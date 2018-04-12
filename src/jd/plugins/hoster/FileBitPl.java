@@ -21,11 +21,18 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -41,21 +48,16 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filebit.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
 public class FileBitPl extends PluginForHost {
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static final String                            APIKEY             = "YWI3Y2E2NWM3OWQxYmQzYWJmZWU3NTRiNzY0OTM1NGQ5ODI3ZjlhNmNkZWY3OGE1MjQ0ZjU4NmM5NTNiM2JjYw==";
+    private static final String                            API_BASE           = "https://filebit.pl/api/index.php";
     private static String                                  SESSIONID          = null;
     /*
      * 2018-02-13: Their API is broken and only returns 404. Support did not respond which is why we now have website- and API support ...
      */
-    private static final boolean                           USE_API            = false;
+    private static final boolean                           USE_API            = true;
     /* Default value is 10 */
     private static AtomicInteger                           maxPrem            = new AtomicInteger(10);
     private static MultiHosterManagement                   mhm                = new MultiHosterManagement("filebit.pl");
@@ -186,8 +188,8 @@ public class FileBitPl extends PluginForHost {
     }
 
     private String getDllinkAPI(final Account account, final DownloadLink link) throws Exception {
-        this.loginAPI(account);
-        br.getPage("http://filebit.pl/api/index.php?a=getFile&sessident=" + SESSIONID + "&url=" + Encoding.urlEncode(link.getDownloadURL()));
+        this.loginAPI(account, false);
+        br.getPage(API_BASE + "?a=addNewFile&sessident=" + SESSIONID + "&url=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
         handleAPIErrors(br, account, link);
         // final String expires = getJson("expires");
         return PluginJSonUtils.getJson(this.br, "downloadurl");
@@ -237,20 +239,13 @@ public class FileBitPl extends PluginForHost {
 
     public AccountInfo fetchAccountInfoAPI(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        loginAPI(account);
-        br.getPage("http://filebit.pl/api/index.php?a=accountStatus&sessident=" + SESSIONID);
+        loginAPI(account, true);
+        br.getPage(API_BASE + "?a=accountStatus&sessident=" + SESSIONID);
         handleAPIErrors(br, account, null);
         account.setValid(true);
         account.setConcurrentUsePossible(true);
-        final String premium = PluginJSonUtils.getJson(this.br, "premium");
-        if (premium != null && !premium.matches("0|1")) {
-            final String lang = System.getProperty("user.language");
-            if ("de".equalsIgnoreCase(lang)) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-        }
+        final String accountDescription = PluginJSonUtils.getJson(br, "acctype");
+        String premium = PluginJSonUtils.getJson(this.br, "premium");
         final String expire = PluginJSonUtils.getJson(this.br, "expires");
         if (expire != null) {
             final Long expirelng = Long.parseLong(expire);
@@ -279,7 +274,7 @@ public class FileBitPl extends PluginForHost {
             maxChunks = -maxChunks;
         }
         account.setProperty("maxconnections", maxChunks);
-        br.getPage("http://filebit.pl/api/index.php?a=getHostList");
+        br.getPage(API_BASE + "?a=getHostList");
         handleAPIErrors(br, account, null);
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         final String[] hostDomains = br.getRegex("\"hostdomains\":\\[(.*?)\\]").getColumn(0);
@@ -289,12 +284,17 @@ public class FileBitPl extends PluginForHost {
                 supportedHosts.add(realDomain);
             }
         }
-        if (!"1".equals(premium)) {
+        if (!StringUtils.isEmpty(accountDescription)) {
             account.setType(AccountType.FREE);
-            ai.setStatus("Free Account");
+            ai.setStatus(accountDescription);
         } else {
-            account.setType(AccountType.PREMIUM);
-            ai.setStatus("Premium Account");
+            if (!"1".equals(premium)) {
+                account.setType(AccountType.FREE);
+                ai.setStatus("Free Account");
+            } else {
+                account.setType(AccountType.PREMIUM);
+                ai.setStatus("Premium Account");
+            }
         }
         ai.setMultiHostSupport(this, supportedHosts);
         return ai;
@@ -376,14 +376,21 @@ public class FileBitPl extends PluginForHost {
     // loginWebsite(account);
     // }
     // }
-    private void loginAPI(final Account account) throws IOException, PluginException, InterruptedException {
+    private void loginAPI(final Account account, final boolean force) throws IOException, PluginException, InterruptedException {
         newBrowserAPI();
-        br.getPage("http://filebit.pl/api/index.php?a=login&apikey=" + Encoding.Base64Decode(APIKEY) + "&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-        handleAPIErrors(br, account, null);
-        SESSIONID = PluginJSonUtils.getJson(this.br, "sessident");
-        if (SESSIONID == null) {
-            // This should never happen
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        SESSIONID = account.getStringProperty("sessionid");
+        final long session_expire = account.getLongProperty("sessionexpire", 0);
+        if (force || SESSIONID == null || System.currentTimeMillis() > session_expire) {
+            br.getPage(API_BASE + "?a=login&apikey=" + Encoding.Base64Decode(APIKEY) + "&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + JDHash.getMD5(account.getPass()));
+            handleAPIErrors(br, account, null);
+            SESSIONID = PluginJSonUtils.getJson(this.br, "sessident");
+            if (SESSIONID == null) {
+                // This should never happen
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            /* According to API documentation, sessionIDs are valid for 60 minutes */
+            account.setProperty("sessionexpire", System.currentTimeMillis() + 40 * 60 * 60 * 1000);
+            account.setProperty("sessionid", SESSIONID);
         }
     }
 
@@ -468,36 +475,45 @@ public class FileBitPl extends PluginForHost {
         } else if (statusCode == null) {
             statusCode = "0";
         }
-        String statusMessage = null;
+        String statusMessage = PluginJSonUtils.getJson(br, "error");
         try {
+            /* Should never happen: {"result":false,"errno":99,"error":"function not found"} */
             int status = Integer.parseInt(statusCode);
             switch (status) {
             case 0:
                 /* Everything ok */
                 break;
-            case 2:
-                /* Login or password missing -> disable account */
-                statusMessage = "\r\nInvalid account / Ungültiger Account";
+            case 200:
+                /* SessionID expired */
+                statusMessage = "Invalid sessionID";
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            case 201:
+                /* MOCH server maintenance -> Disable for 5 minutes */
+                statusMessage = "Server maintenance";
+                tempUnavailableHoster(account, downloadLink, 5 * 60 * 1000l);
+            case 202:
+                /* Login/PW missing (should never happen) */
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            case 3:
-                /* Account invalid -> disable account. */
-                statusMessage = "\r\nInvalid account / Ungültiger Account";
+            case 203:
+                /* Invalid API key (should never happen) */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            case 204:
+                /* Login/PW wrong or account temporary blocked (should never happen) */
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            case 10:
+            case 207:
+                /* Custom API error */
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            case 210:
                 /* Link offline */
                 statusMessage = "Link offline";
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            case 11:
+            case 211:
                 /* Host not supported -> Remove it from hostList */
                 statusMessage = "Host not supported";
                 tempUnavailableHoster(account, downloadLink, 3 * 60 * 60 * 1000l);
-            case 12:
+            case 212:
                 /* Host offline -> Disable for 5 minutes */
                 statusMessage = "Host offline";
-                tempUnavailableHoster(account, downloadLink, 5 * 60 * 1000l);
-            case 101:
-                /* MOCH server maintenance -> Disable for 5 minutes */
-                statusMessage = "MOCH server maintenance";
                 tempUnavailableHoster(account, downloadLink, 5 * 60 * 1000l);
             default:
                 /* unknown error, do not try again with this multihoster */

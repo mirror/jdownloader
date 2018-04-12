@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
@@ -26,7 +25,6 @@ import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -37,11 +35,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.locale.JDL;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pinterest.com" }, urls = { "https?://(?:(?:www|[a-z]{2})\\.)?pinterest\\.(?:com|de|fr)/pin/[A-Za-z0-9\\-_]+/" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pinterest.com" }, urls = { "decryptedpinterest://(?:(?:www|[a-z]{2})\\.)?pinterest\\.(?:com|de|fr)/pin/[A-Za-z0-9\\-_]+/" })
 public class PinterestCom extends PluginForHost {
     public PinterestCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -54,11 +49,10 @@ public class PinterestCom extends PluginForHost {
         return "https://about.pinterest.com/de/terms-service";
     }
 
-    @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
         /* Correct link - remove country related subdomains (e.g. 'es.pinterest.com'). */
-        final String pin_id = getPinID(link.getDownloadURL());
-        link.setUrlDownload("https://www.pinterest.com/pin/" + pin_id + "/");
+        final String pin_id = getPinID(link.getPluginPatternMatcher());
+        link.setContentUrl("https://www.pinterest.com/pin/" + pin_id + "/");
     }
 
     public static String getPinID(final String pin_url) {
@@ -71,141 +65,45 @@ public class PinterestCom extends PluginForHost {
     /* don't touch the following! */
     private String             dllink           = null;
 
-    @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
+    @SuppressWarnings({ "deprecation" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        String filename = null;
-        final String pin_id = getPinID(link.getDownloadURL());
+        final String pin_id = getPinID(link.getContentUrl());
         /* Display ids for offline links */
         link.setName(pin_id);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        String site_title = null;
         dllink = checkDirectLink(link, "free_directlink");
-        if (dllink != null) {
-            /* Avoid unnecessary site requests. */
-            site_title = link.getFinalFileName();
-            if (site_title == null) {
-                site_title = pin_id;
-            }
-        } else {
+        LinkedHashMap<String, Object> pinMap = null;
+        boolean loggedIN = false;
+        if (dllink == null) {
             final String source_url = link.getStringProperty("source_url", null);
             final String boardid = link.getStringProperty("boardid", null);
             final String username = link.getStringProperty("username", null);
             final Account aa = AccountController.getInstance().getValidAccount(this);
             if (aa != null && source_url != null && boardid != null && username != null) {
                 login(this.br, aa, false);
-                String pin_ressource_url = "http://www.pinterest.com/resource/PinResource/get/?source_url=";
-                String options = "/pin/%s/&data={\"options\":{\"field_set_key\":\"detailed\",\"link_selection\":true,\"fetch_visual_search_objects\":true,\"id\":\"%s\"},\"context\":{},\"module\":{\"name\":\"CloseupContent\",\"options\":{\"unauth_pin_closeup\":false}},\"render_type\":1}&module_path=App()>BoardPage(resource=BoardResource(username=amazvicki,+slug=))>Grid(resource=BoardFeedResource(board_id=%s,+board_url=%s,+page_size=null,+prepend=true,+access=,+board_layout=default))>GridItems(resource=BoardFeedResource(board_id=%s,+board_url=%s,+page_size=null,+prepend=true,+access=,+board_layout=default))>Pin(show_pinner=false,+show_pinned_from=true,+show_board=false,+squish_giraffe_pins=false,+component_type=0,+resource=PinResource(id=%s))";
-                options = String.format(options, pin_id, pin_id, username, username, boardid, source_url, boardid, source_url, pin_id);
-                options = options.replace("/", "%2F");
-                // options = Encoding.urlEncode(options);
-                pin_ressource_url += options;
-                pin_ressource_url += "&_=" + System.currentTimeMillis();
-                prepAPIBR(this.br);
-                br.getPage(pin_ressource_url);
-                if (isOffline(this.br, pin_id)) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-                final LinkedHashMap<String, Object> page_info = (LinkedHashMap<String, Object>) entries.get("page_info");
-                final ArrayList<Object> ressourcelist = (ArrayList) entries.get("resource_data_cache");
-                dllink = getDirectlinkFromJson(ressourcelist, pin_id);
-                site_title = (String) page_info.get("title");
+                loggedIN = true;
+                pinMap = jd.plugins.decrypter.PinterestComDecrypter.findPINMap(this.br, true, link.getContentUrl(), source_url, boardid, username);
                 /* We don't have to be logged in to perform downloads so better log out to avoid account bans. */
                 br.clearCookies(br.getHost());
             } else {
-                br.getPage(link.getDownloadURL());
-                if (isOffline(this.br, pin_id)) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                LinkedHashMap<String, Object> entries = null;
-                ArrayList<Object> ressourcelist = null;
-                /*
-                 * Site actually contains similar json compared to API --> Grab that and get the final link via that as it is not always
-                 * present in the normal html code.
-                 */
-                site_title = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-                String json = br.getRegex("P\\.(?:start\\.start|main\\.start)\\((.*?)\\);\n").getMatch(0);
-                if (json == null) {
-                    json = br.getRegex("P\\.startArgs = (.*?);\n").getMatch(0);
-                }
-                if (json != null) {
-                    /* Website json */
-                    entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
-                    ressourcelist = (ArrayList) entries.get("resourceDataCache");
-                } else {
-                    /* API json e.g. needed: https://www.pinterest.com/pin/104497653832270636/ */
-                    prepAPIBR(this.br);
-                    final String pin_json_url = "https://www.pinterest.com/resource/PinResource/get/?source_url=%2Fpin%2F" + pin_id + "%2F&data=%7B%22options%22%3A%7B%22field_set_key%22%3A%22detailed%22%2C%22ptrf%22%3Anull%2C%22fetch_visual_search_objects%22%3Atrue%2C%22id%22%3A%22" + pin_id + "%22%7D%2C%22context%22%3A%7B%7D%7D&module_path=Pin(show_pinner%3Dtrue%2C+show_board%3Dtrue%2C+is_original_pin_in_related_pins_grid%3Dtrue)&_=" + System.currentTimeMillis();
-                    this.br.getPage(pin_json_url);
-                    json = this.br.toString();
-                    entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
-                    ressourcelist = (ArrayList) entries.get("resource_data_cache");
-                }
-                dllink = getDirectlinkFromJson(ressourcelist, pin_id);
+                loggedIN = false;
+                pinMap = jd.plugins.decrypter.PinterestComDecrypter.findPINMap(this.br, false, link.getContentUrl(), source_url, boardid, username);
             }
+            dllink = jd.plugins.decrypter.PinterestComDecrypter.getDirectlinkFromPINMap(pinMap);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            link.setProperty("free_directlink", dllink);
-            /* Check if our directlink is actually valid. */
-            dllink = checkDirectLink(link, "free_directlink");
-            if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            site_title = Encoding.htmlDecode(site_title).trim();
-            site_title = pin_id + "_" + site_title;
         }
-        if (site_title != null && link.getComment() == null) {
-            link.setComment(site_title);
+        jd.plugins.decrypter.PinterestComDecrypter.setInfoOnDownloadLink(this.br, link, pinMap, dllink, loggedIN);
+        /* Check if our directlink is actually valid. */
+        dllink = checkDirectLink(link, "free_directlink");
+        if (dllink == null) {
+            logger.info("Final downloadurl is not downloadable --> Offline?");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String ext = getFileNameExtensionFromString(dllink, ".jpg");
-        filename = pin_id;
-        final String picture_description = getPictureDescription(link);
-        if (this.getPluginConfig().getBooleanProperty(ENABLE_DESCRIPTION_IN_FILENAMES, defaultENABLE_DESCRIPTION_IN_FILENAMES) && picture_description != null) {
-            filename += "_" + picture_description;
-        }
-        if (!filename.endsWith(ext)) {
-            filename += ext;
-        }
-        filename = encodeUnicode(filename);
-        link.setFinalFileName(filename);
-        link.setLinkID(getLinkidForInternalDuplicateCheck(link.getDownloadURL(), dllink));
         return AvailableStatus.TRUE;
-    }
-
-    @SuppressWarnings("unchecked")
-    private String getDirectlinkFromJson(final ArrayList<Object> ressourcelist, final String pin_id) {
-        String directlink = null;
-        logger.info("resource_data_cache size: " + ressourcelist.size());
-        final boolean grabThis;
-        if (ressourcelist.size() == 1) {
-            logger.info("resource_data_cache contains only 1 item --> This should be the one, we want");
-            grabThis = true;
-        } else {
-            logger.info("resource_data_cache contains multiple item --> We'll have to find the correct one");
-            grabThis = false;
-        }
-        for (final Object resource_object : ressourcelist) {
-            final LinkedHashMap<String, Object> t2 = (LinkedHashMap<String, Object>) resource_object;
-            final LinkedHashMap<String, Object> t3 = (LinkedHashMap<String, Object>) t2.get("data");
-            final String this_pin_id = (String) t3.get("id");
-            final boolean pins_matched = this_pin_id.equals(pin_id);
-            if (pins_matched || grabThis) {
-                if (pins_matched) {
-                    logger.info("Found correct item because PINs matched");
-                }
-                if (grabThis) {
-                    logger.info("Found correct item because we only had one");
-                }
-                final LinkedHashMap<String, Object> t4 = (LinkedHashMap<String, Object>) t3.get("images");
-                final LinkedHashMap<String, Object> t5 = (LinkedHashMap<String, Object>) t4.get("orig");
-                directlink = (String) t5.get("url");
-                break;
-            }
-        }
-        return directlink;
     }
 
     /**
@@ -233,7 +131,7 @@ public class PinterestCom extends PluginForHost {
         br.getHeaders().put("X-CSRFToken", csrftoken);
     }
 
-    private static boolean isOffline(final Browser br, final String pin_id) {
+    public static boolean isOffline(final Browser br, final String pin_id) {
         if (br.getHttpConnection().getResponseCode() == 404) {
             return true;
         } else if (!br.getURL().contains(pin_id)) {
@@ -388,7 +286,7 @@ public class PinterestCom extends PluginForHost {
         doFree(link, false, 1, "account_free_directlink");
     }
 
-    private String getPictureDescription(final DownloadLink dl) {
+    public static String getPictureDescription(final DownloadLink dl) {
         return dl.getStringProperty("description", null);
     }
 
@@ -397,11 +295,14 @@ public class PinterestCom extends PluginForHost {
         return "JDownloader's Pinterest plugin helps downloading pictures from pinterest.com.";
     }
 
-    public static final String  ENABLE_DESCRIPTION_IN_FILENAMES        = "ENABLE_DESCRIPTION_IN_FILENAMES";
-    public static final boolean defaultENABLE_DESCRIPTION_IN_FILENAMES = false;
+    public static final String  ENABLE_DESCRIPTION_IN_FILENAMES                      = "ENABLE_DESCRIPTION_IN_FILENAMES";
+    public static final boolean defaultENABLE_DESCRIPTION_IN_FILENAMES               = false;
+    public static final String  ENABLE_CRAWL_ALTERNATIVE_SOURCE_URLS        = "ENABLE_CRAWL_ALTERNATIVE_URLS_INSIDE_COMMENTS";
+    public static final boolean defaultENABLE_CRAWL_ALTERNATIVE_SOURCE_URLS = false;
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ENABLE_DESCRIPTION_IN_FILENAMES, JDL.L("plugins.hoster.PinterestCom.enableDescriptionInFilenames", "Add pin-description to filenames?\r\nNOTE: If enabled, Filenames might get very long!")).setDefaultValue(defaultENABLE_DESCRIPTION_IN_FILENAMES));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ENABLE_DESCRIPTION_IN_FILENAMES, "Add pin-description to filenames?\r\nNOTE: If enabled, Filenames might get very long!").setDefaultValue(defaultENABLE_DESCRIPTION_IN_FILENAMES));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ENABLE_CRAWL_ALTERNATIVE_SOURCE_URLS, "Crawl alternative source URLs e.g. (higher quality) imgur.com URLs?").setDefaultValue(defaultENABLE_CRAWL_ALTERNATIVE_SOURCE_URLS));
     }
 
     @Override

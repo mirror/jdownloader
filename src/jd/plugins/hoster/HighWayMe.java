@@ -310,20 +310,8 @@ public class HighWayMe extends UseNet {
             link.setChunksProgress(null);
             link.setProperty(HighWayMe.NORESUME, Boolean.valueOf(true));
             throw new PluginException(LinkStatus.ERROR_RETRY);
-        } else if (responsecode == 503) {
-            br.followConnection();
-            final String statustext = PluginJSonUtils.getJson(this.br, "for_jd");
-            // final String waitHeader = br.getRequest().getResponseHeader("Retry-After");
-            final String retry_in_seconds = PluginJSonUtils.getJson(this.br, "retry_in_seconds");
-            if (retry_in_seconds != null && retry_in_seconds.matches("\\d+") && statustext != null) {
-                logger.info("Waiting serverside 503 waittime: " + retry_in_seconds);
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503: " + statustext, Long.parseLong(retry_in_seconds) * 1000l);
-            } else {
-                /* This should never happen */
-                logger.info("Waiting default 503 waittime: 60");
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 60 * 1000l);
-            }
         }
+        jd.plugins.hoster.SimplyPremiumCom.handle503(this.br, responsecode);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             handleErrorRetries("unknowndlerror", 10, 5 * 60 * 1000l);

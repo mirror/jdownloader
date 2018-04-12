@@ -20,6 +20,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -27,7 +28,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sexuria.com" }, urls = { "https?://(www\\.)?sexuria\\.(com|to)/(v1/)?Pornos_Kostenlos_.+?_(\\d+)\\.html|https?://(www\\.)?sexuria\\.(com|to)/(v1/)?dl_links_\\d+_\\d+\\.html|https?://(www\\.)?sexuria\\.(com|to)/out\\.php\\?id=([0-9]+)\\&part=[0-9]+\\&link=[0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sexuria.com" }, urls = { "https?://(?:www\\.)?sexuria\\.(com|to)/(v1/)?Pornos_Kostenlos_.+?_(\\d+)\\.html|https?://(www\\.)?sexuria\\.(com|to)/(v1/)?dl_links_\\d+_\\d+\\.html|https?://(www\\.)?sexuria\\.(com|to)/out\\.php\\?id=([0-9]+)\\&part=[0-9]+\\&link=[0-9]+" })
 public class Sxrcm extends PluginForDecrypt {
     private static final Pattern PATTEREN_SUPPORTED_MAIN    = Pattern.compile("https?://(www\\.)?sexuria\\.(com|to)/(v1/)?Pornos_Kostenlos_.+?_(\\d+)\\.html", Pattern.CASE_INSENSITIVE);
     private static final Pattern PATTERN_SUPPORTED_CRYPT    = Pattern.compile("https?://(www\\.)?sexuria\\.(com|to)/(v1/)?dl_links_\\d+_(\\d+)\\.html", Pattern.CASE_INSENSITIVE);
@@ -45,7 +46,8 @@ public class Sxrcm extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        final String host = Browser.getHost(param.toString());
+        String parameter = param.toString().replace(host, "sexuria.to");
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         String downloadId;
@@ -60,7 +62,7 @@ public class Sxrcm extends PluginForDecrypt {
                     return decryptedLinks;
                 }
                 final String password = br.getRegex(PATTERN_PASSWORD).getMatch(0);
-                if (password != null) {
+                if (password != null && !password.equalsIgnoreCase("no password")) {
                     param.setDecrypterPassword(password);
                 }
                 final String[] final_links = br.getRegex("onclick=\"this\\.className\\+=\\' disabled\\'\" href=\"(https?[^<>\"]*?)\"").getColumn(0);

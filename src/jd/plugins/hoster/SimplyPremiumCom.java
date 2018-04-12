@@ -21,6 +21,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.translate._JDT;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -35,18 +42,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.translate._JDT;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "simply-premium.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "simply-premium.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
 public class SimplyPremiumCom extends PluginForHost {
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
-    private static final String                            NOCHUNKS           = "NOCHUNKS";
     private static final String                            NICE_HOST          = "simply-premium.com";
     private static final String                            NICE_HOSTproperty  = "simplypremiumcom";
     private static String                                  APIKEY             = null;
@@ -112,14 +112,13 @@ public class SimplyPremiumCom extends PluginForHost {
         if (maxChunks > 20) {
             maxChunks = 0;
         }
-        if (link.getBooleanProperty(NOCHUNKS, false)) {
-            maxChunks = 1;
-        }
         if (!resume_allowed) {
             maxChunks = 1;
         }
         link.setProperty(NICE_HOSTproperty + "directlink", dllink);
+        br.setAllowedResponseCodes(new int[] { 503 });
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume_allowed, maxChunks);
+        handle503(this.br, dl.getConnection().getResponseCode());
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             downloadErrorhandling(account, link);
@@ -136,28 +135,21 @@ public class SimplyPremiumCom extends PluginForHost {
                 tempUnavailableHoster(account, link, 60 * 60 * 1000l);
             }
         }
-        try {
-            if (!this.dl.startDownload()) {
-                try {
-                    if (dl.externalDownloadStop()) {
-                        return;
-                    }
-                } catch (final Throwable e) {
-                }
-                /* unknown error, we disable multiple chunks */
-                if (link.getBooleanProperty(SimplyPremiumCom.NOCHUNKS, false) == false) {
-                    link.setProperty(SimplyPremiumCom.NOCHUNKS, Boolean.valueOf(true));
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
+        dl.startDownload();
+    }
+
+    public static void handle503(final Browser br, final long responsecode) throws NumberFormatException, PluginException, IOException {
+        if (responsecode == 503) {
+            br.followConnection();
+            final String statustext = PluginJSonUtils.getJson(br, "for_jd");
+            // final String waitHeader = br.getRequest().getResponseHeader("Retry-After");
+            final String retry_in_seconds = PluginJSonUtils.getJson(br, "retry_in_seconds");
+            if (retry_in_seconds != null && retry_in_seconds.matches("\\d+") && statustext != null) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503: " + statustext, Long.parseLong(retry_in_seconds) * 1000l);
+            } else {
+                /* This should never happen */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 60 * 1000l);
             }
-        } catch (final PluginException e) {
-            // New V2 errorhandling
-            /* unknown error, we disable multiple chunks */
-            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(SimplyPremiumCom.NOCHUNKS, false) == false) {
-                link.setProperty(SimplyPremiumCom.NOCHUNKS, Boolean.valueOf(true));
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
-            throw e;
         }
     }
 
