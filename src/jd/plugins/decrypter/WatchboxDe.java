@@ -28,6 +28,7 @@ import java.util.Map.Entry;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.config.MediathekProperties;
+import org.jdownloader.plugins.components.config.WatchboxDeConfigInterface;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -42,7 +43,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.MediathekHelper;
-import jd.plugins.hoster.WatchboxDe.WatchboxDeConfigInterface;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "watchbox.de" }, urls = { "https?://(?:www\\.)?watchbox\\.de/(?:serien|filme)/[^<>\"]+\\d+\\.html" })
 public class WatchboxDe extends PluginForDecrypt {
@@ -82,7 +82,7 @@ public class WatchboxDe extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final WatchboxDeConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.WatchboxDe.WatchboxDeConfigInterface.class);
+        final WatchboxDeConfigInterface cfg = PluginJsonConfig.get(org.jdownloader.plugins.components.config.WatchboxDeConfigInterface.class);
         final List<String> selectedQualities = new ArrayList<String>();
         final boolean addHLS144 = cfg.isGrabHLS144pVideoEnabled();
         final boolean addHLS180 = cfg.isGrabHLS180pVideoEnabled();
@@ -228,7 +228,7 @@ public class WatchboxDe extends PluginForDecrypt {
         } else {
             protocol = "http";
         }
-        final WatchboxDeConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.WatchboxDe.WatchboxDeConfigInterface.class);
+        final WatchboxDeConfigInterface cfg = PluginJsonConfig.get(org.jdownloader.plugins.components.config.WatchboxDeConfigInterface.class);
         final String qualityStringForQualitySelection = getQualityIdentifier(directurl, bandwidth, width, height);
         final DownloadLink link = createDownloadlink(directurl.replaceAll("https?://", getHost() + "decrypted://"));
         final MediathekProperties data = link.bindData(MediathekProperties.class);
@@ -265,7 +265,7 @@ public class WatchboxDe extends PluginForDecrypt {
     private void handleUserQualitySelection(List<String> selectedQualities) {
         /* We have to re-add the subtitle for the best quality if wished by the user */
         HashMap<String, DownloadLink> finalSelectedQualityMap = new HashMap<String, DownloadLink>();
-        final WatchboxDeConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.WatchboxDe.WatchboxDeConfigInterface.class);
+        final WatchboxDeConfigInterface cfg = PluginJsonConfig.get(org.jdownloader.plugins.components.config.WatchboxDeConfigInterface.class);
         if (cfg.isGrabBESTEnabled()) {
             /* User wants BEST only */
             finalSelectedQualityMap = findBESTInsideGivenMap(this.foundQualitiesMap);
