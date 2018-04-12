@@ -88,6 +88,7 @@ plugins_optional_extraction_status_extractok=Estrazione OK
 plugins_optional_extraction_status_notenoughspace=Spazio insufficiente per l'estrazione
 plugins_optional_extraction_status_openingarchive2=Estrazione in corso
 plugins_optional_extraction_status_passfound=Trovata password
+plugins_optional_extraction_status_pausedForOtherCrc=Pausa - controllo crc ancora in corso
 plugins_optional_extraction_status_queued=In coda per l'estrazione
 properties=Proprietà sottopercorso
 set_autoextract_false=L'estrazione automatica è ora disabilitata
