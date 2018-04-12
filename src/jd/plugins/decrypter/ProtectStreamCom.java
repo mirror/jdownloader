@@ -38,25 +38,26 @@ public class ProtectStreamCom extends PluginForDecrypt {
         final String prtcid = new Regex(parameter, "protect\\-stream\\.com/PS_(?:DL|SM)_([A-Za-z0-9\\-_]+)").getMatch(0);
         if (parameter.contains("PS_SM")) {
             br.getPage(parameter);
+            br.followRedirect();
             final String cheap = br.getRegex("var k=\"([^<>\"]*?)\";").getMatch(0);
             if (cheap == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             this.sleep(10 * 1000l, param);
-            br.postPage("http://www.protect-stream.com/secur2_sm.php", "k=" + Encoding.urlEncode(cheap));
+            br.postPage("/secur2_sm.php", "k=" + Encoding.urlEncode(cheap));
         } else {
             // br.getPage(parameter);
             // br.getPage("http://www.protect-stream.com/frame.php?u=" + prtcid);
-            br.getPage("http://www.protect-stream.com/w.php?u=" + prtcid);
+            br.getPage("https://www.protect-stream.com/w.php?u=" + prtcid);
             final String cheap = br.getRegex("var k=\"([^<>\"]*?)\";").getMatch(0);
             if (cheap == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            br.postPage("http://www.protect-stream.com/secur.php", "k=" + Encoding.urlEncode(cheap));
+            br.postPage("/secur.php", "k=" + Encoding.urlEncode(cheap));
         }
-        final String finallink = br.getRegex("(?:href|src)\\s*=\\s*\"(http[^<>\"]*?)\"").getMatch(0);
+        final String finallink = br.getRegex("(?:href|src)\\s*=\\s*\"(https?[^<>\"]*?)\"").getMatch(0);
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
