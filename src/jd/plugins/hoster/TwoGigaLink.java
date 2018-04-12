@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -33,7 +32,6 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "2giga.link" }, urls = { "https?://(?:www\\.)?2giga\\.link/d(?:ownload)?/[A-Za-z0-9]+" })
 public class TwoGigaLink extends PluginForHost {
-
     public TwoGigaLink(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -57,7 +55,6 @@ public class TwoGigaLink extends PluginForHost {
     //
     // /* don't touch the following! */
     // private static AtomicInteger maxPrem = new AtomicInteger(1);
-
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
@@ -66,7 +63,8 @@ public class TwoGigaLink extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">File not found|Expired or deleted by Admin because it")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Regex finfo = br.getRegex("<p>([^<>\"]+) \\((\\d+ [A-Za-z]+)\\)</p>");
+        // <p>Ray.Donovan.S05E08.Horses.720p.WEBRip.2CH.x265.HEVC-PSA.rar ( 270.6 MB )</p>
+        final Regex finfo = br.getRegex("<p>([^<>\"]+)\\((\\s*?\\d+(\\.\\d{1,2})? [A-Za-z]+\\s*?)\\)</p>");
         String filename = finfo.getMatch(0);
         String filesize = finfo.getMatch(1);
         if (filename == null) {
@@ -169,5 +167,4 @@ public class TwoGigaLink extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

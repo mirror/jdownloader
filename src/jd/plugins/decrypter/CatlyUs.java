@@ -42,7 +42,8 @@ import jd.plugins.components.SiteType.SiteTemplate;
  * @author pspzockerscene
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "akorto.eu", "u2s.io", "zlshorte.net", "igram.im", "bit-url.com", "adbilty.me", "linclik.com", "oke.io", "vivads.net", "koylinks.win", "cuon.io", "pnd.tl" }, urls = { "https?://(?:www\\.)?akorto\\.eu/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?u2s\\.io/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?zlshorte\\.net/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?igram\\.im/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?bit\\-url\\.com/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?adbilty\\.me/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?linclik\\.com/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?oke\\.io/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?vivads\\.net/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?koylinks\\.win/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?(?:cuon|curs)\\.io/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?pnd\\.tl/[A-Za-z0-9]{4,}" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "akorto.eu", "u2s.io", "zlshorte.net", "igram.im", "bit-url.com", "adbilty.me", "linclik.com", "oke.io", "vivads.net", "koylinks.win", "cuon.io", "pnd.tl", "met.bz", "urlcloud.us" }, urls = { "https?://(?:www\\.)?akorto\\.eu/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?u2s\\.io/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?zlshorte\\.net/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?igram\\.im/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?bit\\-url\\.com/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?adbilty\\.me/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?linclik\\.com/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?oke\\.io/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?vivads\\.net/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?koylinks\\.win/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?(?:cuon|curs)\\.io/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?pnd\\.tl/[A-Za-z0-9]{4,}",
+        "https?://met\\.bz/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?urlcloud\\.us/[A-Za-z0-9]{4,}" })
 public class CatlyUs extends antiDDoSForDecrypt {
     public CatlyUs(PluginWrapper wrapper) {
         super(wrapper);
@@ -104,6 +105,7 @@ public class CatlyUs extends antiDDoSForDecrypt {
                 } else {
                     captcha_failed = false;
                 }
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.submitForm(form);
                 /**
                  * TODO: Check if we need this for other language or check if this is language independant and only exists if the captcha

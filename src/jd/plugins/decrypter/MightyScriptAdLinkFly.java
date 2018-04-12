@@ -18,6 +18,9 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -31,19 +34,16 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 /**
  *
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "coinlink.co" }, urls = { "https?://(?:www\\.)?(?:coinlink\\.co|adlink\\.guru|short\\.es|tmearn\\.com|cut-urls\\.com|ibly\\.co|adshort\\.(?:co|me|im)|brlink\\.in|urle\\.co|mitly\\.us|cutwin\\.com|cpmlink\\.net)/[A-Za-z0-9]+$" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "coinlink.co" }, urls = { "https?://(?:www\\.)?(?:coinlink\\.co|adlink\\.guru|short\\.es|tmearn\\.com|cut-urls\\.com|ibly\\.co|adshort\\.(?:co|me|im)|brlink\\.in|urle\\.co|mitly\\.us|cutwin\\.com)/[A-Za-z0-9]+$" })
 public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "coinlink.co", "adlink.guru", "short.es", "tmearn.com", "cut-urls.com", "ibly.co", "adshort.co", "adshort.me", "adshort.im", "brlink.in", "urle.co", "mitly.us", "cutwin.com", "cpmlink.net" };
+        return new String[] { "coinlink.co", "adlink.guru", "short.es", "tmearn.com", "cut-urls.com", "ibly.co", "adshort.co", "adshort.me", "adshort.im", "brlink.in", "urle.co", "mitly.us", "cutwin.com" };
     }
 
     public MightyScriptAdLinkFly(PluginWrapper wrapper) {

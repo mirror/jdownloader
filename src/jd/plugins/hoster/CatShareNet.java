@@ -43,6 +43,7 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -203,22 +204,6 @@ public class CatShareNet extends antiDDoSForHost {
         return AvailableStatus.TRUE;
     }
 
-    @SuppressWarnings("deprecation")
-    public void checkErrorsWebsite(DownloadLink theLink, boolean beforeRecaptcha) throws NumberFormatException, PluginException {
-        // Some waittimes...
-        if (beforeRecaptcha) {
-            if (br.containsHTML("<h4 style=\"margin-right: 10px;\">Odczekaj <big id=\"counter\"></big> lub kup")) {
-                // possible waiitime after last download
-                String waitTime = br.getRegex("<script>[ \t\n\r\f]+var count = ([0-9]+);").getMatch(0);
-                logger.warning("Waittime detected for link " + theLink.getDownloadURL());
-                Long waitTimeSeconds = Long.parseLong(waitTime);
-                if (waitTimeSeconds != 60l) {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, getPhrase("WAITTIME"), (waitTimeSeconds + 5) * 1000L);
-                }
-            }
-        }
-    }
-
     // never got one, but left this for future usage
     public void checkServerErrors() throws NumberFormatException, PluginException {
         if (new Regex(brbefore, Pattern.compile("No file", Pattern.CASE_INSENSITIVE)).matches()) {
@@ -260,12 +245,9 @@ public class CatShareNet extends antiDDoSForHost {
     public String getDllinkWebsite() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(brbefore, "Download: <a href=\"(.*?)\"").getMatch(0);
+            dllink = new Regex(brbefore, "(https?://(\\w+\\.)?catshare\\.net/dl/(\\d+/){4}[^\"]+)").getMatch(0);
             if (dllink == null) {
-                dllink = new Regex(brbefore, "(https?://(\\w+\\.)?catshare\\.net/dl/(\\d+/){4}[^\"]+)").getMatch(0);
-                if (dllink == null) {
-                    dllink = new Regex(brbefore, "(https?://\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}/catshare/\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}/dl/(\\d+/){4}[^\"]+)").getMatch(0);
-                }
+                dllink = new Regex(brbefore, "(https?://\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}/catshare/\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}/dl/(\\d+/){4}[^\"]+)").getMatch(0);
             }
         }
         return dllink;
@@ -358,13 +340,15 @@ public class CatShareNet extends antiDDoSForHost {
 
     /** 2018-04-11: Outdated! */
     public void doFreeWebsite(final DownloadLink downloadLink, final boolean resumable, final int maxChunks) throws Exception, PluginException {
-        checkErrorsWebsite(downloadLink, true);
         String dllink = null;
-        boolean password = false;
-        // only ReCaptcha
-        Form dlForm = new Form();
-        if (new Regex(brbefore, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {
-            dlForm = br.getForm(0);
+        // boolean password = false;
+        if (new Regex(brbefore, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api)").matches()) {
+            Form dlForm = br.getFormByInputFieldKeyValue("submit", "pobierz");
+            if (dlForm == null) {
+                dlForm = new Form();
+                dlForm.setMethod(MethodType.POST);
+                dlForm.setAction(br.getURL());
+            }
             final String id = br.getRegex("data\\-sitekey=\"([^<>\"]+)\"").getMatch(0);
             String waittime_seconds = br.getRegex("var count = (\\d+);").getMatch(0);
             if (waittime_seconds == null) {
@@ -381,18 +365,13 @@ public class CatShareNet extends antiDDoSForHost {
             dlForm.put("g-recaptcha-response", recaptchaV2Response);
             waitTime(downloadLink, timeBefore, 60000);
             submitForm(dlForm);
-        } else {
-            logger.warning("Unknown ReCaptcha method for: " + downloadLink.getDownloadURL());
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, getPhrase("UNKNOWN_RECAPTCHA"));
         }
-        /* Captcha END */
         // if (password) passCode = handlePassword(passCode, dlForm, downloadLink);
         if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
             logger.info("5 reCaptcha tryouts for <" + downloadLink.getDownloadURL() + "> were incorrect");
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, getPhrase("RECAPTCHA_ERROR"), 1 * 60 * 1000l);
         }
         doSomething();
-        checkErrorsWebsite(downloadLink, false);
         dllink = getDllinkWebsite();
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
@@ -840,7 +819,6 @@ public class CatShareNet extends antiDDoSForHost {
                                                       put("PREMIUM_DISABLED", "Premium disabled, will continue downloads as anonymous user");
                                                       put("LINK_BROKEN", "Link is broken at the server side");
                                                       put("NO_RECAPTCHA_FORM", "no reCaptcha form!");
-                                                      put("UNKNOWN_RECAPTCHA", "Unknown ReCaptcha method!");
                                                       put("RECAPTCHA_ERROR", "reCaptcha error or server doesn't accept reCaptcha challenges");
                                                       put("REGEX_ERROR", "Regex didn't match - no final link found");
                                                       put("FINAL_LINK_ERROR", "The final dllink seems not to be a file!");
@@ -863,7 +841,6 @@ public class CatShareNet extends antiDDoSForHost {
                                                       put("PREMIUM_DISABLED", "Konto Premium zostanie wyłączone, pobierania będą kontynuowane jako anonimowe");
                                                       put("LINK_BROKEN", "Plik jest uszkodzony na serwerze");
                                                       put("NO_RECAPTCHA_FORM", "brak formularza reCaptcha!");
-                                                      put("UNKNOWN_RECAPTCHA", "Nieznany typ ReCaptcha!");
                                                       put("RECAPTCHA_ERROR", "błąd reCaptcha lub serwer nie akceptuje prób wprowadzenia kodu reCaptcha");
                                                       put("REGEX_ERROR", "Wyrażenie regularne nie znalazło finalnego linku");
                                                       put("FINAL_LINK_ERROR", "Finałowy link jest nieprawidłowy");

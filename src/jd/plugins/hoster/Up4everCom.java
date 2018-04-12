@@ -87,7 +87,7 @@ public class Up4everCom extends antiDDoSForHost {
     private final boolean        IMAGEHOSTER                        = false;
     private final boolean        SUPPORTS_HTTPS                     = true;
     // depending on domain, https will redirect to http, thus not enforced.
-    private final boolean        SUPPORTS_HTTPS_FORCED              = false;
+    private final boolean        SUPPORTS_HTTPS_FORCED              = true;
     private final boolean        SUPPORTS_AVAILABLECHECK_ALT        = true;
     private final boolean        SUPPORTS_AVAILABLECHECK_ABUSE      = true;
     /*
@@ -159,7 +159,6 @@ public class Up4everCom extends antiDDoSForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    @SuppressWarnings("deprecation")
     public Up4everCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
@@ -665,6 +664,8 @@ public class Up4everCom extends antiDDoSForHost {
                     dlForm.put("capcode", result);
                     skipWaittime = false;
                 }
+                /* 2018-04-12: Important! */
+                dlForm.put("adblock_detected", "0");
                 /* Captcha END */
                 if (password) {
                     passCode = handlePassword(dlForm, downloadLink);

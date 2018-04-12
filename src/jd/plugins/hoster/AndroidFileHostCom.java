@@ -44,6 +44,11 @@ public class AndroidFileHostCom extends antiDDoSForHost {
     }
 
     @Override
+    public String getLinkID(final DownloadLink link) {
+        return new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -73,9 +78,14 @@ public class AndroidFileHostCom extends antiDDoSForHost {
         String dllink = null;
         if (dllink == null) {
             /* Old handling removed AFTER revision 26995 */
-            final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+            final String fid = getLinkID(downloadLink);
             // sleep(10 * 1001l, downloadLink);
+            /* 2018-04-12: Correct headers are required now */
+            br.getHeaders().put("Accept", "*/*");
+            br.getHeaders().put("X-MOD-SBB-CTYPE", "xhr");
+            br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            postPage("/libs/otf/checks.otf.php", "w=waitingtime");
             postPage("/libs/otf/mirrors.otf.php", "submit=submit&action=getdownloadmirrors&fid=" + fid);
             final String[] mirrors = br.getRegex("\"url\":\"(http[^<>\"]*?)\"").getColumn(0);
             if (mirrors == null || mirrors.length == 0) {
