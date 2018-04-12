@@ -50,6 +50,7 @@ public class ProtectStreamCom extends PluginForDecrypt {
             // br.getPage(parameter);
             // br.getPage("http://www.protect-stream.com/frame.php?u=" + prtcid);
             br.getPage("https://www.protect-stream.com/w.php?u=" + prtcid);
+            br.followRedirect();
             final String cheap = br.getRegex("var k=\"([^<>\"]*?)\";").getMatch(0);
             if (cheap == null) {
                 logger.warning("Decrypter broken for link: " + parameter);

@@ -325,36 +325,97 @@ public class LinkCrawler {
         return classLoader;
     }
 
-    public static synchronized boolean addLinkCrawlerRule(LinkCrawlerRule rule) {
+    public boolean addLinkCrawlerRule(LinkCrawlerRule rule) {
         if (rule != null) {
-            List<LinkCrawlerRuleStorable> rules = CONFIG.getLinkCrawlerRules();
-            if (rules == null) {
-                rules = new ArrayList<LinkCrawlerRuleStorable>();
-            }
-            for (LinkCrawlerRuleStorable existingRule : rules) {
-                if (existingRule.getId() == rule.getId() || (existingRule.getRule() == rule.getRule() && StringUtils.equals(existingRule.getPattern(), rule.getPattern()))) {
-                    return false;
+            boolean refresh = false;
+            try {
+                synchronized (LINKCRAWLERRULESLOCK) {
+                    List<LinkCrawlerRuleStorable> rules = CONFIG.getLinkCrawlerRules();
+                    if (rules == null) {
+                        rules = new ArrayList<LinkCrawlerRuleStorable>();
+                    }
+                    for (final LinkCrawlerRuleStorable existingRule : rules) {
+                        if (existingRule.getId() == rule.getId() || (existingRule.getRule() == rule.getRule() && StringUtils.equals(existingRule.getPattern(), rule.getPattern()))) {
+                            return false;
+                        }
+                    }
+                    rules.add(new LinkCrawlerRuleStorable(rule));
+                    CONFIG.setLinkCrawlerRules(rules);
+                    refresh = true;
+                    return true;
+                }
+            } finally {
+                if (refresh) {
+                    synchronized (linkCrawlerRules) {
+                        linkCrawlerRules.set(null);
+                    }
                 }
             }
-            rules.add(new LinkCrawlerRuleStorable(rule));
-            CONFIG.setLinkCrawlerRules(rules);
-            return true;
         }
         return false;
+    }
+
+    private static final Object LINKCRAWLERRULESLOCK = new Object();
+
+    protected void setLinkCrawlerRuleCookies(final long ruleID, final List<String[]> setCookies) {
+        boolean refresh = false;
+        try {
+            synchronized (LINKCRAWLERRULESLOCK) {
+                final List<LinkCrawlerRuleStorable> rules = CONFIG.getLinkCrawlerRules();
+                if (rules != null) {
+                    for (final LinkCrawlerRuleStorable rule : rules) {
+                        if (rule.getId() == ruleID) {
+                            rule.setCookies(setCookies);
+                            CONFIG.setLinkCrawlerRules(new ArrayList<LinkCrawlerRuleStorable>(rules));
+                            refresh = true;
+                            return;
+                        }
+                    }
+                }
+            }
+        } finally {
+            if (refresh) {
+                synchronized (linkCrawlerRules) {
+                    linkCrawlerRules.set(null);
+                }
+            }
+        }
+    }
+
+    protected List<String[]> getLinkCrawlerRuleCookies(final long ruleID) {
+        synchronized (LINKCRAWLERRULESLOCK) {
+            final List<LinkCrawlerRuleStorable> rules = CONFIG.getLinkCrawlerRules();
+            if (rules == null) {
+                return null;
+            } else {
+                for (final LinkCrawlerRuleStorable rule : rules) {
+                    if (rule.getId() == ruleID) {
+                        if (rule.getCookies() != null) {
+                            return new ArrayList<String[]>(rule.getCookies());
+                        } else {
+                            return null;
+                        }
+                    }
+                }
+                return null;
+            }
+        }
     }
 
     protected List<LinkCrawlerRule> listLinkCrawlerRules() {
         final ArrayList<LinkCrawlerRule> ret = new ArrayList<LinkCrawlerRule>();
         if (CONFIG.isLinkCrawlerRulesEnabled()) {
-            final List<LinkCrawlerRuleStorable> rules = CONFIG.getLinkCrawlerRules();
-            if (rules != null) {
-                for (final LinkCrawlerRuleStorable rule : rules) {
-                    try {
-                        if (rule.isEnabled()) {
-                            ret.add(rule._getLinkCrawlerRule());
+            synchronized (LINKCRAWLERRULESLOCK) {
+                final List<LinkCrawlerRuleStorable> rules = CONFIG.getLinkCrawlerRules();
+                if (rules != null) {
+                    for (final LinkCrawlerRuleStorable rule : rules) {
+                        try {
+                            if (rule.isEnabled()) {
+                                ret.add(rule._getLinkCrawlerRule());
+                            }
+                        } catch (final Throwable e) {
+                            LogController.CL().log(e);
                         }
-                    } catch (final Throwable e) {
-                        LogController.CL().log(e);
                     }
                 }
             }
@@ -993,11 +1054,11 @@ public class LinkCrawler {
             link.setVerifiedFileSize(contentLength);
         }
         final String headerFileName = Plugin.getFileNameFromDispositionHeader(con);
-        if (headerFileName != null) {
+        if (StringUtils.isNotEmpty(headerFileName)) {
             link.setFinalFileName(headerFileName);
         } else {
             final String urlFileName = Plugin.getFileNameFromURL(request.getURL());
-            if (urlFileName != null) {
+            if (StringUtils.isNotEmpty(urlFileName)) {
                 link.setName(urlFileName);
             }
         }
@@ -1008,12 +1069,11 @@ public class LinkCrawler {
             final String postString = ((PostRequest) request).getPostDataString();
             if (postString != null) {
                 link.setProperty("post", postString);
-                return crawledLinkFactorybyDownloadLink(link);
             }
+            return crawledLinkFactorybyDownloadLink(link);
         } else {
             return crawledLinkFactorybyDownloadLink(link);
         }
-        return null;
     }
 
     protected static interface DeeperOrMatchingRuleModifier extends CrawledLinkModifier {
@@ -1082,9 +1142,9 @@ public class LinkCrawler {
                         if (LogController.getInstance().isDebugMode()) {
                             br.setLogger(LogController.CL());
                         }
-                        br.setFollowRedirects(false);
-                        if (matchingRule != null && matchingRule.getCookies() != null) {
-                            for (String cookie[] : matchingRule.getCookies()) {
+                        final List<String[]> setCookies = matchingRule != null ? getLinkCrawlerRuleCookies(matchingRule.getId()) : null;
+                        if (setCookies != null) {
+                            for (final String cookie[] : setCookies) {
                                 if (cookie != null) {
                                     if (cookie.length == 1) {
                                         br.setCookie(source.getURL(), cookie[0], null);
@@ -1095,6 +1155,16 @@ public class LinkCrawler {
                             }
                         }
                         final URLConnectionAdapter connection = openCrawlDeeperConnection(br, source);
+                        if (setCookies != null && matchingRule.isUpdateCookies()) {
+                            final Cookies cookies = br.getCookies(source.getURL());
+                            final List<String[]> currentCookies = new ArrayList<String[]>();
+                            for (final Cookie cookie : cookies.getCookies()) {
+                                if (!cookie.isExpired()) {
+                                    currentCookies.add(new String[] { cookie.getKey(), cookie.getValue() });
+                                }
+                            }
+                            setLinkCrawlerRuleCookies(matchingRule.getId(), currentCookies);
+                        }
                         final CrawledLink deeperSource;
                         final String[] sourceURLs;
                         if (StringUtils.equals(connection.getRequest().getUrl(), source.getURL())) {
@@ -2058,7 +2128,7 @@ public class LinkCrawler {
     public List<LinkCrawlerRule> getLinkCrawlerRules() {
         List<LinkCrawlerRule> ret = linkCrawlerRules.get();
         if (ret == null) {
-            synchronized (linkCrawlerRules) {
+            synchronized (LINKCRAWLERRULESLOCK) {
                 ret = linkCrawlerRules.get();
                 if (ret == null) {
                     linkCrawlerRules.set(listLinkCrawlerRules());
