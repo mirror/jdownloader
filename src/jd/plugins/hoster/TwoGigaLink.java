@@ -63,7 +63,6 @@ public class TwoGigaLink extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">File not found|Expired or deleted by Admin because it")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        // <p>Ray.Donovan.S05E08.Horses.720p.WEBRip.2CH.x265.HEVC-PSA.rar ( 270.6 MB )</p>
         final Regex finfo = br.getRegex("<p>([^<>\"]+)\\((\\s*?\\d+(\\.\\d{1,2})? [A-Za-z]+\\s*?)\\)</p>");
         String filename = finfo.getMatch(0);
         String filesize = finfo.getMatch(1);
