@@ -37,7 +37,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deluxemusic.tv" }, urls = { "https?://(?:www\\.)?deluxetv\\-vimp\\.mivitec\\.net/.*?/?video/[^/]+/[a-f0-9]{32}.*" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deluxemusic.tv" }, urls = { "https?://(?:www\\.)?deluxetv\\-vimp\\.mivitec\\.net/.*?/?video/[^/]+/[a-f0-9]{32}.*|https?://deluxetv\\-vimp\\.mivitec\\.net/getMedium/[a-f0-9]{32}\\.mp4" })
 public class DeluxemusicTv extends PluginForHost {
     public DeluxemusicTv(PluginWrapper wrapper) {
         super(wrapper);
@@ -51,27 +51,29 @@ public class DeluxemusicTv extends PluginForHost {
     private static final int     free_maxdownloads = -1;
     private String               dllink            = null;
     private boolean              server_issues     = false;
+    private static final String  TYPE_DIRECT       = ".+/getMedium/.+";
 
     @Override
     public String getAGBLink() {
         return "https://deluxetv-vimp.mivitec.net/pages/view/id/1";
     }
 
-    @SuppressWarnings("deprecation")
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), "([a-f0-9]{32})").getMatch(0);
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         dllink = null;
         server_issues = false;
+        final String fid = getLinkID(link);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(new int[] { 500 });
-        final Regex urlregex = new Regex(link.getDownloadURL(), "/video/([^/]+).*([a-f0-9]{32})(/(\\d+))?");
-        final String fid = urlregex.getMatch(1);
-        final String category_id = urlregex.getMatch(3);
+        final Regex urlregex = new Regex(link.getPluginPatternMatcher(), "/video/([^/]+).*[a-f0-9]{32}(/(\\d+))?");
+        final String category_id = urlregex.getMatch(2);
         final String url_title = urlregex.getMatch(0);
-        /* Set unique videoid. */
-        link.setLinkID(fid);
-        br.getPage(link.getDownloadURL());
         final DeluxemusicTvConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.DeluxemusicTv.DeluxemusicTvConfigInterface.class);
         /*
          * Usually this setting is for decrypters but in this case their contentservers are very slow which is why users can disable the
@@ -79,27 +81,36 @@ public class DeluxemusicTv extends PluginForHost {
          */
         final boolean fastlinkcheck = cfg.isFastLinkcheckEnabled();
         String filename = null;
-        /* 2018-04-03: Website seems to be broken sometimes which leads to 404 error here but content is still online and downloadable. */
-        final boolean probablyOffline = br.getHttpConnection().getResponseCode() == 404 || !this.br.getURL().matches(".*?[a-f0-9]{32}.*?");
-        if (br.getHttpConnection().getResponseCode() == 500) {
-            /* Can be caused by trying to access wrong urls but also if there are server issues! */
-            server_issues = true;
-            return AvailableStatus.UNCHECKABLE;
-        } else if (!probablyOffline) {
-            final String description = this.br.getRegex("name=\"description\" content=\"([^<>\"]+)\"").getMatch(0);
-            filename = br.getRegex("<title>([^<>\"]+):: Medien :: DELUXE MUSIC</title>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("name=\"title\" content=\"([^<>\"]+)MedienDELUXE MUSIC\"").getMatch(0);
-            }
-            if (description != null && link.getComment() == null) {
-                link.setComment(description);
-            }
-        }
-        if (filename == null && !"discodeluxe_set".equalsIgnoreCase(url_title)) {
-            filename = url_title;
-        } else if (filename == null) {
-            /* Last chance */
+        if (new Regex(link.getPluginPatternMatcher(), TYPE_DIRECT).matches()) {
+            /* No other information available ... */
             filename = fid;
+        } else {
+            br.getPage(link.getPluginPatternMatcher());
+            /*
+             * 2018-04-03: Website seems to be broken sometimes which leads to 404 error here but content is still online and downloadable.
+             */
+            final boolean probablyOffline = br.getHttpConnection().getResponseCode() == 404 || !this.br.getURL().matches(".*?[a-f0-9]{32}.*?");
+            if (br.getHttpConnection().getResponseCode() == 500) {
+                /* Can be caused by trying to access wrong urls but also if there are server issues! */
+                server_issues = true;
+                return AvailableStatus.UNCHECKABLE;
+            } else if (!probablyOffline) {
+                final String description = this.br.getRegex("name=\"description\" content=\"([^<>\"]+)\"").getMatch(0);
+                filename = br.getRegex("<title>([^<>\"]+):: Medien :: DELUXE MUSIC</title>").getMatch(0);
+                if (filename == null) {
+                    filename = br.getRegex("name=\"title\" content=\"([^<>\"]+)MedienDELUXE MUSIC\"").getMatch(0);
+                }
+                if (description != null && link.getComment() == null) {
+                    link.setComment(description);
+                }
+            }
+            if (filename == null && url_title != null && !"discodeluxe_set".equalsIgnoreCase(url_title)) {
+                filename = url_title;
+            }
+            if (filename == null) {
+                /* Last chance */
+                filename = fid;
+            }
         }
         if (filename == null) {
             /* This should never happen! */
