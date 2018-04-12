@@ -94,9 +94,12 @@ public class FilterList implements Storable {
 
     private volatile String[] entries;
 
-    public boolean validate(String host, String accUser) {
+    public boolean validate(String host, String user) {
         if (host == null) {
             host = "";
+        }
+        if (user == null) {
+            user = "";
         }
         final Pattern[][] lPatterns = patterns;
         final int size = this.size;
@@ -105,34 +108,22 @@ public class FilterList implements Storable {
         switch (type) {
         case BLACKLIST:
             for (int i = 0; i < domainPatterns.length; i++) {
-                final Pattern domain = domainPatterns[i];
-                if (domain != null) {
-                    final Pattern account = accountPatterns[i];
-                    if (account != null && accUser != null) {
-                        if (domain.matcher(host).find() && account.matcher(accUser).find()) {
-                            return false;
-                        }
-                    } else {
-                        if (domain.matcher(host).find()) {
-                            return false;
-                        }
+                final Pattern domainPattern = domainPatterns[i];
+                if (domainPattern != null) {
+                    final Pattern accountPattern = accountPatterns[i];
+                    if (domainPattern.matcher(host).find() && (accountPattern == null || accountPattern.matcher(user).find())) {
+                        return false;
                     }
                 }
             }
             return true;
         case WHITELIST:
             for (int i = 0; i < domainPatterns.length; i++) {
-                final Pattern domain = domainPatterns[i];
-                if (domain != null) {
-                    final Pattern account = accountPatterns[i];
-                    if (account != null && accUser != null) {
-                        if (domain.matcher(host).find() && account.matcher(accUser).find()) {
-                            return true;
-                        }
-                    } else {
-                        if (domain.matcher(host).find()) {
-                            return true;
-                        }
+                final Pattern domainPattern = domainPatterns[i];
+                if (domainPattern != null) {
+                    final Pattern accountPattern = accountPatterns[i];
+                    if (domainPattern.matcher(host).find() && (accountPattern == null || accountPattern.matcher(user).find())) {
+                        return true;
                     }
                 }
             }
