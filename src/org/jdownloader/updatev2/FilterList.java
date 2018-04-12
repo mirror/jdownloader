@@ -4,6 +4,7 @@ import java.util.regex.Pattern;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.Storable;
+import org.jdownloader.logging.LogController;
 
 public class FilterList implements Storable {
     public enum Type {
@@ -61,17 +62,19 @@ public class FilterList implements Storable {
                 } else {
                     size++;
                     final int index = entry.lastIndexOf("@");
-                    if (index >= 0 && index + 1 < entry.length() && entry.matches("^[a-zA-Z0-9.-_@]+$")) {
+                    if (index >= 0 && index + 1 < entry.length()) {
                         final String username = entry.substring(0, index);
                         final String host = entry.substring(index + 1);
                         try {
                             accountPatterns[i] = Pattern.compile(username, Pattern.CASE_INSENSITIVE);
                         } catch (Throwable e) {
+                            LogController.CL().log(e);
                             accountPatterns[i] = Pattern.compile(".*" + Pattern.quote(username) + ".*", Pattern.CASE_INSENSITIVE);
                         }
                         try {
                             domainPatterns[i] = Pattern.compile(host, Pattern.CASE_INSENSITIVE);
                         } catch (Throwable e) {
+                            LogController.CL().log(e);
                             domainPatterns[i] = Pattern.compile(".*" + Pattern.quote(host) + ".*", Pattern.CASE_INSENSITIVE);
                         }
                     } else {
@@ -79,6 +82,7 @@ public class FilterList implements Storable {
                         try {
                             domainPatterns[i] = Pattern.compile(entry, Pattern.CASE_INSENSITIVE);
                         } catch (Throwable e) {
+                            LogController.CL().log(e);
                             domainPatterns[i] = Pattern.compile(".*" + Pattern.quote(entry) + ".*", Pattern.CASE_INSENSITIVE);
                         }
                     }
