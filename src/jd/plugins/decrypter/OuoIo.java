@@ -13,10 +13,10 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Random;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
@@ -38,9 +38,8 @@ import jd.plugins.components.SiteType.SiteTemplate;
  * @author psp
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ouo.io" }, urls = { "https?://(?:www\\.)?ouo\\.(?:io|press)/(:?s/[A-Za-z0-9]{4,}\\?s=(?:http|ftp).+|[A-Za-z0-9]{4,})" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ouo.io", "cpmlink.net", "uskip.me" }, urls = { "https?://(?:www\\.)?ouo\\.(?:io|press)/(:?s/[A-Za-z0-9]{4,}\\?s=(?:http|ftp).+|[A-Za-z0-9]{4,})", "https?://cpmlink\\.net/[A-Za-z0-9]+", "https?://uskip\\.me/[A-Za-z0-9]+" })
 public class OuoIo extends antiDDoSForDecrypt {
-
     public OuoIo(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -78,19 +77,30 @@ public class OuoIo extends antiDDoSForDecrypt {
                 }
             }
         } while (br.getRedirectLocation() != null);
-        if (!br.containsHTML("class=\"content\"")) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+        Form captchaForm = br.getFormbyProperty("id", "skip");
+        if (captchaForm == null) {
+            captchaForm = br.getFormbyProperty("id", "form-captcha");
         }
-        final String token = br.getRegex("name=\"_token\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
+        if (captchaForm == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        if (captchaForm.hasInputFieldByName("s_width") && captchaForm.hasInputFieldByName("s_height")) {
+            /* E.g. uskip.me */
+            captchaForm.remove("s_width");
+            captchaForm.remove("s_height");
+            captchaForm.put("s_width", Integer.toString(new Random().nextInt(1000)));
+            captchaForm.put("s_height", Integer.toString(new Random().nextInt(1000)));
+        }
         final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
-        postPage("/go/" + fuid, "_token=" + Encoding.urlEncode(token) + "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
+        captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+        br.setFollowRedirects(true);
+        br.submitForm(captchaForm);
         final String finallink = getFinalLink();
         if (finallink == null) {
             return null;
         }
         decryptedLinks.add(createDownloadlink(finallink));
-
         return decryptedLinks;
     }
 
@@ -99,6 +109,7 @@ public class OuoIo extends antiDDoSForDecrypt {
         // can be another form after captcha - 20170326
         final Form f = br.getForm(0);
         if (f != null && f.containsHTML(">\\s*Get Link<")) {
+            br.setFollowRedirects(false);
             submitForm(f);
             finallink = br.getRedirectLocation();
         } else {
@@ -109,7 +120,7 @@ public class OuoIo extends antiDDoSForDecrypt {
 
     private void set(final String downloadLink) {
         parameter = downloadLink;
-        fuid = new Regex(parameter, ".+\\.(?:io|press)/([A-Za-z0-9]{4,})$").getMatch(0);
+        fuid = new Regex(parameter, "https?://[^/]+/([A-Za-z0-9]+)").getMatch(0);
         slink = new Regex(parameter, "\\.(?:io|press)/s/[A-Za-z0-9]{4,}\\?s=((?:http|ftp).+)").getMatch(0);
     }
 
@@ -129,5 +140,4 @@ public class OuoIo extends antiDDoSForDecrypt {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.OuoIoCryptor;
     }
-
 }

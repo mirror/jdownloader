@@ -13,20 +13,18 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 
 import java.io.File;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -48,7 +46,6 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "downace.com" }, urls = { "https?://(?:www\\.)?downace\\.com/[A-Za-z0-9]+" })
 public class DownaceCom extends antiDDoSForHost {
-
     public DownaceCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(mainpage + "/upgrade." + type);
@@ -63,7 +60,6 @@ public class DownaceCom extends antiDDoSForHost {
      * captchatype: null<br />
      * other:<br />
      */
-
     @Override
     public String getAGBLink() {
         return mainpage + "/terms." + type;
@@ -93,7 +89,6 @@ public class DownaceCom extends antiDDoSForHost {
     private static final String  errortext_ERROR_SERVER                       = "Server error";
     private static final String  errortext_ERROR_PREMIUMONLY                  = "This file can only be downloaded by premium (or registered) users";
     private static final String  errortext_ERROR_SIMULTANDLSLIMIT             = "Max. simultan downloads limit reached, wait to start more downloads from this host";
-
     /* Connection stuff */
     private static final boolean free_RESUME                                  = true;
     private static final int     free_MAXCHUNKS                               = -8;
@@ -633,5 +628,4 @@ public class DownaceCom extends antiDDoSForHost {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.MFScripts_YetiShare;
     }
-
 }

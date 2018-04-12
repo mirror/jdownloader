@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -36,7 +35,6 @@ import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "1fichier.com" }, urls = { "https?://(www\\.)?1fichier\\.com/((en|cn)/)?dir/[A-Za-z0-9]+" })
 public class OneFichierComFolder extends PluginForDecrypt {
-
     public OneFichierComFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -46,16 +44,20 @@ public class OneFichierComFolder extends PluginForDecrypt {
         final String parameter = Request.getLocation("/dir/" + new Regex(param.toString(), "([A-Za-z0-9]+)$").getMatch(0), br.createGetRequest(param.toString()));
         prepareBrowser(br);
         br.setLoadLimit(Integer.MAX_VALUE);
-        br.getPage(parameter + "?e=1");
-        if (br.toString().equals("bad") || br.containsHTML("No htmlCode read")) {
+        final Browser jsonBR = br.cloneBrowser();
+        jsonBR.getPage(parameter + "?e=1");
+        if (jsonBR.toString().equals("bad") || jsonBR.getHttpConnection().getResponseCode() == 404 || jsonBR.containsHTML("No htmlCode read")) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
+        /* Access folder without API just to find foldername ... */
+        br.getPage(parameter);
+        final String fpName = br.getRegex(">Shared folder (.*?)</").getMatch(0);
         // password handling
         handlePassword(param, parameter);
         // passCode != null, post handling seems to respond with html instead of what's preferred below.
-        if ("text/plain; charset=utf-8".equals(br.getHttpConnection().getContentType())) {
-            String[][] linkInfo = br.getRegex("(https?://[a-z0-9\\-]+\\..*?);([^;]+);([0-9]+)").getMatches();
+        if ("text/plain; charset=utf-8".equals(jsonBR.getHttpConnection().getContentType())) {
+            String[][] linkInfo = jsonBR.getRegex("(https?://[a-z0-9\\-]+\\..*?);([^;]+);([0-9]+)").getMatches();
             for (String singleLinkInfo[] : linkInfo) {
                 final DownloadLink dl = createDownloadlink(singleLinkInfo[0]);
                 dl.setFinalFileName(Encoding.htmlDecode(singleLinkInfo[1].trim()));
@@ -68,7 +70,6 @@ public class OneFichierComFolder extends PluginForDecrypt {
             }
         } else {
             // webmode
-            final String fpName = br.getRegex(">Shared folder (.*?)</").getMatch(0);
             final String[][] linkInfo = getLinkInfo();
             if (linkInfo == null || linkInfo.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -84,11 +85,11 @@ public class OneFichierComFolder extends PluginForDecrypt {
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
             }
-            if (fpName != null) {
-                final FilePackage fp = FilePackage.getInstance();
-                fp.setName(fpName);
-                fp.addLinks(decryptedLinks);
-            }
+        }
+        if (fpName != null) {
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(fpName);
+            fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
     }
@@ -145,5 +146,4 @@ public class OneFichierComFolder extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

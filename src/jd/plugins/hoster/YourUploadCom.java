@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.net.ConnectException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -30,13 +33,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourupload.com" }, urls = { "http://((www\\.)?(yourupload\\.com|yucache\\.net)/(file|embed(_ext/\\w+)?|watch)/[a-z0-9]+|embed\\.(yourupload\\.com|yucache\\.net)/[A-Za-z0-9]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourupload.com" }, urls = { "https?://((?:www\\.)?(yourupload\\.com|yucache\\.net)/((file|embed(_ext/\\w+)?|watch)/|download\\?file=)[a-z0-9]+|embed\\.(yourupload\\.com|yucache\\.net)/[A-Za-z0-9]+)" })
 public class YourUploadCom extends antiDDoSForHost {
-    private String dllink     = null;
-    private String regexEmbed = ".+(/embed_ext/|embed\\.(?:yourupload\\.com|yucache\\.net)/|yourupload\\.com/embed/).+";
+    private String dllink        = null;
+    private String regexEmbed    = ".+(/embed_ext/|embed\\.(?:yourupload\\.com|yucache\\.net)/|yourupload\\.com/embed/).+";
+    private String regexDownload = ".+/download\\?file=.+";
 
     public YourUploadCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -53,7 +54,7 @@ public class YourUploadCom extends antiDDoSForHost {
             link.setUrlDownload("http://embed.yourupload.com/" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
         }
         // you can not convert embed formats back! will always show up offline!
-        if (!link.getDownloadURL().matches(regexEmbed)) {
+        if (!link.getDownloadURL().matches(regexEmbed) && !link.getDownloadURL().matches(regexDownload)) {
             link.setUrlDownload("http://yourupload.com/file/" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
         }
     }
@@ -68,6 +69,7 @@ public class YourUploadCom extends antiDDoSForHost {
         // Correct old links
         correctDownloadLink(link);
         getPage(link.getDownloadURL());
+        String filename = null;
         if (link.getDownloadURL().matches(regexEmbed)) {
             if (br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() > 400 || br.containsHTML("<h1>Error</h1>") || br.containsHTML("Embed\\+entry\\+doesnt\\+exist") || br.containsHTML("No htmlCode read") || br.containsHTML("Could not redirect legacy")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -75,7 +77,7 @@ public class YourUploadCom extends antiDDoSForHost {
                 /* Browser will show "Error loading player: No playable sources found" in this case */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+            filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("<meta name=\"description\" content=\"(.*?)\" />").getMatch(0);
             }
@@ -120,6 +122,15 @@ public class YourUploadCom extends antiDDoSForHost {
                 } catch (Throwable e) {
                 }
             }
+        } else if (link.getDownloadURL().matches(regexDownload)) {
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            filename = br.getRegex("<h1>Downloading ([^<>\"]+)</h1>").getMatch(0);
+            if (filename != null) {
+                link.setName(filename);
+            }
+            return AvailableStatus.TRUE;
         }
         if (br.containsHTML(">System Error<|>could not find file|>File not found<|Array doesn\\'t have key named|File not found") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -127,7 +138,7 @@ public class YourUploadCom extends antiDDoSForHost {
             /* E.g. redirect to mainpage --> Offline */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex(">Name</b>[\r\n\t ]+</td>[\r\n\t ]+<td>([^<>\"]+)</td>").getMatch(0);
+        filename = br.getRegex(">Name</b>[\r\n\t ]+</td>[\r\n\t ]+<td>([^<>\"]+)</td>").getMatch(0);
         final String filesize = br.getRegex(">Size</b>[\r\n\t ]+</td>[\r\n\t ]+<td>([^<>\"]+)</td>").getMatch(0);
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -153,10 +164,17 @@ public class YourUploadCom extends antiDDoSForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (dllink == null) {
-            dllink = br.getRegex("(http://download\\.(yourupload\\.com|yucache\\.net)/[a-f0-9]{32}[^\"]+)").getMatch(0);
+        if (downloadLink.getDownloadURL().matches(regexDownload)) {
+            dllink = br.getRegex("(/download\\?file=[^<>\"]+)\"").getMatch(0);
+            if (dllink != null) {
+                dllink = Encoding.htmlDecode(dllink);
+            }
+        } else {
+            if (dllink == null) {
+                dllink = br.getRegex("(http://download\\.(yourupload\\.com|yucache\\.net)/[a-f0-9]{32}[^\"]+)").getMatch(0);
+            }
         }
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

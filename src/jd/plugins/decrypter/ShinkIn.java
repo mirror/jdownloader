@@ -28,6 +28,7 @@ import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.components.SiteType.SiteTemplate;
 
 /**
  * NOTE: <br />
@@ -40,9 +41,8 @@ import jd.plugins.DownloadLink;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "shink.in" }, urls = { "https?://(www\\.)?shink\\.(in|me)/(s/)?(?-i)[a-zA-Z0-9]{5}" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "shink.in" }, urls = { "https?://(?:www\\.)?shink\\.(in|me)/(s/)?(?-i)[a-zA-Z0-9]{5}" })
 public class ShinkIn extends antiDDoSForDecrypt {
-
     private static Object CTRLLOCK = new Object();
 
     public ShinkIn(PluginWrapper wrapper) {
@@ -105,5 +105,10 @@ public class ShinkIn extends antiDDoSForDecrypt {
 
     public boolean hasAutoCaptcha() {
         return false;
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.OuoIoCryptor;
     }
 }

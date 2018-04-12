@@ -33,7 +33,7 @@ import jd.plugins.PluginForDecrypt;
 /**
  * @author typek_pb
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "avxhome.se" }, urls = { "https?://(www\\.)?(avaxhome\\.(?:ws|bz|cc|in)|avaxho\\.me|avaxhm\\.com|avxhome\\.(?:se|in)|avxhm\\.se)/(ebooks|music|software|video|magazines|newspapers|games|graphics|misc|hraphile|comics|go)/.+|https?://(www\\.)?(avaxhome\\.pro)/[A-Za-z0-9\\-_]+\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "avxhome.se" }, urls = { "https?://(www\\.)?(avaxhome\\.(?:ws|bz|cc|in)|avaxho\\.me|avaxhm\\.com|avxhome\\.(?:se|in)|avxhm\\.se|avaxhome\\.unblocker\\.xyz)/(ebooks|music|software|video|magazines|newspapers|games|graphics|misc|hraphile|comics|go)/.+|https?://(www\\.)?(avaxhome\\.pro)/[A-Za-z0-9\\-_]+\\.html" })
 public class AvxHmeW extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     public AvxHmeW(PluginWrapper wrapper) {
@@ -50,7 +50,7 @@ public class AvxHmeW extends PluginForDecrypt {
         br = new Browser();
         br.setAllowedResponseCodes(new int[] { 401 });
         // two different sites, do not rename, avaxhome.pro doesn't belong to the following template.
-        final String parameter = cryptedLink.toString().replaceAll("(avaxhome\\.(?:ws|bz|cc|in)|avaxho\\.me|avaxhm\\.com|avxhome\\.(?:se|in)|avxhm\\.se)", "avxhm.se");
+        final String parameter = cryptedLink.toString().replaceAll("(avaxhome\\.(?:ws|bz|cc|in)|avaxho\\.me|avaxhm\\.com|avxhome\\.(?:se|in)|avxhm\\.se|avaxhome\\.unblocker\\.xyz)", "avxhm.se");
         if (parameter.matches(".*/go/\\d+/.*")) {
             br.setFollowRedirects(false);
             br.getPage(parameter);
