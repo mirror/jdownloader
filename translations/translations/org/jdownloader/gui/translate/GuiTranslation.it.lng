@@ -2113,6 +2113,7 @@ userio_errorregex=.*(errore|fallito).*
 version=Versione %s1
 youtube_add_variant=Aggiungi ulteriori varianti (nuovo collegamento)...
 youtube_add_variant_help=Scegli almeno una nuova variante. JDownloader creerà un nuovo link per ogni nuova voce.
+youtube_add_variants_help=Scegli almeno una variante %s1. JDownloader tenterà di aggiungere un nuovo collegamento a variante per ogni video selezionato.
 youtube_choose_dropdown_list=Scegli tutte le varianti che dovrebbero essere nella colonna varianti nel linkgrabber per le collezioni desiderate
 youtube_choose_quick_selection_dropdown_table='%s1' voci varianti
 youtube_choose_variant=Cambia variante...
