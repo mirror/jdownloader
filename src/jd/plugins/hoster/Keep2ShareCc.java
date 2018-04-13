@@ -20,6 +20,11 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -27,10 +32,6 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
-import jd.http.Request;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -40,12 +41,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import jdk.nashorn.internal.runtime.regexp.joni.Regex;
 
 /**
  *
@@ -227,8 +223,8 @@ public class Keep2ShareCc extends K2SApi {
     /** 2017-03-22: They switched to a new layout (accessible via new.keep2share.cc), old is still online at the moment. */
     public AvailableStatus requestFileInformationNew2017(final DownloadLink link) throws Exception {
         /*
-         * TODO: Add error handling here - filename might not be available or located in a different place for abused content or when a
-         * download limit is reached!
+         * TODO: Add error handling here - filename might not be available or located in a different place for abused content or when a download
+         * limit is reached!
          */
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">This file is no longer available")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -256,8 +252,8 @@ public class Keep2ShareCc extends K2SApi {
     }
 
     /**
-     * E.g. user starts a download, stops it, directurl does not work anymore --> Retry --> Keep2share will save that information based on
-     * his IP and possibly offer the free download without having to enter another captcha.
+     * E.g. user starts a download, stops it, directurl does not work anymore --> Retry --> Keep2share will save that information based on his
+     * IP and possibly offer the free download without having to enter another captcha.
      */
     public boolean freeDownloadImmediatelyPossible() {
         return br.containsHTML(">To download this file with slow speed, use");
@@ -589,7 +585,7 @@ public class Keep2ShareCc extends K2SApi {
                     if (original == null) {
                         this.setDownloadLink(null);
                     }
-                    login.put("UniversalCaptchaForm%5BverifyCode%5D", Encoding.urlEncode(recaptchaV2Response));
+                    login.put("LoginForm%5BverifyCode%5D", Encoding.urlEncode(recaptchaV2Response));
                 }
                 sendForm(login);
                 if (br.containsHTML("Incorrect username or password")) {
