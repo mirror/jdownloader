@@ -65,10 +65,7 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
 
     public boolean isAllowedByFilter(final String host, final Account acc) {
         final FilterList lFilter = filter;
-        if (lFilter == null) {
-            return true;
-        }
-        return lFilter.validate(host, acc == null ? null : acc.getUser());
+        return lFilter == null || lFilter.validate(host, acc == null ? null : acc.getUser());
     }
 
     public void setFilter(final FilterList filter) {

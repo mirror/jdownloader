@@ -148,34 +148,39 @@ public class ScriptEnvironment {
         final ScriptThread env = getScriptThread();
         if (env.isCheckPermissions()) {
             final String md5 = Hash.getMD5(env.getScript().getScript());
-            ConfirmDialog d = new ConfirmDialog(0 | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, T.T.permission_title(), T.T.permission_msg(env.getScript().getName(), env.getScript().getEventTrigger().getLabel(), string), new AbstractIcon(IconKey.ICON_SERVER, 32), T.T.allow(), T.T.deny()) {
-                @Override
-                public String getDontShowAgainKey() {
-                    return "ASK_FOR_PERMISSION_" + md5 + "_" + string;
-                }
+            if (!env.isPermissionSet(md5)) {
+                ConfirmDialog d = new ConfirmDialog(0 | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, T.T.permission_title(), T.T.permission_msg(env.getScript().getName(), env.getScript().getEventTrigger().getLabel(), string), new AbstractIcon(IconKey.ICON_SERVER, 32), T.T.allow(), T.T.deny()) {
+                    @Override
+                    public String getDontShowAgainKey() {
+                        return "ASK_FOR_PERMISSION_" + md5 + "_" + string;
+                    }
 
-                @Override
-                protected int getPreferredWidth() {
-                    return 600;
-                }
+                    @Override
+                    protected int getPreferredWidth() {
+                        return 600;
+                    }
 
-                @Override
-                public boolean isRemoteAPIEnabled() {
-                    return true;
-                }
+                    @Override
+                    public boolean isRemoteAPIEnabled() {
+                        return true;
+                    }
 
-                public void windowClosing(final WindowEvent arg0) {
-                    setReturnmask(false);
-                    this.dispose();
+                    public void windowClosing(final WindowEvent arg0) {
+                        setReturnmask(false);
+                        this.dispose();
+                    }
+                };
+                d.setDoNotShowAgainSelected(true);
+                // Integer ret = JSonStorage.getPlainStorage("Dialogs").get(d.getDontShowAgainKey(), -1);
+                // if (ret != null && ret > 0) {
+                // return;
+                // }
+                if (d.show().getCloseReason() != CloseReason.OK) {
+                    throw new EnvironmentException("Security Warning: User Denied Access to " + string);
                 }
-            };
-            d.setDoNotShowAgainSelected(true);
-            // Integer ret = JSonStorage.getPlainStorage("Dialogs").get(d.getDontShowAgainKey(), -1);
-            // if (ret != null && ret > 0) {
-            // return;
-            // }
-            if (d.show().getCloseReason() != CloseReason.OK) {
-                throw new EnvironmentException("Security Warning: User Denied Access to " + string);
+                if (d.isDontShowAgainSelected()) {
+                    env.setPermissionSet(md5);
+                }
             }
         }
     }

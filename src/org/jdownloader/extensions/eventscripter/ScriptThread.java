@@ -13,6 +13,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.WeakHashMap;
 
 import jd.http.Browser;
@@ -47,6 +48,19 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
     private final LogSource              logger;
     private final EventScripterExtension extension;
     private boolean                      checkPermissions = true;
+    private Set<String>                  permissions      = new HashSet<String>();
+
+    public boolean isPermissionSet(String permission) {
+        synchronized (permission) {
+            return permissions.contains(permission);
+        }
+    }
+
+    public void setPermissionSet(String permission) {
+        synchronized (permission) {
+            permissions.add(permission);
+        }
+    }
 
     public boolean isCheckPermissions() {
         return checkPermissions;
