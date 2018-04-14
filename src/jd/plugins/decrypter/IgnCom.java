@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.io.ByteArrayInputStream;
@@ -42,9 +41,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ign.com" }, urls = { "http://(www\\.)?pc\\.ign\\.com/dor/objects/\\d+/[A-Za-z0-9_\\-]+/videos/.*?\\d+\\.html|http://(www\\.)?ign\\.com/videos/\\d{4}/\\d{2}/\\d{2}/[a-z0-9\\-]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ign.com" }, urls = { "http://(www\\.)?pc\\.ign\\.com/dor/objects/\\d+/[A-Za-z0-9_\\-]+/videos/.*?\\d+\\.html|http://(www\\.)?ign\\.com/videos/\\d{4}/\\d{2}/\\d{2}/[a-z0-9\\-]+" })
 public class IgnCom extends PluginForDecrypt {
-
     public IgnCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -64,42 +62,34 @@ public class IgnCom extends PluginForDecrypt {
                 decryptedLinks.add(offline);
                 return decryptedLinks;
             }
-
             fpName = this.br.getRegex("data\\-video\\-title=\"([^<>\"]*?)\"").getMatch(0);
             if (fpName == null) {
                 /* Fallback to url-name */
                 fpName = new Regex(parameter, "/([a-z0-9\\-]+)$").getMatch(0);
             }
-
             fpName = Encoding.htmlDecode(fpName).trim();
-
-            final String json = this.br.getRegex("data\\-video=\\'(\\{.*?\\})\\'[\t\n\r ]+").getMatch(0);
-
+            // final String json = br.getRegex("data-video=\\'(\\{.*?\\})\\'[\t\n\r ]+").getMatch(0);
+            // final String json = br.getRegex("data-settings=\"(\\{.*?\\})\"[\t\n\r ]+").getMatch(0);
+            String json = br.getRegex("video&quot;:(\\{.*?\\})\"[\t\n\r ]+").getMatch(0);
             if (json == null) {
                 return null;
             }
-
+            json = Encoding.htmlDecode(json);
             LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
-
             /* HLS */
             // final String hls = (String) entries.get("m3uUrl");
-
             final ArrayList<Object> renditions = (ArrayList) entries.get("assets");
-
             for (final Object rendition : renditions) {
                 entries = (LinkedHashMap<String, Object>) rendition;
                 final String finallink = (String) entries.get("url");
                 final String height = Long.toString(JavaScriptEngineFactory.toLong(entries.get("height"), -1));
-
                 if (finallink == null || height.equals("-1")) {
                     continue;
                 }
-
                 final DownloadLink dlink = createDownloadlink("directhttp://" + finallink);
                 dlink.setFinalFileName(fpName + "_" + height + ".mp4");
                 decryptedLinks.add(dlink);
             }
-
         } else {
             if (br.containsHTML("No htmlCode read")) {
                 final DownloadLink offline = this.createOfflinelink(parameter);
@@ -175,18 +165,13 @@ public class IgnCom extends PluginForDecrypt {
                     vid = br.getRegex("/embed/(\\d+)").getMatch(0);
                 }
                 br.getPage("http://rutube.ru/play/embed/" + vid + "?wmode=opaque&autoStart=true");
-
                 String videoBalancer = br.getRegex("(http\\:\\/\\/bl\\.rutube\\.ru[^\"]+)").getMatch(0);
-
                 if (videoBalancer != null) {
                     final DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
                     final XPath xPath = XPathFactory.newInstance().newXPath();
-
                     br.getPage(videoBalancer);
-
                     Document d = parser.parse(new ByteArrayInputStream(br.toString().getBytes("UTF-8")));
                     String baseUrl = xPath.evaluate("/manifest/baseURL", d).trim();
-
                     NodeList f4mUrls = (NodeList) xPath.evaluate("/manifest/media", d, XPathConstants.NODESET);
                     Node best = f4mUrls.item(f4mUrls.getLength() - 1);
                     ArrayList<IgnVariant> variantsVideo = new ArrayList<IgnVariant>();
@@ -197,32 +182,25 @@ public class IgnCom extends PluginForDecrypt {
                         String height = getAttByNamedItem(best, "height");
                         String bitrate = getAttByNamedItem(best, "bitrate");
                         String f4murl = getAttByNamedItem(best, "href");
-
                         br.getPage(baseUrl + f4murl);
-
                         d = parser.parse(new ByteArrayInputStream(br.toString().getBytes("UTF-8")));
                         // baseUrl = xPath.evaluate("/manifest/baseURL", d).trim();
                         double duration = Double.parseDouble(xPath.evaluate("/manifest/duration", d));
-
                         NodeList mediaUrls = (NodeList) xPath.evaluate("/manifest/media", d, XPathConstants.NODESET);
                         Node media;
                         for (int j = 0; j < mediaUrls.getLength(); j++) {
                             media = mediaUrls.item(j);
                             // System.out.println(new String(Base64.decode(xPath.evaluate("/manifest/media[" + (j + 1) + "]/metadata",
                             // d).trim())));
-
                             IgnVariant var = new IgnVariant(width, height, bitrate, getAttByNamedItem(media, "streamId"));
                             variantsVideo.add(var);
                             bestVariant = var;
-
                         }
-
                     }
                     if (variantsVideo.size() > 0) {
                         ret.setVariants(variantsVideo);
                         ret.setVariant(bestVariant);
                     }
-
                     return ret;
                 } else {
                     logger.warning("Video not available in your country: " + "http://rutube.ru/api/video/" + vid);
@@ -233,7 +211,6 @@ public class IgnCom extends PluginForDecrypt {
             }
         }
         return ret;
-
     }
 
     /**
@@ -248,5 +225,4 @@ public class IgnCom extends PluginForDecrypt {
         final String t = n.getAttributes().getNamedItem(item).getTextContent();
         return (t != null ? t.trim() : null);
     }
-
 }
