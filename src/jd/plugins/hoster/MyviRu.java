@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.LinkedHashMap;
@@ -35,7 +34,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myvi.ru" }, urls = { "https?://(?:www\\.)?myvi\\.ru/(watch/[^/#\\?]+|[A-Za-z]{2}/flash/player/[A-Za-z0-9_\\-]+|player/embed/html/[A-Za-z0-9_\\-]+)" })
 public class MyviRu extends PluginForHost {
-
     public MyviRu(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -45,16 +43,13 @@ public class MyviRu extends PluginForHost {
     // Tags:
     // protocol: no https
     // other:
-
     /* Connection stuff */
     private static final boolean free_resume       = true;
     /* Chunkload possible but not really stable --> Disable it right away */
     private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
     private boolean              temp_unavailable  = false;
-
     private final String         TYPE_NORMAL       = "https?://(?:www\\.)?myvi\\.ru/watch/[^/#\\?]+";
     private final String         TYPE_PLAYER       = "https?://(?:www\\.)?myvi\\.ru/([A-Za-z]{2}/flash/player/[A-Za-z0-9_\\-]+|player/embed/html/[A-Za-z0-9_\\-]+)";
 
@@ -85,11 +80,12 @@ public class MyviRu extends PluginForHost {
             if (filename == null) {
                 filename = new Regex(downloadLink.getDownloadURL(), "myvi\\.ru/watch/(.+)").getMatch(0);
             }
-            html_embed_url = br.getRegex("myvi\\.ru(/player/embed/html/[^<>\"/]+)").getMatch(0);
+            html_embed_url = br.getRegex("(//(myvi|netvi)\\.ru/player/embed/html/[^<>\"/]+)").getMatch(0);
             if (html_embed_url == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            this.br.getPage("http://myvi.ru" + html_embed_url);
+            // br.getPage("http://myvi.ru" + html_embed_url);
+            br.getPage(html_embed_url);
         } else {
             /*
              * Embed url --> We could simply find the normal URL and continue from there but we can save 1 request by directly accessing our
@@ -116,16 +112,8 @@ public class MyviRu extends PluginForHost {
                 filename = video_embed_id;
             }
         }
-        final String api_url = br.getRegex("([\"'])(/player/api/Video/Get/[^\"']+?)\\1").getMatch(1);
-        if (api_url == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        this.br.getPage(api_url);
-        if (br.getHttpConnection().getResponseCode() == 404 || "{}".equals(br.toString())) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-        dllink = (String) JavaScriptEngineFactory.walkJson(entries, "sprutoData/playlist/{0}/video/{0}/url");
+        String player = br.getRegex("createPlayer\\(\"v=([^\"]+?)\"").getMatch(0).replace("\\", "'");
+        dllink = new Regex(player, "([^']+)'").getMatch(0);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
