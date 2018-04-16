@@ -30,6 +30,7 @@ import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.requests.GetRequest;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
@@ -43,7 +44,11 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 import org.appwork.storage.JSonStorage;
+import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.plugins.controller.PluginClassLoader;
+import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "https?://(www\\.)?instagram\\.com/(?!explore/)(p/[A-Za-z0-9_-]+|[^/]+)" })
@@ -70,10 +75,15 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         return null;
     }
 
-    private void getPage(CryptedLink link, final Browser br, String url) throws IOException, InterruptedException {
+    private void getPage(CryptedLink link, final Browser br, String url, final String rhxGis, final String variables) throws IOException, InterruptedException {
         int retry = 0;
         while (retry < 10) {
-            br.getPage(url);
+            final GetRequest get = br.createGetRequest(url);
+            if (rhxGis != null && variables != null) {
+                final String sig = Hash.getMD5(rhxGis + ":" + br.getCookie(getHost(), "csrftoken") + ":" + variables);
+                get.getHeaders().put("X-Instagram-GIS", sig);
+            }
+            br.getPage(get);
             final int responsecode = br.getHttpConnection().getResponseCode();
             if (responsecode == 502) {
                 sleep(20000 + 5000 * retry++, link);
@@ -145,7 +155,13 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             try {
                 jd.plugins.hoster.InstaGramCom.login(this.br, aa, false);
                 logged_in = true;
-            } catch (final Throwable e) {
+            } catch (final PluginException e) {
+                final PluginForHost plugin = HostPluginController.getInstance().get(getHost()).newInstance(PluginClassLoader.getThreadPluginClassLoaderChild());
+                if (getLogger() instanceof LogSource) {
+                    plugin.handleAccountException(aa, (LogSource) getLogger(), e);
+                } else {
+                    plugin.handleAccountException(aa, null, e);
+                }
             }
         }
         if (isPrivate && !logged_in) {
@@ -154,7 +170,8 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         }
         jd.plugins.hoster.InstaGramCom.prepBR(this.br);
         br.addAllowedResponseCodes(502);
-        getPage(param, br, parameter);
+        getPage(param, br, parameter, null, null);
+        final String rhxGis = br.getRegex("\"rhx_gis\"\\s*:\\s*\"([a-f0-9]{32})\"").getMatch(0);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
@@ -233,14 +250,15 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                     // prepBRAjax(br, username_url, maxid);
                     br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     br.getHeaders().put("Accept", "*/*");
-                    final Map<String, Object> varliables = new HashMap<String, Object>();
-                    varliables.put("id", id_owner);
-                    varliables.put("first", 100);
-                    varliables.put("after", nextid);
+                    final Map<String, Object> vars = new HashMap<String, Object>();
+                    vars.put("id", id_owner);
+                    vars.put("first", 100);
+                    vars.put("after", nextid);
                     if (queryHash == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    getPage(param, br, "/graphql/query/?query_hash=" + queryHash + "&variables=" + URLEncoder.encode(JSonStorage.toString(varliables), "UTF-8"));
+                    final String jsonString = JSonStorage.toString(vars).replaceAll("[\r\n]+", "").replaceAll("\\s+", "");
+                    getPage(param, br, "/graphql/query/?query_hash=" + queryHash + "&variables=" + URLEncoder.encode(jsonString, "UTF-8"), rhxGis, jsonString);
                     final int responsecode = br.getHttpConnection().getResponseCode();
                     if (responsecode == 404) {
                         logger.warning("Error occurred: 404");
