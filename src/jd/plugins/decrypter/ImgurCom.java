@@ -218,6 +218,11 @@ public class ImgurCom extends PluginForDecrypt {
                 final FilePackage fp = FilePackage.getInstance();
                 fp.setName(fpName.trim());
                 fp.addLinks(decryptedLinks);
+            } else {
+                // single images
+                final DownloadLink dl = createDownloadlink(getHostpluginurl(lid));
+                dl.setProperty("imgUID", lid);
+                decryptedLinks.add(dl);
             }
         }
         return decryptedLinks;
