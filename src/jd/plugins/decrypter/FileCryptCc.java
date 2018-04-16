@@ -34,6 +34,7 @@ import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.parser.html.InputField;
 import jd.plugins.CaptchaException;
 import jd.plugins.CryptedLink;
@@ -87,6 +88,7 @@ public class FileCryptCc extends PluginForDecrypt {
         br.getHeaders().put("Accept-Encoding", "gzip, deflate, sdch");
         br.getHeaders().put("Accept-Language", "en");
         br.setFollowRedirects(true);
+        FilePackage fp = null;
         br.addAllowedResponseCodes(500);// submit captcha responds with 500 code
         final String uid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         // not all captcha types are skipable (recaptchav2 isn't). I tried with new response value - raztoki
@@ -280,10 +282,13 @@ public class FileCryptCc extends PluginForDecrypt {
             if (!tdl.isEmpty()) {
                 decryptedLinks.addAll(tdl);
                 if (fpName != null) {
-                    final FilePackage fp = FilePackage.getInstance();
-                    fp.setName(Encoding.htmlDecode(fpName.trim()));
-                    fp.addLinks(decryptedLinks);
+                    if (fp == null) {
+                        fp = FilePackage.getInstance();
+                        fp.setName(Encoding.htmlDecode(fpName.trim()));
+                    }
+                    fp.addLinks(tdl);
                 }
+                distribute(tdl.toArray(new DownloadLink[0]));
                 if (containsMirror != null) {
                     return decryptedLinks;
                 }
@@ -315,11 +320,35 @@ public class FileCryptCc extends PluginForDecrypt {
         br.setFollowRedirects(false);
         br.setCookie(this.getHost(), "BetterJsPopCount", "1");
         for (final String singleLink : links) {
+            if (isAbort()) {
+                break;
+            }
             final Browser br2 = br.cloneBrowser();
             br2.getPage("/Link/" + singleLink + ".html");
             if (br2.containsHTML("friendlyduck.com/") || br2.containsHTML("filecrypt\\.cc/usenet\\.html") || br2.containsHTML("share-online\\.biz/affiliate")) {
                 /* Advertising */
                 continue;
+            }
+            while (!isAbort()) {
+                if (br2.containsHTML("Security prompt")) {
+                    final String captcha = br2.getRegex("(/captcha/[^<>\"]*?)\"").getMatch(0);
+                    if (captcha != null && captcha.contains("circle.php")) {
+                        final File file = this.getLocalCaptchaFile();
+                        getCaptchaBrowser(br).getDownload(file, captcha);
+                        final ClickedPoint cp = getCaptchaClickedPoint(getHost(), file, param, null, "Click on the open circle");
+                        final Form form = new Form();
+                        form.setMethod(MethodType.POST);
+                        form.setAction(br2.getURL());
+                        form.put("button.x", String.valueOf(cp.getX()));
+                        form.put("button.y", String.valueOf(cp.getY()));
+                        form.put("button", "send");
+                        br2.submitForm(form);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                } else {
+                    break;
+                }
             }
             String finallink = null;
             final String first_rd = br2.getRedirectLocation();
@@ -341,12 +370,16 @@ public class FileCryptCc extends PluginForDecrypt {
                 // return null;
                 continue;
             }
-            decryptedLinks.add(createDownloadlink(finallink));
-        }
-        if (fpName != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
+            final DownloadLink link = createDownloadlink(finallink);
+            decryptedLinks.add(link);
+            if (fpName != null) {
+                if (fp == null) {
+                    fp = FilePackage.getInstance();
+                    fp.setName(Encoding.htmlDecode(fpName.trim()));
+                }
+                fp.add(link);
+            }
+            distribute(link);
         }
         return decryptedLinks;
     }
