@@ -345,6 +345,7 @@ public class OneFichierCom extends PluginForHost {
                     if (a2 == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
+                    a2.remove("save");
                     final Browser br3 = br.cloneBrowser();
                     br3.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
                     sleep(2000, downloadLink);
