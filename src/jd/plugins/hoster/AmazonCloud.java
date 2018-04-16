@@ -13,14 +13,10 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -34,9 +30,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "amazon.com" }, urls = { "https://amazondecrypted\\.com/\\d+" })
 public class AmazonCloud extends PluginForHost {
-
     public AmazonCloud(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -47,12 +45,10 @@ public class AmazonCloud extends PluginForHost {
     }
 
     public static final String   JSON_KIND_FILE     = "FILE";
-
     /* Connection stuff */
     private static final boolean FREE_RESUME        = true;
     private static final int     FREE_MAXCHUNKS     = 0;
     private static final int     FREE_MAXDOWNLOADS  = -1;
-
     /* Don't touch this! */
     public static int            max_items_per_page = 200;
 
@@ -96,7 +92,6 @@ public class AmazonCloud extends PluginForHost {
                 /* Check if user still has VERY old links in his list --> Invalid */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-
             this.setBrowserExclusive();
             prepBR();
             final String plain_folder_id = link.getStringProperty("plain_folder_id", null);
@@ -159,7 +154,6 @@ public class AmazonCloud extends PluginForHost {
         }
         requestFileInformation(link);
         String dllink = link.getStringProperty("plain_directlink", null);
-
         boolean needs_new_directlink = false;
         if (dllink == null) {
             needs_new_directlink = true;
@@ -174,7 +168,6 @@ public class AmazonCloud extends PluginForHost {
         if (needs_new_directlink) {
             dllink = refreshDirectlink(link);
         }
-
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, FREE_RESUME, FREE_MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
@@ -201,9 +194,7 @@ public class AmazonCloud extends PluginForHost {
         final String linkid_target = getLinkid(plain_folder_id, dl.getMD5Hash(), plain_name);
         String linkid_temp = null;
         String finallink = null;
-
         logger.info("Refreshing directlink");
-
         if (plain_folder_id == null) {
             /* Should never happen! */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -233,7 +224,6 @@ public class AmazonCloud extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
-
         try {
             for (final Object data_o : resource_data_list) {
                 final LinkedHashMap<String, Object> nodeInfo = (LinkedHashMap<String, Object>) data_o;
@@ -254,12 +244,10 @@ public class AmazonCloud extends PluginForHost {
             }
         } catch (final Throwable e) {
         }
-
         if (finallink == null) {
             logger.warning("Either something went terribly wrong or maybe the file we're trying to download is offline (or owner changed rights / filename / folder structure)");
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error: Failed to refresh final downloadurl");
         }
-
         return finallink;
     }
 
@@ -367,5 +355,4 @@ public class AmazonCloud extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }
