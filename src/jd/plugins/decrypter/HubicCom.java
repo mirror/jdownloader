@@ -115,7 +115,7 @@ public class HubicCom extends PluginForDecrypt {
     }
 
     public static boolean isOffline(final Browser br, final LinkedHashMap<String, Object> entries) {
-        final boolean is_offline = br.getHttpConnection().getResponseCode() == 405 || (entries != null && entries.get("error") != null);
+        final boolean is_offline = br.getHttpConnection().getResponseCode() == 401 || br.getHttpConnection().getResponseCode() == 405 || (entries != null && entries.get("error") != null);
         return is_offline;
     }
 
