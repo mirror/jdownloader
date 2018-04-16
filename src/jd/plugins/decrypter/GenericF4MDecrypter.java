@@ -37,7 +37,7 @@ import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilte
 import org.jdownloader.plugins.components.hds.HDSContainer;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin.FEATURE;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "f4m" }, urls = { "https?://.+\\.f4m($|\\?[^\\s<>\"']*)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "f4m" }, urls = { "https?://.+\\.f4m($|\\?[^\\s<>\"']*|#.*)" })
 public class GenericF4MDecrypter extends PluginForDecrypt {
     @Override
     public Boolean siteTesterDisabled() {
