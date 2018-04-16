@@ -18,22 +18,27 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hubic.com" }, urls = { "https?://(?:www\\.)?hubic\\.com/home/pub/\\?ruid=([a-zA-Z0-9_/\\+\\=\\-%]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hubic.com" }, urls = { "(https?://(?:www\\.)?hubic\\.com/home/pub/\\?ruid=([a-zA-Z0-9_/\\+\\=\\-%]+)|https?://[a-z0-9\\-_]+\\.hubic\\.ovh\\.net/.+)" })
 public class HubicCom extends PluginForDecrypt {
     public HubicCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -42,11 +47,33 @@ public class HubicCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        final String ruid_b64 = Encoding.htmlDecode(new Regex(parameter, this.getSupportedLinks()).getMatch(0));
         jd.plugins.hoster.HubicCom.prepBR(this.br);
-        br.getPage(parameter);
-        jd.plugins.hoster.HubicCom.prepBRAjax(this.br);
-        accessRUID(this.br, ruid_b64);
+        String ruid_b64 = null;
+        if (parameter.matches("https?://[a-z0-9\\-_]+\\.hubic\\.ovh\\.net/.+")) {
+            final URLConnectionAdapter con = br.openGetConnection(parameter);
+            if (con.isOK() && con.isContentDisposition() && !StringUtils.containsIgnoreCase(con.getContentType(), "json")) {
+                con.disconnect();
+                final DownloadLink dl = this.createDownloadlink(parameter.replaceAll("hubic.ovh.net/", "hubicdecrypted.ovh.net/"));
+                final String name = getFileNameFromHeader(con);
+                if (name != null) {
+                    dl.setFinalFileName(name);
+                }
+                final long size = con.getLongContentLength();
+                if (size > 0) {
+                    dl.setVerifiedFileSize(size);
+                }
+                dl.setAvailable(true);
+                decryptedLinks.add(dl);
+                return decryptedLinks;
+            } else {
+                br.getPage(parameter);
+            }
+        } else {
+            ruid_b64 = Encoding.htmlDecode(new Regex(parameter, this.getSupportedLinks()).getMatch(0));
+            br.getPage(parameter);
+            jd.plugins.hoster.HubicCom.prepBRAjax(this.br);
+            accessRUID(this.br, ruid_b64);
+        }
         if (isOffline(this.br, null)) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
@@ -66,10 +93,9 @@ public class HubicCom extends PluginForDecrypt {
             if (StringUtils.isEmpty(name) || StringUtils.isEmpty(url) || filesize == 0) {
                 continue;
             }
-            final DownloadLink dl = this.createDownloadlink(url);
+            final DownloadLink dl = this.createDownloadlink(url.replaceAll("hubic.ovh.net/", "hubicdecrypted.ovh.net"));
             dl.setProperty("ruid", ruid_b64);
             dl.setProperty("hash", hash);
-            dl.setLinkID(hash);
             dl.setFinalFileName(name);
             dl.setDownloadSize(filesize);
             dl.setAvailable(true);
@@ -93,8 +119,21 @@ public class HubicCom extends PluginForDecrypt {
         return is_offline;
     }
 
-    public static ArrayList<Object> getList(LinkedHashMap<String, Object> entries) {
-        entries = (LinkedHashMap<String, Object>) entries.get("answer");
-        return (ArrayList<Object>) entries.get("list");
+    public static ArrayList<Object> getList(LinkedHashMap<String, Object> entries) throws Exception {
+        if (entries.containsKey("answer")) {
+            entries = (LinkedHashMap<String, Object>) entries.get("answer");
+        }
+        if (entries.get("list") instanceof Map) {
+            final Object ret = ((Map<String, Object>) entries.get("list")).get("/");
+            if (ret instanceof List) {
+                return (ArrayList<Object>) ret;
+            } else if (ret instanceof Map) {
+                return new ArrayList<Object>(((Map<String, Object>) ret).values());
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        } else {
+            return (ArrayList<Object>) entries.get("list");
+        }
     }
 }
