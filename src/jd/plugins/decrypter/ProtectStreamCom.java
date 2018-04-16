@@ -56,6 +56,7 @@ public class ProtectStreamCom extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
+            this.sleep(10 * 1000l, param);
             br.postPage("/secur.php", "k=" + Encoding.urlEncode(cheap));
         }
         final String finallink = br.getRegex("(?:href|src)\\s*=\\s*\"(https?[^<>\"]*?)\"").getMatch(0);
