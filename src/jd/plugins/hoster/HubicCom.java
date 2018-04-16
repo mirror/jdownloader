@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hubic.com" }, urls = { "https?://[a-z0-9\\-_]+\\.hubic\\.ovh\\.net/.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hubic.com" }, urls = { "https?://[a-z0-9\\-_]+\\.hubicdecrypted\\.ovh\\.net/.+" })
 public class HubicCom extends PluginForHost {
     public HubicCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -47,6 +47,15 @@ public class HubicCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "https://hubic.com/de/contracts/Contrat_hubiC_2014.pdf";
+    }
+
+    @Override
+    public void correctDownloadLink(DownloadLink link) throws Exception {
+        final String url = link.getDownloadURL();
+        final String newURL = url.replaceAll("hubicdecrypted\\.ovh\\.net/", "hubic.ovh\\.net/");
+        if (!StringUtils.equals(url, newURL)) {
+            link.setUrlDownload(newURL);
+        }
     }
 
     public static Browser prepBR(final Browser br) {
