@@ -35,6 +35,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.appwork.utils.StringUtils;
+
 /**
  *
  * I've created jac for this under the default names entry 'click.tf'.
@@ -93,8 +95,11 @@ public class ClkTf extends PluginForDecrypt {
         final String link = f.getAction();
         if (link == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if (!StringUtils.startsWithCaseInsensitive(link, "http://") && !StringUtils.startsWithCaseInsensitive(link, "https://")) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            decryptedLinks.add(createDownloadlink(link));
         }
-        decryptedLinks.add(createDownloadlink(link));
     }
 
     private void handleCaptcha(final CryptedLink param) throws Exception {
@@ -104,16 +109,20 @@ public class ClkTf extends PluginForDecrypt {
             if (captcha == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final String captchaImage = captcha.getRegex("/captcha\\.php\\?cap_id=\\d+").getMatch(-1);
+            final String captchaImage = captcha.getRegex("(/captcha\\.php\\?.*?)\"").getMatch(0);
             if (captchaImage != null) {
                 final String c = getCaptchaCode(captchaImage, param);
                 if (c == null) {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
-                captcha.put("ent_code", Encoding.urlEncode(c));
+                if (captcha.containsHTML("verifycode")) {
+                    captcha.put("verifycode", Encoding.urlEncode(c));
+                } else {
+                    captcha.put("ent_code", Encoding.urlEncode(c));
+                }
             }
             br.submitForm(captcha);
-            if (br.containsHTML("<p style='color:\\s*red;'>Wrong CAPTCHA</p>")) {
+            if (br.getRegex("(/captcha\\.php\\?.*?)\"").getMatch(0) != null) {
                 if (i + 1 > retry) {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 } else {
