@@ -242,15 +242,20 @@ public class NocoTv extends PluginForHost {
              * an Code. Die Methode "setBrowserExclusive()" muss dabei deaktiviert sein.
              */
             long ts = System.currentTimeMillis();
-            callAPI(this.br, getId(dllink));
-            dllink = PluginJSonUtils.getJson(this.br, "file");
+            Browser br2 = null;
+            dllink = Encoding.htmlDecode(br.getRegex("noco_media\"\\s*src\\s*=\\s*\"(https?://.*?)\"").getMatch(0));
+            if (StringUtils.isEmpty(dllink)) {
+                br2 = br.cloneBrowser();
+                callAPI(br2, getId(dllink));
+                dllink = PluginJSonUtils.getJson(br2, "file");
+            }
             if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             filename = filename.trim();
             final String ext = getFileNameExtensionFromString(dllink, ".mp4");
             downloadLink.setFinalFileName(filename + ext);
-            final Browser br2 = br.cloneBrowser();
+            br2 = br.cloneBrowser();
             // In case the link redirects to the finallink
             br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;
