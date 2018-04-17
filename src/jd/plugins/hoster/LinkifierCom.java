@@ -6,6 +6,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Hash;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.requests.PostRequest;
@@ -19,12 +27,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linkifier.com" }, urls = { "" })
 public class LinkifierCom extends PluginForHost {
@@ -171,8 +173,34 @@ public class LinkifierCom extends PluginForHost {
                     } catch (final IOException e) {
                         logger.log(e);
                     }
-                    if (dl.getConnection().getResponseCode() == 500 && br.containsHTML("<title>Runtime Error</title>")) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Server Error", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    String errorMessage = new Regex(br.getRequest().getUrl(), "\\!%20Error%20Code:([^\\&]+)").getMatch(0);
+                    String ErrDesc = UrlQuery.parse(br.getRequest().getUrl()).getDecoded("ErrDesc");
+                    if (dl.getConnection().getResponseCode() == 500 && br.containsHTML("<title>[^<]*Error[^<]*</title>")) {
+                        // throw new PluginException(LinkStatus.ERROR_RETRY, ErrDesc == null ? "Server Error" : ErrDesc,
+                        // PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                        int requests = ((Number) downloadLink.getProperty("retryRequests", 0)).intValue() + 1;
+                        downloadLink.setProperty("retryRequests", requests);
+                        int waitTime = 0;
+                        switch (requests) {
+                        case 1:
+                            waitTime = 0;
+                            break;
+                        case 2:
+                            waitTime = 3;
+                            break;
+                        case 3:
+                            waitTime = 5;
+                            break;
+                        case 4:
+                            waitTime = 15;
+                            break;
+                        case 5:
+                            waitTime = 30;
+                            break;
+                        default:
+                            throw new PluginException(LinkStatus.ERROR_FATAL, ErrDesc == null ? "Server Error" : ErrDesc);
+                        }
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, ErrDesc == null ? "Server Error" : ErrDesc, waitTime * 60 * 1000l + 1);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
@@ -230,6 +258,7 @@ public class LinkifierCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+        link.setProperty("retryRequests", 0);
     }
 
     @Override
