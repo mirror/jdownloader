@@ -57,7 +57,7 @@ import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bdnupload.com" }, urls = { "https?://(?:www\\.)?(?:bduploadmor|bdnupload)\\.com/(?:embed\\-)?[a-z0-9]{12}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bdnupload.com" }, urls = { "https?://(?:www\\.)?(?:hdupload|bduploadmor|bdnupload)\\.com/(?:embed\\-)?[a-z0-9]{12}" })
 public class BdnuploadCom extends antiDDoSForHost {
     /* Some HTML code to identify different (error) states */
     private static final String  HTML_PASSWORDPROTECTED             = "<br><b>Passwor(d|t):</b> <input";
@@ -89,18 +89,18 @@ public class BdnuploadCom extends antiDDoSForHost {
      * will check for videohoster "next" Download/Ad- Form.
      */
     private final boolean        IMAGEHOSTER                        = false;
-    private final boolean        SUPPORTS_AVAILABLECHECK_ALT        = false;
+    private final boolean        SUPPORTS_AVAILABLECHECK_ALT        = true;
     /*
      * true = check via postPage, false = we access the check_files site first and parse the Form to cover eventually required tokens inside
      * the Form.
      */
-    private final boolean        SUPPORTS_AVAILABLECHECK_ALT_FAST   = false;
-    private final boolean        SUPPORTS_AVAILABLECHECK_ABUSE      = false;
+    private final boolean        SUPPORTS_AVAILABLECHECK_ALT_FAST   = true;
+    private final boolean        SUPPORTS_AVAILABLECHECK_ABUSE      = true;
     /*
      * Scan in html code for filesize? Disable this if a website either does not contain any filesize information in its html or it only
      * contains misleading information such as fake texts.
      */
-    private final boolean        SUPPORTS_HTML_FILESIZE_CHECK       = false;
+    private final boolean        SUPPORTS_HTML_FILESIZE_CHECK       = true;
     /* Pre-Download waittime stuff */
     private final boolean        WAITFORCED                         = false;
     private final int            WAITSECONDSMIN                     = 3;
@@ -245,6 +245,9 @@ public class BdnuploadCom extends antiDDoSForHost {
             /* We failed to find the filename via html --> Try getFnameViaAbuseLink */
             logger.info("Failed to find filename, trying getFnameViaAbuseLink");
             fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
+            if (altbr.containsHTML(">No such file<")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         }
         if (inValidate(fileInfo[0]) && IMAGEHOSTER) {
             /*
