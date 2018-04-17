@@ -93,7 +93,7 @@ public class HubicCom extends PluginForDecrypt {
             if (StringUtils.isEmpty(name) || StringUtils.isEmpty(url) || filesize == 0) {
                 continue;
             }
-            final DownloadLink dl = this.createDownloadlink(url.replaceAll("hubic.ovh.net/", "hubicdecrypted.ovh.net"));
+            final DownloadLink dl = this.createDownloadlink(url.replaceAll("hubic.ovh.net/", "hubicdecrypted.ovh.net/"));
             dl.setProperty("ruid", ruid_b64);
             dl.setProperty("hash", hash);
             dl.setFinalFileName(name);
