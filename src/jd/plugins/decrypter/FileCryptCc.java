@@ -329,7 +329,8 @@ public class FileCryptCc extends PluginForDecrypt {
                 /* Advertising */
                 continue;
             }
-            while (!isAbort()) {
+            int retryCaptcha = 5;
+            while (!isAbort() && retryCaptcha-- > 0) {
                 if (br2.containsHTML("Security prompt")) {
                     final String captcha = br2.getRegex("(/captcha/[^<>\"]*?)\"").getMatch(0);
                     if (captcha != null && captcha.contains("circle.php")) {
