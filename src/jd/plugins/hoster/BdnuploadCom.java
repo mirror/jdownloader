@@ -57,7 +57,7 @@ import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bdnupload.com" }, urls = { "https?://(?:www\\.)?(?:hdupload|bduploadmor|bdnupload)\\.com/(?:embed\\-)?[a-z0-9]{12}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bdnupload.com" }, urls = { "https?://(?:www\\.)?(?:(?:bduploadmor|bdnupload)\\.com|hdupload\\.net)/(?:embed\\-)?[a-z0-9]{12}" })
 public class BdnuploadCom extends antiDDoSForHost {
     /* Some HTML code to identify different (error) states */
     private static final String  HTML_PASSWORDPROTECTED             = "<br><b>Passwor(d|t):</b> <input";
