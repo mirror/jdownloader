@@ -68,9 +68,14 @@ public class RapidturkCom extends Ftp {
         if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML(">Download:\\&nbsp;<h1> \\(\\)</h1>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Regex finfo = this.br.getRegex("class=\"fl\">Download:\\&nbsp;<h1>([^<>\"]+) \\(([^\\(\\)]+)\\)</h1>");
+        Regex finfo = this.br.getRegex("class=\"fl\">Download:\\&nbsp;<h1>([^<>\"]+) \\(([^\\(\\)]+)\\)</h1>");
         String filename = finfo.getMatch(0);
         String filesize = finfo.getMatch(1);
+        if (filename == null || filesize == null) {
+            finfo = br.getRegex("Download File: \"([^<>\"]+)\" \\(([^\\(\\)]+)\\)<");
+            filename = finfo.getMatch(0);
+            filesize = finfo.getMatch(1);
+        }
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
