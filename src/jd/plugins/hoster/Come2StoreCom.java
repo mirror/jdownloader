@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -30,9 +29,8 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "come2store.com" }, urls = { "http://(www\\.)?download\\.come2store\\.com/[a-z0-9]+/[^<>\"/]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "come2store.com" }, urls = { "http://(www\\.)?download\\.come2store\\.com/[a-z0-9]+/[^<>\"/]+" })
 public class Come2StoreCom extends PluginForHost {
-
     public Come2StoreCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -47,10 +45,14 @@ public class Come2StoreCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("is not a valid file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("is not a valid file|You must be")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("td>File Name:</td><td>([^<>\"]*?)</td>").getMatch(0);
         String filesize = br.getRegex("<td>File Size:</td><td>([^<>\"]*?)</td>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -60,9 +62,13 @@ public class Come2StoreCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         final Form dlform = br.getForm(0);
-        if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dlform == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform, false, 1);
-        if (dl.getConnection().getLongContentLength() == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dl.getConnection().getLongContentLength() == 0) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
     }
 
@@ -78,5 +84,4 @@ public class Come2StoreCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
