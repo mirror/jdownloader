@@ -43,18 +43,20 @@ public class FShareVnFolder extends PluginForDecrypt {
         final String parameter = param.toString();
         final String folderid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         final LinkedHashSet<String> dupe = new LinkedHashSet<String>();
-        jd.plugins.hoster.FShareVn.prepBrowser(this.br);
+        jd.plugins.hoster.FShareVn.prepBrowser(br);
         /* Important or we'll get XML ;) */
         br.getHeaders().put("Accept", "application/json, text/plain, */*");
-        br.getPage("https://www." + this.getHost() + "/api/v3/files/folder?linkcode=" + folderid + "&sort=type,name");
+        br.getPage("https://www." + getHost() + "/api/v3/files/folder?linkcode=" + folderid + "&sort=type,name");
         while (!isAbort()) {
             final Map<String, Object> map = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             final List<Object> ressourcelist = (List<Object>) map.get("items");
-            if (this.br.getHttpConnection().getResponseCode() == 404) {
+            if (br.getHttpConnection().getResponseCode() == 404) {
                 logger.info("Link offline: " + parameter);
+                decryptedLinks.add(createOfflinelink(parameter));
                 return decryptedLinks;
             } else if (ressourcelist.isEmpty()) {
                 logger.info("Empty folder");
+                decryptedLinks.add(createOfflinelink(parameter));
                 return decryptedLinks;
             }
             final Map<String, Object> entries = (Map<String, Object>) map.get("current");
