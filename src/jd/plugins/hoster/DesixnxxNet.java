@@ -34,11 +34,11 @@ public class DesixnxxNet extends PluginForHost {
     public DesixnxxNet(PluginWrapper wrapper) {
         super(wrapper);
     }
+
     /* DEV NOTES */
     // Tags:
     // protocol: no https
     // other:
-
     /* Extension which will be used if no correct extension is found */
     public static final String   default_extension = ".mp4";
     /* Connection stuff */
@@ -69,12 +69,12 @@ public class DesixnxxNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = getFilename(this.br, link.getDownloadURL());
-        dllink = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
+        dllink = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(https?[^<>\"]*?)\\'").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("(?:file|url):[\t\n\r ]*?(?:\"|\\')(http[^<>\"]*?)(?:\"|\\')").getMatch(0);
+            dllink = br.getRegex("(?:file|url):[\t\n\r ]*?(?:\"|\\')(https?[^<>\"]*?)(?:\"|\\')").getMatch(0);
         }
         if (dllink == null) {
-            dllink = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
+            dllink = br.getRegex("<source src=(?:\"|\\')(https?://[^<>\"]*?)(?:\"|\\') type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
         }
         if (dllink == null) {
             dllink = br.getRegex("property=\"og:video\" content=\"(http[^<>\"]*?)\"").getMatch(0);
