@@ -70,8 +70,8 @@ public class DiskYandexNet extends PluginForHost {
     private final String          DOWNLOAD_ZIP                       = "DOWNLOAD_ZIP_2";
     private static final String   NORESUME                           = "NORESUME";
     /* Some constants which they used in browser */
-    public static final String    CLIENT_ID                          = "6214e1ac6b579eb984b716151bcb5143";
-    public static String          VERSION                            = "8.5";
+    public static final String    CLIENT_ID                          = "2784000881524006529778";
+    public static String          VERSION                            = "59.7";
     private static final String   STANDARD_FREE_SPEED                = "64 kbit/s";
     /* Different languages == different 'downloads' directory names */
     private static final String[] downloaddirs                       = { "Downloads", "%D0%97%D0%B0%D0%B3%D1%80%D1%83%D0%B7%D0%BA%D0%B8" };
@@ -98,7 +98,7 @@ public class DiskYandexNet extends PluginForHost {
     private String                currPath                           = null;
     /* 2017-02-08: Disabled API usage due to issues/ especially the download API request seems not to work anymore. */
     private static final boolean  use_api_file_free_availablecheck   = false;
-    private static final boolean  use_api_file_free_download         = false;
+    private static final boolean  use_api_file_free_download         = true;
 
     /* Make sure we always use our main domain */
     private String getMainLink(final DownloadLink dl) throws PluginException {
@@ -319,31 +319,34 @@ public class DiskYandexNet extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             } else {
-                /* Free website download. */
+                /* Free website download */
                 this.br = this.prepbrWebsite(new Browser());
                 getPage(getMainLink(downloadLink));
                 String sk = getSK(this.br);
-                /* 2017-02-09: Required */
-                getPage("https://yadi.sk/tns.html");
                 if (sk == null) {
                     logger.warning("sk in account handling (without move) is null");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.postPage("/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=" + getID0ForPostFree(isPartOfAFolder(downloadLink)) + "&idClient=" + getIdClient() + "&version=" + VERSION + "&sk=" + sk);
+                /* 2018-04-18: Not required anymore */
+                // getPage("https://yadi.sk/tns.html");
+                br.getHeaders().put("Accept", "*/*");
+                br.getHeaders().put("Content-Type", "text/plain");
+                postPageRaw("/public-api-desktop/download-url", String.format("{\"hash\":\"%s\",\"sk\":\"%s\"}", this.currHash, sk));
                 /** TODO: Find out why we have the wrong SK here and remove this workaround! */
                 if (br.containsHTML("\"id\":\"WRONG_SK\"")) {
-                    sk = getSK(this.br);
-                    if (sk == null || sk.equals("")) {
-                        logger.warning("sk in account handling (without move) is null");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    br.postPage("https://disk.yandex.com/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=" + getID0ForPostFree(isPartOfAFolder(downloadLink)) + "&idClient=" + getIdClient() + "&version=" + VERSION + "&sk=" + sk);
+                    logger.warning("WRONG_SK --> This should not happen");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    // sk = getSK(this.br);
+                    // if (sk == null || sk.equals("")) {
+                    // logger.warning("sk in account handling (without move) is null");
+                    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    // }
+                    // br.postPage("/public-api-desktop/download-url", String.format("{\"hash\":\"%s\",\"sk\":\"%s\"}", this.currHash, sk));
                 }
                 handleErrorsFree();
-                dllink = PluginJSonUtils.getJsonValue(br, "file");
+                dllink = PluginJSonUtils.getJsonValue(br, "url");
                 if (dllink == null) {
+                    logger.warning("Failed to find final downloadurl");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 /* Don't do htmldecode because the link will be invalid then */
@@ -449,6 +452,10 @@ public class DiskYandexNet extends PluginForHost {
         return ckey;
     }
 
+    private String getUserID(final Account acc) {
+        return acc.getStringProperty("account_userid");
+    }
+
     private boolean isZippedFolder(final DownloadLink dl) {
         return dl.getBooleanProperty("is_zipped_folder", false);
     }
@@ -458,10 +465,6 @@ public class DiskYandexNet extends PluginForHost {
             try {
                 br.setCookiesExclusive(true);
                 prepbrWebsite(this.br);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
                 /*
                  * Login procedure can redirect multiple times! It should lead us to disk.yandex.com via the referer parameter in our login
                  * URL.
@@ -487,19 +490,55 @@ public class DiskYandexNet extends PluginForHost {
                     /* Failed - we have to perform a full login! */
                     br.clearCookies(br.getHost());
                 }
+                boolean isLoggedIN = false;
+                boolean requiresCaptcha;
+                final Browser ajaxBR = br.cloneBrowser();
+                ajaxBR.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                ajaxBR.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
                 br.getPage("https://passport.yandex.com/auth?from=cloud&origin=disk_landing_web_signin_ru&retpath=https%3A%2F%2Fdisk.yandex.com%2F%3Fsource%3Dlanding_web_signin&backpath=https%3A%2F%2Fdisk.yandex.com");
-                final Form[] forms = br.getForms();
-                if (forms.length == 0) {
-                    logger.warning("Failed to find loginform");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                for (int i = 0; i <= 4; i++) {
+                    final Form[] forms = br.getForms();
+                    if (forms.length == 0) {
+                        logger.warning("Failed to find loginform");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    final Form loginform = forms[0];
+                    loginform.remove("twoweeks");
+                    loginform.put("source", "password");
+                    loginform.put("login", Encoding.urlEncode(account.getUser()));
+                    loginform.put("passwd", Encoding.urlEncode(account.getPass()));
+                    if (br.containsHTML("\\&quot;captchaRequired\\&quot;:true")) {
+                        /** TODO: Fix captcha support */
+                        /* 2018-04-18: Only required after 10 bad login attempts or bad IP */
+                        requiresCaptcha = true;
+                        final String csrf_token = loginform.hasInputFieldByName("csrf_token") ? loginform.getInputField("csrf_token").getValue() : null;
+                        final String idkey = loginform.hasInputFieldByName("idkey") ? loginform.getInputField("idkey").getValue() : null;
+                        if (csrf_token == null || idkey == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        ajaxBR.postPage("https://passport.yandex.com/registration-validations/textcaptcha", "csrf_token=" + csrf_token + "&track_id=" + idkey);
+                        final String url_captcha = PluginJSonUtils.getJson(ajaxBR, "image_url");
+                        final String id = PluginJSonUtils.getJson(ajaxBR, "id");
+                        if (StringUtils.isEmpty(url_captcha) || StringUtils.isEmpty(id)) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        final DownloadLink dummyLink = new DownloadLink(this, "Account", account.getHoster(), "https://" + account.getHoster(), true);
+                        final String c = getCaptchaCode(url_captcha, dummyLink);
+                        loginform.put("captcha_answer", c);
+                        // loginform.put("idkey", id);
+                    } else {
+                        requiresCaptcha = false;
+                    }
+                    br.submitForm(loginform);
+                    isLoggedIN = br.getCookie(br.getURL(), "yandex_login") != null;
+                    if (!requiresCaptcha && i > 0) {
+                        /* Probably wrong password */
+                        break;
+                    } else if (isLoggedIN) {
+                        break;
+                    }
                 }
-                final Form loginform = forms[0];
-                loginform.remove("twoweeks");
-                loginform.put("login", Encoding.urlEncode(account.getUser()));
-                loginform.put("passwd", Encoding.urlEncode(account.getPass()));
-                /** TODO: Add support for login captcha */
-                br.submitForm(loginform);
-                if (br.getCookie(MAIN_DOMAIN, "yandex_login") == null) {
+                if (!isLoggedIN) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -528,7 +567,8 @@ public class DiskYandexNet extends PluginForHost {
             getPage("https://disk.yandex.com/client/disk/");
         }
         ACCOUNT_SK = br.getRegex("\"sk\":\"([a-z0-9]+)\"").getMatch(0);
-        if (ACCOUNT_SK == null) {
+        final String userID = PluginJSonUtils.getJson(br, "uid");
+        if (ACCOUNT_SK == null || StringUtils.isEmpty(userID)) {
             final String lang = System.getProperty("user.language");
             if ("de".equalsIgnoreCase(lang)) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -537,6 +577,7 @@ public class DiskYandexNet extends PluginForHost {
             }
         }
         account.setProperty("saved_sk", ACCOUNT_SK);
+        account.setProperty("account_userid", userID);
         ai.setUnlimitedTraffic();
         account.setValid(true);
         account.setType(AccountType.FREE);
@@ -552,9 +593,10 @@ public class DiskYandexNet extends PluginForHost {
         setConstants(link, account);
         String dllink = checkDirectLink(link, "directlink_account");
         if (dllink == null) {
+            final String userID = getUserID(account);
             final String hash = getHash(link);
             /* This should never happen */
-            if (ACCOUNT_SK == null) {
+            if (ACCOUNT_SK == null || userID == null) {
                 logger.warning("ACCOUNT_SK is null");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -565,51 +607,55 @@ public class DiskYandexNet extends PluginForHost {
                 if (forcedmoveIntoAccHandling) {
                     logger.info("forcedmoveIntoAccHandling active");
                 }
-                boolean file_moved = link.getBooleanProperty("file_moved", false);
+                String internal_file_path = getInternalFilePath(link);
+                final boolean file_was_moved_before = internal_file_path != null;
                 try {
                     logger.info("MoveToAccount handling is active -> Starting account download handling");
-                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                    if (file_moved) {
-                        logger.info("Seems like the file has already been moved to the account -> Trying to get it");
-                        dllink = getLinkFromFileInAccount(link, br);
-                        if (dllink == null) {
-                            logger.info("Seems like the file is not in the account -> Trying to move it");
-                            file_moved = false;
-                            link.setProperty("file_moved", false);
-                        }
-                    }
-                    if (dllink == null) {
-                        postPage("https://disk.yandex.com/models/?_m=do-save-resource-public", "_model.0=do-save-resource-public&id.0=" + getID0ForPostFree(isPartOfAFolder(link)) + "&async.0=0&idClient=" + CLIENT_ID + "&version=" + VERSION + "&sk=" + ACCOUNT_SK);
+                    br.getHeaders().put("Content-Type", "text/plain");
+                    if (internal_file_path == null) {
+                        /*
+                         * "name" pretty much doesn't matter as this is just the name the file gets inside our account. Of course this will
+                         * be part of our <internal_file_path> but best is to use the original filename!
+                         */
+                        postPageRaw("https://disk.yandex.com/public-api-desktop/save", String.format("{\"hash\":\"%s\",\"name\":\"%s\",\"lang\":\"en\",\"source\":\"public_web_copy\",\"sk\":\"%s\",\"uid\":\"%s\"}", this.currHash, link.getName(), this.ACCOUNT_SK, userID));
+                        internal_file_path = PluginJSonUtils.getJson(br, "path");
                         /* TODO: Maybe add/find a way to verify if the file really has been moved to the account. */
                         if (br.containsHTML("\"code\":85")) {
                             logger.info("No free space available, failed to move file to account");
                             throw new PluginException(LinkStatus.ERROR_FATAL, "No free space available, failed to move file to account");
-                        }
-                        dllink = getLinkFromFileInAccount(link, br);
-                        if (dllink == null) {
-                            /*
-                             * Possible errors (which should never occur: "id":"HTTP_404 == File could not be found in the account -->
-                             * Probably move handling failed or is broken
-                             */
+                        } else if (StringUtils.isEmpty(internal_file_path)) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
-                        file_moved = true;
-                        link.setProperty("file_moved", true);
-                        if (this.getPluginConfig().getBooleanProperty(DELETE_FROM_ACCOUNT_AFTER_DOWNLOAD, false)) {
-                            try {
-                                logger.info("Successfully grabbed dllink via move_to_Account_handling -> Move file to trash -> Trying to delete file from account");
-                                moveFileToTrash(link);
-                                /* Only empty trash if desired by user */
-                                if (!forcedmoveIntoAccHandlingAgainstUserSelection) {
-                                    logger.info("Successfully grabbed dllink via move_to_Account_handling -> Empty trash -> Trying to empty trash inside account");
-                                    emptyTrash();
-                                }
-                            } catch (final Throwable e) {
+                        link.setProperty("path_internal", internal_file_path);
+                    }
+                    dllink = getDllinkFromFileInAccount(link, br);
+                    if (dllink == null) {
+                        if (file_was_moved_before) {
+                            /* Retry one more time */
+                            logger.info("Previously stored internal path was wrong --> Retring");
+                            link.setProperty("path_internal", Property.NULL);
+                            throw new PluginException(LinkStatus.ERROR_RETRY, "Bad internal path");
+                        }
+                        /*
+                         * Possible errors (which should never occur: "id":"HTTP_404 == File could not be found in the account --> Probably
+                         * move handling failed or is broken
+                         */
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    if (this.getPluginConfig().getBooleanProperty(DELETE_FROM_ACCOUNT_AFTER_DOWNLOAD, false)) {
+                        try {
+                            logger.info("Successfully grabbed dllink via move_to_Account_handling -> Move file to trash -> Trying to delete file from account");
+                            moveFileToTrash(link);
+                            /* Only empty trash if desired by user */
+                            if (!forcedmoveIntoAccHandlingAgainstUserSelection) {
+                                logger.info("Successfully grabbed dllink via move_to_Account_handling -> Empty trash -> Trying to empty trash inside account");
+                                emptyTrash();
                             }
+                        } catch (final Throwable e) {
                         }
                     }
                 } catch (final PluginException e) {
-                    if (file_moved) {
+                    if (!StringUtils.isEmpty(internal_file_path)) {
                         logger.info("MoveToAccount download-handling failed (dllink == null) -> Deleting moved file and emptying trash, then falling back to free download handling");
                         moveFileToTrash(link);
                         /* Only empty trash if desired by user */
@@ -679,88 +725,120 @@ public class DiskYandexNet extends PluginForHost {
         }
     }
 
-    private String getLinkFromFileInAccount(final DownloadLink dl, final Browser br2) {
-        final String filepath = siteGetInternalFilePath(dl);
+    private String getDllinkFromFileInAccount(final DownloadLink dl, final Browser br2) {
+        final String filepath = getInternalFilePath(dl);
         if (filepath == null) {
             logger.info("Debug-info: filepath == null, can't throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); here");
             return null;
         }
         String dllink = null;
-        for (final String downloaddir : downloaddirs) {
+        final boolean newWay = true;
+        if (newWay) {
+            /* 2018-04-18 */
             try {
-                br.setFollowRedirects(false);
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.getHeaders().put("Referer", "https://disk.yandex.com/client/disk/Downloads");
-                postPage("https://disk.yandex.com/models/?_m=do-get-resource-subresources,do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fdisk%2F" + downloaddir + "%2F" + filepath + "&idClient=" + CLIENT_ID + "&version=" + VERSION + "&sk=" + this.ACCOUNT_SK);
-                /* 28 = file not found, 70 = folder not found */
-                if (br.containsHTML("\"code\":28") || br.containsHTML("\"code\":70")) {
-                    logger.info("getLinkFromFileInAccount: Moved file was not found in directory: " + downloaddir);
-                    continue;
-                }
-                dllink = br.getRedirectLocation();
-                if (dllink == null) {
-                    dllink = siteGetDllink(dl);
-                }
-                br.setFollowRedirects(true);
-                /* Fix links - cookies sit on the other domain */
-                if (dllink != null) {
-                    dllink = dllink.replace("disk.yandex.ru/", "disk.yandex.com/");
-                }
-                break;
+                postPage("https://disk.yandex.com/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=" + Encoding.urlEncode(filepath) + "&idClient=" + CLIENT_ID + "&version=" + VERSION + "&sk=" + this.ACCOUNT_SK);
+                dllink = siteGetDllink(dl);
             } catch (final Throwable e) {
                 logger.warning("Failed to create dllink of link in account - Exception!");
-                break;
+            }
+        } else {
+            for (final String downloaddir : downloaddirs) {
+                try {
+                    br.setFollowRedirects(false);
+                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    br.getHeaders().put("Referer", "https://disk.yandex.com/client/disk/Downloads");
+                    postPage("https://disk.yandex.com/models/?_m=do-get-resource-subresources,do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fdisk%2F" + downloaddir + "%2F" + filepath + "&idClient=" + CLIENT_ID + "&version=" + VERSION + "&sk=" + this.ACCOUNT_SK);
+                    /* 28 = file not found, 70 = folder not found */
+                    if (br.containsHTML("\"code\":28") || br.containsHTML("\"code\":70")) {
+                        logger.info("getLinkFromFileInAccount: Moved file was not found in directory: " + downloaddir);
+                        continue;
+                    }
+                    dllink = br.getRedirectLocation();
+                    if (dllink == null) {
+                        dllink = siteGetDllink(dl);
+                    }
+                    br.setFollowRedirects(true);
+                    /* Fix links - cookies sit on the other domain */
+                    if (dllink != null) {
+                        dllink = dllink.replace("disk.yandex.ru/", "disk.yandex.com/");
+                    }
+                    break;
+                } catch (final Throwable e) {
+                    logger.warning("Failed to create dllink of link in account - Exception!");
+                    break;
+                }
             }
         }
         return dllink;
     }
 
     private void moveFileToTrash(final DownloadLink dl) {
-        final String filepath = siteGetInternalFilePath(dl);
-        for (final String downloaddir : downloaddirs) {
+        final String filepath = getInternalFilePath(dl);
+        final boolean newWay = true;
+        if (newWay) {
+            /* 2018-04-18 */
             try {
-                postPage("https://disk.yandex.com/models/?_m=do-resource-delete", "_model.0=do-resource-delete&id.0=%2Fdisk%2F" + downloaddir + "%2F" + filepath + "&idClient=" + CLIENT_ID + "&sk=" + this.ACCOUNT_SK + "&version=" + VERSION);
-                /* 28 = file not found, 70 = folder not found */
-                if (br.containsHTML("\"code\":28") || br.containsHTML("\"code\":70")) {
-                    logger.info("moveFileToTrash: ");
-                    continue;
-                }
-                logger.info("Successfully moved file to trash");
-                break;
+                postPage("https://disk.yandex.com/models/?_m=do-resource-delete", "_model.0=do-resource-delete&id.0=" + Encoding.urlEncode(filepath) + "&idClient=" + CLIENT_ID + "&sk=" + this.ACCOUNT_SK + "&version=" + VERSION);
             } catch (final Throwable e) {
                 logger.warning("Failed to move file to trash - Exception!");
-                break;
+            }
+        } else {
+            for (final String downloaddir : downloaddirs) {
+                try {
+                    postPage("https://disk.yandex.com/models/?_m=do-resource-delete", "_model.0=do-resource-delete&id.0=%2Fdisk%2F" + downloaddir + "%2F" + filepath + "&idClient=" + CLIENT_ID + "&sk=" + this.ACCOUNT_SK + "&version=" + VERSION);
+                    /* 28 = file not found, 70 = folder not found */
+                    if (br.containsHTML("\"code\":28") || br.containsHTML("\"code\":70")) {
+                        logger.info("moveFileToTrash: ");
+                        continue;
+                    }
+                    logger.info("Successfully moved file to trash");
+                    break;
+                } catch (final Throwable e) {
+                    logger.warning("Failed to move file to trash - Exception!");
+                    break;
+                }
             }
         }
     }
 
     private String siteGetDllink(final DownloadLink dl) {
-        final String dllink;
+        String dllink;
         if (isZippedFolder(dl)) {
             dllink = PluginJSonUtils.getJsonValue(br, "folder");
         } else {
             dllink = PluginJSonUtils.getJsonValue(br, "file");
         }
+        if (!StringUtils.isEmpty(dllink) && dllink.startsWith("//")) {
+            /* 2018-04-18 */
+            dllink = "https:" + dllink;
+        }
         return dllink;
     }
 
-    /* Returns URL-encoded internal path for download/move/file POST-requests */
-    private String siteGetInternalFilePath(final DownloadLink dl) {
-        final String plain_filename = dl.getStringProperty("plain_filename", null);
+    /** Returns URL-encoded internal path for download/move/file POST-requests */
+    private String getInternalFilePath(final DownloadLink dl) {
         String filepath = null;
-        if (isZippedFolder(dl)) {
-            /* Rare case */
-            filepath = plain_filename.substring(0, plain_filename.lastIndexOf("."));
-            filepath = Encoding.urlEncode(filepath);
+        final boolean newWay = true;
+        if (newWay) {
+            /* 2018-04-18: New */
+            filepath = dl.getStringProperty("path_internal", null);
         } else {
-            filepath = Encoding.urlEncode(plain_filename);
-        }
-        if (filepath == null) {
-            logger.info("Debug-info: filepath == null, can't throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); here");
+            final String plain_filename = dl.getStringProperty("plain_filename", null);
+            if (isZippedFolder(dl)) {
+                /* Rare case */
+                filepath = plain_filename.substring(0, plain_filename.lastIndexOf("."));
+                filepath = Encoding.urlEncode(filepath);
+            } else {
+                filepath = Encoding.urlEncode(plain_filename);
+            }
+            if (filepath == null) {
+                logger.info("Debug-info: filepath == null, can't throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); here");
+            }
         }
         return filepath;
     }
 
+    /** Deletes all items inside users' Yandex trash folder. */
     private void emptyTrash() {
         try {
             postPage("https://disk.yandex.com/models/?_m=do-clean-trash", "_model.0=do-clean-trash&idClient=" + CLIENT_ID + "&sk=" + this.ACCOUNT_SK + "&version=" + VERSION);
@@ -824,6 +902,15 @@ public class DiskYandexNet extends PluginForHost {
     /** Avoid chars which are not allowed in filenames under certain OS' */
     private void postPage(final String url, final String data) throws Exception {
         br.postPage(url, data);
+        if (br.containsHTML("\"id\":\"WRONG_SK\"")) {
+            logger.info("Refreshing ACCOUNT_SK");
+            this.login(this.currAcc, true);
+        }
+    }
+
+    /** Avoid chars which are not allowed in filenames under certain OS' */
+    private void postPageRaw(final String url, final String data) throws Exception {
+        br.postPageRaw(url, data);
         if (br.containsHTML("\"id\":\"WRONG_SK\"")) {
             logger.info("Refreshing ACCOUNT_SK");
             this.login(this.currAcc, true);

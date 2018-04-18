@@ -69,30 +69,12 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         if (path_main == null) {
             path_main = "/";
         }
-        if (parameter.matches(type_docviewer)) {
-            /* TODO: Change that --> FILE-URLs --> Should work fine then with the fixed decrypter! */
-            /* Documents in web view mode --> File-URLs! */
-            /* First lets fix broken URLs by removing unneeded parameters ... */
-            final String remove = new Regex(parameter, "(\\&[a-z0-9]+=.+)").getMatch(0);
-            if (remove != null) {
-                parameter = parameter.replace(remove, "");
-            }
-            mainhashID = new Regex(parameter, type_docviewer).getMatch(0);
-            mainhashID = new Regex(parameter, "url=ya\\-disk\\-public%3A%2F%2F(.+)").getMatch(0);
-            String hash_temp_decoded = Encoding.htmlDecode(mainhashID);
-            fname_url = new Regex(parameter, "\\&name=([^/\\&]+)").getMatch(0);
-            if (fname_url == null) {
-                fname_url = new Regex(hash_temp_decoded, ":/([^/]+)$").getMatch(0);
-            }
-            fname_url = Encoding.htmlDecode(fname_url);
-        } else if (parameter.matches(type_yadi_sk_mail)) {
-            mainhashID = regexHashFromURL(parameter);
-            parameter = "https://disk.yandex.com/public/?hash=" + mainhashID;
-        } else if (parameter.matches(type_yadi_sk_album)) {
+        if (parameter.matches(type_yadi_sk_album)) {
+            /* Crawl albums */
             /* 2018-02-07: Not yet supported */
-            if (true) {
-                return null;
-            }
+            // if (true) {
+            // return null;
+            // }
             getPage(parameter);
             if (br.containsHTML(OFFLINE_TEXT)) {
                 final DownloadLink offline = this.createOfflinelink(parameter);
@@ -102,176 +84,199 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             }
             mainhashID = PluginJSonUtils.getJsonValue(br, "public_key");
             if (mainhashID == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            parameter = "https://disk.yandex.com/public/?hash=" + Encoding.urlEncode(mainhashID);
-            parameter_correct = true;
-        } else if (parameter.matches(type_shortURLs_d) || parameter.matches(type_shortURLs_i)) {
-            getPage(parameter);
-            if (br.containsHTML(OFFLINE_TEXT)) {
-                final DownloadLink offline = this.createOfflinelink(parameter);
-                main.setFinalFileName(new Regex(parameter, "([A-Za-z0-9\\-_]+)$").getMatch(0));
-                decryptedLinks.add(offline);
-                return decryptedLinks;
-            }
-            mainhashID = PluginJSonUtils.getJsonValue(br, "hash");
-            if (mainhashID == null) {
+                /* 2018-04-18: This could also mean offline */
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             parameter = "https://disk.yandex.com/public/?hash=" + Encoding.urlEncode(mainhashID);
             parameter_correct = true;
         } else {
-            parameter = parameter.replace("#", "?hash=");
-            mainhashID = regexHashFromURL(parameter);
-        }
-        hash_decoded = Encoding.htmlDecode(mainhashID);
-        if (hash_decoded.contains(":/")) {
-            final Regex hashregex = new Regex(hash_decoded, "(.*?):(/.+)");
-            mainhashID = hashregex.getMatch(0);
-            path_main = hashregex.getMatch(1);
-            is_part_of_a_folder = true;
-        }
-        if (!parameter_correct) {
-            parameter = "https://disk.yandex.com/public/?hash=" + mainhashID;
-        }
-        this.br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-        this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        main.setProperty("mainlink", parameter);
-        main.setProperty("LINKDUPEID", "copydiskyandexcom" + mainhashID);
-        main.setName(mainhashID);
-        short offset = 0;
-        final short entries_per_request = 200;
-        long numberof_entries = 0;
-        long filesize_total = 0;
-        final FilePackage fp = FilePackage.getInstance();
-        do {
-            if (this.isAbort()) {
-                logger.info("Decryption aborted by user");
-                return decryptedLinks;
+            /* Crawl everything else */
+            if (parameter.matches(type_docviewer)) {
+                /* TODO: Change that --> FILE-URLs --> Should work fine then with the fixed decrypter! */
+                /* Documents in web view mode --> File-URLs! */
+                /* First lets fix broken URLs by removing unneeded parameters ... */
+                final String remove = new Regex(parameter, "(\\&[a-z0-9]+=.+)").getMatch(0);
+                if (remove != null) {
+                    parameter = parameter.replace(remove, "");
+                }
+                mainhashID = new Regex(parameter, type_docviewer).getMatch(0);
+                mainhashID = new Regex(parameter, "url=ya\\-disk\\-public%3A%2F%2F(.+)").getMatch(0);
+                String hash_temp_decoded = Encoding.htmlDecode(mainhashID);
+                fname_url = new Regex(parameter, "\\&name=([^/\\&]+)").getMatch(0);
+                if (fname_url == null) {
+                    fname_url = new Regex(hash_temp_decoded, ":/([^/]+)$").getMatch(0);
+                }
+                fname_url = Encoding.htmlDecode(fname_url);
+            } else if (parameter.matches(type_yadi_sk_mail)) {
+                mainhashID = regexHashFromURL(parameter);
+                parameter = "https://disk.yandex.com/public/?hash=" + mainhashID;
+            } else if (parameter.matches(type_shortURLs_d) || parameter.matches(type_shortURLs_i)) {
+                getPage(parameter);
+                if (br.containsHTML(OFFLINE_TEXT)) {
+                    final DownloadLink offline = this.createOfflinelink(parameter);
+                    main.setFinalFileName(new Regex(parameter, "([A-Za-z0-9\\-_]+)$").getMatch(0));
+                    decryptedLinks.add(offline);
+                    return decryptedLinks;
+                }
+                mainhashID = PluginJSonUtils.getJsonValue(br, "hash");
+                if (mainhashID == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                parameter = "https://disk.yandex.com/public/?hash=" + Encoding.urlEncode(mainhashID);
+                parameter_correct = true;
+            } else {
+                parameter = parameter.replace("#", "?hash=");
+                mainhashID = regexHashFromURL(parameter);
             }
-            getPage("https://cloud-api.yandex.net/v1/disk/public/resources?limit=" + entries_per_request + "&offset=" + offset + "&public_key=" + Encoding.urlEncode(mainhashID) + "&path=" + Encoding.urlEncode(path_main));
-            if (PluginJSonUtils.getJsonValue(br, "error") != null) {
-                main.setAvailable(false);
-                main.setProperty("offline", true);
-                main.setFinalFileName(mainhashID);
-                decryptedLinks.add(main);
-                return decryptedLinks;
+            hash_decoded = Encoding.htmlDecode(mainhashID);
+            if (hash_decoded.contains(":/")) {
+                final Regex hashregex = new Regex(hash_decoded, "(.*?):(/.+)");
+                mainhashID = hashregex.getMatch(0);
+                path_main = hashregex.getMatch(1);
+                is_part_of_a_folder = true;
             }
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
-            final String type_main = (String) entries.get("type");
-            if (!type_main.equals(JSON_TYPE_DIR)) {
-                /* We only have a single file --> Add to downloadliste / host plugin */
-                final DownloadLink dl = createDownloadlink("http://yandexdecrypted.net/" + System.currentTimeMillis() + new Random().nextInt(10000000));
-                if (jd.plugins.hoster.DiskYandexNet.apiAvailablecheckIsOffline(this.br)) {
-                    dl.setAvailable(false);
-                    dl.setProperty("offline", true);
-                    dl.setFinalFileName(mainhashID);
+            if (!parameter_correct) {
+                parameter = "https://disk.yandex.com/public/?hash=" + mainhashID;
+            }
+            this.br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+            this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            main.setProperty("mainlink", parameter);
+            main.setProperty("LINKDUPEID", "copydiskyandexcom" + mainhashID);
+            main.setName(mainhashID);
+            short offset = 0;
+            final short entries_per_request = 200;
+            long numberof_entries = 0;
+            long filesize_total = 0;
+            final FilePackage fp = FilePackage.getInstance();
+            do {
+                if (this.isAbort()) {
+                    logger.info("Decryption aborted by user");
+                    return decryptedLinks;
+                }
+                getPage("https://cloud-api.yandex.net/v1/disk/public/resources?limit=" + entries_per_request + "&offset=" + offset + "&public_key=" + Encoding.urlEncode(mainhashID) + "&path=" + Encoding.urlEncode(path_main));
+                if (PluginJSonUtils.getJsonValue(br, "error") != null) {
+                    main.setAvailable(false);
+                    main.setProperty("offline", true);
+                    main.setFinalFileName(mainhashID);
+                    decryptedLinks.add(main);
+                    return decryptedLinks;
+                }
+                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
+                final String type_main = (String) entries.get("type");
+                if (!type_main.equals(JSON_TYPE_DIR)) {
+                    /* We only have a single file --> Add to downloadliste / host plugin */
+                    final DownloadLink dl = createDownloadlink("http://yandexdecrypted.net/" + System.currentTimeMillis() + new Random().nextInt(10000000));
+                    if (jd.plugins.hoster.DiskYandexNet.apiAvailablecheckIsOffline(this.br)) {
+                        dl.setAvailable(false);
+                        dl.setProperty("offline", true);
+                        dl.setFinalFileName(mainhashID);
+                        decryptedLinks.add(dl);
+                        return decryptedLinks;
+                    }
+                    decryptSingleFile(dl, entries);
+                    if (is_part_of_a_folder) {
+                        dl.setProperty("is_part_of_a_folder", is_part_of_a_folder);
+                        /* 2017-04-07: Overwrite previously set path value with correct value. */
+                        dl.setProperty("path", path_main);
+                    }
+                    dl.setProperty("mainlink", parameter);
+                    dl.setLinkID(mainhashID + path_main);
+                    /* Required by hoster plugin to get filepath (filename) */
+                    dl.setProperty("plain_filename", PluginJSonUtils.getJsonValue(br, "name"));
                     decryptedLinks.add(dl);
                     return decryptedLinks;
                 }
-                decryptSingleFile(dl, entries);
-                if (is_part_of_a_folder) {
-                    dl.setProperty("is_part_of_a_folder", is_part_of_a_folder);
-                    /* 2017-04-07: Overwrite previously set path value with correct value. */
-                    dl.setProperty("path", path_main);
+                final String walk_string = "_embedded/items";
+                final ArrayList<Object> resource_data_list = (ArrayList) JavaScriptEngineFactory.walkJson(entries, walk_string);
+                if (offset == 0) {
+                    /* Set total number of entries on first loop. */
+                    numberof_entries = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "_embedded/total"), 0);
+                    fpName = (String) entries.get("name");
+                    if (inValidate(fpName)) {
+                        /* Maybe our folder has no name. */
+                        fpName = mainhashID;
+                    }
+                    fp.setName(fpName);
                 }
-                dl.setProperty("mainlink", parameter);
-                dl.setLinkID(mainhashID + path_main);
-                /* Required by hoster plugin to get filepath (filename) */
-                dl.setProperty("plain_filename", PluginJSonUtils.getJsonValue(br, "name"));
-                decryptedLinks.add(dl);
-                return decryptedLinks;
-            }
-            final String walk_string = "_embedded/items";
-            final ArrayList<Object> resource_data_list = (ArrayList) JavaScriptEngineFactory.walkJson(entries, walk_string);
-            if (offset == 0) {
-                /* Set total number of entries on first loop. */
-                numberof_entries = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "_embedded/total"), 0);
-                fpName = (String) entries.get("name");
-                if (inValidate(fpName)) {
-                    /* Maybe our folder has no name. */
-                    fpName = mainhashID;
-                }
-                fp.setName(fpName);
-            }
-            main.setProperty("hash_main", mainhashID);
-            mainhashID = Encoding.htmlDecode(mainhashID);
-            for (final Object list_object : resource_data_list) {
-                entries = (LinkedHashMap<String, Object>) list_object;
-                final String type = (String) entries.get("type");
-                final String hash = (String) entries.get("public_key");
-                final String path = (String) entries.get("path");
-                final String md5 = (String) entries.get("md5");
-                final String url_preview = (String) entries.get("preview");
-                if (type == null || path == null) {
-                    return null;
-                }
-                String name = (String) entries.get("name");
-                if (type.equals(JSON_TYPE_DIR)) {
-                    /* Subfolders go back into our decrypter! */
-                    final String folderlink = "https://disk.yandex.com/public/?hash=" + Encoding.urlEncode(hash) + "%3A" + Encoding.urlEncode(path);
-                    decryptedLinks.add(createDownloadlink(folderlink));
-                } else {
-                    if (name == null || hash == null) {
+                main.setProperty("hash_main", mainhashID);
+                mainhashID = Encoding.htmlDecode(mainhashID);
+                for (final Object list_object : resource_data_list) {
+                    entries = (LinkedHashMap<String, Object>) list_object;
+                    final String type = (String) entries.get("type");
+                    final String hash = (String) entries.get("public_key");
+                    final String path = (String) entries.get("path");
+                    final String md5 = (String) entries.get("md5");
+                    final String url_preview = (String) entries.get("preview");
+                    if (type == null || path == null) {
                         return null;
                     }
-                    final DownloadLink dl = createDownloadlink("http://yandexdecrypted.net/" + System.currentTimeMillis() + new Random().nextInt(10000000));
-                    decryptSingleFile(dl, entries);
-                    final String url_content;
-                    if (url_preview != null) {
-                        /*
-                         * Given preview URLs are bullshit as trhey only e.g. link to a thumbnail of a .pdf file - but we know how to build
-                         * good "open in browser" content URLs ...
-                         */
-                        url_content = "https://docviewer.yandex.com/?url=ya-disk-public%3A%2F%2F" + Encoding.urlEncode(hash) + "%3A" + Encoding.urlEncode(path);
+                    String name = (String) entries.get("name");
+                    if (type.equals(JSON_TYPE_DIR)) {
+                        /* Subfolders go back into our decrypter! */
+                        final String folderlink = "https://disk.yandex.com/public/?hash=" + Encoding.urlEncode(hash) + "%3A" + Encoding.urlEncode(path);
+                        decryptedLinks.add(createDownloadlink(folderlink));
                     } else {
-                        /*
-                         * We do not have any URL - set main URL.
-                         */
-                        url_content = "https://disk.yandex.com/public/?hash=" + Encoding.urlEncode(hash);
+                        if (name == null || hash == null) {
+                            return null;
+                        }
+                        final DownloadLink dl = createDownloadlink("http://yandexdecrypted.net/" + System.currentTimeMillis() + new Random().nextInt(10000000));
+                        decryptSingleFile(dl, entries);
+                        final String url_content;
+                        if (url_preview != null) {
+                            /*
+                             * Given preview URLs are bullshit as trhey only e.g. link to a thumbnail of a .pdf file - but we know how to
+                             * build good "open in browser" content URLs ...
+                             */
+                            url_content = "https://docviewer.yandex.com/?url=ya-disk-public%3A%2F%2F" + Encoding.urlEncode(hash) + "%3A" + Encoding.urlEncode(path);
+                        } else {
+                            /*
+                             * We do not have any URL - set main URL.
+                             */
+                            url_content = "https://disk.yandex.com/public/?hash=" + Encoding.urlEncode(hash);
+                        }
+                        dl.setProperty("hash_main", hash);
+                        dl.setProperty("mainlink", url_content);
+                        if (md5 != null) {
+                            /* md5 hash is usually given */
+                            dl.setMD5Hash(md5);
+                        }
+                        /* All items decrypted here are part of a folder! */
+                        dl.setProperty("is_part_of_a_folder", true);
+                        dl.setContentUrl(url_content);
+                        dl.setLinkID(hash + path);
+                        dl._setFilePackage(fp);
+                        decryptedLinks.add(dl);
+                        distribute(dl);
+                        filesize_total += dl.getDownloadSize();
                     }
-                    dl.setProperty("hash_main", hash);
-                    dl.setProperty("mainlink", url_content);
-                    if (md5 != null) {
-                        /* md5 hash is usually given */
-                        dl.setMD5Hash(md5);
-                    }
-                    /* All items decrypted here are part of a folder! */
-                    dl.setProperty("is_part_of_a_folder", true);
-                    dl.setContentUrl(url_content);
-                    dl.setLinkID(hash + path);
-                    dl._setFilePackage(fp);
-                    decryptedLinks.add(dl);
-                    distribute(dl);
-                    filesize_total += dl.getDownloadSize();
+                    offset++;
                 }
-                offset++;
+                if (resource_data_list.size() < entries_per_request) {
+                    /* Fail safe */
+                    break;
+                }
+            } while (offset < numberof_entries);
+            if (decryptedLinks.size() == 0) {
+                /* Should never happen! */
+                logger.info("Probably empty folder");
+                return decryptedLinks;
             }
-            if (resource_data_list.size() < entries_per_request) {
-                /* Fail safe */
-                break;
+            /* Only add main .zip link if the user added the ROOT link, otherwise we get the ROOT as .zip anyways which makes no sense. */
+            final boolean is_root_folder = path_main.equals("/");
+            if (is_root_folder && SubConfiguration.getConfig("disk.yandex.net").getBooleanProperty(DOWNLOAD_ZIP, false)) {
+                /* User wants a .zip file of the complete (sub) folder --> Do that */
+                main.setFinalFileName(fpName + ".zip");
+                main.setProperty("plain_filename", fpName + ".zip");
+                main.setProperty("path", path_main);
+                main.setProperty("is_zipped_folder", true);
+                main.setContentUrl(parameter);
+                main.setLinkID(mainhashID + path_main);
+                main.setDownloadSize(filesize_total);
+                main.setAvailable(true);
+                decryptedLinks.add(main);
             }
-        } while (offset < numberof_entries);
-        if (decryptedLinks.size() == 0) {
-            /* Should never happen! */
-            logger.info("Probably empty folder");
-            return decryptedLinks;
-        }
-        /* Only add main .zip link if the user added the ROOT link, otherwise we get the ROOT as .zip anyways which makes no sense. */
-        final boolean is_root_folder = path_main.equals("/");
-        if (is_root_folder && SubConfiguration.getConfig("disk.yandex.net").getBooleanProperty(DOWNLOAD_ZIP, false)) {
-            /* User wants a .zip file of the complete (sub) folder --> Do that */
-            main.setFinalFileName(fpName + ".zip");
-            main.setProperty("plain_filename", fpName + ".zip");
-            main.setProperty("path", path_main);
-            main.setProperty("is_zipped_folder", true);
-            main.setContentUrl(parameter);
-            main.setLinkID(mainhashID + path_main);
-            main.setDownloadSize(filesize_total);
-            main.setAvailable(true);
-            decryptedLinks.add(main);
         }
         return decryptedLinks;
     }
