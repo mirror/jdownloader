@@ -75,12 +75,17 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         return null;
     }
 
-    private void getPage(CryptedLink link, final Browser br, String url, final String rhxGis, final String variables) throws IOException, InterruptedException {
+    private void getPage(CryptedLink link, final Browser br, String url, final String rhxGis, final String variables) throws Exception {
         int retry = 0;
         while (retry < 10) {
             final GetRequest get = br.createGetRequest(url);
             if (rhxGis != null && variables != null) {
-                final String sig = Hash.getMD5(rhxGis + ":" + br.getCookie(getHost(), "csrftoken") + ":" + variables);
+                if (true) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                // final String sig = Hash.getMD5(rhxGis + ":" + br.getCookie(getHost(), "csrftoken") + ":" + variables);
+                final String path = get.getURL().getPath();
+                final String sig = Hash.getMD5(rhxGis + ":" + path);
                 get.getHeaders().put("X-Instagram-GIS", sig);
             }
             br.getPage(get);
