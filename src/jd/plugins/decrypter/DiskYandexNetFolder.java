@@ -72,9 +72,9 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         if (parameter.matches(type_yadi_sk_album)) {
             /* Crawl albums */
             /* 2018-02-07: Not yet supported */
-            // if (true) {
-            // return null;
-            // }
+            if (true) {
+                return null;
+            }
             getPage(parameter);
             if (br.containsHTML(OFFLINE_TEXT)) {
                 final DownloadLink offline = this.createOfflinelink(parameter);
