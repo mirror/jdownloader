@@ -90,13 +90,13 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             br.getPage(get);
             final int responsecode = br.getHttpConnection().getResponseCode();
             if (responsecode == 502) {
-                sleep(20000 + 5000 * retry++, link);
+                sleep(20000 + 15000 * retry++, link);
             } else if (responsecode == 403 || responsecode == 429) {
                 if (SubConfiguration.getConfig(this.getHost()).getBooleanProperty(jd.plugins.hoster.InstaGramCom.QUIT_ON_RATE_LIMIT_REACHED, jd.plugins.hoster.InstaGramCom.defaultQUIT_ON_RATE_LIMIT_REACHED)) {
                     logger.info("abort_on_rate_limit_reached setting active --> Rate limit has been reached --> Aborting");
                     break;
                 } else {
-                    sleep(20000 + 5000 * retry++, link);
+                    sleep(20000 + 15000 * retry++, link);
                 }
             } else {
                 break;
