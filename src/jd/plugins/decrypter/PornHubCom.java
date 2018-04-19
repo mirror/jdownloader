@@ -187,16 +187,19 @@ public class PornHubCom extends PluginForDecrypt {
             final DownloadLink dl = this.createOfflinelink(parameter);
             dl.setFinalFileName("viewkey=" + viewkey);
             decryptedLinks.add(dl);
+            logger.info("Debug info: isOffline: " + parameter);
             return;
         }
         if (br.containsHTML(jd.plugins.hoster.PornHubCom.html_privatevideo)) {
             final DownloadLink dl = this.createOfflinelink(parameter);
             dl.setFinalFileName("This_video_is_private_" + fpName + ".mp4");
             decryptedLinks.add(dl);
+            logger.info("Debug info: html_privatevideo: " + parameter);
             return;
         }
         if (br.containsHTML(jd.plugins.hoster.PornHubCom.html_premium_only)) {
             decryptedLinks.add(createOfflinelink(parameter, fpName + ".mp4", "Private_video_Premium_required"));
+            logger.info("Debug info: html_premium_only: " + parameter);
             return;
         }
         final LinkedHashMap<String, String> foundLinks_all = jd.plugins.hoster.PornHubCom.getVideoLinksFree(br);
