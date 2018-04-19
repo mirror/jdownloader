@@ -134,6 +134,8 @@ public class NocoTv extends PluginForHost {
                 }
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, ONLYPREMIUMUSERTEXT);
+        } else if (StringUtils.isEmpty(dllink)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -218,14 +220,14 @@ public class NocoTv extends PluginForHost {
         if (aa != null && br.getCookie(MAINPAGE, "bbpassword") == null) {
             login(aa, false);
         }
-        String dllink = downloadLink.getDownloadURL();
-        br.getPage(dllink);
+        final String url = downloadLink.getDownloadURL();
+        br.getPage(url);
         if (this.br.containsHTML("Erreur : émission non trouvée")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>Nolife Online \\- ([^<>\"]+)</title>").getMatch(0);
         if (filename == null) {
-            filename = new Regex(dllink, "https?://[^/]+/(.+)").getMatch(0);
+            filename = new Regex(url, "https?://[^/]+/(.+)").getMatch(0);
             if (filename == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
