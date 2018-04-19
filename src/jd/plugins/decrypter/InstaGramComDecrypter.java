@@ -80,13 +80,12 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         while (retry < 10) {
             final GetRequest get = br.createGetRequest(url);
             if (rhxGis != null && variables != null) {
-                if (true) {
+                if (false) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
+                    final String sig = Hash.getMD5(rhxGis + ":" + variables);
+                    get.getHeaders().put("X-Instagram-GIS", sig);
                 }
-                // final String sig = Hash.getMD5(rhxGis + ":" + br.getCookie(getHost(), "csrftoken") + ":" + variables);
-                final String path = get.getURL().getPath();
-                final String sig = Hash.getMD5(rhxGis + ":" + path);
-                get.getHeaders().put("X-Instagram-GIS", sig);
             }
             br.getPage(get);
             final int responsecode = br.getHttpConnection().getResponseCode();
@@ -257,7 +256,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                     br.getHeaders().put("Accept", "*/*");
                     final Map<String, Object> vars = new HashMap<String, Object>();
                     vars.put("id", id_owner);
-                    vars.put("first", 100);
+                    vars.put("first", 12);
                     vars.put("after", nextid);
                     if (queryHash == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
