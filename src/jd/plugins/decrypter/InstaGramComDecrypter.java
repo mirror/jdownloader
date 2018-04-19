@@ -77,7 +77,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
 
     private void getPage(CryptedLink link, final Browser br, String url, final String rhxGis, final String variables) throws Exception {
         int retry = 0;
-        while (retry < 10) {
+        while (retry < 10 && !isAbort()) {
             final GetRequest get = br.createGetRequest(url);
             if (rhxGis != null && variables != null) {
                 if (false) {
