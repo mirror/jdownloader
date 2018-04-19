@@ -187,6 +187,9 @@ public abstract class PluginForDecrypt extends Plugin {
             synchronized (this) {
                 this.wait(1000);
             }
+            if (isAbort()) {
+                throw new InterruptedException();
+            }
         }
     }
 
