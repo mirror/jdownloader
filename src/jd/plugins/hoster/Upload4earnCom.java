@@ -1365,7 +1365,7 @@ public class Upload4earnCom extends antiDDoSForHost {
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force) {
-                    br.setCookies(this.getHost(), cookies);
+                    br.setCookies(COOKIE_HOST, cookies);
                     return;
                 }
                 getPage(COOKIE_HOST + "/login.html");
@@ -1404,7 +1404,7 @@ public class Upload4earnCom extends antiDDoSForHost {
                 } else {
                     account.setType(AccountType.PREMIUM);
                 }
-                account.saveCookies(br.getCookies(this.getHost()), "");
+                account.saveCookies(br.getCookies(COOKIE_HOST), "");
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
