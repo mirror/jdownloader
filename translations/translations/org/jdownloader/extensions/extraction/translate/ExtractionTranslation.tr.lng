@@ -88,6 +88,7 @@ plugins_optional_extraction_status_extractok=Çıkartma TAMAM
 plugins_optional_extraction_status_notenoughspace=Çıkartma için yeterli alan yok
 plugins_optional_extraction_status_openingarchive2=Çıkartma yürütülüyor
 plugins_optional_extraction_status_passfound=Parola bulundu
+plugins_optional_extraction_status_pausedForOtherCrc=Duraklatıldı - tamamlamak için diğer crc kontrolü bekleniyor
 plugins_optional_extraction_status_queued=Çıkartma için kuyruğa alındı
 properties=Alt Yol Özellikleri
 set_autoextract_false=Otomatik çıkartma artık etkisiz
