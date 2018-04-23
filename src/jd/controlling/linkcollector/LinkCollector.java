@@ -406,6 +406,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     public void onCrawlerFinished(LinkCollectorCrawler crawledLinkCrawler) {
         getEventsender().removeListener(crawledLinkCrawler);
         eventsender.fireEvent(new LinkCollectorEvent(this, LinkCollectorEvent.TYPE.CRAWLER_FINISHED, crawledLinkCrawler, QueuePriority.NORM));
+        autoStartManager.onCrawlerFinished(crawledLinkCrawler);
     }
 
     public void onCrawlerStarted(LinkCollectorCrawler crawledLinkCrawler) {
@@ -1324,9 +1325,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     *
+     * 
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     *
+     * 
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, java.util.List<CrawledLink> plinks) {
