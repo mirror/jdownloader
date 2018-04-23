@@ -342,13 +342,6 @@ public class DownloadLinkSandBox {
         return downloadLink.getName();
     }
 
-    public FilePackageSandBox getPackage() {
-        if (downloadLink == null) {
-            return new FilePackageSandBox();
-        }
-        return new FilePackageSandBox(downloadLink.getParentNode());
-    }
-
     public long getSpeed() {
         if (downloadLink != null) {
             return downloadLink.getView().getSpeedBps();
@@ -448,6 +441,15 @@ public class DownloadLinkSandBox {
             return ((DownloadLinkSandBox) obj).downloadLink == downloadLink;
         } else {
             return super.equals(obj);
+        }
+    }
+
+    public FilePackageSandBox getPackage() {
+        final FilePackage fp = downloadLink != null ? downloadLink.getFilePackage() : null;
+        if (fp == null || FilePackage.isDefaultFilePackage(fp)) {
+            return null;
+        } else {
+            return new FilePackageSandBox(fp);
         }
     }
 
