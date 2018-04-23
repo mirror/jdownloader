@@ -264,10 +264,12 @@ public class CrawledLinkSandbox {
     }
 
     public CrawledPackageSandbox getPackage() {
-        if (link == null) {
-            return new CrawledPackageSandbox();
+        final CrawledPackage pkg = link != null ? link.getParentNode() : null;
+        if (pkg != null) {
+            return new CrawledPackageSandbox(pkg);
+        } else {
+            return null;
         }
-        return new CrawledPackageSandbox(link.getParentNode());
     }
 
     public String getHost() {

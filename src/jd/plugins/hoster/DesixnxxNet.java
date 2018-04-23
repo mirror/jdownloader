@@ -71,10 +71,10 @@ public class DesixnxxNet extends PluginForHost {
         final String filename = getFilename(this.br, link.getDownloadURL());
         dllink = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(https?[^<>\"]*?)\\'").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("(?:file|url):[\t\n\r ]*?(?:\"|\\')(https?[^<>\"]*?)(?:\"|\\')").getMatch(0);
+            dllink = br.getRegex("(?:file|url):[\t\n\r ]*?(\"|\\')\\s*(https?[^<>\"]*?)\\s*(\\1)").getMatch(1);
         }
         if (dllink == null) {
-            dllink = br.getRegex("<source src=(?:\"|\\')(https?://[^<>\"]*?)(?:\"|\\') type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
+            dllink = br.getRegex("<source src=(\"|\\')\\s*(https?://[^<>\"]*?)\\s*(\\1)[^<>]*type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(1);
         }
         if (dllink == null) {
             dllink = br.getRegex("property=\"og:video\" content=\"(http[^<>\"]*?)\"").getMatch(0);

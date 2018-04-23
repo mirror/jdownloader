@@ -15,15 +15,10 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 import jd.PluginWrapper;
 import jd.http.Cookie;
@@ -41,6 +36,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extmatrix.com" }, urls = { "https?://(www\\.)?extmatrix\\.com/(files|get)/[A-Za-z0-9]+" })
 public class ExtMatrixCom extends PluginForHost {
@@ -122,16 +121,12 @@ public class ExtMatrixCom extends PluginForHost {
             if (con.getContentType().contains("html")) {
                 br.followConnection();
                 final String action = br.getRegex("\"(https?://s\\d+\\.extmatrix\\.com/get/[A-Za-z0-9]+/\\d+/[^<>\"]*?)\"").getMatch(0);
-                final String rcID = br.getRegex("Recaptcha\\.create\\(\"([^<>\"]*?)\"").getMatch(0);
-                if (rcID == null || action == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br);
+                final String recaptchaV2Response = rc2.getToken();
+                if (recaptchaV2Response == null) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
-                final Recaptcha rc = new Recaptcha(br, this);
-                rc.setId(rcID);
-                rc.load();
-                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                String c = getCaptchaCode("recaptcha", cf, downloadLink);
-                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, action, "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c + "&task=download", true, 1);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, action, "&g-recaptcha-response=" + recaptchaV2Response + "&task=download", true, 1);
             } else {
                 dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, getLink, true, 1);
             }
@@ -148,11 +143,11 @@ public class ExtMatrixCom extends PluginForHost {
             if (br.containsHTML("Server is too busy for free users")) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots", 10 * 60 * 1000l);
             }
-            if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            }
             if (br.containsHTML("(files per hour for free users\\.</div>|>Los usuarios de Cuenta Gratis pueden descargar|hours for free users\\.|var time =)")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
+            }
+            if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/|\"g-recaptcha\")")) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
             final String unknownError = br.getRegex("class=\"error\">(.*?)\"").getMatch(0);
             if (unknownError != null) {

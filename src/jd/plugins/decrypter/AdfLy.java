@@ -41,7 +41,7 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class AdfLy extends antiDDoSForDecrypt {
     private static final String[] domains = { "adf.ly", "j.gs", "q.gs", "ay.gy", "zo.ee", "babblecase.com", "riffhold.com", "microify.com", "pintient.com", "tinyium.com", "atominik.com", "bluenik.com", "bitigee.com", "atomcurve.com", "picocurl.com", "tinyical.com", "casualient.com", "battleate.com", "mmoity.com", "simizer.com", "dataurbia.com", "viahold.com", "coginator.com", "cogismith.com", "kaitect.com", "yoalizer.com", "kibuilder.com", "kimechanic.com", "quainator.com", "tinyium.com", "pintient.com", "quamiller.com", "yobuilder.com", "skamason.com", "twineer.com", "vializer.com", "viwright.com", "yabuilder.com", "yamechanic.com", "kializer.com", "yoineer.com", "skamaker.com", "yoitect.com", "activeation.com", "brisktopia.com", "queuecosm.bid", "nimbleinity.com", "rapidtory.com", "swiftation.com", "velocicosm.com", "zipteria.com", "zipvale.com", "agileurbia.com", "briskrange.com",
-        "threadsphere.bid", "dashsphere.com", "fasttory.com", "rapidteria.com", "sprysphere.com", "swifttopia.com", "restorecosm.bid", "bullads.net", "velociterium.com",
+        "threadsphere.bid", "dashsphere.com", "fasttory.com", "rapidteria.com", "sprysphere.com", "swifttopia.com", "restorecosm.bid", "bullads.net", "velociterium.com", "zipansion.com",
         /** <-- full domains & subdomains --> */
         "chathu.apkmania.co", "alien.apkmania.co", "adf.acb.im", "packs.redmusic.pl", "packs2.redmusic.pl", "dl.android-zone.org", "out.unionfansub.com", "sostieni.ilwebmaster21.com", "fuyukai-desu.garuda-raws.net" };
 
@@ -133,7 +133,7 @@ public class AdfLy extends antiDDoSForDecrypt {
                 // we assume they are http
                 linkInsideLink = "http://" + linkInsideLink;
             }
-            if (!linkInsideLink.matches(hosts + "/.+")) {
+            if (!linkInsideLink.matches(hosts + "/.+") && linkInsideLink.matches("(.+)\\.(.+)")) {
                 // lets try dns method to verify if the link is actually valid
                 // re: https://board.jdownloader.org/showthread.php?p=363462#post363462
                 InetAddress[] inetAddress = null;
