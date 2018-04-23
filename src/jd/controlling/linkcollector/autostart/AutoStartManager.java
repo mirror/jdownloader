@@ -2,10 +2,12 @@ package jd.controlling.linkcollector.autostart;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.WeakHashMap;
 
 import jd.controlling.linkcollector.LinkCollectingInformation;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
+import jd.controlling.linkcollector.LinkCollectorCrawler;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
@@ -132,11 +134,34 @@ public class AutoStartManager implements GenericConfigEventListener<Boolean> {
         };
     }
 
+    private final WeakHashMap<LinkCollectorCrawler, Boolean> resetMap = new WeakHashMap<LinkCollectorCrawler, Boolean>();
+
+    public void onCrawlerFinished(LinkCollectorCrawler linkCrawler) {
+        final Boolean resetFlag;
+        synchronized (resetMap) {
+            resetFlag = resetMap.get(linkCrawler);
+        }
+        if (Boolean.TRUE.equals(resetFlag)) {
+            delayer.resetAndStart();
+            if (eventSender.hasListener()) {
+                eventSender.fireEvent(new AutoStartManagerEvent(this, AutoStartManagerEvent.Type.RESET));
+            }
+        }
+    }
+
     public void onLinkAdded(CrawledLink link) {
         if (globalAutoStart || globalAutoConfirm || link.isAutoConfirmEnabled() || link.isAutoStartEnabled() || link.isForcedAutoStartEnabled()) {
             final LinkCollectingInformation collectingInfo = link.getCollectingInfo();
-            if (collectingInfo != null && collectingInfo.getLinkCrawler().isCollecting() && delayer.getMaximumDelay() == -1) {
-                return;
+            if (collectingInfo != null) {
+                synchronized (resetMap) {
+                    resetMap.put(collectingInfo.getLinkCrawler(), Boolean.TRUE);
+                }
+                if (collectingInfo.getLinkCrawler().isCollecting() && delayer.getMaximumDelay() == -1) {
+                    return;
+                }
+                synchronized (resetMap) {
+                    resetMap.remove(collectingInfo.getLinkCrawler());
+                }
             }
             delayer.resetAndStart();
             if (eventSender.hasListener()) {
