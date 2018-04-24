@@ -306,11 +306,11 @@ public class FileAl extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "freelink");
+        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "freelink", null);
     }
 
     @SuppressWarnings({ "unused", "deprecation" })
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty, final Account account) throws Exception, PluginException {
         br.setFollowRedirects(false);
         passCode = downloadLink.getStringProperty("pass");
         /* First, bring up saved final links */
@@ -374,12 +374,12 @@ public class FileAl extends PluginForHost {
         }
         /* Fourth, continue like normal */
         if (dllink == null) {
-            checkErrors(downloadLink, false);
+            checkErrors(downloadLink, false, account);
             final Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
                 download1.remove("method_premium");
                 submitForm(download1);
-                checkErrors(downloadLink, false);
+                checkErrors(downloadLink, false, account);
                 dllink = getDllink();
             }
         }
@@ -495,7 +495,7 @@ public class FileAl extends PluginForHost {
                 }
                 submitForm(dlForm);
                 logger.info("Submitted DLForm");
-                checkErrors(downloadLink, true);
+                checkErrors(downloadLink, true, account);
                 dllink = getDllink();
                 if (dllink == null && (!br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"") || i == repeat)) {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
@@ -525,7 +525,7 @@ public class FileAl extends PluginForHost {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             correctBR();
-            checkServerErrors();
+            checkServerErrors(null);
             handlePluginBroken(downloadLink, "dllinknofile", 3);
         }
         downloadLink.setProperty(directlinkproperty, dllink);
@@ -881,7 +881,7 @@ public class FileAl extends PluginForHost {
         return passCode;
     }
 
-    private void checkErrors(final DownloadLink theLink, final boolean checkAll) throws NumberFormatException, PluginException {
+    private void checkErrors(final DownloadLink theLink, final boolean checkAll, final Account account) throws NumberFormatException, PluginException {
         if (checkAll) {
             if (new Regex(correctedBR, PASSWORDTEXT).matches() && correctedBR.contains("Wrong password")) {
                 /* handle password has failed in the past, additional try catching / resetting values */
@@ -896,6 +896,11 @@ public class FileAl extends PluginForHost {
             }
             if (correctedBR.contains("\">Skipped countdown<")) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Fatal countdown error (countdown skipped)");
+            }
+        }
+        if (new Regex(correctedBR, "Anonymous proxies and hosting providers are forbidden").matches()) {
+            if (account != null) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Anonymous proxies and hosting providers are forbidden", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
         }
         /** Wait time reconnect handling */
@@ -985,7 +990,7 @@ public class FileAl extends PluginForHost {
         }
     }
 
-    private void checkServerErrors() throws NumberFormatException, PluginException {
+    private void checkServerErrors(Account account) throws NumberFormatException, PluginException {
         if (new Regex(correctedBR, Pattern.compile("No file", Pattern.CASE_INSENSITIVE)).matches()) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: 'no file'", 2 * 60 * 60 * 1000l);
         }
@@ -994,6 +999,11 @@ public class FileAl extends PluginForHost {
         }
         if (new Regex(correctedBR, "(File Not Found|<h1>404 Not Found</h1>)").matches()) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error (404)", 30 * 60 * 1000l);
+        }
+        if (new Regex(correctedBR, "Anonymous proxies and hosting providers are forbidden").matches()) {
+            if (account != null) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Anonymous proxies and hosting providers are forbidden", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
         }
     }
 
@@ -1182,7 +1192,7 @@ public class FileAl extends PluginForHost {
         login(account, false);
         if (account.getBooleanProperty("nopremium")) {
             requestFileInformation(downloadLink);
-            doFree(downloadLink, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "freelink2");
+            doFree(downloadLink, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "freelink2", account);
         } else {
             String dllink = checkDirectLink(downloadLink, "premlink");
             if (dllink == null) {
@@ -1194,12 +1204,12 @@ public class FileAl extends PluginForHost {
                     if (dlform != null && new Regex(correctedBR, PASSWORDTEXT).matches()) {
                         passCode = handlePassword(dlform, downloadLink);
                     }
-                    checkErrors(downloadLink, true);
+                    checkErrors(downloadLink, true, account);
                     if (dlform == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     submitForm(dlform);
-                    checkErrors(downloadLink, true);
+                    checkErrors(downloadLink, true, account);
                     dllink = getDllink();
                 }
             }
@@ -1216,7 +1226,7 @@ public class FileAl extends PluginForHost {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
                 correctBR();
-                checkServerErrors();
+                checkServerErrors(account);
                 handlePluginBroken(downloadLink, "dllinknofile", 3);
             }
             fixFilename(downloadLink);
