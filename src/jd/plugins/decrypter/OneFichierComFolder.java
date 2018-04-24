@@ -60,8 +60,8 @@ public class OneFichierComFolder extends PluginForDecrypt {
         }
         // passCode != null, post handling seems to respond with html instead of what's preferred below.
         if (password == null && "text/plain; charset=utf-8".equals(jsonBR.getHttpConnection().getContentType())) {
-            String[][] linkInfo = jsonBR.getRegex("(https?://[a-z0-9\\-]+\\..*?);([^;]+);([0-9]+)").getMatches();
-            for (String singleLinkInfo[] : linkInfo) {
+            final String[][] linkInfo1 = jsonBR.getRegex("(https?://[a-z0-9\\-]+\\..*?);([^;]+);([0-9]+)").getMatches();
+            for (String singleLinkInfo[] : linkInfo1) {
                 final DownloadLink dl = createDownloadlink(singleLinkInfo[0]);
                 dl.setFinalFileName(Encoding.htmlDecode(singleLinkInfo[1].trim()));
                 dl.setVerifiedFileSize(Long.parseLong(singleLinkInfo[2]));
