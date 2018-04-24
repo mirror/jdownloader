@@ -336,7 +336,8 @@ public enum EventTrigger implements LabelInterface {
         }
 
         public HashMap<String, Object> getTestProperties() {
-            HashMap<String, Object> props = new HashMap<String, Object>();
+            final HashMap<String, Object> props = new HashMap<String, Object>();
+            props.put("hasPendingJobs", Boolean.FALSE);
             return props;
         }
 
@@ -356,9 +357,10 @@ public enum EventTrigger implements LabelInterface {
         }
 
         public HashMap<String, Object> getTestProperties() {
-            HashMap<String, Object> props = new HashMap<String, Object>();
+            final HashMap<String, Object> props = new HashMap<String, Object>();
             props.put("solver", new String[] { "jac.JACSolver", "dialog.DialogBasicCaptchaSolver", "9kw.Captcha9kwSolver" });
             props.put("solved", true);
+            props.put("hasPendingJobs", Boolean.FALSE);
             props.put("result", "aBcd");
             return props;
         }
