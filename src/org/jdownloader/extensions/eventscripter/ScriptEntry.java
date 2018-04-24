@@ -7,15 +7,12 @@ import org.appwork.storage.Storable;
 import org.jdownloader.controlling.UniqueAlltimeID;
 
 public class ScriptEntry implements Storable {
-
     public ScriptEntry(/* Storable */) {
-
     }
 
     private EventTrigger          eventTrigger;
     private boolean               enabled;
     private String                name;
-
     private final UniqueAlltimeID uniqueAlltimeID = new UniqueAlltimeID();
 
     public long getID() {
@@ -65,8 +62,9 @@ public class ScriptEntry implements Storable {
         final EventTrigger eventTrigger = this.eventTrigger;
         if (eventTrigger == null) {
             return EventTrigger.NONE;
+        } else {
+            return eventTrigger;
         }
-        return eventTrigger;
     }
 
     public void setEventTrigger(EventTrigger eventTrigger) {

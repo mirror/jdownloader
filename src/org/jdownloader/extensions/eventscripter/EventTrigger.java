@@ -71,7 +71,6 @@ public enum EventTrigger implements LabelInterface {
         public String getAPIDescription() {
             return ON_DOWNLOAD_CONTROLLER_START.getAPIDescription();
         }
-
     },
     ON_PACKAGE_FINISHED {
         @Override
@@ -88,7 +87,6 @@ public enum EventTrigger implements LabelInterface {
         public String getAPIDescription() {
             return defaultAPIDescription(this);
         }
-
     },
     ON_GENERIC_EXTRACTION {
         @Override
@@ -106,7 +104,6 @@ public enum EventTrigger implements LabelInterface {
         public String getAPIDescription() {
             return defaultAPIDescription(this);
         }
-
     },
     ON_ARCHIVE_EXTRACTED {
         @Override
@@ -123,7 +120,6 @@ public enum EventTrigger implements LabelInterface {
         public String getAPIDescription() {
             return defaultAPIDescription(this);
         }
-
     },
     ON_JDOWNLOADER_STARTED {
         @Override
@@ -138,14 +134,12 @@ public enum EventTrigger implements LabelInterface {
         public String getAPIDescription() {
             return NONE.getAPIDescription();
         }
-
     },
     NONE {
         @Override
         public String getLabel() {
             return T.T.NONE();
         }
-
     },
     ON_OUTGOING_REMOTE_API_EVENT {
         @Override
@@ -156,14 +150,12 @@ public enum EventTrigger implements LabelInterface {
         public HashMap<String, Object> getTestProperties() {
             HashMap<String, Object> props = new HashMap<String, Object>();
             props.put("event", new EventSandbox());
-
             return props;
         }
 
         public String getAPIDescription() {
             return defaultAPIDescription(this);
         }
-
     },
     ON_NEW_FILE {
         @Override
@@ -173,10 +165,8 @@ public enum EventTrigger implements LabelInterface {
 
         public HashMap<String, Object> getTestProperties() {
             HashMap<String, Object> props = new HashMap<String, Object>();
-
             props.put("files", new String[] { Application.getResource("license.txt").getAbsolutePath() });
             props.put("caller", DownloadController.class.getName());
-
             return props;
         }
 
@@ -185,7 +175,6 @@ public enum EventTrigger implements LabelInterface {
             sb.append(T.T.properties_for_eventtrigger(getLabel())).append("\r\n");
             sb.append("var myStringArray=files;").append("\r\n");
             sb.append("var myString=caller; /*Who created the files*/").append("\r\n");
-
             return sb.toString();
         }
     },
@@ -202,9 +191,7 @@ public enum EventTrigger implements LabelInterface {
 
         public HashMap<String, Object> getTestProperties() {
             HashMap<String, Object> props = new HashMap<String, Object>();
-
             props.put("job", new CrawlerJobSandbox());
-
             return props;
         }
 
@@ -227,7 +214,6 @@ public enum EventTrigger implements LabelInterface {
             HashMap<String, Object> props = new HashMap<String, Object>();
             props.put("linkcheckDone", true);
             props.put("link", new PackagizerLinkSandbox());
-
             return props;
         }
 
@@ -248,7 +234,6 @@ public enum EventTrigger implements LabelInterface {
 
         public HashMap<String, Object> getTestProperties() {
             HashMap<String, Object> props = new HashMap<String, Object>();
-
             return props;
         }
 
@@ -269,7 +254,6 @@ public enum EventTrigger implements LabelInterface {
 
         public HashMap<String, Object> getTestProperties() {
             HashMap<String, Object> props = new HashMap<String, Object>();
-
             return props;
         }
 
@@ -290,7 +274,6 @@ public enum EventTrigger implements LabelInterface {
 
         public HashMap<String, Object> getTestProperties() {
             HashMap<String, Object> props = new HashMap<String, Object>();
-
             return props;
         }
 
@@ -298,7 +281,6 @@ public enum EventTrigger implements LabelInterface {
             return defaultAPIDescription(this);
         }
     },
-
     RECONNECT_BEFORE {
         @Override
         public String getLabel() {
@@ -335,6 +317,26 @@ public enum EventTrigger implements LabelInterface {
             HashMap<String, Object> props = new HashMap<String, Object>();
             props.put("result", ReconnectResult.SUCCESSFUL.name());
             props.put("method", LiveHeaderReconnect.class.getSimpleName());
+            return props;
+        }
+
+        public String getAPIDescription() {
+            return defaultAPIDescription(this);
+        }
+    },
+    CAPTCHA_CHALLENGE_BEFORE {
+        @Override
+        public String getLabel() {
+            return T.T.CAPTCHA_CHALLENGE_BEFORE();
+        }
+
+        public boolean isDefaultSynchronous() {
+            // scripts should be able to modify the link
+            return true;
+        }
+
+        public HashMap<String, Object> getTestProperties() {
+            HashMap<String, Object> props = new HashMap<String, Object>();
             return props;
         }
 
@@ -386,7 +388,6 @@ public enum EventTrigger implements LabelInterface {
                     setSynchronous(settings, checkBox.isSelected());
                 };
             };
-
             ret.addPair(T.T.interval_settings(), null, spinner);
             ret.addDescriptionPlain(T.T.synchronous_desc());
             ret.addPair(T.T.synchronous(), null, checkBox);
@@ -401,7 +402,6 @@ public enum EventTrigger implements LabelInterface {
         public HashMap<String, Object> getTestProperties() {
             HashMap<String, Object> props = new HashMap<String, Object>();
             props.put("interval", 1000);
-
             return props;
         }
 
@@ -424,24 +424,19 @@ public enum EventTrigger implements LabelInterface {
                 };
             };
             ret.add(new JLabel(T.T.TOOLBAR_BUTTON_explain()), "spanx");
-
             SettingsButton toolbarManager = new SettingsButton(new AppAction() {
                 {
                     setName(_GUI.T.gui_config_menumanager_toolbar());
-
                 }
 
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     new EDTRunner() {
-
                         @Override
                         protected void runInEDT() {
-
                             MenuManagerMainToolbar.getInstance().openGui();
                         }
                     };
-
                 }
             });
             ret.addPair("", null, toolbarManager);
@@ -458,7 +453,6 @@ public enum EventTrigger implements LabelInterface {
         public HashMap<String, Object> getTestProperties() {
             HashMap<String, Object> props = new HashMap<String, Object>();
             props.put("name", "MyMenuButton");
-
             return props;
         }
 
@@ -475,30 +469,25 @@ public enum EventTrigger implements LabelInterface {
         @Override
         public TriggerSetupPanel createSettingsPanel(final Map<String, Object> settings) {
             final Checkbox checkBox = new Checkbox(isSynchronous(settings));
-
             TriggerSetupPanel ret = new TriggerSetupPanel(0) {
                 public void save() {
                     setSynchronous(settings, checkBox.isSelected());
                 };
             };
             ret.add(new JLabel(T.T.MAIN_MENU_BUTTON_explain()), "spanx");
-
             ret.addPair("", null, new SettingsButton(new AppAction() {
                 {
                     setName(_GUI.T.gui_config_menumanager_mainmenu());
-
                 }
 
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     new EDTRunner() {
-
                         @Override
                         protected void runInEDT() {
                             MenuManagerMainmenu.getInstance().openGui();
                         }
                     };
-
                 }
             }));
             ret.addDescriptionPlain(T.T.synchronous_desc());
@@ -537,21 +526,17 @@ public enum EventTrigger implements LabelInterface {
             ret.addPair("", null, new SettingsButton(new AppAction() {
                 {
                     setName(_GUI.T.gui_config_menumanager_downloadlist());
-
                 }
 
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     new EDTRunner() {
-
                         @Override
                         protected void runInEDT() {
                             JDGui.getInstance().requestPanel(JDGui.Panels.DOWNLOADLIST);
-
                             MenuManagerDownloadTableContext.getInstance().openGui();
                         }
                     };
-
                 }
             }));
             ret.addDescriptionPlain(T.T.synchronous_desc());
@@ -590,21 +575,17 @@ public enum EventTrigger implements LabelInterface {
             ret.addPair("", null, new SettingsButton(new AppAction() {
                 {
                     setName(_GUI.T.gui_config_menumanager_linkgrabber());
-
                 }
 
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     new EDTRunner() {
-
                         @Override
                         protected void runInEDT() {
                             JDGui.getInstance().requestPanel(JDGui.Panels.LINKGRABBER);
-
                             MenuManagerLinkgrabberTableContext.getInstance().openGui();
                         }
                     };
-
                 }
             }));
             ret.addDescriptionPlain(T.T.synchronous_desc());
@@ -643,20 +624,16 @@ public enum EventTrigger implements LabelInterface {
             ret.addPair("", null, new SettingsButton(new AppAction() {
                 {
                     setName(_GUI.T.gui_config_menumanager_downloadBottom());
-
                 }
 
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     new EDTRunner() {
-
                         @Override
                         protected void runInEDT() {
-
                             MenuManagerDownloadTabBottomBar.getInstance().openGui();
                         }
                     };
-
                 }
             }));
             ret.addDescriptionPlain(T.T.synchronous_desc());
@@ -686,7 +663,6 @@ public enum EventTrigger implements LabelInterface {
         @Override
         public TriggerSetupPanel createSettingsPanel(final Map<String, Object> settings) {
             final Checkbox checkBox = new Checkbox(isSynchronous(settings));
-
             TriggerSetupPanel ret = new TriggerSetupPanel(0) {
                 public void save() {
                     setSynchronous(settings, checkBox.isSelected());
@@ -696,20 +672,16 @@ public enum EventTrigger implements LabelInterface {
             ret.addPair("", null, new SettingsButton(new AppAction() {
                 {
                     setName(_GUI.T.gui_config_menumanager_linkgrabberBottom());
-
                 }
 
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     new EDTRunner() {
-
                         @Override
                         protected void runInEDT() {
-
                             MenuManagerLinkgrabberTabBottombar.getInstance().openGui();
                         }
                     };
-
                 }
             }));
             ret.addDescriptionPlain(T.T.synchronous_desc());
@@ -723,7 +695,6 @@ public enum EventTrigger implements LabelInterface {
         }
 
         public HashMap<String, Object> getTestProperties() {
-
             return EventTrigger.TRAY_BUTTON.getTestProperties();
         }
 
@@ -740,7 +711,6 @@ public enum EventTrigger implements LabelInterface {
         @Override
         public TriggerSetupPanel createSettingsPanel(final Map<String, Object> settings) {
             final Checkbox checkBox = new Checkbox(isSynchronous(settings));
-
             TriggerSetupPanel ret = new TriggerSetupPanel(0) {
                 public void save() {
                     setSynchronous(settings, checkBox.isSelected());
@@ -750,19 +720,16 @@ public enum EventTrigger implements LabelInterface {
             ret.addPair("", null, new SettingsButton(new AppAction() {
                 {
                     setName(_GUI.T.gui_config_menumanager_traymenu());
-
                 }
 
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     new EDTRunner() {
-
                         @Override
                         protected void runInEDT() {
                             MenuManagerTrayIcon.getInstance().openGui();
                         }
                     };
-
                 }
             }));
             ret.addDescriptionPlain(T.T.synchronous_desc());
@@ -783,7 +750,6 @@ public enum EventTrigger implements LabelInterface {
             props.put("menu", "TriggerName");
             props.put("dlSelection", new DownloadlistSelectionSandbox());
             props.put("lgSelection", new LinkgrabberSelectionSandbox());
-
             return props;
         }
 
@@ -791,7 +757,6 @@ public enum EventTrigger implements LabelInterface {
             return defaultAPIDescription(this);
         }
     };
-
     public String getAPIDescription() {
         return T.T.none_trigger();
     }
@@ -799,12 +764,9 @@ public enum EventTrigger implements LabelInterface {
     protected static String defaultAPIDescription(EventTrigger eventTrigger) {
         StringBuilder sb = new StringBuilder();
         sb.append(T.T.properties_for_eventtrigger(eventTrigger.getLabel())).append("\r\n");
-
         for (Entry<String, Object> es : eventTrigger.getTestProperties().entrySet()) {
             sb.append("var ").append(Utils.toMy(Utils.cleanUpClass(es.getValue().getClass().getSimpleName()))).append(" = ").append(es.getKey()).append(";").append("\r\n");
-
         }
-
         return sb.toString();
     }
 
@@ -815,7 +777,6 @@ public enum EventTrigger implements LabelInterface {
         if (Clazz.isPrimitive(cl)) {
             return;
         }
-
         for (Method m : cl.getDeclaredMethods()) {
             if (m.getReturnType() == Object.class || !Modifier.isPublic(m.getModifiers()) || Clazz.isPrimitive(m.getReturnType()) || Clazz.isPrimitiveWrapper(m.getReturnType()) || Clazz.isString(m.getReturnType())) {
                 continue;
@@ -830,9 +791,7 @@ public enum EventTrigger implements LabelInterface {
                 if (clazzes.add(cl2)) {
                     collectClasses(cl2, clazzes);
                 }
-
             }
-
         }
     }
 
@@ -874,5 +833,4 @@ public enum EventTrigger implements LabelInterface {
     public TriggerSetupPanel createSettingsPanel(Map<String, Object> settings) {
         return null;
     }
-
 }

@@ -248,7 +248,7 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
 
     public void kill(SolverJob<Object> job) {
         super.kill(job);
-        MyJDownloaderController.getInstance().pushCaptchaFlag(true);
+        MyJDownloaderController.getInstance().pushCaptchaFlag(hasJobs());
     }
 
     @Override
@@ -294,7 +294,13 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
         eventPublisher.fireJobDoneEvent(job);
         synchronized (map) {
             dispose(job);
-            MyJDownloaderController.getInstance().pushCaptchaFlag(map.size() > 0);
+        }
+        MyJDownloaderController.getInstance().pushCaptchaFlag(hasJobs());
+    }
+
+    public boolean hasJobs() {
+        synchronized (map) {
+            return map.size() > 0;
         }
     }
 

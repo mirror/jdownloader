@@ -198,4 +198,6 @@ public interface EventScripterTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "After a Captcha Challenge" })
     String CAPTCHA_CHALLENGE_AFTER();
 
+    @Default(lngs = { "en" }, values = { "Before a Captcha Challenge" })
+    String CAPTCHA_CHALLENGE_BEFORE();
 }
