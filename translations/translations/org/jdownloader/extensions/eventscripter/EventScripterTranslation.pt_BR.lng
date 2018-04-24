@@ -1,4 +1,5 @@
 CAPTCHA_CHALLENGE_AFTER=Após um Desafio Captcha
+CAPTCHA_CHALLENGE_BEFORE=Antes de um desafio Captcha
 DOWNLOAD_TABLE_BOTTOM_BAR_BUTTON=Botão da Barra Inferior da LIsta de Downloads Pressionado
 DOWNLOAD_TABLE_BOTTOM_BAR_BUTTON_explain=Você precisa adicionar um Botão personalizado do Script de Evento ao menu da Barra Inferior da Lista de Downloads usando o Gerenciador de Menu.
 DOWNLOAD_TABLE_CONTEXT_MENU_BUTTON=Botão do Menu de Contexto da Lista de Downloads Pressionado
