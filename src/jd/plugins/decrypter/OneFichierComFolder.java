@@ -17,8 +17,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -32,6 +30,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "1fichier.com" }, urls = { "https?://(www\\.)?1fichier\\.com/((en|cn)/)?dir/[A-Za-z0-9]+" })
 public class OneFichierComFolder extends PluginForDecrypt {
@@ -52,18 +52,21 @@ public class OneFichierComFolder extends PluginForDecrypt {
         }
         /* Access folder without API just to find foldername ... */
         br.getPage(parameter);
-        final String fpName = br.getRegex(">Shared folder (.*?)</").getMatch(0);
+        String fpName = br.getRegex(">Shared folder (.*?)</").getMatch(0);
         // password handling
-        handlePassword(param, parameter);
+        final String password = handlePassword(param, parameter);
+        if (fpName == null && password != null) {
+            fpName = br.getRegex(">Shared folder (.*?)</").getMatch(0);
+        }
         // passCode != null, post handling seems to respond with html instead of what's preferred below.
-        if ("text/plain; charset=utf-8".equals(jsonBR.getHttpConnection().getContentType())) {
+        if (password == null && "text/plain; charset=utf-8".equals(jsonBR.getHttpConnection().getContentType())) {
             String[][] linkInfo = jsonBR.getRegex("(https?://[a-z0-9\\-]+\\..*?);([^;]+);([0-9]+)").getMatches();
             for (String singleLinkInfo[] : linkInfo) {
                 final DownloadLink dl = createDownloadlink(singleLinkInfo[0]);
                 dl.setFinalFileName(Encoding.htmlDecode(singleLinkInfo[1].trim()));
                 dl.setVerifiedFileSize(Long.parseLong(singleLinkInfo[2]));
-                if (passCode != null) {
-                    dl.setDownloadPassword(passCode);
+                if (password != null) {
+                    dl.setDownloadPassword(password);
                 }
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
@@ -79,8 +82,8 @@ public class OneFichierComFolder extends PluginForDecrypt {
                 final DownloadLink dl = createDownloadlink(singleLinkInfo[1]);
                 dl.setFinalFileName(Encoding.htmlDecode(singleLinkInfo[2]));
                 dl.setDownloadSize(SizeFormatter.getSize(singleLinkInfo[3]));
-                if (passCode != null) {
-                    dl.setDownloadPassword(passCode);
+                if (password != null) {
+                    dl.setDownloadPassword(password);
                 }
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);

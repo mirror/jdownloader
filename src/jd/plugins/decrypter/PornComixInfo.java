@@ -21,13 +21,14 @@ public class PornComixInfo extends PluginForDecrypt {
         if (postTitle != null) {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(postTitle));
-            final String[] images = br.getRegex("class='gallery-icon\\s*portrait'\\s*>\\s*<a.*?href='.*?'\\s*>\\s*<img\\s*src=\".*?\"\\s*data-lazy-src=\"(https?://(?:www\\.)?porncomix\\.info/.*?(jpe?g|gif|png))\"").getColumn(0);
+            final String[] images = br.getRegex("class='gallery-icon\\s*(?:portrait|landscape)'\\s*>\\s*<a.*?href='.*?'\\s*>\\s*<img\\s*src=\".*?\"\\s*data-lazy-src=\"(https?://(?:www\\.)?porncomix\\.info/.*?(jpe?g|gif|png))\"").getColumn(0);
             if (images != null) {
                 for (final String image : images) {
                     if (!isAbort()) {
                         final String url = image.replaceFirst("(-\\d+x\\d+)\\.(jpe?g|gif|png)$", ".$2");
                         final DownloadLink link = createDownloadlink(url);
                         link.setAvailable(true);
+                        link.setContainerUrl(parameter.getCryptedUrl());
                         fp.add(link);
                         distribute(link);
                     }
