@@ -364,22 +364,28 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
                 dllink = httpurl_temp;
             }
         }
-        String video_url = br.getRegex("var\\s+video_url=\"(.*?)\";").getMatch(0);
-        if (video_url == null) {
-            video_url = br.getRegex("var\\s+video_url=Dpww3Dw64\\(\"([^\"]+)").getMatch(0);
-        }
-        if (inValidate(dllink, plugin) || (video_url != null && !video_url.startsWith("http"))) {
-            final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(null);
-            final ScriptEngine engine = manager.getEngineByName("javascript");
-            final Invocable inv = (Invocable) engine;
-            try {
-                engine.eval(IO.readURLToString(Script.class.getResource("script.js")));
-                final Object result = inv.invokeFunction("result", video_url);
-                if (result != null) {
-                    return result.toString();
+        if (inValidate(dllink, plugin)) {
+            String video_url = br.getRegex("var\\s+video_url=\"(.*?)\";").getMatch(0);
+            if (video_url == null) {
+                video_url = br.getRegex("var\\s+video_url=Dpww3Dw64\\(\"([^\"]+)").getMatch(0);
+            }
+            if (video_url != null) {
+                if (!video_url.startsWith("http")) {
+                    final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(null);
+                    final ScriptEngine engine = manager.getEngineByName("javascript");
+                    final Invocable inv = (Invocable) engine;
+                    try {
+                        engine.eval(IO.readURLToString(Script.class.getResource("script.js")));
+                        final Object result = inv.invokeFunction("result", video_url);
+                        if (result != null) {
+                            return result.toString();
+                        }
+                    } catch (final Throwable e) {
+                        plugin.getLogger().log(e);
+                    }
+                } else {
+                    dllink = video_url;
                 }
-            } catch (final Throwable e) {
-                plugin.getLogger().log(e);
             }
         }
         if (inValidate(dllink, plugin)) {

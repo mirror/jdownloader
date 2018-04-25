@@ -153,7 +153,14 @@ public class CamwhoresTv extends PluginForHost {
     }
 
     private void getDllink(final DownloadLink link) throws Exception {
-        dllink = jd.plugins.hoster.KernelVideoSharingCom.getDllink(br, this);
+        try {
+            dllink = jd.plugins.hoster.KernelVideoSharingCom.getDllink(br, this);
+        } catch (final PluginException e) {
+            logger.log(e);
+            if (!this.br.containsHTML("This video is a private")) {
+                throw e;
+            }
+        }
         if (dllink != null && dllink.contains("login-required")) {
             dllink = null;
         }
@@ -171,7 +178,11 @@ public class CamwhoresTv extends PluginForHost {
         } else if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (is_private_video) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
