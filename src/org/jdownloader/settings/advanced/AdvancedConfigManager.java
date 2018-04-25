@@ -169,5 +169,4 @@ public class AdvancedConfigManager {
         ret.addAll(listPluginsInterfaces());
         return ret;
     }
-
 }

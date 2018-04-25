@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.controlling.downloadcontroller;
 
 import java.io.BufferedOutputStream;
@@ -95,21 +94,14 @@ import org.jdownloader.settings.GeneralSettings.CreateFolderTrigger;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
 public class DownloadController extends PackageController<FilePackage, DownloadLink> {
-
     private final transient DownloadControllerEventSender eventSender         = new DownloadControllerEventSender();
-
     private final DelayedRunnable                         downloadSaver;
     private final DelayedRunnable                         changesSaver;
     private final CopyOnWriteArrayList<File>              downloadLists       = new CopyOnWriteArrayList<File>();
-
     public static final ScheduledExecutorService          TIMINGQUEUE         = DelayedRunnable.getNewScheduledExecutorService();
-
     private final DupeManager                             dupeController;
-
     public static final SingleReachableState              DOWNLOADLIST_LOADED = new SingleReachableState("DOWNLOADLIST_COMPLETE");
-
     private static final DownloadController               INSTANCE            = new DownloadController();
-
     private static final Object                           SAVELOADLOCK        = new Object();
 
     /**
@@ -122,7 +114,6 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
     @Override
     public void moveOrAddAt(final FilePackage pkg, final List<DownloadLink> movechildren, final int moveChildrenindex, final int pkgIndex) {
         getQueue().add(new QueueAction<Void, RuntimeException>() {
-
             @Override
             protected Void run() throws RuntimeException {
                 final HashMap<FilePackage, List<DownloadLink>> sourceMap = new HashMap<FilePackage, List<DownloadLink>>();
@@ -147,7 +138,6 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
         dupeController = new DupeManager();
         final AtomicBoolean saveFlag = new AtomicBoolean(false);
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
-
             @Override
             public long getMaxDuration() {
                 return 0;
@@ -182,7 +172,15 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                 return "ShutdownEvent: Save Downloadlist";
             }
         });
-        changesSaver = new DelayedRunnable(TIMINGQUEUE, 5000l, 60000l) {
+        final DownloadControllerConfig cfg = JsonConfig.create(DownloadControllerConfig.class);
+        final long minimumDelay = Math.max(5000, cfg.getMinimumSaveDelay());
+        long maximumDelay = cfg.getMaximumSaveDelay();
+        if (maximumDelay <= 0) {
+            maximumDelay = -1;
+        } else {
+            maximumDelay = Math.max(maximumDelay, minimumDelay);
+        }
+        changesSaver = new DelayedRunnable(TIMINGQUEUE, minimumDelay, maximumDelay) {
             private final boolean ignoreShutDown = false;
 
             @Override
@@ -208,7 +206,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                 }
             }
         };
-        downloadSaver = new DelayedRunnable(TIMINGQUEUE, 60 * 1000l, 5 * 60 * 1000l) {
+        downloadSaver = new DelayedRunnable(TIMINGQUEUE, Math.max(60 * 1000l, minimumDelay), Math.max(5 * 60 * 1000l, maximumDelay)) {
             private final boolean ignoreShutDown = false;
 
             @Override
@@ -233,10 +231,8 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     }
                 }
             }
-
         };
         this.eventSender.addListener(new DownloadControllerListener() {
-
             @Override
             public void onDownloadControllerAddedPackage(FilePackage pkg) {
                 changesSaver.run();
@@ -287,7 +283,6 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                 changesSaver.run();
             }
         });
-
     }
 
     public void requestSaving() {
@@ -307,7 +302,6 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
 
     @Override
     protected void _controllerPackageNodeRemoved(FilePackage pkg, QueuePriority priority) {
-
         eventSender.fireEvent(new DownloadControllerEventRemovedPackage(pkg));
     }
 
@@ -334,7 +328,6 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
 
     @Override
     protected void _controllerStructureChanged(QueuePriority priority) {
-
         eventSender.fireEvent(new DownloadControllerEventStructureRefresh());
     }
 
@@ -358,7 +351,6 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
     public void addAllAt(final java.util.List<FilePackage> fps, final int index) {
         if (fps != null && fps.size() > 0) {
             QUEUE.add(new QueueAction<Void, RuntimeException>() {
-
                 @Override
                 protected Void run() throws RuntimeException {
                     int counter = index;
@@ -374,7 +366,6 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                                     logger.info("Skip folder creation: " + folderFile + " already exists");
                                 } else {
                                     /* folder does not exist */
-
                                     try {
                                         DownloadWatchDog.getInstance().validateDestination(folderFile);
                                         if (folderFile.mkdirs()) {
@@ -385,7 +376,6 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                                     } catch (BadDestinationException e) {
                                         logger.info("Not allowed to create folder: " + e.getFile());
                                     }
-
                                 }
                             }
                         }
@@ -478,7 +468,6 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
      */
     public void initDownloadLinks() {
         QUEUE.add(new QueueAction<Void, RuntimeException>(Queue.QueuePriority.HIGH) {
-
             @Override
             protected Void run() throws RuntimeException {
                 logger.info("Init DownloadList");
@@ -559,7 +548,6 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
 
     public void importList(final LinkedList<FilePackage> lpackages) {
         QUEUE.add(new QueueAction<Void, RuntimeException>(Queue.QueuePriority.HIGH) {
-
             @Override
             protected Void run() throws RuntimeException {
                 if (lpackages != null) {
@@ -616,15 +604,15 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
 
         private final ArrayList<IndexedDownloadLink>         downloadLinks = new ArrayList<IndexedDownloadLink>();
         private final static Comparator<IndexedDownloadLink> COMPARATOR    = new Comparator<IndexedDownloadLink>() {
-            private final int compare(int x, int y) {
-                return (x < y) ? -1 : ((x == y) ? 0 : 1);
-            }
+                                                                               private final int compare(int x, int y) {
+                                                                                   return (x < y) ? -1 : ((x == y) ? 0 : 1);
+                                                                               }
 
-            @Override
-            public int compare(IndexedDownloadLink o1, IndexedDownloadLink o2) {
-                return compare(o1.getIndex(), o2.getIndex());
-            }
-        };
+                                                                               @Override
+                                                                               public int compare(IndexedDownloadLink o1, IndexedDownloadLink o2) {
+                                                                                   return compare(o1.getIndex(), o2.getIndex());
+                                                                               }
+                                                                           };
 
         private FilePackage getLoadedPackage() {
             final FilePackage filePackage = this.filePackage;
@@ -687,7 +675,6 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                 ZipEntry entry = null;
                 final ZipInputStream finalZis = zis;
                 final InputStream entryInputStream = new InputStream() {
-
                     @Override
                     public int read() throws IOException {
                         return finalZis.read();
@@ -893,7 +880,6 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
     public void checkPluginUpdates() {
         if (DOWNLOADLIST_LOADED.isReached()) {
             DownloadWatchDog.getInstance().enqueueJob(new DownloadWatchDogJob() {
-
                 @Override
                 public void execute(DownloadSession currentSession) {
                     QUEUE.addWait(new QueueAction<Void, RuntimeException>() {
@@ -902,7 +888,6 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                         @Override
                         protected Void run() throws RuntimeException {
                             getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
-
                                 @Override
                                 public int returnMaxResults() {
                                     return 0;
@@ -942,7 +927,6 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                                     final SingleDownloadController controller = node.getDownloadLinkController();
                                     if (controller != null) {
                                         controller.getJobsAfterDetach().add(new DownloadWatchDogJob() {
-
                                             @Override
                                             public void execute(DownloadSession currentSession) {
                                                 updatePluginInstance(node);
@@ -1100,7 +1084,6 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     zos = new ZipOutputStream(new BufferedOutputStream(fos, bufferSize));
                     final ZipOutputStream finalZos = zos;
                     final OutputStream entryOutputStream = new OutputStream() {
-
                         @Override
                         public void write(int b) throws IOException {
                             finalZos.write(b);
@@ -1120,7 +1103,6 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                         public void flush() throws IOException {
                             finalZos.flush();
                         }
-
                     };
                     int packageIndex = 0;
                     for (FilePackage pkg : packages) {
@@ -1263,7 +1245,6 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
             eventSender.fireEvent(new DownloadControllerEventStructureRefresh(source, param));
             break;
         }
-
     }
 
     @Override
@@ -1273,7 +1254,6 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
 
     public void set(final DownloadLinkWalker filter) {
         DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
-
             @Override
             public int returnMaxResults() {
                 return 0;
@@ -1294,7 +1274,6 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
      */
     public static void removePackageIfFinished(final Object asker, final LogSource logger, final FilePackage fp) {
         getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
-
             @Override
             protected Void run() throws RuntimeException {
                 if (new DownloadLinkAggregator(fp).isFinished()) {
@@ -1316,5 +1295,4 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
     public boolean hasDownloadLinkByID(String linkID) {
         return dupeController.hasID(linkID);
     }
-
 }
