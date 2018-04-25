@@ -47,6 +47,7 @@ public class DeluxemusicTv extends PluginForDecrypt {
         final String parameter = param.toString();
         this.br.setFollowRedirects(true);
         if (parameter.matches(".+deluxemusic\\.tv/.+")) {
+            /* Crawl playlist */
             this.br.getPage(parameter);
             if (this.br.getHttpConnection().getResponseCode() == 404) {
                 decryptedLinks.add(this.createOfflinelink(parameter));
@@ -57,6 +58,12 @@ public class DeluxemusicTv extends PluginForDecrypt {
                 logger.info("Seems like this page does not contain any playlist");
                 return decryptedLinks;
             }
+            String playlistName = new Regex(parameter, "/([^/]+)\\.html$").getMatch(0);
+            if (playlistName == null) {
+                playlistName = playlist_embed_id;
+            }
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName("DeluxeMusic Playlist " + playlistName);
             /*
              * 2018-04-11: Old url + same parameters still working:
              * https://deluxetv-vimp.mivitec.net/playlist_embed_3/search_playlist_videos.php ... but we'll use the new one for now.
@@ -91,6 +98,7 @@ public class DeluxemusicTv extends PluginForDecrypt {
                 if (description != null && !description.equalsIgnoreCase(title)) {
                     dl.setComment(description);
                 }
+                dl._setFilePackage(fp);
                 decryptedLinks.add(dl);
             }
         } else {
