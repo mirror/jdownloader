@@ -21,10 +21,6 @@ import java.util.LinkedHashMap;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -49,6 +45,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "disk.yandex.net", "video.yandex.ru" }, urls = { "http://yandexdecrypted\\.net/\\d+", "http://video\\.yandex\\.ru/(iframe/[A-Za-z0-9]+/[A-Za-z0-9]+\\.\\d+|users/[A-Za-z0-9]+/view/\\d+)" })
 public class DiskYandexNet extends PluginForHost {
@@ -627,12 +627,22 @@ public class DiskYandexNet extends PluginForHost {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
                         link.setProperty("path_internal", internal_file_path);
+                        final String oid = PluginJSonUtils.getJson(br, "oid");
+                        for (int i = 1; i < 5; i++) {
+                            postPage("https://disk.yandex.com/models/?_m=do-status-operation", "_model.0=do-status-operation&oid.0=" + oid + "&idClient=" + CLIENT_ID + "&version=" + VERSION + "&sk=" + ACCOUNT_SK);
+                            final String copyState = PluginJSonUtils.getJson(br, "state");
+                            logger.info("Copy state: " + copyState);
+                            if (copyState.equals("COMPLETED")) {
+                                break;
+                            }
+                            sleep(i * 1000l, link);
+                        }
                     }
                     dllink = getDllinkFromFileInAccount(link, br);
                     if (dllink == null) {
                         if (file_was_moved_before) {
                             /* Retry one more time */
-                            logger.info("Previously stored internal path was wrong --> Retring");
+                            logger.info("Previously stored internal path was wrong --> Retrying");
                             link.setProperty("path_internal", Property.NULL);
                             throw new PluginException(LinkStatus.ERROR_RETRY, "Bad internal path");
                         }
@@ -642,12 +652,12 @@ public class DiskYandexNet extends PluginForHost {
                          */
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    if (this.getPluginConfig().getBooleanProperty(DELETE_FROM_ACCOUNT_AFTER_DOWNLOAD, false)) {
+                    if (getPluginConfig().getBooleanProperty(DELETE_FROM_ACCOUNT_AFTER_DOWNLOAD, false)) {
                         try {
                             logger.info("Successfully grabbed dllink via move_to_Account_handling -> Move file to trash -> Trying to delete file from account");
                             moveFileToTrash(link);
                             /* Only empty trash if desired by user */
-                            if (!forcedmoveIntoAccHandlingAgainstUserSelection) {
+                            if (getPluginConfig().getBooleanProperty(DELETE_FROM_ACCOUNT_AFTER_DOWNLOAD, false)) {
                                 logger.info("Successfully grabbed dllink via move_to_Account_handling -> Empty trash -> Trying to empty trash inside account");
                                 emptyTrash();
                             }
