@@ -142,7 +142,7 @@ public class UsersCloudCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br.openHeadConnection(link.getDownloadURL());
-            if (!con.getContentType().contains("html")) {
+            if (!con.getContentType().contains("html") && con.isOK()) {
                 link.setDownloadSize(con.getLongContentLength());
                 link.setFinalFileName(getFileNameFromHeader(con));
                 link.setProperty("freelink", link.getDownloadURL());
@@ -268,6 +268,9 @@ public class UsersCloudCom extends PluginForHost {
                     }
                 }
             }
+        }
+        if (fileInfo[1] == null) {
+            fileInfo[1] = new Regex(correctedBR, "File\\s*size\\s*:\\s*([0-9\\.,]+\\s*(KB|MB|GB|B))").getMatch(0);
         }
         if (fileInfo[1] == null) {
             fileInfo[1] = new Regex(correctedBR, "ribbon\">([^<>]+)<").getMatch(0);
