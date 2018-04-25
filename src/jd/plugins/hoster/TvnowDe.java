@@ -141,18 +141,25 @@ public class TvnowDe extends PluginForHost {
             episode = (int) Long.parseLong(episode_str);
         }
         final String description = (String) entries.get("articleLong");
-        final String title = (String) entries.get("title");
+        /* Title or subtitle of a current series-episode */
+        String title = (String) entries.get("title");
         final String title_series = (String) format.get("title");
         if (title == null || title_series == null || tv_station == null || date == null) {
             downloadLink.setAvailableStatus(AvailableStatus.UNCHECKABLE);
         }
-        data.setTitle(title);
         data.setShow(title_series);
         data.setChannel(tv_station);
         data.setReleaseDate(getDateMilliseconds(date));
         if (season != -1 && episode != -1) {
             data.setSeasonNumber(season);
             data.setEpisodeNumber(episode);
+            if (title.matches("Folge \\d+")) {
+                /* We do not need the episode information twice! */
+                title = null;
+            }
+        }
+        if (!StringUtils.isEmpty(title)) {
+            data.setTitle(title);
         }
         final String filename = MediathekHelper.getMediathekFilename(downloadLink, data, false, false);
         try {
