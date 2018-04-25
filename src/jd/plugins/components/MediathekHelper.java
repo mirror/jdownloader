@@ -34,18 +34,20 @@ public class MediathekHelper {
         /* TODO: value zero is not possible at the moment! */
         if (seasonNumber > 0 && episodeNumber > 0) {
             /* TODO: Check if we can have the case that only episode- or seasonnumber is given! */
-            filename += String.format(Locale.US, "S%0" + getPadLength(seasonNumber) + "d" + "E%0" + getPadLength(episodeNumber) + "d", seasonNumber, episodeNumber) + "_";
+            filename += String.format(Locale.US, "S%0" + getPadLength(seasonNumber) + "d" + "E%0" + getPadLength(episodeNumber) + "d", seasonNumber, episodeNumber);
         }
-        filename += title + "_";
+        if (title != null) {
+            filename += "_" + title;
+        }
         /* Only add protocol to filename if we can have multiple protocols */
         if (multipleProtocolsAvailable) {
-            filename += protocol + "_";
+            filename += "_" + protocol;
         }
         /* Use either bitrate or bandwidth and only if available- and required */
         if (sameResolutionWithDifferentBitratePossible && bitrateTotal > 0) {
-            filename += bitrateTotal;
+            filename += "_" + bitrateTotal;
         } else if (sameResolutionWithDifferentBitratePossible && bandwith > 0) {
-            filename += bandwith;
+            filename += "_" + bandwith;
         }
         if (videoResolution != null) {
             filename += "_" + videoResolution;
@@ -65,9 +67,7 @@ public class MediathekHelper {
     }
 
     public static final int getPadLength(final int size) {
-        if (size < 10) {
-            return 1;
-        } else if (size < 100) {
+        if (size < 100) {
             return 2;
         } else if (size < 1000) {
             return 3;
