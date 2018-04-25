@@ -28,10 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.config.Property;
-import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -58,7 +55,6 @@ import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uptobox.com" }, urls = { "https?://(?:www\\.)?uptobox\\.com/[a-z0-9]{12}" })
 public class UpToBoxCom extends antiDDoSForHost {
-    private final static String  SSL_CONNECTION               = "SSL_CONNECTION";
     private boolean              happyHour                    = false;
     private String               correctedBR                  = "";
     private static final String  PASSWORDTEXT                 = "Passwor(d|t):</b> <input|Password:</b>";
@@ -104,7 +100,6 @@ public class UpToBoxCom extends antiDDoSForHost {
     public UpToBoxCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
-        this.setConfigElements();
     }
 
     // do not add @Override here to keep 0.* compatibility
@@ -484,15 +479,11 @@ public class UpToBoxCom extends antiDDoSForHost {
          * Special: Usually it is a bad idea to change the protocol of final downloadlinks but in this case it is fine plus this helps to
          * avoid gouvernment/ISP blocks!
          */
-        if (dllink != null) {
-            dllink = fixLinkSSL(dllink);
-        }
         return dllink;
     }
 
     @Override
     protected void getPage(String page) throws Exception {
-        page = fixLinkSSL(page);
         for (int i = 1; i <= 3; i++) {
             super.getPage(page);
             if (br.containsHTML("No htmlCode read")) {
@@ -508,7 +499,6 @@ public class UpToBoxCom extends antiDDoSForHost {
 
     @Override
     protected void postPage(String page, String postdata) throws Exception {
-        page = fixLinkSSL(page);
         super.postPage(page, postdata);
         correctBR();
         if (correctedBR.contains("No htmlCode read")) {
@@ -930,27 +920,6 @@ public class UpToBoxCom extends antiDDoSForHost {
         if (wait > 0) {
             sleep(wait * 1000l, downloadLink);
         }
-    }
-
-    private static String fixLinkSSL(String link) {
-        if (link == null) {
-            return null;
-        }
-        if (checkSsl()) {
-            link = link.replace("http://", "https://");
-        } else {
-            link = link.replace("https://", "http://");
-        }
-        return link;
-    }
-
-    @SuppressWarnings("deprecation")
-    private static boolean checkSsl() {
-        return SubConfiguration.getConfig("uptobox.com").getBooleanProperty(SSL_CONNECTION, true);
-    }
-
-    private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.UpToBox.preferSSL", "Use Secure Communication over SSL (HTTPS://)")).setDefaultValue(true));
     }
 
     @Override
