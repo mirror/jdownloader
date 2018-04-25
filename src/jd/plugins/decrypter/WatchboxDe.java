@@ -43,6 +43,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.MediathekHelper;
+import jd.plugins.components.PluginJSonUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "watchbox.de" }, urls = { "https?://(?:www\\.)?watchbox\\.de/(?:serien|filme)/[^<>\"]+\\d+\\.html" })
 public class WatchboxDe extends PluginForDecrypt {
@@ -133,17 +134,18 @@ public class WatchboxDe extends PluginForDecrypt {
             this.decryptedLinks.add(this.createOfflinelink(this.parameter));
             return;
         }
-        this.contentID = br.getRegex("videoId\\s*?:\\s*?\"(\\d+)\"").getMatch(0);
+        this.contentID = br.getRegex("(?:\\'|\")videoId(?:\\'|\"):(?:\\'|\")?(\\d+)(?:\\'|\")?").getMatch(0);
         /*
          * 2018-04-11: E.g. hls:
          * https://vodwbusohls.secure.footprint.net/proxy/manifest-wb-clear/at-ch-de/<videoID>-1-12332.ism/fairplay.m3u8
          */
         /* 2018-04-11: E.g. dash: https://vodwbusodash.secure.footprint.net/proxy/manifest-wb-clear/at-ch-de/<videoID>-1-12332.ism/.mpd */
-        final String hls_master = br.getRegex("hls\\s*?:\\s*?\\'(http[^<>\"\\']*?)\\'").getMatch(0);
+        String hls_master = br.getRegex("(?:\\'|\")hls(?:\\'|\"):(?:\\'|\")(http[^<>\"\\']*?)(?:\\'|\")").getMatch(0);
         if (StringUtils.isEmpty(hls_master) || StringUtils.isEmpty(this.contentID)) {
             logger.warning("Decrypter broken for link: " + parameter);
             throw new DecrypterException("Plugin broken");
         }
+        hls_master = PluginJSonUtils.unescape(hls_master);
         /* Tags: schema.org Supported/known types: TVEpisode, Movie */
         final String[] jsonSchemaOrgSchemas = br.getRegex("<script[^>]*?type=\"application/ld\\+json\"[^>]*?>(.*?)</script>").getColumn(0);
         for (final String jsonSchemaOrgSchema : jsonSchemaOrgSchemas) {
