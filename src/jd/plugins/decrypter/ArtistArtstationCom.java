@@ -1,6 +1,8 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -25,10 +27,24 @@ public class ArtistArtstationCom extends antiDDoSForDecrypt {
             ret.add(createDownloadlink("https://www.artstation.com/artwork/" + artwork));
         } else {
             br.setFollowRedirects(true);
+            final Set<String> dups = new HashSet<String>();
             getPage(parameter.getCryptedUrl());
-            final String[] projects = br.getRegex("/projects/([A-Z0-9]+)").getColumn(0);
-            for (final String project : projects) {
-                ret.add(createDownloadlink("https://www.artstation.com/artwork/" + project));
+            String[] projects = br.getRegex("/projects/([A-Z0-9]+)").getColumn(0);
+            if (projects != null) {
+                for (final String project : projects) {
+                    if (dups.add(project)) {
+                        ret.add(createDownloadlink("https://www.artstation.com/artwork/" + project));
+                    }
+                }
+            }
+            getPage("/projects");
+            projects = br.getRegex("/projects/([A-Z0-9]+)").getColumn(0);
+            if (projects != null) {
+                for (final String project : projects) {
+                    if (dups.add(project)) {
+                        ret.add(createDownloadlink("https://www.artstation.com/artwork/" + project));
+                    }
+                }
             }
         }
         return ret;
