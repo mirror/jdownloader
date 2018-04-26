@@ -1,4 +1,5 @@
 CAPTCHA_CHALLENGE_AFTER=Dopo la richiesta di Captcha
+CAPTCHA_CHALLENGE_BEFORE=Prima della risoluzione di un captcha
 DOWNLOAD_TABLE_BOTTOM_BAR_BUTTON=Premuto pulsante Elenco download barra inferiore
 DOWNLOAD_TABLE_BOTTOM_BAR_BUTTON_explain=Devi aggiungere un pulsante EventScripter al menu inferiore Elenco downlaod usando il Gestore menu.
 DOWNLOAD_TABLE_CONTEXT_MENU_BUTTON=Premuto pulsante menu contestuale elenco download
