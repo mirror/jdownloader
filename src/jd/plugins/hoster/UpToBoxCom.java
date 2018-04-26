@@ -58,7 +58,7 @@ public class UpToBoxCom extends antiDDoSForHost {
     private boolean              happyHour                    = false;
     private String               correctedBR                  = "";
     private static final String  PASSWORDTEXT                 = "Passwor(d|t):</b> <input|Password:</b>";
-    private final String         COOKIE_HOST                  = "http://uptobox.com";
+    private final String         COOKIE_HOST                  = "https://uptobox.com";
     private static final String  DOMAINS                      = "(uptobox\\.com|uptostream\\.com)";
     private static final String  regexIpBlock                 = "<center><p><b>Sorry, " + DOMAINS + " is not available in your country</b></p></center>";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode|Our website is currently undergoing maintenance and will be back online shortly\\s*!\\s*<";
@@ -145,11 +145,18 @@ public class UpToBoxCom extends antiDDoSForHost {
         return prepBr;
     }
 
+    @Override
+    public void correctDownloadLink(DownloadLink link) throws Exception {
+        final String downloadURL = link.getPluginPatternMatcher();
+        link.setPluginPatternMatcher(downloadURL.replaceFirst("^http://", "https://"));
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        correctDownloadLink(link);
         getPage(link.getDownloadURL());
         if (new Regex(correctedBR, regexIpBlock).matches()) {
             // apparently error fatal will prevent multihoster.
@@ -375,6 +382,7 @@ public class UpToBoxCom extends antiDDoSForHost {
             downloadLink.setDownloadPassword(passCode);
         }
         logger.info("Final downloadlink = " + dllink + " starting the download...");
+        dllink = dllink.replaceFirst("^http://", "https://");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
@@ -874,6 +882,7 @@ public class UpToBoxCom extends antiDDoSForHost {
                 link.setDownloadPassword(passCode);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
+            dllink = dllink.replaceFirst("^http://", "https://");
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
