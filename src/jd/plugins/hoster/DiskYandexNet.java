@@ -603,9 +603,17 @@ public class DiskYandexNet extends PluginForHost {
             final boolean moveIntoAccHandlingActive = this.getPluginConfig().getBooleanProperty(MOVE_FILES_TO_ACCOUNT, false);
             final boolean forcedmoveIntoAccHandling = downloadableViaAccountOnly(link);
             final boolean forcedmoveIntoAccHandlingAgainstUserSelection = downloadableViaAccountOnly(link) && !moveIntoAccHandlingActive;
-            if (moveIntoAccHandlingActive || forcedmoveIntoAccHandling) {
+            if (!moveIntoAccHandlingActive && !forcedmoveIntoAccHandling) {
+                logger.info("MoveToAccount handling is inactive -> Starting free account download handling");
+                getPage(getMainLink(link));
+                br.postPage("https://disk.yandex.com/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fpublic%2F" + hash + "&idClient=" + CLIENT_ID + "&version=" + VERSION + "&sk=" + this.ACCOUNT_SK);
+                dllink = siteGetDllink(link);
+            }
+            if (moveIntoAccHandlingActive || forcedmoveIntoAccHandling || dllink == null) {
                 if (forcedmoveIntoAccHandling) {
                     logger.info("forcedmoveIntoAccHandling active");
+                } else {
+                    logger.info("Free account download failed, trying with move to account download");
                 }
                 String internal_file_path = getInternalFilePath(link);
                 final boolean file_was_moved_before = internal_file_path != null;
@@ -673,20 +681,6 @@ public class DiskYandexNet extends PluginForHost {
                             emptyTrash();
                         }
                     }
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            } else {
-                logger.info("MoveToAccount handling is inactive -> Starting free account download handling");
-                getPage(getMainLink(link));
-                br.postPage("https://disk.yandex.com/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fpublic%2F" + hash + "&idClient=" + CLIENT_ID + "&version=" + VERSION + "&sk=" + this.ACCOUNT_SK);
-                if (br.containsHTML("\"code\":(28|88)")) {
-                    // setProperty: "premiumonly" then retry with move to account
-                    link.setProperty("premiumonly", true);
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error 28|88, retry with move to account", 1 * 1000l);
-                }
-                handleErrorsFree();
-                dllink = siteGetDllink(link);
-                if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
