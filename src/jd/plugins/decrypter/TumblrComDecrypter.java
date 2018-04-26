@@ -40,17 +40,21 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.plugins.components.config.TumblrComConfig;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.PluginClassLoader;
+import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tumblr.com" }, urls = { "https?://(?!\\d+\\.media\\.tumblr\\.com/.+)[\\w\\.\\-]+?tumblr\\.com(?:/(audio|video)_file/\\d+/tumblr_[A-Za-z0-9]+|/image/\\d+|/post/\\d+(?:\\?password=.+)?|/?$|/archive.+|/(?:dashboard/)?blog/[^/]+|/likes)(?:\\?password=.+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tumblr.com" }, urls = { "https?://(?!\\d+\\.media\\.tumblr\\.com/.+)[\\w\\.\\-]+?tumblr\\.com(?:/(audio|video)_file/\\d+/tumblr_[A-Za-z0-9]+|/image/\\d+|/post/\\d+(?:\\?password=.+)?|/?$|/archive.*|/(?:dashboard/)?blog/[^/]+|/likes)(?:\\?password=.+)?" })
 public class TumblrComDecrypter extends PluginForDecrypt {
     public TumblrComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -104,7 +108,12 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                 jd.plugins.hoster.TumblrCom.login(this.br, aa, false);
                 isLoggedin = true;
             } catch (final Throwable e) {
-                logger.info("Login failed");
+                final PluginForHost plugin = HostPluginController.getInstance().get(getHost()).newInstance(PluginClassLoader.getThreadPluginClassLoaderChild());
+                if (getLogger() instanceof LogSource) {
+                    plugin.handleAccountException(aa, (LogSource) getLogger(), e);
+                } else {
+                    plugin.handleAccountException(aa, null, e);
+                }
             }
         }
         try {
@@ -663,7 +672,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             if (parameter.contains("/archive")) {
                 // archive we will need todo things differently!
                 final boolean urlsOnly;
-                String[] postSrcs = this.br.getRegex("<div class=\"post post_micro[^\"]+\".*?</span>").getColumn(-1);
+                String[] postSrcs = this.br.getRegex("<div class=\"post post_micro[^\"]+\".*?</span>\\s*</div>").getColumn(-1);
                 if (postSrcs == null || postSrcs.length == 0) {
                     urlsOnly = true;
                     postSrcs = br.getRegex("<a target=\"_blank\" class=\"hover\" title=\"[^\"]*\" href=\"(http[^<>\"]+)\"").getColumn(0);

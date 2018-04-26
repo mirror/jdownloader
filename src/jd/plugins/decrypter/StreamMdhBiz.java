@@ -13,7 +13,7 @@ import org.appwork.utils.Regex;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 34719 $", interfaceVersion = 2, names = { "stream-mydirtyhobby.biz" }, urls = { "https?://stream-mydirtyhobby.biz/view/.+/.+" })
+@DecrypterPlugin(revision = "$Revision: 34719 $", interfaceVersion = 2, names = { "stream-mydirtyhobby.biz" }, urls = { "https?://(stream-mydirtyhobby.biz|stream-mdh.se)/view/.+/.+" })
 public class StreamMdhBiz extends antiDDoSForDecrypt {
     public StreamMdhBiz(PluginWrapper wrapper) {
         super(wrapper);
@@ -26,7 +26,7 @@ public class StreamMdhBiz extends antiDDoSForDecrypt {
         if (streamID == null) {
             return null;
         }
-        getPage("https://stream-mydirtyhobby.biz/embed/" + streamID);
+        getPage("https://stream-mdh.se/embed/" + streamID);
         final String iFrameSrc = br.getRegex("(?i)iframe src=\"(https?://.+?)\"").getMatch(0);
         if (iFrameSrc != null) {
             final String title = br.getRegex("<title>\\s*(.*?)\\s*</title>").getMatch(0);
