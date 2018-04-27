@@ -445,11 +445,15 @@ public class DownloadLinkSandBox {
     }
 
     public FilePackageSandBox getPackage() {
-        final FilePackage fp = downloadLink != null ? downloadLink.getFilePackage() : null;
-        if (fp == null || FilePackage.isDefaultFilePackage(fp)) {
-            return null;
+        if (downloadLink == null) {
+            return new FilePackageSandBox();
         } else {
-            return new FilePackageSandBox(fp);
+            final FilePackage fp = downloadLink.getFilePackage();
+            if (fp == null || FilePackage.isDefaultFilePackage(fp)) {
+                return null;
+            } else {
+                return new FilePackageSandBox(fp);
+            }
         }
     }
 
