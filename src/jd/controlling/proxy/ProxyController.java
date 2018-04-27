@@ -69,6 +69,7 @@ import org.appwork.utils.net.httpconnection.ProxyAuthException;
 import org.appwork.utils.net.httpconnection.ProxyConnectException;
 import org.appwork.utils.net.httpconnection.ProxyEndpointConnectException;
 import org.appwork.utils.net.socketconnection.SocketConnection;
+import org.appwork.utils.net.socketconnection.Socks5SocketConnection.Socks5EndpointConnectException;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.swing.dialog.ProxyDialog;
@@ -1282,6 +1283,15 @@ public class ProxyController implements ProxySelectorInterface {
                 if (selectedProxy != null && selectedProxy.getSelector() != null) {
                     final AbstractProxySelectorImpl selector = selectedProxy.getSelector();
                     if (e instanceof ProxyEndpointConnectException) {
+                        final Socks5EndpointConnectException socks5EndpointConnectException = Exceptions.getInstanceof(e, Socks5EndpointConnectException.class);
+                        if (socks5EndpointConnectException != null) {
+                            switch (socks5EndpointConnectException.getError()) {
+                            case TTL_EXPIRED:
+                                return false;
+                            default:
+                                break;
+                            }
+                        }
                         selector.addSessionBan(new EndPointConnectExceptionBan(selector, selectedProxy, url));
                         return true;
                     } else if (e instanceof ProxyConnectException) {
@@ -1314,6 +1324,15 @@ public class ProxyController implements ProxySelectorInterface {
                         selector.addSessionBan(new ConnectExceptionInPluginBan(plg, selector, selectedProxy));
                     } else {
                         if (e instanceof ProxyEndpointConnectException) {
+                            final Socks5EndpointConnectException socks5EndpointConnectException = Exceptions.getInstanceof(e, Socks5EndpointConnectException.class);
+                            if (socks5EndpointConnectException != null) {
+                                switch (socks5EndpointConnectException.getError()) {
+                                case TTL_EXPIRED:
+                                    return false;
+                                default:
+                                    break;
+                                }
+                            }
                             selector.addSessionBan(new EndPointConnectExceptionBan(selector, selectedProxy, request.getURL()));
                         } else {
                             selector.addSessionBan(new GenericConnectExceptionBan(selector, selectedProxy, request.getURL()));
