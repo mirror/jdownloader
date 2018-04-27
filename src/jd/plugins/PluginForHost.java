@@ -2529,6 +2529,18 @@ public abstract class PluginForHost extends Plugin {
         return null;
     }
 
+    public boolean hasFeature(FEATURE feature) {
+        final FEATURE[] features = getFeatures();
+        if (features != null) {
+            for (int i = 0; i < features.length; i++) {
+                if (features[i] == feature) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     public FEATURE[] getFeatures() {
         return new FEATURE[0];
     }
