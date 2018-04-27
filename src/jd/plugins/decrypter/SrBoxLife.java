@@ -30,10 +30,12 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.Regex;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "israbox.life" }, urls = { "https?://[\\w\\.]*(?:israbox\\.(?:com|co|net|org|info|me|download|eu|be|club|life|pw|pro|io|one)|isbox\\.net)/[0-9]+-.*?\\.html" })
-public class SrBoxLife extends PluginForDecrypt {
+public class SrBoxLife extends antiDDoSForDecrypt {
     public SrBoxLife(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -44,14 +46,14 @@ public class SrBoxLife extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.setFollowRedirects(false);
-        br.getPage(parameter);
+        getPage(parameter);
         final String redirect = br.getRedirectLocation();
         if (br.containsHTML("(An error has occurred|The article cannot be found)") || (redirect != null && redirect.matches(base))) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         } else if (redirect != null) {
             br.setFollowRedirects(true);
-            br.getPage(redirect);
+            getPage(redirect);
         }
         String fpName = br.getRegex("<h1 itemprop=\"name\">(.*?)</h1>").getMatch(0);
         if (fpName == null) {
@@ -91,11 +93,16 @@ public class SrBoxLife extends PluginForDecrypt {
         String[] linksCrypted = br.getRegex("\"(" + base + "engine/go\\.php\\?url=.*?)\"").getColumn(0);
         // Added crypted links
         for (String redirectlink : linksCrypted) {
-            final Browser br2 = br.cloneBrowser();
-            br2.getPage(redirectlink);
-            String finallink = br2.getRedirectLocation();
-            if (finallink != null) {
-                decryptedLinks.add(createDownloadlink(finallink));
+            final String base64 = new Regex(redirectlink, "url=((?:aHR0c|ZnRwOi).+?)(\\?|$)").getMatch(0);
+            if (base64 != null) {
+                decryptedLinks.add(createDownloadlink(base64));
+            } else {
+                final Browser br2 = br.cloneBrowser();
+                getPage(br2, redirectlink);
+                final String finallink = br2.getRedirectLocation();
+                if (finallink != null) {
+                    decryptedLinks.add(createDownloadlink(finallink));
+                }
             }
         }
         /*

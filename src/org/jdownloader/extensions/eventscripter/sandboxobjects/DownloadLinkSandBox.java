@@ -8,6 +8,7 @@ import java.util.WeakHashMap;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.packagecontroller.PackageController;
+import jd.http.Browser;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginProgress;
@@ -31,6 +32,7 @@ import org.jdownloader.plugins.DownloadPluginProgress;
 import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.TimeOutCondition;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.settings.UrlDisplayType;
 
 @ScriptAPI(description = "The context download list link")
@@ -363,15 +365,25 @@ public class DownloadLinkSandBox {
     public String getHost() {
         if (downloadLink != null) {
             return downloadLink.getHost();
+        } else {
+            return null;
         }
-        return null;
+    }
+
+    public String getDownloadHost() {
+        if (downloadLink != null) {
+            if (downloadLink.getDefaultPlugin().hasFeature(FEATURE.GENERIC)) {
+                return Browser.getHost(downloadLink.getPluginPatternMatcher());
+            } else {
+                return downloadLink.getHost();
+            }
+        } else {
+            return null;
+        }
     }
 
     public boolean isSkipped() {
-        if (downloadLink != null) {
-            return downloadLink.isSkipped();
-        }
-        return false;
+        return downloadLink != null && downloadLink.isSkipped();
     }
 
     public String getSkippedReason() {

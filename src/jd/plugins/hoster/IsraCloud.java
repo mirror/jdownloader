@@ -1377,12 +1377,7 @@ public class IsraCloud extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (final PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account, true);
         final String space[] = new Regex(correctedBR, ">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
         if ((space != null && space.length != 0) && (space[0] != null && space[1] != null)) {
             /* free users it's provided by default */
@@ -1454,7 +1449,7 @@ public class IsraCloud extends antiDDoSForHost {
                 final Cookies cookies = account.loadCookies("");
                 boolean loggedInViaCookies = false;
                 if (cookies != null) {
-                    br.setCookies(this.getHost(), cookies);
+                    br.setCookies(COOKIE_HOST, cookies);
                     if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l) {
                         /* We trust these cookies as they're not that old --> Do not check them */
                         return;
@@ -1463,7 +1458,7 @@ public class IsraCloud extends antiDDoSForHost {
                     loggedInViaCookies = isLoggedinHTML();
                     if (loggedInViaCookies) {
                         /* Save new cookie-timestamp */
-                        account.saveCookies(br.getCookies(this.getHost()), "");
+                        account.saveCookies(br.getCookies(COOKIE_HOST), "");
                     }
                     if (loggedInViaCookies && !force) {
                         return;
@@ -1515,9 +1510,11 @@ public class IsraCloud extends antiDDoSForHost {
                 } else {
                     account.setType(AccountType.PREMIUM);
                 }
-                account.saveCookies(br.getCookies(this.getHost()), "");
+                account.saveCookies(br.getCookies(COOKIE_HOST), "");
             } catch (final PluginException e) {
-                account.clearCookies("");
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
@@ -1557,7 +1554,7 @@ public class IsraCloud extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, false, 1);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, -5);
             if (dl.getConnection().getContentType().contains("html")) {
                 checkResponseCodeErrors(dl.getConnection());
                 logger.warning("The final dllink seems not to be a file!");
