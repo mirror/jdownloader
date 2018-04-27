@@ -88,7 +88,7 @@ public class OneFichierCom extends PluginForHost {
 
     @Override
     public void init() {
-        Browser.setRequestIntervalLimitGlobal(this.getHost(), 800);
+        Browser.setRequestIntervalLimitGlobal(this.getHost(), 2000);
     }
 
     private String correctProtocol(final String input) {
