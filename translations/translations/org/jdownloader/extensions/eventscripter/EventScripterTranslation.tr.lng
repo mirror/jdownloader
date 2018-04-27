@@ -1,4 +1,5 @@
 CAPTCHA_CHALLENGE_AFTER=Captcha Karşılaşmasından Sonra
+CAPTCHA_CHALLENGE_BEFORE=Captcha Karşılaşmasından Önce
 DOWNLOAD_TABLE_BOTTOM_BAR_BUTTON=İndirme Listesi Alt Çubuk Düğmesine Basıldı
 DOWNLOAD_TABLE_BOTTOM_BAR_BUTTON_explain=Menü Yöneticisini kullanarak özel bir Olay Betiği Yazar Düğmesini, İndirme Listesi Alt Çubuk menüsüne eklemek zorundasınız.
 DOWNLOAD_TABLE_CONTEXT_MENU_BUTTON=İndirme Listesi Bağlam Menüsü Düğmesine Basıldı
