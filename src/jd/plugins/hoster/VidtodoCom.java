@@ -179,6 +179,7 @@ public class VidtodoCom extends antiDDoSForHost {
         correctDownloadLink(link);
         setFUID(link);
         br.getHeaders().put("Referer", "http://vidtodo.com/");
+        br.setFollowRedirects(true);
         getPage(link.getDownloadURL());
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was (deleted|removed) by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -283,6 +284,9 @@ public class VidtodoCom extends antiDDoSForHost {
         if (!inValidate(fileInfo[1])) {
             link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
         }
+        getPage("https://" + NICE_HOST + "/embed-" + fuid + ".html");
+        String dllink = getDllink();
+        checkSize(link, dllink);
         return AvailableStatus.TRUE;
     }
 
@@ -721,6 +725,25 @@ public class VidtodoCom extends antiDDoSForHost {
             }
         }
         return dllink;
+    }
+
+    private String checkSize(final DownloadLink link, final String flink) throws Exception {
+        URLConnectionAdapter con = null;
+        final Browser br2 = br.cloneBrowser();
+        br2.setFollowRedirects(true);
+        try {
+            con = br2.openHeadConnection(flink);
+            if (!con.getContentType().contains("html")) {
+                link.setDownloadSize(con.getLongContentLength());
+            }
+        } catch (final Exception e) {
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Exception e) {
+            }
+        }
+        return flink;
     }
 
     @Override
