@@ -18,9 +18,7 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Random;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -30,6 +28,7 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -748,26 +747,21 @@ public class UpToBoxCom extends antiDDoSForHost {
                 isLogin = true;
                 /** Load cookies */
                 br.setCookiesExclusive(true);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            br.setCookie(COOKIE_HOST, key, value);
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    br.setCookies(COOKIE_HOST, cookies);
+                    // check
+                    getPage("https://uptobox.com/?op=my_account");
+                    if (isCookieSessionValid()) {
+                        if (!new Regex(correctedBR, ">Premium account expiration date :").matches()) {
+                            account.setType(AccountType.FREE);
+                        } else {
+                            account.setType(AccountType.PREMIUM);
                         }
-                        // check
-                        getPage("https://uptobox.com/?op=my_account");
-                        if (isCookieSessionValid()) {
-                            return;
-                        }
-                        br = new Browser();
+                        account.saveCookies(br.getCookies(COOKIE_HOST), "");
+                        return;
                     }
+                    br = new Browser();
                 }
                 br.setFollowRedirects(true);
                 getPage("https://uptobox.com/?op=login");
@@ -807,11 +801,11 @@ public class UpToBoxCom extends antiDDoSForHost {
                 } else {
                     account.setType(AccountType.PREMIUM);
                 }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", fetchCookies(COOKIE_HOST));
+                account.saveCookies(br.getCookies(COOKIE_HOST), "");
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             } finally {
                 br.setFollowRedirects(before);
