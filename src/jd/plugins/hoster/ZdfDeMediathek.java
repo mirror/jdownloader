@@ -22,14 +22,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Scanner;
 
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.config.Order;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.translate._JDT;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -41,6 +33,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
+
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.translate._JDT;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de" }, urls = { "decryptedmediathek://.+" })
 public class ZdfDeMediathek extends PluginForHost {
@@ -172,7 +172,7 @@ public class ZdfDeMediathek extends PluginForHost {
             if (!convertSubtitle(downloadLink)) {
                 logger.severe("Subtitle conversion failed!");
             } else {
-                downloadLink.setFinalFileName(downloadLink.getFinalFileName().replace(".xml", ".srt"));
+                downloadLink.setFinalFileName(downloadLink.getName().replace(".xml", ".srt"));
             }
         }
     }

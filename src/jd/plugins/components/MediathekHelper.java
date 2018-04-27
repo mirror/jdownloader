@@ -4,9 +4,9 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-import org.jdownloader.plugins.components.config.MediathekProperties;
-
 import jd.plugins.DownloadLink;
+
+import org.jdownloader.plugins.components.config.MediathekProperties;
 
 public class MediathekHelper {
     /* TODO: Ensure mp3 (audioonly) compatibility, put less info in filename if not required e.g. leave out protocol if we only have one */
@@ -14,7 +14,12 @@ public class MediathekHelper {
         final String title = data.getTitle();
         final String show = data.getShow();
         final String channel = data.getChannel();
-        final String protocol = data.getProtocol();
+        String protocol = data.getProtocol();
+        if (protocol != null) {
+            /* necessary for video player to find correct subtitle */
+            protocol = protocol.replace("httpsub", "http");
+            protocol = protocol.replace("hlssub", "hls");
+        }
         final String videoResolution = data.getResolution();
         final String date_formatted = formatDate(data.getReleaseDate());
         final String type = data.getStreamingType();
