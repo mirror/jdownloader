@@ -100,7 +100,7 @@ public class MinhatecaComBr extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         br.getPage(url);
-        if (br.containsHTML("class=\"noFile\"")) {
+        if (br.containsHTML("class=\"noFile\"|Conta temporariamente bloqueada")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = link.getStringProperty("plain_filename", null);
