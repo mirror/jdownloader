@@ -226,6 +226,9 @@ public class MinhatecaComBr extends PluginForHost {
                     /* User needs to use an account and/or buy traffic for his existing account to download this file. */
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                 }
+                if (br.containsHTML("Este arquivo está indisponível")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
