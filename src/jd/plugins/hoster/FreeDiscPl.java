@@ -96,13 +96,15 @@ public class FreeDiscPl extends PluginForHost {
         br.setConnectTimeout(3 * 60 * 1000);
         prepBR(this.br);
         br.getPage(link.getDownloadURL());
-        if (isBotBlocked(this.br)) {
-            return AvailableStatus.UNCHECKABLE;
-        } else if (br.getRequest().getHttpConnection().getResponseCode() == 410) {
+        if (br.getRequest().getHttpConnection().getResponseCode() == 410) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Ten plik został usunięty przez użytkownika lub administratora|Użytkownik nie posiada takiego pliku|<title>404 error") || !br.getURL().contains(",f")) {
             /* Check this last as botBlocked also contains 404. */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (isBotBlocked(br)) {
+                return AvailableStatus.UNCHECKABLE;
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         }
         // Handle no public files as offline
         if (br.containsHTML("Ten plik nie jest publicznie dostępny")) {
@@ -113,7 +115,11 @@ public class FreeDiscPl extends PluginForHost {
         if (fileName == null) {
             fileName = br.getRegex("itemprop=\"name\"( style=\"[^<>\"/]+\")?>([^<>\"]*?)</h1>").getMatch(1);
             if (fileName == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (isBotBlocked(this.br)) {
+                    return AvailableStatus.UNCHECKABLE;
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
         }
         fileName = fileName.trim();
@@ -135,6 +141,9 @@ public class FreeDiscPl extends PluginForHost {
         String storedExt = "";
         if (storedfileName != null) {
             storedExt = storedfileName.substring(storedfileName.lastIndexOf(".") + 1);
+            if (storedExt != null && !storedExt.matches("^[a-zA-Z0-9]$")) {
+                storedExt = null;
+            }
         }
         if (link.getName() == null || (storedExt != null && !("." + storedExt).matches(DirectHTTP.ENDINGS))) {
             final String fileNameExt = fileName.substring(fileName.lastIndexOf(".") + 1);

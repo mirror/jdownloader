@@ -15,13 +15,13 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.HeadRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -29,6 +29,10 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  *
@@ -37,7 +41,6 @@ import jd.plugins.FilePackage;
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hitomi.la" }, urls = { "https?://(www\\.)?hitomi\\.la/(?:galleries/\\d+\\.html|reader/\\d+\\.html)" })
 public class HitomiLa extends antiDDoSForDecrypt {
-
     public HitomiLa(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -56,7 +59,7 @@ public class HitomiLa extends antiDDoSForDecrypt {
         final String fpName = br.getRegex("<title>([^<>\"]*?) \\| Hitomi\\.la</title>").getMatch(0);
         // get the image host.
         // retval = subdomain_from_galleryid(g) + retval;
-        final String imghost = getImageHost(guid) + "a";
+        String imghost = getImageHost(guid) + "a";
         final String[] links = br.getRegex("(/" + guid + "/(?:[^<>\"]*?\\.[a-z]+)+)").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
@@ -65,8 +68,30 @@ public class HitomiLa extends antiDDoSForDecrypt {
         final int numberOfPages = links.length;
         final DecimalFormat df = numberOfPages > 999 ? new DecimalFormat("0000") : numberOfPages > 99 ? new DecimalFormat("000") : new DecimalFormat("00");
         int i = 0;
+        boolean checked = false;
         for (final String singleLink : links) {
             ++i;
+            if (!checked) {
+                HeadRequest head = br.createHeadRequest("https://" + imghost + ".hitomi.la/galleries" + singleLink);
+                URLConnectionAdapter con = br.openRequestConnection(head);
+                try {
+                    if (con.isOK()) {
+                        checked = true;
+                    } else {
+                        con.disconnect();
+                        head = br.createHeadRequest("https://0a.hitomi.la/galleries" + singleLink);
+                        con = br.openRequestConnection(head);
+                        if (con.isOK()) {
+                            checked = true;
+                            imghost = "0a";
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                    }
+                } finally {
+                    con.disconnect();
+                }
+            }
             final DownloadLink dl = createDownloadlink("directhttp://https://" + imghost + ".hitomi.la/galleries" + singleLink);
             dl.setAvailable(true);
             dl.setFinalFileName(df.format(i) + getFileNameExtensionFromString(singleLink, ".jpg"));
