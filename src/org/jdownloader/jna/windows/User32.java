@@ -18,8 +18,8 @@ public interface User32 extends com.sun.jna.platform.win32.User32 {
      * @return
      */
     boolean CloseWindow(HWND hWnd);
-    // https://msdn.microsoft.com/de-de/library/windows/desktop/ms633548(v=vs.85).aspx
 
+    // https://msdn.microsoft.com/de-de/library/windows/desktop/ms633548(v=vs.85).aspx
     // Displays the window in its current size and position. This value is similar to SW_SHOW, except that the window is not activated.
     public static final int SHOW_SW_SHOWNA            = 8;
     // Maximizes the specified window.
@@ -44,4 +44,7 @@ public interface User32 extends com.sun.jna.platform.win32.User32 {
     boolean ShowWindow(HWND hWnd, int state);
 
     void AnimateWindow(HWND hwnd, long time, long animation);
+
+    boolean SystemParametersInfo(int uiAction, int uiParam, Object pvParam, // Pointer or int
+            int fWinIni);
 }
