@@ -13,15 +13,10 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.HashMap;
 import java.util.Map;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -37,11 +32,13 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.components.UserAgents.BrowserName;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sizedrive.com", "file4go.net", "file4go.com" }, urls = { "http://(?:www\\.)?(?:file4go|sizedrive)\\.(?:com|net)/(?:r/|d/|download\\.php\\?id=)([a-f0-9]{20})", "regex://nullfied/ranoasdahahdom", "regex://nullfied/ranoasdahahdom" })
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sizedrive.com", "file4go.net", "file4go.com" }, urls = { "http://(?:www\\.)?(?:file4go|sizedrive)\\.(?:com|net|biz)/(?:r/|d/|download\\.php\\?id=)([a-f0-9]{20})", "regex://nullfied/ranoasdahahdom", "regex://nullfied/ranoasdahahdom" })
 public class File4GoCom extends antiDDoSForHost {
-
     public File4GoCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(MAINPAGE);
@@ -52,7 +49,7 @@ public class File4GoCom extends antiDDoSForHost {
         return MAINPAGE;
     }
 
-    private static final String MAINPAGE = "http://www.file4go.net";
+    private static final String MAINPAGE = "http://www.file4go.biz";
     private static Object       LOCK     = new Object();
 
     @Override
@@ -70,20 +67,11 @@ public class File4GoCom extends antiDDoSForHost {
         return super.rewriteHost(host);
     }
 
-    @Override
-    protected boolean useRUA() {
-        return true;
-    }
-
-    @Override
-    protected BrowserName setBrowserName() {
-        return BrowserName.Firefox;
-    }
-
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
+        correctDownloadLink(link);
         br.setCookie(MAINPAGE, "animesonline", "1");
         br.setCookie(MAINPAGE, "musicasab", "1");
         br.setCookie(MAINPAGE, "poup", "1");
@@ -263,12 +251,7 @@ public class File4GoCom extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (final PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account, true);
         ai.setUnlimitedTraffic();
         String expire = br.getRegex(">Premium Stop: (\\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2}:\\d{2}) </b>").getMatch(0);
         account.setValid(true);
