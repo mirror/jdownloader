@@ -16,9 +16,8 @@ import org.jdownloader.plugins.components.config.WallPapersCraftComConfig;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wallpaperscraft.com" }, urls = { "https?://(?:www\\.)?wallpaperscraft\\.com/download/[^/]+_\\d+/\\d+x\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wallpaperscraft.com" }, urls = { "https?://(?:www\\.)?wallpaperscraft\\.com/(download/[^/]+_\\d+/\\d+x\\d+|wallpaper/[^/]+_\\d+)" })
 public class WallPapersCraftCom extends PluginForDecrypt {
-
     public WallPapersCraftCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -33,9 +32,21 @@ public class WallPapersCraftCom extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         br.getPage(parameter.getCryptedUrl());
-        final String resolution = new Regex(parameter.getCryptedUrl(), "(\\d+x\\d+)$").getMatch(0);
-        final String originalResolution = br.getRegex("Original Resolution:\\s*<a href=.*?>(\\d+x\\d+)").getMatch(0);
-        final String url = br.getRegex("\"downloads_big\">\\s*<img\\s*src=\"(.*?_\\d+_\\d+x\\d+\\..*?)\"").getMatch(0);
+        String originalResolution = br.getRegex("Original Resolution:\\s*<a href=.*?>(\\d+x\\d+)").getMatch(0);
+        if (originalResolution == null) {
+            originalResolution = br.getRegex("Original Resolution\\s*:\\s*(\\d+x\\d+)").getMatch(0);
+        }
+        if (parameter.getCryptedUrl().contains("/wallpaper/")) {
+            final String download = br.getRegex("href=\"(/download/.*?/\\d+x\\d+)\"").getMatch(0);
+            if (download != null) {
+                br.getPage(download);
+            }
+        }
+        final String resolution = new Regex(br.getURL(), "(\\d+x\\d+)$").getMatch(0);
+        String url = br.getRegex("\"downloads_big\">\\s*<img\\s*src=\"(.*?_\\d+_\\d+x\\d+\\..*?)\"").getMatch(0);
+        if (url == null) {
+            url = br.getRegex("href=\"([^\"]*?_\\d+_\\d+x\\d+\\.[^\"]*?)\"\\s*download").getMatch(0);
+        }
         if (url != null) {
             final URL imageURL;
             if (originalResolution != null && PluginJsonConfig.get(WallPapersCraftComConfig.class).isPreferOriginalResolution()) {
@@ -52,5 +63,4 @@ public class WallPapersCraftCom extends PluginForDecrypt {
         }
         return ret;
     }
-
 }
