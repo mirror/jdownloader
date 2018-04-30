@@ -34,17 +34,24 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixiv.net" }, urls = { "https?://(?:www\\.)?pixiv\\.net/(?:member_illust\\.php\\?mode=[a-z]+\\&illust_id=\\d+|member_illust\\.php\\?id=\\d+)" })
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.plugins.controller.PluginClassLoader;
+import org.jdownloader.plugins.controller.host.HostPluginController;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixiv.net" }, urls = { "https?://(?:www\\.)?pixiv\\.net/(?:member_illust\\.php\\?mode=[a-z]+\\&illust_id=\\d+|member(_illust)?\\.php\\?id=\\d+)" })
 public class PixivNet extends PluginForDecrypt {
     public PixivNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String TYPE_GALLERY = ".+/member_illust\\.php\\?mode=[a-z]+\\&illust_id=\\d+";
+    private static final String TYPE_GALLERY        = ".+/member_illust\\.php\\?mode=[a-z]+\\&illust_id=\\d+";
+    private static final String TYPE_GALLERY_MEDIUM = ".+/member_illust\\.php\\?mode=medium\\&illust_id=\\d+";
+    private static final String TYPE_GALLERY_MANGA  = ".+/member_illust\\.php\\?mode=manga\\&illust_id=\\d+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        String parameter = param.toString();
         final PluginForHost hostplugin = JDUtilities.getPluginForHost(this.getHost());
         final Account aa = AccountController.getInstance().getValidAccount(hostplugin);
         jd.plugins.hoster.PixivNet.prepBR(br);
@@ -54,19 +61,47 @@ public class PixivNet extends PluginForDecrypt {
                 jd.plugins.hoster.PixivNet.login(br, aa, false, false);
                 loggedIn = true;
             } catch (PluginException e) {
-                logger.log(e);
+                final PluginForHost plugin = HostPluginController.getInstance().get(getHost()).newInstance(PluginClassLoader.getThreadPluginClassLoaderChild());
+                if (getLogger() instanceof LogSource) {
+                    plugin.handleAccountException(aa, (LogSource) getLogger(), e);
+                } else {
+                    plugin.handleAccountException(aa, null, e);
+                }
             }
         }
         final String lid = new Regex(parameter, "id=(\\d+)").getMatch(0);
         br.setFollowRedirects(true);
         String fpName = null;
+        Boolean single = null;
         if (parameter.matches(TYPE_GALLERY)) {
-            /* Decrypt gallery */
-            br.getPage(jd.plugins.hoster.PixivNet.createGalleryUrl(lid));
-            String[] links;
-            if (br.containsHTML("指定されたIDは複数枚投稿ではありません|t a multiple-image submission<")) {
-                /* Not multiple urls --> Switch to single-url view */
+            if (parameter.matches(TYPE_GALLERY_MEDIUM)) {
                 br.getPage(jd.plugins.hoster.PixivNet.createSingleImageUrl(lid));
+                if (br.containsHTML("mode=manga&amp;illust_id=" + lid)) {
+                    parameter = jd.plugins.hoster.PixivNet.createGalleryUrl(lid);
+                    br.getPage(parameter);
+                    single = Boolean.FALSE;
+                } else {
+                    single = Boolean.TRUE;
+                }
+            } else if (parameter.matches(TYPE_GALLERY_MANGA)) {
+                br.getPage(jd.plugins.hoster.PixivNet.createGalleryUrl(lid));
+                if (br.containsHTML("指定されたIDは複数枚投稿ではありません|t a multiple-image submission<")) {
+                    parameter = jd.plugins.hoster.PixivNet.createSingleImageUrl(lid);
+                    br.getPage(parameter);
+                    single = Boolean.TRUE;
+                } else {
+                    single = Boolean.FALSE;
+                }
+            } else {
+                br.getPage(jd.plugins.hoster.PixivNet.createGalleryUrl(lid));
+            }
+            /* Decrypt gallery */
+            String[] links;
+            if (Boolean.TRUE.equals(single) || (single == null && br.containsHTML("指定されたIDは複数枚投稿ではありません|t a multiple-image submission<"))) {
+                /* Not multiple urls --> Switch to single-url view */
+                if (single == null) {
+                    br.getPage(jd.plugins.hoster.PixivNet.createSingleImageUrl(lid));
+                }
                 fpName = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)(?:\\[pixiv\\])?\">").getMatch(0);
                 if (fpName == null) {
                     fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
@@ -164,10 +199,16 @@ public class PixivNet extends PluginForDecrypt {
                     break;
                 }
                 final HashSet<String> dups = new HashSet<String>();
-                final String[] links = br.getRegex("<a href=\"[^<>\"]*?[^/]+illust_id=(\\d+)\"").getColumn(0);
-                for (final String galleryID : links) {
+                final String[][] links = br.getRegex("<a href=\"[^<>\"]*?[^/]+illust_id=(\\d+)\"\\s*(class=\"(.*?)\")?").getMatches();
+                for (final String[] link : links) {
+                    final String galleryID = link[0];
                     if (dups.add(galleryID)) {
-                        final DownloadLink dl = createDownloadlink(jd.plugins.hoster.PixivNet.createGalleryUrl(galleryID));
+                        final DownloadLink dl;
+                        if (link.length > 1 && StringUtils.contains(link[1], "multiple")) {
+                            dl = createDownloadlink(jd.plugins.hoster.PixivNet.createGalleryUrl(galleryID));
+                        } else {
+                            dl = createDownloadlink(jd.plugins.hoster.PixivNet.createSingleImageUrl(galleryID));
+                        }
                         decryptedLinks.add(dl);
                         distribute(dl);
                     }
