@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -41,9 +40,8 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "load.to" }, urls = { "https?://(www\\.)?load\\.to/[A-Za-z0-9]+/" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "load.to" }, urls = { "https?://(www\\.)?load\\.to/[A-Za-z0-9]+/" })
 public class LoadTo extends PluginForHost {
-
     public LoadTo(PluginWrapper wrapper) {
         super(wrapper);
         this.setConfigElements();
@@ -66,19 +64,16 @@ public class LoadTo extends PluginForHost {
 
     /* Settings stuff */
     private static final String            ENABLE_UNLIMITED_MAXDLS      = "ENABLE_UNLIMITED_MAXDLS";
-
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections
     // fail. .:. use [1-20]
     private static AtomicInteger           totalMaxSimultanFreeDownload = new AtomicInteger(getMaxdls());
     // don't touch the following!
     private static AtomicInteger           maxFree                      = new AtomicInteger(1);
     private final String                   INVALIDLINKS                 = "http://(www\\.)?load\\.to/(news|imprint|faq)/";
-
     /* Connection stuff */
     private static final boolean           FREE_RESUME                  = false;
     private static final int               FREE_MAXCHUNKS               = 1;
     private static final int               FREE_MAXDOWNLOADS            = 1;
-
     private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
 
     @Override
@@ -94,9 +89,12 @@ public class LoadTo extends PluginForHost {
         if (br.containsHTML(">Can't find file")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>(?:Load\\.to - )?([^<>\"]*?)(?: // Load\\.to)?</title>").getMatch(0);
+        String filename = br.getRegex("id=\"filename\">([^<\"]*?)</").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("Download file\\s*:\\s*<br/>\\s*<h1>(.*?)</h1>").getMatch(0);
+            filename = br.getRegex("<title>?:Load\\.to -)?(\\s*Download of)?\\s*([^<>\"]*?)(?: // Load\\.to)?</title>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("Download file\\s*:\\s*<br/>\\s*<h1>(.*?)</h1>").getMatch(0);
+            }
         }
         final String filesize = br.getRegex("Size:\\s*(\\d+(\\.\\d+)?\\s*(KB|MB|GB))").getMatch(0);
         if (filename == null) {
@@ -147,7 +145,6 @@ public class LoadTo extends PluginForHost {
         } else if (br.containsHTML("solvemedia\\.com/papi/")) {
             for (int i = 1; i <= 3; i++) {
                 /* Captcha */
-
                 final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                 File cf = null;
                 try {
@@ -164,7 +161,6 @@ public class LoadTo extends PluginForHost {
                     logger.info("Invalid captcha answer");
                     continue;
                 }
-
                 final String postData = "adcopy_response=" + code + "&adcopy_challenge=" + Encoding.urlEncode(chid) + "&returnUrl=" + Encoding.urlEncode(br.getURL());
                 dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, postData, FREE_RESUME, FREE_MAXCHUNKS);
                 if (dl.getConnection().getContentType().contains("html")) {
@@ -300,5 +296,4 @@ public class LoadTo extends PluginForHost {
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
         return true;
     }
-
 }
