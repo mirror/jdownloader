@@ -5,6 +5,7 @@ import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 
+import jd.controlling.downloadcontroller.DownloadControllerConfig;
 import jd.controlling.faviconcontroller.FavIconsConfig;
 import jd.controlling.linkchecker.LinkCheckerConfig;
 import jd.controlling.linkcrawler.LinkCrawlerConfig;
@@ -77,6 +78,7 @@ public class AdvancedConfigManager {
         register(JsonConfig.create(PhantomJSConfig.class));
         register(JsonConfig.create(LinkCheckerConfig.class));
         register(JsonConfig.create(LinkCrawlerConfig.class));
+        register(JsonConfig.create(DownloadControllerConfig.class));
         register(CFG_LINKGRABBER.CFG);
         register(CFG_LINKCOLLECTOR.CFG);
         register(CFG_RECONNECT.CFG);
