@@ -20,6 +20,8 @@ import java.util.Locale;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -28,7 +30,10 @@ import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -76,12 +81,15 @@ public class VideoBoxCom extends PluginForHost {
         dllink = checkDirectLink(link, "directlink");
         br.setFollowRedirects(true);
         final String orginalurl = link.getStringProperty("originalurl", null);
-        if (orginalurl == null) {
+        final String sceneID = link.getStringProperty("sceneid", null);
+        if (orginalurl == null || sceneID == null) {
+            /* This should never happen */
             throw new PluginException(LinkStatus.ERROR_FATAL, "Delete link and re-add it!");
         }
         br.getPage(orginalurl);
         if (dllink == null) {
-            br.getPage("http://www.videobox.com/content/download/options/" + link.getStringProperty("sceneid", null) + ".json?x-user-name=" + Encoding.urlEncode(account.getUser()) + "&x-session-key=" + sessionID + "&callback=metai.buildDownloadLinks");
+            /** TODO: Improve this! */
+            br.getPage("http://www.videobox.com/content/download/options/" + sceneID + ".json?x-user-name=" + Encoding.urlEncode(account.getUser()) + "&x-session-key=" + sessionID + "&callback=metai.buildDownloadLinks");
             dllink = getSpecifiedQuality(link.getStringProperty("quality", null));
         }
         link.setFinalFileName(link.getStringProperty("finalname", null));
@@ -121,41 +129,58 @@ public class VideoBoxCom extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
 
-    private static final String MAINPAGE = "http://videobox.com";
-    private static Object       LOCK     = new Object();
+    private static Object LOCK = new Object();
 
     public void login(final Account account, final boolean force, final Browser br) throws Exception {
         synchronized (LOCK) {
             try {
-                // Load cookies
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null && !force) {
+                /* Avoid full login whenever possible to avoid login captcha */
+                if (cookies != null) {
                     br.setCookies(account.getHoster(), cookies);
-                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age) {
+                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age && !force) {
                         /* We trust these cookies --> Do not check them */
                         return;
                     }
-                    /* TODO: Check if loggedIn, via HTML code */
-                    return;
+                    br.getPage("https://www." + account.getHoster() + "/member/home");
+                    if (isLoggedinHTML(br)) {
+                        /* Save cookie timestamp */
+                        account.saveCookies(br.getCookies(account.getHoster()), "");
+                        return;
+                    }
+                    /* Perform full login */
                 }
                 br.setFollowRedirects(true);
                 br.getPage("https://www." + account.getHoster() + "/login");
-                String postData = "login-page=login-page&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember_me=true&x=0&y=0";
-                /* TODO: 2018-02-07: Fix this (status unclear but login without captcha should work fine) */
-                if (false) {
+                Form loginform = br.getFormbyProperty("name", "f");
+                if (loginform == null) {
+                    loginform = new Form();
+                    loginform.setMethod(MethodType.POST);
+                    loginform.setAction("/login");
+                }
+                loginform.remove("remember_me");
+                loginform.put("remember_me", "true");
+                if (!loginform.hasInputFieldByName("login-page")) {
+                    loginform.put("login-page", "login-page");
+                }
+                loginform.put("x", "0");
+                loginform.put("y", "0");
+                loginform.put("username", Encoding.urlEncode(account.getUser()));
+                loginform.put("password", Encoding.urlEncode(account.getPass()));
+                if (br.containsHTML("class=\"g\\-recaptcha\"")) {
                     if (this.getDownloadLink() == null) {
                         final DownloadLink dummyLink = new DownloadLink(this, "Account", account.getHoster(), "https://" + account.getHoster(), true);
                         this.setDownloadLink(dummyLink);
                     }
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                    postData += "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response);
+                    loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 }
-                br.postPage(br.getURL(), postData);
+                br.submitForm(loginform);
                 if (br.containsHTML("Your account expired on")) {
                     account.getAccountInfo().setExpired(true);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account expired", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else if (br.getCookie(MAINPAGE, "SPRING_SECURITY_REMEMBER_ME_COOKIE") == null || br.getURL().contains("videobox.com/auth-fail")) {
+                } else if (!isLoggedinHTML(br)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(br.getCookies(this.getHost()), "");
@@ -168,6 +193,10 @@ public class VideoBoxCom extends PluginForHost {
         }
     }
 
+    private boolean isLoggedinHTML(final Browser br) {
+        return !br.getURL().contains("/auth-fail") && br.containsHTML("href=\\'/logout\\'");
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -177,16 +206,17 @@ public class VideoBoxCom extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        br.getPage("https://www.videobox.com/billing/account");
+        br.getPage("/billing/account");
         ai.setUnlimitedTraffic();
-        final String expire = br.getRegex(">next statement</div>[\t\n\r ]+<div class=\"value\">([^<>\"]*?)</div>").getMatch(0);
-        if (expire == null && !br.containsHTML("<strong>Account status:</strong>[\t\n\r ]+ACTIVE")) {
+        final String expire = br.getRegex(">next statement:</strong>([^<>\"]*?)<").getMatch(0);
+        if (expire == null && !br.containsHTML("<strong>Account status:</strong>\\s*?ACTIVE")) {
             account.setValid(false);
             return ai;
         } else if (expire != null) {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.trim(), "MM/dd/yyyy", Locale.ENGLISH));
         }
         account.setValid(true);
+        account.setType(AccountType.PREMIUM);
         ai.setStatus("Premium User");
         return ai;
     }
@@ -194,11 +224,24 @@ public class VideoBoxCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link, account);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
+        if (this.dllink == null) {
+            /* This should never happen! */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (this.dllink.contains(".m3u8")) {
+            /* Ideally this should only contain 1 quality! */
+            br.getPage(this.dllink);
+            final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
+            dllink = hlsbest.getDownloadurl();
+            checkFFmpeg(link, "Download a HLS Stream");
+            dl = new HLSDownloader(link, br, dllink);
+        } else {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         dl.startDownload();
     }
