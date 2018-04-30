@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -33,7 +32,6 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "files.fm" }, urls = { "https?://(?:www\\.)?files\\.fm/u/[a-z0-9]+" })
 public class FilesFmFolder extends PluginForDecrypt {
-
     public FilesFmFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -86,7 +84,7 @@ public class FilesFmFolder extends PluginForDecrypt {
                 filename = new Regex(singleLink, "\\&n=([^<>\"]*?)\\'").getMatch(0);
             }
             final String filesize = new Regex(singleLink, "class=\"file_size\">([^<>}\"]*?)<").getMatch(0);
-            final String fileid = new Regex(singleLink, "\\?i=([a-z0-9]+)").getMatch(0);
+            final String fileid = new Regex(singleLink, "(?:\\?|&)i=([a-z0-9]+)").getMatch(0);
             if (filename == null || filesize == null || fileid == null) {
                 return null;
             }
@@ -100,14 +98,11 @@ public class FilesFmFolder extends PluginForDecrypt {
             dl.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize)));
             decryptedLinks.add(dl);
         }
-
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
         }
-
         return decryptedLinks;
     }
-
 }
