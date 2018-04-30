@@ -760,6 +760,8 @@ public class UpToBoxCom extends antiDDoSForHost {
                         }
                         account.saveCookies(br.getCookies(COOKIE_HOST), "");
                         return;
+                    } else {
+                        account.clearCookies("");
                     }
                     br = new Browser();
                 }
