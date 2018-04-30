@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -31,9 +30,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tapeciarnia.pl" }, urls = { "http://(?:www\\.)?tapeciarnia\\.pl/\\d+_[^/]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tapeciarnia.pl" }, urls = { "https?://(?:www\\.)?tapeciarnia\\.pl/\\d+_[^/]+" })
 public class TapeciarniaPl extends PluginForHost {
-
     public TapeciarniaPl(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -42,12 +40,10 @@ public class TapeciarniaPl extends PluginForHost {
     // Tags:
     // protocol: no https
     // other:
-
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
 
     @Override
@@ -70,7 +66,7 @@ public class TapeciarniaPl extends PluginForHost {
         if (filename == null) {
             filename = url_filename;
         }
-        dllink = br.getRegex("property=\"og:image\" content=\"(http[^<>\"]*?)\"").getMatch(0);
+        dllink = br.getRegex("property=\"og:image\" content=\"(https?[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("(https?://(?:www\\.)?tapeciarnia\\.pl/tapety/normalne/[^/]*?\\.jpg)").getMatch(0);
         }
