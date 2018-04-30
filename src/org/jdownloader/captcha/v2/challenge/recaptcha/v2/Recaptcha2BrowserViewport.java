@@ -6,8 +6,10 @@ import java.awt.Rectangle;
 import java.awt.event.InputEvent;
 import java.awt.image.BufferedImage;
 
+import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.captcha.v2.solver.browser.BrowserViewport;
 import org.jdownloader.captcha.v2.solver.browser.BrowserWindow;
+import org.jdownloader.logging.LogController;
 
 public class Recaptcha2BrowserViewport extends BrowserViewport {
     private Rectangle     recaptchaIframe;
@@ -30,6 +32,15 @@ public class Recaptcha2BrowserViewport extends BrowserViewport {
         Point oldloc = MouseInfo.getPointerInfo().getLocation();
         int clickX = recaptchaIframe.x + scale(22) + scale(Math.random() * 20);
         int clickY = recaptchaIframe.y + scale(32) + scale(Math.random() * 20);
+        WindowsMouseSpeedWorkaround workaround = null;
+        if (CrossSystem.isWindows()) {
+            try {
+                workaround = new WindowsMouseSpeedWorkaround();
+                workaround.saveMouseSpeed();
+            } catch (final Throwable e) {
+                LogController.CL().log(e);
+            }
+        }
         // System.out.println("Press " + clickX + ":" + clickY);
         getRobot().mouseMove(clickX, clickY);
         // first click ensure focus
@@ -39,6 +50,13 @@ public class Recaptcha2BrowserViewport extends BrowserViewport {
         getRobot().mousePress(InputEvent.BUTTON1_MASK);
         getRobot().mouseRelease(InputEvent.BUTTON1_MASK);
         getRobot().mouseMove(oldloc.x, oldloc.y);
+        if (CrossSystem.isWindows() && workaround != null) {
+            try {
+                workaround.loadMouseSpeed();
+            } catch (final Throwable e) {
+                LogController.CL().log(e);
+            }
+        }
         // if (!Application.isJared(null)) {
         // new Thread() {
         // public void run() {
@@ -63,6 +81,7 @@ public class Recaptcha2BrowserViewport extends BrowserViewport {
         // }.start();
         // }
     }
+
     // protected void onFoundCaptchaRectangle(Rectangle rectangle) {
     //
     // if (rectangle.height < scale(350)) {
@@ -103,7 +122,6 @@ public class Recaptcha2BrowserViewport extends BrowserViewport {
     // }
     //
     // }
-
     // protected Rectangle find() {
     // Rectangle spoken = getRectangleByColor(0xCCCCCC, scale(48), scale(48), 1d, scale(22), scale(32));
     //
