@@ -15,8 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -28,16 +26,18 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.StringUtils;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alotporn.com" }, urls = { "https?://(?:www\\.)?alotporn\\.com/(?:\\d+/[A-Za-z0-9\\-_]+/|(?:embed\\.php\\?id=|embed/)\\d+)|https?://m\\.alotporn\\.com/\\d+/[a-z0-9\\-]+/" })
 public class AlotpornCom extends PluginForHost {
     public AlotpornCom(PluginWrapper wrapper) {
         super(wrapper);
     }
+
     /* DEV NOTES */
     // Tags: Porn plugin
     // protocol: no https
     // other:
-
     /* Extension which will be used if no correct extension is found */
     private static final String  default_extension = ".mp4";
     /* Connection stuff */
@@ -94,7 +94,7 @@ public class AlotpornCom extends PluginForHost {
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        this.dllink = getDllink();
+        dllink = getDllink();
         final String ext;
         if (!StringUtils.isEmpty(dllink)) {
             ext = getFileNameExtensionFromString(dllink, default_extension);
@@ -159,6 +159,9 @@ public class AlotpornCom extends PluginForHost {
         String videoUrl = br.getRegex("video_alt_url\\s*?:\\s*?\\'(.+?)\\'").getMatch(0);
         if (videoUrl == null) {
             videoUrl = br.getRegex("video_url\\s*?:\\s*?\\'(.+?)\\'").getMatch(0);
+        }
+        if (videoUrl == null) {
+            videoUrl = br.getRegex("<source src=(?:'|\")(http[^<>\"]*?)/?(?:'|\")").getMatch(0);
         }
         if (videoUrl == null) {
             return null;
