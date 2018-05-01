@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -38,7 +37,6 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eroprofile.com" }, urls = { "http://(www\\.)?eroprofile\\.com/m/(videos|photos)/view/[A-Za-z0-9\\-_]+" })
 public class EroProfileCom extends PluginForHost {
-
     public EroProfileCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium();
@@ -46,7 +44,6 @@ public class EroProfileCom extends PluginForHost {
 
     /* DEV NOTES */
     /* Porn_plugin */
-
     private String dllink = null;
 
     @Override
@@ -82,6 +79,9 @@ public class EroProfileCom extends PluginForHost {
                 return AvailableStatus.TRUE;
             }
             dllink = br.getRegex("file:\\'(http://[^<>\"]*?)\\'").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("<source src=(?:'|\")(http[^<>\"]*?)/?(?:'|\")").getMatch(0);
+            }
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
