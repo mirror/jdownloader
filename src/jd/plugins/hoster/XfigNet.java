@@ -17,8 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -31,16 +29,18 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.appwork.utils.StringUtils;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xfig.net" }, urls = { "https?://(?:www\\.)?xfig\\.net/(?:videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)|https?://m\\.xfig\\.net/videos/\\d+/[a-z0-9\\-]+/" })
 public class XfigNet extends PluginForHost {
     public XfigNet(PluginWrapper wrapper) {
         super(wrapper);
     }
+
     /* DEV NOTES */
     // Tags: Porn plugin
     // protocol: no https
     // other:
-
     /* Extension which will be used if no correct extension is found */
     private static final String  default_extension = ".mp4";
     /* Connection stuff */
@@ -88,7 +88,8 @@ public class XfigNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* Small workaround - do not include the slash at the end. */
-        dllink = br.getRegex("var videoFile=\"(http[^<>\"]*?)/?\"").getMatch(0);
+        // dllink = br.getRegex("var videoFile=\"(http[^<>\"]*?)/?\"").getMatch(0);
+        dllink = br.getRegex("<source src=(?:'|\")(http[^<>\"]*?)/?(?:'|\")").getMatch(0);
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
