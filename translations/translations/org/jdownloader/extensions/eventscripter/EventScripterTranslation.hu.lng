@@ -1,4 +1,5 @@
 CAPTCHA_CHALLENGE_AFTER=Miután egy képkód
+CAPTCHA_CHALLENGE_BEFORE=Képkód kihívás előtt
 DOWNLOAD_TABLE_BOTTOM_BAR_BUTTON=Letöltési lista alsó sáv gomb megnyomva
 DOWNLOAD_TABLE_BOTTOM_BAR_BUTTON_explain=Amennyiben szeretne hozzáadni egy egyéni esemény scripter gombot a letőltési lista alsó menüsávjához, használja a Felhasználói felület menükezelőjét.
 DOWNLOAD_TABLE_CONTEXT_MENU_BUTTON=Letöltési lista helyi menü gomb megnyomva
