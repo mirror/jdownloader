@@ -51,6 +51,7 @@ public class GeneralMultiuploadDecrypter extends antiDDoSForDecrypt {
     // Tags: Multi file upload, mirror, mirrorstack, GeneralMultiuploadDecrypter
     private final String DEFAULTREGEX = "<frame name=\"main\" src=\"(.*?)\">";
     private CryptedLink  param;
+    private boolean      notOK        = false;
 
     @Override
     protected boolean useRUA() {
@@ -163,18 +164,18 @@ public class GeneralMultiuploadDecrypter extends antiDDoSForDecrypt {
         br.setFollowRedirects(false);
         final ArrayList<String> redirectLinks = getRedirectsLinks(brc);
         if (redirectLinks == null || redirectLinks.isEmpty()) {
-            // So far only tested for maxmirror.com, happens when all links have
-            // the status "Unavailable"
-            if (br.containsHTML("<td><img src=/images/Upload\\.gif")) {
+            // So far only tested for maxmirror.com, happens when all links have "Unavailable" status
+            // and go4up.com when all links have !"ok" status
+            if (br.containsHTML("<td><img src=/images/Upload\\.gif") || notOK) {
                 logger.info("All links are unavailable: " + parameter);
+                decryptedLinks.add(createOfflinelink(parameter));
                 return decryptedLinks;
             }
             // exoshare have just advertising crapola for dead/offline links
             if ("exoshare.com".equals(getHost())) {
                 return decryptedLinks;
             }
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            throw new DecrypterException("Decrypter broken for link: " + parameter);
         }
         logger.info("Found " + redirectLinks.size() + " " + " links to decrypt...");
         String fileName = null;
@@ -233,14 +234,17 @@ public class GeneralMultiuploadDecrypter extends antiDDoSForDecrypt {
     private ArrayList<String> getRedirectsLinks(final Browser br) throws Exception {
         // try with json, not sure which hosts use what though try catch will help as final failover anyway.
         try {
+            boolean noneOK = true;
             final ArrayList<String> links = new ArrayList<String>();
             final ArrayList<Object> jsonArray = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             for (final Object jsonObject : jsonArray) {
                 final LinkedHashMap<String, Object> json = (LinkedHashMap<String, Object>) jsonObject;
                 final String status = (String) json.get("status");
                 if (!"ok".equalsIgnoreCase(status) && !"checking".equalsIgnoreCase(status)) {
+                    notOK = true;
                     continue;
                 }
+                noneOK = false;
                 final String link = (String) json.get("link");
                 if (link != null) {
                     final String url = new Regex(link, "href=(\"|'|)(.*?)\\1").getMatch(1);
@@ -248,6 +252,9 @@ public class GeneralMultiuploadDecrypter extends antiDDoSForDecrypt {
                         links.add(url);
                     }
                 }
+            }
+            if (noneOK == false) {
+                notOK = false;
             }
             return links;
         } catch (final Exception t) {
