@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -29,13 +28,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vporno.tv" }, urls = { "http://(www\\.)?vporno\\.tv/\\d+/.{1}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vporno.tv" }, urls = { "http://(www\\.)?vporno\\.tv/\\d+/.{1}" })
 public class VPornoTv extends PluginForHost {
-
     /* DEV NOTES */
     /* Porn_plugin */
-
-    private String DLLINK = null;
+    private String dllink = null;
 
     public VPornoTv(PluginWrapper wrapper) {
         super(wrapper);
@@ -54,7 +51,7 @@ public class VPornoTv extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -74,21 +71,22 @@ public class VPornoTv extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("title>(.*?)</title>").getMatch(0);
-        DLLINK = br.getRegex("<file>(http://.*?\\.flv)</file>").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("(http://v\\d+\\.vmedia\\.tv/videos/[a-z0-9]+/[a-z0-9]+/vporno/\\d+\\.flv)").getMatch(0);
+        // dllink = br.getRegex("<file>(http://.*?\\.flv)</file>").getMatch(0);
+        dllink = br.getRegex("<mp4>(http.*?)</mp4>").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("(http://v\\d+\\.vmedia\\.tv/videos/[a-z0-9]+/[a-z0-9]+/vporno/\\d+\\.flv)").getMatch(0);
         }
-        if (filename == null || DLLINK == null) {
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = filename.trim();
-        downloadLink.setFinalFileName(filename + ".flv");
+        downloadLink.setFinalFileName(filename + ".mp4");
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
+            con = br2.openGetConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
