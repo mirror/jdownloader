@@ -136,7 +136,11 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
             if ("folder".equals(type)) {
                 folderContainsSubfolder = true;
                 weblink = Encoding.htmlDecode(weblink);
-                weblink = "https://cloud.mail.ru/public/" + weblink;
+                String encoded_weblink = Encoding.urlEncode(weblink);
+                /* We need the "/" so let's encode them back. */
+                encoded_weblink = encoded_weblink.replace("%2F", "/");
+                encoded_weblink = encoded_weblink.replace("+", "%20");
+                weblink = "https://cloud.mail.ru/public/" + encoded_weblink;
                 final DownloadLink folderLink = createDownloadlink(weblink);
                 if (StringUtils.isNotEmpty(item_name)) {
                     final String folder_path;
