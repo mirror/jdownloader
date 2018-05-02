@@ -1,7 +1,18 @@
 package org.jdownloader.jna.windows;
 
+import java.util.HashMap;
+
+import com.sun.jna.Pointer;
+import com.sun.jna.win32.W32APIFunctionMapper;
+import com.sun.jna.win32.W32APITypeMapper;
+
 public interface User32 extends com.sun.jna.platform.win32.User32 {
-    public User32 INSTANCE = (User32) com.sun.jna.Native.loadLibrary("user32", User32.class);
+    public User32 INSTANCE = (User32) com.sun.jna.Native.loadLibrary("user32", User32.class, new HashMap<Object, Object>() {
+                               {
+                                   put(OPTION_TYPE_MAPPER, W32APITypeMapper.UNICODE);
+                                   put(OPTION_FUNCTION_MAPPER, W32APIFunctionMapper.UNICODE);
+                               }
+                           });
 
     /**
      * Requires win 2000+
@@ -45,6 +56,6 @@ public interface User32 extends com.sun.jna.platform.win32.User32 {
 
     void AnimateWindow(HWND hwnd, long time, long animation);
 
-    boolean SystemParametersInfo(int uiAction, int uiParam, Object pvParam, // Pointer or int
+    boolean SystemParametersInfo(int uiAction, int uiParam, Pointer pvParam, // Pointer or int
             int fWinIni);
 }
