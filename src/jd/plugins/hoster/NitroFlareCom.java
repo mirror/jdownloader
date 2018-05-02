@@ -661,25 +661,31 @@ public class NitroFlareCom extends antiDDoSForHost {
                 }
                 if (fullLogin) {
                     getPage("https://nitroflare.com/login");
-                    Form f = br.getFormbyProperty("id", "login");
-                    if (f == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    // recaptcha2
-                    if (f.containsHTML("<div class=\"g-recaptcha\"")) {
-                        if (this.getDownloadLink() == null) {
-                            // login wont contain downloadlink
-                            this.setDownloadLink(new DownloadLink(this, "Account Login!", this.getHost(), this.getHost(), true));
+                    Form f = null;
+                    for (int retry = 0; retry < 3; retry++) {
+                        f = br.getFormbyProperty("id", "login");
+                        if (f == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
-                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                        f.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                        // recaptcha2
+                        if (f.containsHTML("<div class=\"g-recaptcha\"")) {
+                            if (this.getDownloadLink() == null) {
+                                // login wont contain downloadlink
+                                this.setDownloadLink(new DownloadLink(this, "Account Login!", this.getHost(), this.getHost(), true));
+                            }
+                            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                            f.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                        }
+                        f.put("email", Encoding.urlEncode(account.getUser().toLowerCase(Locale.ENGLISH)));
+                        f.put("password", Encoding.urlEncode(account.getPass()));
+                        f.put("login", "");
+                        submitForm(f);
+                        // place in incorrect password here
+                        f = br.getFormbyProperty("id", "login");
+                        if (f == null) {
+                            break;
+                        }
                     }
-                    f.put("email", Encoding.urlEncode(account.getUser().toLowerCase(Locale.ENGLISH)));
-                    f.put("password", Encoding.urlEncode(account.getPass()));
-                    f.put("login", "");
-                    submitForm(f);
-                    // place in incorrect password here
-                    f = br.getFormbyProperty("id", "login");
                     if (f != null) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nIncorrect User/Password", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
