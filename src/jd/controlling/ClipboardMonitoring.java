@@ -24,6 +24,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import jd.controlling.ClipboardMonitoring.ClipboardChangeDetector.CHANGE_FLAG;
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledLinkModifier;
+import jd.parser.html.HTMLParser;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.IO;
 import org.appwork.utils.IO.BOM;
@@ -37,13 +45,6 @@ import org.jdownloader.gui.views.components.packagetable.dragdrop.PackageControl
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
-import jd.controlling.ClipboardMonitoring.ClipboardChangeDetector.CHANGE_FLAG;
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkOrigin;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledLinkModifier;
-import jd.parser.html.HTMLParser;
 import sun.awt.datatransfer.SunClipboard;
 
 public class ClipboardMonitoring {
@@ -283,9 +284,9 @@ public class ClipboardMonitoring {
         }
     }
 
-    private static final ClipboardMonitoring INSTANCE = new ClipboardMonitoring();
-    private static final DataFlavor          URLFLAVOR;
-    private static final DataFlavor          URILISTFLAVOR;
+    private static final ClipboardMonitoring                                                 INSTANCE            = new ClipboardMonitoring();
+    private static final DataFlavor                                                          URLFLAVOR;
+    private static final DataFlavor                                                          URILISTFLAVOR;
     static {
         DataFlavor ret = null;
         try {
@@ -554,7 +555,7 @@ public class ClipboardMonitoring {
                                 } catch (final Throwable e) {
                                     clipboardChangeDetector.slowDown(e);
                                     final String message = e.getMessage();
-                                    if (!StringUtils.containsIgnoreCase(message, "Failed to retrieve atom name") && !StringUtils.containsIgnoreCase(message, "cannot open system clipboard") && !StringUtils.containsIgnoreCase(message, "Owner failed to convert data") && !StringUtils.containsIgnoreCase(message, "Owner timed out") && !StringUtils.containsIgnoreCase(message, "system clipboard data unavailable")) {
+                                    if (!StringUtils.containsIgnoreCase(message, "Font transform has") && !StringUtils.containsIgnoreCase(message, "Failed to retrieve atom name") && !StringUtils.containsIgnoreCase(message, "cannot open system clipboard") && !StringUtils.containsIgnoreCase(message, "Owner failed to convert data") && !StringUtils.containsIgnoreCase(message, "Owner timed out") && !StringUtils.containsIgnoreCase(message, "system clipboard data unavailable")) {
                                         if (message != null) {
                                             logger.severe(message);
                                         }

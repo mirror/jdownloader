@@ -904,8 +904,10 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
                 this.addToText(null, ChatExtension.STYLE_ERROR, "Command /" + cmd + " is not available");
             }
         } else {
-            this.conn.doPrivmsg(channel2, this.prepareToSend(text));
-            this.addToText(this.getUser(this.conn.getNick()), ChatExtension.STYLE_SELF, Utils.prepareMsg(text));
+            if (conn != null) {
+                this.conn.doPrivmsg(channel2, this.prepareToSend(text));
+                this.addToText(this.getUser(this.conn.getNick()), ChatExtension.STYLE_SELF, Utils.prepareMsg(text));
+            }
         }
         new EDTHelper<Object>() {
             @Override
