@@ -16,7 +16,6 @@
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
@@ -234,9 +233,9 @@ public class CloudMailRu extends PluginForHost {
                     // using linkedhashmap here will result in exception
                     // java.lang.ClassCastException: java.util.HashMap cannot be cast to java.util.LinkedHashMap
                     // irc report - raztoki20160619
-                    final HashMap<String, Object> entries = (HashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(web_json);
-                    dataserver = (String) JavaScriptEngineFactory.walkJson(entries, "dispatcher/weblink_get/{0}/url");
-                    pageid = (String) JavaScriptEngineFactory.walkJson(entries, "params/x-page-id");
+                    // final HashMap<String, Object> entries = (HashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(web_json);
+                    // dataserver = (String) JavaScriptEngineFactory.walkJson(entries, "dispatcher/weblink_get/{0}/url");
+                    // pageid = (String) JavaScriptEngineFactory.walkJson(entries, "params/x-page-id");
                     // final LinkedHashMap<String, Object> page_info = (LinkedHashMap<String, Object>) entries.get("");
                     // final ArrayList<Object> ressourcelist = (ArrayList) entries.get("");
                 }
@@ -262,7 +261,7 @@ public class CloudMailRu extends PluginForHost {
                     /* We need the "/" so let's encode them back. */
                     encoded_unique_id = encoded_unique_id.replace("%2F", "/");
                     encoded_unique_id = encoded_unique_id.replace("+", "%20");
-                    dllink = dataserver + "/" + encoded_unique_id + "?key=" + token;
+                    dllink = dataserver + "get/" + encoded_unique_id + "?key=" + token;
                 } else {
                     logger.warning("Failed to find dataserver for finallink");
                 }
