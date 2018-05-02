@@ -16,9 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.File;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -27,6 +25,7 @@ import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
+import jd.http.requests.GetRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -39,6 +38,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "realitykings.com" }, urls = { "https?://(?:new\\.)?members\\.realitykings\\.com/video/download/\\d+/[A-Za-z0-9\\-_]+/|realitykingsdecrypted://.+" })
 public class RealityKingsCom extends PluginForHost {
@@ -209,16 +214,24 @@ public class RealityKingsCom extends PluginForHost {
                      * when the user logs in via browser.
                      */
                     br.setCookies(account.getHoster(), cookies);
-                    br.getPage(jd.plugins.decrypter.RealityKingsCom.getProtocol() + jd.plugins.decrypter.RealityKingsCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/");
-                    if (br.containsHTML(html_loggedin)) {
+                    br.getPage("https://site-ma.realitykings.com");
+                    if (StringUtils.containsIgnoreCase(br.getURL(), "/access/login")) {
+                        logger.info("Cookie login failed --> Performing full login");
+                        br = prepBR(new Browser());
+                        account.clearCookies("");
+                    } else {
+                        account.saveCookies(br.getCookies(account.getHoster()), "");
                         logger.info("Cookie login successful");
                         return;
                     }
-                    logger.info("Cookie login failed --> Performing full login");
-                    br = prepBR(new Browser());
                 }
                 br.getPage(jd.plugins.decrypter.RealityKingsCom.getProtocol() + jd.plugins.decrypter.RealityKingsCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/access/login/");
-                String postdata = "rememberme=on&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
+                Form loginForm = br.getFormbyActionRegex("/access/submit");
+                if (loginForm == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                loginForm.put("username", Encoding.urlEncode(account.getUser()));
+                loginForm.put("password", Encoding.urlEncode(account.getPass()));
                 if (br.containsHTML("api\\.recaptcha\\.net|google\\.com/recaptcha/api/")) {
                     final Recaptcha rc = new Recaptcha(br, this);
                     rc.findID();
@@ -226,19 +239,26 @@ public class RealityKingsCom extends PluginForHost {
                     final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                     final DownloadLink dummyLink = new DownloadLink(this, "Account", account.getHoster(), jd.plugins.decrypter.RealityKingsCom.getProtocol() + jd.plugins.decrypter.RealityKingsCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/", true);
                     final String code = getCaptchaCode("recaptcha", cf, dummyLink);
-                    postdata += "&recaptcha_challenge_field=" + Encoding.urlEncode(rc.getChallenge()) + "&recaptcha_response_field=" + Encoding.urlEncode(code);
+                    loginForm.put("recaptcha_challenge_field", Encoding.urlEncode(rc.getChallenge()));
+                    loginForm.put("ecaptcha_response_field", Encoding.urlEncode(code));
                 }
-                br.postPage(jd.plugins.decrypter.RealityKingsCom.getProtocol() + jd.plugins.decrypter.RealityKingsCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/access/submit/", postdata);
+                br.submitForm(loginForm);
                 final String redirect_http = br.getRedirectLocation();
                 if (redirect_http != null) {
                     br.getPage(redirect_http);
                 }
-                final Form continueform = br.getFormbyKey("response");
+                Form continueform = br.getFormbyKey("response");
                 if (continueform != null) {
                     /* Redirect from probiller.com to main website --> Login complete */
                     br.submitForm(continueform);
+                    continueform = br.getFormbyKey("response");
+                    if (continueform != null) {
+                        /* Redirect from site-ma.realitykings.com.com to main website --> Login complete */
+                        br.submitForm(continueform);
+                    }
                 }
-                if (!br.containsHTML(html_loggedin)) {
+                br.getPage("https://site-ma.realitykings.com");
+                if (StringUtils.containsIgnoreCase(br.getURL(), "/access/login")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername,Passwort und/oder login Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -247,7 +267,9 @@ public class RealityKingsCom extends PluginForHost {
                 }
                 account.saveCookies(br.getCookies(account.getHoster()), "");
             } catch (final PluginException e) {
-                account.clearCookies("");
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
@@ -256,15 +278,16 @@ public class RealityKingsCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(this.br, account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
-        br.getPage("/member/profile/");
-        final boolean isPremium = br.containsHTML("<dt>Membership type:</dt>\\s*?<dd>Paying</dd>");
-        if (!isPremium) {
+        login(this.br, account, true);
+        final GetRequest get = br.createGetRequest("https://site-api.realitykings.com/v1/self");
+        get.getHeaders().put("Authorization", br.getCookie(getHost(), "access_token_ma"));
+        get.getHeaders().put("Instance", br.getCookie(getHost(), "instance_token"));
+        get.getHeaders().put("Origin", "https://site-ma.realitykings.com");
+        br.getPage(get);
+        Map<String, Object> map = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Boolean isExpired = (Boolean) map.get("isExpired");
+        final Boolean isTrial = (Boolean) map.get("isTrial");
+        if (Boolean.TRUE.equals(isTrial) || Boolean.TRUE.equals(isExpired)) {
             /*
              * 2017-02-28: Added free account support. Advantages: View trailers (also possible without account), view picture galleries
              * (only possible via free/premium account, free is limited to max 99 viewable pictures!)
@@ -272,10 +295,12 @@ public class RealityKingsCom extends PluginForHost {
             account.setType(AccountType.FREE);
             ai.setStatus("Free Account");
         } else {
-            final String days_remaining = br.getRegex("Remaining membership:</dt>\\s*?<dd>(\\d+) days</dd>").getMatch(0);
-            if (days_remaining != null) {
-                /* 2018-03-09: Expiredate might not always be available */
-                ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(days_remaining) * 24 * 60 * 60 * 1000, br);
+            final String expiryDate = (String) map.get("expiryDate");
+            if (expiryDate != null) {
+                final long expireTimestamp = TimeFormatter.getMilliSeconds(expiryDate, "yyyy'-'MM'-'dd'T'HH':'mm':'ss", null);
+                if (expireTimestamp > 0) {
+                    ai.setValidUntil(expireTimestamp, br);
+                }
             }
             account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium Account");
