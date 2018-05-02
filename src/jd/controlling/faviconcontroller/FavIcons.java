@@ -8,10 +8,11 @@ import java.awt.Transparency;
 import java.awt.geom.Rectangle2D;
 import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
-import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -40,6 +41,7 @@ import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.Files;
+import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.images.IconIO;
@@ -53,6 +55,7 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.updatev2.gui.LAFOptions;
+import org.seamless.util.io.IO;
 
 public class FavIcons {
     private static final ThreadPoolExecutor                                      THREAD_POOL;
@@ -374,54 +377,6 @@ public class FavIcons {
         }
     }
 
-    private static BufferedImage download_FavIconIco(String host, LogSource logger) throws IOException {
-        final String url = "http://" + host + "/favicon.ico";
-        final Browser favBr = new Browser();
-        favBr.setLogger(logger);
-        favBr.setConnectTimeout(10000);
-        favBr.setReadTimeout(10000);
-        URLConnectionAdapter con = null;
-        BufferedInputStream inputStream = null;
-        try {
-            /* we first try favicon.ico in root */
-            favBr.setFollowRedirects(true);
-            favBr.getHeaders().put("Accept-Encoding", null);
-            con = favBr.openGetConnection(url);
-            if (con.isOK() && !StringUtils.containsIgnoreCase(con.getContentType(), "text")) {
-                /* we use bufferedinputstream to reuse it later if needed */
-                inputStream = new BufferedInputStream(con.getInputStream());
-                inputStream.mark(Integer.MAX_VALUE);
-                try {
-                    /* try first with iconloader */
-                    final List<BufferedImage> ret = ICODecoder.read(inputStream);
-                    final BufferedImage img = returnBestImage(ret);
-                    if (img != null) {
-                        return img;
-                    }
-                    throw new Throwable("Try again with other ImageLoader");
-                } catch (Throwable e) {
-                    /* retry with normal image download */
-                    inputStream.reset();
-                    /* maybe redirect to different icon format? */
-                    final BufferedImage img = downloadImage(inputStream);
-                    if (img != null && img.getHeight() > 1 && img.getWidth() > 1) {
-                        return img;
-                    }
-                }
-            }
-            return null;
-        } finally {
-            try {
-                inputStream.close();
-            } catch (final Throwable e) {
-            }
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
-            }
-        }
-    }
-
     /*
      * dirty hack to count number of unique colors, use only for small images like favicons!
      */
@@ -466,7 +421,7 @@ public class FavIcons {
         favBr.setConnectTimeout(10000);
         favBr.setReadTimeout(10000);
         URLConnectionAdapter con = null;
-        BufferedInputStream inputStream = null;
+        byte[] bytes = null;
         try {
             favBr.setFollowRedirects(true);
             favBr.getPage("http://" + host);
@@ -483,28 +438,59 @@ public class FavIcons {
                     url = "http://" + url;
                 }
             }
+            if (StringUtils.isEmpty(url)) {
+                url = "/favicon.ico";
+            }
             if (!StringUtils.isEmpty(url)) {
                 /* favicon tag with ico extension */
                 favBr.setFollowRedirects(true);
                 favBr.getHeaders().put("Accept-Encoding", null);
                 con = favBr.openGetConnection(url);
                 /* we use bufferedinputstream to reuse it later if needed */
-                inputStream = new BufferedInputStream(con.getInputStream());
-                inputStream.mark(Integer.MAX_VALUE);
+                bytes = IO.readBytes(con.getInputStream());
                 if (con.isOK() && !StringUtils.containsIgnoreCase(con.getContentType(), "text")) {
                     try {
+                        List<BufferedImage> ret = null;
+                        if (bytes[1] == 80 && bytes[2] == 78 && bytes[3] == 71) {
+                            final BufferedImage img = downloadImage(new ByteArrayInputStream(bytes));
+                            if (img != null) {
+                                ret = new ArrayList<BufferedImage>();
+                                ret.add(img);
+                            }
+                        } else if (bytes[0] == 71 && bytes[1] == 73 && bytes[2] == 70) {
+                            final GifDecoder gifDecoder = new GifDecoder();
+                            /* reset bufferedinputstream to begin from start */
+                            if (gifDecoder.read(new ByteArrayInputStream(bytes)) == 0) {
+                                final BufferedImage img = gifDecoder.getImage();
+                                if (img != null) {
+                                    ret = new ArrayList<BufferedImage>();
+                                    ret.add(img);
+                                }
+                            }
+                        }
                         /* try first with iconloader */
-                        final List<BufferedImage> ret = ICODecoder.read(inputStream);
+                        if (ret == null) {
+                            try {
+                                ret = ICODecoder.read(new ByteArrayInputStream(bytes));
+                            } catch (final IOException e) {
+                                final String max = new Regex(e.getMessage(), "Failed to read image #\\s*(\\d+)").getMatch(0);
+                                if (max != null && Integer.parseInt(max) > 1) {
+                                    final byte[] copy = bytes.clone();
+                                    // TODO: modify icon header to stop at last okay image
+                                    ret = ICODecoder.read(new ByteArrayInputStream(copy));
+                                } else {
+                                    throw e;
+                                }
+                            }
+                        }
                         final BufferedImage img = returnBestImage(ret);
                         if (img != null) {
                             return img;
                         }
                         throw new Throwable("Try again with other ImageLoader");
                     } catch (Throwable e) {
-                        /* retry with normal image download */
-                        inputStream.reset();
                         /* maybe redirect to different icon format? */
-                        final BufferedImage img = downloadImage(inputStream);
+                        final BufferedImage img = downloadImage(new ByteArrayInputStream(bytes));
                         if (img != null && img.getHeight() > 1 && img.getWidth() > 1) {
                             return img;
                         }
@@ -513,10 +499,6 @@ public class FavIcons {
             }
             return null;
         } finally {
-            try {
-                inputStream.close();
-            } catch (final Throwable e) {
-            }
             try {
                 con.disconnect();
             } catch (final Throwable e) {
@@ -542,18 +524,10 @@ public class FavIcons {
         logger.info("Download FavIcon for " + host);
         BufferedImage ret = null;
         try {
-            try {
-                /* first try to get the FavIcon specified in FavIconTag */
-                ret = download_FavIconTag(host, logger);
-            } catch (Throwable e) {
-            }
-            if (ret == null) {
-                try {
-                    /* fallback to favicon.ico in host root */
-                    ret = download_FavIconIco(host, logger);
-                } catch (Throwable e) {
-                }
-            }
+            /* first try to get the FavIcon specified in FavIconTag */
+            ret = download_FavIconTag(host, logger);
+        } catch (Throwable ignore) {
+            logger.log(ignore);
         } finally {
             if (ret != null) {
                 logger.clear();
@@ -565,7 +539,7 @@ public class FavIcons {
         return ret;
     }
 
-    private static BufferedImage downloadImage(BufferedInputStream is) {
+    private static BufferedImage downloadImage(InputStream is) {
         try {
             BufferedImage ret = ImageIO.read(is);
             if (ret == null) {
