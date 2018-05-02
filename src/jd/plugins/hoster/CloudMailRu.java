@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
@@ -46,7 +45,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloud.mail.ru" }, urls = { "http://clouddecrypted\\.mail\\.ru/\\d+|https?://[a-z0-9]+\\.datacloudmail\\.ru/weblink/(view|get)/a13a79fc6e6f/[^<>\"/]+/[^<>\"/]+" })
 public class CloudMailRu extends PluginForHost {
-
     public CloudMailRu(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
@@ -57,7 +55,6 @@ public class CloudMailRu extends PluginForHost {
     private static final String  TYPE_HOTLINK                 = "https?://[a-z0-9]+\\.datacloudmail\\.ru/weblink/(view|get)/[a-z0-9]+/[^<>\"/]+/[^<>\"/]+";
     private static final String  NOCHUNKS                     = "NOCHUNKS";
     private static final String  DOWNLOAD_ZIP                 = "DOWNLOAD_ZIP_2";
-
     /* Connection stuff */
     private static final boolean FREE_RESUME                  = true;
     private static final int     FREE_MAXCHUNKS               = 0;
@@ -228,10 +225,9 @@ public class CloudMailRu extends PluginForHost {
                 String dataserver = null;
                 String pageid = null;
                 String linkpart = new Regex(mainlink, "/public/([^/]+/[^/]+)").getMatch(0);
-                if (linkpart == null) {
+                if (linkpart == null || (unique_id != null && unique_id.contains("#"))) {
                     linkpart = unique_id;
                 }
-
                 this.br.getPage(mainlink);
                 final String web_json = this.br.getRegex("window\\[\"__configObject[^<>\"]+\"\\] =(\\{.*?\\});<").getMatch(0);
                 if (web_json != null) {
@@ -250,11 +246,15 @@ public class CloudMailRu extends PluginForHost {
                 if (pageid == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-
                 br.postPage("https://cloud.mail.ru/api/v2/tokens/download", "api=2&build=" + BUILD + "&x-page-id=" + pageid);
                 final String token = PluginJSonUtils.getJsonValue(br, "token");
                 if (token == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                if (dataserver == null) {
+                    /* Usually this should not be needed! */
+                    br.getPage("/api/v2/dispatcher?api=2&build=" + BUILD + "&_=" + System.currentTimeMillis());
+                    dataserver = br.getRegex("\"url\":\"(https?://[a-z0-9]+\\.datacloudmail\\.ru/weblink/)view/\"").getMatch(0);
                 }
                 if (dataserver != null) {
                     /* TODO: Check for encoding problems here! */
@@ -262,21 +262,10 @@ public class CloudMailRu extends PluginForHost {
                     /* We need the "/" so let's encode them back. */
                     encoded_unique_id = encoded_unique_id.replace("%2F", "/");
                     encoded_unique_id = encoded_unique_id.replace("+", "%20");
-
                     dllink = dataserver + "/" + encoded_unique_id + "?key=" + token;
                 } else {
-                    /* Usually this should not be needed! */
-                    br.getPage("/api/v2/dispatcher?api=2&build=" + BUILD + "&_=" + System.currentTimeMillis());
-                    dataserver = br.getRegex("\"url\":\"(https?://[a-z0-9]+\\.datacloudmail\\.ru/weblink/)view/\"").getMatch(0);
-                    if (dataserver != null) {
-                        /* Old handling see Rev. 29087 */
-                        logger.info("Successfully found new finallink");
-                        dllink = dataserver + "get/" + linkpart + "?key=" + token;
-                    } else {
-                        logger.warning("Failed to find dataserver for finallink");
-                    }
+                    logger.warning("Failed to find dataserver for finallink");
                 }
-
             }
         }
         if (dllink == null) {
@@ -422,5 +411,4 @@ public class CloudMailRu extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }

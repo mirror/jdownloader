@@ -30,6 +30,10 @@ public class BrowserSandBox {
         }
     }
 
+    public void setHeader(String field, String value) {
+        br.setHeader(field, value);
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof BrowserSandBox) {
