@@ -43,7 +43,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
@@ -52,9 +51,10 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filescdn.com" }, urls = { "https?://(www\\.)?filescdn\\.com/(?:embed\\-)?[a-z0-9]{12}" })
-public class FilescdnCom extends PluginForHost {
+public class FilescdnCom extends antiDDoSForHost {
     /* Some HTML code to identify different (error) states */
     private static final String            HTML_PASSWORDPROTECTED          = "<br><b>Passwor(d|t):</b> <input";
     private static final String            HTML_MAINTENANCE_MODE           = ">This server is in maintenance mode";
@@ -782,34 +782,34 @@ public class FilescdnCom extends PluginForHost {
         return finallink;
     }
 
-    private void getPage(final String page) throws Exception {
+    public void getPage(final String page) throws Exception {
         getPage(br, page, true);
     }
 
     private void getPage(final Browser br, final String page, final boolean correctBr) throws Exception {
-        br.getPage(page);
+        super.getPage(page);
         if (correctBr) {
             correctBR();
         }
     }
 
-    private void postPage(final String page, final String postdata) throws Exception {
+    public void postPage(final String page, final String postdata) throws Exception {
         postPage(br, page, postdata, true);
     }
 
     private void postPage(final Browser br, final String page, final String postdata, final boolean correctBr) throws Exception {
-        br.postPage(page, postdata);
+        super.postPage(page, postdata);
         if (correctBr) {
             correctBR();
         }
     }
 
-    private void submitForm(final Form form) throws Exception {
+    public void submitForm(final Form form) throws Exception {
         submitForm(br, form, true);
     }
 
     private void submitForm(final Browser br, final Form form, final boolean correctBr) throws Exception {
-        br.submitForm(form);
+        super.submitForm(form);
         if (correctBr) {
             correctBR();
         }
@@ -853,22 +853,6 @@ public class FilescdnCom extends PluginForHost {
             sleep(wait * 1000l, downloadLink);
         } else {
             logger.info("Found no waittime");
-        }
-    }
-
-    /**
-     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
-     * @param s
-     *            Imported String to match against.
-     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
-     * @author raztoki
-     */
-    private boolean inValidate(final String s) {
-        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
-            return true;
-        } else {
-            return false;
         }
     }
 
