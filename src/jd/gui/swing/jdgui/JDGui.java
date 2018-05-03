@@ -57,20 +57,6 @@ import javax.swing.Timer;
 import javax.swing.ToolTipManager;
 import javax.swing.WindowConstants;
 
-import jd.SecondLevelLaunch;
-import jd.config.ConfigContainer;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.gui.UIConstants;
-import jd.gui.swing.jdgui.components.StatusBarImpl;
-import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
-import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
-import jd.gui.swing.jdgui.interfaces.View;
-import jd.gui.swing.jdgui.menu.JDMenuBar;
-import jd.gui.swing.jdgui.views.myjd.MyJDownloaderView;
-import jd.gui.swing.jdgui.views.settings.ConfigurationView;
-import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
@@ -93,6 +79,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.speedmeter.SpeedMeterInterface.Resolution;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
@@ -150,6 +137,20 @@ import org.jdownloader.updatev2.SmartRlyRestartRequest;
 import org.jdownloader.updatev2.UpdateController;
 import org.jdownloader.updatev2.UpdateHandler;
 import org.jdownloader.updatev2.UpdaterListener;
+
+import jd.SecondLevelLaunch;
+import jd.config.ConfigContainer;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.gui.UIConstants;
+import jd.gui.swing.jdgui.components.StatusBarImpl;
+import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
+import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
+import jd.gui.swing.jdgui.interfaces.View;
+import jd.gui.swing.jdgui.menu.JDMenuBar;
+import jd.gui.swing.jdgui.views.myjd.MyJDownloaderView;
+import jd.gui.swing.jdgui.views.settings.ConfigurationView;
+import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
+import net.miginfocom.swing.MigLayout;
 
 public class JDGui implements UpdaterListener, OwnerFinder {
     private static final String TITLE_PATTERN_UPDATE            = "\\|([^\\|]*)\\#UPDATENOTIFY([^\\|]*)\\|";
@@ -1673,7 +1674,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
             speedAverage = sm.getAverageSpeed();
         }
         if (speedAverage < 0) {
-            speedAverage = DownloadWatchDog.getInstance().getDownloadSpeedManager().getSpeedMeter().getValue(1000);
+            speedAverage = DownloadWatchDog.getInstance().getDownloadSpeedManager().getSpeedMeter().getValue(Resolution.SECONDS);
         }
         if (DownloadWatchDog.getInstance().isRunning()) {
             pattern = pattern.replaceAll(TITLE_PATTERN_SPEED_AVERAGE, "$1" + SizeFormatter.formatBytes(Math.max(0, speedAverage)) + "$2");

@@ -9,8 +9,6 @@ import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 
-import jd.parser.Regex;
-
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.utils.Application;
 import org.appwork.utils.Exceptions;
@@ -25,6 +23,7 @@ import org.appwork.utils.net.meteredconnection.MeteredInputStream;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.processes.ProcessBuilderFactory;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
+import org.appwork.utils.speedmeter.SpeedMeterInterface.Resolution;
 import org.jdownloader.api.DeprecatedAPIHttpServerController;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.extensions.streaming.ByteRange;
@@ -32,8 +31,9 @@ import org.jdownloader.extensions.streaming.StreamLinker;
 import org.jdownloader.extensions.streaming.dataprovider.StreamFactoryInterface;
 import org.jdownloader.logging.LogController;
 
-public abstract class Transcoder {
+import jd.parser.Regex;
 
+public abstract class Transcoder {
     private int               port;
     private HttpHandlerInfo   streamHandler;
     private String            sessionID;
@@ -44,7 +44,6 @@ public abstract class Transcoder {
         this.port = port;
         logger = LogController.getInstance().getLogger(Transcoder.class.getName());
         sessionID = new UniqueAlltimeID().toString();
-
     }
 
     public String toString() {
@@ -63,9 +62,7 @@ public abstract class Transcoder {
     }
 
     public void run() throws Exception {
-
         String path = getFFMpegPath();
-
         initStreamHandler();
         //
         // "g:\\audio" + sessionID + ".mp3"
@@ -75,9 +72,7 @@ public abstract class Transcoder {
              * a suitable output format for 'http://127.0.0.1:3128/ffmpeg/1346828391987' http://127.0.0.1:3128/ffmpeg/1346828391987: Invalid
              * argument
              */
-
             String[] results;
-
             ArrayList<String> ffmpegcommands = new ArrayList<String>();
             ffmpegcommands.add(path);
             for (String s : getFFMpegCommandLine("http://127.0.0.1:" + port + "/ffmpeg/" + sessionID)) {
@@ -85,11 +80,8 @@ public abstract class Transcoder {
             }
             commands = ffmpegcommands;
             results = execute(ffmpegcommands.toArray(new String[] {}));
-
         } catch (Exception e) {
-
             addException(e);
-
         } finally {
             DeprecatedAPIHttpServerController.getInstance().unregisterRequestHandler(streamHandler);
             if (exception != null) {
@@ -104,7 +96,6 @@ public abstract class Transcoder {
 
     protected void initStreamHandler() throws IOException {
         streamHandler = DeprecatedAPIHttpServerController.getInstance().registerRequestHandler(port, true, new HttpRequestHandler() {
-
             @Override
             public boolean onPostRequest(PostRequest request, HttpResponse response) {
                 if (!request.getRequestedURL().equals("/ffmpeg/" + sessionID)) {
@@ -114,72 +105,56 @@ public abstract class Transcoder {
                 MeteredInputStream input;
                 try {
                     input = new MeteredInputStream(request.getInputStream(), new AverageSpeedMeter(10));
-
                     int len;
                     byte[] buffer = new byte[100 * 1024];
                     long oldspeed = 0;
                     while ((len = input.read(buffer)) != -1) {
                         if (len > 0) {
-
                             write(buffer, len);
-
-                            long speed = (input.getValue(1000) / 1000);
+                            long speed = (input.getValue(Resolution.SECONDS) / 1000);
                             if (speed != oldspeed) {
                                 oldspeed = speed;
                                 System.out.println("Transcoded Data Speed: " + speed + " kbyte/s @Systembitrate: " + (systemBitrate / (8 * 1024)) + "kbyte/s");
                             }
-
                         }
                     }
-
                     response.setResponseCode(ResponseCode.SUCCESS_OK);
                     response.closeConnection();
-
                     return true;
                 } catch (IOException e) {
                     if (e.getMessage().contains("Connection reset")) {
-
                         // ffmpeg killed;
                         logger.info("FFMPeg killed transcoded Stream");
                         return true;
                     }
-
                     addException(e);
                     try {
                         response.getOutputStream(true).write(Exceptions.getStackTrace(e).getBytes("UTF-8"));
                     } catch (Exception e1) {
-
                     }
-
                 }
-
                 return true;
             }
 
             @Override
             public boolean onGetRequest(GetRequest request, HttpResponse response) {
-
                 if (!request.getRequestedURL().equals("/ffmpeg/" + sessionID)) {
                     return false;
                 }
-
                 try {
                     new StreamLinker(response).run(getStreamFactory(), new ByteRange(request));
-
                 } catch (Exception e) {
                     if (e.getMessage().contains("socket write error")) {
                         // output closed by ffmpeg
                         return true;
                     }
                     addException(e);
-
                     try {
                         response.getOutputStream(true).write(Exceptions.getStackTrace(e).getBytes());
                     } catch (IOException e1) {
                         e1.printStackTrace();
                     }
                     response.setResponseCode(ResponseCode.SERVERERROR_INTERNAL);
-
                 }
                 return true;
             }
@@ -215,7 +190,6 @@ public abstract class Transcoder {
         try {
             f = new BufferedReader(new InputStreamReader(fis, "UTF8"));
             String line;
-
             final String sep = System.getProperty("line.separator");
             while ((line = f.readLine()) != null) {
                 if (ret.length() > 0) {
@@ -225,22 +199,18 @@ public abstract class Transcoder {
                      * Workaround for this bug: http://bugs.sun.com/view_bug.do?bug_id=4508058
                      * http://bugs.sun.com/view_bug.do?bug_id=6378911
                      */
-
                     line = line.substring(1);
                 }
                 ret.append(line);
             }
-
             return ret.toString();
         } catch (IOException e) {
-
             throw e;
         } catch (RuntimeException e) {
             throw e;
         } catch (Error e) {
             throw e;
         } finally {
-
             // don't close streams this might ill the process
         }
     }
@@ -251,22 +221,19 @@ public abstract class Transcoder {
         try {
             f = new BufferedReader(new InputStreamReader(fis, "UTF8"));
             String line;
-
             final String sep = System.getProperty("line.separator");
             while ((line = f.readLine()) != null) {
                 // String[] matches = new Regex(line,
-                // "frame=\\s*(\\d+)\\s+fps=\\s*(\\d+)\\s+q=\\s*([^ ]+)\\s+size=\\s+([^ ]+)\\s+time=\\s*([^ ]+)\\s+bitrate=\\s*([^ ]+) ").getRow(0);
-
+                // "frame=\\s*(\\d+)\\s+fps=\\s*(\\d+)\\s+q=\\s*([^ ]+)\\s+size=\\s+([^ ]+)\\s+time=\\s*([^ ]+)\\s+bitrate=\\s*([^ ]+)
+                // ").getRow(0);
                 long size = formatSize(new Regex(line, "size=\\s*([^ ]+)").getMatch(0));
                 long br = formatBitrate(new Regex(line, "bitrate=\\s*([^ ]+)").getMatch(0));
-
                 if (size > transcodedSize) {
                     transcodedSize = size;
                 }
                 if (br > 0) {
                     systemBitrate = br;
                 }
-
                 if (ret.length() > 0) {
                     ret.append(sep);
                 } else if (line.startsWith("\uFEFF")) {
@@ -274,22 +241,18 @@ public abstract class Transcoder {
                      * Workaround for this bug: http://bugs.sun.com/view_bug.do?bug_id=4508058
                      * http://bugs.sun.com/view_bug.do?bug_id=6378911
                      */
-
                     line = line.substring(1);
                 }
                 ret.append(line);
             }
-
             return ret.toString();
         } catch (IOException e) {
-
             throw e;
         } catch (RuntimeException e) {
             throw e;
         } catch (Error e) {
             throw e;
         } finally {
-
             // don't close streams this might ill the process
         }
     }
@@ -327,7 +290,6 @@ public abstract class Transcoder {
         final StringBuilder sb = new StringBuilder();
         final StringBuilder sb2 = new StringBuilder();
         process = pb.start();
-
         reader1 = new Thread("ffmpegReader") {
             public void run() {
                 try {
@@ -341,12 +303,10 @@ public abstract class Transcoder {
                 }
             }
         };
-
         reader2 = new Thread("ffmpegReader") {
             public void run() {
                 try {
                     sb2.append(readErrorStream(process.getErrorStream()));
-
                 } catch (UnsupportedEncodingException e) {
                     e.printStackTrace();
                 } catch (IOException e) {
@@ -360,7 +320,6 @@ public abstract class Transcoder {
         reader2.start();
         try {
             int exitCode = process.waitFor();
-
             logger.info("Exit FFMPEG: " + exitCode);
             logger.info("Output: \r\n" + sb);
             logger.info("ErrorOutput: \r\n" + sb2);
@@ -373,12 +332,10 @@ public abstract class Transcoder {
             try {
                 process.getInputStream().close();
             } catch (Exception e2) {
-
             }
             try {
                 process.getErrorStream().close();
             } catch (Exception e2) {
-
             }
             // try {
             //
@@ -393,7 +350,6 @@ public abstract class Transcoder {
             throw e;
         }
         return new String[] { sb.toString(), sb2.toString() };
-
     }
 
     private String getFFMpegPath() {

@@ -23,7 +23,6 @@ public class ListenerInputstreamWrapper extends InputStream {
                     listener.onStreamTimeout(ListenerInputstreamWrapper.this, delegate);
                 }
             };
-
         }
     }
 
@@ -45,7 +44,9 @@ public class ListenerInputstreamWrapper extends InputStream {
             listener.onStreamException(this, delegate, e);
             throw e;
         } finally {
-            if (closer != null) closer.resetAndStart();
+            if (closer != null) {
+                closer.resetAndStart();
+            }
         }
     }
 
@@ -63,7 +64,9 @@ public class ListenerInputstreamWrapper extends InputStream {
             listener.onStreamException(this, delegate, e);
             throw e;
         } finally {
-            if (closer != null) closer.resetAndStart();
+            if (closer != null) {
+                closer.resetAndStart();
+            }
         }
     }
 
@@ -81,7 +84,9 @@ public class ListenerInputstreamWrapper extends InputStream {
             listener.onStreamException(this, delegate, e);
             throw e;
         } finally {
-            if (closer != null) closer.resetAndStart();
+            if (closer != null) {
+                closer.resetAndStart();
+            }
         }
     }
 
@@ -99,7 +104,9 @@ public class ListenerInputstreamWrapper extends InputStream {
             listener.onStreamException(this, delegate, e);
             throw e;
         } finally {
-            if (closer != null) closer.resetAndStart();
+            if (closer != null) {
+                closer.resetAndStart();
+            }
         }
     }
 
@@ -117,7 +124,9 @@ public class ListenerInputstreamWrapper extends InputStream {
             listener.onStreamException(this, delegate, e);
             throw e;
         } finally {
-            if (closer != null) closer.resetAndStart();
+            if (closer != null) {
+                closer.resetAndStart();
+            }
         }
     }
 
@@ -134,9 +143,10 @@ public class ListenerInputstreamWrapper extends InputStream {
         } catch (Error e) {
             listener.onStreamException(this, delegate, e);
             throw e;
-
         } finally {
-            if (closer != null) closer.stop();
+            if (closer != null) {
+                closer.stop();
+            }
             listener.onStreamClosed(this, delegate);
         }
     }
@@ -160,7 +170,9 @@ public class ListenerInputstreamWrapper extends InputStream {
             listener.onStreamException(this, delegate, e);
             throw e;
         } finally {
-            if (closer != null) closer.resetAndStart();
+            if (closer != null) {
+                closer.resetAndStart();
+            }
         }
     }
 
@@ -168,5 +180,4 @@ public class ListenerInputstreamWrapper extends InputStream {
     public boolean markSupported() {
         return delegate.markSupported();
     }
-
 }
