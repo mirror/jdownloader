@@ -44,7 +44,7 @@ public class FoldrUs extends PluginForDecrypt {
         }
         String fpName = br.getRegex("<title>(.*?)\\s*\\|\\s*(foldr\\.us|Mir\\.to)\\s*</title>").getMatch(0);
         // as of 20130520, site doesn't return any links...
-        String[] links = br.getRegex("\"(https?://relink\\.[a-z]+/(view\\.php\\?id=.*?|f/[0-9a-f]{30}))\"").getColumn(0);
+        String[] links = br.getRegex("\"(https?://relink\\.[a-z]+/(?:view\\.php\\?id=.*?|f/[0-9a-f]{30}))\"").getColumn(0);
         if (links == null || links.length == 0) {
             if (br.containsHTML(">W\\&auml;hlen Sie ihren bevorzugten Mirror")) {
                 logger.info("Can't find any downloadable links for link: " + parameter);
