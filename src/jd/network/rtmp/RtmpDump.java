@@ -54,7 +54,7 @@ public class RtmpDump extends RTMPDownload {
             return 0;
         }
 
-        public long getSpeedMeter() {
+        public long getValue(long scalingFactor) {
             return 0;
         }
 
@@ -300,7 +300,7 @@ public class RtmpDump extends RTMPDownload {
         }
         final ThrottledConnection tcon = new RTMPCon() {
             @Override
-            public long getSpeedMeter() {
+            public long getValue(long scalingFactor) {
                 return SPEED;
             }
 

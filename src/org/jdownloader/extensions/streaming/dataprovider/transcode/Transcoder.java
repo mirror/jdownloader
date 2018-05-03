@@ -123,7 +123,7 @@ public abstract class Transcoder {
 
                             write(buffer, len);
 
-                            long speed = (input.getSpeedMeter() / 1000);
+                            long speed = (input.getValue(1000) / 1000);
                             if (speed != oldspeed) {
                                 oldspeed = speed;
                                 System.out.println("Transcoded Data Speed: " + speed + " kbyte/s @Systembitrate: " + (systemBitrate / (8 * 1024)) + "kbyte/s");

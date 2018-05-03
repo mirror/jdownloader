@@ -20,7 +20,7 @@ public class PrintSpeedInputStream extends MeteredInputStream implements StreamL
                     } catch (InterruptedException e) {
                         return;
                     }
-                    System.out.println(name + " " + (getSpeedMeter() / 1024) + " kb/s");
+                    System.out.println(name + " " + (getValue(1000) / 1024) + " kb/s");
                 }
             }
         };
