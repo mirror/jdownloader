@@ -13,10 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -26,9 +27,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "foldr.us" }, urls = { "http://(www\\.)?foldr\\.us/(foldr\\.php\\?id=|m/)[a-z0-9]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "foldr.us" }, urls = { "https?://(www\\.)?(foldr\\.us|mir\\.to)/(foldr\\.php\\?id=|m/)[a-z0-9]+" })
 public class FoldrUs extends PluginForDecrypt {
-
     public FoldrUs(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -42,9 +42,9 @@ public class FoldrUs extends PluginForDecrypt {
             logger.info("Link not found! or has been deleted : " + parameter);
             return decryptedLinks;
         }
-        String fpName = br.getRegex("<title>(.*?) \\| foldr\\.us</title>").getMatch(0);
+        String fpName = br.getRegex("<title>(.*?)\\s*\\|\\s*(foldr\\.us|Mir\\.to)\\s*</title>").getMatch(0);
         // as of 20130520, site doesn't return any links...
-        String[] links = br.getRegex("\"(http://relink\\.[a-z]+/view\\.php\\?id=.*?)\"").getColumn(0);
+        String[] links = br.getRegex("\"(https?://relink\\.[a-z]+/(view\\.php\\?id=.*?|f/[0-9a-f]{30}))\"").getColumn(0);
         if (links == null || links.length == 0) {
             if (br.containsHTML(">W\\&auml;hlen Sie ihren bevorzugten Mirror")) {
                 logger.info("Can't find any downloadable links for link: " + parameter);
@@ -52,8 +52,11 @@ public class FoldrUs extends PluginForDecrypt {
             }
             return null;
         }
+        final Set<String> dup = new HashSet<String>();
         for (String dl : links) {
-            decryptedLinks.add(createDownloadlink(dl));
+            if (dup.add(dl)) {
+                decryptedLinks.add(createDownloadlink(dl));
+            }
         }
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
@@ -67,5 +70,4 @@ public class FoldrUs extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
