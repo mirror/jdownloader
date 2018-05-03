@@ -74,9 +74,12 @@ public class UnknownPornScript1 extends PluginForHost {
         if (filename == null) {
             filename = url_filename;
         }
-        final String html_clip = this.br.getRegex("clip: \\{(.*?)\\},").getMatch(0);
+        final String html_clip = br.getRegex("clip: \\{(.*?)\\},").getMatch(0);
         if (html_clip != null) {
             dllink = new Regex(html_clip, "url: \\'(http[^<>\"]*?)\\'").getMatch(0);
+            if (dllink.contains("torbenetwork")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         } else {
             /* E.g. xtwisted.com */
             dllink = br.getRegex("(?:\"|\\')(?:file|url)(?:\"|\\'):[\t\n\r ]*?(?:\"|\\')(http[^<>\"]*?\\.(?:mp4|flv))(?:\"|\\')").getMatch(0);
