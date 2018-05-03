@@ -741,6 +741,7 @@ public class LinkCrawler {
         if (text != null) {
             text = text.replaceAll("/\\s*Sharecode\\[\\?\\]:\\s*/", "/");
             text = text.replaceAll("\\s*Sharecode\\[\\?\\]:\\s*", "");
+            text = text.replaceAll("/?\\s*Sharecode:\\s*/?", "/");
         }
         return text;
     }
