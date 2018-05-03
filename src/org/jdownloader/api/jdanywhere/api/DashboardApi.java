@@ -21,8 +21,8 @@ import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
 import org.appwork.remoteapi.exceptions.InternalApiException;
 import org.appwork.storage.config.ValidationException;
-
 import org.appwork.utils.net.HTTPHeader;
+import org.appwork.utils.speedmeter.SpeedMeterInterface.Resolution;
 import org.jdownloader.api.jdanywhere.api.interfaces.IDashboardApi;
 import org.jdownloader.api.jdanywhere.api.storable.RunningObjectStorable;
 import org.jdownloader.api.polling.PollingAPIImpl;
@@ -40,11 +40,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 public class DashboardApi implements IDashboardApi {
-    PollingAPIImpl            plAPI = new PollingAPIImpl();
-    JDownloaderToolBarAPIImpl tbAPI = new JDownloaderToolBarAPIImpl();
-
-    LinkedList<Integer> _speedList = new LinkedList<Integer>(Arrays.asList(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
-    Timer               timer      = new Timer();
+    PollingAPIImpl            plAPI      = new PollingAPIImpl();
+    JDownloaderToolBarAPIImpl tbAPI      = new JDownloaderToolBarAPIImpl();
+    LinkedList<Integer>       _speedList = new LinkedList<Integer>(Arrays.asList(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+    Timer                     timer      = new Timer();
 
     public DashboardApi() {
         timer.scheduleAtFixedRate(new TimerTask() {
@@ -143,12 +142,10 @@ public class DashboardApi implements IDashboardApi {
         if (running == 0) {
             ret.put("speed", 0);
         } else {
-            ret.put("speed", DownloadWatchDog.getInstance().getDownloadSpeedManager().getSpeedMeter().getValue(1000));
+            ret.put("speed", DownloadWatchDog.getInstance().getDownloadSpeedManager().getSpeedMeter().getValue(Resolution.SECONDS));
         }
         ret.put("pause", DownloadWatchDog.getInstance().isPaused());
-
         List<DownloadLink> calc_progress = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
-
             public int returnMaxResults() {
                 return 0;
             }
@@ -163,7 +160,6 @@ public class DashboardApi implements IDashboardApi {
                 return true;
             }
         });
-
         long todo = 0;
         long done = 0;
         for (DownloadLink link : calc_progress) {
@@ -172,12 +168,10 @@ public class DashboardApi implements IDashboardApi {
         }
         ret.put("download_current", done);
         ret.put("download_complete", todo);
-
         ret.put("maxDL", org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_SIMULTANE_DOWNLOADS.getValue());
         ret.put("maxConDL", org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_CHUNKS_PER_FILE.getValue());
         ret.put("maxConHost", org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_SIMULTANE_DOWNLOADS_PER_HOST.getValue());
         ret.put("maxConHostActive", org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_DOWNLOADS_PER_HOST_ENABLED.isEnabled());
-
         return ret;
     }
 
@@ -224,7 +218,6 @@ public class DashboardApi implements IDashboardApi {
      */
     @Override
     public boolean setLimitspeed(int speed) {
-
         boolean returnValue = true;
         try {
             org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT.setValue(speed);
@@ -264,12 +257,10 @@ public class DashboardApi implements IDashboardApi {
         OutputStream out = null;
         try {
             SpeedMeterPanel speedMeter = MainToolBar.getInstance().getSpeedMeter();
-
             BufferedImage bufferedImage = new BufferedImage(speedMeter.getWidth(), speedMeter.getHeight(), BufferedImage.TYPE_INT_RGB);
             Graphics2D g2d = bufferedImage.createGraphics();
             g2d.setColor(Color.white);
             g2d.fillRect(0, 0, speedMeter.getWidth(), speedMeter.getHeight());
-
             speedMeter.paintComponent(g2d, false);
             g2d.dispose();
             /* we force content type to image/png and allow caching of the image */
@@ -288,7 +279,6 @@ public class DashboardApi implements IDashboardApi {
             } catch (final Throwable e) {
             }
         }
-
     }
 
     /*
@@ -386,5 +376,4 @@ public class DashboardApi implements IDashboardApi {
         }
         return returnValue;
     }
-
 }

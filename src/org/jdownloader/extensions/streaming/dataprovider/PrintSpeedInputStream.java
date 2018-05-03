@@ -6,7 +6,6 @@ import org.appwork.utils.net.meteredconnection.MeteredInputStream;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
 
 public class PrintSpeedInputStream extends MeteredInputStream implements StreamListener {
-
     private Thread thread = null;
 
     public PrintSpeedInputStream(ListenerInputstreamWrapper inputStream, final String name) {
@@ -20,11 +19,10 @@ public class PrintSpeedInputStream extends MeteredInputStream implements StreamL
                     } catch (InterruptedException e) {
                         return;
                     }
-                    System.out.println(name + " " + (getValue(1000) / 1024) + " kb/s");
+                    System.out.println(name + " " + (getValue(Resolution.SECONDS) / 1024) + " kb/s");
                 }
             }
         };
-
         thread.start();
     }
 
@@ -42,5 +40,4 @@ public class PrintSpeedInputStream extends MeteredInputStream implements StreamL
     public void onStreamException(ListenerInputstreamWrapper timeoutInputStream, InputStream delegate, Throwable e) {
         thread.interrupt();
     }
-
 }

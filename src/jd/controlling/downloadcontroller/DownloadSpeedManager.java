@@ -89,7 +89,7 @@ public class DownloadSpeedManager {
                     try {
                         this.setName("DownloadSpeedManager");
                         /* reset SpeedMeter */
-                        speedMeter.resetSpeedMeter();
+                        speedMeter.resetSpeedmeter();
                         final HashMap<ManagedThrottledConnectionHandler, ManagedThrottledConnectionHelper> speedAssignHelpMap = new HashMap<ManagedThrottledConnectionHandler, ManagedThrottledConnectionHelper>();
                         java.util.List<ManagedThrottledConnectionHandler> removedHandlers = new ArrayList<ManagedThrottledConnectionHandler>();
                         java.util.List<ThrottledConnectionHelp> currentHelpers = new ArrayList<ThrottledConnectionHelp>();
@@ -100,7 +100,7 @@ public class DownloadSpeedManager {
                                     if (watchDogThread.compareAndSet(Thread.currentThread(), null)) {
                                         bandwidth.set(0);
                                         connections.set(0);
-                                        speedMeter.resetSpeedMeter();
+                                        speedMeter.resetSpeedmeter();
                                     }
                                     break;
                                 }
@@ -175,7 +175,7 @@ public class DownloadSpeedManager {
                                 }
                             }
                             bandwidth.set(newBandwidth);
-                            speedMeter.putSpeedMeter(Math.max(0, traffic.get() - lastRoundTraffic), sleepTime);
+                            speedMeter.putBytes(Math.max(0, traffic.get() - lastRoundTraffic), sleepTime);
                             connections.set(currentHelpers.size());
                             int left = currentHelpers.size();
                             final int currentLimit = limit.get();

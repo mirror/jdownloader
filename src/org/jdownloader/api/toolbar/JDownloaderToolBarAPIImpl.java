@@ -9,6 +9,21 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 
+import org.appwork.exceptions.WTFException;
+import org.appwork.remoteapi.RemoteAPIRequest;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.config.MinTimeWeakReference;
+import org.appwork.utils.speedmeter.SpeedMeterInterface.Resolution;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.api.toolbar.LinkCheckResult.STATUS;
+import org.jdownloader.api.toolbar.specialurls.YouTubeSpecialUrlHandling;
+import org.jdownloader.gui.views.linkgrabber.actions.AddLinksProgress;
+import org.jdownloader.plugins.FinalLinkState;
+import org.jdownloader.settings.staticreferences.CFG_RECONNECT;
+import org.jdownloader.updatev2.UpdateController;
+
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadSession;
 import jd.controlling.downloadcontroller.DownloadSession.STOPMARK;
@@ -27,20 +42,6 @@ import jd.controlling.linkcrawler.UnknownCrawledLinkHandler;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
-
-import org.appwork.exceptions.WTFException;
-import org.appwork.remoteapi.RemoteAPIRequest;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.config.MinTimeWeakReference;
-import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.jdownloader.api.toolbar.LinkCheckResult.STATUS;
-import org.jdownloader.api.toolbar.specialurls.YouTubeSpecialUrlHandling;
-import org.jdownloader.gui.views.linkgrabber.actions.AddLinksProgress;
-import org.jdownloader.plugins.FinalLinkState;
-import org.jdownloader.settings.staticreferences.CFG_RECONNECT;
-import org.jdownloader.updatev2.UpdateController;
 
 //Toolbar NameSpace
 //http://localhost:3128/toolbar/
@@ -141,9 +142,7 @@ import org.jdownloader.updatev2.UpdateController;
 //returns:(json)
 //-nothing in case we do not have special LinkCheck features available for given URL (default for now)
 //-js code we want to inject, we do LinkCheck ourselves
-
 public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI {
-
     private class ChunkedDom {
         protected HashMap<Integer, String> domChunks   = new HashMap<Integer, String>();
         protected String                   URL         = null;
@@ -151,7 +150,6 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI {
     }
 
     private class CheckedDom extends ChunkedDom {
-
         protected final String ID;
 
         protected CheckedDom(ChunkedDom dom) {
@@ -189,12 +187,10 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI {
         if (running == 0) {
             ret.put("speed", 0);
         } else {
-            ret.put("speed", DownloadWatchDog.getInstance().getDownloadSpeedManager().getSpeedMeter().getValue(1000));
+            ret.put("speed", DownloadWatchDog.getInstance().getDownloadSpeedManager().getSpeedMeter().getValue(Resolution.SECONDS));
         }
         ret.put("pause", DownloadWatchDog.getInstance().isPaused());
-
         List<DownloadLink> calc_progress = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
-
             public int returnMaxResults() {
                 return 0;
             }
@@ -209,7 +205,6 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI {
                 return true;
             }
         });
-
         long todo = 0;
         long done = 0;
         for (DownloadLink link : calc_progress) {
@@ -269,24 +264,19 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI {
             if (chunkedDom != null) {
                 final String url = chunkedDom.URL;
                 final String dom = chunkedDom.completeDOM;
-
                 /*
                  * we first check if the url itself can be handled by a plugin
                  */
                 CrawledLink link = new CrawledLink(chunkedDom.URL);
                 link.setUnknownHandler(new UnknownCrawledLinkHandler() {
-
                     public void unhandledCrawledLink(CrawledLink link, LinkCrawler lc) {
                         /*
                          * if the url cannot be handled by a plugin, we check the dom
                          */
                         addCompleteDom(url, dom, link);
                     }
-
                 });
-
                 link.setBrokenCrawlerHandler(new BrokenCrawlerHandler() {
-
                     public void brokenCrawler(CrawledLink link, LinkCrawler lc) {
                         /*
                          * if the url cannot be handled because a plugin is broken, we check the dom
@@ -376,7 +366,6 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI {
     }
 
     public void addCompleteDom(final String url, final String dom, CrawledLink link) {
-
         final LinkCollectingJob job = new LinkCollectingJob(LinkOrigin.TOOLBAR.getLinkOriginDetails(), dom);
         job.setCustomSourceUrl(url);
         AddLinksProgress d = new AddLinksProgress(job) {
@@ -391,7 +380,6 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI {
                 return loc;
             }
         };
-
         if (d.isHiddenByDontShowAgain()) {
             Thread thread = new Thread("AddLinksDialog") {
                 public void run() {
@@ -456,13 +444,11 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI {
                 }
                 checkSession.linkChecker = new LinkChecker<CrawledLink>();
                 checkSession.linkChecker.setLinkCheckHandler(new LinkCheckerHandler<CrawledLink>() {
-
                     public void linkCheckDone(CrawledLink link) {
                         defaultHandler.handleFinalLink(link);
                     }
                 });
                 checkSession.linkCrawler.setHandler(new LinkCrawlerHandler() {
-
                     public void handleFinalLink(CrawledLink link) {
                         checkSession.linkChecker.check(link);
                     }
@@ -564,7 +550,6 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI {
                 UpdateController.getInstance().runUpdateChecker(true);
             }
         }.start();
-
         return true;
     }
 }

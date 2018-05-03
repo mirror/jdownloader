@@ -6,12 +6,13 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-
 import org.appwork.utils.net.DownloadProgress;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
+import org.appwork.utils.speedmeter.SpeedMeterInterface.Resolution;
+
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 
 public class DownloadClient {
     private Browser                     httpClient;
@@ -167,6 +168,6 @@ public class DownloadClient {
         if (input == null) {
             return 0;
         }
-        return input.getValue(1000);
+        return input.getValue(Resolution.SECONDS);
     }
 }
