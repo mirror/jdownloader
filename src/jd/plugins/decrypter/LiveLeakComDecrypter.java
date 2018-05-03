@@ -30,7 +30,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 //Decrypts embedded videos from liveleak.com
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "liveleak.com" }, urls = { "https?://(www\\.)?liveleak\\.com/(view\\?i=[a-z0-9]+_\\d+|ll_embed\\?f=[a-z0-9]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "liveleak.com" }, urls = { "https?://(www\\.)?liveleak\\.com/(view\\?(?:i|t)=[a-z0-9]+_\\d+|(?:ll_embed\\?f=|e/)[a-z0-9_]+)" })
 public class LiveLeakComDecrypter extends PluginForDecrypt {
     public LiveLeakComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -49,9 +49,9 @@ public class LiveLeakComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         br.getPage(parameter);
-        if (isOffline(this.br)) {
+        if (isOffline(br)) {
             /* e.g. 'a possible violation of our terms of service' or 'a copyright violation' */
-            decryptedLinks.add(this.createOfflinelink(parameter));
+            decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
         String externID = br.getRegex("\"(https?://(www\\.)?prochan\\.com/embed\\?f=[^<>\"/]*?)\"").getMatch(0);
@@ -60,7 +60,7 @@ public class LiveLeakComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         /* Page can contain multiple embedded YouTube videos. */
-        final String[] embedURLs = this.br.getRegex("\"[^\"]+(youtube\\.com/embed/[^<>\"]*?)\"").getColumn(0);
+        final String[] embedURLs = br.getRegex("\"[^\"]+(youtube\\.com/embed/[^<>\"]*?)\"").getColumn(0);
         if (embedURLs.length > 0) {
             for (final String embedURLPart : embedURLs) {
                 decryptedLinks.add(createDownloadlink("https://www." + embedURLPart));
@@ -76,7 +76,8 @@ public class LiveLeakComDecrypter extends PluginForDecrypt {
         }
         filename = Encoding.htmlDecode(filename.trim());
         // There can also be multiple videos on one page
-        final String[] allEmbedcodes = br.getRegex("ll_embed\\?f=([A-Za-z0-9]+)").getColumn(0);
+        // final String[] allEmbedcodes = br.getRegex("ll_embed\\?f=([A-Za-z0-9]+)").getColumn(0);
+        final String[] allEmbedcodes = br.getRegex("liveleak.com/e/([a-z0-9_]+)").getColumn(0);
         if (allEmbedcodes != null && allEmbedcodes.length != 0) {
             int counter = 1;
             final DecimalFormat df = new DecimalFormat("000");
@@ -110,9 +111,9 @@ public class LiveLeakComDecrypter extends PluginForDecrypt {
             }
         }
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
-            if (!this.br.containsHTML("<video")) {
+            if (!br.containsHTML("<video")) {
                 logger.info("Seems like our object contains only text --> Nothing we want to download --> Adding URL as offline");
-                decryptedLinks.add(this.createOfflinelink(parameter));
+                decryptedLinks.add(createOfflinelink(parameter));
                 return decryptedLinks;
             }
             logger.warning("Decrypter broken for link: " + parameter);

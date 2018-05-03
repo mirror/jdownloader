@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -30,10 +29,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "liveleak.com" }, urls = { "http://(www\\.)?liveleakvideodecrypted\\.com/[a-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "liveleak.com" }, urls = { "http://(www\\.)?liveleakvideodecrypted\\.com/[a-z0-9_]+" })
 public class LiveLeakCom extends PluginForHost {
-
-    private String DLLINK = null;
+    private String dllink = null;
 
     public LiveLeakCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -52,32 +50,29 @@ public class LiveLeakCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
+        setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCookie("http://liveleak.com/", "liveleak_safe_mode", "0");
-        final String linkid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+        final String linkid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9_]+)$").getMatch(0);
         downloadLink.setLinkID(linkid);
-
-        br.getPage("https://www." + this.getHost() + "/ll_embed?f=" + linkid);
+        br.getPage("https://www." + getHost() + "/ll_embed?f=" + linkid);
         if (br.containsHTML("File not found or deleted\\!")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-
-        String filename = this.br.getRegex("shareTitle\\s*?:\\s*?\\'([^<>\"\\']+)\\'").getMatch(0);
+        String filename = br.getRegex("shareTitle\\s*?:\\s*?\\'([^<>\"\\']+)\\'").getMatch(0);
         if (filename == null) {
             /* Fallback */
             filename = linkid;
         }
-
         String ext = ".mp4";
-        DLLINK = br.getRegex("source src=\"(http[^<>\"]+)\"[^>]*?label=\"HD\"").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("source src=\"(http[^<>\"]+)\"[^>]*?label=\"SD\"").getMatch(0);
+        dllink = br.getRegex("source src=\"(http[^<>\"]+)\"[^>]*?label=\"HD\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("source src=\"(http[^<>\"]+)\"[^>]*?label=").getMatch(0);
         }
-        if (DLLINK == null) {
+        if (dllink == null) {
             ext = ".flv";
             filename = filename.replace(".mp4", "");
-            DLLINK = br.getRegex("file_url=(http[^<>\"]+)\\&").getMatch(0);
+            dllink = br.getRegex("file_url=(http[^<>\"]+)\\&").getMatch(0);
         }
         if (filename.contains(".")) {
             String oldExt = filename.substring(filename.lastIndexOf("."));
@@ -85,10 +80,10 @@ public class LiveLeakCom extends PluginForHost {
                 filename = filename.replace(oldExt, "");
             }
         }
-        if (filename == null || DLLINK == null) {
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = filename.trim();
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         final Browser br2 = br.cloneBrowser();
@@ -96,7 +91,7 @@ public class LiveLeakCom extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
+            con = br2.openGetConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
@@ -114,7 +109,7 @@ public class LiveLeakCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
