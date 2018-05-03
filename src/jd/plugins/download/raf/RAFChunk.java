@@ -260,22 +260,31 @@ public class RAFChunk extends Thread {
                     }
                     lastFlush = System.currentTimeMillis();
                     while (!reachedEOF && buffer.free() > 0 && buffer.size() <= flushLevel && !isExternalyAborted() && !connectionclosed.get()) {
+                        final int bufLeft = buffer.free();
                         if (endByte > 0) {
                             /* read only as much as needed */
                             remoteIO = true;
-                            read = inputStream.read(buffer.getInternalBuffer(), buffer.size(), (int) Math.min(bytes2Do, (buffer.getInternalBuffer().length - buffer.size())));
+                            int readMaxNext = (int) Math.min(bytes2Do, bufLeft);
+                            if (readMaxNext < 512 * 1024) {
+                                readMaxNext = Math.max(1024, readMaxNext / 2);
+                                readMaxNext = Math.min(readMaxNext, bufLeft);
+                            }
+                            read = inputStream.read(buffer.getInternalBuffer(), buffer.size(), readMaxNext);
                             if (read > 0) {
                                 bytes2Do -= read;
                                 if (bytes2Do == 0) {
                                     /* we reached our artificial EOF */
                                     logger.warning("reached artificial EOF");
                                     reachedEOF = true;
+                                } else if (bytes2Do < 0) {
+                                    logger.warning("WTF, where is EOF?!");
+                                    reachedEOF = true;
                                 }
                             }
                         } else {
                             /* read as much as possible */
                             remoteIO = true;
-                            read = inputStream.read(buffer.getInternalBuffer(), buffer.size(), (buffer.getInternalBuffer().length - buffer.size()));
+                            read = inputStream.read(buffer.getInternalBuffer(), buffer.size(), bufLeft);
                         }
                         if (read > 0) {
                             /* we read some data */
