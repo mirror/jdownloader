@@ -1673,7 +1673,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
             speedAverage = sm.getAverageSpeed();
         }
         if (speedAverage < 0) {
-            speedAverage = DownloadWatchDog.getInstance().getDownloadSpeedManager().getSpeedMeter().getSpeedMeter();
+            speedAverage = DownloadWatchDog.getInstance().getDownloadSpeedManager().getSpeedMeter().getValue(1000);
         }
         if (DownloadWatchDog.getInstance().isRunning()) {
             pattern = pattern.replaceAll(TITLE_PATTERN_SPEED_AVERAGE, "$1" + SizeFormatter.formatBytes(Math.max(0, speedAverage)) + "$2");

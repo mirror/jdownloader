@@ -45,7 +45,7 @@ public class ManagedThrottledConnectionHandler implements ThrottledConnectionHan
     public int getSpeed() {
         int ret = 0;
         for (ThrottledConnection con : connections) {
-            ret += ((SpeedMeterInterface) con).getSpeedMeter();
+            ret += ((SpeedMeterInterface) con).getValue(1000);
         }
         return ret;
     }

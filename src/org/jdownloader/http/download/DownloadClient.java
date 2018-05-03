@@ -167,6 +167,6 @@ public class DownloadClient {
         if (input == null) {
             return 0;
         }
-        return input.getSpeedMeter();
+        return input.getValue(1000);
     }
 }

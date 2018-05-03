@@ -2332,7 +2332,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         final Set<SingleDownloadController> controllers = session.getControllers();
         if (autoMaxDownloadSpeedLimit > 0 && (autoMaxDownloadsMaxDownloads == 0 || controllers.size() < autoMaxDownloadsMaxDownloads)) {
             try {
-                final long currentDownloadSpeed = getDownloadSpeedManager().getSpeedMeter().getSpeedMeter();
+                final long currentDownloadSpeed = getDownloadSpeedManager().getSpeedMeter().getValue(1000);
                 if (currentDownloadSpeed < autoMaxDownloadSpeedLimit) {
                     final int speedlimit = config.isDownloadSpeedLimitEnabled() ? config.getDownloadSpeedLimit() : 0;
                     if (speedlimit > 0 && currentDownloadSpeed > speedlimit * 0.8) {

@@ -676,7 +676,7 @@ public class ScriptEnvironment {
 
     @ScriptAPI(description = "Get current average Download Speed in bytes/second")
     public static long getAverageSpeed() {
-        return DownloadWatchDog.getInstance().getDownloadSpeedManager().getSpeedMeter().getSpeedMeter();
+        return DownloadWatchDog.getInstance().getDownloadSpeedManager().getSpeedMeter().getValue(1000);
     }
 
     @ScriptAPI(description = "Stop Downloads")

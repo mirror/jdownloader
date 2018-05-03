@@ -143,7 +143,7 @@ public class DashboardApi implements IDashboardApi {
         if (running == 0) {
             ret.put("speed", 0);
         } else {
-            ret.put("speed", DownloadWatchDog.getInstance().getDownloadSpeedManager().getSpeedMeter().getSpeedMeter());
+            ret.put("speed", DownloadWatchDog.getInstance().getDownloadSpeedManager().getSpeedMeter().getValue(1000));
         }
         ret.put("pause", DownloadWatchDog.getInstance().isPaused());
 
