@@ -940,9 +940,7 @@ public class HLSDownloader extends DownloadInterface {
                                     }
                                 } catch (IOException e) {
                                     requestLogger.log(e);
-                                    onSegmentException(connection, e);
-                                    if (connection == null || connection.getResponseCode() == 504 || connection.getResponseCode() == 502 || connection.getResponseCode() == 999) {
-                                        Thread.sleep(250 + (retry * 250));
+                                    if (onSegmentConnectException(connection, e, fileBytesMap, retry, requestLogger)) {
                                         continue retryLoop;
                                     } else {
                                         return false;
@@ -1049,8 +1047,11 @@ public class HLSDownloader extends DownloadInterface {
                                             }
                                         } catch (IOException e) {
                                             requestLogger.log(e);
-                                            Thread.sleep(250 + (retry * 250));
-                                            continue retryLoop;
+                                            if (onSegmentReadException(connection, e, fileBytesMap, retry, requestLogger)) {
+                                                continue retryLoop;
+                                            } else {
+                                                throw e;
+                                            }
                                         }
                                         if (len > 0) {
                                             ffmpeg.updateLastUpdateTimestamp();
@@ -1111,7 +1112,41 @@ public class HLSDownloader extends DownloadInterface {
         });
     }
 
-    protected void onSegmentException(URLConnectionAdapter connection, IOException e) {
+    protected boolean onSegmentReadException(final URLConnectionAdapter connection, final IOException e, final FileBytesMap fileBytesMap, final int retry, final LogSource logger) throws Exception {
+        try {
+            Thread.sleep(250 + (retry * 250));
+            return true;
+        } catch (InterruptedException ie) {
+            if (logger != null) {
+                logger.log(ie);
+            }
+            return false;
+        }
+    }
+
+    protected boolean onSegmentConnectException(final URLConnectionAdapter connection, final IOException e, final FileBytesMap fileBytesMap, final int retry, final LogSource logger) throws Exception {
+        try {
+            if (connection != null) {
+                switch (connection.getResponseCode()) {
+                case 999:
+                case 504:
+                case 503:
+                case 502:
+                    Thread.sleep(250 + (retry * 1000));
+                    return true;
+                default:
+                    return false;
+                }
+            } else {
+                Thread.sleep(250 + (retry * 1000));
+                return true;
+            }
+        } catch (InterruptedException ie) {
+            if (logger != null) {
+                logger.log(ie);
+            }
+            return false;
+        }
     }
 
     public long getBytesLoaded() {

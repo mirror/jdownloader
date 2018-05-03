@@ -53,9 +53,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.download.raf.FileBytesMap;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.controlling.ffmpeg.FFmpegMetaData;
 import org.jdownloader.controlling.ffmpeg.json.Stream;
@@ -275,10 +277,11 @@ public class TwitchTv extends PluginForHost {
             }
 
             @Override
-            protected void onSegmentException(URLConnectionAdapter connection, IOException e) {
+            protected boolean onSegmentConnectException(URLConnectionAdapter connection, IOException e, final FileBytesMap fileBytesMap, int retry, LogSource logger) throws Exception {
                 if (isTwitchOptimized && connection != null && connection.getResponseCode() == 400) {
                     config.setProperty("expspeed", false);
                 }
+                return super.onSegmentConnectException(connection, e, fileBytesMap, retry, logger);
             }
 
             @Override
