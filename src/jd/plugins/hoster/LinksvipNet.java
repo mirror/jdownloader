@@ -50,7 +50,6 @@ public class LinksvipNet extends PluginForHost {
     /* Connection limits */
     private static final boolean                           ACCOUNT_PREMIUM_RESUME    = true;
     private static final int                               ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    private final String                                   default_UA                = "JDownloader";
     private static final boolean                           USE_API                   = false;
     private final String                                   website_html_loggedin     = "/login/logout\\.php";
     private static Object                                  LOCK                      = new Object();
@@ -71,7 +70,7 @@ public class LinksvipNet extends PluginForHost {
 
     private Browser prepBR(final Browser br) {
         br.setCookiesExclusive(true);
-        br.getHeaders().put("User-Agent", default_UA);
+        br.getHeaders().put("User-Agent", "JDownloader");
         br.setFollowRedirects(true);
         return br;
     }
@@ -278,6 +277,7 @@ public class LinksvipNet extends PluginForHost {
                  */
                 br.getPage("https://" + this.getHost() + "/");
                 if (br.containsHTML(website_html_loggedin)) {
+                    account.saveCookies(this.br.getCookies(this.getHost()), "");
                     return;
                 }
                 /* Clear cookies to prevent unknown errors as we'll perform a full login below now. */

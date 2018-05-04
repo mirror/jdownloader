@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.LinkedHashMap;
@@ -53,9 +52,7 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filecloud.io", "ezfile.ch" }, urls = { "https?://(?:www\\.)?(?:filecloud\\.io|ezfile\\.ch)/[a-z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" })
 public class FilecloudIo extends antiDDoSForHost {
-
     private final String         useragent                    = "JDownloader";
-
     /* Connection stuff */
     private static final boolean FREE_RESUME                  = true;
     private static final int     FREE_MAXCHUNKS               = 1;
@@ -66,24 +63,19 @@ public class FilecloudIo extends antiDDoSForHost {
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 10;
-
     private static final String  NOCHUNKS                     = "NOCHUNKS";
     private static final String  NORESUME                     = "NORESUME";
     public static final String   MAINPAGE                     = "https://filecloud.io";
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
     private static AtomicBoolean UNDERMAINTENANCE             = new AtomicBoolean(false);
     private static final String  UNDERMAINTENANCEUSERTEXT     = "The site is under maintenance!";
-
     private static final String  API_ERROR_NO_PERMISSION      = "No permission granted for this apikey to perform this api call";
-
     /* API doc: https://filecloud.io/?m=apidoc */
     // private static final String NICE_HOST = "filecloud.io";
     private static final boolean useFilecheckAPI              = true;
-
     private String               dllink                       = null;
     private boolean              isPrivateFile                = false;
 
-    @SuppressWarnings("deprecation")
     public FilecloudIo(final PluginWrapper wrapper) {
         super(wrapper);
         this.setAccountwithoutUsername(true);
@@ -409,12 +401,10 @@ public class FilecloudIo extends antiDDoSForHost {
                 /* This should never happen. */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-
             int maxchunks = ACCOUNT_PREMIUM_MAXCHUNKS;
             if (link.getBooleanProperty(NOCHUNKS, false)) {
                 maxchunks = 1;
             }
-
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, finallink, ACCOUNT_PREMIUM_RESUME, maxchunks);
             if (dl.getConnection().getContentType().contains("html")) {
                 handleServerErrors();
@@ -560,7 +550,6 @@ public class FilecloudIo extends antiDDoSForHost {
          *
          */
         private static final long serialVersionUID = 1L;
-
         private final String      APIKEYHELP       = "Enter your APIKey / APIKey eingeben";
 
         public boolean updateAccount(Account input, Account output) {
@@ -593,15 +582,12 @@ public class FilecloudIo extends antiDDoSForHost {
             super("ins 0, wrap 2", "[][grow,fill]", "");
             add(new JLabel("Instructions / Anleitung:"));
             add(new JLink(MAINPAGE + "/?m=help&a=jdownloader"));
-
             add(new JLabel("APIKey:"));
             add(this.pass = new ExtPasswordField() {
-
                 @Override
                 public void onChanged() {
                     callback.onChangedInput(this);
                 }
-
             }, "");
             pass.setHelpText(APIKEYHELP);
         }
@@ -628,5 +614,4 @@ public class FilecloudIo extends antiDDoSForHost {
             return new Account(null, getPassword());
         }
     }
-
 }
