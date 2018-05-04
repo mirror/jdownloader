@@ -15,6 +15,7 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,6 +26,20 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import jd.PluginWrapper;
+import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
+import jd.plugins.DecrypterPlugin;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.MediathekHelper;
+import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -53,20 +68,6 @@ import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-import jd.PluginWrapper;
-import jd.controlling.ProgressController;
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
-import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
-import jd.plugins.DecrypterPlugin;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.components.MediathekHelper;
-import jd.plugins.components.PluginJSonUtils;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ardmediathek.de", "mediathek.daserste.de", "daserste.de", "rbb-online.de", "sandmann.de", "wdr.de", "sportschau.de", "one.ard.de", "wdrmaus.de", "sr-online.de", "ndr.de", "kika.de", "eurovision.de", "sputnik.de", "mdr.de", "checkeins.de" }, urls = { "https?://(?:www\\.)?ardmediathek\\.de/.*?documentId=\\d+[^/]*?", "https?://(?:www\\.)?mediathek\\.daserste\\.de/.*?documentId=\\d+[^/]*?", "https?://www\\.daserste\\.de/[^<>\"]+/(?:videos|videosextern)/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?mediathek\\.rbb\\-online\\.de/tv/[^<>\"]+documentId=\\d+[^/]*?", "https?://(?:www\\.)?sandmann\\.de/.+", "https?://(?:[a-z0-9]+\\.)?wdr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?sportschau\\.de/.*?\\.html", "https?://(?:www\\.)?one\\.ard\\.de/tv/[^<>\"]+documentId=\\d+[^/]*?", "https?://(?:www\\.)?wdrmaus\\.de/.+",
         "https?://sr\\-mediathek\\.sr\\-online\\.de/index\\.php\\?seite=\\d+\\&id=\\d+", "https?://(?:[a-z0-9]+\\.)?ndr\\.de/.*?\\.html", "https?://(?:www\\.)?kika\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?eurovision\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?sputnik\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?mdr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?checkeins\\.de/[^<>\"]+\\.html" })
 public class Ardmediathek extends PluginForDecrypt {
@@ -90,14 +91,14 @@ public class Ardmediathek extends PluginForDecrypt {
         heigth_to_bitrate.put("576", 1728000l);
         heigth_to_bitrate.put("720", 3773000l);
     }
-    private String  subtitleLink   = null;
-    private String  parameter      = null;
-    private String  title          = null;
-    private String  show           = null;
-    private String  provider       = null;
-    private long    date_timestamp = -1;
-    private boolean grabHLS        = false;
-    private String  contentID      = null;
+    private String                              subtitleLink          = null;
+    private String                              parameter             = null;
+    private String                              title                 = null;
+    private String                              show                  = null;
+    private String                              provider              = null;
+    private long                                date_timestamp        = -1;
+    private boolean                             grabHLS               = false;
+    private String                              contentID             = null;
 
     public Ardmediathek(final PluginWrapper wrapper) {
         super(wrapper);
@@ -474,13 +475,17 @@ public class Ardmediathek extends PluginForDecrypt {
     /**
      * Find subtitle URL inside xml String
      */
-    private String getXMLSubtitleURL(final Browser xmlBR) throws MalformedURLException {
+    private String getXMLSubtitleURL(final Browser xmlBR) throws IOException {
         String subtitleURL = getXML(xmlBR.toString(), "videoSubtitleUrl");
         if (StringUtils.isEmpty(subtitleURL)) {
             /* E.g. checkeins.de */
             subtitleURL = xmlBR.getRegex("<dataTimedTextNoOffset url=\"(http[^<>\"]+\\.xml)\">").getMatch(0);
         }
-        return subtitleURL;
+        if (subtitleURL != null) {
+            return xmlBR.getURL(subtitleURL).toString();
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -488,17 +493,22 @@ public class Ardmediathek extends PluginForDecrypt {
      *
      * @throws MalformedURLException
      */
-    private String getJsonSubtitleURL(final Browser jsonBR) throws MalformedURLException {
+    private String getJsonSubtitleURL(final Browser jsonBR) throws IOException {
         String subtitleURL;
         if (br.getURL().contains("wdr.de/")) {
             subtitleURL = PluginJSonUtils.getJsonValue(jsonBR, "captionURL");
+            if (subtitleURL == null) {
+                // TODO: check other formats
+                subtitleURL = PluginJSonUtils.getJsonValue(jsonBR, "xml");
+            }
         } else {
             subtitleURL = PluginJSonUtils.getJson(jsonBR, "_subtitleUrl");
-            if (subtitleURL != null && !subtitleURL.startsWith("http://")) {
-                subtitleURL = jsonBR._getURL().getProtocol() + "://www." + jsonBR.getHost() + subtitleURL;
-            }
         }
-        return subtitleURL;
+        if (subtitleURL != null) {
+            return jsonBR.getURL(subtitleURL).toString();
+        } else {
+            return null;
+        }
     }
 
     private String getHlsToHttpURLFormat(final String hls_master) {
@@ -570,7 +580,13 @@ public class Ardmediathek extends PluginForDecrypt {
          */
         final List<String> httpStreamsQualityIdentifiers = new ArrayList<String>();
         try {
-            final HashMap<String, Object> map = JSonStorage.restoreFromString(brJSON.toString(), TypeRef.HASHMAP);
+            final String json = brJSON.toString().trim();
+            final HashMap<String, Object> map;
+            if (json.startsWith("{") && json.endsWith("}")) {
+                map = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+            } else {
+                map = null;
+            }
             if (map != null && map.containsKey("_mediaArray")) {
                 final List<Map<String, Object>> mediaArray = (List<Map<String, Object>>) map.get("_mediaArray");
                 for (Map<String, Object> media : mediaArray) {
