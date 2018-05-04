@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
@@ -48,25 +47,20 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megarapido.net" }, urls = { "" })
 public class MegarapidoNet extends antiDDoSForHost {
-
     /* Tags: conexaomega.com.br, megarapido.net, superdown.com.br */
-
     private final String                 DOMAIN                       = "megarapido.net";
     private final String                 PRIMARYURL                   = "https://" + DOMAIN;
     private final String                 NICE_HOSTproperty            = DOMAIN.replaceAll("(\\.|-)", "") + "_";
     private final String                 NOCHUNKS                     = NICE_HOSTproperty + "NOCHUNKS";
     private final String                 NORESUME                     = NICE_HOSTproperty + "NORESUME";
     private final String                 DIRECTLINK                   = NICE_HOSTproperty + "DIRECTLINK";
-
     /* Connection limits */
     private static final boolean         ACCOUNT_PREMIUM_RESUME       = true;
     private static final int             ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int             ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     private static final String          default_UA                   = "JDownloader";
-
     private Account                      currAcc                      = null;
     private DownloadLink                 currDownloadLink             = null;
-
     private static Object                LOCK                         = new Object();
     private int                          statuscode                   = 0;
     private static MultiHosterManagement mhm                          = new MultiHosterManagement("megarapido.net");
@@ -281,7 +275,6 @@ public class MegarapidoNet extends antiDDoSForHost {
             // wont use, just use error message.
             // final String limit = (String)entries.get("limit");
             // //Ilimitado = unlimited
-
             /* First cover special cases */
             if (crippledhost.equals("mediafire")) {
                 /* There is also mediafire.bz and so on but .com is the right one in this case! */
@@ -290,8 +283,6 @@ public class MegarapidoNet extends antiDDoSForHost {
                 supportedHosts.add("uploaded.net");
             } else if (crippledhost.equals("minhateca.com.br")) {
                 supportedHosts.add("minhateca.com.br");
-            } else if (crippledhost.equals("nowvideo.sx")) {
-                supportedHosts.add("nowvideo.sx");
             } else {
                 /* Finally, go insane... */
                 for (final String possibledomain : possible_domains) {
@@ -301,7 +292,6 @@ public class MegarapidoNet extends antiDDoSForHost {
             }
         }
         ai.setMultiHostSupport(this, supportedHosts);
-
         return ai;
     }
 
@@ -412,5 +402,4 @@ public class MegarapidoNet extends antiDDoSForHost {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.Unknown_MultihosterScript;
     }
-
 }

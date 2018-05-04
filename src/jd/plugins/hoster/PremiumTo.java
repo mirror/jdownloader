@@ -15,19 +15,19 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import org.jdownloader.plugins.ConditionalSkipReasonException;
-import org.jdownloader.plugins.WaitingSkipReason;
-import org.jdownloader.plugins.WaitingSkipReason.CAUSE;
-import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetServer;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
+
+import org.jdownloader.plugins.ConditionalSkipReasonException;
+import org.jdownloader.plugins.WaitingSkipReason;
+import org.jdownloader.plugins.WaitingSkipReason.CAUSE;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -42,6 +42,7 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -53,9 +54,7 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "https?://torrent[a-z0-9]*?\\.(premium\\.to|premium4\\.me)/(t|z)/[^<>/\"]+(/[^<>/\"]+){0,1}(/\\d+)*|https?://storage[a-z0-9]*?\\.(?:premium\\.to|premium4\\.me)/file/[A-Z0-9]+" })
 public class PremiumTo extends UseNet {
-
     private static WeakHashMap<Account, HashMap<String, Long>> hostUnavailableMap             = new WeakHashMap<Account, HashMap<String, Long>>();
-
     private final String                                       noChunks                       = "noChunks";
     private static Object                                      LOCK                           = new Object();
     private final String                                       normalTraffic                  = "normalTraffic";
@@ -121,6 +120,7 @@ public class PremiumTo extends UseNet {
         tbr.getPage("http://" + this.getHost() + "/sstraffic.php");
         /* NormalTraffic:SpecialTraffic:TorrentTraffic */
         String[] traffic = tbr.toString().split(";");
+        String additionalAccountStatus = "";
         if (traffic != null && traffic.length == 3) {
             // because we can not account for separate traffic allocations.
             /* Normal traffic */
@@ -133,19 +133,20 @@ public class PremiumTo extends UseNet {
             // set both so we can check in canHandle.
             account.setProperty(normalTraffic, nT + stT);
             account.setProperty(specialTraffic, spT);
-        }
-        {
-            final Browser hbr = br.cloneBrowser();
-            hbr.getPage(API_BASE + "hosts.php");
-            final String hosters[] = hbr.toString().split(";|\\s+");
-            if (hosters != null && hosters.length != 0) {
-                final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosters));
-                supportedHosts.add("usenet");
-                ac.setMultiHostSupport(this, supportedHosts);
+            if (nT > 0 && spT > 0) {
+                additionalAccountStatus = String.format(" | Normal Traffic: %d MiB Special Traffic: %d MiB", nT, spT);
             }
         }
-        account.setValid(true);
-        ac.setStatus("Premium account");
+        final Browser hbr = br.cloneBrowser();
+        hbr.getPage(API_BASE + "hosts.php");
+        final String hosters[] = hbr.toString().split(";|\\s+");
+        if (hosters != null && hosters.length != 0) {
+            final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosters));
+            supportedHosts.add("usenet");
+            ac.setMultiHostSupport(this, supportedHosts);
+        }
+        account.setType(AccountType.PREMIUM);
+        ac.setStatus("Premium account" + additionalAccountStatus);
         return ac;
     }
 
@@ -329,12 +330,10 @@ public class PremiumTo extends UseNet {
                     con.disconnect();
                 }
                 downloadable = new DownloadLinkDownloadable(link) {
-
                     @Override
                     public boolean isHashCheckEnabled() {
                         return false;
                     }
-
                 };
             } else {
                 downloadable = new DownloadLinkDownloadable(link);
@@ -419,7 +418,6 @@ public class PremiumTo extends UseNet {
                     throw new PluginException(LinkStatus.ERROR_RETRY, null, -1, ex);
                 }
             }
-
         }
     }
 

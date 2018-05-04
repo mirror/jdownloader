@@ -17,7 +17,6 @@ package jd.plugins.hoster;
 
 import java.util.Locale;
 
-import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.downloader.hls.HLSDownloader;
@@ -92,8 +91,6 @@ public class VideoBoxCom extends PluginForHost {
             br.getPage("http://www.videobox.com/content/download/options/" + sceneID + ".json?x-user-name=" + Encoding.urlEncode(account.getUser()) + "&x-session-key=" + sessionID + "&callback=metai.buildDownloadLinks");
             dllink = getSpecifiedQuality(link.getStringProperty("quality", null));
         }
-        link.setFinalFileName(link.getStringProperty("finalname", null));
-        link.setDownloadSize(SizeFormatter.getSize(link.getStringProperty("plainfilesize", null)));
         return AvailableStatus.TRUE;
     }
 
