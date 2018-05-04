@@ -266,7 +266,11 @@ public class RAFChunk extends Thread {
                             remoteIO = true;
                             int readMaxNext = (int) Math.min(bytes2Do, bufLeft);
                             if (readMaxNext < 512 * 1024) {
-                                readMaxNext = Math.max(1024, readMaxNext / 2);
+                                if (readMaxNext < 32767) {
+                                    readMaxNext = 1024;
+                                } else {
+                                    readMaxNext = Math.max(1024, readMaxNext / 2);
+                                }
                                 readMaxNext = Math.min(readMaxNext, bufLeft);
                             }
                             read = inputStream.read(buffer.getInternalBuffer(), buffer.size(), readMaxNext);
