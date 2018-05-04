@@ -19,13 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -48,6 +41,12 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filebit.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
 public class FileBitPl extends PluginForHost {
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
@@ -58,8 +57,6 @@ public class FileBitPl extends PluginForHost {
      * 2018-02-13: Their API is broken and only returns 404. Support did not respond which is why we now have website- and API support ...
      */
     private static final boolean                           USE_API            = true;
-    /* Default value is 10 */
-    private static AtomicInteger                           maxPrem            = new AtomicInteger(10);
     private static MultiHosterManagement                   mhm                = new MultiHosterManagement("filebit.pl");
 
     public FileBitPl(PluginWrapper wrapper) {
@@ -295,10 +292,9 @@ public class FileBitPl extends PluginForHost {
         if (maxSimultanDls < 1) {
             maxSimultanDls = 1;
         } else if (maxSimultanDls > 20) {
-            maxSimultanDls = 20;
+            maxSimultanDls = 0;
         }
         account.setMaxSimultanDownloads(maxSimultanDls);
-        maxPrem.set(maxSimultanDls);
         long maxChunks = Integer.parseInt(PluginJSonUtils.getJson(this.br, "maxcon"));
         if (maxChunks > 1) {
             maxChunks = -maxChunks;
@@ -554,11 +550,6 @@ public class FileBitPl extends PluginForHost {
             logger.info("Exception: statusCode: " + statusCode + " statusMessage: " + statusMessage);
             throw e;
         }
-    }
-
-    @Override
-    public int getMaxSimultanDownload(final DownloadLink link, final Account account) {
-        return maxPrem.get();
     }
 
     @Override
