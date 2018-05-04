@@ -13,15 +13,12 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -35,9 +32,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "traileraddict.com" }, urls = { "http://(?:www\\.)?traileraddict\\.com/(?:trailer/)?[a-z0-9\\-]+/[a-z0-9\\-]+" })
-public class TrailerAddictCom extends PluginForHost {
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "traileraddict.com" }, urls = { "https?://(?:www\\.)?traileraddict\\.com/(?:trailer/)?[a-z0-9\\-]+/[a-z0-9\\-]+" })
+public class TrailerAddictCom extends PluginForHost {
     private String dllink = null;
 
     public TrailerAddictCom(PluginWrapper wrapper) {
@@ -89,8 +87,9 @@ public class TrailerAddictCom extends PluginForHost {
             }
         }
         final String unwise = unWise();
+        logger.info("Debug info: unwise: " + unwise);
         if (unwise != null) {
-            dllink = new Regex(unwise, "file:'(.*?)'").getMatch(0);
+            dllink = new Regex(unwise, "src=\"(.*?)\"").getMatch(0);
         } else {
             br.getPage("http://www.traileraddict.com/fvar.php?tid=" + vid);
             dllink = new Regex(Encoding.htmlDecode(br.toString()), "fileurl=(http://.*?)\\&vidwidth=").getMatch(0);
