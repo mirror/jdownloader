@@ -1,174 +1,89 @@
-//    jDownloader - Downloadmanager
-//    Copyright (C) 2012  JD-Team support@jdownloader.org
+//jDownloader - Downloadmanager
+//Copyright (C) 2013  JD-Team support@jdownloader.org
 //
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
+//This program is free software: you can redistribute it and/or modify
+//it under the terms of the GNU General Public License as published by
+//the Free Software Foundation, either version 3 of the License, or
+//(at your option) any later version.
 //
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-//    GNU General Public License for more details.
+//This program is distributed in the hope that it will be useful,
+//but WITHOUT ANY WARRANTY; without even the implied warranty of
+//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//GNU General Public License for more details.
 //
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//You should have received a copy of the GNU General Public License
+//along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.lang.reflect.Field;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
-import java.net.URL;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Pattern;
+import java.util.LinkedHashMap;
 
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
-import jd.controlling.AccountController;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
-import jd.plugins.components.ZeveraApiTracker;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zevera.com" }, urls = { "https?://\\w+\\.zevera\\.com/getFiles\\.as(p|h)x\\?ourl=.+" })
-public class ZeveraCom extends antiDDoSForHost {
-    // DEV NOTES
-    // supports last09 based on pre-generated links and jd2
-    /* Important - all of these belong together: zevera.com, multihosters.com, putdrive.com(?!) */
-    private static ZeveraApiTracker      API               = new ZeveraApiTracker();
-    private static final String          mName             = "zevera.com";
-    private static final String          NICE_HOSTproperty = mName.replaceAll("(\\.|\\-)", "");
-    private static final String          mProt             = "http://";
-    private static Object                LOCK              = new Object();
-    private static MultiHosterManagement mhm               = new MultiHosterManagement("zevera.com");
-    private static final String          NOCHUNKS          = "NOCHUNKS";
-    private Account                      currAcc           = null;
-    private DownloadLink                 currDownloadLink  = null;
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zevera.com" }, urls = { "" })
+public class ZeveraCom extends PluginForHost {
+    private static final String                            NICE_HOST                 = "zevera.com";
+    private static final String                            NICE_HOSTproperty         = NICE_HOST.replaceAll("(\\.|\\-)", "");
+    /* Connection limits */
+    private static final boolean                           ACCOUNT_PREMIUM_RESUME    = true;
+    private static final int                               ACCOUNT_PREMIUM_MAXCHUNKS = 0;
+    private static final boolean                           USE_API                   = true;
+    private final String                                   client_id                 = "306575304";
+    private static Object                                  LOCK                      = new Object();
+    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap        = new HashMap<Account, HashMap<String, Long>>();
+    private Account                                        currentAcc                = null;
+    private DownloadLink                                   currentLink               = null;
+    private static MultiHosterManagement                   mhm                       = new MultiHosterManagement("zevera.com");
 
     public ZeveraCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(mProt + mName + "/");
+        this.setAccountwithoutUsername(true);
+        this.enablePremium("https://www.zevera.com/premium");
     }
 
     @Override
     public String getAGBLink() {
-        return mProt + mName + "/terms";
+        return "https://www.zevera.com/legal";
     }
 
-    private synchronized String getMServ() {
-        return mProt + API.get() + mName;
-    }
-
-    @Override
-    protected Browser prepBrowser(final Browser prepBr, final String host) {
-        if (!(browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
-            super.prepBrowser(prepBr, host);
-            // define custom browser headers and language settings.
-            prepBr.setCookie(mProt + mName, "lang", "english");
-            // prepBr.getHeaders().put("User-Agent", "JDownloader");
-            prepBr.setCustomCharset("utf-8");
-            prepBr.setConnectTimeout(60 * 1000);
-            prepBr.setReadTimeout(60 * 1000);
-            prepBr.addAllowedResponseCodes(500);
-        }
-        return prepBr;
-    }
-
-    /**
-     * JD 2 Code. DO NOT USE OVERRIDE FOR COMPATIBILITY REASONS
-     */
-    public boolean isProxyRotationEnabledForLinkChecker() {
-        return false;
-    }
-
-    public boolean checkLinks(DownloadLink[] urls) {
-        if (urls == null || urls.length == 0) {
-            return false;
-        }
-        try {
-            List<Account> accs = AccountController.getInstance().getValidAccounts(this.getHost());
-            if (accs == null || accs.size() == 0) {
-                logger.info("No account present, Please add a premium" + mName + "account.");
-                for (DownloadLink dl : urls) {
-                    /* no check possible */
-                    dl.setAvailableStatus(AvailableStatus.UNCHECKABLE);
-                }
-                return false;
-            }
-            login(accs.get(0), false);
-            br.setFollowRedirects(true);
-            for (DownloadLink dl : urls) {
-                URLConnectionAdapter con = null;
-                try {
-                    con = openAntiDDoSRequestConnection(br, br.createGetRequest(dl.getDownloadURL()));
-                    if (con.isContentDisposition()) {
-                        dl.setFinalFileName(getFileNameFromHeader(con));
-                        dl.setDownloadSize(con.getLongContentLength());
-                        dl.setAvailable(true);
-                    } else {
-                        dl.setAvailable(false);
-                    }
-                } finally {
-                    try {
-                        /* make sure we close connection */
-                        con.disconnect();
-                    } catch (final Throwable e) {
-                    }
-                }
-            }
-        } catch (Exception e) {
-            return false;
-        }
-        return true;
+    public static Browser prepBR(final Browser br) {
+        br.setCookiesExclusive(true);
+        br.getHeaders().put("User-Agent", "JDownloader");
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+        br.setFollowRedirects(true);
+        return br;
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
-        final boolean checked = checkLinks(new DownloadLink[] { link });
-        // we can't throw exception in checklinks! This is needed to prevent multiple captcha events!
-        if (!checked && hasAntiddosCaptchaRequirement()) {
-            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        } else if (!checked || !link.isAvailabilityStatusChecked()) {
-            link.setAvailableStatus(AvailableStatus.UNCHECKABLE);
-        } else if (!link.isAvailable()) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        return getAvailableStatus(link);
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws PluginException {
+        return AvailableStatus.UNCHECKABLE;
     }
 
-    private AvailableStatus getAvailableStatus(DownloadLink link) {
-        try {
-            final Field field = link.getClass().getDeclaredField("availableStatus");
-            field.setAccessible(true);
-            Object ret = field.get(link);
-            if (ret != null && ret instanceof AvailableStatus) {
-                return (AvailableStatus) ret;
-            }
-        } catch (final Throwable e) {
-        }
-        return AvailableStatus.UNCHECKED;
+    private void setConstants(final Account acc, final DownloadLink dl) {
+        this.currentAcc = acc;
+        this.currentLink = dl;
     }
 
     @Override
@@ -182,352 +97,13 @@ public class ZeveraCom extends antiDDoSForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Download only works with a premium" + mName + "account.", PluginException.VALUE_ID_PREMIUM_ONLY);
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 0;
-    }
-
-    @Override
-    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        setConstants(account, link);
-        login(account, false);
-        showMessage(link, "Phase 1/3: URL check for pre-generated links!");
-        requestFileInformation(link);
-        showMessage(link, "Pgase 2/3: Download ready!");
-        handleDL(link, link.getDownloadURL());
-    }
-
-    private void setConstants(final Account acc, final DownloadLink dl) {
-        this.currAcc = acc;
-        this.currDownloadLink = dl;
-    }
-
-    private void handleDL(final DownloadLink link, String dllink) throws Exception {
-        // Zevera uses this redirect logic to wait for the actual file in the backend. This means: follow the redirects until we get Data!
-        // After 10 redirects Zevera shows an error. We do not allow more than 10 redirects - so we probably never see this error page
-        //
-        // Besides redirects, the connections often run into socket exceptions. do the same on socket problems - retry
-        // according to Zevera, 20 retries should be enough
-        br.setFollowRedirects(true);
-        showMessage(link, "Phase 3/3: Check download!");
-        int maxchunks = 0;
-        if (link.getBooleanProperty(ZeveraCom.NOCHUNKS, false)) {
-            maxchunks = 1;
-        }
-        try {
-            logger.info("Connecting to " + new URL(dllink).getHost());
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, maxchunks, true);
-        } catch (final PluginException e) {
-            if ("Redirectloop".equals(e.getMessage())) {
-                logger.info("Download failed because of a Redirectloop -> This is caused by zevera and NOT a JD issue!");
-                handleErrorRetries("redirectloop", 20, 2 * 60 * 1000l);
-            }
-            /* unknown error, we disable multiple chunks */
-            if (link.getBooleanProperty(ZeveraCom.NOCHUNKS, false) == false) {
-                link.setProperty(ZeveraCom.NOCHUNKS, Boolean.valueOf(true));
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
-            logger.info("Download failed because: " + e.getMessage());
-            logger.info("Name of the errorMessage: " + e.getLocalizedMessage());
-            throw e;
-        } catch (final SocketTimeoutException e) {
-            logger.info("Download failed because of a timeout -> This is caused by zevera and NOT a JD issue!");
-            handleErrorRetries("timeout", 20, 5 * 60 * 1000l);
-        } catch (final SocketException e) {
-            logger.info("Download failed because of a timeout/connection problem -> This is probably caused by zevera and NOT a JD issue!");
-            handleErrorRetries("timeout", 20, 5 * 60 * 1000l);
-        } catch (final BrowserException e) {
-            // some exemptions happen in browser exceptions and not collected by sockettimeoutexception/socketexception
-            logger.info("Download failed because of a timeout/connection problem -> This is probably caused by zevera and NOT a JD issue!");
-            getLogger().log(e);
-            handleErrorRetries("BrowserException", 20, 5 * 60 * 1000l);
-        } catch (final Exception e) {
-            logger.info("Download FATAL failed because: " + e.getMessage());
-            throw e;
-        }
-        if (dl.getConnection().getResponseCode() == 404) {
-            handleErrorRetries("servererror404", 20, 2 * 60 * 1000l);
-        }
-        if (!dl.getConnection().getContentType().contains("html")) {
-            /* contentdisposition, lets download it */
-            try {
-                if (!this.dl.startDownload()) {
-                    try {
-                        if (dl.externalDownloadStop()) {
-                            return;
-                        }
-                    } catch (final Throwable e) {
-                    }
-                    /* unknown error, we disable multiple chunks */
-                    if (link.getBooleanProperty(ZeveraCom.NOCHUNKS, false) == false) {
-                        link.setProperty(ZeveraCom.NOCHUNKS, Boolean.valueOf(true));
-                        throw new PluginException(LinkStatus.ERROR_RETRY);
-                    }
-                }
-            } catch (final PluginException e) {
-                // New V2 errorhandling
-                /* unknown error, we disable multiple chunks */
-                if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(ZeveraCom.NOCHUNKS, false) == false) {
-                    link.setProperty(ZeveraCom.NOCHUNKS, Boolean.valueOf(true));
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                } else {
-                    throw e;
-                }
-            }
-            return;
-        }
-        /* download is not content disposition! */
-        if (dl.getConnection().getResponseCode() == 500) {
-            handleErrorRetries("servererror500", 20, 5 * 60 * 1000l);
-        }
-        // it seems that they can give this error AFTER hoster link has been fetched...
-        handleRedirectionErrors(br.getURL());
-        br.followConnection();
-        handleErrorRetries("unknowndlerroratend", 50, 10 * 60 * 1000l);
-    }
-
-    /**
-     * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before we temporarily remove the host
-     * from the host list.
-     *
-     * @param error
-     *            : The name of the error
-     * @param maxRetries
-     *            : Max retries before out of date error is thrown
-     */
-    private void handleErrorRetries(final String error, final int maxRetries, final long timeout) throws PluginException {
-        int timesFailed = this.currDownloadLink.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
-        if (timesFailed <= maxRetries) {
-            logger.info(error + " -> Retrying");
-            timesFailed++;
-            this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
-            throw new PluginException(LinkStatus.ERROR_RETRY, error);
-        } else {
-            this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
-            logger.info(error + " -> Disabling current host");
-            mhm.putError(this.currAcc, this.currDownloadLink, timeout, error);
-        }
-    }
-
-    /** no override to keep plugin compatible to old stable */
-    public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        mhm.runCheck(account, link);
-        br.setFollowRedirects(false);
-        login(account, false);
-        setConstants(account, link);
-        showMessage(link, "Task 1: Generating Link");
-        /* request Download */
-        getApi("/getFiles.aspx?ourl=" + Encoding.urlEncode(link.getDownloadURL()) + (link.getStringProperty("pass", null) != null ? "&FilePass=" + Encoding.urlEncode(link.getStringProperty("pass", null)) : ""));
-        String dllink = br.getRedirectLocation();
-        int redirect_count = 0;
-        do {
-            // wtf ?
-            if (dllink == null) {
-                // to check for newly reported logs via statserv reporting.
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                // zevera will respond with invalid redirect
-                // ----------------Response Information------------
-                // Connection-Time: keep-Alive
-                // ----------------Response------------------------
-                // HTTP/1.1 302 Found
-                // Cache-Control: private
-                // Content-Type: text/html; charset=utf-8
-                // Server: Microsoft-IIS/8.0
-                // X-AspNet-Version: 4.0.30319
-                // X-Powered-By: ASP.NET
-                // Date: Wed, 01 Jul 2015 21:55:08 GMT
-                // Content-Length: 117
-                // ------------------------------------------------
-                //
-                //
-                // --ID:1927TS:1435787721587-7/2/15 5:55:21 AM - [jd.http.Browser(loadConnection)] ->
-                // <html><head><title>Object moved</title></head><body>
-                // <h2>Object moved to <a href="">here</a>.</h2>
-                // </body></html>
-            } else if (dllink.matches(".*/Download/directDownload\\.ashx\\?.+")) {
-                break;
-            } else {
-                // general redirect handling
-                handleRedirectionErrors(dllink);
-                redirect_count++;
-                // standard redirect counter ?
-                if (redirect_count >= 20) {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Redirect Loop!");
-                }
-                getPage(dllink);
-                dllink = br.getRedirectLocation();
-            }
-        } while (redirect_count <= 20);
-        showMessage(link, "Task 2: Download begins!");
-        handleDL(link, dllink);
-    }
-
-    private void handleRedirectionErrors(final String dllink) throws PluginException {
-        if (dllink == null) {
-            handleErrorRetries("dllink_null_redirect", 20, 1 * 60 * 60 * 1000l);
-        } else if (new Regex(dllink, "/member/systemmessage\\.aspx\\?hoster=[\\w\\.\\-]+_customer").matches()) {
-            // out of traffic for that given host for that given account.
-            mhm.putError(this.currAcc, this.currDownloadLink, 1 * 60 * 60 * 1000l, "No traffic left for this host.");
-        } else if (new Regex(dllink, "/member/systemmessage\\.aspx\\?hoster=[\\w\\.\\-]+$").matches()) {
-            // out of traffic for that given host for whole of multihoster, set to null account to prevent retry across different accounts.
-            mhm.putError(null, this.currDownloadLink, 30 * 60 * 1000l, "No traffic left for this host.");
-        } else if (new Regex(dllink, "/member/systemmessage\\.aspx").matches()) {
-            // we assume that they might have other error types for that same URL.
-            handleErrorRetries("known_unknownerror", 20, 1 * 60 * 60 * 1000l);
-        }
-    }
-
-    @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        setConstants(account, null);
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            ai.setProperty("multiHostSupport", Property.NULL);
-            throw e;
-        }
-        account.setValid(true);
-        account.setConcurrentUsePossible(true);
-        account.setMaxSimultanDownloads(-1);
-        getPage("https://www.zevera.com/members/dashboard");
-        final String expire = br.getRegex(">Expiration date:</span>.+?txExpirationDate\">\\s*(.*?)\\s*</span").getMatch(0);
-        if (expire != null) {
-            if (StringUtils.equalsIgnoreCase(expire, "Expired")) {
-                ai.setExpired(true);
-            } else {
-                final String expireTime = new Regex(expire, "(\\d+/\\d+/\\d+ [\\d\\:]+ (AM|PM))").getMatch(0);
-                long eTime = -1;
-                if (expireTime != null) {
-                    eTime = TimeFormatter.getMilliSeconds(expireTime, "MM/dd/yyyy hh:mm:ss a", null);
-                    if (eTime == -1) {
-                        eTime = TimeFormatter.getMilliSeconds(expireTime, "MM/dd/yyyy hh:mm a", null);
-                    }
-                }
-                if (eTime >= 0) {
-                    // standard account
-                    ai.setValidUntil(eTime, br);
-                } else if (StringUtils.endsWithCaseInsensitive(expire, "NEVER")) {
-                    // life time account
-                } else {
-                    logger.warning("unknown expire");
-                }
-            }
-        }
-        final String traffic = br.getRegex(">Traffic Left:\\s*</span>(?:<[^>]+>\\s*){2,}(.*?)</span>").getMatch(0);
-        if (traffic != null) {
-            if (StringUtils.equalsIgnoreCase(traffic, "UNLIMITED")) {
-                ai.setUnlimitedTraffic();
-            } else {
-                final String dayTrafficLeft = new Regex(traffic, "(\\d+ (MB|GB|TB))").getMatch(0);
-                if (dayTrafficLeft != null) {
-                    ai.setTrafficLeft(SizeFormatter.getSize(dayTrafficLeft));
-                }
-            }
-        }
-        ai.setStatus("Premium Account");
-        try {
-            final StringBuilder sb = new StringBuilder();
-            sb.append("<?xml version=\"1.0\" encoding=\"utf-8\"?><soap12:Envelope xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:soap12=\"http://www.w3.org/2003/05/soap-envelope\"><soap12:Body>");
-            sb.append("<GetHosters xmlns=\"http://tempuri.org/\" />");
-            sb.append("</soap12:Body></soap12:Envelope>");
-            br.getHeaders().put("Content-Type", "application/soap+xml; charset=utf-8");
-            postApiRaw(br, "/downloadapi.asmx", sb.toString());
-            ai.setMultiHostSupport(this, addThis());
-        } catch (Throwable e) {
-            logger.info("Could not fetch ServerList: " + e.toString());
-        }
-        return ai;
-    }
-
-    private final void getApi(final String relative) throws Exception {
-        boolean failure = false;
-        do {
-            try {
-                final String url = Request.getLocation(relative, br.createGetRequest(getMServ()));
-                getPage(url);
-                final int responseCode = br.getHttpConnection().getResponseCode();
-                if (responseCode == 500 || responseCode == 404) {
-                    API.setFailure();
-                    if (failure) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                    }
-                    failure = true;
-                } else {
-                    failure = false;
-                }
-            } catch (BrowserException e) {
-                API.setFailure();
-                if (failure) {
-                    throw e;
-                }
-                failure = true;
-            }
-        } while (failure);
-    }
-
-    private void postApiRaw(Browser br, final String relative, final String postData) throws Exception {
-        boolean failure = false;
-        do {
-            try {
-                final String url = Request.getLocation(relative, br.createGetRequest(getMServ()));
-                postPageRaw(url, postData);
-                final int responseCode = br.getHttpConnection().getResponseCode();
-                if (responseCode == 500 || responseCode == 404) {
-                    API.setFailure();
-                    if (failure) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                    }
-                    failure = true;
-                }
-            } catch (BrowserException e) {
-                API.setFailure();
-                if (failure) {
-                    throw e;
-                }
-                failure = true;
-            }
-        } while (failure);
-    }
-
-    private ArrayList<String> addThis() {
-        // try {
-        // final DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-        // final XPath xPath = XPathFactory.newInstance().newXPath();
-        // String input = "";
-        // Document d = parser.parse(new ByteArrayInputStream(input.getBytes("UTF-8")));
-        // NodeList mediaUrls = (NodeList) xPath.evaluate("/soap:Envelope/soap:Body/GetHostersResponse/GetHostersResult/hosters/hoster", d,
-        // XPathConstants.NODESET);
-        // System.out.println(1);
-        // } catch (Exception e) {
-        // e.printStackTrace();
-        // }
-        final ArrayList<String> r = new ArrayList<String>();
-        final String[] results = getXMLb(br.toString().replace("<hoster><isActive>false</isActive><Limit>0</Limit></hoster>", ""), "hoster");
-        if (results != null) {
-            for (final String result : results) {
-                final String name = getXMLa(result, "hostername");
-                final boolean active = PluginJSonUtils.parseBoolean(getXMLa(result, "isActive"));
-                if (active) {
-                    r.add(name);
-                }
-            }
-        }
-        return r;
-    }
-
-    private final String getXMLa(final String input, final String keyname) {
-        final String result = new Regex(input, "<" + Pattern.quote(keyname) + ">(.*?)</" + Pattern.quote(keyname) + ">").getMatch(0);
-        return result;
-    }
-
-    private final String[] getXMLb(final String input, final String keyname) {
-        final String[] result = new Regex(input, "<" + Pattern.quote(keyname) + ">(.*?)</" + Pattern.quote(keyname) + ">").getColumn(0);
-        return result;
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        /* handle premium should never be called */
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
     @Override
@@ -535,70 +111,175 @@ public class ZeveraCom extends antiDDoSForHost {
         return new FEATURE[] { FEATURE.MULTIHOST };
     }
 
-    private void login(Account account, boolean force) throws Exception {
-        synchronized (LOCK) {
-            final boolean ifr = br.isFollowingRedirects();
+    @Override
+    public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
+        this.br = prepBR(this.br);
+        setConstants(account, link);
+        mhm.runCheck(currentAcc, currentLink);
+        synchronized (hostUnavailableMap) {
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            if (unavailableMap != null) {
+                Long lastUnavailable = unavailableMap.get(link.getHost());
+                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
+                    final long wait = lastUnavailable - System.currentTimeMillis();
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
+                } else if (lastUnavailable != null) {
+                    unavailableMap.remove(link.getHost());
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
+                }
+            }
+        }
+        login(account, false);
+        String dllink = getDllink(link);
+        if (StringUtils.isEmpty(dllink)) {
+            mhm.handleErrorGeneric(currentAcc, currentLink, "dllinknull", 2, 5 * 60 * 1000l);
+        }
+        handleDL(account, link, dllink);
+    }
+
+    private String getDllink(final DownloadLink link) throws IOException, PluginException {
+        String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
+        if (dllink == null) {
+            if (USE_API) {
+                dllink = getDllinkAPI(this.br, this.client_id, this.currentAcc, link, this);
+            } else {
+                dllink = getDllinkWebsite(link);
+            }
+        }
+        return dllink;
+    }
+
+    public static String getDllinkAPI(final Browser br, final String clientID, final Account account, final DownloadLink link, final PluginForHost plugin) throws IOException, PluginException {
+        br.getPage("https://www." + account.getHoster() + "/api/transfer/directdl?client_id=" + clientID + "&pin=" + Encoding.urlEncode(account.getPass()) + "&src=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, plugin)));
+        final String dllink = PluginJSonUtils.getJsonValue(br, "location");
+        return dllink;
+    }
+
+    public static String getDllinkWebsite(final DownloadLink link) throws IOException, PluginException {
+        return null;
+    }
+
+    private void handleDL(final Account account, final DownloadLink link, final String dllink) throws Exception {
+        link.setProperty(NICE_HOSTproperty + "directlink", dllink);
+        try {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+            final String contenttype = dl.getConnection().getContentType();
+            if (contenttype.contains("html")) {
+                br.followConnection();
+                updatestatuscode();
+                handleAPIErrors(this.br);
+                mhm.handleErrorGeneric(currentAcc, currentLink, "unknowndlerror", 2, 5 * 60 * 1000l);
+            }
+            this.dl.startDownload();
+        } catch (final Exception e) {
+            link.setProperty(NICE_HOSTproperty + "directlink", Property.NULL);
+            throw e;
+        }
+    }
+
+    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
+        String dllink = downloadLink.getStringProperty(property);
+        if (dllink != null) {
+            URLConnectionAdapter con = null;
             try {
-                /** Load cookies */
-                br.setCookiesExclusive(true);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(true);
+                con = br2.openHeadConnection(dllink);
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                    downloadLink.setProperty(property, Property.NULL);
+                    dllink = null;
                 }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            this.br.setCookie(mProt + mName, key, value);
-                        }
-                        return;
-                    }
-                }
-                br.setFollowRedirects(true);
-                getApi("/");
-                // zevera redirects to Location: /member/GetOrExtendPremium.aspx?code= after successful login. Location:
-                // /member/GetOrExtendPremium.aspx?code= then returns an error. We do not need this redirect anyway as long as the cookies
-                // are available
-                br.setFollowRedirects(false);
-                getApi("/OfferLogin.aspx?login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
-                br.setFollowRedirects(true);
-                if (br.getCookie(mProt + mName, ".ASPNETAUTH") == null) {
-                    // they can make more steps here.
-                    final Form more = getMoreForm(account);
-                    if (more != null) {
-                        submitForm(more);
-                    }
-                    if (br.getCookie(mProt + mName, ".ASPNETAUTH") == null) {
-                        final String lang = System.getProperty("user.language");
-                        if ("de".equalsIgnoreCase(lang)) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        } else {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        }
-                    }
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", fetchCookies(mProt + mName));
-            } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
-                throw e;
+            } catch (final Exception e) {
+                downloadLink.setProperty(property, Property.NULL);
+                dllink = null;
             } finally {
-                br.setFollowRedirects(ifr);
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+        }
+        return dllink;
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        setConstants(account, null);
+        this.br = prepBR(this.br);
+        final AccountInfo ai;
+        if (USE_API) {
+            ai = fetchAccountInfoAPI(this.br, this.client_id, account);
+        } else {
+            ai = fetchAccountInfoWebsite(account);
+        }
+        return ai;
+    }
+
+    public static AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
+        return null;
+    }
+
+    public AccountInfo fetchAccountInfoAPI(final Browser br, final String clientID, final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        login(account, true);
+        /* TODO: Check if this is actually the fair use value ... */
+        final String fair_use_used_str = PluginJSonUtils.getJson(br, "limit_used");
+        final String premium_until_str = PluginJSonUtils.getJson(br, "premium_until");
+        final long premium_until = premium_until_str != null ? Long.parseLong(premium_until_str) * 1000 : 0;
+        if (premium_until > System.currentTimeMillis()) {
+            account.setType(AccountType.PREMIUM);
+            if (!StringUtils.isEmpty(fair_use_used_str)) {
+                ai.setStatus(String.format("Premium | Fair use:%s%%", fair_use_used_str));
+            } else {
+                ai.setStatus("Premium");
+            }
+            ai.setValidUntil(premium_until);
+            ai.setUnlimitedTraffic();
+        } else {
+            /* Expired == FREE */
+            account.setType(AccountType.FREE);
+            ai.setTrafficLeft(0);
+        }
+        br.getPage("/api/services/list?client_id=" + clientID + "&pin=" + Encoding.urlEncode(account.getPass()));
+        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        // final ArrayList<String> supportedHosts = new ArrayList<String>();
+        final ArrayList<String> ressourcelist = (ArrayList<String>) entries.get("directdl");
+        ai.setMultiHostSupport(this, ressourcelist);
+        return ai;
+    }
+
+    private void login(final Account account, final boolean force) throws Exception {
+        synchronized (LOCK) {
+            /* Load cookies */
+            br.setCookiesExclusive(true);
+            this.br = prepBR(this.br);
+            if (USE_API) {
+                loginAPI(this.br, this.client_id, account, force);
+            } else {
+                loginWebsite(account, force);
             }
         }
     }
 
-    private Form getMoreForm(final Account account) {
-        final Form more = br.getFormbyActionRegex("(?:\\./)?OfferLogin\\.aspx\\?login=" + Pattern.quote(Encoding.urlEncode(account.getUser())) + "&(?:amp;)?pass=" + Pattern.quote(Encoding.urlEncode(account.getPass())));
-        return more;
+    private void loginWebsite(final Account account, final boolean force) throws Exception {
     }
 
-    private void showMessage(DownloadLink link, String message) {
-        link.getLinkStatus().setStatusText(message);
+    public static void loginAPI(final Browser br, final String clientID, final Account account, final boolean force) throws Exception {
+        br.getPage("https://www." + account.getHoster() + "/api/account/info?client_id=" + clientID + "&pin=" + Encoding.urlEncode(account.getPass()));
+        final String status = PluginJSonUtils.getJson(br, "status");
+        if (!"success".equalsIgnoreCase(status)) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Login PIN invalid! Make sure you're using your PIN as password see " + account.getHoster() + "/account", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+    }
+
+    /** Keep this for possible future API implementation */
+    private void updatestatuscode() {
+    }
+
+    /** Keep this for possible future API implementation */
+    private void handleAPIErrors(final Browser br) throws PluginException {
     }
 
     @Override
