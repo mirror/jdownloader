@@ -10,15 +10,25 @@ import org.jdownloader.plugins.components.hls.HlsContainer;
  * @author raztoki
  *
  */
-public class VimeoVideoContainer extends VideoContainer {
-    public static final TypeRef<VimeoVideoContainer> TYPE_REF      = new TypeRef<VimeoVideoContainer>() {
+public class VimeoContainer extends VideoContainer {
+    public static final TypeRef<VimeoContainer> TYPE_REF = new TypeRef<VimeoContainer>() {
     };
-    private Quality                                  quality;
-    private Source                                   source;
-    private String                                   codec;
-    private Long                                     estimatedSize = null;
+    private Quality                             quality;
+    private String                              lang;
 
-    public VimeoVideoContainer() {
+    public String getLang() {
+        return lang;
+    }
+
+    public void setLang(String lang) {
+        this.lang = lang;
+    }
+
+    private Source source;
+    private String codec;
+    private Long   estimatedSize = null;
+
+    public VimeoContainer() {
     }
 
     public Long getEstimatedSize() {
@@ -44,7 +54,8 @@ public class VimeoVideoContainer extends VideoContainer {
         HLS, // hls. (currently can't resume)
         DASH, // dash in segments. (think this can resume)
         WEB, // standard mp4. (can resume)
-        DOWNLOAD; // from download button. (can resume)
+        DOWNLOAD, // from download button. (can resume)
+        SUBTITLE;
     }
 
     /**
@@ -134,8 +145,8 @@ public class VimeoVideoContainer extends VideoContainer {
      * @param container
      * @return
      */
-    public static VimeoVideoContainer createVimeoVideoContainer(HlsContainer container) {
-        final VimeoVideoContainer vvm = new VimeoVideoContainer();
+    public static VimeoContainer createVimeoVideoContainer(HlsContainer container) {
+        final VimeoContainer vvm = new VimeoContainer();
         vvm.setCodec(container.getCodecs());
         vvm.setWidth(container.getWidth());
         vvm.setHeight(container.getHeight());
@@ -154,7 +165,12 @@ public class VimeoVideoContainer extends VideoContainer {
      * @return
      */
     public String createLinkID(final String id) {
-        final String linkid = id.concat("_").concat(getQuality().toString()).concat("_").concat(String.valueOf(getWidth())).concat("x").concat(String.valueOf(getHeight())).concat((getId() != null ? "_" + String.valueOf(getId()) : "")).concat((getSource() != null ? "_" + getSource().toString() : ""));
+        final String linkid;
+        if (Source.SUBTITLE.equals(getSource())) {
+            linkid = id.concat("_").concat(getId() != null ? "_" + String.valueOf(getId()) : "").concat((getSource() != null ? "_" + getSource().toString() : "")).concat((getLang() != null ? "_" + getLang().toString() : ""));
+        } else {
+            linkid = id.concat("_").concat(getQuality().toString()).concat("_").concat(String.valueOf(getWidth())).concat("x").concat(String.valueOf(getHeight())).concat((getId() != null ? "_" + String.valueOf(getId()) : "")).concat((getSource() != null ? "_" + getSource().toString() : "")).concat((getLang() != null ? "_" + getLang().toString() : ""));
+        }
         return linkid;
     }
 

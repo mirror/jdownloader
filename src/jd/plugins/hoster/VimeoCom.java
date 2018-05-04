@@ -55,35 +55,35 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.containers.VimeoVideoContainer;
-import org.jdownloader.plugins.components.containers.VimeoVideoContainer.Quality;
-import org.jdownloader.plugins.components.containers.VimeoVideoContainer.Source;
+import org.jdownloader.plugins.components.containers.VimeoContainer;
+import org.jdownloader.plugins.components.containers.VimeoContainer.Quality;
+import org.jdownloader.plugins.components.containers.VimeoContainer.Source;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "decryptedforVimeoHosterPlugin://.+" })
 public class VimeoCom extends PluginForHost {
-    private static final String MAINPAGE           = "http://vimeo.com";
+    private static final String MAINPAGE        = "http://vimeo.com";
     private String              finalURL;
-    private static Object       LOCK               = new Object();
-    public static final String  Q_MOBILE           = "Q_MOBILE";
-    public static final String  Q_ORIGINAL         = "Q_ORIGINAL";
-    public static final String  Q_HD               = "Q_HD";
-    public static final String  Q_SD               = "Q_SD";
-    public static final String  Q_BEST             = "Q_BEST";
-    private static final String CUSTOM_DATE        = "CUSTOM_DATE_3";
-    private static final String CUSTOM_FILENAME    = "CUSTOM_FILENAME_3";
-    private static final String CUSTOM_PACKAGENAME = "CUSTOM_PACKAGENAME_3";
-    public static final String  VVC                = "VVC_1";
-    public static final String  P_240              = "P_240";
-    public static final String  P_360              = "P_360";
-    public static final String  P_480              = "P_480";
-    public static final String  P_540              = "P_540";
-    public static final String  P_720              = "P_720";
-    public static final String  P_1080             = "P_1080";
-    public static final String  P_1440             = "P_1440";
-    public static final String  P_2560             = "P_2560";
-    public static final String  ASK_REF            = "ASK_REF";
+    private static Object       LOCK            = new Object();
+    public static final String  Q_MOBILE        = "Q_MOBILE";
+    public static final String  Q_ORIGINAL      = "Q_ORIGINAL";
+    public static final String  Q_HD            = "Q_HD";
+    public static final String  Q_SD            = "Q_SD";
+    public static final String  Q_BEST          = "Q_BEST";
+    public static final String  SUBTITLE        = "SUBTITLE";
+    private static final String CUSTOM_DATE     = "CUSTOM_DATE_3";
+    private static final String CUSTOM_FILENAME = "CUSTOM_FILENAME_3";
+    public static final String  VVC             = "VVC_1";
+    public static final String  P_240           = "P_240";
+    public static final String  P_360           = "P_360";
+    public static final String  P_480           = "P_480";
+    public static final String  P_540           = "P_540";
+    public static final String  P_720           = "P_720";
+    public static final String  P_1080          = "P_1080";
+    public static final String  P_1440          = "P_1440";
+    public static final String  P_2560          = "P_2560";
+    public static final String  ASK_REF         = "ASK_REF";
 
     public VimeoCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -177,14 +177,14 @@ public class VimeoCom extends PluginForHost {
         final boolean isHLS = StringUtils.endsWithCaseInsensitive(videoQuality, "HLS") || StringUtils.endsWithCaseInsensitive(downloadlinkId, "HLS");
         final boolean isDownload = StringUtils.endsWithCaseInsensitive(videoQuality, "DOWNLOAD") || StringUtils.endsWithCaseInsensitive(downloadlinkId, "DOWNLOAD");
         final boolean isStream = !isHLS && !isDownload;
-        final List<VimeoVideoContainer> qualities = getQualities(br, videoID, isDownload || !isHLS, isStream, isHLS);
+        final List<VimeoContainer> qualities = getQualities(this, br, videoID, isDownload || !isHLS, isStream, isHLS, true);
         if (qualities.isEmpty()) {
             logger.warning("vimeo.com: Qualities could not be found");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        VimeoVideoContainer container = null;
+        VimeoContainer container = null;
         if (downloadlinkId != null) {
-            for (VimeoVideoContainer quality : qualities) {
+            for (VimeoContainer quality : qualities) {
                 final String linkdupeid = quality.createLinkID(videoID);
                 // match refreshed qualities to stored reference, to make sure we have the same format for resume! we never want to cross
                 // over!
@@ -195,7 +195,7 @@ public class VimeoCom extends PluginForHost {
             }
         }
         if (container == null && videoQuality != null) {
-            for (VimeoVideoContainer quality : qualities) {
+            for (VimeoContainer quality : qualities) {
                 // match refreshed qualities to stored reference, to make sure we have the same format for resume! we never want to cross
                 // over!
                 if (videoQuality.equalsIgnoreCase(quality.getQuality().toString())) {
@@ -211,6 +211,7 @@ public class VimeoCom extends PluginForHost {
         switch (container.getSource()) {
         case DOWNLOAD:
         case WEB:
+        case SUBTITLE:
             try {
                 con = br.openHeadConnection(finalURL);
                 if (con.getContentType() != null && !con.getContentType().contains("html") && con.isOK()) {
@@ -454,9 +455,9 @@ public class VimeoCom extends PluginForHost {
         String xsrft = br.getRegex("vimeo\\.xsrft\\s*=\\s*('|\"|)([a-z0-9\\.]{32,})\\1").getMatch(1);
         if (xsrft == null) {
             xsrft = br.getRegex("\"xsrft\"\\s*:\\s*\"([a-z0-9\\.]{32,})\"").getMatch(0);
-        }
-        if (xsrft == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (xsrft == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         br.setCookie(br.getHost(), "xsrft", xsrft);
         return xsrft;
@@ -470,9 +471,9 @@ public class VimeoCom extends PluginForHost {
             String passCode = downloadLink.getStringProperty("pass", null);
             if (passCode == null) {
                 passCode = Plugin.getUserInput("Password?", downloadLink);
-            }
-            if (passCode == null) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Password needed!");
+                if (passCode == null) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Password needed!");
+                }
             }
             br.postPage(br.getURL(), "password=" + Encoding.urlEncode(passCode) + "&token=" + xsrft);
             if (br.containsHTML(containsPass)) {
@@ -484,7 +485,7 @@ public class VimeoCom extends PluginForHost {
     }
 
     @SuppressWarnings({ "unchecked", "unused" })
-    public static List<VimeoVideoContainer> getQualities(final Browser ibr, final String ID, final boolean download, final boolean stream, final boolean hls) throws Exception {
+    public static List<VimeoContainer> getQualities(final Plugin plugin, final Browser ibr, final String ID, final boolean download, final boolean stream, final boolean hls, final boolean subtitles) throws Exception {
         /*
          * little pause needed so the next call does not return trash
          */
@@ -495,9 +496,9 @@ public class VimeoCom extends PluginForHost {
             // can be within json on the given page now.. but this is easy to just request again raz20151215
             configURL = PluginJSonUtils.getJsonValue(ibr, "config_url");
         }
-        final ArrayList<VimeoVideoContainer> results = new ArrayList<VimeoVideoContainer>();
+        final ArrayList<VimeoContainer> results = new ArrayList<VimeoContainer>();
         if (download && ibr.containsHTML("download_config\"\\s*?:\\s*?\\[")) {
-            results.addAll(handleDownloadConfig(ibr, ID));
+            results.addAll(handleDownloadConfig(plugin, ibr, ID));
         }
         /* player.vimeo.com links = Special case as the needed information is already in our current browser. */
         if ((stream || hls || (download && results.size() == 0)) && configURL != null || ibr.getURL().contains("player.vimeo.com/")) {
@@ -520,18 +521,50 @@ public class VimeoCom extends PluginForHost {
             }
             /* Old handling without DummyScriptEnginePlugin removed AFTER revision 28754 */
             if (json != null) {
-                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
-                final LinkedHashMap<String, Object> files = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "request/files");
+                final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+                final Map<String, Object> files = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "request/files");
+                final List<Map<String, Object>> text_tracks = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "request/text_tracks");
                 // progressive = web, hls = hls
-                if (files.containsKey("progressive") && stream) {
-                    results.addAll(handleProgessive(files));
+                if (files != null) {
+                    if (files.containsKey("progressive") && stream) {
+                        results.addAll(handleProgessive(plugin, ibr, files));
+                    }
+                    if (files.containsKey("hls") && hls) {
+                        results.addAll(handleHLS(plugin, ibr, (Map<String, Object>) files.get("hls")));
+                    }
                 }
-                if (files.containsKey("hls") && hls) {
-                    results.addAll(handleHLS(ibr, (LinkedHashMap<String, Object>) files.get("hls")));
+                if (text_tracks != null && subtitles && false) {
+                    results.addAll(handleSubtitles(plugin, ibr, text_tracks));
                 }
             }
         }
         return results;
+    }
+
+    private static List<VimeoContainer> handleSubtitles(Plugin plugin, Browser br, List<Map<String, Object>> text_tracks) {
+        final ArrayList<VimeoContainer> ret = new ArrayList<VimeoContainer>();
+        try {
+            for (final Map<String, Object> text_track : text_tracks) {
+                final VimeoContainer vvc = new VimeoContainer();
+                final String url = (String) text_track.get("url");
+                final String lang = (String) text_track.get("lang");
+                if (url == null || lang == null) {
+                    continue;
+                }
+                vvc.setSource(Source.SUBTITLE);
+                vvc.setDownloadurl(br.getURL(url).toString());
+                vvc.setLang(lang);
+                final Number id = getNumber(text_track, "id");
+                if (id != null) {
+                    vvc.setId(id.longValue());
+                }
+                vvc.setExtension("srt");
+                ret.add(vvc);
+            }
+        } catch (final Throwable t) {
+            plugin.getLogger().log(t);
+        }
+        return ret;
     }
 
     private static Number getNumber(Map<String, Object> map, String key) {
@@ -547,8 +580,8 @@ public class VimeoCom extends PluginForHost {
         }
     }
 
-    private static List<VimeoVideoContainer> handleDownloadConfig(final Browser ibr, final String ID) {
-        final ArrayList<VimeoVideoContainer> v = new ArrayList<VimeoVideoContainer>();
+    private static List<VimeoContainer> handleDownloadConfig(Plugin plugin, final Browser ibr, final String ID) {
+        final ArrayList<VimeoContainer> ret = new ArrayList<VimeoContainer>();
         try {
             final Browser gq = ibr.cloneBrowser();
             /* With dl button */
@@ -561,7 +594,7 @@ public class VimeoCom extends PluginForHost {
                 if (files != null) {
                     for (final Object file : files) {
                         final Map<String, Object> info = (Map<String, Object>) file;
-                        final VimeoVideoContainer vvc = new VimeoVideoContainer();
+                        final VimeoContainer vvc = new VimeoContainer();
                         vvc.setDownloadurl((String) info.get("download_url"));
                         final String ext = (String) info.get("extension");
                         if (StringUtils.isNotEmpty(ext)) {
@@ -585,13 +618,13 @@ public class VimeoCom extends PluginForHost {
                             // not provided... determine by x and y
                             vvc.setQuality();
                         }
-                        v.add(vvc);
+                        ret.add(vvc);
                     }
                 }
                 if (entries.containsKey("source_file")) {
                     final Map<String, Object> file = (Map<String, Object>) entries.get("source_file");
                     final Map<String, Object> info = file;
-                    final VimeoVideoContainer vvc = new VimeoVideoContainer();
+                    final VimeoContainer vvc = new VimeoContainer();
                     vvc.setDownloadurl((String) info.get("download_url"));
                     final String ext = (String) info.get("extension");
                     if (StringUtils.isNotEmpty(ext)) {
@@ -607,24 +640,24 @@ public class VimeoCom extends PluginForHost {
                     }
                     vvc.setSource(Source.DOWNLOAD);
                     vvc.setQuality(Quality.ORIGINAL);
-                    v.add(vvc);
+                    ret.add(vvc);
                 }
             }
         } catch (final Throwable t) {
-            t.printStackTrace();
+            plugin.getLogger().log(t);
         }
-        return v;
+        return ret;
     }
 
-    private static List handleProgessive(final LinkedHashMap<String, Object> files) {
-        final ArrayList<VimeoVideoContainer> v = new ArrayList<VimeoVideoContainer>();
+    private static List<VimeoContainer> handleProgessive(Plugin plugin, Browser br, final Map<String, Object> files) {
+        final ArrayList<VimeoContainer> ret = new ArrayList<VimeoContainer>();
         try {
             final ArrayList<Object> progressive = (ArrayList<Object>) files.get("progressive");
             // atm they only have one object in array [] and then wrapped in {}
             for (final Object obj : progressive) {
                 // todo some code to map...
                 final LinkedHashMap<String, Object> abc = (LinkedHashMap<String, Object>) obj;
-                final VimeoVideoContainer vvc = new VimeoVideoContainer();
+                final VimeoContainer vvc = new VimeoContainer();
                 vvc.setDownloadurl((String) abc.get("url"));
                 vvc.setExtension();
                 vvc.setHeight(((Number) abc.get("height")).intValue());
@@ -640,18 +673,21 @@ public class VimeoCom extends PluginForHost {
                     vvc.setQuality(Quality.HD);
                 }
                 vvc.setCodec(".mp4".equalsIgnoreCase(vvc.getExtension()) ? "h264" : "vp5");
-                vvc.setId(((Number) abc.get("id")).longValue());
+                final Number id = getNumber(abc, "id");
+                if (id != null) {
+                    vvc.setId(id.longValue());
+                }
                 vvc.setSource(Source.WEB);
-                v.add(vvc);
+                ret.add(vvc);
             }
         } catch (final Throwable t) {
-            t.printStackTrace();
+            plugin.getLogger().log(t);
         }
-        return v;
+        return ret;
     }
 
-    private static List<VimeoVideoContainer> handleHLS(final Browser br, final LinkedHashMap<String, Object> base) {
-        final ArrayList<VimeoVideoContainer> v = new ArrayList<VimeoVideoContainer>();
+    private static List<VimeoContainer> handleHLS(Plugin plugin, final Browser br, final Map<String, Object> base) {
+        final ArrayList<VimeoContainer> ret = new ArrayList<VimeoContainer>();
         try {
             // they can have audio and video seperated (usually for dash);
             final String defaultCDN = (String) base.get("default_cdn");
@@ -664,7 +700,7 @@ public class VimeoCom extends PluginForHost {
                     final List<M3U8Playlist> m3u8s = quality.getM3U8(br.cloneBrowser());
                     duration = M3U8Playlist.getEstimatedDuration(m3u8s);
                 }
-                final VimeoVideoContainer container = VimeoVideoContainer.createVimeoVideoContainer(quality);
+                final VimeoContainer container = VimeoContainer.createVimeoVideoContainer(quality);
                 final int bandwidth;
                 if (quality.getAverageBandwidth() > 0) {
                     bandwidth = quality.getAverageBandwidth();
@@ -675,25 +711,25 @@ public class VimeoCom extends PluginForHost {
                     final long estimatedSize = bandwidth / 8 * (duration / 1000);
                     container.setEstimatedSize(estimatedSize);
                 }
-                v.add(container);
+                ret.add(container);
             }
         } catch (final Throwable t) {
-            t.printStackTrace();
+            plugin.getLogger().log(t);
         }
-        return v;
+        return ret;
     }
 
-    public static VimeoVideoContainer getVimeoVideoContainer(final DownloadLink downloadLink, final boolean allowNull) throws Exception {
+    public static VimeoContainer getVimeoVideoContainer(final DownloadLink downloadLink, final boolean allowNull) throws Exception {
         synchronized (downloadLink) {
             final Object value = downloadLink.getProperty(VVC, null);
-            if (value instanceof VimeoVideoContainer) {
-                return (VimeoVideoContainer) value;
+            if (value instanceof VimeoContainer) {
+                return (VimeoContainer) value;
             } else if (value instanceof String) {
-                final VimeoVideoContainer ret = JSonStorage.restoreFromString(value.toString(), VimeoVideoContainer.TYPE_REF);
+                final VimeoContainer ret = JSonStorage.restoreFromString(value.toString(), VimeoContainer.TYPE_REF);
                 downloadLink.setProperty(VVC, ret);
                 return ret;
             } else if (value instanceof Map) {
-                final VimeoVideoContainer ret = JSonStorage.restoreFromString(JSonStorage.toString(value), VimeoVideoContainer.TYPE_REF);
+                final VimeoContainer ret = JSonStorage.restoreFromString(JSonStorage.toString(value), VimeoContainer.TYPE_REF);
                 downloadLink.setProperty(VVC, ret);
                 return ret;
             } else {
@@ -712,7 +748,7 @@ public class VimeoCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public String getFormattedFilename(final DownloadLink downloadLink) throws Exception {
-        final VimeoVideoContainer vvc = getVimeoVideoContainer(downloadLink, true);
+        final VimeoContainer vvc = getVimeoVideoContainer(downloadLink, true);
         String videoTitle = downloadLink.getStringProperty("videoTitle", null);
         final SubConfiguration cfg = SubConfiguration.getConfig("vimeo.com");
         String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME, defaultCustomFilename);
@@ -879,6 +915,7 @@ public class VimeoCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HD, JDL.L("plugins.hoster.vimeo.loadhd", "Load HD Version")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_SD, JDL.L("plugins.hoster.vimeo.loadsd", "Load SD Version")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_MOBILE, JDL.L("plugins.hoster.vimeo.loadmobile", "Load Mobile Version")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SUBTITLE, JDL.L("plugins.hoster.vimeo.subtitle", "Load Subtitle")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), P_240, JDL.L("plugins.hoster.vimeo.240p", "240p")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), P_360, JDL.L("plugins.hoster.vimeo.360p", "360p")).setDefaultValue(true));
