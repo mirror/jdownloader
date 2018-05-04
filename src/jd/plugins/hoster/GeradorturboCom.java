@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
@@ -41,19 +40,15 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "geradorturbo.com" }, urls = { "" })
 public class GeradorturboCom extends antiDDoSForHost {
-
     private final String                 DOMAIN                       = "http://geradorturbo.com/";
     private final String                 NICE_HOST                    = "geradorturbo.com";
     private final String                 NICE_HOSTproperty            = NICE_HOST.replaceAll("(\\.|\\-)", "");
-
     private final String                 HTML_LOGOUT                  = "/logout\"";
-
     /* Connection limits */
     private final boolean                ACCOUNT_PREMIUM_RESUME       = true;
     private final int                    ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private final int                    ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     private final int                    ACCOUNT_FREE_MAXDOWNLOADS    = 1;
-
     private static Object                LOCK                         = new Object();
     private static MultiHosterManagement mhm                          = new MultiHosterManagement("geradorturbo.com");
     private Account                      currAcc                      = null;
@@ -235,8 +230,6 @@ public class GeradorturboCom extends antiDDoSForHost {
                 supportedHosts.add("2shared.com");
             } else if ("shared".equals(crippledhost)) {
                 supportedHosts.add("4shared.com");
-            } else if ("nowdownloadch".equals(crippledhost)) {
-                supportedHosts.add("nowdownload.eu");
             } else {
                 /* Finally, go insane... */
                 for (final String possibledomain : possible_domains) {
@@ -246,7 +239,6 @@ public class GeradorturboCom extends antiDDoSForHost {
             }
         }
         ai.setMultiHostSupport(this, supportedHosts);
-
         return ai;
     }
 
@@ -269,7 +261,6 @@ public class GeradorturboCom extends antiDDoSForHost {
                 String postData = "btnSubmited=Log+in&txtEmail=" + Encoding.urlEncode(currAcc.getUser()) + "&txtSenha=" + Encoding.urlEncode(currAcc.getPass());
                 br.getPage("http://" + this.getHost() + "/en.php");
                 br.getPage("/login.php");
-
                 if (br.containsHTML("\"g-recaptcha\"")) {
                     if (this.getDownloadLink() == null) {
                         final DownloadLink dummyLink = new DownloadLink(this, "Account", this.getHost(), DOMAIN, true);
@@ -278,7 +269,6 @@ public class GeradorturboCom extends antiDDoSForHost {
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                     postData += "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response);
                 }
-
                 postPage("http://" + this.getHost() + "/login.php", postData);
                 if (!br.containsHTML(HTML_LOGOUT)) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -307,5 +297,4 @@ public class GeradorturboCom extends antiDDoSForHost {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.Unknown_MultihosterScript;
     }
-
 }

@@ -16,8 +16,6 @@
 package jd.plugins.hoster;
 
 import java.io.ByteArrayInputStream;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 
@@ -27,12 +25,16 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.downloader.hds.HDSDownloader;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.config.MediathekProperties;
 import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -53,7 +55,6 @@ import jd.plugins.components.MediathekHelper;
 public class TvnowDe extends PluginForHost {
     public TvnowDe(final PluginWrapper wrapper) {
         super(wrapper);
-        setConfigElements();
     }
 
     /* Settings */
@@ -100,7 +101,7 @@ public class TvnowDe extends PluginForHost {
      * ~2016-01-01: RTMP(E) streams were turned off / all of them are DRM protected/crypted now<br />
      * ~2016-02-24: Summary: There is absolutely NO WAY to download from this website <br />
      * ~2016-03-15: Domainchange from nowtv.de to tvnow.de<br />
-     * 2018-04-17: Big code cleanup and HLS streams were re-introduced<br />
+     * .2018-04-17: Big code cleanup and HLS streams were re-introduced<br />
      */
     @SuppressWarnings({ "unchecked" })
     @Override
@@ -198,7 +199,7 @@ public class TvnowDe extends PluginForHost {
         String hlsMaster = (String) entries.get("hlsclear");
         if (StringUtils.isEmpty(hlsMaster)) {
             hlsMaster = (String) entries.get("hlsfairplay");
-            /* Only "hls" == Always DRM */
+            /* 2018-05-04: Only "hls" == Always DRM */
             // if (StringUtils.isEmpty(hlsMaster)) {
             // hlsMaster = (String) entries.get("hls");
             // }
@@ -313,8 +314,12 @@ public class TvnowDe extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        /* More possible but the servers freak out then so keep the load low! */
-        return 1;
+        final TvnowConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.TvnowDe.TvnowConfigInterface.class);
+        if (cfg.isEnableUnlimitedSimultaneousDownloads()) {
+            return -1;
+        } else {
+            return 1;
+        }
     }
 
     @Override
@@ -370,24 +375,25 @@ public class TvnowDe extends PluginForHost {
         return TimeFormatter.getMilliSeconds(input, "yyyy-MM-dd HH:mm:ss", Locale.GERMAN);
     }
 
-    /** Formats the existing date to the 'general' date used for german TV online services: yyyy-MM-dd */
-    private String formatDate(final String input) {
-        final long date = TimeFormatter.getMilliSeconds(input, "yyyy-MM-dd HH:mm:ss", Locale.GERMAN);
-        String formattedDate = null;
-        final String targetFormat = "yyyy-MM-dd";
-        Date theDate = new Date(date);
-        try {
-            final SimpleDateFormat formatter = new SimpleDateFormat(targetFormat);
-            formattedDate = formatter.format(theDate);
-        } catch (Exception e) {
-            /* prevent input error killing plugin */
-            formattedDate = input;
-        }
-        return formattedDate;
+    @Override
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        return TvnowConfigInterface.class;
     }
 
-    private void setConfigElements() {
-        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DEFAULTTIMEOUT, "Enable default
-        // timeout?").setDefaultValue(false));
+    public static interface TvnowConfigInterface extends PluginConfigInterface {
+        public static class TRANSLATION {
+            public String getEnableUnlimitedSimultaneousDownloads_label() {
+                /* Translation not required for this */
+                return "Enable unlimited simultaneous downloads? [Warning this may cause issues]";
+            }
+        }
+
+        public static final TRANSLATION TRANSLATION = new TRANSLATION();
+
+        @DefaultBooleanValue(false)
+        @Order(10)
+        boolean isEnableUnlimitedSimultaneousDownloads();
+
+        void setEnableUnlimitedSimultaneousDownloads(boolean b);
     }
 }
