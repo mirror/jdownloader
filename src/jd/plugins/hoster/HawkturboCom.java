@@ -17,13 +17,15 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -31,6 +33,7 @@ import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -43,34 +46,35 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linksvip.net" }, urls = { "" })
-public class LinksvipNet extends PluginForHost {
-    private static final String                            NICE_HOST                 = "linksvip.net";
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hawkturbo.com" }, urls = { "" })
+public class HawkturboCom extends PluginForHost {
+    private static final String                            NICE_HOST                 = "hawkturbo.com";
     private static final String                            NICE_HOSTproperty         = NICE_HOST.replaceAll("(\\.|\\-)", "");
     /* Connection limits */
-    private static final boolean                           ACCOUNT_PREMIUM_RESUME    = true;
-    private static final int                               ACCOUNT_PREMIUM_MAXCHUNKS = 0;
+    private static final boolean                           ACCOUNT_PREMIUM_RESUME    = false;
+    private static final int                               ACCOUNT_PREMIUM_MAXCHUNKS = 1;
     private static final boolean                           USE_API                   = false;
-    private final String                                   website_html_loggedin     = "/login/logout\\.php";
     private static Object                                  LOCK                      = new Object();
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap        = new HashMap<Account, HashMap<String, Long>>();
     private Account                                        currentAcc                = null;
     private DownloadLink                                   currentLink               = null;
-    private static MultiHosterManagement                   mhm                       = new MultiHosterManagement("linksvip.net");
+    private static MultiHosterManagement                   mhm                       = new MultiHosterManagement("hawkturbo.com");
 
-    public LinksvipNet(PluginWrapper wrapper) {
+    public HawkturboCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://linksvip.net/premium.html");
+        this.enablePremium("https://www.hawkturbo.com/premium");
     }
 
     @Override
     public String getAGBLink() {
-        return "https://linksvip.net/";
+        return "https://www.hawkturbo.com/terms";
     }
 
     private Browser prepBR(final Browser br) {
         br.setCookiesExclusive(true);
         br.getHeaders().put("User-Agent", "JDownloader");
+        br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.setFollowRedirects(true);
         return br;
     }
@@ -155,10 +159,8 @@ public class LinksvipNet extends PluginForHost {
     }
 
     private String getDllinkWebsite(final DownloadLink link) throws IOException, PluginException {
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-        this.postAPISafe("https://" + this.getHost() + "/GetLinkFs", "pass=undefined&hash=undefined&captcha=&link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
-        final String dllink = PluginJSonUtils.getJsonValue(this.br, "linkvip");
+        br.postPage("https://www." + this.getHost() + "/user/download", "links=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
+        final String dllink = PluginJSonUtils.getJsonValue(this.br, "link_generated");
         return dllink;
     }
 
@@ -225,28 +227,48 @@ public class LinksvipNet extends PluginForHost {
          */
         final AccountInfo ai = new AccountInfo();
         login(account, true);
-        br.getPage("https://" + this.getHost() + "/");
-        final boolean isPremium = br.containsHTML("class=\"badge\"[^>]+>Premium</span>");
-        ArrayList<String> supportedHosts = new ArrayList<String>();
+        final boolean isPremium = br.containsHTML("Pro User</");
         if (isPremium) {
             account.setType(AccountType.PREMIUM);
-            final String expire = br.getRegex("Hạn dùng <span [^>]*?>(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2} (?:AM|PM))</span>").getMatch(0);
+            String expire = br.getRegex(">\\s*?(\\d+[^<>\"]+(?:AM|PM))\\s*?<").getMatch(0);
             if (expire != null) {
+                /* Fix date e.g. "13th May" --> "13 May" */
+                final String date_remove = new Regex(expire, "^\\d+([a-z]+) ").getMatch(0);
+                if (date_remove != null) {
+                    expire = expire.replace(date_remove, "");
+                }
                 /* Only set expiredate if we find it */
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MM/dd/yyyy hh:mm a", Locale.US), br);
-            }
-            br.getPage("/host-support.html");
-            final String[] hostlist = br.getRegex("domain=([^<>\"]+)\"").getColumn(0);
-            if (hostlist != null) {
-                supportedHosts = new ArrayList<String>(Arrays.asList(hostlist));
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMM, yy hh:mm a", Locale.US), br);
             }
             ai.setUnlimitedTraffic();
         } else {
             account.setType(AccountType.FREE);
             ai.setTrafficLeft(0);
         }
-        ai.setMultiHostSupport(this, supportedHosts);
+        parseSupportedHosts(ai, isPremium);
         return ai;
+    }
+
+    private void parseSupportedHosts(final AccountInfo ai, final boolean isPremium) throws Exception {
+        br.getPage("/api/host-list");
+        final ArrayList<String> supportedHosts = new ArrayList<String>();
+        LinkedHashMap<String, Object> entries = null;
+        final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+        for (final Object hostO : ressourcelist) {
+            entries = (LinkedHashMap<String, Object>) hostO;
+            final String host = (String) entries.get("hostname");
+            final long free_user_allow = JavaScriptEngineFactory.toLong(entries.get("free_user_allow"), 0);
+            final long status_host = JavaScriptEngineFactory.toLong(entries.get("status_host"), 0);
+            if (status_host != 1) {
+                /* Deactivated hosts --> Skip */
+                continue;
+            } else if (!isPremium && free_user_allow != 1) {
+                /* Free account but download from host is not allowed for freeusers --> Skip */
+                continue;
+            }
+            supportedHosts.add(host);
+        }
+        ai.setMultiHostSupport(this, supportedHosts);
     }
 
     public AccountInfo fetchAccountInfoAPI(final Account account) throws Exception {
@@ -272,26 +294,37 @@ public class LinksvipNet extends PluginForHost {
             if (cookies != null) {
                 this.br.setCookies(this.getHost(), cookies);
                 /*
-                 * Even though login is forced first check if our cookies are still valid --> If not, force login!
+                 * Even though login is forced first check if our cookies are still valid to avoid login captcha --> If not, force login!
                  */
-                br.getPage("https://" + this.getHost() + "/");
-                if (br.containsHTML(website_html_loggedin)) {
+                br.getPage("https://www." + this.getHost() + "/user/account");
+                if (isLoggedinHTML()) {
                     account.saveCookies(this.br.getCookies(this.getHost()), "");
                     return;
                 }
                 /* Clear cookies to prevent unknown errors as we'll perform a full login below now. */
                 this.br = prepBR(new Browser());
             }
-            br.getPage("https://" + this.getHost() + "/");
-            br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            this.postAPISafe("/login/", "auto_login=true&u=" + Encoding.urlEncode(currentAcc.getUser()) + "&p=" + Encoding.urlEncode(currentAcc.getPass()));
-            final String status = PluginJSonUtils.getJson(br, "status");
-            if ("1".equals(status)) {
-                /* Login should be okay and we should get the cookies now! */
-                br.getPage("/login/logined.php");
+            br.getPage("https://www." + this.getHost() + "/login");
+            final String token = br.getRegex("<meta name=\"csrf\\-token\" content=\"([^<>\"]+)\">").getMatch(0);
+            if (StringUtils.isEmpty(token)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (!br.containsHTML(website_html_loggedin)) {
+            final DownloadLink dlinkbefore = this.getDownloadLink();
+            if (dlinkbefore == null) {
+                this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "http://" + account.getHoster(), true));
+            }
+            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+            if (dlinkbefore != null) {
+                this.setDownloadLink(dlinkbefore);
+            }
+            String postData = "_token=" + Encoding.urlEncode(token) + "&name=" + Encoding.urlEncode(currentAcc.getUser()) + "&password=" + Encoding.urlEncode(currentAcc.getPass()) + "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response);
+            br.postPage("/login", postData);
+            final String success = PluginJSonUtils.getJson(br, "success");
+            if (!StringUtils.isEmpty(success)) {
+                /* Login should be okay and we should get the cookies now! */
+                br.getPage("/user/account");
+            }
+            if (!isLoggedinHTML()) {
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else {
@@ -305,19 +338,11 @@ public class LinksvipNet extends PluginForHost {
         }
     }
 
+    private boolean isLoggedinHTML() {
+        return br.containsHTML("/logout");
+    }
+
     private void loginAPI(final Account account, final boolean force) throws Exception {
-    }
-
-    private void getAPISafe(final String accesslink) throws IOException, PluginException {
-        br.getPage(accesslink);
-        updatestatuscode();
-        handleAPIErrors(this.br);
-    }
-
-    private void postAPISafe(final String accesslink, final String postdata) throws IOException, PluginException {
-        br.postPage(accesslink, postdata);
-        updatestatuscode();
-        handleAPIErrors(this.br);
     }
 
     /** Keep this for possible future API implementation */
