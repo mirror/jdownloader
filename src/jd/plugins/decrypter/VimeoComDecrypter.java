@@ -52,7 +52,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.plugins.components.containers.VimeoVideoContainer;
+import org.jdownloader.plugins.components.containers.VimeoContainer;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vimeo.com" }, urls = { "https?://(?:www\\.)?vimeo\\.com/(\\d+(?:/[a-f0-9]+)?|channels/[a-z0-9\\-_]+/\\d+|[A-Za-z0-9\\-_]+/videos|ondemand/[A-Za-z0-9\\-_]+|groups/[A-Za-z0-9\\-_]+(?:/videos/\\d+)?)|https?://player\\.vimeo.com/(?:video|external)/\\d+.+" })
 public class VimeoComDecrypter extends PluginForDecrypt {
@@ -343,7 +343,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 channelName = getFormattedString(channelName);
             }
             title = getFormattedString(title);
-            final List<VimeoVideoContainer> qualities = getQualities(br, videoID, true, qALL || qMOBILE || qMOBILE || qHD, qALL || qMOBILE || qMOBILE || qHD);
+            final List<VimeoContainer> qualities = jd.plugins.hoster.VimeoCom.getQualities(this, br, videoID, true, qALL || qMOBILE || qMOBILE || qHD, qALL || qMOBILE || qMOBILE || qHD, subtitle);
             if (qualities == null) {
                 return null;
             }
@@ -351,8 +351,8 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 return decryptedLinks;
             }
             final HashMap<String, DownloadLink> dedupeMap = new HashMap<String, DownloadLink>();
-            for (final VimeoVideoContainer quality : qualities) {
-                if (!qualityAllowed(quality) || !pRatingAllowed(quality)) {
+            for (final VimeoContainer quality : qualities) {
+                if (!VimeoContainer.Source.SUBTITLE.equals(quality.getSource()) && (!qualityAllowed(quality) || !pRatingAllowed(quality))) {
                     skippedLinks++;
                     continue;
                 }
@@ -486,6 +486,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
     private boolean p1440;
     private boolean p2560;
     private boolean pALL;
+    private boolean subtitle;
 
     public void init(final SubConfiguration cfg) {
         //
@@ -493,6 +494,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         qHD = cfg.getBooleanProperty(jd.plugins.hoster.VimeoCom.Q_HD, true);
         qSD = cfg.getBooleanProperty(jd.plugins.hoster.VimeoCom.Q_SD, true);
         qORG = cfg.getBooleanProperty(jd.plugins.hoster.VimeoCom.Q_ORIGINAL, true);
+        subtitle = cfg.getBooleanProperty(jd.plugins.hoster.VimeoCom.SUBTITLE, true);
         qALL = !qMOBILE && !qHD && !qSD && !qORG;
         // p ratings
         p240 = cfg.getBooleanProperty(jd.plugins.hoster.VimeoCom.P_240, true);
@@ -506,7 +508,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         pALL = !p240 && !p360 && !p480 && !p540 && !p720 && !p1080 && !p1440 && !p1440;
     }
 
-    private boolean qualityAllowed(final VimeoVideoContainer vvc) {
+    private boolean qualityAllowed(final VimeoContainer vvc) {
         if (qALL) {
             return true;
         }
@@ -523,7 +525,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         return false;
     }
 
-    private boolean pRatingAllowed(final VimeoVideoContainer quality) {
+    private boolean pRatingAllowed(final VimeoContainer quality) {
         if (pALL) {
             return true;
         }
@@ -577,10 +579,6 @@ public class VimeoComDecrypter extends PluginForDecrypt {
     }
 
     private PluginForHost vimeo_hostPlugin = null;
-
-    private List<VimeoVideoContainer> getQualities(final Browser ibr, final String ID, final boolean download, final boolean stream, final boolean hls) throws Exception {
-        return jd.plugins.hoster.VimeoCom.getQualities(ibr, ID, download, stream, hls);
-    }
 
     private String getXsrft(final Browser br) throws Exception {
         return jd.plugins.hoster.VimeoCom.getXsrft(br);
