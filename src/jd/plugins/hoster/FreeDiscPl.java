@@ -39,7 +39,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freedisc.pl" }, urls = { "https?://(www\\.)?freedisc\\.pl/(#(!|%21))?[A-Za-z0-9\\-_]+,f-\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freedisc.pl" }, urls = { "https?://(www\\.)?freedisc\\.pl/(#(!|%21))?[A-Za-z0-9\\-_]+,f-\\d+(,[a-z0-9])?" })
 public class FreeDiscPl extends PluginForHost {
     public FreeDiscPl(PluginWrapper wrapper) {
         super(wrapper);
@@ -110,7 +110,7 @@ public class FreeDiscPl extends PluginForHost {
         if (br.containsHTML("Ten plik nie jest publicznie dostępny")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String fileName = br.getRegex("itemprop=\"name\">([^<>\"]*?)</h2>").getMatch(0);
+        String fileName = br.getRegex("itemprop=\"name\">\\s*([^<>\"]*?)</h").getMatch(0);
         // itemprop="name" style=" font-size: 17px; margin-top: 6px;">Alternatywne Metody Analizy technicznej .pdf</h1>
         if (fileName == null) {
             fileName = br.getRegex("itemprop=\"name\"( style=\"[^<>\"/]+\")?>([^<>\"]*?)</h1>").getMatch(1);
@@ -123,6 +123,7 @@ public class FreeDiscPl extends PluginForHost {
             }
         }
         fileName = fileName.trim();
+        link.setName(Encoding.htmlDecode(fileName.trim()));
         final String fpat = "\\s*([0-9]+(?:[\\.,][0-9]+)?\\s*[A-Z]{1,2})";
         String filesize = br.getRegex("class='frameFilesSize'>Rozmiar pliku</div>[\t\n\r ]+<div class='frameFilesCountNumber'>" + fpat).getMatch(0);
         if (filesize == null) {
