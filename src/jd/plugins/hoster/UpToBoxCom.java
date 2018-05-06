@@ -662,8 +662,8 @@ public class UpToBoxCom extends antiDDoSForHost {
         if (passCode == null) {
             passCode = Plugin.getUserInput("Password?", thelink);
         }
-        pwform.put("password", Encoding.urlEncode(passCode));
-        logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
+        pwform.put("file-password", Encoding.urlEncode(passCode));
+        logger.info("Put file-password \"" + passCode + "\" entered by user in the DLForm.");
         return passCode;
     }
 
