@@ -56,7 +56,7 @@ import org.jdownloader.plugins.components.antiDDoSForHost;
 public class UpToBoxCom extends antiDDoSForHost {
     private boolean              happyHour                    = false;
     private String               correctedBR                  = "";
-    private static final String  PASSWORDTEXT                 = "Passwor(d|t):</b> <input|Password:</b>";
+    private static final String  PASSWORDTEXT                 = "password-dl";
     private final String         COOKIE_HOST                  = "https://uptobox.com";
     private static final String  DOMAINS                      = "(uptobox\\.com|uptostream\\.com)";
     private static final String  regexIpBlock                 = "<center><p><b>Sorry, " + DOMAINS + " is not available in your country</b></p></center>";
@@ -590,6 +590,9 @@ public class UpToBoxCom extends antiDDoSForHost {
         if (correctedBR.contains("You're using all download slots for IP")) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
         }
+        if (correctedBR.contains("You have reached the daily limit")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1001l);
+        }
         if (correctedBR.contains("Error happened when generating Download Link")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
         }
@@ -850,7 +853,8 @@ public class UpToBoxCom extends antiDDoSForHost {
                     // this is required here for maintenance mode, otherwise throw plugin defect will kick in if forms are not found!
                     checkErrors(link, false, passCode);
                     if (new Regex(correctedBR, PASSWORDTEXT).matches()) {
-                        Form dlform = br.getFormbyProperty("name", "F1");
+                        // Form dlform = br.getFormbyProperty("name", "F1");
+                        Form dlform = br.getForm(0);
                         if (dlform == null) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
