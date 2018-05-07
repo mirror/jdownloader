@@ -47,14 +47,14 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "chomikuj.pl" }, urls = { "http://chomikujdecrypted\\.pl/.*?,\\d+$" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "chomikuj.pl" }, urls = { "https?://chomikujdecrypted\\.pl/.*?,\\d+$" })
 public class ChoMikujPl extends antiDDoSForHost {
     private String              dllink                      = null;
     private static final String PREMIUMONLY                 = "(Aby pobrać ten plik, musisz być zalogowany lub wysłać jeden SMS\\.|Właściciel tego chomika udostępnia swój transfer, ale nie ma go już w wystarczającej|wymaga opłacenia kosztów transferu z serwerów Chomikuj\\.pl)";
     private static final String PREMIUMONLYUSERTEXT         = "Download is only available for registered/premium users!";
     private static final String ACCESSDENIED                = "Nie masz w tej chwili uprawnień do tego pliku lub dostęp do niego nie jest w tej chwili możliwy z innych powodów\\.";
     private final String        VIDEOENDINGS                = "\\.(avi|flv|mp4|mpg|rmvb|divx|wmv|mkv)";
-    private static final String MAINPAGE                    = "http://chomikuj.pl/";
+    private static final String MAINPAGE                    = "https://chomikuj.pl/";
     private static Object       LOCK                        = new Object();
     /* Pluging settings */
     public static final String  DECRYPTFOLDERS              = "DECRYPTFOLDERS";
@@ -203,12 +203,12 @@ public class ChoMikujPl extends antiDDoSForHost {
         if (isVideo(theLink) && !premium) {
             /* Download video stream (free download) */
             br.setFollowRedirects(true);
-            getPageWithCleanup(br, "http://" + this.getHost() + "/ShowVideo.aspx?id=" + fid);
+            getPageWithCleanup(br, "https://" + this.getHost() + "/ShowVideo.aspx?id=" + fid);
             if (br.getURL().contains("chomikuj.pl/Error404.aspx") || cbr.containsHTML("(Nie znaleziono|Strona, której szukasz nie została odnaleziona w portalu\\.<|>Sprawdź czy na pewno posługujesz się dobrym adresem)")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             br.setFollowRedirects(false);
-            getPage(br, "http://" + this.getHost() + "/Video.ashx?id=" + fid + "&type=1&ts=" + new Random().nextInt(1000000000) + "&file=video&start=0");
+            getPage(br, "https://" + this.getHost() + "/Video.ashx?id=" + fid + "&type=1&ts=" + new Random().nextInt(1000000000) + "&file=video&start=0");
             dllink = br.getRedirectLocation();
             if (dllink == null) {
                 /* Probably not free downloadable! */
@@ -251,7 +251,7 @@ public class ChoMikujPl extends antiDDoSForHost {
                 }
             }
             br.setCookie(this.getHost(), "cookiesAccepted", "1");
-            postPageWithCleanup(br, "http://" + this.getHost() + "/action/License/DownloadContext", "FileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken));
+            postPageWithCleanup(br, "https://" + this.getHost() + "/action/License/DownloadContext", "FileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken));
             unescapedBR = Encoding.unicodeDecode(br.toString());
             String serializedUserSelection = new Regex(unescapedBR, "name=\"SerializedUserSelection\" type=\"hidden\" value=\"([^<>\"]+)\"").getMatch(0);
             if (serializedUserSelection == null) {
@@ -338,7 +338,7 @@ public class ChoMikujPl extends antiDDoSForHost {
             dllink = getDllinkMP3(theLink);
         } else {
             /* Premium users can always download the original file */
-            getPageWithCleanup(br, "http://chomikuj.pl/action/fileDetails/Index/" + fid);
+            getPageWithCleanup(br, "https://chomikuj.pl/action/fileDetails/Index/" + fid);
             final String filesize = br.getRegex("<p class=\"fileSize\">([^<>\"]*?)</p>").getMatch(0);
             if (filesize != null) {
                 theLink.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
@@ -372,7 +372,7 @@ public class ChoMikujPl extends antiDDoSForHost {
                 }
             }
             br.getHeaders().put("Referer", theLink.getDownloadURL());
-            postPageWithCleanup(br, "http://chomikuj.pl/action/License/DownloadContext", "fileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken));
+            postPageWithCleanup(br, "https://chomikuj.pl/action/License/DownloadContext", "fileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken));
             if (cbr.containsHTML(ACCESSDENIED)) {
                 return false;
             }
@@ -384,7 +384,7 @@ public class ChoMikujPl extends antiDDoSForHost {
                     logger.warning("Failed to pass low traffic warning!");
                     return false;
                 }
-                postPageWithCleanup(br, "http://chomikuj.pl/action/License/DownloadWarningAccept", "FileId=" + fid + "&SerializedUserSelection=" + Encoding.urlEncode(serializedUserSelection) + "&SerializedOrgFile=" + Encoding.urlEncode(serializedOrgFile) + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken));
+                postPageWithCleanup(br, "https://chomikuj.pl/action/License/DownloadWarningAccept", "FileId=" + fid + "&SerializedUserSelection=" + Encoding.urlEncode(serializedUserSelection) + "&SerializedOrgFile=" + Encoding.urlEncode(serializedOrgFile) + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken));
             }
             if (cbr.containsHTML("/action/License/acceptLargeTransfer")) {
                 // this can happen also
@@ -416,12 +416,12 @@ public class ChoMikujPl extends antiDDoSForHost {
                 f.put("__RequestVerificationToken", Encoding.urlEncode(requestVerificationToken));
                 submitFormWithCleanup(br, f);
             }
-            dllink = br.getRegex("redirectUrl\":\"(http://.*?)\"").getMatch(0);
+            dllink = br.getRegex("redirectUrl\":\"(https?://.*?)\"").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("\\\\u003ca href=\\\\\"([^\"]*?)\\\\\" title").getMatch(0);
             }
             if (dllink == null) {
-                dllink = br.getRegex("\"(http://[A-Za-z0-9\\-_\\.]+\\.chomikuj\\.pl/File\\.aspx[^<>\"]*?)\\\\\"").getMatch(0);
+                dllink = br.getRegex("\"(https?://[A-Za-z0-9\\-_\\.]+\\.chomikuj\\.pl/File\\.aspx[^<>\"]*?)\\\\\"").getMatch(0);
             }
             if (dllink != null) {
                 dllink = Encoding.unicodeDecode(dllink);
@@ -437,7 +437,7 @@ public class ChoMikujPl extends antiDDoSForHost {
 
     private String getDllinkMP3(final DownloadLink dl) throws Exception {
         final String fid = getFID(dl);
-        getPageWithCleanup(br, "http://chomikuj.pl/Audio.ashx?id=" + fid + "&type=2&tp=mp3");
+        getPageWithCleanup(br, "https://chomikuj.pl/Audio.ashx?id=" + fid + "&type=2&tp=mp3");
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -517,11 +517,11 @@ public class ChoMikujPl extends antiDDoSForHost {
             // "Do you really want to download this file", so we have to confirm
             // it with "YES" here ;)
             if (cbr.containsHTML("Właściciel tego chomika udostępnia darmowy transfer, ale jego ilość jest obecnie zbyt mała, aby można było pobrać plik")) {
-                postPage("http://chomikuj.pl/action/License/AcceptOwnTransfer?fileId=" + getFID(link), "orgFile=" + Encoding.urlEncode(argh1) + "&userSelection=" + Encoding.urlEncode(argh2) + "&__RequestVerificationToken=" + Encoding.urlEncode(link.getStringProperty("requestverificationtoken")));
+                postPage("https://chomikuj.pl/action/License/AcceptOwnTransfer?fileId=" + getFID(link), "orgFile=" + Encoding.urlEncode(argh1) + "&userSelection=" + Encoding.urlEncode(argh2) + "&__RequestVerificationToken=" + Encoding.urlEncode(link.getStringProperty("requestverificationtoken")));
             } else {
-                postPage("http://chomikuj.pl/action/License/acceptLargeTransfer?fileId=" + getFID(link), "orgFile=" + Encoding.urlEncode(argh1) + "&userSelection=" + Encoding.urlEncode(argh2) + "&__RequestVerificationToken=" + Encoding.urlEncode(link.getStringProperty("requestverificationtoken")));
+                postPage("https://chomikuj.pl/action/License/acceptLargeTransfer?fileId=" + getFID(link), "orgFile=" + Encoding.urlEncode(argh1) + "&userSelection=" + Encoding.urlEncode(argh2) + "&__RequestVerificationToken=" + Encoding.urlEncode(link.getStringProperty("requestverificationtoken")));
             }
-            dllink = br.getRegex("redirectUrl\":\"(http://.*?)\"").getMatch(0);
+            dllink = br.getRegex("redirectUrl\":\"(https?://.*?)\"").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("\\\\u003ca href=\\\\\"([^\"]*?)\\\\\" title").getMatch(0);
             }
@@ -580,7 +580,7 @@ public class ChoMikujPl extends antiDDoSForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                postPageRawWithCleanup(this.br, "http://chomikuj.pl/action/Login/TopBarLogin", "rememberLogin=true&rememberLogin=false&topBar_LoginBtn=Zaloguj&ReturnUrl=%2F" + Encoding.urlEncode(account.getUser()) + "&Login=" + Encoding.urlEncode(account.getUser()) + "&Password=" + Encoding.urlEncode(account.getPass()) + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken));
+                postPageRawWithCleanup(this.br, "https://chomikuj.pl/action/Login/TopBarLogin", "rememberLogin=true&rememberLogin=false&topBar_LoginBtn=Zaloguj&ReturnUrl=%2F" + Encoding.urlEncode(account.getUser()) + "&Login=" + Encoding.urlEncode(account.getUser()) + "&Password=" + Encoding.urlEncode(account.getPass()) + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken));
                 if (br.getCookie(MAINPAGE, "RememberMe") == null) {
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -591,8 +591,8 @@ public class ChoMikujPl extends antiDDoSForHost {
                 br.setCookie(MAINPAGE, "cookiesAccepted", "1");
                 br.setCookie(MAINPAGE, "spt", "0");
                 br.setCookie(MAINPAGE, "rcid", "1");
-                postPageRawWithCleanup(this.br, "http://chomikuj.pl/" + Encoding.urlEncode(account.getUser()), "ReturnUrl=%2F" + Encoding.urlEncode(account.getUser()) + "&Login=" + Encoding.urlEncode(account.getUser()) + "&Password=" + Encoding.urlEncode(account.getPass()) + "&rememberLogin=true&rememberLogin=false&topBar_LoginBtn=Zaloguj");
-                getPageWithCleanup(this.br, "http://chomikuj.pl/" + Encoding.urlEncode(account.getUser()));
+                postPageRawWithCleanup(this.br, "https://chomikuj.pl/" + Encoding.urlEncode(account.getUser()), "ReturnUrl=%2F" + Encoding.urlEncode(account.getUser()) + "&Login=" + Encoding.urlEncode(account.getUser()) + "&Password=" + Encoding.urlEncode(account.getPass()) + "&rememberLogin=true&rememberLogin=false&topBar_LoginBtn=Zaloguj");
+                getPageWithCleanup(this.br, "https://chomikuj.pl/" + Encoding.urlEncode(account.getUser()));
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
