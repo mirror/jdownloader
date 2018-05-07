@@ -134,6 +134,9 @@ public class MirrorCreatorCom extends PluginForDecrypt {
             if (result.hasInputFieldByName("c_click")) {
                 return result;
             }
+            if (result.hasInputFieldByName("c-click")) {
+                return result;
+            }
         }
         return null;
     }
