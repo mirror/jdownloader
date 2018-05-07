@@ -247,7 +247,7 @@ public class Rlnks extends antiDDoSForDecrypt {
         }
         if (b) {
             allForm = br.getForm(0);
-            allForm = allForm != null && allForm.getAction() != null && allForm.getAction().matches("^https?://(\\w+\\.)?" + domains + "/container_password\\d*\\.php.*") ? allForm : null;
+            allForm = allForm != null && allForm.getAction() != null && allForm.getAction().matches("^.*/container_password\\d*\\.php.*") ? allForm : null;
         }
         if (allForm != null) {
             final List<String> passwords = getPreSetPasswords();
@@ -279,9 +279,10 @@ public class Rlnks extends antiDDoSForDecrypt {
                         allForm.remove("button");
                         final String captchaLink = allForm.getRegex("src=\"(.*?)\"").getMatch(0);
                         if (captchaLink == null) {
-                            break;
-                        }
-                        if (StringUtils.containsIgnoreCase(captchaLink, "solvemedia.com")) {
+                            if (!allForm.containsHTML("Disabled\\s*-\\s*Enter\\s*Password")) {
+                                break;
+                            }
+                        } else if (StringUtils.containsIgnoreCase(captchaLink, "solvemedia.com")) {
                             final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                             try {
                                 final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
