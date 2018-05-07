@@ -40,7 +40,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chomikuj.pl" }, urls = { "http://((www\\.)?chomikuj\\.pl//?[^<>\"]+|chomikujpagedecrypt\\.pl/result/.+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chomikuj.pl" }, urls = { "https?://((www\\.)?chomikuj\\.pl//?[^<>\"]+|chomikujpagedecrypt\\.pl/result/.+)" })
 public class ChoMikujPl extends PluginForDecrypt {
     public ChoMikujPl(PluginWrapper wrapper) {
         super(wrapper);
@@ -53,7 +53,7 @@ public class ChoMikujPl extends PluginForDecrypt {
     private String             REQUESTVERIFICATIONTOKEN = null;
     private final String       PAGEDECRYPTLINK          = "https?://chomikujpagedecrypt\\.pl/.+";
     private final String       ENDINGS                  = "\\.(3gp|7zip|7z|abr|ac3|aiff|aifc|aif|ai|au|avi|bin|bat|bz2|cbr|cbz|ccf|chm|cso|cue|cvd|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gz|iwd|idx|iso|ipa|ipsw|java|jar|jpg|jpeg|load|m2ts|mws|mv|m4v|m4a|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|nfo|npk|oga|ogg|ogv|otrkey|par2|pkg|png|pdf|pptx|ppt|pps|ppz|pot|psd|qt|rmvb|rm|rar|ram|ra|rev|rnd|[r-z]\\d{2}|r\\d+|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sub|srt|snd|sfv|swf|tar\\.gz|tar\\.bz2|tar\\.xz|tar|tgz|tiff|tif|ts|txt|url|viv|vivo|vob|webm|wav|wmv|wma|wpl|xla|xls|xpi|zeno|zip)";
-    private final String       UNSUPPORTED              = "http://(www\\.)?chomikuj\\.pl//?(action/[^<>\"]+|(Media|Kontakt|PolitykaPrywatnosci|Empty|Abuse|Sugestia|LostPassword|Zmiany|Regulamin|Platforma)\\.aspx|favicon\\.ico|konkurs_literacki/info)";
+    private final String       UNSUPPORTED              = "https?://(www\\.)?chomikuj\\.pl//?(action/[^<>\"]+|(Media|Kontakt|PolitykaPrywatnosci|Empty|Abuse|Sugestia|LostPassword|Zmiany|Regulamin|Platforma)\\.aspx|favicon\\.ico|konkurs_literacki/info)";
     private static Object      LOCK                     = new Object();
 
     public int getMaxConcurrentProcessingInstances() {
@@ -80,7 +80,7 @@ public class ChoMikujPl extends PluginForDecrypt {
                             break;
                         }
                         pageNum = pageNum + 1;
-                        final DownloadLink dl = createDownloadlink("http://chomikujpagedecrypt.pl/result/" + Encoding.Base64Encode(parameter + "," + pageNum));
+                        final DownloadLink dl = createDownloadlink("https://chomikujpagedecrypt.pl/result/" + Encoding.Base64Encode(parameter + "," + pageNum));
                         dl.setProperty("reallink", parameter);
                         fp.add(dl);
                         try {
@@ -126,7 +126,7 @@ public class ChoMikujPl extends PluginForDecrypt {
                  */
                 if (isLinkendingWithoutID) {
                     getPage(parameter);
-                    final String orgLink = br.getRegex("property=\"og:url\" content=\"(http://(www\\.)?chomikuj\\.pl/[^<>\"]*?)\"").getMatch(0);
+                    final String orgLink = br.getRegex("property=\"og:url\" content=\"(https?://(www\\.)?chomikuj\\.pl/[^<>\"]*?)\"").getMatch(0);
                     if (orgLink != null && orgLink.contains(",")) {
                         linkending = orgLink.substring(orgLink.lastIndexOf(","));
                         if (!linkending.matches(",\\d+\\.[A-Za-z0-9]{1,5}")) {
@@ -316,7 +316,7 @@ public class ChoMikujPl extends PluginForDecrypt {
         final PluginForHost chomikujpl = JDUtilities.getPluginForHost("chomikuj.pl");
         final boolean decryptFolders = chomikujpl.getPluginConfig().getBooleanProperty(jd.plugins.hoster.ChoMikujPl.DECRYPTFOLDERS, false);
         if (decryptFolders) {
-            String serverPath = parameter.replace("http://chomikuj.pl/", "");
+            String serverPath = parameter.replace("https?://chomikuj.pl/", "");
             serverPath = serverPath.replace("*", "%");
             serverPath = URLDecoder.decode(serverPath, "UTF-8");
             final Regex serverPathRe = new Regex(serverPath, "^(.+)(,\\d+)$");
@@ -453,7 +453,7 @@ public class ChoMikujPl extends PluginForDecrypt {
                 final String fid = new Regex(entry, "rel=\"(\\d+)\"").getMatch(0);
                 String content_url = new Regex(entry, "<li><a href=\"(/[^<>\"]*?)\"").getMatch(0);
                 if (content_url != null) {
-                    content_url = "http://" + this.getHost() + content_url;
+                    content_url = "https://" + this.getHost() + content_url;
                     url_filename = new Regex(content_url, "/([^<>\"/]+)$").getMatch(0);
                 }
                 String filesize = new Regex(entry, "<li><span>(\\d+(,\\d+)? [A-Za-z]{1,5})</span>").getMatch(0);
@@ -541,7 +541,7 @@ public class ChoMikujPl extends PluginForDecrypt {
             linkPart = linkPart.replaceAll("%28", "(").replaceAll("%29", ")");
             for (String[] folder : allFolders) {
                 String folderLink = folder[0];
-                folderLink = "http://chomikuj.pl" + folderLink;
+                folderLink = "https://chomikuj.pl" + folderLink;
                 if (folderLink.contains(linkPart) && !folderLink.equals(parameter)) {
                     final DownloadLink dl = createDownloadlink(folderLink);
                     if (FOLDERPASSWORD != null) {
@@ -561,7 +561,7 @@ public class ChoMikujPl extends PluginForDecrypt {
     }
 
     private void accessPage(String postData, Browser pageBR, int pageNum) throws Exception {
-        postPage(pageBR, "http://chomikuj.pl/action/Files/FilesList", postData + "&pageNr=" + pageNum);
+        postPage(pageBR, "https://chomikuj.pl/action/Files/FilesList", postData + "&pageNr=" + pageNum);
     }
 
     private void prepareBrowser(String parameter, Browser bro) {
