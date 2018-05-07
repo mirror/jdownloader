@@ -29,9 +29,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "viz.com" }, urls = { "https?://(?:www\\.)?viz\\.com/[^/]+/(?:chapter/|issue/|manga/product/|manga/product/digital/)[^/]+/\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "viz.com" }, urls = { "https?://(?:www\\.)?viz\\.com/[^/]+/[^/]+/(?:chapter/|issue/|manga/product/|manga/product/digital/)\\d+" })
 public class VizCom extends antiDDoSForDecrypt {
-
     public VizCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -47,8 +46,8 @@ public class VizCom extends antiDDoSForDecrypt {
             return decryptedLinks;
         }
         /*
-         * Fog: Length: x pages is always visible. but not always correct for pages available (e.g. previews) so we check the javascript for
-         * the proper amount of pages, and then only use Length: x pages if var pages = 0
+         * Fog: Length: x pages is always visible. but not always correct for pages available (e.g. previews) so we check the javascript for the
+         * proper amount of pages, and then only use Length: x pages if var pages = 0
          */
         // String pages_str = br.getRegex("<strong>Length</strong>\\s*?(\\d+)\\s*?pages\\s*?</div>").getMatch(0);
         String pages_str = br.getRegex("var pages\\s*=\\s*(\\d+);").getMatch(0);
@@ -57,7 +56,7 @@ public class VizCom extends antiDDoSForDecrypt {
             pages_str = br.getRegex("<strong>Length</strong>\\s*(\\d+)\\s*pages\\s*</div>").getMatch(0);
         }
         final int pages = Integer.parseInt(pages_str);
-        final Regex urlinfo = new Regex(parameter, "([^/]+)/(\\d+)");
+        final Regex urlinfo = new Regex(parameter, "([^/]+)/(?:[^/]+)/(\\d+)");
         final String url_name = urlinfo.getMatch(0);
         final String manga_id = urlinfo.getMatch(1);
         final DecimalFormat page_formatter_page = new DecimalFormat("000");
