@@ -185,7 +185,8 @@ public class FreeDiscPl extends PluginForHost {
             final String videoEmbedUrl = br.getRegex("<iframe src=\"(https?://freedisc\\.pl/embed/video/\\d+[^<>\"]*?)\"").getMatch(0);
             resumable = true;
             maxchunks = 0;
-            final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+            // final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+            final String fid = new Regex(downloadLink.getDownloadURL(), "f-(\\d+)").getMatch(0);
             postPageRaw("//freedisc.pl/download/payment_info", "{\"item_id\":\"" + fid + "\",\"item_type\":1,\"code\":\"\",\"file_id\":" + fid + ",\"no_headers\":1,\"menu_visible\":0}");
             br.getRequest().setHtmlCode(Encoding.unicodeDecode(this.br.toString()));
             if (br.containsHTML("Pobranie plików większych jak [0-9\\.]+ (MB|GB|TB), wymaga opłacenia kosztów transferu")) {
