@@ -123,7 +123,6 @@ public class FreeDiscPl extends PluginForHost {
             }
         }
         fileName = fileName.trim();
-        link.setName(Encoding.htmlDecode(fileName.trim()));
         final String fpat = "\\s*([0-9]+(?:[\\.,][0-9]+)?\\s*[A-Z]{1,2})";
         String filesize = br.getRegex("class='frameFilesSize'>Rozmiar pliku</div>[\t\n\r ]+<div class='frameFilesCountNumber'>" + fpat).getMatch(0);
         if (filesize == null) {
