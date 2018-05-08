@@ -35,6 +35,8 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.FreeDiscPlConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "freedisc.pl" }, urls = { "https?://(www\\.)?freedisc\\.pl/[A-Za-z0-9_\\-]+,d-\\d+([A-Za-z0-9_,\\-]+)?" })
 public class FreeDiscPlFolder extends PluginForDecrypt {
@@ -75,6 +77,7 @@ public class FreeDiscPlFolder extends PluginForDecrypt {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
+        final boolean crawlSubfolders = PluginJsonConfig.get(FreeDiscPlConfig.class).isCrawlSubfolders();
         final String fpName = br.getRegex(">([^>]+)</h1>").getMatch(0);
         // final String[] entries = br.getRegex("div class=\"dir-item\"><div.*?</div></div></div>").getColumn(-1);
         final String[] entries = br.getRegex("div\\s*class=\"dir-item\">[^~]*?</div>\\s*</div>").getColumn(-1);
@@ -85,7 +88,9 @@ public class FreeDiscPlFolder extends PluginForDecrypt {
             for (final String e : entries) {
                 final String folder = new Regex(e, folderEntry).getMatch(1);
                 if (folder != null) {
-                    // decryptedLinks.add(createDownloadlink(Request.getLocation(folder, br.getRequest()))); // Too much!
+                    if (crawlSubfolders) {
+                        decryptedLinks.add(createDownloadlink(Request.getLocation(folder, br.getRequest()))); // Too much!
+                    }
                     continue;
                 }
                 final String link = new Regex(e, fileEntry).getMatch(1);
@@ -114,9 +119,9 @@ public class FreeDiscPlFolder extends PluginForDecrypt {
                     decryptedLinks.add(createDownloadlink(singleLink));
                 }
             }
-            if (folders != null && folders.length > 0) {
+            if (crawlSubfolders && folders != null && folders.length > 0) {
                 for (final String singleLink : folders) {
-                    // decryptedLinks.add(createDownloadlink("https://freedisc.pl" + singleLink)); Too much!
+                    decryptedLinks.add(createDownloadlink("https://freedisc.pl" + singleLink));
                 }
             }
         }
