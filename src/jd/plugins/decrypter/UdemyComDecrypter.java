@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -35,13 +34,11 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "udemy.com" }, urls = { "https?://(?:www\\.)?udemy\\.com/.+" })
 public class UdemyComDecrypter extends PluginForDecrypt {
-
     public UdemyComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     private static final String     decrypter_domain = "udemydecrypted.com";
-
     private String                  course_id        = null;
     private ArrayList<DownloadLink> decryptedLinks   = new ArrayList<DownloadLink>();
 
@@ -64,6 +61,7 @@ public class UdemyComDecrypter extends PluginForDecrypt {
         }
         jd.plugins.hoster.UdemyCom.prepBRAPI(this.br);
         br.getPage(parameter);
+        br.followRedirect();
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
@@ -88,12 +86,10 @@ public class UdemyComDecrypter extends PluginForDecrypt {
         // logger.warning("Decrypter broken for link: " + parameter);
         // return null;
         // }
-
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         final LinkedHashMap<String, Object> page_info = (LinkedHashMap<String, Object>) entries.get("");
         final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("results");
         ArrayList<Object> ressourcelist_2 = null;
-
         for (final Object courseo : ressourcelist) {
             entries = (LinkedHashMap<String, Object>) courseo;
             final String lecture_id = Long.toString(JavaScriptEngineFactory.toLong(entries.get("id"), 0));
@@ -108,7 +104,6 @@ public class UdemyComDecrypter extends PluginForDecrypt {
                 continue;
             }
             decryptAsset(entries, lecture_id);
-
             if (supplementary_assets != null) {
                 /* Most likely files ... */
                 ressourcelist_2 = (ArrayList<Object>) supplementary_assets;
@@ -117,13 +112,10 @@ public class UdemyComDecrypter extends PluginForDecrypt {
                     decryptAsset(entries, lecture_id);
                 }
             }
-
         }
-
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(fpName);
         fp.addLinks(decryptedLinks);
-
         return decryptedLinks;
     }
 
@@ -133,7 +125,6 @@ public class UdemyComDecrypter extends PluginForDecrypt {
         final String filename = (String) entries.get("filename");
         /* E.g. Video, Article, File */
         final String asset_type = (String) entries.get("asset_type");
-
         if (asset_id.equals("0") || asset_type == null || asset_type.equals("")) {
             return;
         }
@@ -172,5 +163,4 @@ public class UdemyComDecrypter extends PluginForDecrypt {
         }
         decryptedLinks.add(dl);
     }
-
 }
