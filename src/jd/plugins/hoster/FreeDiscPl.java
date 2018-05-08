@@ -35,6 +35,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
@@ -137,18 +138,22 @@ public class FreeDiscPl extends PluginForHost {
                 }
             }
         }
+        final String htmlUrlExtension = br.getRegex("meta\\s*property\\s*=\\s*\"og:url\"\\s*content\\s*=\\s*\"https?://.+?-([a-z0-9]+)\"").getMatch(0);
         final String storedfileName = link.getName();
-        String storedExt = "";
+        String extension = "";
         if (storedfileName != null) {
-            storedExt = storedfileName.substring(storedfileName.lastIndexOf(".") + 1);
-            if (storedExt != null && !storedExt.matches("^[a-zA-Z0-9]$")) {
-                storedExt = null;
+            final String storedExt = storedfileName.lastIndexOf(".") != -1 ? storedfileName.substring(storedfileName.lastIndexOf(".") + 1) : null;
+            if (storedExt != null && ("." + storedExt).matches(DirectHTTP.ENDINGS)) {
+                extension = storedExt;
             }
         }
-        if (link.getName() == null || (storedExt != null && !("." + storedExt).matches(DirectHTTP.ENDINGS))) {
+        if (StringUtils.isEmpty(extension) && htmlUrlExtension != null && ("." + htmlUrlExtension).matches(DirectHTTP.ENDINGS)) {
+            extension = htmlUrlExtension;
+        }
+        if (!link.isNameSet() || (extension != null && ("." + extension).matches(DirectHTTP.ENDINGS))) {
             final String fileNameExt = fileName.substring(fileName.lastIndexOf(".") + 1);
-            if (storedExt != null && (fileNameExt == null || !("." + fileNameExt).matches(DirectHTTP.ENDINGS))) {
-                fileName = fileName + "." + storedExt;
+            if (extension != null && (fileNameExt == null || !("." + fileNameExt).matches(DirectHTTP.ENDINGS))) {
+                fileName = fileName + "." + extension;
             }
             link.setName(Encoding.htmlDecode(fileName.trim()));
         }
