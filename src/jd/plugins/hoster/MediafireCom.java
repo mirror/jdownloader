@@ -56,7 +56,7 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mediafire.com" }, urls = { "https?://(www\\.)?mediafire\\.com/(download/[a-z0-9]+|(download\\.php\\?|\\?JDOWNLOADER(?!sharekey)|file/).*?(?=http:|$|\r|\n))" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mediafire.com" }, urls = { "https?://(www\\.|m\\.|download\\d+\\.)?mediafire\\.com/(download/[a-z0-9]+|(download\\.php\\?|\\?JDOWNLOADER(?!sharekey)|file/|file\\?|download/?).*?(?=http:|$|\r|\n))" })
 public class MediafireCom extends PluginForHost {
     /** Settings stuff */
     private static final String FREE_FORCE_RECONNECT_ON_CAPTCHA = "FREE_FORCE_RECONNECT_ON_CAPTCHA";
@@ -145,7 +145,7 @@ public class MediafireCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) throws Exception {
-        final String id = new Regex(link.getDownloadURL(), "mediafire\\.com/download/([a-z0-9]+)").getMatch(0);
+        final String id = getFUID(link);
         if (id != null) {
             link.setProperty("LINKDUPEID", "mediafirecom_" + id);
         }
@@ -376,9 +376,9 @@ public class MediafireCom extends PluginForHost {
     }
 
     private String getFUID(DownloadLink link) {
-        String fileID = new Regex(link.getDownloadURL(), "\\?([a-zA-Z0-9]+)").getMatch(0);
+        String fileID = new Regex(link.getDownloadURL(), "https?://.*?/(file|file\\.php|download|download\\.php)/?\\??([a-zA-Z0-9]+)").getMatch(1);
         if (fileID == null) {
-            fileID = new Regex(link.getDownloadURL(), "(file|download)/([a-zA-Z0-9]+)").getMatch(1);
+            fileID = new Regex(link.getDownloadURL(), "\\?([a-zA-Z0-9]+)").getMatch(0);
             if (fileID == null) {
                 fileID = new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
             }
