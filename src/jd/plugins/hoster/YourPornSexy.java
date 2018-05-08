@@ -31,6 +31,8 @@ public class YourPornSexy extends PluginForHost {
         }
     }
 
+    private String downloadURL = null;
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         br.setFollowRedirects(true);
@@ -39,9 +41,17 @@ public class YourPornSexy extends PluginForHost {
         if (title == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String mp4 = br.getRegex("<video id='.*?'\\s*src=(\"|')((?:https?:)?//.*?\\.mp4)(\"|')").getMatch(1);
+        String mp4 = br.getRegex("<video id='[^'\"]*?'\\s*src=(\"|')((?:https?:)?//[^'\"]*?\\.mp4)(\"|')").getMatch(1);
+        if (mp4 == null) {
+            mp4 = br.getRegex("data-vnfo\\s*=\\s*'\\{\\s*\".*?\"\\s*:\\s*\"(.*?)\"").getMatch(0);
+            if (mp4 != null) {
+                mp4 = mp4.replaceAll("\\\\", "");
+            }
+        }
         if (mp4 == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else {
+            downloadURL = mp4;
         }
         link.setFinalFileName(title.trim() + ".mp4");
         if (link.getVerifiedFileSize() == -1) {
@@ -67,11 +77,10 @@ public class YourPornSexy extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
-        final String mp4 = br.getRegex("<video id='.*?'\\s*src=(\"|')((?:https?:)?//.*?\\.mp4)(\"|')").getMatch(1);
-        if (mp4 == null) {
+        if (downloadURL == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, mp4, true, -2);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadURL, true, -2);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
