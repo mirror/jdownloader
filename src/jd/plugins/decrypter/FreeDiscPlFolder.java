@@ -44,7 +44,7 @@ public class FreeDiscPlFolder extends PluginForDecrypt {
         super(wrapper);
         try {
             Browser.setRequestIntervalLimitGlobal("freedisc.pl", 1000, 20, 60000);
-        } catch (final Throwable e) {
+        } catch (final Throwable ignore) {
         }
     }
 
