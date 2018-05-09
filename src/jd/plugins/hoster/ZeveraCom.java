@@ -20,12 +20,20 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.gui.swing.components.linkbutton.JLink;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -60,6 +68,11 @@ public class ZeveraCom extends PluginForHost {
         super(wrapper);
         this.setAccountwithoutUsername(true);
         this.enablePremium("https://www.zevera.com/premium");
+    }
+
+    @Override
+    public AccountBuilderInterface getAccountFactory(InputChangedCallbackInterface callback) {
+        return new ZeveraComAccountFactory(callback);
     }
 
     @Override
@@ -231,7 +244,8 @@ public class ZeveraCom extends PluginForHost {
         if (premium_until > System.currentTimeMillis()) {
             account.setType(AccountType.PREMIUM);
             if (!StringUtils.isEmpty(fair_use_used_str)) {
-                ai.setStatus(String.format("Premium | Fair use:%s%%", fair_use_used_str));
+                final double d = Double.parseDouble(fair_use_used_str);
+                ai.setStatus("Premium | Fair usage:" + (100 - ((int) (d * 100.0))) + "%");
             } else {
                 ai.setStatus("Premium");
             }
@@ -271,6 +285,83 @@ public class ZeveraCom extends PluginForHost {
         final String status = PluginJSonUtils.getJson(br, "status");
         if (!"success".equalsIgnoreCase(status)) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Login PIN invalid! Make sure you're using your PIN as password see " + account.getHoster() + "/account", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+    }
+
+    public static class ZeveraComAccountFactory extends MigPanel implements AccountBuilderInterface {
+        /**
+         *
+         */
+        private static final long serialVersionUID = 1L;
+        private final String      PINHELP          = "Enter your Apikey";
+
+        private String getPassword() {
+            if (this.pass == null) {
+                return null;
+            }
+            if (EMPTYPW.equals(new String(this.pass.getPassword()))) {
+                return null;
+            }
+            return new String(this.pass.getPassword());
+        }
+
+        public boolean updateAccount(Account input, Account output) {
+            boolean changed = false;
+            if (!StringUtils.equals(input.getUser(), output.getUser())) {
+                output.setUser(input.getUser());
+                changed = true;
+            }
+            if (!StringUtils.equals(input.getPass(), output.getPass())) {
+                output.setPass(input.getPass());
+                changed = true;
+            }
+            return changed;
+        }
+
+        private final ExtPasswordField pass;
+        private static String          EMPTYPW = "                 ";
+
+        public ZeveraComAccountFactory(final InputChangedCallbackInterface callback) {
+            super("ins 0, wrap 2", "[][grow,fill]", "");
+            add(new JLabel("Click here to find your Apikey:"));
+            add(new JLink("https://www.zevera.com/account"));
+            add(new JLabel("Apikey:"));
+            add(this.pass = new ExtPasswordField() {
+                @Override
+                public void onChanged() {
+                    callback.onChangedInput(this);
+                }
+            }, "");
+            pass.setHelpText(PINHELP);
+        }
+
+        @Override
+        public JComponent getComponent() {
+            return this;
+        }
+
+        @Override
+        public void setAccount(Account defaultAccount) {
+            if (defaultAccount != null) {
+                // name.setText(defaultAccount.getUser());
+                pass.setText(defaultAccount.getPass());
+            }
+        }
+
+        @Override
+        public boolean validateInputs() {
+            // final String userName = getUsername();
+            // if (userName == null || !userName.trim().matches("^\\d{9}$")) {
+            // idLabel.setForeground(Color.RED);
+            // return false;
+            // }
+            // idLabel.setForeground(Color.BLACK);
+            return getPassword() != null;
+        }
+
+        @Override
+        public Account getAccount() {
+            return new Account(null, getPassword());
         }
     }
 
