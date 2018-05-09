@@ -1098,6 +1098,7 @@ public class LinkCrawler {
             return;
         }
         final LinkCrawlerRule matchingRule = source.getMatchingRule();
+        final List<CrawledLinkModifier> additionalModifier = new ArrayList<CrawledLinkModifier>();
         final CrawledLinkModifier lm = new DeeperOrMatchingRuleModifier() {
             public CrawledLinkModifier getSourceCrawledLinkModifier() {
                 return sourceLinkModifier;
@@ -1110,6 +1111,9 @@ public class LinkCrawler {
                 }
                 if (setContainerURL) {
                     link.getDownloadLink().setContainerUrl(source.getURL());
+                }
+                for (final CrawledLinkModifier modifier : additionalModifier) {
+                    modifier.modifyCrawledLink(link);
                 }
             }
         };
@@ -1274,6 +1278,7 @@ public class LinkCrawler {
                                             possibleCryptedLink.setDesiredPackageInfo(dpi);
                                         }
                                         if (possibleCryptedLinks.size() == 1) {
+                                            final CrawledLink link = possibleCryptedLinks.get(0);
                                             final String finalBaseUrl = new Regex(brURL, "(https?://.*?)(\\?|$)").getMatch(0);
                                             final String crawlContent;
                                             if (matchingRule != null && matchingRule._getDeepPattern() != null) {
@@ -1283,7 +1288,7 @@ public class LinkCrawler {
                                                     final StringBuilder sb = new StringBuilder();
                                                     for (final String matcharray[] : matches) {
                                                         for (final String match : matcharray) {
-                                                            if (match != null && !brURL.equals(match) && dups.add(match)) {
+                                                            if (StringUtils.isNotEmpty(match) && !brURL.equals(match) && dups.add(match)) {
                                                                 if (sb.length() > 0) {
                                                                     sb.append("\r\n");
                                                                 }
@@ -1307,8 +1312,30 @@ public class LinkCrawler {
                                             } else {
                                                 crawlContent = request.getHtmlCode();
                                             }
+                                            if (matchingRule != null && matchingRule._getPasswordPattern() != null) {
+                                                final String[][] matches = new Regex(request.getHtmlCode(), matchingRule._getPasswordPattern()).getMatches();
+                                                if (matches != null) {
+                                                    final HashSet<String> passwords = new HashSet<String>();
+                                                    for (final String matcharray[] : matches) {
+                                                        for (final String match : matcharray) {
+                                                            if (StringUtils.isNotEmpty(match)) {
+                                                                passwords.add(match);
+                                                            }
+                                                        }
+                                                    }
+                                                    if (passwords.size() > 0) {
+                                                        additionalModifier.add(new CrawledLinkModifier() {
+                                                            @Override
+                                                            public void modifyCrawledLink(CrawledLink link) {
+                                                                for (final String password : passwords) {
+                                                                    link.getArchiveInfo().addExtractionPassword(password);
+                                                                }
+                                                            }
+                                                        });
+                                                    }
+                                                }
+                                            }
                                             /* first check if the url itself can be handled */
-                                            final CrawledLink link = possibleCryptedLinks.get(0);
                                             link.setUnknownHandler(new UnknownCrawledLinkHandler() {
                                                 @Override
                                                 public void unhandledCrawledLink(CrawledLink link, LinkCrawler lc) {

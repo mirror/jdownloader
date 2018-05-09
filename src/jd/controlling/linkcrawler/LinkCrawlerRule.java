@@ -136,9 +136,31 @@ public class LinkCrawlerRule {
     protected Pattern               pattern            = null;
     protected RULE                  rule               = null;
     protected Pattern               packageNamePattern = null;
+    protected Pattern               passwordPattern    = null;
     protected Pattern               formPattern        = null;
     protected Pattern               deepPattern        = null;
     protected String                rewriteReplaceWith = null;
+
+    public Pattern _getPasswordPattern() {
+        return passwordPattern;
+    }
+
+    public String getPasswordPattern() {
+        final Pattern lPattern = _getPasswordPattern();
+        if (lPattern != null) {
+            return lPattern.pattern();
+        } else {
+            return null;
+        }
+    }
+
+    public void setPasswordPattern(String pattern) {
+        if (pattern == null) {
+            this.passwordPattern = null;
+        } else {
+            this.passwordPattern = Pattern.compile(pattern);
+        }
+    }
 
     public String getRewriteReplaceWith() {
         return rewriteReplaceWith;

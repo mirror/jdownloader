@@ -9,17 +9,7 @@ public class LinkCrawlerRuleStorable extends LinkCrawlerRule implements Storable
 
     public LinkCrawlerRuleStorable(LinkCrawlerRule rule) {
         super(rule.getId());
-        this.setEnabled(rule.isEnabled());
-        this.setName(rule.getName());
-        this.setPattern(rule.getPattern());
-        this.setRule(rule.getRule());
-        this.setMaxDecryptDepth(rule.getMaxDecryptDepth());
-        this.setPackageNamePattern(rule.getPackageNamePattern());
-        this.setFormPattern(rule.getFormPattern());
-        this.setDeepPattern(rule.getDeepPattern());
-        this.setRewriteReplaceWith(rule.getRewriteReplaceWith());
-        this.setCookies(rule.getCookies());
-        this.setUpdateCookies(rule.isUpdateCookies());
+        set(rule);
     }
 
     public void setId(long id) {
@@ -37,6 +27,7 @@ public class LinkCrawlerRuleStorable extends LinkCrawlerRule implements Storable
         this.setDeepPattern(rule.getDeepPattern());
         this.setRewriteReplaceWith(rule.getRewriteReplaceWith());
         this.setCookies(rule.getCookies());
+        this.setPasswordPattern(rule.getPasswordPattern());
         this.setUpdateCookies(rule.isUpdateCookies());
         this.setId(rule.getId());
     }
@@ -54,6 +45,7 @@ public class LinkCrawlerRuleStorable extends LinkCrawlerRule implements Storable
         ret.setRewriteReplaceWith(getRewriteReplaceWith());
         ret.setCookies(getCookies());
         ret.setUpdateCookies(isUpdateCookies());
+        ret.setPasswordPattern(getPasswordPattern());
         return ret;
     }
 }
