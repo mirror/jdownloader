@@ -28,7 +28,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cnet.com" }, urls = { "http://(www\\.)?download\\.cnet\\.com/[A-Za-z0-9\\-_]+/[^<>\"/]*?\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cnet.com" }, urls = { "https?://(www\\.)?download\\.cnet\\.com/[A-Za-z0-9\\-_]+/[^<>\"/]*?\\.html" })
 public class CnetCom extends PluginForHost {
     public CnetCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -47,7 +47,7 @@ public class CnetCom extends PluginForHost {
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(>Whoops\\! You broke the Internet\\!<|>No, really,  it looks like you clicked on a borked link)") || this.br.getHttpConnection().getResponseCode() == 404 || this.br.getHttpConnection().getResponseCode() == 500 || br.getURL().contains("/most-popular/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (!br.containsHTML("class=\"download-now title-detail-button-dln\"")) {
+        } else if (!br.containsHTML("class=\"download-now (title|flat)-detail-button-dln\"")) {
             /* No downloadable content / External Download Site */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -88,21 +88,21 @@ public class CnetCom extends PluginForHost {
         String dllink = null;
         boolean ads_free = true;
         /* Try to get installer without adware */
-        String continueLink = br.getRegex("<a href=\\'(http://[^<>\"]*?)\\' class=\"dln\\-a\">[\t\n\r ]+<span class=\"dln\\-cta\">Direct Download Link</span>").getMatch(0);
+        String continueLink = br.getRegex("<a href=\\'(https?://[^<>\"]*?)\\' class=\"dln\\-a\">[\t\n\r ]+<span class=\"dln\\-cta\">Direct Download Link</span>").getMatch(0);
         /* If not, we can only download the installer with ads */
         if (continueLink == null) {
-            continueLink = br.getRegex("<a href=\\'(http://[^<>\"]*?)\\' class=\"dln\\-a\">[\t\n\r ]+<span class=\"dln\\-cta\">Download Now</span>").getMatch(0);
+            continueLink = br.getRegex("<a href=\\'(https?://[^<>\"]*?)\\' class=\"dln\\-a\">[\t\n\r ]+<span class=\"dln\\-cta\">Download Now</span>").getMatch(0);
             ads_free = false;
         }
         if (continueLink != null) { // 20170614 continueLink is no longer available?
             br.getPage(continueLink);
         }
-        dllink = br.getRegex("data-download-now-url=\"(http://[^<>\"]*?)\"").getMatch(0);
+        dllink = br.getRegex("data-download-now-url=\"(https?://[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("http\\-equiv=\"refresh\" content=\\'0;url=(http://[^<>\"]*?)\\'").getMatch(0);
+            dllink = br.getRegex("http\\-equiv=\"refresh\" content=\\'0;url=(https?://[^<>\"]*?)\\'").getMatch(0);
         }
         if (dllink == null) {
-            dllink = br.getRegex("data-dl-url=\\'(http://[^<>\"]*?)\\'").getMatch(0);
+            dllink = br.getRegex("data-dl-url=\\'(https?://[^<>\"]*?)\\'").getMatch(0);
         }
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
