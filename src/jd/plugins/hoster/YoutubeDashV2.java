@@ -401,8 +401,8 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                                 YoutubeFinalLinkResource cache = new YoutubeFinalLinkResource(si);
                                 if (cache.getSegments() != null) {
                                     verifiedSize = false;
-                                    long estimatedSize = guessTotalSize(cache.getBaseUrl(), cache.getSegments());
-                                    if (estimatedSize == -1) {
+                                    final Long estimatedSize = guessTotalSize(cache.getBaseUrl(), cache.getSegments());
+                                    if (estimatedSize != null && estimatedSize == -1) {
                                         if (firstException == null) {
                                             firstException = new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                                         }
@@ -410,8 +410,12 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                                     }
                                     workingVideoStream = cache;
                                     // downloadLink.setProperty(YoutubeHelper.YT_STREAM_DATA_VIDEO, cache);
-                                    totalSize += estimatedSize;
-                                    ok |= estimatedSize > 0;
+                                    if (estimatedSize != null) {
+                                        totalSize += estimatedSize;
+                                        ok |= estimatedSize > 0;
+                                    } else {
+                                        ok = true;
+                                    }
                                     firstException = null;
                                     break;
                                 } else {
@@ -424,8 +428,10 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                                     if (con.getResponseCode() == 200) {
                                         workingVideoStream = cache;
                                         // downloadLink.setProperty(YoutubeHelper.YT_STREAM_DATA_VIDEO, cache);
-                                        totalSize += con.getLongContentLength();
-                                        data.setDashVideoSize(con.getLongContentLength());
+                                        if (con.getLongContentLength() > 0) {
+                                            totalSize += con.getLongContentLength();
+                                            data.setDashVideoSize(con.getLongContentLength());
+                                        }
                                         firstException = null;
                                         ok |= true;
                                         break;
@@ -454,8 +460,8 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                                 final YoutubeFinalLinkResource cache = new YoutubeFinalLinkResource(si);
                                 if (cache.getSegments() != null) {
                                     verifiedSize = false;
-                                    long estimatedSize = guessTotalSize(cache.getBaseUrl(), cache.getSegments());
-                                    if (estimatedSize == -1) {
+                                    final Long estimatedSize = guessTotalSize(cache.getBaseUrl(), cache.getSegments());
+                                    if (estimatedSize != null && estimatedSize == -1) {
                                         // if (i == 0) {
                                         // resetStreamUrls(downloadLink);
                                         // continue;
@@ -468,9 +474,13 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                                         }
                                         continue;
                                     }
-                                    totalSize += estimatedSize;
+                                    if (estimatedSize != null) {
+                                        totalSize += estimatedSize;
+                                        ok |= estimatedSize > 0;
+                                    } else {
+                                        ok = true;
+                                    }
                                     workingAudioStream = cache;
-                                    ok |= estimatedSize > 0;
                                     // downloadLink.setProperty(YoutubeHelper.YT_STREAM_DATA_AUDIO, );
                                     firstException = null;
                                     break;
@@ -481,8 +491,10 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                                     if (con.getResponseCode() == 200) {
                                         workingAudioStream = cache;
                                         // downloadLink.setProperty(YoutubeHelper.YT_STREAM_DATA_AUDIO, new YoutubeFinalLinkResource(si));
-                                        totalSize += con.getLongContentLength();
-                                        data.setDashAudioSize(con.getLongContentLength());
+                                        if (con.getLongContentLength() > 0) {
+                                            totalSize += con.getLongContentLength();
+                                            data.setDashAudioSize(con.getLongContentLength());
+                                        }
                                         firstException = null;
                                         ok |= true;
                                         break;
@@ -730,11 +742,12 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
         return AvailableStatus.TRUE;
     }
 
-    private long guessTotalSize(String base, String[] segs) throws IOException {
+    private Long guessTotalSize(String base, String[] segs) throws IOException {
         final int jump = Math.max(1, segs.length / 10);
         int segments = 0;
-        long size = 0;
+        Long size = null;
         boolean lastFlag = false;
+        int fastBreak = 0;
         for (int i = 1; i < segs.length; i += jump) {
             final String url = segs[i].toLowerCase(Locale.ENGLISH).startsWith("http") ? segs[i] : (base + segs[i]);
             URLConnectionAdapter con = null;
@@ -743,12 +756,26 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                 if (con.getResponseCode() == 200) {
                     lastFlag = true;
                     segments++;
-                    size += con.getLongContentLength();
+                    if (size == null) {
+                        size = 0l;
+                    }
+                    if (con.getLongContentLength() > 0) {
+                        fastBreak = 0;
+                        size += con.getLongContentLength();
+                    } else {
+                        if (fastBreak++ > 2) {
+                            return null;
+                        }
+                    }
                 } else {
                     if (lastFlag) {
                         lastFlag = false;
                     } else {
-                        return -1;
+                        if (size == null) {
+                            return -1l;
+                        } else {
+                            return null;
+                        }
                     }
                 }
             } catch (final IOException e) {
@@ -756,7 +783,11 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                 if (lastFlag) {
                     lastFlag = false;
                 } else {
-                    return -1;
+                    if (size == null) {
+                        return -1l;
+                    } else {
+                        return null;
+                    }
                 }
             } finally {
                 if (con != null) {
@@ -764,11 +795,15 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                 }
             }
         }
-        if (segments > 0 && segs.length > 1) {
+        if (segments > 0 && segs.length > 1 && size != null && size.longValue() > 0) {
             // first segment is a init segment and has only ~802 bytes
-            return (segs.length - 1) * (size / segments) + 802;
+            return (segs.length - 1) * (size.longValue() / segments) + 802;
         } else {
-            return -1;
+            if (size == null) {
+                return -1l;
+            } else {
+                return null;
+            }
         }
     }
 

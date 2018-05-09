@@ -252,7 +252,9 @@ public class MultiShareCz extends antiDDoSForHost {
         /* login to get u_ID and u_HASH */
         getPage("https://www.multishare.cz/api/?sub=download-link&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&link=" + Encoding.urlEncode(link.getDownloadURL()));
         if (br.containsHTML("ERR: Invalid password\\.")) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Wrong password", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Wrong password", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        } else if (br.containsHTML("ERR: User account is blocked")) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "User account is blocked. Please contact multishare support", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         final String dllink = PluginJSonUtils.getJsonValue(br, "link");
         final String maxChunks = PluginJSonUtils.getJsonValue(br, "chunks");
