@@ -748,11 +748,18 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
         Long size = null;
         boolean lastFlag = false;
         int fastBreak = 0;
+        boolean headRequest = true;
         for (int i = 1; i < segs.length; i += jump) {
             final String url = segs[i].toLowerCase(Locale.ENGLISH).startsWith("http") ? segs[i] : (base + segs[i]);
             URLConnectionAdapter con = null;
             try {
-                con = br.openRequestConnection(new HeadRequest(url));
+                final Request request;
+                if (headRequest) {
+                    request = new HeadRequest(url);
+                } else {
+                    request = new GetRequest(url);
+                }
+                con = br.openRequestConnection(request);
                 if (con.getResponseCode() == 200) {
                     lastFlag = true;
                     segments++;
@@ -763,6 +770,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                         fastBreak = 0;
                         size += con.getLongContentLength();
                     } else {
+                        headRequest = false;
                         if (fastBreak++ > 2) {
                             return null;
                         }
