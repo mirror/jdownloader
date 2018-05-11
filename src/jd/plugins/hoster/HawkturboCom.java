@@ -21,12 +21,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -46,13 +40,19 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hawkturbo.com" }, urls = { "" })
 public class HawkturboCom extends PluginForHost {
     private static final String                            NICE_HOST                 = "hawkturbo.com";
     private static final String                            NICE_HOSTproperty         = NICE_HOST.replaceAll("(\\.|\\-)", "");
     /* Connection limits */
-    private static final boolean                           ACCOUNT_PREMIUM_RESUME    = false;
-    private static final int                               ACCOUNT_PREMIUM_MAXCHUNKS = 1;
+    private static final boolean                           ACCOUNT_PREMIUM_RESUME    = true;
+    private static final int                               ACCOUNT_PREMIUM_MAXCHUNKS = 0;
     private static final boolean                           USE_API                   = false;
     private static Object                                  LOCK                      = new Object();
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap        = new HashMap<Account, HashMap<String, Long>>();

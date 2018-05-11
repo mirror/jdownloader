@@ -350,12 +350,16 @@ public class FreeDiscPl extends PluginForHost {
                     /* Always try to re-use cookies. */
                     br.setCookies(this.getHost(), cookies);
                     br.getPage("https://" + this.getHost() + "/");
+                    handleAntiBot(br);
                     if (br.containsHTML("id=\"btnLogout\"")) {
+                        account.saveCookies(br.getCookies(this.getHost()), "");
                         return;
+                    } else {
+                        br.clearCookies(getHost());
                     }
                 }
-                Browser br = prepBR(new Browser());
                 br.getPage("https://" + this.getHost() + "/");
+                handleAntiBot(br);
                 // this is done via ajax!
                 br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -372,14 +376,13 @@ public class FreeDiscPl extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                handleAntiBot(this.br);
                 /* Only free accounts are supported */
                 account.setType(AccountType.FREE);
                 account.saveCookies(br.getCookies(this.getHost()), "");
-                // reload into standard browser
-                this.br.setCookies(this.getHost(), account.loadCookies(""));
             } catch (final PluginException e) {
-                account.clearCookies("");
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
@@ -388,12 +391,7 @@ public class FreeDiscPl extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account, true);
         ai.setUnlimitedTraffic();
         if (account.getType() == AccountType.FREE) {
             /* free accounts can still have captcha */
