@@ -17,20 +17,15 @@ import org.jdownloader.controlling.AggregatedCrawlerNumbers;
 import org.jdownloader.controlling.AggregatedNumbers;
 
 public class PollingAPIImpl implements PollingAPI {
-
-    private DownloadWatchDog   dwd = DownloadWatchDog.getInstance();
-    private DownloadController dc  = DownloadController.getInstance();
-    private LinkCollector      lc  = LinkCollector.getInstance();
-    private APIQuery           queryParams;
+    private final DownloadWatchDog   dwd = DownloadWatchDog.getInstance();
+    private final DownloadController dc  = DownloadController.getInstance();
+    private final LinkCollector      lc  = LinkCollector.getInstance();
 
     @Override
     public List<PollingResultAPIStorable> poll(APIQuery queryParams) {
-        this.queryParams = queryParams;
-
-        List<PollingResultAPIStorable> result = new ArrayList<PollingResultAPIStorable>();
-
+        final List<PollingResultAPIStorable> result = new ArrayList<PollingResultAPIStorable>();
         if (queryParams.containsKey("downloadProgress")) {
-            result.add(getDownloadProgress());
+            result.add(getDownloadProgress(queryParams));
         }
         if (queryParams.containsKey("jdState")) {
             result.add(getJDState());
@@ -44,7 +39,6 @@ public class PollingAPIImpl implements PollingAPI {
         if (queryParams.containsKey("aggregatedNumbers")) {
             result.add(getAggregatedNumbers());
         }
-
         return result;
     }
 
@@ -58,37 +52,35 @@ public class PollingAPIImpl implements PollingAPI {
     }
 
     @SuppressWarnings("rawtypes")
-    private PollingResultAPIStorable getDownloadProgress() {
-
+    private PollingResultAPIStorable getDownloadProgress(APIQuery queryParams) {
         // get packageUUIDs who should be filled with download progress of the containing links e.g because they are expanded in the
         // view
-        List<Long> expandedPackageUUIDs = new ArrayList<Long>();
-        if (!queryParams._getQueryParam("downloadProgress", List.class, new ArrayList()).isEmpty()) {
-            List uuidsFromQuery = queryParams._getQueryParam("downloadProgress", List.class, new ArrayList());
-            for (Object o : uuidsFromQuery) {
+        final List<Long> expandedPackageUUIDs;
+        if (queryParams.get("downloadProgress") == null) {
+            expandedPackageUUIDs = null;
+        } else {
+            expandedPackageUUIDs = new ArrayList<Long>();
+            final List<Long> uuidsFromQuery = queryParams._getQueryParam("downloadProgress", List.class, new ArrayList<Long>());
+            for (final Object uuidFromQuery : uuidsFromQuery) {
                 try {
-                    expandedPackageUUIDs.add((Long) o);
+                    expandedPackageUUIDs.add(((Number) uuidFromQuery).longValue());
                 } catch (ClassCastException e) {
                     continue;
                 }
             }
         }
-
         PollingResultAPIStorable prs = new PollingResultAPIStorable();
         prs.setEventName("downloadProgress");
-
         List<PollingAPIFilePackageStorable> fpas = new ArrayList<PollingAPIFilePackageStorable>();
-
         for (FilePackage fp : dwd.getRunningFilePackages()) {
             PollingAPIFilePackageStorable fps = new PollingAPIFilePackageStorable(fp);
             fps.setSpeed(dwd.getDownloadSpeedbyFilePackage(fp));
-
             // if packages is expanded in view, current state of all running links inside the package
-            if (expandedPackageUUIDs.contains(fp.getUniqueID().getID())) {
+            if (expandedPackageUUIDs == null || expandedPackageUUIDs.contains(fp.getUniqueID().getID())) {
                 boolean readL = fp.getModifyLock().readLock();
                 try {
-                    for (DownloadLink dl : fp.getChildren()) {
-                        if (dwd.getRunningDownloadLinks().contains(dl.getDownloadLinkController())) {
+                    for (final DownloadLink dl : fp.getChildren()) {
+                        if (dl.getDownloadLinkController() != null) {
                             PollingAPIDownloadLinkStorable pdls = new PollingAPIDownloadLinkStorable(dl);
                             fps.getLinks().add(pdls);
                         }
@@ -99,21 +91,17 @@ public class PollingAPIImpl implements PollingAPI {
             }
             fpas.add(fps);
         }
-
         org.jdownloader.myjdownloader.client.json.JsonMap eventData = new org.jdownloader.myjdownloader.client.json.JsonMap();
         eventData.put("data", fpas);
         prs.setEventData(eventData);
-
         return prs;
     }
 
     private PollingResultAPIStorable getJDState() {
         PollingResultAPIStorable prs = new PollingResultAPIStorable();
         prs.setEventName("jdState");
-
         org.jdownloader.myjdownloader.client.json.JsonMap eventData = new org.jdownloader.myjdownloader.client.json.JsonMap();
         eventData.put("data", dwd.getStateMachine().getState().getLabel());
-
         prs.setEventData(eventData);
         return prs;
     }
@@ -121,20 +109,16 @@ public class PollingAPIImpl implements PollingAPI {
     private PollingResultAPIStorable getLinkGrabberState() {
         PollingResultAPIStorable prs = new PollingResultAPIStorable();
         prs.setEventName("linkGrabberState");
-
         LinkCollector lc = LinkCollector.getInstance();
-
         String status = "UNKNOWN";
         if (lc.getDefaultLinkChecker().isRunning()) {
             status = "RUNNING";
         } else {
             status = "IDLE";
         }
-
         org.jdownloader.myjdownloader.client.json.JsonMap eventData = new org.jdownloader.myjdownloader.client.json.JsonMap();
         eventData.put("data", status);
         prs.setEventData(eventData);
-
         return prs;
     }
 
@@ -143,11 +127,9 @@ public class PollingAPIImpl implements PollingAPI {
     private PollingResultAPIStorable getCaptchasWaiting() {
         PollingResultAPIStorable prs = new PollingResultAPIStorable();
         prs.setEventName("captchasWaiting");
-
         org.jdownloader.myjdownloader.client.json.JsonMap eventData = new org.jdownloader.myjdownloader.client.json.JsonMap();
         eventData.put("data", captchaAPI.list());
         prs.setEventData(eventData);
-
         return prs;
     }
 }
