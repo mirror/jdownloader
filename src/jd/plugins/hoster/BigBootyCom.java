@@ -59,7 +59,7 @@ public class BigBootyCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         final String fid = new Regex(downloadLink.getDownloadURL(), "bigbooty\\.com/video/(\\d+)").getMatch(0);
         downloadLink.setLinkID(fid);
-        if (br.getURL().contains("bigbooty.com/error/video_missing") || br.containsHTML("(>This video cannot be found\\. Are you sure you typed in the correct|<h2>ERROR</h2>|<title>Big Booty</title>)")) {
+        if (br.getURL().contains("bigbooty.com/error/video_missing") || br.containsHTML("(>(The page|This video) cannot be found|<h2>ERROR</h2>|<title>Big Booty</title>)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (br.getURL().equals("http://www.bigbooty.com/upgrade")) {
