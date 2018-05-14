@@ -56,7 +56,6 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 public class DepfileCom extends PluginForHost {
     private static final String            CAPTCHATEXT           = "(/includes/vvc\\d?\\.php\\?vvcid=)";
     private static AtomicReference<String> MAINPAGE              = new AtomicReference<String>("https://depfile.us/");
-    private static Object                  LOCK                  = new Object();
     private static final long              FREE_RECONNECTWAIT    = 1 * 60 * 60 * 1001L;
     private String                         PROPERTY_LASTIP       = "DEPFILECOM_PROPERTY_LASTIP";
     private static final String            PROPERTY_LASTDOWNLOAD = "depfilecom_lastdownload_timestamp";
@@ -289,13 +288,29 @@ public class DepfileCom extends PluginForHost {
     }
 
     private AccountInfo login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force) {
                     br.setCookiesExclusive(true);
                     prepBrowser(br);
                     br.setCookies(MAINPAGE.get(), cookies);
+                    if (!"2".equals(br.getCookie(MAINPAGE.get(), "sdlanguageid"))) {
+                        br.setCookie(MAINPAGE.get(), "sdlanguageid", "2");
+                    }
+                    br.getPage(MAINPAGE.get());
+                    if (br.getCookies(MAINPAGE.get()).get("sduserid", Cookies.NOTDELETEDPATTERN) == null || br.getCookies(MAINPAGE.get()).get("sdpassword", Cookies.NOTDELETEDPATTERN) == null) {
+                        br.clearCookies(MAINPAGE.get());
+                        account.clearCookies("");
+                    } else {
+                        if (isAccountPremium() || isAccountAffiliate()) {
+                            account.setType(AccountType.PREMIUM);
+                        } else {
+                            account.setType(AccountType.FREE);
+                        }
+                        account.saveCookies(br.getCookies(MAINPAGE.get()), "");
+                        return null;
+                    }
                     return null;
                 }
                 br = newBrowser();
@@ -309,9 +324,9 @@ public class DepfileCom extends PluginForHost {
                  */
                 if (!"2".equals(br.getCookie(MAINPAGE.get(), "sdlanguageid"))) {
                     br.setCookie(MAINPAGE.get(), "sdlanguageid", "2");
-                    br.getPage("/");
                 }
-                if (br.getCookie(MAINPAGE.get(), "sduserid") == null || br.getCookie(MAINPAGE.get(), "sdpassword") == null) {
+                br.getPage("/");
+                if (br.getCookies(MAINPAGE.get()).get("sduserid", Cookies.NOTDELETEDPATTERN) == null || br.getCookies(MAINPAGE.get()).get("sdpassword", Cookies.NOTDELETEDPATTERN) == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -458,7 +473,7 @@ public class DepfileCom extends PluginForHost {
     }
 
     private void checkForStupidFileDownloadQuotaAndSetQuota(final Account account) throws PluginException {
-        synchronized (LOCK) {
+        synchronized (account) {
             final AccountInfo ai = account.getAccountInfo();
             if (br.containsHTML("class='notice'>You spent limit on urls/files per \\d+ hours|class='notice'>Sorry, you spent downloads limit on urls/files per \\d+ hours|class='notice'>You spent daily limit on \\d+Gb\\.</")) {
                 logger.info("Daily limit reached, temp disabling premium");
