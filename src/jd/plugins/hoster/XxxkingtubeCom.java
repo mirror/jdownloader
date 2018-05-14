@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -30,9 +29,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xxxkingtube.com" }, urls = { "http://(?:www\\.)?xxxkingtube\\.com/video/[a-z0-9\\-_]+\\-\\d+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xxxkingtube.com" }, urls = { "https?://(?:www\\.)?xxxkingtube\\.com/video/[a-z0-9\\-_]+\\-\\d+\\.html" })
 public class XxxkingtubeCom extends PluginForHost {
-
     public XxxkingtubeCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -41,13 +39,11 @@ public class XxxkingtubeCom extends PluginForHost {
     // Tags:
     // protocol: no https
     // other:
-
     /* Connection stuff */
     private static final boolean free_resume       = true;
     /* 2016-08-02: Do not use more then 1 chunk - download will work but videofiles will be broken!! */
     private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
     private boolean              server_issues     = false;
 
