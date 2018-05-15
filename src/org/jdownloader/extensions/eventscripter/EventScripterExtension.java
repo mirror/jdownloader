@@ -576,7 +576,18 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
     }
 
     @Override
-    public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink link) {
+    public void onLinkCollectorLinkAdded(final LinkCollectorEvent event, final CrawledLink link) {
+        for (ScriptEntry script : entries) {
+            if (script.isEnabled() && EventTrigger.ON_NEW_LINK.equals(script.getEventTrigger()) && StringUtils.isNotEmpty(script.getScript())) {
+                try {
+                    HashMap<String, Object> props = new HashMap<String, Object>();
+                    props.put("link", new PackagizerLinkSandbox(link));
+                    runScript(script, props);
+                } catch (Throwable e) {
+                    getLogger().log(e);
+                }
+            }
+        }
     }
 
     @Override
