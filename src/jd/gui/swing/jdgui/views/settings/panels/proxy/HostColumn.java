@@ -34,10 +34,8 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
 public class HostColumn extends ExtTextColumn<AbstractProxySelectorImpl> {
-
     public HostColumn() {
         super(_GUI.T.gui_column_host2());
-
     }
 
     /**
@@ -47,7 +45,6 @@ public class HostColumn extends ExtTextColumn<AbstractProxySelectorImpl> {
 
     @Override
     protected Icon getIcon(AbstractProxySelectorImpl value) {
-
         return super.getIcon(value);
     }
 
@@ -72,7 +69,6 @@ public class HostColumn extends ExtTextColumn<AbstractProxySelectorImpl> {
             return;
         }
         throw new IllegalStateException("Unknown Factory Type: " + object.getClass());
-
     }
 
     @Override
@@ -85,14 +81,12 @@ public class HostColumn extends ExtTextColumn<AbstractProxySelectorImpl> {
             } else if (value instanceof SingleBasicProxySelectorImpl) {
                 return ((SingleBasicProxySelectorImpl) value).getProxy().getHost();
             } else if (value instanceof PacProxySelectorImpl) {
-
                 return ((PacProxySelectorImpl) value).getPACUrl();
             }
             throw new IllegalStateException("Unknown Factory Type: " + value.getClass());
         } catch (Throwable e) {
             return "Invalid Proxy: " + JSonStorage.serializeToJson(value.toProxyData());
         }
-
     }
 
     @Override
@@ -114,7 +108,6 @@ public class HostColumn extends ExtTextColumn<AbstractProxySelectorImpl> {
     private static final ScheduledExecutorService SCHEDULER = DelayedRunnable.getNewScheduledExecutorService();
 
     private class ConnectionTooltip extends ExtTooltip {
-
         /**
          *
          */
@@ -123,7 +116,7 @@ public class HostColumn extends ExtTextColumn<AbstractProxySelectorImpl> {
         public ConnectionTooltip(final AbstractProxySelectorImpl impl) {
             JLabel lbl;
             this.panel = new TooltipPanel("ins 3,wrap 1", "[grow,fill]", "[grow,fill]");
-            final String proxyString = impl.toString();
+            final String proxyString = impl.toDetailsString();
             final Icon icon;
             if (AbstractProxySelectorImpl.Type.DIRECT.equals(impl.getType()) || AbstractProxySelectorImpl.Type.NONE.equals(impl.getType())) {
                 icon = NewTheme.I().getIcon("modem", 16);
@@ -136,12 +129,10 @@ public class HostColumn extends ExtTextColumn<AbstractProxySelectorImpl> {
             final JLabel finalLbl = lbl;
             final long taskID = TASK.incrementAndGet();
             SCHEDULER.execute(new Runnable() {
-
                 @Override
                 public void run() {
                     if (taskID == TASK.get()) {
                         final BalancedWebIPCheck ipCheck = new BalancedWebIPCheck(new ProxySelectorInterface() {
-
                             @Override
                             public boolean updateProxy(Request request, int retryCounter) {
                                 return false;
@@ -160,7 +151,6 @@ public class HostColumn extends ExtTextColumn<AbstractProxySelectorImpl> {
                         try {
                             final IP ip = ipCheck.getExternalIP();
                             new EDTRunner() {
-
                                 @Override
                                 protected void runInEDT() {
                                     finalLbl.setText(_GUI.T.ConnectionColumn_getStringValue_connection(proxyString + " (" + ip.getIP() + ")"));
@@ -187,7 +177,6 @@ public class HostColumn extends ExtTextColumn<AbstractProxySelectorImpl> {
         public String toText() {
             return null;
         }
-
     }
 
     @Override
@@ -220,5 +209,4 @@ public class HostColumn extends ExtTextColumn<AbstractProxySelectorImpl> {
     public boolean isHidable() {
         return false;
     }
-
 }

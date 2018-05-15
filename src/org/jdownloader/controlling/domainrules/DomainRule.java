@@ -1,19 +1,9 @@
 package org.jdownloader.controlling.domainrules;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
 
 //{"maxSimultanDownloads":10,"pattern":".*dummmydomain.com,"allowToExceedTheGlobalLimit":true,"enabled":false}
 public class DomainRule implements Storable {
-    public static void main(String[] args) {
-        DomainRule dr = new DomainRule();
-        dr.setAccountPattern("myUsername");
-        dr.setDomainPattern(".*jdownloader\\.org");
-        dr.setFilenamePattern("\\.png$");
-        dr.setMaxSimultanDownloads(20);
-        System.out.println("[" + JSonStorage.toString(dr).replace("\"", "\\\"") + "]");
-    }
-
     public boolean isEnabled() {
         return enabled;
     }

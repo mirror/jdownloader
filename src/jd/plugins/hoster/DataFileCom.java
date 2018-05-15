@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -53,7 +52,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datafile.com" }, urls = { "https?://(www\\.)?datafile\\.com/(d/[A-Za-z0-9]+(/[^<>\"/]+)?|download/.*?i=[A-Za-z0-9]+)" })
@@ -272,29 +271,23 @@ public class DataFileCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait);
             }
             long timeBeforeCaptcha = System.currentTimeMillis();
-            final String rcID = br.getRegex("api/challenge\\?k=([^<>\"]*?)\"").getMatch(0);
-            if (rcID == null) {
-                logger.warning("rcID is null");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            final Recaptcha rc = new Recaptcha(br, this);
-            rc.setId(rcID);
-            rc.load();
             for (int i = 1; i <= 5; i++) {
-                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                final String c = getCaptchaCode("recaptcha", cf, downloadLink);
+                final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6LdWgNgSAAAAACXqFKE69ttVU-CfV-IruHtDKCUf");
+                final String recaptchaV2Response = rc2.getToken();
+                if (recaptchaV2Response == null) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
                 if (!SKIPWAITTIME || i > 1) {
                     waitTime(timeBeforeCaptcha, downloadLink, wait);
                 }
                 // Validation phase, return token that need to be added to getFileDownloadLink call
-                postPage("/files/ajax.html", "doaction=validateCaptcha&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&fileid=" + fid);
+                postPage("/files/ajax.html", "doaction=validateCaptcha&recaptcha_response_field=" + Encoding.urlEncode(recaptchaV2Response) + "&fileid=" + fid);
                 final String token = PluginJSonUtils.getJson(br, "token");
                 if (token == null || br.containsHTML("\"success\":0")) {
-                    rc.reload();
                     continue;
                 }
-                postPage("/files/ajax.html", "doaction=getFileDownloadLink&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&fileid=" + fid + "&token=" + token);
+                postPage("/files/ajax.html", "doaction=getFileDownloadLink&recaptcha_response_field=" + Encoding.urlEncode(recaptchaV2Response) + "&fileid=" + fid + "&token=" + token);
                 captchaSuccess = true;
                 break;
             }

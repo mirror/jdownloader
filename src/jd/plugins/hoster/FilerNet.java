@@ -15,8 +15,6 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.File;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -39,7 +37,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filer.net" }, urls = { "https?://(www\\.)?filer\\.net/(get|dl)/[a-z0-9]+" })
@@ -54,6 +51,8 @@ public class FilerNet extends PluginForHost {
     private static final String ERRORMESSAGE_DOWNLOADTEMPORARILYDISABLEDTEXT = "Download temporarily disabled!";
     private static final int    STATUSCODE_UNKNOWNERROR                      = 599;
     private static final String ERRORMESSAGE_UNKNOWNERRORTEXT                = "Unknown file error";
+    private static final String DIRECT_WEB                                   = "directlinkWeb";
+    private static final String DIRECT_API                                   = "directlinkApi";
 
     @SuppressWarnings("deprecation")
     public FilerNet(PluginWrapper wrapper) {
@@ -140,7 +139,7 @@ public class FilerNet extends PluginForHost {
         if (checkShowFreeDialog(getHost())) {
             showFreeDialog(getHost());
         }
-        String dllink = checkDirectLink(downloadLink, "directlink");
+        String dllink = checkDirectLink(downloadLink, DIRECT_API);
         if (dllink == null) {
             callAPI(null, "http://filer.net/get/" + fuid + ".json");
             handleFreeErrorsAPI();
@@ -200,12 +199,12 @@ public class FilerNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.setAllowFilenameFromURL(true);
-        downloadLink.setProperty("directlink", dl.getConnection().getURL().toString());
+        downloadLink.setProperty(DIRECT_API, dl.getConnection().getURL().toString());
         this.dl.startDownload();
     }
 
     private void doFreeWebsite(final DownloadLink downloadLink) throws Exception {
-        String dllink = checkDirectLink(downloadLink, "directlink");
+        String dllink = checkDirectLink(downloadLink, DIRECT_WEB);
         if (dllink == null) {
             br.getPage(downloadLink.getDownloadURL());
             Form continueForm = br.getFormbyKey("token");
@@ -226,13 +225,12 @@ public class FilerNet extends PluginForHost {
                 if (continueForm == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                final Recaptcha rc = new Recaptcha(br, this);
-                rc.findID();
-                rc.load();
-                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                final String c = getCaptchaCode("recaptcha", cf, downloadLink);
-                continueForm.put("recaptcha_challenge_field", Encoding.urlEncode(rc.getChallenge()));
-                continueForm.put("recaptcha_response_field", Encoding.urlEncode(c));
+                final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br);
+                final String recaptchaV2Response = rc2.getToken();
+                if (recaptchaV2Response == null) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+                continueForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 br.submitForm(continueForm);
                 dllink = br.getRedirectLocation();
                 tries++;
@@ -241,7 +239,7 @@ public class FilerNet extends PluginForHost {
                 }
                 break;
             }
-            if (dllink == null && this.br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+            if (dllink == null && this.br.containsHTML("data-sitekey")) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             } else if (dllink == null) {
                 /* This should never happen! */
@@ -255,7 +253,7 @@ public class FilerNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.setAllowFilenameFromURL(true);
-        downloadLink.setProperty("directlink", dl.getConnection().getURL().toString());
+        downloadLink.setProperty(DIRECT_WEB, dl.getConnection().getURL().toString());
         this.dl.startDownload();
     }
 
@@ -527,7 +525,9 @@ public class FilerNet extends PluginForHost {
 
     @Override
     public void resetDownloadlink(final DownloadLink link) {
-        link.setProperty("errorFailure", Property.NULL);
+        link.removeProperty("errorFailure");
+        link.removeProperty("directlinkWeb");
+        link.removeProperty("directlinkApi");
     }
 
     @Override

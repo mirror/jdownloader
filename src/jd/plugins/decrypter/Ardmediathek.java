@@ -479,7 +479,7 @@ public class Ardmediathek extends PluginForDecrypt {
         String subtitleURL = getXML(xmlBR.toString(), "videoSubtitleUrl");
         if (StringUtils.isEmpty(subtitleURL)) {
             /* E.g. checkeins.de */
-            subtitleURL = xmlBR.getRegex("<dataTimedTextNoOffset url=\"(http[^<>\"]+\\.xml)\">").getMatch(0);
+            subtitleURL = xmlBR.getRegex("<dataTimedTextNoOffset url=\"((?:https:)?[^<>\"]+\\.xml)\">").getMatch(0);
         }
         if (subtitleURL != null) {
             return xmlBR.getURL(subtitleURL).toString();
