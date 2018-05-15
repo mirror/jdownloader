@@ -199,6 +199,27 @@ public enum EventTrigger implements LabelInterface {
             return defaultAPIDescription(this);
         }
     },
+    ON_NEW_LINK {
+        @Override
+        public String getLabel() {
+            return T.T.ON_NEW_LINK();
+        }
+
+        public boolean isDefaultSynchronous() {
+            // scripts should be able to modify the job
+            return true;
+        }
+
+        public HashMap<String, Object> getTestProperties() {
+            HashMap<String, Object> props = new HashMap<String, Object>();
+            props.put("link", new PackagizerLinkSandbox());
+            return props;
+        }
+
+        public String getAPIDescription() {
+            return defaultAPIDescription(this);
+        }
+    },
     ON_PACKAGIZER {
         @Override
         public String getLabel() {
