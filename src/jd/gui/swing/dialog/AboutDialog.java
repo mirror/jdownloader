@@ -218,7 +218,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
         // }
         // });
         stats.add(new JLabel("JSON Support:"), "");
-        stats.add(disable("Jackson JSON Processor 2.7.5 (http://wiki.fasterxml.com/JacksonHome/)"));
+        stats.add(disable("Jackson JSON Processor 2.7.9 (http://wiki.fasterxml.com/JacksonHome/)"));
         stats.add(new JLabel("RTMP Support:"), "");
         stats.add(disable("RtmpDump (http://rtmpdump.mplayerhq.hu)"));
         stats.add(new JLabel("UPNP:"), "");
