@@ -281,7 +281,7 @@ public class RAFChunk extends Thread {
                                     logger.warning("reached artificial EOF");
                                     reachedEOF = true;
                                 } else if (bytes2Do < 0) {
-                                    logger.warning("WTF, where is EOF?!");
+                                    logger.warning("WTF, where is EOF?!:" + bytes2Do + "|" + readMaxNext);
                                     reachedEOF = true;
                                 }
                             }
