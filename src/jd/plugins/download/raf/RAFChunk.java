@@ -265,11 +265,12 @@ public class RAFChunk extends Thread {
                             /* read only as much as needed */
                             remoteIO = true;
                             int readMaxNext = (int) Math.min(bytes2Do, bufLeft);
+                            final long bytes2DoBf = bytes2Do;
                             if (bytes2Do > 0 && bytes2Do < 512 * 1024) {
                                 if (bytes2Do < 32767) {
-                                    readMaxNext = 1024;
+                                    readMaxNext = (int) Math.min(bytes2Do, 32);
                                 } else {
-                                    readMaxNext = (int) Math.max(1024, bytes2Do / 2);
+                                    readMaxNext = (int) Math.max(512, bytes2Do / 2);
                                 }
                                 readMaxNext = Math.min(readMaxNext, bufLeft);
                             }
@@ -281,7 +282,7 @@ public class RAFChunk extends Thread {
                                     logger.warning("reached artificial EOF");
                                     reachedEOF = true;
                                 } else if (bytes2Do < 0) {
-                                    logger.warning("WTF, where is EOF?!:" + bytes2Do + "|" + readMaxNext);
+                                    logger.warning("WTF, where is EOF?!:" + bytes2Do + "|" + bytes2DoBf + "|" + readMaxNext);
                                     reachedEOF = true;
                                 }
                             }
