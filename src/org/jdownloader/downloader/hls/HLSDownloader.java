@@ -1073,7 +1073,7 @@ public class HLSDownloader extends DownloadInterface {
                                             } catch (IllegalArgumentException e) {
                                                 requestLogger.log(e);
                                                 if (fileBytesMap.getFinalSize() != -1) {
-                                                    requestLogger.info("Apply 'Ignore Content-Length' workaround!");
+                                                    requestLogger.info("apply 'Ignore Content-Length' workaround!");
                                                     fileBytesMap.setFinalSize(-1);
                                                     fileBytesMap.mark(position, len);
                                                 } else {
