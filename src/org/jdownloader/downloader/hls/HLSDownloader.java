@@ -94,26 +94,25 @@ public class HLSDownloader extends DownloadInterface {
         }
     }
 
-    private final AtomicLong                       bytesWritten         = new AtomicLong(0);
-    private DownloadLinkDownloadable               downloadable;
-    private DownloadLink                           link;
-    private long                                   startTimeStamp       = -1;
-    private LogInterface                           logger;
-    private URLConnectionAdapter                   currentConnection;
-    private ManagedThrottledConnectionHandler      connectionHandler;
-    private File                                   outputCompleteFile;
-    private PluginException                        caughtPluginException;
-    private String                                 m3uUrl;
-    private String                                 persistentParameters;
-    private HttpServer                             server;
-    private Browser                                sourceBrowser;
-    private long                                   processID;
-    protected volatile MeteredThrottledInputStream meteredThrottledInputStream;
-    private List<M3U8Playlist>                     m3u8Playlists;
-    private final List<PartFile>                   outputPartFiles      = new ArrayList<PartFile>();
-    private final AtomicInteger                    currentPlayListIndex = new AtomicInteger(0);
-    private final HashMap<String, SecretKeySpec>   aes128Keys           = new HashMap<String, SecretKeySpec>();
-    private final boolean                          isJared              = Application.isJared(HLSDownloader.class);
+    private final AtomicLong                     bytesWritten         = new AtomicLong(0);
+    private DownloadLinkDownloadable             downloadable;
+    private DownloadLink                         link;
+    private long                                 startTimeStamp       = -1;
+    private LogInterface                         logger;
+    private URLConnectionAdapter                 currentConnection;
+    private ManagedThrottledConnectionHandler    connectionHandler;
+    private File                                 outputCompleteFile;
+    private PluginException                      caughtPluginException;
+    private String                               m3uUrl;
+    private String                               persistentParameters;
+    private HttpServer                           server;
+    private Browser                              sourceBrowser;
+    private long                                 processID;
+    private List<M3U8Playlist>                   m3u8Playlists;
+    private final List<PartFile>                 outputPartFiles      = new ArrayList<PartFile>();
+    private final AtomicInteger                  currentPlayListIndex = new AtomicInteger(0);
+    private final HashMap<String, SecretKeySpec> aes128Keys           = new HashMap<String, SecretKeySpec>();
+    private final boolean                        isJared              = Application.isJared(HLSDownloader.class);
 
     public int getCurrentPlayListIndex() {
         return currentPlayListIndex.get();
@@ -608,17 +607,11 @@ public class HLSDownloader extends DownloadInterface {
             throw e;
         } finally {
             currentPlayListIndex.set(0);
-            try {
-                if (meteredThrottledInputStream != null) {
-                    connectionHandler.removeThrottledConnection(meteredThrottledInputStream);
-                }
-            } finally {
-                // link.removePluginProgress(set);
-                final HttpServer server = this.server;
-                this.server = null;
-                if (server != null) {
-                    server.stop();
-                }
+            // link.removePluginProgress(set);
+            final HttpServer server = this.server;
+            this.server = null;
+            if (server != null) {
+                server.stop();
             }
         }
     }
@@ -922,192 +915,199 @@ public class HLSDownloader extends DownloadInterface {
                         final Browser br = getRequestBrowser();
                         br.setLogger(requestLogger);
                         OutputStream requestOutputStream = null;
-                        retryLoop: for (int retry = 0; retry < 10; retry++) {
-                            try {
-                                final jd.http.requests.GetRequest getRequest = new jd.http.requests.GetRequest(buildDownloadUrl(downloadURL));
-                                final long byteRange[] = segment.getByteRange();
-                                if (fileBytesMap.getFinalSize() > 0) {
-                                    requestLogger.info("Resume(" + retry + "): " + fileBytesMap.toString());
-                                    final List<Long[]> unMarkedAreas = fileBytesMap.getUnMarkedAreas();
-                                    final long startByteRange = byteRange != null ? byteRange[1] : 0;
-                                    getRequest.getHeaders().put(HTTPConstants.HEADER_REQUEST_RANGE, "bytes=" + startByteRange + unMarkedAreas.get(0)[0] + "-" + startByteRange + unMarkedAreas.get(0)[1]);
-                                } else if (byteRange != null) {
-                                    getRequest.getHeaders().put(HTTPConstants.HEADER_REQUEST_RANGE, "bytes=" + byteRange[1] + "-" + (byteRange[1] + byteRange[0] - 1));
-                                }
-                                URLConnectionAdapter connection = null;
+                        MeteredThrottledInputStream meteredThrottledInputStream = null;
+                        try {
+                            retryLoop: for (int retry = 0; retry < 10; retry++) {
                                 try {
+                                    final jd.http.requests.GetRequest getRequest = new jd.http.requests.GetRequest(buildDownloadUrl(downloadURL));
+                                    final long byteRange[] = segment.getByteRange();
+                                    if (fileBytesMap.getFinalSize() > 0) {
+                                        requestLogger.info("Resume(" + retry + "): " + fileBytesMap.toString());
+                                        final List<Long[]> unMarkedAreas = fileBytesMap.getUnMarkedAreas();
+                                        final long startByteRange = byteRange != null ? byteRange[1] : 0;
+                                        getRequest.getHeaders().put(HTTPConstants.HEADER_REQUEST_RANGE, "bytes=" + startByteRange + unMarkedAreas.get(0)[0] + "-" + startByteRange + unMarkedAreas.get(0)[1]);
+                                    } else if (byteRange != null) {
+                                        getRequest.getHeaders().put(HTTPConstants.HEADER_REQUEST_RANGE, "bytes=" + byteRange[1] + "-" + (byteRange[1] + byteRange[0] - 1));
+                                    }
+                                    URLConnectionAdapter connection = null;
+                                    try {
+                                        ffmpeg.updateLastUpdateTimestamp();
+                                        connection = br.openRequestConnection(getRequest);
+                                        if (connection.getResponseCode() != 200 && connection.getResponseCode() != 206) {
+                                            throw new IOException("ResponseCode(" + connection.getResponseCode() + ") must be 200 or 206!");
+                                        }
+                                    } catch (IOException e) {
+                                        requestLogger.log(e);
+                                        if (onSegmentConnectException(connection, e, fileBytesMap, retry, requestLogger)) {
+                                            continue retryLoop;
+                                        } else {
+                                            return false;
+                                        }
+                                    }
                                     ffmpeg.updateLastUpdateTimestamp();
-                                    connection = br.openRequestConnection(getRequest);
-                                    if (connection.getResponseCode() != 200 && connection.getResponseCode() != 206) {
-                                        throw new IOException("ResponseCode(" + connection.getResponseCode() + ") must be 200 or 206!");
-                                    }
-                                } catch (IOException e) {
-                                    requestLogger.log(e);
-                                    if (onSegmentConnectException(connection, e, fileBytesMap, retry, requestLogger)) {
-                                        continue retryLoop;
+                                    final byte[] readWriteBuffer = new byte[32 * 1024];
+                                    final long length;
+                                    if (fileBytesMap.getFinalSize() > 0) {
+                                        length = fileBytesMap.getFinalSize();
+                                    } else if (byteRange != null) {
+                                        length = connection.getContentLength();
                                     } else {
-                                        return false;
+                                        length = connection.getCompleteContentLength();
                                     }
-                                }
-                                ffmpeg.updateLastUpdateTimestamp();
-                                final byte[] readWriteBuffer = new byte[32 * 1024];
-                                final long length;
-                                if (fileBytesMap.getFinalSize() > 0) {
-                                    length = fileBytesMap.getFinalSize();
-                                } else if (byteRange != null) {
-                                    length = connection.getContentLength();
-                                } else {
-                                    length = connection.getCompleteContentLength();
-                                }
-                                try {
-                                    if (requestOutputStream == null) {
-                                        final String acceptRanges = connection.getHeaderField(HTTPConstants.HEADER_RESPONSE_ACCEPT_RANGES);
-                                        response.setResponseCode(ResponseCode.SUCCESS_OK);
-                                        if (length > 0) {
-                                            fileBytesMap.setFinalSize(length);
-                                            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_LENGTH, Long.toString(length)));
+                                    try {
+                                        if (requestOutputStream == null) {
+                                            final String acceptRanges = connection.getHeaderField(HTTPConstants.HEADER_RESPONSE_ACCEPT_RANGES);
+                                            response.setResponseCode(ResponseCode.SUCCESS_OK);
+                                            if (length > 0) {
+                                                fileBytesMap.setFinalSize(length);
+                                                response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_LENGTH, Long.toString(length)));
+                                            }
+                                            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, connection.getContentType()));
+                                            if (StringUtils.equalsIgnoreCase(acceptRanges, "bytes")) {
+                                                response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCEPT_RANGES, acceptRanges));
+                                            }
+                                            requestOutputStream = response.getOutputStream(true);
                                         }
-                                        response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, connection.getContentType()));
-                                        if (StringUtils.equalsIgnoreCase(acceptRanges, "bytes")) {
-                                            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCEPT_RANGES, acceptRanges));
-                                        }
-                                        requestOutputStream = response.getOutputStream(true);
-                                    }
-                                    final InputStream inputStream;
-                                    if (segment != null && segment.isEncrypted()) {
-                                        // FIXME: resume(range request) not supported yet
-                                        final String keyURI = segment.getxKeyURI();
-                                        if (M3U8Segment.X_KEY_METHOD.AES_128.equals(segment.getxKeyMethod()) && keyURI != null) {
-                                            SecretKeySpec key = aes128Keys.get(keyURI);
-                                            if (key == null) {
-                                                final Browser br2 = getRequestBrowser();
-                                                br2.setLogger(requestLogger);
-                                                br2.setFollowRedirects(true);
-                                                final URLConnectionAdapter con = br2.openGetConnection(buildDownloadUrl(keyURI));
-                                                try {
-                                                    if (con.getResponseCode() == 200) {
-                                                        final byte[] buf = IO.readStream(20, con.getInputStream());
-                                                        if (buf.length == 16) {
-                                                            key = new SecretKeySpec(buf, "AES");
-                                                            aes128Keys.put(keyURI, key);
-                                                        }
-                                                    }
-                                                } finally {
-                                                    con.disconnect();
-                                                }
+                                        final InputStream inputStream;
+                                        if (segment != null && segment.isEncrypted()) {
+                                            // FIXME: resume(range request) not supported yet
+                                            final String keyURI = segment.getxKeyURI();
+                                            if (M3U8Segment.X_KEY_METHOD.AES_128.equals(segment.getxKeyMethod()) && keyURI != null) {
+                                                SecretKeySpec key = aes128Keys.get(keyURI);
                                                 if (key == null) {
-                                                    throw new IOException("Failed to fetch #EXT-X-KEY:URI=" + keyURI);
+                                                    final Browser br2 = getRequestBrowser();
+                                                    br2.setLogger(requestLogger);
+                                                    br2.setFollowRedirects(true);
+                                                    final URLConnectionAdapter con = br2.openGetConnection(buildDownloadUrl(keyURI));
+                                                    try {
+                                                        if (con.getResponseCode() == 200) {
+                                                            final byte[] buf = IO.readStream(20, con.getInputStream());
+                                                            if (buf.length == 16) {
+                                                                key = new SecretKeySpec(buf, "AES");
+                                                                aes128Keys.put(keyURI, key);
+                                                            }
+                                                        }
+                                                    } finally {
+                                                        con.disconnect();
+                                                    }
+                                                    if (key == null) {
+                                                        throw new IOException("Failed to fetch #EXT-X-KEY:URI=" + keyURI);
+                                                    }
                                                 }
-                                            }
-                                            /*
-                                             * https://tools.ietf.org/html/draft-pantos-http-live-streaming-20#section-5.2
-                                             */
-                                            final IvParameterSpec ivSpec;
-                                            if (segment.getxKeyIV() != null) {
-                                                ivSpec = new IvParameterSpec(HexFormatter.hexToByteArray(segment.getxKeyIV()));
+                                                /*
+                                                 * https://tools.ietf.org/html/draft-pantos-http-live-streaming-20#section-5.2
+                                                 */
+                                                final IvParameterSpec ivSpec;
+                                                if (segment.getxKeyIV() != null) {
+                                                    ivSpec = new IvParameterSpec(HexFormatter.hexToByteArray(segment.getxKeyIV()));
+                                                } else {
+                                                    final int sequenceNumber = playList.getMediaSequenceOffset() + playList.indexOf(segment);
+                                                    final byte[] iv = new byte[16];
+                                                    iv[15] = (byte) (sequenceNumber >>> 0 & 0xFF);
+                                                    iv[14] = (byte) (sequenceNumber >>> 8 & 0xFF);
+                                                    iv[13] = (byte) (sequenceNumber >>> 16 & 0xFF);
+                                                    ivSpec = new IvParameterSpec(iv);
+                                                }
+                                                try {
+                                                    final Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+                                                    cipher.init(Cipher.DECRYPT_MODE, key, ivSpec);
+                                                    inputStream = new javax.crypto.CipherInputStream(connection.getInputStream(), cipher);
+                                                } catch (Exception e) {
+                                                    throw new IOException(e);
+                                                }
                                             } else {
-                                                final int sequenceNumber = playList.getMediaSequenceOffset() + playList.indexOf(segment);
-                                                final byte[] iv = new byte[16];
-                                                iv[15] = (byte) (sequenceNumber >>> 0 & 0xFF);
-                                                iv[14] = (byte) (sequenceNumber >>> 8 & 0xFF);
-                                                iv[13] = (byte) (sequenceNumber >>> 16 & 0xFF);
-                                                ivSpec = new IvParameterSpec(iv);
-                                            }
-                                            try {
-                                                final Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-                                                cipher.init(Cipher.DECRYPT_MODE, key, ivSpec);
-                                                inputStream = new javax.crypto.CipherInputStream(connection.getInputStream(), cipher);
-                                            } catch (Exception e) {
-                                                throw new IOException(e);
+                                                throw new IOException("Unsupported Method #EXT-X-KEY:METHOD=" + segment.getxKeyMethod());
                                             }
                                         } else {
-                                            throw new IOException("Unsupported Method #EXT-X-KEY:METHOD=" + segment.getxKeyMethod());
+                                            inputStream = connection.getInputStream();
                                         }
-                                    } else {
-                                        inputStream = connection.getInputStream();
-                                    }
-                                    if (meteredThrottledInputStream == null) {
-                                        meteredThrottledInputStream = new MeteredThrottledInputStream(inputStream, new AverageSpeedMeter(10));
-                                        if (connectionHandler != null) {
-                                            connectionHandler.addThrottledConnection(meteredThrottledInputStream);
+                                        if (meteredThrottledInputStream == null) {
+                                            meteredThrottledInputStream = new MeteredThrottledInputStream(inputStream, new AverageSpeedMeter(10));
+                                            if (connectionHandler != null) {
+                                                connectionHandler.addThrottledConnection(meteredThrottledInputStream);
+                                            }
+                                        } else {
+                                            meteredThrottledInputStream.setInputStream(inputStream);
                                         }
-                                    } else {
-                                        meteredThrottledInputStream.setInputStream(inputStream);
-                                    }
-                                    long position = fileBytesMap.getMarkedBytes();
-                                    final OutputStream outputStream;
-                                    if (position > 0) {
-                                        if (connection.getResponseCode() == 206) {
+                                        long position = fileBytesMap.getMarkedBytes();
+                                        final OutputStream outputStream;
+                                        if (position > 0) {
+                                            if (connection.getResponseCode() == 206) {
+                                                outputStream = requestOutputStream;
+                                            } else {
+                                                outputStream = new SkippingLimitedOutputStream(requestOutputStream, position);
+                                            }
+                                        } else {
                                             outputStream = requestOutputStream;
-                                        } else {
-                                            outputStream = new SkippingLimitedOutputStream(requestOutputStream, position);
                                         }
-                                    } else {
-                                        outputStream = requestOutputStream;
-                                    }
-                                    while (true) {
-                                        final int len;
-                                        try {
-                                            len = meteredThrottledInputStream.read(readWriteBuffer);
-                                            if (segment != null) {
-                                                segment.setLoaded(true);
-                                            }
-                                        } catch (IOException e) {
-                                            requestLogger.log(e);
-                                            if (onSegmentReadException(connection, e, fileBytesMap, retry, requestLogger)) {
-                                                continue retryLoop;
-                                            } else {
-                                                throw e;
-                                            }
-                                        }
-                                        if (len > 0) {
-                                            ffmpeg.updateLastUpdateTimestamp();
+                                        while (true) {
+                                            final int len;
                                             try {
-                                                outputStream.write(readWriteBuffer, 0, len);
+                                                len = meteredThrottledInputStream.read(readWriteBuffer);
+                                                if (segment != null) {
+                                                    segment.setLoaded(true);
+                                                }
                                             } catch (IOException e) {
                                                 requestLogger.log(e);
-                                                throw e;
-                                            }
-                                            try {
-                                                fileBytesMap.mark(position, len);
-                                            } catch (IllegalArgumentException e) {
-                                                requestLogger.log(e);
-                                                if (fileBytesMap.getFinalSize() != -1) {
-                                                    requestLogger.info("apply 'Ignore Content-Length' workaround!");
-                                                    fileBytesMap.setFinalSize(-1);
-                                                    fileBytesMap.mark(position, len);
+                                                if (onSegmentReadException(connection, e, fileBytesMap, retry, requestLogger)) {
+                                                    continue retryLoop;
                                                 } else {
                                                     throw e;
                                                 }
                                             }
-                                            position += len;
-                                        } else if (len == -1) {
-                                            break;
-                                        }
-                                    }
-                                    outputStream.flush();
-                                    outputStream.close();
-                                    if (fileBytesMap.getSize() > 0) {
-                                        requestOkay = fileBytesMap.getUnMarkedBytes() == 0;
-                                    } else {
-                                        requestOkay = true;
-                                    }
-                                    return true;
-                                } finally {
-                                    try {
-                                        if (segment != null) {
-                                            requestLogger.info("Segment:" + segment.getUrl() + "|Loaded:" + segment.isLoaded());
-                                            if (connection.getResponseCode() == 200 || connection.getResponseCode() == 206) {
-                                                segment.setSize(Math.max(length, fileBytesMap.getSize()));
+                                            if (len > 0) {
+                                                ffmpeg.updateLastUpdateTimestamp();
+                                                try {
+                                                    outputStream.write(readWriteBuffer, 0, len);
+                                                } catch (IOException e) {
+                                                    requestLogger.log(e);
+                                                    throw e;
+                                                }
+                                                try {
+                                                    fileBytesMap.mark(position, len);
+                                                } catch (IllegalArgumentException e) {
+                                                    requestLogger.log(e);
+                                                    if (fileBytesMap.getFinalSize() != -1) {
+                                                        requestLogger.info("apply 'Ignore Content-Length' workaround!");
+                                                        fileBytesMap.setFinalSize(-1);
+                                                        fileBytesMap.mark(position, len);
+                                                    } else {
+                                                        throw e;
+                                                    }
+                                                }
+                                                position += len;
+                                            } else if (len == -1) {
+                                                break;
                                             }
                                         }
-                                        requestLogger.info(fileBytesMap.toString());
+                                        outputStream.flush();
+                                        outputStream.close();
+                                        if (fileBytesMap.getSize() > 0) {
+                                            requestOkay = fileBytesMap.getUnMarkedBytes() == 0;
+                                        } else {
+                                            requestOkay = true;
+                                        }
+                                        return true;
                                     } finally {
-                                        connection.disconnect();
+                                        try {
+                                            if (segment != null) {
+                                                requestLogger.info("Segment:" + segment.getUrl() + "|Loaded:" + segment.isLoaded());
+                                                if (connection.getResponseCode() == 200 || connection.getResponseCode() == 206) {
+                                                    segment.setSize(Math.max(length, fileBytesMap.getSize()));
+                                                }
+                                            }
+                                            requestLogger.info(fileBytesMap.toString());
+                                        } finally {
+                                            connection.disconnect();
+                                        }
                                     }
+                                } finally {
+                                    br.disconnect();
                                 }
-                            } finally {
-                                br.disconnect();
+                            }
+                        } finally {
+                            if (connectionHandler != null && meteredThrottledInputStream != null) {
+                                connectionHandler.addThrottledConnection(meteredThrottledInputStream);
                             }
                         }
                     } else {
