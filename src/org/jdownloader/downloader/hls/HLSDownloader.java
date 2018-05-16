@@ -135,7 +135,22 @@ public class HLSDownloader extends DownloadInterface {
         this.sourceBrowser = br.cloneBrowser();
         this.link = link;
         logger = initLogger(link);
-        connectionHandler = new ManagedThrottledConnectionHandler();
+        connectionHandler = new ManagedThrottledConnectionHandler() {
+            @Override
+            public void addThrottledConnection(ThrottledConnection con) {
+                final long transfered = con.transfered();
+                if (transfered > 0) {
+                    traffic.addAndGet(-transfered);
+                    if (connections.addIfAbsent(con)) {
+                        con.setHandler(this);
+                    } else {
+                        traffic.addAndGet(transfered);
+                    }
+                } else {
+                    super.addThrottledConnection(con);
+                }
+            }
+        };
         downloadable = new DownloadLinkDownloadable(link) {
             @Override
             public boolean isResumable() {
@@ -1129,7 +1144,6 @@ public class HLSDownloader extends DownloadInterface {
                                 if (meteredThrottledInputStream != null) {
                                     if (connectionHandler.size() > 1) {
                                         connectionHandler.removeThrottledConnection(meteredThrottledInputStream);
-                                        meteredThrottledInputStream.resetSpeedmeter();
                                     }
                                     synchronized (cachedMeteredThrottledInputStream) {
                                         cachedMeteredThrottledInputStream.add(meteredThrottledInputStream);
