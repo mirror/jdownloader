@@ -1104,17 +1104,36 @@ public class LinkCrawler {
                 return sourceLinkModifier;
             }
 
-            public void modifyCrawledLink(CrawledLink link) {
+            @Override
+            public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
+                if (sourceLinkModifier == null && additionalModifier.size() > 0) {
+                    return Collections.unmodifiableList(additionalModifier);
+                } else {
+                    final List<CrawledLinkModifier> ret = new ArrayList<CrawledLinkModifier>();
+                    ret.add(sourceLinkModifier);
+                    ret.addAll(additionalModifier);
+                    return Collections.unmodifiableList(ret);
+                }
+            }
+
+            public boolean modifyCrawledLink(CrawledLink link) {
                 final boolean setContainerURL = link.getDownloadLink() != null && link.getDownloadLink().getContainerUrl() == null;
+                boolean ret = false;
                 if (sourceLinkModifier != null) {
-                    sourceLinkModifier.modifyCrawledLink(link);
+                    if (sourceLinkModifier.modifyCrawledLink(link)) {
+                        ret = true;
+                    }
                 }
                 if (setContainerURL) {
                     link.getDownloadLink().setContainerUrl(source.getURL());
+                    ret = true;
                 }
                 for (final CrawledLinkModifier modifier : additionalModifier) {
-                    modifier.modifyCrawledLink(link);
+                    if (modifier.modifyCrawledLink(link)) {
+                        ret = true;
+                    }
                 }
+                return ret;
             }
         };
         if (checkStartNotify(generation)) {
@@ -1326,10 +1345,16 @@ public class LinkCrawler {
                                                     if (passwords.size() > 0) {
                                                         additionalModifier.add(new CrawledLinkModifier() {
                                                             @Override
-                                                            public void modifyCrawledLink(CrawledLink link) {
+                                                            public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
+                                                                return null;
+                                                            }
+
+                                                            @Override
+                                                            public boolean modifyCrawledLink(CrawledLink link) {
                                                                 for (final String password : passwords) {
                                                                     link.getArchiveInfo().addExtractionPassword(password);
                                                                 }
+                                                                return true;
                                                             }
                                                         });
                                                     }
@@ -1555,19 +1580,46 @@ public class LinkCrawler {
                 final CrawledLinkModifier originalModifier = link.getCustomCrawledLinkModifier();
                 final CrawledLinkModifier lm;
                 if (pluginC.hideLinks()) {
-                    lm = new CrawledLinkModifier() {
-                        /*
-                         * set new LinkModifier, hides the url if needed
-                         */
-                        public void modifyCrawledLink(CrawledLink link) {
-                            if (originalModifier != null) {
-                                originalModifier.modifyCrawledLink(link);
-                            }
+                    final ArrayList<CrawledLinkModifier> modifiers = new ArrayList<CrawledLinkModifier>();
+                    if (originalModifier != null) {
+                        modifiers.add(originalModifier);
+                    }
+                    modifiers.add(new CrawledLinkModifier() {
+                        @Override
+                        public boolean modifyCrawledLink(CrawledLink link) {
                             /* we hide the links */
                             final DownloadLink dl = link.getDownloadLink();
                             if (dl != null) {
                                 dl.setUrlProtection(UrlProtection.PROTECTED_CONTAINER);
+                                return true;
                             }
+                            return false;
+                        }
+
+                        @Override
+                        public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
+                            return null;
+                        }
+                    });
+                    lm = new CrawledLinkModifier() {
+                        @Override
+                        public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
+                            if (originalModifier != null) {
+                                return Collections.unmodifiableList(modifiers);
+                            } else {
+                                return null;
+                            }
+                        }
+
+                        @Override
+                        public boolean modifyCrawledLink(CrawledLink link) {
+                            boolean ret = false;
+                            for (CrawledLinkModifier mod : modifiers) {
+                                if (mod.modifyCrawledLink(link)) {
+                                    ret = true;
+                                }
+                            }
+                            return ret;
                         }
                     };
                 } else {
@@ -2649,12 +2701,26 @@ public class LinkCrawler {
                 destCrawledLink.setCustomCrawledLinkModifier(sourceLinkModifier);
             } else if (sourceLinkModifier != null) {
                 destCrawledLink.setCustomCrawledLinkModifier(new CrawledLinkModifier() {
+                    private final ArrayList<CrawledLinkModifier> modifiers = new ArrayList<CrawledLinkModifier>();
+                    {
+                        modifiers.add(sourceLinkModifier);
+                        modifiers.add(destCustomModifier);
+                    }
+
                     @Override
-                    public void modifyCrawledLink(CrawledLink link) {
-                        if (sourceLinkModifier != null) {
-                            sourceLinkModifier.modifyCrawledLink(link);
+                    public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
+                        return Collections.unmodifiableList(modifiers);
+                    }
+
+                    @Override
+                    public boolean modifyCrawledLink(CrawledLink link) {
+                        boolean ret = false;
+                        for (CrawledLinkModifier mod : modifiers) {
+                            if (mod.modifyCrawledLink(link)) {
+                                ret = true;
+                            }
                         }
-                        destCustomModifier.modifyCrawledLink(link);
+                        return ret;
                     }
                 });
             }

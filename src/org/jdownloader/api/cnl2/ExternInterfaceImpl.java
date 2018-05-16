@@ -12,7 +12,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 
 import javax.swing.Icon;
 
@@ -22,6 +21,7 @@ import jd.controlling.linkcollector.LinkOrigin;
 import jd.controlling.linkcollector.LinkOriginDetails;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledLinkModifier;
+import jd.controlling.linkcrawler.CrawledLinkModifiers;
 import jd.controlling.linkcrawler.LinkCrawler;
 import jd.controlling.linkcrawler.UnknownCrawledLinkHandler;
 import jd.controlling.linkcrawler.modifier.CommentModifier;
@@ -50,7 +50,6 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.net.HTTPHeader;
-import org.appwork.utils.net.PublicSuffixList;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.api.RemoteAPIConfig;
@@ -193,21 +192,33 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                 jobs.add(new LinkCollectingJob(LinkOriginDetails.getInstance(LinkOrigin.CNL, request.getRequestHeaders().getValue("user-agent")), urls));
             }
             if (jobs.size() > 0) {
-                final ArrayList<CrawledLinkModifier> modifiers = new ArrayList<CrawledLinkModifier>();
+                final List<CrawledLinkModifier> modifiers = new ArrayList<CrawledLinkModifier>();
                 if (cnl.getAutostart() != null) {
                     modifiers.add(new CrawledLinkModifier() {
                         @Override
-                        public void modifyCrawledLink(CrawledLink link) {
+                        public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
+                            return null;
+                        }
+
+                        @Override
+                        public boolean modifyCrawledLink(CrawledLink link) {
                             link.setAutoConfirmEnabled(cnl.getAutostart());
                             link.setAutoStartEnabled(cnl.getAutostart());
+                            return true;
                         }
                     });
                 }
                 if (cnl.getPasswords() != null && cnl.getPasswords().size() > 0) {
                     modifiers.add(new CrawledLinkModifier() {
                         @Override
-                        public void modifyCrawledLink(CrawledLink link) {
+                        public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
+                            return null;
+                        }
+
+                        @Override
+                        public boolean modifyCrawledLink(CrawledLink link) {
                             link.getArchiveInfo().getExtractionPasswords().addAll(cnl.getPasswords());
+                            return true;
                         }
                     });
                 }
@@ -215,7 +226,8 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                     modifiers.add(new CommentModifier(cnl.getComment()));
                 }
                 if (StringUtils.isNotEmpty(cnl.getPackageName())) {
-                    modifiers.add(new PackageNameModifier(cnl.getPackageName(), false));
+                    final PackageNameModifier mod = new PackageNameModifier(cnl.getPackageName(), false);
+                    modifiers.add(mod);
                 }
                 if (StringUtils.isNotEmpty(cnl.getDir())) {
                     modifiers.add(new DownloadFolderModifier(cnl.getDir(), false));
@@ -223,35 +235,42 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                 if (StringUtils.isNotEmpty(cnl.getReferrer())) {
                     modifiers.add(new CrawledLinkModifier() {
                         @Override
-                        public void modifyCrawledLink(CrawledLink link) {
+                        public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
+                            return null;
+                        }
+
+                        @Override
+                        public boolean modifyCrawledLink(CrawledLink link) {
                             final DownloadLink downloadLink = link.getDownloadLink();
                             if (downloadLink != null) {
                                 downloadLink.setReferrerUrl(cnl.getReferrer());
+                                return true;
                             }
+                            return false;
                         }
                     });
                 }
                 if (StringUtils.isNotEmpty(cnl.getSource())) {
                     modifiers.add(new CrawledLinkModifier() {
                         @Override
-                        public void modifyCrawledLink(CrawledLink link) {
+                        public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
+                            return null;
+                        }
+
+                        @Override
+                        public boolean modifyCrawledLink(CrawledLink link) {
                             final DownloadLink downloadLink = link.getDownloadLink();
                             if (downloadLink != null) {
                                 downloadLink.setOriginUrl(cnl.getSource());
+                                return true;
                             }
+                            return false;
                         }
                     });
                 }
                 final CrawledLinkModifier modifier;
                 if (modifiers.size() > 0) {
-                    modifier = new CrawledLinkModifier() {
-                        @Override
-                        public void modifyCrawledLink(CrawledLink link) {
-                            for (final CrawledLinkModifier modifier : modifiers) {
-                                modifier.modifyCrawledLink(link);
-                            }
-                        }
-                    };
+                    modifier = new CrawledLinkModifiers(modifiers);
                 } else {
                     modifier = null;
                 }
@@ -286,12 +305,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         final LinkCollectingJob job = new LinkCollectingJob(origin, urls);
         final String finalDestination = request.getParameterbyKey("dir");
         String packageName = request.getParameterbyKey("package");
-        String packageComment = null;
         if (source != null && !(StringUtils.startsWithCaseInsensitive(source, "http://") || StringUtils.startsWithCaseInsensitive(source, "https://"))) {
-            final PublicSuffixList psl = PublicSuffixList.getInstance();
-            if (psl == null || psl.getDomain(source.toLowerCase(Locale.ENGLISH)) == null) {
-                packageComment = source;
-            }
             source = null;
         }
         if (source != null) {
@@ -301,12 +315,15 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         }
         final String finalPackageName = packageName;
         final String finalComment = linkComment;
-        final ArrayList<CrawledLinkModifier> modifiers = new ArrayList<CrawledLinkModifier>();
+        final List<CrawledLinkModifier> modifiers = new ArrayList<CrawledLinkModifier>();
+        final List<CrawledLinkModifier> requiredPreModifiers = new ArrayList<CrawledLinkModifier>();
         if (StringUtils.isNotEmpty(finalDestination)) {
             modifiers.add(new DownloadFolderModifier(finalDestination, true));
         }
         if (StringUtils.isNotEmpty(finalPackageName)) {
-            modifiers.add(new PackageNameModifier(finalPackageName, true));
+            final PackageNameModifier mod = new PackageNameModifier(finalPackageName, true);
+            modifiers.add(mod);
+            requiredPreModifiers.add(mod);
         }
         if (StringUtils.isNotEmpty(finalComment)) {
             modifiers.add(new CommentModifier(finalComment));
@@ -316,24 +333,23 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
             pws.add(finalPasswords);
             modifiers.add(new CrawledLinkModifier() {
                 @Override
-                public void modifyCrawledLink(CrawledLink link) {
+                public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
+                    return null;
+                }
+
+                @Override
+                public boolean modifyCrawledLink(CrawledLink link) {
                     link.getArchiveInfo().getExtractionPasswords().addAll(pws);
+                    return true;
                 }
             });
         }
         if (modifiers.size() > 0) {
-            final CrawledLinkModifier modifier = new CrawledLinkModifier() {
-                @Override
-                public void modifyCrawledLink(CrawledLink link) {
-                    for (CrawledLinkModifier mod : modifiers) {
-                        mod.modifyCrawledLink(link);
-                    }
-                }
-            };
             if (StringUtils.isNotEmpty(finalPackageName) || StringUtils.isNotEmpty(finalDestination)) {
-                job.addPostPackagizerModifier(modifier);
+                job.addPrePackagizerModifier(new CrawledLinkModifiers(requiredPreModifiers));
+                job.addPostPackagizerModifier(new CrawledLinkModifiers(modifiers));
             } else {
-                job.addPrePackagizerModifier(modifier);
+                job.addPrePackagizerModifier(new CrawledLinkModifiers(modifiers));
             }
         }
         LinkCollector.getInstance().addCrawlerJob(job);
@@ -422,12 +438,15 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
             final String finalDestination = request.getParameterbyKey("dir");
             job.setCustomSourceUrl(source);
             final String finalPackageName = request.getParameterbyKey("package");
-            final ArrayList<CrawledLinkModifier> modifiers = new ArrayList<CrawledLinkModifier>();
+            final List<CrawledLinkModifier> modifiers = new ArrayList<CrawledLinkModifier>();
+            final List<CrawledLinkModifier> requiredPreModifiers = new ArrayList<CrawledLinkModifier>();
             if (StringUtils.isNotEmpty(finalDestination)) {
                 modifiers.add(new DownloadFolderModifier(finalDestination, true));
             }
             if (StringUtils.isNotEmpty(finalPackageName)) {
-                modifiers.add(new PackageNameModifier(finalPackageName, true));
+                final PackageNameModifier mod = new PackageNameModifier(finalPackageName, true);
+                modifiers.add(mod);
+                requiredPreModifiers.add(mod);
             }
             if (StringUtils.isNotEmpty(finalComment)) {
                 modifiers.add(new CommentModifier(finalComment));
@@ -436,9 +455,15 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                 final Boolean finalAutostart = "true".equals(request.getParameterbyKey("autostart"));
                 modifiers.add(new CrawledLinkModifier() {
                     @Override
-                    public void modifyCrawledLink(CrawledLink link) {
+                    public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
+                        return null;
+                    }
+
+                    @Override
+                    public boolean modifyCrawledLink(CrawledLink link) {
                         link.setAutoConfirmEnabled(finalAutostart);
                         link.setAutoStartEnabled(finalAutostart);
+                        return true;
                     }
                 });
             }
@@ -447,24 +472,23 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                 pws.add(finalPasswords);
                 modifiers.add(new CrawledLinkModifier() {
                     @Override
-                    public void modifyCrawledLink(CrawledLink link) {
+                    public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
+                        return null;
+                    }
+
+                    @Override
+                    public boolean modifyCrawledLink(CrawledLink link) {
                         link.getArchiveInfo().getExtractionPasswords().addAll(pws);
+                        return true;
                     }
                 });
             }
             if (modifiers.size() > 0) {
-                final CrawledLinkModifier modifier = new CrawledLinkModifier() {
-                    @Override
-                    public void modifyCrawledLink(CrawledLink link) {
-                        for (CrawledLinkModifier mod : modifiers) {
-                            mod.modifyCrawledLink(link);
-                        }
-                    }
-                };
                 if (StringUtils.isNotEmpty(finalPackageName) || StringUtils.isNotEmpty(finalDestination)) {
-                    job.addPostPackagizerModifier(modifier);
+                    job.addPrePackagizerModifier(new CrawledLinkModifiers(requiredPreModifiers));
+                    job.addPostPackagizerModifier(new CrawledLinkModifiers(modifiers));
                 } else {
-                    job.addPrePackagizerModifier(modifier);
+                    job.addPrePackagizerModifier(new CrawledLinkModifiers(modifiers));
                 }
             }
             LinkCollector.getInstance().addCrawlerJob(job);
@@ -616,7 +640,8 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                  */
                 final LinkCollectingJob job = new LinkCollectingJob(LinkOriginDetails.getInstance(LinkOrigin.FLASHGOT, request.getRequestHeaders().getValue("user-agent")), null);
                 final String finalPackageName = request.getParameterbyKey("package");
-                final ArrayList<CrawledLinkModifier> modifiers = new ArrayList<CrawledLinkModifier>();
+                final List<CrawledLinkModifier> modifiers = new ArrayList<CrawledLinkModifier>();
+                final List<CrawledLinkModifier> requiredPreModifiers = new ArrayList<CrawledLinkModifier>();
                 String dir = request.getParameterbyKey("dir");
                 if (dir != null && dir.matches("^[a-zA-Z]{1}:$")) {
                     /* flashgot seems unable to set x:/ <-> only x: is possible */
@@ -632,8 +657,14 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                     if (pws.size() > 0) {
                         modifiers.add(new CrawledLinkModifier() {
                             @Override
-                            public void modifyCrawledLink(CrawledLink link) {
+                            public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
+                                return null;
+                            }
+
+                            @Override
+                            public boolean modifyCrawledLink(CrawledLink link) {
                                 link.getArchiveInfo().getExtractionPasswords().addAll(pws);
+                                return true;
                             }
                         });
                     }
@@ -641,27 +672,31 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                 if (finalAutostart != null) {
                     modifiers.add(new CrawledLinkModifier() {
                         @Override
-                        public void modifyCrawledLink(CrawledLink link) {
+                        public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
+                            return null;
+                        }
+
+                        @Override
+                        public boolean modifyCrawledLink(CrawledLink link) {
                             link.setAutoConfirmEnabled(finalAutostart);
                             link.setAutoStartEnabled(finalAutostart);
+                            return true;
                         }
                     });
                 }
                 if (StringUtils.isNotEmpty(finalPackageName)) {
-                    modifiers.add(new PackageNameModifier(finalPackageName, true));
+                    final PackageNameModifier mod = new PackageNameModifier(finalPackageName, true);
+                    modifiers.add(mod);
+                    requiredPreModifiers.add(mod);
                 }
                 if (StringUtils.isNotEmpty(dir)) {
                     modifiers.add(new DownloadFolderModifier(dir, true));
                 }
                 if (modifiers.size() > 0) {
-                    job.addPostPackagizerModifier(new CrawledLinkModifier() {
-                        @Override
-                        public void modifyCrawledLink(CrawledLink link) {
-                            for (final CrawledLinkModifier modifier : modifiers) {
-                                modifier.modifyCrawledLink(link);
-                            }
-                        }
-                    });
+                    if (requiredPreModifiers.size() > 0) {
+                        job.addPrePackagizerModifier(new CrawledLinkModifiers(requiredPreModifiers));
+                    }
+                    job.addPostPackagizerModifier(new CrawledLinkModifiers(modifiers));
                 }
                 final UnknownCrawledLinkHandler unknownCrawledLinkHandler = new UnknownCrawledLinkHandler() {
                     public void unhandledCrawledLink(CrawledLink link, LinkCrawler lc) {
@@ -689,13 +724,20 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                     crawledLink.setSourceJob(job);
                     if (StringUtils.isNotEmpty(referer)) {
                         crawledLink.setCustomCrawledLinkModifier(new CrawledLinkModifier() {
-                            public void modifyCrawledLink(CrawledLink link) {
+                            @Override
+                            public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
+                                return null;
+                            }
+
+                            public boolean modifyCrawledLink(CrawledLink link) {
                                 final DownloadLink dl = link.getDownloadLink();
                                 if (dl != null) {
                                     if (StringUtils.isEmpty(dl.getReferrerUrl())) {
                                         dl.setReferrerUrl(referer);
+                                        return true;
                                     }
                                 }
+                                return false;
                             }
                         });
                     }

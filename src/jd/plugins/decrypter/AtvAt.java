@@ -228,6 +228,9 @@ public class AtvAt extends PluginForDecrypt {
                     if (!ffmpeg.isAvailable()) {
                         logger.info("Ffmpeg is not installed --> Skipping hls urls");
                         continue;
+                    } else if (!ffmpeg.isCompatible()) {
+                        logger.info("Ffmpeg is incompatible --> Skipping hls urls");
+                        continue;
                     }
                     /* Find all hls qualities */
                     /* 2016-10-18: It is possible to change hls urls to http urls! */

@@ -2400,7 +2400,7 @@ public class YoutubeHelper {
         if (itag != null && itag.getAudioCodec() != null) {
             if (FFMPEG_SUPPORTED_FLAGS == null) {
                 final FFmpeg ffmpeg = new FFmpeg();
-                if (ffmpeg.isAvailable()) {
+                if (ffmpeg.isAvailable() && ffmpeg.isCompatible()) {
                     FFMPEG_SUPPORTED_FLAGS = ffmpeg.getSupportedFlags();
                 }
             }
