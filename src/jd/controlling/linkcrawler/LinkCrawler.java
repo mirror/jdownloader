@@ -1163,6 +1163,7 @@ public class LinkCrawler {
                         }
                     } else {
                         br = new Browser();
+                        br.addAllowedResponseCodes(500);
                         if (LogController.getInstance().isDebugMode()) {
                             br.setLogger(LogController.CL());
                         }
