@@ -5,12 +5,12 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import jd.plugins.DownloadLink;
+
 import org.appwork.utils.net.throttledconnection.ThrottledConnection;
 import org.appwork.utils.net.throttledconnection.ThrottledConnectionHandler;
 import org.appwork.utils.speedmeter.SpeedMeterInterface;
 import org.appwork.utils.speedmeter.SpeedMeterInterface.Resolution;
-
-import jd.plugins.DownloadLink;
 
 public class ManagedThrottledConnectionHandler implements ThrottledConnectionHandler {
     private CopyOnWriteArrayList<ThrottledConnection> connections = new CopyOnWriteArrayList<ThrottledConnection>();
@@ -27,7 +27,7 @@ public class ManagedThrottledConnectionHandler implements ThrottledConnectionHan
 
     public void addThrottledConnection(ThrottledConnection con) {
         if (connections.addIfAbsent(con)) {
-            DownloadSpeedManager lmanagedBy = managedBy;
+            final DownloadSpeedManager lmanagedBy = managedBy;
             if (lmanagedBy != null && lmanagedBy.getLimit() > 0 || getLimit() > 0) {
                 con.setLimit(10);
             }

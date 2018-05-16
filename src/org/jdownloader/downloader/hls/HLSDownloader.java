@@ -9,6 +9,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -53,6 +54,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.HTTPHeader;
+import org.appwork.utils.net.NullInputStream;
 import org.appwork.utils.net.SkippingLimitedOutputStream;
 import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.net.httpserver.HttpServer;
@@ -62,6 +64,7 @@ import org.appwork.utils.net.httpserver.requests.HttpRequest;
 import org.appwork.utils.net.httpserver.requests.PostRequest;
 import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
+import org.appwork.utils.net.throttledconnection.ThrottledConnection;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
 import org.jdownloader.controlling.UniqueAlltimeID;
@@ -607,11 +610,19 @@ public class HLSDownloader extends DownloadInterface {
             throw e;
         } finally {
             currentPlayListIndex.set(0);
-            // link.removePluginProgress(set);
-            final HttpServer server = this.server;
-            this.server = null;
-            if (server != null) {
-                server.stop();
+            try {
+                if (connectionHandler != null) {
+                    for (ThrottledConnection con : connectionHandler.getConnections()) {
+                        connectionHandler.removeThrottledConnection(con);
+                    }
+                }
+            } finally {
+                // link.removePluginProgress(set);
+                final HttpServer server = this.server;
+                this.server = null;
+                if (server != null) {
+                    server.stop();
+                }
             }
         }
     }
@@ -744,6 +755,7 @@ public class HLSDownloader extends DownloadInterface {
     private final AtomicInteger requestsInProcess = new AtomicInteger(0);
 
     private void initPipe(final AbstractFFmpegBinary ffmpeg) throws IOException {
+        final LinkedList<MeteredThrottledInputStream> cachedMeteredThrottledInputStream = new LinkedList<MeteredThrottledInputStream>();
         server = new HttpServer(0);
         server.setLocalhostOnly(true);
         final HttpServer finalServer = server;
@@ -1022,7 +1034,14 @@ public class HLSDownloader extends DownloadInterface {
                                             inputStream = connection.getInputStream();
                                         }
                                         if (meteredThrottledInputStream == null) {
-                                            meteredThrottledInputStream = new MeteredThrottledInputStream(inputStream, new AverageSpeedMeter(10));
+                                            synchronized (cachedMeteredThrottledInputStream) {
+                                                meteredThrottledInputStream = cachedMeteredThrottledInputStream.poll();
+                                            }
+                                            if (meteredThrottledInputStream == null) {
+                                                meteredThrottledInputStream = new MeteredThrottledInputStream(inputStream, new AverageSpeedMeter(10));
+                                            } else {
+                                                meteredThrottledInputStream.setInputStream(inputStream);
+                                            }
                                             if (connectionHandler != null) {
                                                 connectionHandler.addThrottledConnection(meteredThrottledInputStream);
                                             }
@@ -1106,8 +1125,17 @@ public class HLSDownloader extends DownloadInterface {
                                 }
                             }
                         } finally {
-                            if (connectionHandler != null && meteredThrottledInputStream != null) {
-                                connectionHandler.removeThrottledConnection(meteredThrottledInputStream);
+                            if (connectionHandler != null) {
+                                if (meteredThrottledInputStream != null) {
+                                    if (connectionHandler.size() > 1) {
+                                        connectionHandler.removeThrottledConnection(meteredThrottledInputStream);
+                                        meteredThrottledInputStream.resetSpeedmeter();
+                                    }
+                                    synchronized (cachedMeteredThrottledInputStream) {
+                                        cachedMeteredThrottledInputStream.add(meteredThrottledInputStream);
+                                        meteredThrottledInputStream.setInputStream(new NullInputStream());
+                                    }
+                                }
                             }
                         }
                     } else {
