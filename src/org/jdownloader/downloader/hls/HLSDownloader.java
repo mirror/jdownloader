@@ -811,11 +811,11 @@ public class HLSDownloader extends DownloadInterface {
                 final String id = request.getParameterbyKey("id");
                 if (id == null) {
                     return false;
-                }
-                if (processID != Long.parseLong(request.getParameterbyKey("id"))) {
+                } else if (processID != Long.parseLong(request.getParameterbyKey("id"))) {
                     return false;
+                } else {
+                    return true;
                 }
-                return true;
             }
 
             @Override
@@ -983,16 +983,18 @@ public class HLSDownloader extends DownloadInterface {
                                     }
                                     try {
                                         if (requestOutputStream == null) {
-                                            final String acceptRanges = connection.getHeaderField(HTTPConstants.HEADER_RESPONSE_ACCEPT_RANGES);
+                                            // final String acceptRanges =
+                                            // connection.getHeaderField(HTTPConstants.HEADER_RESPONSE_ACCEPT_RANGES);
                                             response.setResponseCode(ResponseCode.SUCCESS_OK);
                                             if (length > 0) {
                                                 fileBytesMap.setFinalSize(length);
                                                 response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_LENGTH, Long.toString(length)));
                                             }
                                             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, connection.getContentType()));
-                                            if (StringUtils.equalsIgnoreCase(acceptRanges, "bytes")) {
-                                                response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCEPT_RANGES, acceptRanges));
-                                            }
+                                            // if (StringUtils.equalsIgnoreCase(acceptRanges, "bytes")) {
+                                            // response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCEPT_RANGES,
+                                            // acceptRanges));
+                                            // }
                                             requestOutputStream = response.getOutputStream(true);
                                         }
                                         final InputStream inputStream;
