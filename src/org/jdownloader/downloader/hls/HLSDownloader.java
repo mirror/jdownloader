@@ -961,12 +961,16 @@ public class HLSDownloader extends DownloadInterface {
                                 }
                                 try {
                                     if (requestOutputStream == null) {
+                                        final String acceptRanges = connection.getHeaderField(HTTPConstants.HEADER_RESPONSE_ACCEPT_RANGES);
                                         response.setResponseCode(ResponseCode.SUCCESS_OK);
                                         if (length > 0) {
                                             fileBytesMap.setFinalSize(length);
                                             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_LENGTH, Long.toString(length)));
                                         }
                                         response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, connection.getContentType()));
+                                        if (StringUtils.equalsIgnoreCase(acceptRanges, "bytes")) {
+                                            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCEPT_RANGES, acceptRanges));
+                                        }
                                         requestOutputStream = response.getOutputStream(true);
                                     }
                                     final InputStream inputStream;
@@ -1064,7 +1068,18 @@ public class HLSDownloader extends DownloadInterface {
                                                 requestLogger.log(e);
                                                 throw e;
                                             }
-                                            fileBytesMap.mark(position, len);
+                                            try {
+                                                fileBytesMap.mark(position, len);
+                                            } catch (IllegalArgumentException e) {
+                                                requestLogger.log(e);
+                                                if (fileBytesMap.getFinalSize() != -1) {
+                                                    requestLogger.info("Apply 'Ignore Content-Length' workaround!");
+                                                    fileBytesMap.setFinalSize(-1);
+                                                    fileBytesMap.mark(position, len);
+                                                } else {
+                                                    throw e;
+                                                }
+                                            }
                                             position += len;
                                         } else if (len == -1) {
                                             break;
