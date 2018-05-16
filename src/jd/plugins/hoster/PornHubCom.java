@@ -430,7 +430,6 @@ public class PornHubCom extends PluginForHost {
 
     private static final String PORNHUB_FREE    = "pornhub.com";
     private static final String PORNHUB_PREMIUM = "pornhubpremium.com";
-    private static Object       LOCK            = new Object();
 
     public static void login(final Browser br, final Account account, final boolean force) throws Exception {
         synchronized (account) {
@@ -468,7 +467,11 @@ public class PornHubCom extends PluginForHost {
                     }
                     loggedin = loggedin_free || loggedin_premium;
                     if (loggedin) {
-                        /* Refresh timestamp */
+                        if (loggedin_premium) {
+                            account.setType(AccountType.PREMIUM);
+                        } else {
+                            account.setType(AccountType.FREE);
+                        }
                         saveCookies(br, account);
                         return;
                     }
@@ -521,6 +524,11 @@ public class PornHubCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
+                if (isLoggedInHtmlPremium(br)) {
+                    account.setType(AccountType.PREMIUM);
+                } else {
+                    account.setType(AccountType.FREE);
+                }
                 saveCookies(br, account);
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
@@ -556,12 +564,7 @@ public class PornHubCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(br, account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(br, account, true);
         ai.setUnlimitedTraffic();
         if (isLoggedInHtmlPremium(br)) {
             account.setType(AccountType.PREMIUM);
