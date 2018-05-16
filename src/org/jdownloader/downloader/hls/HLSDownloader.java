@@ -1107,7 +1107,7 @@ public class HLSDownloader extends DownloadInterface {
                             }
                         } finally {
                             if (connectionHandler != null && meteredThrottledInputStream != null) {
-                                connectionHandler.addThrottledConnection(meteredThrottledInputStream);
+                                connectionHandler.removeThrottledConnection(meteredThrottledInputStream);
                             }
                         }
                     } else {
