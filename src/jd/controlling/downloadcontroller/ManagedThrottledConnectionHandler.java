@@ -13,10 +13,10 @@ import org.appwork.utils.speedmeter.SpeedMeterInterface;
 import org.appwork.utils.speedmeter.SpeedMeterInterface.Resolution;
 
 public class ManagedThrottledConnectionHandler implements ThrottledConnectionHandler {
-    private CopyOnWriteArrayList<ThrottledConnection> connections = new CopyOnWriteArrayList<ThrottledConnection>();
-    private AtomicInteger                             limit       = new AtomicInteger(0);
-    private AtomicLong                                traffic     = new AtomicLong(0l);
-    private DownloadSpeedManager                      managedBy   = null;
+    protected CopyOnWriteArrayList<ThrottledConnection> connections = new CopyOnWriteArrayList<ThrottledConnection>();
+    protected AtomicInteger                             limit       = new AtomicInteger(0);
+    protected AtomicLong                                traffic     = new AtomicLong(0l);
+    protected DownloadSpeedManager                      managedBy   = null;
 
     public ManagedThrottledConnectionHandler() {
     }
