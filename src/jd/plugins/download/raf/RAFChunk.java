@@ -270,11 +270,16 @@ public class RAFChunk extends Thread {
                                 if (bytes2Do < 32767) {
                                     readMaxNext = (int) Math.min(bytes2Do, 32);
                                 } else {
-                                    readMaxNext = (int) Math.max(512, bytes2Do / 2);
+                                    readMaxNext = 512;
                                 }
                                 readMaxNext = Math.min(readMaxNext, bufLeft);
                             }
-                            read = inputStream.read(buffer.getInternalBuffer(), buffer.size(), readMaxNext);
+                            try {
+                                read = inputStream.read(buffer.getInternalBuffer(), buffer.size(), readMaxNext);
+                            } catch (IOException e) {
+                                logger.warning(e.getMessage() + ":" + bytes2Do + "|" + readMaxNext);
+                                throw e;
+                            }
                             if (read > 0) {
                                 bytes2Do -= read;
                                 if (bytes2Do == 0) {
