@@ -539,8 +539,14 @@ public class ClipboardMonitoring {
                                                 if (pws != null && pws.size() > 0) {
                                                     job.addPrePackagizerModifier(new CrawledLinkModifier() {
                                                         @Override
-                                                        public void modifyCrawledLink(CrawledLink link) {
+                                                        public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
+                                                            return null;
+                                                        }
+
+                                                        @Override
+                                                        public boolean modifyCrawledLink(CrawledLink link) {
                                                             link.getArchiveInfo().getExtractionPasswords().addAll(pws);
+                                                            return true;
                                                         }
                                                     });
                                                 }
@@ -900,8 +906,14 @@ public class ClipboardMonitoring {
                 if (pws != null && pws.size() > 0) {
                     job.addPrePackagizerModifier(new CrawledLinkModifier() {
                         @Override
-                        public void modifyCrawledLink(CrawledLink link) {
+                        public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
+                            return null;
+                        }
+
+                        @Override
+                        public boolean modifyCrawledLink(CrawledLink link) {
                             link.getArchiveInfo().getExtractionPasswords().addAll(pws);
+                            return true;
                         }
                     });
                 }

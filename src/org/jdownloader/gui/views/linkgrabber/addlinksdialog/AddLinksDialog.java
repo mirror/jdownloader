@@ -37,6 +37,7 @@ import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkOrigin;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledLinkModifier;
+import jd.controlling.linkcrawler.CrawledLinkModifiers;
 import jd.controlling.linkcrawler.LinkCrawler;
 import jd.controlling.linkcrawler.modifier.CommentModifier;
 import jd.controlling.linkcrawler.modifier.DownloadFolderModifier;
@@ -216,12 +217,15 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
     protected LinkCollectingJob createReturnValue() {
         final LinkCollectingJob job = new LinkCollectingJob(LinkOrigin.ADD_LINKS_DIALOG.getLinkOriginDetails(), input.getText());
         job.setDeepAnalyse(isDeepAnalyse());
-        final ArrayList<CrawledLinkModifier> modifiers = new ArrayList<CrawledLinkModifier>();
+        final List<CrawledLinkModifier> modifiers = new ArrayList<CrawledLinkModifier>();
+        final List<CrawledLinkModifier> requiredPreModifiers = new ArrayList<CrawledLinkModifier>();
         final boolean overwritePackagizerRules = isOverwritePackagizerEnabled();
         final String finalPackageName = packagename.getText().trim();
         if (StringUtils.isNotEmpty(finalPackageName)) {
             PackageHistoryManager.getInstance().add(finalPackageName);
-            modifiers.add(new PackageNameModifier(finalPackageName, overwritePackagizerRules));
+            final PackageNameModifier mod = new PackageNameModifier(finalPackageName, overwritePackagizerRules);
+            modifiers.add(mod);
+            requiredPreModifiers.add(mod);
         }
         final String finalComment = getComment().trim();
         if (StringUtils.isNotEmpty(finalComment)) {
@@ -236,13 +240,20 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
             job.setCrawlerPassword(finalDownloadPassword);
             modifiers.add(new CrawledLinkModifier() {
                 @Override
-                public void modifyCrawledLink(CrawledLink link) {
+                public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
+                    return null;
+                }
+
+                @Override
+                public boolean modifyCrawledLink(CrawledLink link) {
                     final DownloadLink dlLink = link.getDownloadLink();
                     if (dlLink != null) {
                         if (overwritePackagizerRules || StringUtils.isEmpty(dlLink.getDownloadPassword())) {
                             dlLink.setDownloadPassword(finalDownloadPassword);
+                            return true;
                         }
                     }
+                    return false;
                 }
             });
         }
@@ -250,8 +261,14 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         if (finalPriority != null && (!Priority.DEFAULT.equals(finalPriority) || overwritePackagizerRules)) {
             modifiers.add(new CrawledLinkModifier() {
                 @Override
-                public void modifyCrawledLink(CrawledLink link) {
+                public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
+                    return null;
+                }
+
+                @Override
+                public boolean modifyCrawledLink(CrawledLink link) {
                     link.setPriority(finalPriority);
+                    return true;
                 }
             });
         }
@@ -266,8 +283,14 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
             final HashSet<String> finalPasswords = passwords;
             modifiers.add(new CrawledLinkModifier() {
                 @Override
-                public void modifyCrawledLink(CrawledLink link) {
+                public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
+                    return null;
+                }
+
+                @Override
+                public boolean modifyCrawledLink(CrawledLink link) {
                     link.getArchiveInfo().getExtractionPasswords().addAll(finalPasswords);
+                    return true;
                 }
             });
         }
@@ -275,24 +298,23 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         if (BooleanStatus.isSet(extractAfterDownload)) {
             modifiers.add(new CrawledLinkModifier() {
                 @Override
-                public void modifyCrawledLink(CrawledLink link) {
+                public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
+                    return null;
+                }
+
+                @Override
+                public boolean modifyCrawledLink(CrawledLink link) {
                     link.getArchiveInfo().setAutoExtract(extractAfterDownload);
+                    return true;
                 }
             });
         }
         if (modifiers.size() > 0) {
-            final CrawledLinkModifier modifier = new CrawledLinkModifier() {
-                @Override
-                public void modifyCrawledLink(CrawledLink link) {
-                    for (final CrawledLinkModifier modifier : modifiers) {
-                        modifier.modifyCrawledLink(link);
-                    }
-                }
-            };
             if (overwritePackagizerRules) {
-                job.addPostPackagizerModifier(modifier);
+                job.addPrePackagizerModifier(new CrawledLinkModifiers(requiredPreModifiers));
+                job.addPostPackagizerModifier(new CrawledLinkModifiers(modifiers));
             } else {
-                job.addPrePackagizerModifier(modifier);
+                job.addPrePackagizerModifier(new CrawledLinkModifiers(modifiers));
             }
         }
         return job;

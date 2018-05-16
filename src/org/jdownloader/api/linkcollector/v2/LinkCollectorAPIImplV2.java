@@ -22,6 +22,7 @@ import jd.controlling.linkcollector.LinkOrigin;
 import jd.controlling.linkcrawler.CheckableLink;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledLinkModifier;
+import jd.controlling.linkcrawler.CrawledLinkModifiers;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.linkcrawler.CrawledPackageView;
 import jd.controlling.linkcrawler.modifier.CommentModifier;
@@ -377,11 +378,14 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
             finalExtPws = null;
         }
         final List<CrawledLinkModifier> modifiers = new ArrayList<CrawledLinkModifier>();
+        final List<CrawledLinkModifier> requiredPreModifiers = new ArrayList<CrawledLinkModifier>();
         if (StringUtils.isNotEmpty(query.getComment())) {
             modifiers.add(new CommentModifier(query.getComment()));
         }
         if (StringUtils.isNotEmpty(query.getPackageName())) {
-            modifiers.add(new PackageNameModifier(query.getPackageName(), overwritePackagizerRules));
+            final PackageNameModifier mod = new PackageNameModifier(query.getPackageName(), overwritePackagizerRules);
+            modifiers.add(mod);
+            requiredPreModifiers.add(mod);
         }
         if (StringUtils.isNotEmpty(query.getDestinationFolder())) {
             modifiers.add(new DownloadFolderModifier(query.getDestinationFolder(), overwritePackagizerRules));
@@ -391,11 +395,18 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
                 final String downloadPassword = query.getDownloadPassword();
 
                 @Override
-                public void modifyCrawledLink(CrawledLink link) {
+                public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
+                    return null;
+                }
+
+                @Override
+                public boolean modifyCrawledLink(CrawledLink link) {
                     final DownloadLink dlLink = link.getDownloadLink();
                     if (dlLink != null) {
                         dlLink.setDownloadPassword(downloadPassword);
+                        return true;
                     }
+                    return false;
                 }
             });
         }
@@ -403,17 +414,29 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
             final boolean autostart = Boolean.TRUE.equals(query.isAutostart());
             modifiers.add(new CrawledLinkModifier() {
                 @Override
-                public void modifyCrawledLink(CrawledLink link) {
+                public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
+                    return null;
+                }
+
+                @Override
+                public boolean modifyCrawledLink(CrawledLink link) {
                     link.setAutoConfirmEnabled(autostart);
                     link.setAutoStartEnabled(autostart);
+                    return true;
                 }
             });
         }
         if (finalExtPws != null && finalExtPws.size() > 0) {
             modifiers.add(new CrawledLinkModifier() {
                 @Override
-                public void modifyCrawledLink(CrawledLink link) {
+                public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
+                    return null;
+                }
+
+                @Override
+                public boolean modifyCrawledLink(CrawledLink link) {
                     link.getArchiveInfo().getExtractionPasswords().addAll(finalExtPws);
+                    return true;
                 }
             });
         }
@@ -422,16 +445,28 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
                 final BooleanStatus autoExtract = BooleanStatus.convert(query.isAutoExtract());
 
                 @Override
-                public void modifyCrawledLink(CrawledLink link) {
+                public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
+                    return null;
+                }
+
+                @Override
+                public boolean modifyCrawledLink(CrawledLink link) {
                     link.getArchiveInfo().setAutoExtract(autoExtract);
+                    return true;
                 }
             });
         }
         if (!Priority.DEFAULT.equals(fp)) {
             modifiers.add(new CrawledLinkModifier() {
                 @Override
-                public void modifyCrawledLink(CrawledLink link) {
+                public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
+                    return null;
+                }
+
+                @Override
+                public boolean modifyCrawledLink(CrawledLink link) {
                     link.setPriority(fp);
+                    return true;
                 }
             });
         }
@@ -446,18 +481,11 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
             break;
         }
         if (modifiers.size() > 0) {
-            final CrawledLinkModifier modifier = new CrawledLinkModifier() {
-                @Override
-                public void modifyCrawledLink(CrawledLink link) {
-                    for (CrawledLinkModifier mod : modifiers) {
-                        mod.modifyCrawledLink(link);
-                    }
-                }
-            };
             if (overwritePackagizerRules) {
-                job.addPostPackagizerModifier(modifier);
+                job.addPrePackagizerModifier(new CrawledLinkModifiers(requiredPreModifiers));
+                job.addPostPackagizerModifier(new CrawledLinkModifiers(modifiers));
             } else {
-                job.addPrePackagizerModifier(modifier);
+                job.addPrePackagizerModifier(new CrawledLinkModifiers(modifiers));
             }
         }
         LinkCollector.getInstance().getAddLinksThread(job, null).start();

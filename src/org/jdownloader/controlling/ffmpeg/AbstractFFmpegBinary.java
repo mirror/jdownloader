@@ -339,6 +339,10 @@ public class AbstractFFmpegBinary {
         return getFullPath() != null;
     }
 
+    public boolean isCompatible() {
+        return true;
+    }
+
     public String getFullPath() {
         try {
             final String path = getPath();

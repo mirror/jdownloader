@@ -9,11 +9,13 @@ import java.util.List;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.Files;
+import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.os.CrossSystem.OperatingSystem;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GeneralSettings;
@@ -29,6 +31,20 @@ public class FFmpeg extends AbstractFFmpegBinary {
         } else {
             setPath(path);
         }
+    }
+
+    @Override
+    public boolean isCompatible() {
+        if (CrossSystem.isWindows()) {
+            if (!CrossSystem.getOS().isMinimum(OperatingSystem.WINDOWS_7)) {
+                final String sha256 = Hash.getFileHash(new File(getFullPath()), Hash.HASH_TYPE_SHA256);
+                if (StringUtils.equalsIgnoreCase("4d41c2db307db1e6639915aa480b363546ada1990d2fd143680a3673483f3a72", sha256) || StringUtils.equalsIgnoreCase("a26f910d561aa3a6a8e2ce70b5dba79e0639fb93eb77b3c2bf1c915901ecbe3e", sha256)) {
+                    logger.severe("ffmpeg binary(" + getFullPath() + ") requires minimum Windows 7!");
+                    return false;
+                }
+            }
+        }
+        return super.isCompatible();
     }
 
     private boolean validatePaths(final String path) {

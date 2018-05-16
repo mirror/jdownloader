@@ -1,5 +1,7 @@
 package jd.controlling.linkcrawler.modifier;
 
+import java.util.List;
+
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledLinkModifier;
 import jd.controlling.linkcrawler.PackageInfo;
@@ -7,7 +9,16 @@ import jd.controlling.linkcrawler.PackageInfo;
 import org.appwork.utils.StringUtils;
 
 public class PackageNameModifier implements CrawledLinkModifier {
-    protected final String  name;
+    protected final String name;
+
+    public String getName() {
+        return name;
+    }
+
+    public boolean isOverwriteFlag() {
+        return overwriteFlag;
+    }
+
     protected final boolean overwriteFlag;
 
     public PackageNameModifier(final String name, final boolean overwriteFlag) {
@@ -16,7 +27,7 @@ public class PackageNameModifier implements CrawledLinkModifier {
     }
 
     @Override
-    public void modifyCrawledLink(CrawledLink link) {
+    public boolean modifyCrawledLink(CrawledLink link) {
         PackageInfo existing = link.getDesiredPackageInfo();
         if (overwriteFlag || existing == null || StringUtils.isEmpty(existing.getName())) {
             if (existing == null) {
@@ -28,6 +39,13 @@ public class PackageNameModifier implements CrawledLinkModifier {
             }
             existing.setUniqueId(null);
             link.setDesiredPackageInfo(existing);
+            return true;
         }
+        return false;
+    }
+
+    @Override
+    public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
+        return null;
     }
 }

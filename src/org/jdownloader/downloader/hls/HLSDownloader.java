@@ -258,6 +258,9 @@ public class HLSDownloader extends DownloadInterface {
             if (!ffprobe.isAvailable()) {
                 logger.info("FFProbe is not available");
                 return null;
+            } else if (!ffprobe.isCompatible()) {
+                logger.info("FFProbe is incompatible");
+                return null;
             } else {
                 this.processID = new UniqueAlltimeID().getID();
                 initPipe(ffprobe);

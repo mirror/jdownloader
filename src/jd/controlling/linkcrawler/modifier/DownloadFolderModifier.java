@@ -1,6 +1,7 @@
 package jd.controlling.linkcrawler.modifier;
 
 import java.io.File;
+import java.util.List;
 
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledLinkModifier;
@@ -10,7 +11,16 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 
 public class DownloadFolderModifier implements CrawledLinkModifier {
-    protected final String  folder;
+    protected final String folder;
+
+    public String getFolder() {
+        return folder;
+    }
+
+    public boolean isOverwriteFlag() {
+        return overwriteFlag;
+    }
+
     protected final boolean overwriteFlag;
 
     public DownloadFolderModifier(final String folder, final boolean overwriteFlag) {
@@ -19,7 +29,7 @@ public class DownloadFolderModifier implements CrawledLinkModifier {
     }
 
     @Override
-    public void modifyCrawledLink(CrawledLink link) {
+    public boolean modifyCrawledLink(CrawledLink link) {
         PackageInfo existing = link.getDesiredPackageInfo();
         if (overwriteFlag || existing == null || StringUtils.isEmpty(existing.getDestinationFolder())) {
             if (existing == null) {
@@ -31,6 +41,13 @@ public class DownloadFolderModifier implements CrawledLinkModifier {
             }
             existing.setUniqueId(null);
             link.setDesiredPackageInfo(existing);
+            return true;
         }
+        return false;
+    }
+
+    @Override
+    public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
+        return null;
     }
 }
