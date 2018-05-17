@@ -27,7 +27,6 @@ import java.lang.Thread.UncaughtExceptionHandler;
 import java.lang.reflect.Field;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -73,7 +72,6 @@ import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.ExceptionDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
-import org.appwork.utils.Exceptions;
 import org.appwork.utils.IO;
 import org.appwork.utils.IOErrorHandler;
 import org.appwork.utils.JarHandlerWorkaround;
@@ -86,9 +84,6 @@ import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.appwork.utils.net.httpconnection.HTTPConnectionImpl;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.os.CrossSystem.OperatingSystem;
-import org.appwork.utils.os.SecuritySoftwareException;
-import org.appwork.utils.os.SecuritySoftwareInfo;
-import org.appwork.utils.os.SecuritySoftwareResponse;
 import org.appwork.utils.processes.ProcessBuilderFactory;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
@@ -126,7 +121,6 @@ import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
 import org.jdownloader.statistics.StatsManager;
-import org.jdownloader.statistics.StatsManager.CollectionName;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.InternetConnectionSettings;
 import org.jdownloader.updatev2.RestartController;
@@ -1024,106 +1018,6 @@ public class SecondLevelLaunch {
         SecondLevelLaunch.INIT_COMPLETE.setReached();
         // init statsmanager
         StatsManager.I();
-        new Thread("Print Sec Infos") {
-            public void run() {
-                if (CrossSystem.isWindows()) {
-                    SecuritySoftwareResponse sw = null;
-                    try {
-                        LoggerFactory.getDefaultLogger().info("AntiVirusProduct START");
-                        sw = CrossSystem.getAntiVirusSoftwareInfo();
-                        HashMap<String, String> infos = createInfoMap(sw);
-                        StatsManager.I().track(100, "secur", "av", infos, CollectionName.SECURITY);
-                    } catch (UnsupportedOperationException e) {
-                    } catch (Throwable e) {
-                        LoggerFactory.getDefaultLogger().log(e);
-                        HashMap<String, String> infos = new HashMap<String, String>();
-                        if (e instanceof SecuritySoftwareException) {
-                            infos.put("response", ((SecuritySoftwareException) e).getResponse());
-                        }
-                        infos.put("error", e.getMessage());
-                        infos.put("exception", Exceptions.getStackTrace(e));
-                        StatsManager.I().track(100, "secur", "av/error", infos, CollectionName.SECURITY);
-                    } finally {
-                        LoggerFactory.getDefaultLogger().info("AntiVirusProduct END");
-                    }
-                    try {
-                        LoggerFactory.getDefaultLogger().info("FirewallProduct START");
-                        sw = CrossSystem.getFirewallSoftwareInfo();
-                        HashMap<String, String> infos = createInfoMap(sw);
-                        StatsManager.I().track(100, "secur", "fw", infos, CollectionName.SECURITY);
-                    } catch (UnsupportedOperationException e) {
-                    } catch (Throwable e) {
-                        LoggerFactory.getDefaultLogger().log(e);
-                        HashMap<String, String> infos = new HashMap<String, String>();
-                        if (e instanceof SecuritySoftwareException) {
-                            infos.put("response", ((SecuritySoftwareException) e).getResponse());
-                        }
-                        infos.put("error", e.getMessage());
-                        infos.put("exception", Exceptions.getStackTrace(e));
-                        StatsManager.I().track(100, "secur", "fw/error", infos, CollectionName.SECURITY);
-                    } finally {
-                        LoggerFactory.getDefaultLogger().info("FirewallProduct END");
-                    }
-                    switch (CrossSystem.getOS()) {
-                    case WINDOWS_10:
-                    case WINDOWS_7:
-                    case WINDOWS_VISTA:
-                    case WINDOWS_8:
-                        try {
-                            LoggerFactory.getDefaultLogger().info("AntiSpywareProduct START");
-                            sw = CrossSystem.getAntiSpySoftwareInfo();
-                            HashMap<String, String> infos = createInfoMap(sw);
-                            StatsManager.I().track(100, "secur", "as", infos, CollectionName.SECURITY);
-                        } catch (UnsupportedOperationException e) {
-                        } catch (Throwable e) {
-                            LoggerFactory.getDefaultLogger().log(e);
-                            HashMap<String, String> infos = new HashMap<String, String>();
-                            infos.put("error", e.getMessage());
-                            infos.put("exception", Exceptions.getStackTrace(e));
-                            if (e instanceof SecuritySoftwareException) {
-                                infos.put("response", ((SecuritySoftwareException) e).getResponse());
-                            }
-                            StatsManager.I().track(100, "secur", "as/error", infos, CollectionName.SECURITY);
-                        } finally {
-                            LoggerFactory.getDefaultLogger().info("AntiSpywareProduct END");
-                        }
-                    }
-                }
-            }
-
-            private HashMap<String, String> createInfoMap(SecuritySoftwareResponse sw) {
-                ArrayList<String> names = new ArrayList<String>();
-                ArrayList<String> signedReportingExe = new ArrayList<String>();
-                ArrayList<String> signedProductExe = new ArrayList<String>();
-                ArrayList<String> state = new ArrayList<String>();
-                for (SecuritySoftwareInfo s : sw) {
-                    names.add(s.getName());
-                    if (OperatingSystem.WINDOWS_XP == CrossSystem.getOS()) {
-                        if (s.get("pathToEnableOnAccessUI") != null) {
-                            signedProductExe.add(new File(s.get("pathToEnableOnAccessUI")).getName());
-                        }
-                        if (s.get("pathToUpdateUI") != null) {
-                            signedReportingExe.add(new File(s.get("pathToUpdateUI")).getName());
-                        }
-                    } else {
-                        if (s.get("pathToSignedReportingExe") != null) {
-                            signedReportingExe.add(new File(s.get("pathToSignedReportingExe")).getName());
-                        }
-                        if (s.get("pathToSignedProductExe") != null) {
-                            signedProductExe.add(new File(s.get("pathToSignedProductExe")).getName());
-                        }
-                    }
-                    state.add(s.get("productState"));
-                }
-                HashMap<String, String> infos = new HashMap<String, String>();
-                infos.put("names", JSonStorage.serializeToJson(names));
-                infos.put("reporting", JSonStorage.serializeToJson(signedReportingExe));
-                infos.put("product", JSonStorage.serializeToJson(signedProductExe));
-                infos.put("states", JSonStorage.serializeToJson(state));
-                infos.put("response", sw.getResponse());
-                return infos;
-            };
-        }.start();
         // init Filechooser. filechoosers may freeze the first time the get initialized. maybe this helps
         if (!Application.isHeadless()) {
             try {
