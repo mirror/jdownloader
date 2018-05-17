@@ -167,11 +167,19 @@ public class VimeoContainer extends VideoContainer {
     public String createLinkID(final String id) {
         final String linkid;
         if (Source.SUBTITLE.equals(getSource())) {
-            linkid = id.concat("_").concat(getId() != null ? "_" + String.valueOf(getId()) : "").concat((getSource() != null ? "_" + getSource().toString() : "")).concat((getLang() != null ? "_" + getLang().toString() : ""));
+            linkid = id.concat("_").concat(toString(getId()).concat(toString(getSource())).concat(toString(getLang())));
         } else {
             linkid = id.concat("_").concat(getQuality().toString()).concat("_").concat(String.valueOf(getWidth())).concat("x").concat(String.valueOf(getHeight())).concat((getId() != null ? "_" + String.valueOf(getId()) : "")).concat((getSource() != null ? "_" + getSource().toString() : "")).concat((getLang() != null ? "_" + getLang().toString() : ""));
         }
         return linkid;
+    }
+
+    private String toString(Object object) {
+        if (object == null) {
+            return "";
+        } else {
+            return "_".concat(object.toString());
+        }
     }
 
     @Override
@@ -180,6 +188,10 @@ public class VimeoContainer extends VideoContainer {
     }
 
     public String bestString() {
-        return String.valueOf(getWidth()).concat("x").concat(String.valueOf(getHeight()));
+        if (Source.SUBTITLE.equals(getSource())) {
+            return getLang();
+        } else {
+            return String.valueOf(getWidth()).concat("x").concat(String.valueOf(getHeight()));
+        }
     }
 }
