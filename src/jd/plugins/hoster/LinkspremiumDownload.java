@@ -18,23 +18,14 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 
-import javax.swing.JComponent;
-import javax.swing.JLabel;
-
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.utils.StringUtils;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
-import jd.gui.swing.components.linkbutton.JLink;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
@@ -47,44 +38,34 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
-import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zevera.com" }, urls = { "" })
-public class ZeveraCom extends PluginForHost {
-    private static final String                            NICE_HOST                 = "zevera.com";
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linkspremium.download" }, urls = { "" })
+public class LinkspremiumDownload extends PluginForHost {
+    private static final String                            NICE_HOST                 = "linkspremium.download";
     private static final String                            NICE_HOSTproperty         = NICE_HOST.replaceAll("(\\.|\\-)", "");
     /* Connection limits */
-    private static final boolean                           ACCOUNT_PREMIUM_RESUME    = true;
+    private static final boolean                           ACCOUNT_PREMIUM_RESUME    = false;
     private static final int                               ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    private static final boolean                           USE_API                   = true;
-    private final String                                   client_id                 = "306575304";
+    private static final boolean                           USE_API                   = false;
     private static Object                                  LOCK                      = new Object();
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap        = new HashMap<Account, HashMap<String, Long>>();
     private Account                                        currentAcc                = null;
     private DownloadLink                                   currentLink               = null;
-    private static MultiHosterManagement                   mhm                       = new MultiHosterManagement("zevera.com");
+    private static MultiHosterManagement                   mhm                       = new MultiHosterManagement("linkspremium.download");
 
-    public ZeveraCom(PluginWrapper wrapper) {
+    public LinkspremiumDownload(PluginWrapper wrapper) {
         super(wrapper);
-        this.setAccountwithoutUsername(true);
-        this.enablePremium("https://www.zevera.com/premium");
-    }
-
-    @Override
-    public AccountBuilderInterface getAccountFactory(InputChangedCallbackInterface callback) {
-        return new ZeveraComAccountFactory(callback);
+        this.enablePremium("http://linkspremium.download/");
     }
 
     @Override
     public String getAGBLink() {
-        return "https://www.zevera.com/legal";
+        return "http://linkspremium.download/";
     }
 
-    public static Browser prepBR(final Browser br) {
+    private Browser prepBR(final Browser br) {
         br.setCookiesExclusive(true);
         br.getHeaders().put("User-Agent", "JDownloader");
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
         br.setFollowRedirects(true);
         return br;
     }
@@ -145,7 +126,7 @@ public class ZeveraCom extends PluginForHost {
             }
         }
         login(account, false);
-        String dllink = getDllink(link);
+        final String dllink = getDllink(link);
         if (StringUtils.isEmpty(dllink)) {
             mhm.handleErrorGeneric(currentAcc, currentLink, "dllinknull", 2, 5 * 60 * 1000l);
         }
@@ -156,7 +137,7 @@ public class ZeveraCom extends PluginForHost {
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null) {
             if (USE_API) {
-                dllink = getDllinkAPI(this.br, this.client_id, this.currentAcc, link, this);
+                dllink = getDllinkAPI(link);
             } else {
                 dllink = getDllinkWebsite(link);
             }
@@ -164,14 +145,16 @@ public class ZeveraCom extends PluginForHost {
         return dllink;
     }
 
-    public static String getDllinkAPI(final Browser br, final String clientID, final Account account, final DownloadLink link, final PluginForHost plugin) throws IOException, PluginException {
-        br.getPage("https://www." + account.getHoster() + "/api/transfer/directdl?client_id=" + clientID + "&pin=" + Encoding.urlEncode(account.getPass()) + "&src=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, plugin)));
-        final String dllink = PluginJSonUtils.getJsonValue(br, "location");
-        return dllink;
+    private String getDllinkAPI(final DownloadLink link) throws IOException, PluginException {
+        return null;
     }
 
-    public static String getDllinkWebsite(final DownloadLink link) throws IOException, PluginException {
-        return null;
+    private String getDllinkWebsite(final DownloadLink link) throws IOException, PluginException {
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+        br.postPage("/index.php?rand=0." + System.currentTimeMillis(), "gerar=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
+        final String dllink = br.getRegex("title=\\'clique aqui para baixar\\' href=\\'(https?://[^<>\"\\']+)").getMatch(0);
+        return dllink;
     }
 
     private void handleDL(final Account account, final DownloadLink link, final String dllink) throws Exception {
@@ -223,45 +206,47 @@ public class ZeveraCom extends PluginForHost {
         this.br = prepBR(this.br);
         final AccountInfo ai;
         if (USE_API) {
-            ai = fetchAccountInfoAPI(this.br, this.client_id, account);
+            ai = fetchAccountInfoAPI(account);
         } else {
             ai = fetchAccountInfoWebsite(account);
         }
         return ai;
     }
 
-    public static AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
-        return null;
-    }
-
-    public AccountInfo fetchAccountInfoAPI(final Browser br, final String clientID, final Account account) throws Exception {
+    public AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
+        /*
+         * 2017-11-29: Lifetime premium not (yet) supported via website mode! But by the time we might need the website version again, they
+         * might have stopped premium lifetime sales already as that has never been a good idea for any (M)OCH.
+         */
         final AccountInfo ai = new AccountInfo();
         login(account, true);
-        /* TODO: Check if this is actually the fair use value ... */
-        final String fair_use_used_str = PluginJSonUtils.getJson(br, "limit_used");
-        final String premium_until_str = PluginJSonUtils.getJson(br, "premium_until");
-        final long premium_until = premium_until_str != null ? Long.parseLong(premium_until_str) * 1000 : 0;
-        if (premium_until > System.currentTimeMillis()) {
+        if (!br.containsHTML("/gerador")) {
+            br.getPage("/gerador");
+        }
+        final boolean isPremium = true;
+        ArrayList<String> supportedHosts = new ArrayList<String>();
+        if (isPremium) {
             account.setType(AccountType.PREMIUM);
-            if (!StringUtils.isEmpty(fair_use_used_str)) {
-                final double d = Double.parseDouble(fair_use_used_str);
-                ai.setStatus("Premium | Fair usage:" + (100 - ((int) (d * 100.0))) + "%");
-            } else {
-                ai.setStatus("Premium");
+            final String[] tlds = { "com.br", "br", "to", "de", "com", "net", "co.nz", ".nz", "in", "co", "me", "biz", "ch", "pl", "us", "cc", "eu" };
+            final String[] hostlist = br.getRegex("publico/host_([^\"]+)\"").getColumn(0);
+            if (hostlist != null) {
+                for (final String crippledHost : hostlist) {
+                    for (final String tld : tlds) {
+                        supportedHosts.add(crippledHost + "." + tld);
+                    }
+                }
             }
-            ai.setValidUntil(premium_until);
             ai.setUnlimitedTraffic();
         } else {
-            /* Expired == FREE */
             account.setType(AccountType.FREE);
             ai.setTrafficLeft(0);
         }
-        br.getPage("/api/services/list?client_id=" + clientID + "&pin=" + Encoding.urlEncode(account.getPass()));
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        // final ArrayList<String> supportedHosts = new ArrayList<String>();
-        final ArrayList<String> ressourcelist = (ArrayList<String>) entries.get("directdl");
-        ai.setMultiHostSupport(this, ressourcelist);
+        ai.setMultiHostSupport(this, supportedHosts);
         return ai;
+    }
+
+    public AccountInfo fetchAccountInfoAPI(final Account account) throws Exception {
+        return null;
     }
 
     private void login(final Account account, final boolean force) throws Exception {
@@ -270,7 +255,7 @@ public class ZeveraCom extends PluginForHost {
             br.setCookiesExclusive(true);
             this.br = prepBR(this.br);
             if (USE_API) {
-                loginAPI(this.br, this.client_id, account, force);
+                loginAPI(account, force);
             } else {
                 loginWebsite(account, force);
             }
@@ -278,91 +263,43 @@ public class ZeveraCom extends PluginForHost {
     }
 
     private void loginWebsite(final Account account, final boolean force) throws Exception {
-    }
-
-    public static void loginAPI(final Browser br, final String clientID, final Account account, final boolean force) throws Exception {
-        br.getPage("https://www." + account.getHoster() + "/api/account/info?client_id=" + clientID + "&pin=" + Encoding.urlEncode(account.getPass()));
-        final String status = PluginJSonUtils.getJson(br, "status");
-        if (!"success".equalsIgnoreCase(status)) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Apikey invalid! Make sure you entered your current Apikey which can be found here: " + account.getHoster() + "/account", PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
-    }
-
-    public static class ZeveraComAccountFactory extends MigPanel implements AccountBuilderInterface {
-        /**
-         *
-         */
-        private static final long serialVersionUID = 1L;
-        private final String      PINHELP          = "Enter your Apikey";
-
-        private String getPassword() {
-            if (this.pass == null) {
-                return null;
-            }
-            if (EMPTYPW.equals(new String(this.pass.getPassword()))) {
-                return null;
-            }
-            return new String(this.pass.getPassword());
-        }
-
-        public boolean updateAccount(Account input, Account output) {
-            boolean changed = false;
-            if (!StringUtils.equals(input.getUser(), output.getUser())) {
-                output.setUser(input.getUser());
-                changed = true;
-            }
-            if (!StringUtils.equals(input.getPass(), output.getPass())) {
-                output.setPass(input.getPass());
-                changed = true;
-            }
-            return changed;
-        }
-
-        private final ExtPasswordField pass;
-        private static String          EMPTYPW = "                 ";
-
-        public ZeveraComAccountFactory(final InputChangedCallbackInterface callback) {
-            super("ins 0, wrap 2", "[][grow,fill]", "");
-            add(new JLabel("Click here to find your Apikey:"));
-            add(new JLink("https://www.zevera.com/account"));
-            add(new JLabel("Apikey:"));
-            add(this.pass = new ExtPasswordField() {
-                @Override
-                public void onChanged() {
-                    callback.onChangedInput(this);
+        try {
+            final Cookies cookies = account.loadCookies("");
+            if (cookies != null) {
+                this.br.setCookies(this.getHost(), cookies);
+                /*
+                 * Even though login is forced first check if our cookies are still valid --> If not, force login!
+                 */
+                br.getPage("http://" + this.getHost() + "/gerador");
+                if (isLoggedinHTML()) {
+                    account.saveCookies(this.br.getCookies(this.getHost()), "");
+                    return;
                 }
-            }, "");
-            pass.setHelpText(PINHELP);
-        }
-
-        @Override
-        public JComponent getComponent() {
-            return this;
-        }
-
-        @Override
-        public void setAccount(Account defaultAccount) {
-            if (defaultAccount != null) {
-                // name.setText(defaultAccount.getUser());
-                pass.setText(defaultAccount.getPass());
+                /* Clear cookies to prevent unknown errors as we'll perform a full login below now. */
+                this.br = prepBR(new Browser());
             }
+            br.getPage("http://" + this.getHost() + "/");
+            if (br.containsHTML("<title>IP bloqueado</title>")) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nIP blocked!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            // br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+            // br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.postPage("/login", "1=1&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+            if (!isLoggedinHTML()) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            account.saveCookies(this.br.getCookies(this.getHost()), "");
+        } catch (final PluginException e) {
+            account.clearCookies("");
+            throw e;
         }
+    }
 
-        @Override
-        public boolean validateInputs() {
-            // final String userName = getUsername();
-            // if (userName == null || !userName.trim().matches("^\\d{9}$")) {
-            // idLabel.setForeground(Color.RED);
-            // return false;
-            // }
-            // idLabel.setForeground(Color.BLACK);
-            return getPassword() != null;
-        }
+    private boolean isLoggedinHTML() {
+        return br.containsHTML("/logout\"");
+    }
 
-        @Override
-        public Account getAccount() {
-            return new Account(null, getPassword());
-        }
+    private void loginAPI(final Account account, final boolean force) throws Exception {
     }
 
     /** Keep this for possible future API implementation */
