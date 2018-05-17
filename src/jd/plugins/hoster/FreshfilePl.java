@@ -22,7 +22,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -39,9 +39,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freshfile.pl" }, urls = { "https?://freshfile\\.pl/dl/(.*)" })
 public class FreshfilePl extends PluginForHost {
-
     public FreshfilePl(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://freshfile.pl/premium/");
@@ -260,7 +261,7 @@ public class FreshfilePl extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Downloads not possible!");
                 }
             } else if (errors.contains("trafficEmpty")) {
-                throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, "No traffic left!");
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No traffic left");
             } else if (errors.contains("notFound")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "File not found!");
             } else {
@@ -352,7 +353,7 @@ public class FreshfilePl extends PluginForHost {
             } else {
                 ai.setStatus("Premium user with limit");
                 ai.setTrafficLeft(SizeFormatter.getSize(trafficRemainded));
-                ai.setTrafficLeft(SizeFormatter.getSize(dailyTraffic));
+                ai.setTrafficMax(SizeFormatter.getSize(dailyTraffic));
             }
         }
         final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());

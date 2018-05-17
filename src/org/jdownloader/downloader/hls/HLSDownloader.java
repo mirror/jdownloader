@@ -1051,8 +1051,15 @@ public class HLSDownloader extends DownloadInterface {
                                             inputStream = connection.getInputStream();
                                         }
                                         if (meteredThrottledInputStream == null) {
-                                            synchronized (cachedMeteredThrottledInputStream) {
-                                                meteredThrottledInputStream = cachedMeteredThrottledInputStream.poll();
+                                            for (int waitLoop = 1; waitLoop < 10; waitLoop++) {
+                                                synchronized (cachedMeteredThrottledInputStream) {
+                                                    meteredThrottledInputStream = cachedMeteredThrottledInputStream.poll();
+                                                }
+                                                if (meteredThrottledInputStream != null) {
+                                                    break;
+                                                } else {
+                                                    Thread.sleep(50);
+                                                }
                                             }
                                             if (meteredThrottledInputStream == null) {
                                                 meteredThrottledInputStream = new MeteredThrottledInputStream(inputStream, new AverageSpeedMeter(10));
