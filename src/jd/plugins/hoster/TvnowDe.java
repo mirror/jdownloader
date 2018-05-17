@@ -41,6 +41,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -60,8 +61,16 @@ public class TvnowDe extends PluginForHost {
     /* Settings */
     /* Tags: rtl-interactive.de, RTL, rtlnow, rtl-now */
     private static final String           TYPE_GENERAL_ALRIGHT = "https?://(?:www\\.)?(?:nowtv|tvnow)\\.(?:de|ch)/[^/]+/[a-z0-9\\-]+/[^/\\?]+";
-    private final String                  CURRENT_DOMAIN       = "tvnow.de";
+    public static final String            API_BASE             = "https://api.tvnow.de/v3";
+    public static final String            CURRENT_DOMAIN       = "tvnow.de";
     private LinkedHashMap<String, Object> entries              = null;
+
+    public static Browser prepBR(final Browser br) {
+        br.getHeaders().put("Accept", "application/json, text/plain, */*");
+        /* 400-bad request for invalid API requests */
+        br.setAllowedResponseCodes(new int[] { 400 });
+        return br;
+    }
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
@@ -109,8 +118,7 @@ public class TvnowDe extends PluginForHost {
         setBrowserExclusive();
         /* Fix old urls */
         correctDownloadLink(downloadLink);
-        /* 400-bad request for invalid API requests */
-        this.br.setAllowedResponseCodes(new int[] { 400 });
+        prepBR(this.br);
         final String urlpart = getURLPart(downloadLink);
         /* urlpart is the same throughout different TV stations so it is a reliable way to detect duplicate urls. */
         downloadLink.setLinkID(urlpart);
@@ -120,19 +128,25 @@ public class TvnowDe extends PluginForHost {
          * this item be purchased and how much does it cost, "trailers" = trailers, "files" = old rtlnow URLs, see plugin revision 38232 and
          * earlier
          */
-        br.getPage("https://api." + CURRENT_DOMAIN + "/v3/movies/" + urlpart + "?fields=*,format,packages,isDrm");
+        br.getPage(API_BASE + "/movies/" + urlpart + "?fields=" + getFields());
         if (br.getHttpConnection().getResponseCode() != 200) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-        parseInformation(downloadLink, entries);
+        final LinkedHashMap<String, Object> format = (LinkedHashMap<String, Object>) entries.get("format");
+        final String tv_station = (String) format.get("station");
+        final String formatTitle = (String) format.get("title");
+        parseInformation(downloadLink, entries, tv_station, formatTitle);
         return AvailableStatus.TRUE;
     }
 
-    public static void parseInformation(final DownloadLink downloadLink, final LinkedHashMap<String, Object> entries) {
+    /** Returns parameters for API 'fields=' key. */
+    public static String getFields() {
+        return "*,format,packages,isDrm";
+    }
+
+    public static void parseInformation(final DownloadLink downloadLink, final LinkedHashMap<String, Object> entries, final String tv_station, final String formatTitle) {
         final MediathekProperties data = downloadLink.bindData(MediathekProperties.class);
-        LinkedHashMap<String, Object> format = (LinkedHashMap<String, Object>) entries.get("format");
-        final String tv_station = (String) format.get("station");
         final String date = (String) entries.get("broadcastStartDate");
         final String episode_str = new Regex(downloadLink.getPluginPatternMatcher(), "folge\\-(\\d+)").getMatch(0);
         final int season = (int) JavaScriptEngineFactory.toLong(entries.get("season"), -1);
@@ -144,11 +158,10 @@ public class TvnowDe extends PluginForHost {
         final String description = (String) entries.get("articleLong");
         /* Title or subtitle of a current series-episode */
         String title = (String) entries.get("title");
-        final String title_series = (String) format.get("title");
-        if (title == null || title_series == null || tv_station == null || date == null) {
+        if (title == null || formatTitle == null || tv_station == null || date == null) {
             downloadLink.setAvailableStatus(AvailableStatus.UNCHECKABLE);
         }
-        data.setShow(title_series);
+        data.setShow(formatTitle);
         data.setChannel(tv_station);
         data.setReleaseDate(getDateMilliseconds(date));
         if (season != -1 && episode != -1) {
@@ -166,7 +179,7 @@ public class TvnowDe extends PluginForHost {
         try {
             if (FilePackage.isDefaultFilePackage(downloadLink.getFilePackage())) {
                 final FilePackage fp = FilePackage.getInstance();
-                fp.setName(title_series);
+                fp.setName(formatTitle);
                 fp.add(downloadLink);
             }
             if (!StringUtils.isEmpty(description) && downloadLink.getComment() == null) {
@@ -190,7 +203,7 @@ public class TvnowDe extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming type [DRM]");
         }
         final String urlpart = getURLPart(downloadLink);
-        br.getPage("https://api." + CURRENT_DOMAIN + "/v3/movies/" + urlpart + "?fields=manifest");
+        br.getPage(API_BASE + "/movies/" + urlpart + "?fields=manifest");
         entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         entries = (LinkedHashMap<String, Object>) entries.get("manifest");
         /* 2018-04-18: So far I haven't seen a single http stream! */

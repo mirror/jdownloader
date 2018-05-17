@@ -13,14 +13,13 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -32,18 +31,16 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornziz.com", "vidxporn.com" }, urls = { "https?://(?:www\\.)?pornziz\\.com/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?vidxporn\\.com/\\d+/[a-z0-9\\-]+/" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornziz.com", "vidxporn.com", "xnhub.com" }, urls = { "https?://(?:www\\.)?pornziz\\.com/video/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.)?vidxporn\\.com/video/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.)?xnhub\\.com/(?:video/[a-z0-9\\-]+\\-\\d+\\.html|embed/\\d+)" })
 public class UnknownPornScript8 extends PluginForHost {
-
     public UnknownPornScript8(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* DEV NOTES */
     /* Porn_plugin */
-    /* V0.1 */
+    /* V0.2 */
     /* Tags: Script, template */
-
     private String  dllink      = null;
     private boolean serverissue = false;
 
@@ -62,12 +59,20 @@ public class UnknownPornScript8 extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename_url = new Regex(downloadLink.getDownloadURL(), "/([a-z0-9\\-]+)/$").getMatch(0);
-        String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
-        if (filename == null) {
+        final String url_embed = br.getRegex("<iframe[^>]*?src=\"(https?://(?:www\\.)?xnhub\\.com/embed/\\d+)\"[^>]*?></iframe>").getMatch(0);
+        if (url_embed != null) {
+            /* Typically pornziz.com or vidxporn.com --> xnhub.com */
+            br.getPage(url_embed);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+        }
+        final String filename_url = getUrlFilename(downloadLink);
+        String filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]+)\">").getMatch(0);
+        if (StringUtils.isEmpty(filename)) {
             filename = filename_url;
         }
-        dllink = br.getRegex("<source src=\"(http[^<>\"]+)\"").getMatch(0);
+        dllink = br.getRegex("<source src=\"(https?[^<>\"]+)\"").getMatch(0);
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -80,30 +85,32 @@ public class UnknownPornScript8 extends PluginForHost {
             filename += ext;
         }
         downloadLink.setFinalFileName(filename);
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            try {
-                con = br2.openHeadConnection(dllink);
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
+            con = br.openHeadConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-                downloadLink.setProperty("directlink", dllink);
             } else {
                 serverissue = true;
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            return AvailableStatus.TRUE;
         } finally {
             try {
                 con.disconnect();
             } catch (final Throwable e) {
             }
         }
+        return AvailableStatus.TRUE;
+    }
+
+    private String getUrlFilename(final DownloadLink dl) {
+        final String result;
+        if (new Regex(dl.getPluginPatternMatcher(), ".+/video/.+\\.html$").matches()) {
+            result = new Regex(dl.getPluginPatternMatcher(), "/([^/]+)\\.html$").getMatch(0);
+        } else {
+            /* Embed urls */
+            result = new Regex(dl.getPluginPatternMatcher(), "(\\d+)$").getMatch(0);
+        }
+        return result;
     }
 
     @Override
