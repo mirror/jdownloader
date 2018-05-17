@@ -49,6 +49,7 @@ import org.jdownloader.settings.staticreferences.CFG_PACKAGIZER;
 import org.jdownloader.settings.staticreferences.CFG_RECONNECT;
 import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
 import org.jdownloader.updatev2.InternetConnectionSettings;
+import org.jdownloader.updatev2.LastChanceSettings;
 import org.jdownloader.updatev2.UpdateSettings;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
@@ -90,6 +91,7 @@ public class AdvancedConfigManager {
         register(JsonConfig.create(ShortcutSettings.class));
         register(JsonConfig.create(RtmpdumpSettings.class));
         register(JsonConfig.create(UpdateSettings.class));
+        register(JsonConfig.create(LastChanceSettings.class));
         register(JsonConfig.create(ExtFileSystemViewSettings.class));
         register(JsonConfig.create(FavIconsConfig.class));
         register(JsonConfig.create(SoundSettings.class));
