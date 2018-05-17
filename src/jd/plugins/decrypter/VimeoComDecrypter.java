@@ -343,21 +343,23 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 channelName = getFormattedString(channelName);
             }
             title = getFormattedString(title);
-            final List<VimeoContainer> qualities = jd.plugins.hoster.VimeoCom.getQualities(this, br, videoID, true, qALL || qMOBILE || qMOBILE || qHD, qALL || qMOBILE || qMOBILE || qHD, subtitle);
-            if (qualities == null) {
+            final List<VimeoContainer> containers = jd.plugins.hoster.VimeoCom.find(this, br, videoID, true, qALL || qMOBILE || qMOBILE || qHD, qALL || qMOBILE || qMOBILE || qHD, subtitle);
+            if (containers == null) {
                 return null;
             }
-            if (qualities.size() == 0) {
+            if (containers.size() == 0) {
                 return decryptedLinks;
             }
             final HashMap<String, DownloadLink> dedupeMap = new HashMap<String, DownloadLink>();
-            for (final VimeoContainer quality : qualities) {
-                if (!VimeoContainer.Source.SUBTITLE.equals(quality.getSource()) && (!qualityAllowed(quality) || !pRatingAllowed(quality))) {
+            final List<DownloadLink> subtitles = new ArrayList<DownloadLink>();
+            for (final VimeoContainer container : containers) {
+                final boolean isSubtitle = VimeoContainer.Source.SUBTITLE.equals(container.getSource());
+                if (!isSubtitle && (!qualityAllowed(container) || !pRatingAllowed(container))) {
                     skippedLinks++;
                     continue;
                 }
                 // there can be multiple hd/sd etc need to identify with framesize.
-                final String linkdupeid = quality.createLinkID(videoID);
+                final String linkdupeid = container.createLinkID(videoID);
                 final DownloadLink link = createDownloadlink(parameter.replaceAll("https?://", "decryptedforVimeoHosterPlugin://"));
                 link.setLinkID(linkdupeid);
                 link.setProperty("videoID", videoID);
@@ -382,27 +384,33 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 if (channelName != null) {
                     link.setProperty("channel", channelName);
                 }
-                link.setProperty(jd.plugins.hoster.VimeoCom.VVC, quality);
+                if (container != null) {
+                    link.setProperty("directURL", container.getDownloadurl());
+                }
+                link.setProperty(jd.plugins.hoster.VimeoCom.VVC, container);
                 link.setFinalFileName(getFormattedFilename(link));
-                if (quality.getFilesize() > -1) {
-                    link.setDownloadSize(quality.getFilesize());
-                } else if (quality.getEstimatedSize() != null) {
-                    link.setDownloadSize(quality.getEstimatedSize());
+                if (container.getFilesize() > -1) {
+                    link.setDownloadSize(container.getFilesize());
+                } else if (container.getEstimatedSize() != null) {
+                    link.setDownloadSize(container.getEstimatedSize());
                 }
                 link.setAvailable(true);
-                final DownloadLink best = dedupeMap.get(quality.bestString());
-                // we wont use size as its not always shown for different qualities. use quality preference
-                if (best == null || quality.getSource().ordinal() > (jd.plugins.hoster.VimeoCom.getVimeoVideoContainer(best, false)).getSource().ordinal()) {
-                    dedupeMap.put(quality.bestString(), link);
+                if (isSubtitle) {
+                    subtitles.add(link);
+                } else {
+                    final DownloadLink best = dedupeMap.get(container.bestString());
+                    // we wont use size as its not always shown for different qualities. use quality preference
+                    if (best == null || container.getSource().ordinal() > (jd.plugins.hoster.VimeoCom.getVimeoVideoContainer(best, false)).getSource().ordinal()) {
+                        dedupeMap.put(container.bestString(), link);
+                    }
                 }
             }
-            if (dedupeMap.size() > 0) {
+            if (dedupeMap.size() > 0 || subtitles.size() > 0) {
+                decryptedLinks.addAll(subtitles);
                 if (cfg.getBooleanProperty(jd.plugins.hoster.VimeoCom.Q_BEST, false)) {
                     decryptedLinks.add(determineBest(dedupeMap));
                 } else {
-                    for (final Map.Entry<String, DownloadLink> best : dedupeMap.entrySet()) {
-                        decryptedLinks.add(best.getValue());
-                    }
+                    decryptedLinks.addAll(dedupeMap.values());
                 }
                 String fpName = "";
                 if (StringUtils.isNotEmpty(channelName)) {

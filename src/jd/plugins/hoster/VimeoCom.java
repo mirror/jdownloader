@@ -146,7 +146,7 @@ public class VimeoCom extends PluginForHost {
             try {
                 /* @since JD2 */
                 con = br.openHeadConnection(finalURL);
-                if (con.getContentType() != null && !con.getContentType().contains("html") && con.isOK()) {
+                if (con.getContentType() != null && !con.getContentType().contains("html") && !con.getContentType().contains("vnd.apple.mpegurl") && con.isOK()) {
                     downloadLink.setVerifiedFileSize(con.getLongContentLength());
                     downloadLink.setFinalFileName(getFormattedFilename(downloadLink));
                     return AvailableStatus.TRUE;
@@ -174,10 +174,11 @@ public class VimeoCom extends PluginForHost {
         // now we nuke linkids for videos.. crazzy... only remove the last one, _ORIGINAL comes from variant system
         final String downloadlinkId = downloadLink.getLinkID().replaceFirst("_ORIGINAL$", "");
         final String videoQuality = downloadLink.getStringProperty("videoQuality", null);
+        final boolean isSubtitle = StringUtils.endsWithCaseInsensitive(videoQuality, "SUBTITLE") || StringUtils.endsWithCaseInsensitive(downloadlinkId, "SUBTITLE");
         final boolean isHLS = StringUtils.endsWithCaseInsensitive(videoQuality, "HLS") || StringUtils.endsWithCaseInsensitive(downloadlinkId, "HLS");
         final boolean isDownload = StringUtils.endsWithCaseInsensitive(videoQuality, "DOWNLOAD") || StringUtils.endsWithCaseInsensitive(downloadlinkId, "DOWNLOAD");
         final boolean isStream = !isHLS && !isDownload;
-        final List<VimeoContainer> qualities = getQualities(this, br, videoID, isDownload || !isHLS, isStream, isHLS, true);
+        final List<VimeoContainer> qualities = find(this, br, videoID, isDownload || !isHLS, isStream, isHLS, isSubtitle);
         if (qualities.isEmpty()) {
             logger.warning("vimeo.com: Qualities could not be found");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -485,7 +486,7 @@ public class VimeoCom extends PluginForHost {
     }
 
     @SuppressWarnings({ "unchecked", "unused" })
-    public static List<VimeoContainer> getQualities(final Plugin plugin, final Browser ibr, final String ID, final boolean download, final boolean stream, final boolean hls, final boolean subtitles) throws Exception {
+    public static List<VimeoContainer> find(final Plugin plugin, final Browser ibr, final String ID, final boolean download, final boolean stream, final boolean hls, final boolean subtitles) throws Exception {
         /*
          * little pause needed so the next call does not return trash
          */
@@ -533,7 +534,7 @@ public class VimeoCom extends PluginForHost {
                         results.addAll(handleHLS(plugin, ibr, (Map<String, Object>) files.get("hls")));
                     }
                 }
-                if (text_tracks != null && subtitles && false) {
+                if (text_tracks != null && subtitles) {
                     results.addAll(handleSubtitles(plugin, ibr, text_tracks));
                 }
             }
@@ -558,7 +559,7 @@ public class VimeoCom extends PluginForHost {
                 if (id != null) {
                     vvc.setId(id.longValue());
                 }
-                vvc.setExtension("srt");
+                vvc.setExtension(".srt");
                 ret.add(vvc);
             }
         } catch (final Throwable t) {
@@ -767,10 +768,17 @@ public class VimeoCom extends PluginForHost {
         final String videoType;
         final String videoExt;
         if (vvc != null) {
-            videoQuality = vvc.getQuality().toString();
-            videoFrameSize = vvc.getWidth() + "x" + vvc.getHeight();
-            videoBitrate = vvc.getBitrate() == -1 ? "" : String.valueOf(vvc.getBitrate());
-            videoType = String.valueOf(vvc.getSource());
+            if (VimeoContainer.Source.SUBTITLE.equals(vvc.getSource())) {
+                videoQuality = null;
+                videoFrameSize = "";
+                videoBitrate = "";
+                videoType = vvc.getLang();
+            } else {
+                videoQuality = vvc.getQuality().toString();
+                videoFrameSize = vvc.getWidth() + "x" + vvc.getHeight();
+                videoBitrate = vvc.getBitrate() == -1 ? "" : String.valueOf(vvc.getBitrate());
+                videoType = String.valueOf(vvc.getSource());
+            }
             videoExt = vvc.getExtension();
         } else {
             videoQuality = downloadLink.getStringProperty("videoQuality", null);
@@ -893,6 +901,9 @@ public class VimeoCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(final DownloadLink link) {
+        if (link != null) {
+            link.removeProperty("directURL");
+        }
     }
 
     @Override
