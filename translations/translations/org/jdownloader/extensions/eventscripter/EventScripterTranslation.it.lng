@@ -23,6 +23,7 @@ ON_GENERIC_EXTRACTION=Qualsiasi evento estrazione
 ON_JDOWNLOADER_STARTED=JDownloader avviato
 ON_NEW_CRAWLER_JOB=Nuova attività crawler
 ON_NEW_FILE=È stato creato un nuovo file
+ON_NEW_LINK=Un nuovo collegamento è stato aggiunto
 ON_OUTGOING_REMOTE_API_EVENT=Evento API remoto attivato
 ON_PACKAGE_FINISHED=Package completato
 ON_PACKAGIZER=Hook pacchettizzatore
