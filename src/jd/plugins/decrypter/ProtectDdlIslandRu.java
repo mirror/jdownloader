@@ -52,6 +52,7 @@ public class ProtectDdlIslandRu extends PluginForDecrypt {
             return decryptedLinks;
         }
         br.getPage(parameter);
+        final boolean valider = br.containsHTML("Valider");
         if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getContentType().matches("(application/javascript|text/css)")) {
             decryptedLinks.add(createOfflinelink(parameter, fuid, null));
             return decryptedLinks;
@@ -63,37 +64,44 @@ public class ProtectDdlIslandRu extends PluginForDecrypt {
         } else {
             final String captchapass = Encoding.urlEncode(generatePass());
             br.postPage("/php/Qaptcha.jquery.php", "action=qaptcha&qaptcha_key=" + captchapass);
-            br.postPage(parameter, captchapass + "=&submit=Submit+form");
+            if (valider) {
+                br.postPage(parameter, captchapass + "=&submit=Valider");
+            } else {
+                br.postPage(parameter, captchapass + "=&submit=Submit+form");
+            }
             if (br.containsHTML("<b>Nom :</b></td><td></td></tr>")) {
                 decryptedLinks.add(createOfflinelink(parameter, fuid, null));
                 return decryptedLinks;
             }
-            if (!br.containsHTML("img\\.php\\?get_captcha=true")) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            boolean success = false;
-            for (int i = 1; i <= 3; i++) {
-                final File captchaFile = this.getLocalCaptchaFile();
-                Browser.download(captchaFile, br.cloneBrowser().openGetConnection("/img.php?get_captcha=true"));
-                final ClickedPoint cp = getCaptchaClickedPoint(getHost(), captchaFile, param, getHost() + " | " + String.valueOf(i + 1) + "/3", null);
-                br.postPage(br.getURL(), "position%5B%5D.x=" + String.valueOf(cp.getX()) + "&position%5B%5D.y=" + String.valueOf(cp.getY()));
-                if (br.containsHTML("img\\.php\\?get_captcha=true")) {
-                    continue;
+            String finallink = br.getRegex(">Lien :</b></td><td><a href=\"(http[^<>\"]*?)\"").getMatch(0);
+            if (finallink != null) {
+                decryptedLinks.add(createDownloadlink(finallink));
+            } else {
+                if (!br.containsHTML("img\\.php\\?get_captcha=true")) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
                 }
-                success = true;
-                break;
-            }
-            if (!success) {
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                boolean success = false;
+                for (int i = 1; i <= 3; i++) {
+                    final File captchaFile = this.getLocalCaptchaFile();
+                    Browser.download(captchaFile, br.cloneBrowser().openGetConnection("/img.php?get_captcha=true"));
+                    final ClickedPoint cp = getCaptchaClickedPoint(getHost(), captchaFile, param, getHost() + " | " + String.valueOf(i + 1) + "/3", null);
+                    br.postPage(br.getURL(), "position%5B%5D.x=" + String.valueOf(cp.getX()) + "&position%5B%5D.y=" + String.valueOf(cp.getY()));
+                    if (br.containsHTML("img\\.php\\?get_captcha=true")) {
+                        continue;
+                    }
+                    success = true;
+                    break;
+                }
+                if (!success) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
             }
         }
         final String finallink = br.getRegex(">Lien :</b></td><td><a href=\"(http[^<>\"]*?)\"").getMatch(0);
-        if (finallink == null) {
-            logger.warning("We can't find finallinks, either empty container or broken plugin. Please confirm in your Web Browser: " + parameter);
-            return decryptedLinks;
+        if (finallink != null) {
+            decryptedLinks.add(createDownloadlink(finallink));
         }
-        decryptedLinks.add(createDownloadlink(finallink));
         return decryptedLinks;
     }
 
