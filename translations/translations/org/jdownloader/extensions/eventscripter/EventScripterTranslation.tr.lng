@@ -23,6 +23,7 @@ ON_GENERIC_EXTRACTION=Herhangi Bir Çıkartma Olayı
 ON_JDOWNLOADER_STARTED=JDownloader başladı
 ON_NEW_CRAWLER_JOB=Yeni Gezici İşi
 ON_NEW_FILE=Yeni bir dosya oluşturulmuş
+ON_NEW_LINK=Yeni bir bağlantı eklendi
 ON_OUTGOING_REMOTE_API_EVENT=Uzak API Olayı atıldı
 ON_PACKAGE_FINISHED=Paket tamamlandı
 ON_PACKAGIZER=Paketleyici Kancası
