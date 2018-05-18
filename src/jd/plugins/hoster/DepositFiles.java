@@ -709,13 +709,7 @@ public class DepositFiles extends antiDDoSForHost {
 
     private AccountInfo webFetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        try {
-            webLogin(account, true);
-        } catch (final PluginException e) {
-            ai.setStatus(JDL.L("plugins.hoster.depositfilescom.accountbad", "Account expired or not valid."));
-            account.setValid(false);
-            return ai;
-        }
+        webLogin(account, true);
         if (isFreeAccountPost()) {
             account.setMaxSimultanDownloads(1);
             account.setConcurrentUsePossible(false);
@@ -777,13 +771,7 @@ public class DepositFiles extends antiDDoSForHost {
                 br.getHeaders().put("User-Agent", UA);
                 br.setFollowRedirects(true);
                 br.getPage(MAINPAGE.get() + "/login.php?return=%2Fde%2F");
-                String captchaJs = br.getRegex("(http[^\"']+js/base2\\.js)").getMatch(0);
                 Browser br2 = br.cloneBrowser();
-                String cid = null;
-                if (captchaJs != null) {
-                    br2.getPage(captchaJs);
-                    cid = br2.getRegex("window\\.recaptcha_public_key = '([^']+)").getMatch(0);
-                }
                 Thread.sleep(2000);
                 final Form login = br.getFormBySubmitvalue("Eingeben");
                 if (login == null) {
@@ -795,18 +783,16 @@ public class DepositFiles extends antiDDoSForHost {
                 login.put("password", Encoding.urlEncode(account.getPass()));
                 br2 = br.cloneBrowser();
                 br2.submitForm(login);
-                if (br2.containsHTML("\"error\":\"CaptchaRequired\"") && cid == null) {
-                    logger.warning("cid = null, captcha is required to login");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } else if (br2.containsHTML("\"error\":\"CaptchaRequired\"") && cid != null) {
-                    DownloadLink dummy = new DownloadLink(null, null, null, null, true);
-                    final Recaptcha rc = new Recaptcha(br2, this);
-                    rc.setId(cid);
-                    rc.load();
-                    File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    String c = getCaptchaCode("recaptcha", cf, dummy);
-                    login.put("recaptcha_challenge_field", rc.getChallenge());
-                    login.put("recaptcha_response_field", Encoding.urlEncode(c));
+                if (br2.containsHTML("\"error\":\"CaptchaRequired\"")) {
+                    if (getDownloadLink() == null) {
+                        final DownloadLink dummyLink = new DownloadLink(null, "Account", this.getHost(), MAINPAGE.get(), true);
+                        setDownloadLink(dummyLink);
+                    }
+                    final String c = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6LdyfgcTAAAAAArE1fk9cGyExtKfT4a12dWcViye").getToken();
+                    if (c == null || c.equals("")) {
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
+                    login.put("g-recaptcha-response", Encoding.urlEncode(c));
                     br2.submitForm(login);
                     if (br2.containsHTML("\"error\":\"CaptchaInvalid\"")) {
                         logger.info("Invalid Captcha response!");
@@ -827,8 +813,10 @@ public class DepositFiles extends antiDDoSForHost {
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
                 account.setProperty("uprand", br.getCookie(MAINPAGE.get(), "uprand"));
             } catch (final PluginException e) {
-                account.clearCookies("");
-                account.setProperty("uprand", Property.NULL);
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                    account.setProperty("uprand", Property.NULL);
+                }
                 throw e;
             }
         }
@@ -1018,18 +1006,15 @@ public class DepositFiles extends antiDDoSForHost {
             apiGetPage("http://depositfiles.com/api/user/login?" + "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&" + apiKeyVal());
             if (br.containsHTML("\"error\":\"CaptchaRequired\"")) {
                 for (int i = 0; i <= 2; i++) {
-                    DownloadLink dummyLink = new DownloadLink(null, "Account", this.getHost(), MAINPAGE.get(), true);
-                    final Recaptcha rc = new Recaptcha(br, this);
-                    rc.setId("6LdRTL8SAAAAAE9UOdWZ4d0Ky-aeA7XfSqyWDM2m");
-                    rc.load();
-                    File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    String c = getCaptchaCode("recaptcha", cf, dummyLink);
-                    if (c == null || c.equals("")) {
-                        logger.warning(this.getHost() + "requires captcha query in order to login, you've entered nothing or blank captcha respsonse. Aborting login sequence");
-                        account.setValid(false);
-                        return ai;
+                    if (getDownloadLink() == null) {
+                        final DownloadLink dummyLink = new DownloadLink(null, "Account", this.getHost(), MAINPAGE.get(), true);
+                        setDownloadLink(dummyLink);
                     }
-                    br.getPage("http://depositfiles.com/api/user/login?recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&" + apiKeyVal() + "&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                    final String c = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6LdyfgcTAAAAAArE1fk9cGyExtKfT4a12dWcViye").getToken();
+                    if (c == null || c.equals("")) {
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
+                    br.getPage("http://depositfiles.com/api/user/login?recaptcha_challenge_field=null&g-recaptcha-response=" + Encoding.urlEncode(c) + "&" + apiKeyVal() + "&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                     if (br.containsHTML("\"error\":\"CaptchaInvalid\"")) {
                         logger.info("Invalid Captcha response!");
                     } else {
@@ -1078,16 +1063,12 @@ public class DepositFiles extends antiDDoSForHost {
                 account.setType(AccountType.PREMIUM);
                 account.setMaxSimultanDownloads(-1);
                 account.setConcurrentUsePossible(true);
-                final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.UK);
                 if (expire == null) {
-                    ai.setStatus(JDL.L("plugins.hoster.depositfilescom.accountbad", "Account expired or not valid."));
-                    account.setProperty("accountData", Property.NULL);
-                    account.setValid(false);
-                    return ai;
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 try {
-                    Date date;
-                    date = dateFormat.parse(expire);
+                    final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.UK);
+                    final Date date = dateFormat.parse(expire);
                     ai.setValidUntil(date.getTime());
                 } catch (final ParseException e) {
                     logger.log(e);
@@ -1098,12 +1079,12 @@ public class DepositFiles extends antiDDoSForHost {
                 account.setConcurrentUsePossible(false);
             }
             saveAccountData(account);
-            account.setValid(true);
+            account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 5 * 60 * 60 * 1000l);
         } catch (PluginException e) {
-            account.setProperty("accountData", Property.NULL);
-            ai.setStatus(JDL.L("plugins.hoster.depositfilescom.accountbad", "Account expired or not valid."));
-            account.setValid(false);
-            return ai;
+            if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                account.setProperty("accountData", Property.NULL);
+            }
+            throw e;
         }
         // }
         return ai;
