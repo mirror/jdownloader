@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
@@ -59,6 +61,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub\\.com/photo/\\d+|https://pornhubdecrypted\\d+" })
@@ -79,13 +82,13 @@ public class PornHubCom extends PluginForHost {
     /* Note: Video bitrates and resolutions are not exact, they can vary. */
     /* Quality, { videoCodec, videoBitrate, videoResolution, audioCodec, audioBitrate } */
     public static LinkedHashMap<String, String[]> formats                   = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
-                                                                                {
-                                                                                    put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
-                                                                                    put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
-                                                                                    put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
-                                                                                    put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
-                                                                                }
-                                                                            });
+        {
+            put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
+            put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
+            put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
+            put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
+        }
+    });
     public static final String                    BEST_ONLY                 = "BEST_ONLY";
     public static final String                    FAST_LINKCHECK            = "FAST_LINKCHECK";
 
@@ -147,7 +150,7 @@ public class PornHubCom extends PluginForHost {
         String source_url = downloadLink.getStringProperty("mainlink");
         /* User-chosen quality, set in decrypter */
         final String quality = downloadLink.getStringProperty("quality", null);
-        LinkedHashMap<String, String> fresh_directurls = null;
+        Map<String, String> fresh_directurls = null;
         final String viewkey;
         boolean isVideo = true;
         if (downloadLink.getDownloadURL().matches(type_photo)) {
@@ -208,7 +211,7 @@ public class PornHubCom extends PluginForHost {
         try {
             con = brCheck.openHeadConnection(dlUrl);
             if (con.getResponseCode() != 200) {
-                fresh_directurls = getVideoLinksFree(br);
+                fresh_directurls = getVideoLinksFree(this, br);
                 if (fresh_directurls == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -258,9 +261,9 @@ public class PornHubCom extends PluginForHost {
     // dlUrl = br.getRegex("class=\"downloadBtn greyButton\" (target=\"_blank\")? href=\"(http[^<>\"]*?)\"").getMatch(1);
     // }
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public static LinkedHashMap<String, String> getVideoLinksFree(final Browser br) throws Exception {
+    public static Map<String, String> getVideoLinksFree(Plugin plugin, final Browser br) throws Exception {
         boolean success = false;
-        final LinkedHashMap qualities = new LinkedHashMap<String, String>();
+        final Map<String, String> qualities = new LinkedHashMap<String, String>();
         String flashVars = br.getRegex("\\'flashvars\\' :[\t\n\r ]+\\{([^\\}]+)").getMatch(0);
         if (flashVars == null) {
             flashVars = br.getRegex("var flashvars_\\d+ = (\\{.*?);\n").getMatch(0);
@@ -276,8 +279,17 @@ public class PornHubCom extends PluginForHost {
             final ArrayList<Object> entries = (ArrayList<Object>) values.get("mediaDefinitions");
             for (Object entry : entries) {
                 final LinkedHashMap<String, Object> e = (LinkedHashMap<String, Object>) entry;
-                String quality = (String) e.get("quality");
+                final String format = (String) e.get("format");
+                if (StringUtils.equalsIgnoreCase(format, "dash")) {
+                    plugin.getLogger().info("Dash not yet supported");
+                    continue;
+                }
+                final Object quality = e.get("quality");
                 if (quality == null) {
+                    continue;
+                }
+                if (quality instanceof List) {
+                    plugin.getLogger().info("quality is list?!");
                     continue;
                 }
                 dllink_temp = (String) e.get("videoUrl");
@@ -298,7 +310,7 @@ public class PornHubCom extends PluginForHost {
                 } else {
                     success = true;
                 }
-                qualities.put(quality, dllink_temp);
+                qualities.put(quality.toString(), dllink_temp);
             }
         }
         if (!success) {
