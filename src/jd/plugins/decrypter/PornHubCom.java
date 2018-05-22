@@ -18,7 +18,7 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
@@ -202,7 +202,7 @@ public class PornHubCom extends PluginForDecrypt {
             logger.info("Debug info: html_premium_only: " + parameter);
             return;
         }
-        final LinkedHashMap<String, String> foundLinks_all = jd.plugins.hoster.PornHubCom.getVideoLinksFree(br);
+        final Map<String, String> foundLinks_all = jd.plugins.hoster.PornHubCom.getVideoLinksFree(this, br);
         logger.info("Debug info: foundLinks_all: " + foundLinks_all);
         if (foundLinks_all == null) {
             throw new DecrypterException("Decrypter broken");
