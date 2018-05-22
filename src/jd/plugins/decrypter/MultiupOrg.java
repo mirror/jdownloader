@@ -51,8 +51,10 @@ public class MultiupOrg extends antiDDoSForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         String parameter = param.toString().replaceFirst("://multiup", "://www.multiup");
-        parameter = parameter.replaceFirst("org/en/", "org/");
-        parameter = parameter.replaceFirst("org/fr/", "org/");
+        parameter = parameter.replaceFirst("\\.org/en/", ".org/");
+        parameter = parameter.replaceFirst("\\.org/fr/", ".org/");
+        parameter = parameter.replaceFirst("\\.eu/en/", ".eu/");
+        parameter = parameter.replaceFirst("\\.eu/fr/", ".eu/");
         parameter = parameter.replaceFirst("http://", "https://");
         final String uid = getFUID(parameter);
         if (uid == null) {

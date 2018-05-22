@@ -34,13 +34,13 @@ import jd.plugins.FilePackage;
 import org.appwork.utils.Regex;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "israbox.life" }, urls = { "https?://[\\w\\.]*(?:israbox\\.(?:com|co|net|org|info|me|download|eu|be|club|life|pw|pro|io|one)|isbox\\.net)/[0-9]+-.*?\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "israbox.life" }, urls = { "https?://[\\w\\.]*(?:israbox\\.(?:[a-zA-Z]+)|isbox\\.net)/[0-9]+-.*?\\.html" })
 public class SrBoxLife extends antiDDoSForDecrypt {
     public SrBoxLife(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private final String base = "(?i)https?://[\\w\\.]*(?:israbox\\.(?:com|co|net|org|info|me|download|eu|be|club|life|pw|pro|io|one)|isbox\\.net)/";
+    private final String base = "(?i)https?://[\\w\\.]*(?:israbox\\.(?:[a-zA-Z]+)|isbox\\.net)/";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
