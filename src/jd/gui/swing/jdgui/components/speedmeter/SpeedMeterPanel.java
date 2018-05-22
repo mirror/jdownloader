@@ -13,8 +13,9 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.gui.swing.jdgui.components.speedmeter;
+
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
@@ -29,42 +30,32 @@ import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-
 public class SpeedMeterPanel extends Graph {
-
-    private static final long serialVersionUID = 5571694800446993879L;
-
-    private final Limiter speedLimiter;
-
+    private static final long     serialVersionUID = 5571694800446993879L;
+    private final Limiter         speedLimiter;
     private final GeneralSettings config;
 
     public SpeedMeterPanel(boolean contextMenu, boolean start) {
         super();
-
-        this.setCapacity((CFG_GUI.CFG.getSpeedMeterTimeFrame() * CFG_GUI.CFG.getSpeedMeterFramesPerSecond()) / 1000);
-        this.setInterval(1000 / CFG_GUI.CFG.getSpeedMeterFramesPerSecond());
+        final int fps = Math.max(1, CFG_GUI.CFG.getSpeedMeterFramesPerSecond());
+        this.setCapacity((CFG_GUI.CFG.getSpeedMeterTimeFrame() * fps) / 1000);
+        this.setInterval(1000 / fps);
         setCurrentColorTop(LAFOptions.getInstance().getColorForSpeedmeterCurrentTop());
         setCurrentColorBottom(LAFOptions.getInstance().getColorForSpeedmeterCurrentBottom());
         setAverageColor(LAFOptions.getInstance().getColorForSpeedMeterAverage());
         setAverageTextColor(LAFOptions.getInstance().getColorForSpeedMeterAverageText());
         setTextColor(LAFOptions.getInstance().getColorForSpeedMeterText());
         setOpaque(false);
-
         speedLimiter = new Limiter(LAFOptions.getInstance().getColorForSpeedmeterLimiterTop(), LAFOptions.getInstance().getColorForSpeedmeterLimiterBottom()) {
             public String getString() {
                 return _GUI.T.SpeedMeterPanel_getString_limited(SizeFormatter.formatBytes(speedLimiter.getValue()));
-
             };
         };
-
         config = JsonConfig.create(GeneralSettings.class);
         speedLimiter.setValue(config.isDownloadSpeedLimitEnabled() ? config.getDownloadSpeedLimit() : 0);
         org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT.getEventSender().addListener(new GenericConfigEventListener<Integer>() {
-
             public void onConfigValueModified(KeyHandler<Integer> keyHandler, Integer newValue) {
                 new EDTRunner() {
-
                     @Override
                     protected void runInEDT() {
                         speedLimiter.setValue(config.isDownloadSpeedLimitEnabled() ? config.getDownloadSpeedLimit() : 0);
@@ -73,17 +64,14 @@ public class SpeedMeterPanel extends Graph {
             }
 
             public void onConfigValidatorError(KeyHandler<Integer> keyHandler, Integer invalidValue, ValidationException validateException) {
-
             }
         }, false);
         org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
-
             public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
             }
 
             public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
                 new EDTRunner() {
-
                     @Override
                     protected void runInEDT() {
                         speedLimiter.setValue(config.isDownloadSpeedLimitEnabled() ? config.getDownloadSpeedLimit() : 0);
@@ -110,5 +98,4 @@ public class SpeedMeterPanel extends Graph {
     public int getValue() {
         return DownloadWatchDog.getInstance().getDownloadSpeedManager().getSpeed();
     }
-
 }

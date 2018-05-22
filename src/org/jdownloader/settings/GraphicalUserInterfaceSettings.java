@@ -73,6 +73,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
      */
     @AboutConfig
     @DefaultIntValue(4)
+    @SpinnerValidator(min = 1, max = 10, step = 1)
     int getSpeedMeterFramesPerSecond();
 
     void setSpeedMeterFramesPerSecond(int i);

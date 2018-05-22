@@ -170,7 +170,7 @@ public class FileCryptCc extends PluginForDecrypt {
                     }
                 }
             }
-            final String captcha = captchaForm != null ? captchaForm.getRegex("(/captcha/[^<>\"]*?)\"").getMatch(0) : null;
+            final String captcha = captchaForm != null ? captchaForm.getRegex("(/captcha/[^<>\"']*?)\"").getMatch(0) : null;
             if (captcha != null && captcha.contains("circle.php")) {
                 final File file = this.getLocalCaptchaFile();
                 getCaptchaBrowser(br).getDownload(file, captcha);
@@ -236,19 +236,15 @@ public class FileCryptCc extends PluginForDecrypt {
                 // they use recaptcha response field key for non recaptcha.. math sum and text =
                 // http://filecrypt.cc/captcha/captcha.php?namespace=container
                 // using bismarck original observation, this type is skipable.
-                if (counter > 0) {
-                    final String code = getCaptchaCode(captcha, param);
-                    if (StringUtils.isEmpty(code)) {
-                        if (counter + 1 < retry) {
-                            continue;
-                        } else {
-                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                        }
+                final String code = getCaptchaCode(captcha, param);
+                if (StringUtils.isEmpty(code)) {
+                    if (counter + 1 < retry) {
+                        continue;
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
-                    captchaForm.put("recaptcha_response_field", Encoding.urlEncode(code));
-                } else {
-                    captchaForm.put("recaptcha_response_field", "");
                 }
+                captchaForm.put("recaptcha_response_field", Encoding.urlEncode(code));
                 submitForm(captchaForm);
             } else if (captchaForm != null && captchaForm.containsHTML("class=\"coinhive\\-captcha\"")) {
                 logger.info("Coinhive captcha is not yet supported");
@@ -314,6 +310,9 @@ public class FileCryptCc extends PluginForDecrypt {
         logger.info("Trying single link handling");
         final String[] links = br.getRegex("openLink\\('([^<>\"]*?)'").getColumn(0);
         if (links == null || links.length == 0) {
+            if (br.containsHTML("Der Inhaber dieses Ordners hat leider alle Hoster in diesem Container in seinen Einstellungen deaktiviert.")) {
+                return decryptedLinks;
+            }
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
