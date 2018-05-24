@@ -26,7 +26,6 @@ import org.jdownloader.myjdownloader.client.json.MyCaptchaChallenge;
 import org.jdownloader.myjdownloader.client.json.MyCaptchaSolution;
 import org.jdownloader.myjdownloader.client.json.MyCaptchaSolution.RESULT;
 import org.jdownloader.settings.staticreferences.CFG_MYJD;
-import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.translate._JDT;
 
 public class MyJDownloaderController implements ShutdownVetoListener, GenericConfigEventListener<Boolean> {
@@ -225,7 +224,6 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
         if (error == null) {
             error = MyJDownloaderError.NONE;
         }
-        StatsManager.I().track(1000, "myjd/error/" + error.name());
         CFG_MYJD.CFG.setLatestError(error);
         switch (error) {
         case ACCOUNT_UNCONFIRMED:
