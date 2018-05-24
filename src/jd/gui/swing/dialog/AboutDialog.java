@@ -257,7 +257,6 @@ public class AboutDialog extends AbstractDialog<Integer> {
         ret.setContentAreaFilled(false);
         ret.setEnabled(true);
         ret.setMaximumSize(new Dimension(1000, labelHeight));
-        // ret.setPreferredSize(new Dimension(ret.getPreferredSize().width, 12));
         return ret;
     }
 }
