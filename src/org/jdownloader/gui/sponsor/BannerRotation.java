@@ -73,7 +73,6 @@ import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
 import org.jdownloader.premium.OpenURLAction;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
-import org.jdownloader.statistics.StatsManager;
 
 public class BannerRotation implements Sponsor, AccountControllerListener {
     private final List<AvailableBanner> allBanners = new CopyOnWriteArrayList<AvailableBanner>();
@@ -625,7 +624,6 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
                                 if (isBannerEnabled.getAndSet(isEnabled) != isEnabled) {
                                     JsonConfig.create(GraphicalUserInterfaceSettings.class).setBannerChangeTimestamp(System.currentTimeMillis());
                                     if (!isEnabled) {
-                                        StatsManager.I().track("various/BANNER/disabled");
                                         new EDTRunner() {
                                             @Override
                                             protected void runInEDT() {
@@ -634,7 +632,6 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
                                             }
                                         };
                                     } else {
-                                        StatsManager.I().track("various/BANNER/enabled");
                                         updateDelayer.resetAndStart();
                                     }
                                 }
@@ -753,13 +750,8 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
             };
             try {
                 Dialog.getInstance().showDialog(d);
-                StatsManager.I().openAfflink(plugin, customURL, "PremiumExpireWarning/" + account.getHoster() + "/OK");
             } catch (DialogNoAnswerException e) {
                 e.printStackTrace();
-                StatsManager.I().track("PremiumExpireWarning/" + account.getHoster() + "/CANCELED");
-            }
-            if (d.isDontShowAgainSelected()) {
-                StatsManager.I().track("PremiumExpireWarning/" + account.getHoster() + "/DONT_SHOW_AGAIN");
             }
         }
     }

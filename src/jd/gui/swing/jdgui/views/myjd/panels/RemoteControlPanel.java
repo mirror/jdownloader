@@ -15,8 +15,6 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.statistics.StatsManager;
-import org.jdownloader.statistics.StatsManager.CollectionName;
 
 public class RemoteControlPanel extends AbstractConfigPanel {
     public RemoteControlPanel() {
@@ -49,7 +47,6 @@ public class RemoteControlPanel extends AbstractConfigPanel {
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
-                    StatsManager.I().track("myjd/" + url, CollectionName.BASIC);
                     CrossSystem.openURLOrShowMessage("http://update3.jdownloader.org/jdserv/RedirectInterface/redirect?" + Encoding.urlEncode(url));
                 } catch (StorageException e1) {
                     e1.printStackTrace();

@@ -25,7 +25,6 @@ import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.SolverStatus;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptcha2FallbackChallenge;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.CESChallengeSolver;
@@ -71,7 +70,7 @@ public class CheapCaptchaSolver extends CESChallengeSolver<String> {
         if (!validateBlackWhite(c)) {
             return false;
         }
-        if (c instanceof RecaptchaV2Challenge || c instanceof AbstractRecaptcha2FallbackChallenge) {
+        if (c instanceof RecaptchaV2Challenge) {
             // does not accept this annoted image yet
             return false;
         }
@@ -92,12 +91,7 @@ public class CheapCaptchaSolver extends CESChallengeSolver<String> {
             PostFormDataRequest r = new PostFormDataRequest("http://api.cheapcaptcha.com/api/captcha");
             r.addFormData(new FormData("username", (config.getUserName())));
             r.addFormData(new FormData("password", (config.getPassword())));
-            final byte[] data;
-            if (challenge instanceof AbstractRecaptcha2FallbackChallenge) {
-                data = challenge.getAnnotatedImageBytes();
-            } else {
-                data = IO.readBytes(challenge.getImageFile());
-            }
+            final byte[] data = IO.readBytes(challenge.getImageFile());
             final int mode = 0;
             switch (mode) {
             case 0:

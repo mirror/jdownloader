@@ -170,7 +170,7 @@ public class FileCryptCc extends PluginForDecrypt {
                     }
                 }
             }
-            final String captcha = captchaForm != null ? captchaForm.getRegex("(/captcha/[^<>\"']*?)\"").getMatch(0) : null;
+            final String captcha = captchaForm != null ? captchaForm.getRegex("((https?://[^<>\"']*?)?/captcha/[^<>\"']*?)\"").getMatch(0) : null;
             if (captcha != null && captcha.contains("circle.php")) {
                 final File file = this.getLocalCaptchaFile();
                 getCaptchaBrowser(br).getDownload(file, captcha);
@@ -232,10 +232,13 @@ public class FileCryptCc extends PluginForDecrypt {
                     continue;
                 }
                 submitForm(captchaForm);
+            } else if (captchaForm != null && captchaForm.containsHTML("class=\"coinhive\\-captcha\"")) {
+                logger.info("Coinhive captcha is not yet supported");
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            } else if (StringUtils.containsIgnoreCase(captcha, "cutcaptcha")) {
+                logger.info("cutcaptcha captcha is not yet supported");
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             } else if (captcha != null) {
-                // they use recaptcha response field key for non recaptcha.. math sum and text =
-                // http://filecrypt.cc/captcha/captcha.php?namespace=container
-                // using bismarck original observation, this type is skipable.
                 final String code = getCaptchaCode(captcha, param);
                 if (StringUtils.isEmpty(code)) {
                     if (counter + 1 < retry) {
@@ -246,9 +249,6 @@ public class FileCryptCc extends PluginForDecrypt {
                 }
                 captchaForm.put("recaptcha_response_field", Encoding.urlEncode(code));
                 submitForm(captchaForm);
-            } else if (captchaForm != null && captchaForm.containsHTML("class=\"coinhive\\-captcha\"")) {
-                logger.info("Coinhive captcha is not yet supported");
-                return null;
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Could not find captcha form");
             }

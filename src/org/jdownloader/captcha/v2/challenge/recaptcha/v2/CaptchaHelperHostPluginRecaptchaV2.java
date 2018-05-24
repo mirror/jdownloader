@@ -15,7 +15,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.captcha.blacklist.BlacklistEntry;
@@ -24,7 +23,6 @@ import org.jdownloader.captcha.blacklist.BlockDownloadCaptchasByHost;
 import org.jdownloader.captcha.blacklist.BlockDownloadCaptchasByLink;
 import org.jdownloader.captcha.blacklist.BlockDownloadCaptchasByPackage;
 import org.jdownloader.captcha.blacklist.CaptchaBlackList;
-import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.gui.IconKey;
@@ -106,55 +104,8 @@ public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRec
                     throw new CaptchaException(blackListEntry);
                 }
                 jobs.add(ChallengeResponseController.getInstance().handle(c));
-                AbstractRecaptcha2FallbackChallenge rcFallback = null;
-                while (jobs.size() <= 20) {
-                    if (rcFallback == null && c.getResult() != null) {
-                        for (AbstractResponse<String> r : c.getResult()) {
-                            if (r.getChallenge() != null && r.getChallenge() instanceof AbstractRecaptcha2FallbackChallenge) {
-                                rcFallback = (AbstractRecaptcha2FallbackChallenge) r.getChallenge();
-                                break;
-                            }
-                        }
-                    }
-                    if (rcFallback != null && rcFallback.getToken() == null) {
-                        // retry
-                        try {
-                            rcFallback.reload(jobs.size() + 1);
-                        } catch (Throwable e) {
-                            LogSource.exception(logger, e);
-                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                        }
-                        if (rcFallback.doRunAntiDDosProtection()) {
-                            runDdosPrevention();
-                        }
-                        jobs.add(ChallengeResponseController.getInstance().handle(rcFallback));
-                        if (StringUtils.isNotEmpty(rcFallback.getToken())) {
-                            break;
-                        }
-                    } else {
-                        break;
-                    }
-                }
                 if (!c.isSolved()) {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                }
-                if (c.getResult() != null) {
-                    for (AbstractResponse<String> r : c.getResult()) {
-                        if (r.getChallenge() instanceof AbstractRecaptcha2FallbackChallenge) {
-                            String token = ((AbstractRecaptcha2FallbackChallenge) r.getChallenge()).getToken();
-                            if (!RecaptchaV2Challenge.isValidToken(token)) {
-                                for (int i = 0; i < jobs.size(); i++) {
-                                    jobs.get(i).invalidate();
-                                }
-                                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                            } else {
-                                for (int i = 0; i < jobs.size(); i++) {
-                                    jobs.get(i).validate();
-                                }
-                            }
-                            return token;
-                        }
-                    }
                 }
                 // check main challenge
                 if (!c.isCaptchaResponseValid()) {

@@ -8,22 +8,22 @@ import java.util.HashMap;
 import javax.swing.Icon;
 import javax.swing.JLabel;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtButton;
-import org.jdownloader.actions.AppAction;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.settings.staticreferences.CFG_ANTICAPTCHA_COM;
-import org.jdownloader.statistics.StatsManager;
-
 import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
 import jd.gui.swing.jdgui.views.settings.components.TextInput;
 import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
 import jd.http.Browser;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtButton;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.actions.AppAction;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.settings.staticreferences.CFG_ANTICAPTCHA_COM;
 
 public final class AntiCaptchaComConfigPanel extends AbstractCaptchaSolverConfigPanel {
     /**
@@ -46,7 +46,7 @@ public final class AntiCaptchaComConfigPanel extends AbstractCaptchaSolverConfig
 
             @Override
             public void actionPerformed(ActionEvent e) {
-                StatsManager.I().openAfflink("anti-captcha.com", "http://getcaptchasolution.com/pue5rd7req", "ConfigPanel");
+                CrossSystem.openURLOrShowMessage("http://getcaptchasolution.com/pue5rd7req");
             }
         }), "gapleft 37,spanx,pushx,growx");
         apiKey = new TextInput(CFG_ANTICAPTCHA_COM.API_KEY);

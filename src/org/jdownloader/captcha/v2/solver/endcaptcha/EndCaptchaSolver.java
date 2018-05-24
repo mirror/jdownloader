@@ -16,7 +16,6 @@ import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.SolverStatus;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptcha2FallbackChallenge;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.CESChallengeSolver;
@@ -30,7 +29,6 @@ import org.jdownloader.settings.staticreferences.CFG_END_CAPTCHA;
 import org.seamless.util.io.IO;
 
 public class EndCaptchaSolver extends CESChallengeSolver<String> {
-
     private final EndCaptchaConfigInterface config;
     private static final EndCaptchaSolver   INSTANCE   = new EndCaptchaSolver();
     private final ThreadPoolExecutor        threadPool = new ThreadPoolExecutor(0, 1, 30000, TimeUnit.MILLISECONDS, new LinkedBlockingDeque<Runnable>(), Executors.defaultThreadFactory());
@@ -63,7 +61,7 @@ public class EndCaptchaSolver extends CESChallengeSolver<String> {
         if (!validateBlackWhite(c)) {
             return false;
         }
-        if (c instanceof RecaptchaV2Challenge || c instanceof AbstractRecaptcha2FallbackChallenge) {
+        if (c instanceof RecaptchaV2Challenge) {
             // endcaptcha does not support them
             return false;
         }
@@ -102,12 +100,7 @@ public class EndCaptchaSolver extends CESChallengeSolver<String> {
             final PostFormDataRequest r = new PostFormDataRequest("http://api.endcaptcha.com/upload");
             r.addFormData(new FormData("username", (config.getUserName())));
             r.addFormData(new FormData("password", (config.getPassword())));
-            final byte[] data;
-            if (challenge instanceof AbstractRecaptcha2FallbackChallenge) {
-                data = challenge.getAnnotatedImageBytes();
-            } else {
-                data = IO.readBytes(challenge.getImageFile());
-            }
+            final byte[] data = IO.readBytes(challenge.getImageFile());
             r.addFormData(new FormData("image", "ByteData.captcha", data));
             conn = br.openRequestConnection(r);
             br.loadConnection(conn);
@@ -171,7 +164,6 @@ public class EndCaptchaSolver extends CESChallengeSolver<String> {
     public boolean setInvalid(final AbstractResponse<?> response) {
         if (config.isFeedBackSendingEnabled() && response instanceof EndCaptchaResponse) {
             threadPool.execute(new Runnable() {
-
                 @Override
                 public void run() {
                     URLConnectionAdapter conn = null;
@@ -236,7 +228,5 @@ public class EndCaptchaSolver extends CESChallengeSolver<String> {
             }
         }
         return ret;
-
     }
-
 }

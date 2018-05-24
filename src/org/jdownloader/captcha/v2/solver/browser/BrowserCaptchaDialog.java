@@ -42,6 +42,15 @@ import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 
+import jd.gui.swing.dialog.AbstractImageCaptchaDialog;
+import jd.gui.swing.dialog.DialogType;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.views.settings.components.Checkbox;
+import jd.plugins.Plugin;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import net.miginfocom.swing.MigLayout;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
@@ -77,17 +86,7 @@ import org.jdownloader.premium.PremiumInfoDialog;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
-import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.updatev2.gui.LAFOptions;
-
-import jd.gui.swing.dialog.AbstractImageCaptchaDialog;
-import jd.gui.swing.dialog.DialogType;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.views.settings.components.Checkbox;
-import jd.plugins.Plugin;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import net.miginfocom.swing.MigLayout;
 
 /**
  * This Dialog is used to display a Inputdialog for the captchas
@@ -369,14 +368,12 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
              *
              */
             private static final long serialVersionUID = -3551320196255605774L;
-
             {
                 setName(_GUI.T.CaptchaDialog_getDefaultButtonPanel_premium());
             }
 
             public void actionPerformed(ActionEvent e) {
                 cancel();
-                StatsManager.I().track("click/captchadialog/hate/" + hosterInfo.getTld());
                 PremiumInfoDialog d = new PremiumInfoDialog(hosterInfo, _GUI.T.PremiumInfoDialog_PremiumInfoDialog_(hosterInfo.getTld()), "CaptchaDialog");
                 try {
                     Dialog.getInstance().showDialog(d);

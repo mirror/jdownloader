@@ -17,18 +17,17 @@ import jd.controlling.captcha.SkipException;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptcha2FallbackChallenge;
 import org.jdownloader.captcha.v2.solver.browser.AbstractBrowserChallenge;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 
 public abstract class ChallengeSolver<T> {
     public static final ChallengeSolver EXTERN = new ChallengeSolver<Object>() {
-        @Override
-        public void solve(SolverJob<Object> solverJob) throws InterruptedException, SolverException, SkipException {
-            throw new WTFException("Not Implemented");
-        }
-    };
+                                                   @Override
+                                                   public void solve(SolverJob<Object> solverJob) throws InterruptedException, SolverException, SkipException {
+                                                       throw new WTFException("Not Implemented");
+                                                   }
+                                               };
 
     private ChallengeSolver() {
     }
@@ -164,9 +163,6 @@ public abstract class ChallengeSolver<T> {
 
     public boolean canHandle(Challenge<?> c) {
         if (c instanceof AbstractBrowserChallenge) {
-            return false;
-        }
-        if (c instanceof AbstractRecaptcha2FallbackChallenge) {
             return false;
         }
         if (!getResultType().isAssignableFrom(c.getResultType())) {

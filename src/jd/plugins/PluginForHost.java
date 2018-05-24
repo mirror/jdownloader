@@ -170,7 +170,6 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
-import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.UpdateController;
 
@@ -182,14 +181,14 @@ import org.jdownloader.updatev2.UpdateController;
 public abstract class PluginForHost extends Plugin {
     private static final String    COPY_MOVE_FILE = "CopyMoveFile";
     private static final Pattern[] PATTERNS       = new Pattern[] {
-                                                  /**
-                                                   * these patterns should split filename and fileextension (extension must include the
-                                                   * point)
-                                                   */
-                                                  // multipart rar archives
-            Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
-            // normal files with extension
-            Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
+        /**
+         * these patterns should split filename and fileextension (extension must include the
+         * point)
+         */
+        // multipart rar archives
+        Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
+        // normal files with extension
+        Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
     private LazyHostPlugin         lazyP          = null;
     /**
      * Is true if the user has answered a captcha challenge. does not say anything whether if the answer was correct or not
@@ -1154,16 +1153,16 @@ public abstract class PluginForHost extends Plugin {
     public void handleMultiHost(DownloadLink downloadLink, Account account) throws Exception {
         /*
          * fetchAccountInfo must fill ai.setMultiHostSupport to signal all supported multiHosts
-         * 
+         *
          * please synchronized on accountinfo and the ArrayList<String> when you change something in the handleMultiHost function
-         * 
+         *
          * in fetchAccountInfo we don't have to synchronize because we create a new instance of AccountInfo and fill it
-         * 
+         *
          * if you need customizable maxDownloads, please use getMaxSimultanDownload to handle this you are in multihost when account host
          * does not equal link host!
-         * 
-         * 
-         * 
+         *
+         *
+         *
          * will update this doc about error handling
          */
         logger.severe("invalid call to handleMultiHost: " + downloadLink.getName() + ":" + downloadLink.getHost() + " to " + getHost() + ":" + this.getVersion() + " with " + account);
@@ -2133,10 +2132,7 @@ public abstract class PluginForHost extends Plugin {
             }
         };
         try {
-            StatsManager.I().track("freedialog/" + domain + "/show");
             UIOManager.I().show(AskToUsePremiumDialogInterface.class, d).throwCloseExceptions();
-            StatsManager.I().track("freedialog/" + domain + "/ok");
-            StatsManager.I().openAfflink(this, null, "freedialog");
         } catch (Throwable e) {
             LogSource.exception(logger, e);
         }

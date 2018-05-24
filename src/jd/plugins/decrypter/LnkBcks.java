@@ -13,14 +13,10 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -33,6 +29,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 // DEV NOTES:
 // 162.158.0.0/15 cloudflare
 // 141.101.64.0 - 141.101.127.255 cloudflare
@@ -41,10 +40,8 @@ import jd.plugins.components.SiteType.SiteTemplate;
 // INFORELAY-LAX2-02   (NET-173-205-128-0-1) 173.205.128.0 - 173.205.255.255
 // LINKBUCKS LINKBUCKS (NET-173-205-185-80-1) 173.205.185.80 - 173.205.185.95
 // www.uid.domain redirects to linkbucks homepage on https.
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class LnkBcks extends antiDDoSForDecrypt {
-
     /**
      * Returns the annotations names array
      *
@@ -105,7 +102,6 @@ public class LnkBcks extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
         }
-
         br.setFollowRedirects(false);
         getPage(parameter);
         long firstGet = System.currentTimeMillis();
@@ -122,10 +118,6 @@ public class LnkBcks extends antiDDoSForDecrypt {
                         isMatch = true;
                         break;
                     }
-                }
-                if (!isMatch) {
-                    // we don't know about this site, lets post about it!
-                    org.jdownloader.statistics.StatsManager.I().track("linkbucks/unidentified_domain/" + Browser.getHost(link));
                 }
                 getPage(link);
                 link = br.getRedirectLocation();
@@ -203,7 +195,6 @@ public class LnkBcks extends antiDDoSForDecrypt {
                     j.getHeaders().put("Cache-Control", null);
                     getPage(j, "/scripts/jquery.js?r=" + token);
                 }
-
                 // for uid/url/hash links, seem to be the only ones encoded, but for now we will use the JS to determine it as its more
                 // likely to be correct longer -- raztoki 20150425
                 final String urlEncoded = new Regex(js, "UrlEncoded\\s*:\\s*(true|false|null)").getMatch(0);
@@ -269,7 +260,6 @@ public class LnkBcks extends antiDDoSForDecrypt {
             return null;
         }
         decryptedLinks.add(createDownloadlink(link));
-
         return decryptedLinks;
     }
 
@@ -313,7 +303,6 @@ public class LnkBcks extends antiDDoSForDecrypt {
             int i, x, y;
             String res = "";
             final String k = "function(str){vars=[],j=0,x,res='',k=arguments.callee.toString().replace(/\\s+/g,\"\");for(vari=0;i<256;i++){s[i]=i;}for(i=0;i<256;i++){j=(j+s[i]+k.charCodeAt(i%k.length))%256;x=s[i];s[i]=s[j];s[j]=x;}i=0;j=0;for(vary=0;y<str.length;y++){i=(i+1)%256;j=(j+s[i])%256;x=s[i];s[i]=s[j];s[j]=x;res+=String.fromCharCode(str.charCodeAt(y)^s[(s[i]+s[j])%256]);}returnres;}";
-
             for (i = 0; i < 256; i++) {
                 s[i] = i;
             }
@@ -373,5 +362,4 @@ public class LnkBcks extends antiDDoSForDecrypt {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.Linkbucks_Linkbucks;
     }
-
 }

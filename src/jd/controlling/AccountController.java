@@ -59,6 +59,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.Eventsender;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -72,7 +73,6 @@ import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChi
 import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.settings.AccountData;
 import org.jdownloader.settings.AccountSettings;
-import org.jdownloader.statistics.StatsManager;
 
 public class AccountController implements AccountControllerListener, AccountPropertyChangeHandler {
     private static final long                                                    serialVersionUID = -7560087582989096645L;
@@ -909,6 +909,18 @@ public class AccountController implements AccountControllerListener, AccountProp
         return "http://update3.jdownloader.org/jdserv/BuyPremiumInterface/redirect?" + Encoding.urlEncode(buyPremiumUrl) + "&" + Encoding.urlEncode(id);
     }
 
+    public static void openAfflink(final PluginForHost plugin, final String customRefURL, final String source) {
+        String refURL = customRefURL;
+        if (StringUtils.isEmpty(refURL) && plugin != null) {
+            String buyPremium = plugin.getBuyPremiumUrl();
+            if (StringUtils.isEmpty(buyPremium)) {
+                buyPremium = "http://" + plugin.getHost();
+            }
+            refURL = AccountController.createFullBuyPremiumUrl(buyPremium, source);
+        }
+        CrossSystem.openURLOrShowMessage(refURL);
+    }
+
     @Override
     public boolean fireAccountPropertyChange(jd.plugins.AccountProperty propertyChange) {
         if (propertyChange.getAccount().isChecking()) {
@@ -918,10 +930,13 @@ public class AccountController implements AccountControllerListener, AccountProp
         return true;
     }
 
+    private final String SLV                = "slv";
+    private final String SLID               = "slid";
+    private final String IMPORTED_TIMESTAMP = "im";
+
     public List<Account> importAccounts(File f) {
         /* TODO: add cleanup to avoid memleak */
         final AccountSettings cfg = JsonConfig.create(new File(f.getParent(), "org.jdownloader.settings.AccountSettings"), AccountSettings.class);
-        StatsManager.I().track("premium/import/" + cfg.getListID() + "/" + cfg.getListVersion());
         final long timeStamp = System.currentTimeMillis();
         final HashMap<String, List<Account>> accounts = loadAccounts(cfg, false);
         final ArrayList<Account> added = new ArrayList<Account>();
@@ -929,9 +944,9 @@ public class AccountController implements AccountControllerListener, AccountProp
             for (final Account ad : es.getValue()) {
                 final Account acc = new Account(ad.getUser(), ad.getPass());
                 acc.setHoster(ad.getHoster());
-                acc.setProperty(StatsManager.IMPORTED_TIMESTAMP, timeStamp);
-                acc.setProperty(StatsManager.SLID, cfg.getListID());
-                acc.setProperty(StatsManager.SLV, cfg.getListVersion());
+                acc.setProperty(IMPORTED_TIMESTAMP, timeStamp);
+                acc.setProperty(SLID, cfg.getListID());
+                acc.setProperty(SLV, cfg.getListVersion());
                 addAccount(acc);
                 added.add(ad);
             }

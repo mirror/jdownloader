@@ -8,6 +8,10 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Plugin;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
@@ -26,7 +30,6 @@ import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.ChallengeSolver;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.phantomjs.Recaptcha2FallbackChallengeViaPhantomJS;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.CaptchaResponse;
 import org.jdownloader.captcha.v2.solver.browser.AbstractBrowserChallenge;
@@ -35,12 +38,6 @@ import org.jdownloader.captcha.v2.solver.browser.BrowserViewport;
 import org.jdownloader.captcha.v2.solver.browser.BrowserWindow;
 import org.jdownloader.captcha.v2.solver.service.BrowserSolverService;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.phantomjs.PhantomJS;
-import org.jdownloader.phantomjs.installation.InstallThread;
-
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.Plugin;
 
 public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
     public static final String             RAWTOKEN    = "rawtoken";
@@ -662,31 +659,6 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
     }
 
     public synchronized BasicCaptchaChallenge createBasicCaptchaChallenge(final boolean showInstallDialog) {
-        if (basicChallenge != null) {
-            return basicChallenge;
-        } else {
-            final PhantomJS binding = new PhantomJS();
-            if (binding.isEnabled()) {
-                if (!binding.isAvailable() && showInstallDialog) {
-                    try {
-                        InstallThread.install(null, _GUI.T.phantomjs_usage());
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-                if (!binding.isAvailable()) {
-                    return null;
-                } else {
-                    basicChallenge = createPhantomJSChallenge(); //
-                    return basicChallenge;
-                }
-            } else {
-                return null;
-            }
-        }
-    }
-
-    protected Recaptcha2FallbackChallengeViaPhantomJS createPhantomJSChallenge() {
-        return new Recaptcha2FallbackChallengeViaPhantomJS(this);
+        return basicChallenge;
     }
 }

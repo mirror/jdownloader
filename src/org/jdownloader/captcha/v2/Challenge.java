@@ -21,8 +21,6 @@ import org.jdownloader.captcha.v2.solver.CESChallengeSolver;
 import org.jdownloader.captcha.v2.solverjob.ResponseList;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.controlling.UniqueAlltimeID;
-import org.jdownloader.statistics.StatsManager;
-import org.jdownloader.statistics.StatsManager.CollectionName;
 
 public abstract class Challenge<T> {
     private static final int      REDUCER      = 100;
@@ -326,28 +324,18 @@ public abstract class Challenge<T> {
         if (solver == null || !(solver instanceof CESChallengeSolver)) {
             return;
         }
-        //
-        HashMap<String, String> info = createStatsInfoMap(solver);
-        info.put("errorclass", e.getClass().getSimpleName());
-        info.put("errormessage", e.getMessage());
-        StatsManager.I().track(REDUCER, "captchaCES", "error", info, CollectionName.CAPTCHA);
     }
 
     public void sendStatsSolving(ChallengeSolver solver) {
         if (solver == null || !(solver instanceof CESChallengeSolver)) {
             return;
         }
-        HashMap<String, String> info = createStatsInfoMap(solver);
-        StatsManager.I().track(REDUCER, "captchaCES", "solving", info, CollectionName.CAPTCHA);
     }
 
     public void sendStatsValidation(ChallengeSolver solver, String status) {
         if (solver == null || !(solver instanceof CESChallengeSolver)) {
             return;
         }
-        HashMap<String, String> info = createStatsInfoMap(solver);
-        info.put("status", status);
-        StatsManager.I().track(REDUCER, "captchaCES", "validation", info, CollectionName.CAPTCHA);
     }
 
     private HashMap<String, String> createStatsInfoMap(ChallengeSolver solver) {

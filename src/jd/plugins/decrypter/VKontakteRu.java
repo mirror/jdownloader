@@ -2209,16 +2209,13 @@ public class VKontakteRu extends PluginForDecrypt {
                 }
                 for (int i = 0; i <= 3; i++) {
                     logger.info("Entering security check...");
-                    org.jdownloader.statistics.StatsManager.I().track("vkontakte/verify/missing_digits/ask");
                     final String to = ajaxBR.getRegex("to: '([^<>\"]*?)'").getMatch(0);
                     final String hash = ajaxBR.getRegex("hash: '([^<>\"]*?)'").getMatch(0);
                     if (to == null || hash == null) {
-                        org.jdownloader.statistics.StatsManager.I().track("vkontakte/verify/missing_digits/tohash_missing");
                         return false;
                     }
                     String[] preAndPost = ajaxBR.getRegex("class=\"label ta_r\">([^<]+)</div></td>.*?class=\"phone_postfix\">([^<]+)</span></td>").getRow(0);
                     if (preAndPost == null || preAndPost.length != 2) {
-                        org.jdownloader.statistics.StatsManager.I().track("vkontakte/verify/missing_digits/prepost_missing");
                         return false;
                     }
                     String end;
@@ -2234,7 +2231,6 @@ public class VKontakteRu extends PluginForDecrypt {
                     if (code == null) {
                         code = UserIO.getInstance().requestInputDialog("Please enter your phone number (Starts with " + start + " & ends with " + end + ")");
                         if (!code.startsWith(start) || !code.endsWith(end)) {
-                            org.jdownloader.statistics.StatsManager.I().track("vkontakte/verify/missing_digits/bad_input");
                             continue;
                         }
                     }
@@ -2244,12 +2240,10 @@ public class VKontakteRu extends PluginForDecrypt {
                     if (!ajaxBR.containsHTML(">Unfortunately, the numbers you have entered are incorrect")) {
                         hasPassed = true;
                         account.setProperty("phone", phone);
-                        org.jdownloader.statistics.StatsManager.I().track("vkontakte/verify/missing_digits/success");
                         break;
                     } else {
                         phone = null;
                         account.setProperty("phone", Property.NULL);
-                        org.jdownloader.statistics.StatsManager.I().track("vkontakte/verify/missing_digits/failed");
                         if (ajaxBR.containsHTML("You can try again in \\d+ hour")) {
                             logger.info("Failed security check, account is banned for some hours!");
                             break;
@@ -2260,7 +2254,6 @@ public class VKontakteRu extends PluginForDecrypt {
             } else {
                 ajaxBR.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 for (int i = 0; i <= 3; i++) {
-                    org.jdownloader.statistics.StatsManager.I().track("vkontakte/verify/digits4/ask");
                     logger.info("Entering security check...");
                     final String to = br.getRegex("to: '([^<>\"]*?)'").getMatch(0);
                     final String hash = br.getRegex("hash: '([^<>\"]*?)'").getMatch(0);
@@ -2271,10 +2264,8 @@ public class VKontakteRu extends PluginForDecrypt {
                     ajaxBR.postPage(getBaseURL() + "/login.php", "act=security_check&al=1&al_page=3&code=" + code + "&hash=" + Encoding.urlEncode(hash) + "&to=" + Encoding.urlEncode(to));
                     if (!ajaxBR.containsHTML(">Unfortunately, the numbers you have entered are incorrect")) {
                         hasPassed = true;
-                        org.jdownloader.statistics.StatsManager.I().track("vkontakte/verify/digits4/success");
                         break;
                     }
-                    org.jdownloader.statistics.StatsManager.I().track("vkontakte/verify/digits4/failed");
                     if (ajaxBR.containsHTML("You can try again in \\d+ hour")) {
                         logger.info("Failed security check, account is banned for some hours!");
                         break;

@@ -7,9 +7,19 @@ import java.util.Map;
 
 import javax.swing.Icon;
 
+import jd.gui.swing.jdgui.components.premiumbar.ServiceCollection;
+import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
+import jd.gui.swing.jdgui.components.premiumbar.ServicePanelExtender;
+import jd.gui.swing.jdgui.views.settings.components.Checkbox;
+import jd.gui.swing.jdgui.views.settings.components.PasswordInput;
+import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
+import jd.gui.swing.jdgui.views.settings.components.TextInput;
+import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.utils.Application;
+import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.captcha.v2.ChallengeSolverConfig;
 import org.jdownloader.captcha.v2.solver.cheapcaptcha.CheapCaptchaSolverService;
@@ -26,16 +36,6 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA_SOLUTIONS;
-import org.jdownloader.statistics.StatsManager;
-
-import jd.gui.swing.jdgui.components.premiumbar.ServiceCollection;
-import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
-import jd.gui.swing.jdgui.components.premiumbar.ServicePanelExtender;
-import jd.gui.swing.jdgui.views.settings.components.Checkbox;
-import jd.gui.swing.jdgui.views.settings.components.PasswordInput;
-import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
-import jd.gui.swing.jdgui.views.settings.components.TextInput;
-import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
 
 public class CaptchaSolutionsSolverService extends AbstractSolverService implements ServicePanelExtender {
     private CaptchaSolutionsConfigInterface config;
@@ -81,7 +81,7 @@ public class CaptchaSolutionsSolverService extends AbstractSolverService impleme
 
                     @Override
                     public void actionPerformed(ActionEvent e) {
-                        StatsManager.I().openAfflink("captchasolutions.com", "http://www.captchasolutions.com/?aff=71ff976c", "ConfigPanel");
+                        CrossSystem.openURLOrShowMessage("http://www.captchasolutions.com/?aff=71ff976c");
                     }
                 }), "gapleft 37,spanx,pushx,growx");
                 username = new TextInput(CFG_CAPTCHA_SOLUTIONS.USER_NAME);

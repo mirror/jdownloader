@@ -38,7 +38,6 @@ import org.jdownloader.captcha.v2.solver.endcaptcha.EndCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.gui.DialogBasicCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.gui.DialogClickCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.gui.DialogMultiClickCaptchaSolver;
-import org.jdownloader.captcha.v2.solver.gui.RecaptchaChooseFrom3x3Solver;
 import org.jdownloader.captcha.v2.solver.imagetyperz.ImageTyperzCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.jac.JACSolver;
 import org.jdownloader.captcha.v2.solver.myjd.CaptchaMyJDSolver;
@@ -143,9 +142,6 @@ public class ChallengeResponseController {
             if (!Application.isHeadless()) {
                 addSolver(BrowserSolver.getInstance());
                 addSolver(OAuthDialogSolver.getInstance());
-            }
-            if (!Application.isHeadless()) {
-                addSolver(RecaptchaChooseFrom3x3Solver.getInstance());
             }
             addSolver(AccountOAuthSolver.getInstance());
             addSolver(KeyCaptchaJACSolver.getInstance());

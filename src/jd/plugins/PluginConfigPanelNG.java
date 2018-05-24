@@ -97,7 +97,6 @@ import org.jdownloader.premium.BuyAndAddPremiumAccount;
 import org.jdownloader.premium.BuyAndAddPremiumDialogInterface;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
-import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public abstract class PluginConfigPanelNG extends AbstractConfigPanel implements AccountControllerListener {
@@ -601,7 +600,7 @@ public abstract class PluginConfigPanelNG extends AbstractConfigPanel implements
                         LazyHostPlugin plg = HostPluginController.getInstance().get(domainInfo.getTld());
                         if (plg != null) {
                             try {
-                                StatsManager.I().openAfflink(plg.getPrototype(null), null, "MultiHostPanel");
+                                AccountController.openAfflink(plg.getPrototype(null), null, "MultiHostPanel");
                                 return;
                             } catch (UpdateRequiredClassNotFoundException e1) {
                                 e1.printStackTrace();

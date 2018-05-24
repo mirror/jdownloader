@@ -13,6 +13,7 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JComboBox;
 
+import jd.controlling.AccountController;
 import jd.controlling.TaskQueue;
 import jd.plugins.PluginForHost;
 
@@ -37,7 +38,6 @@ import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.premium.BuyAndAddPremiumAccount;
 import org.jdownloader.premium.BuyAndAddPremiumDialogInterface;
-import org.jdownloader.statistics.StatsManager;
 
 public class BuyAction extends AbstractAction {
     /**
@@ -79,7 +79,6 @@ public class BuyAction extends AbstractAction {
             selection = null;
         }
         TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
-
             @Override
             protected Void run() throws RuntimeException {
                 final Collection<LazyHostPlugin> pluginsAll = HostPluginController.getInstance().list();
@@ -94,7 +93,6 @@ public class BuyAction extends AbstractAction {
                 LazyHostPlugin plg = HostPluginController.getInstance().get(getPreselectedHoster());
                 if (plg == null) {
                     if (selection != null && selection.size() > 0) {
-
                         for (Iterator<?> iterator = plugins.iterator(); iterator.hasNext();) {
                             LazyHostPlugin hostPluginWrapper = (LazyHostPlugin) iterator.next();
                             if (hostPluginWrapper.getDisplayName().equals(selection.get(0).getAccount().getHoster())) {
@@ -106,7 +104,6 @@ public class BuyAction extends AbstractAction {
                 }
                 final LazyHostPlugin defaultSelection = plg;
                 new EDTRunner() {
-
                     @Override
                     protected void runInEDT() {
                         try {
@@ -117,7 +114,6 @@ public class BuyAction extends AbstractAction {
                                 protected void packed() {
                                     super.packed();
                                     combo.requestFocus();
-
                                 }
 
                                 protected String getIconConstraints() {
@@ -127,9 +123,7 @@ public class BuyAction extends AbstractAction {
 
                                 @Override
                                 protected JComboBox getComboBox(final Object[] options2) {
-
                                     combo = new SearchComboBox<LazyHostPlugin>(plugins) {
-
                                         /**
                                          *
                                          */
@@ -150,12 +144,9 @@ public class BuyAction extends AbstractAction {
                                             }
                                             return value.getDisplayName();
                                         }
-
                                     };
-
                                     final ComboBoxDialog _this = this;
                                     combo.addActionListener(new ActionListener() {
-
                                         public void actionPerformed(ActionEvent e) {
                                             Object item = combo.getSelectedItem();
                                             if (item == null) {
@@ -182,9 +173,7 @@ public class BuyAction extends AbstractAction {
                                     combo.setSelectedItem(defaultSelection);
                                     return combo;
                                 }
-
                             };
-
                             Dialog.getInstance().showDialog(d);
                             if (d.getReturnValue() < 0) {
                                 return;
@@ -202,7 +191,7 @@ public class BuyAction extends AbstractAction {
                                 } else {
                                     customURL = null;
                                 }
-                                StatsManager.I().openAfflink(plugin, customURL, "buypremium/accountmanager/buy" + (table == null ? "/context" : "/table"));
+                                AccountController.openAfflink(plugin, customURL, "buypremium/accountmanager/buy" + (table == null ? "/context" : "/table"));
                                 try {
                                     final BuyAndAddPremiumAccount dia;
                                     UIOManager.I().show(BuyAndAddPremiumDialogInterface.class, dia = new BuyAndAddPremiumAccount(DomainInfo.getInstance(buyIt.getHost()), "accountmanager" + (table == null ? "/context" : "/table")));
@@ -223,6 +212,5 @@ public class BuyAction extends AbstractAction {
                 return null;
             }
         });
-
     }
 }

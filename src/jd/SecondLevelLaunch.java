@@ -120,7 +120,6 @@ import org.jdownloader.settings.GraphicalUserInterfaceSettings.RlyWarnLevel;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
-import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.InternetConnectionSettings;
 import org.jdownloader.updatev2.RestartController;
@@ -606,7 +605,6 @@ public class SecondLevelLaunch {
             });
         } catch (java.lang.UnsatisfiedLinkError e) {
             if (e.getMessage() != null && e.getMessage().contains("Can't find dependent libraries")) {
-                StatsManager.I().track("UnsatisfiedLinkError/JNA");
                 // probably the path contains unsupported special chars
                 LoggerFactory.getDefaultLogger().info("The Library Path probably contains special chars: " + Application.getResource("tmp/jna").getAbsolutePath());
                 ExceptionDialog d = new ExceptionDialog(UIOManager.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_COUNTDOWN | UIOManager.BUTTONS_HIDE_OK, _GUI.T.lit_error_occured(), _GUI.T.special_char_lib_loading_problem(Application.getHome(), "Java Native Interface"), e, null, _GUI.T.lit_close()) {
@@ -616,8 +614,6 @@ public class SecondLevelLaunch {
                     }
                 };
                 UIOManager.I().show(ExceptionDialogInterface.class, d);
-            } else {
-                StatsManager.I().track("UnsatisfiedLinkError/Diff");
             }
             LoggerFactory.getDefaultLogger().log(e);
         } catch (final Throwable e1) {
@@ -1016,8 +1012,6 @@ public class SecondLevelLaunch {
         SecondLevelLaunch.GUI_COMPLETE.setReached();
         LoggerFactory.getDefaultLogger().info("Initialisation finished");
         SecondLevelLaunch.INIT_COMPLETE.setReached();
-        // init statsmanager
-        StatsManager.I();
         // init Filechooser. filechoosers may freeze the first time the get initialized. maybe this helps
         if (!Application.isHeadless()) {
             try {
