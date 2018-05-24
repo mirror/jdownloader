@@ -72,7 +72,6 @@ import org.jdownloader.myjdownloader.client.json.NotificationRequestMessage;
 import org.jdownloader.myjdownloader.client.json.NotificationRequestMessage.TYPE;
 import org.jdownloader.myjdownloader.client.json.SessionInfoResponse;
 import org.jdownloader.settings.staticreferences.CFG_MYJD;
-import org.jdownloader.statistics.StatsManager;
 
 public class MyJDownloaderConnectThread extends Thread implements HTTPBridge, ReconnecterListener {
     public static class SessionInfoWrapper extends SessionInfo {
@@ -612,7 +611,6 @@ public class MyJDownloaderConnectThread extends Thread implements HTTPBridge, Re
 
     private void setConnectionStatus(DeviceConnectionHelper connection, MyJDownloaderConnectionStatus status, MyJDownloaderError error) {
         if (status != null && connected.getAndSet(status) != status) {
-            StatsManager.I().track(1000, "myjd/connection/" + status);
             myJDownloaderController.fireConnectionStatusChanged(status, getEstablishedConnections());
         }
         if (error != null) {
