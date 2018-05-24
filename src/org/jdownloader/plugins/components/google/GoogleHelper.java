@@ -18,6 +18,19 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 
+import jd.controlling.AccountController;
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.parser.html.InputField;
+import jd.plugins.Account;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.components.GoogleService;
+
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.swing.components.TextComponentInterface;
 import org.appwork.uio.InputDialogInterface;
@@ -33,23 +46,9 @@ import org.jdownloader.dialogs.NewPasswordDialogInterface;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.translate._JDT;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
-
-import jd.controlling.AccountController;
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
-import jd.parser.html.InputField;
-import jd.plugins.Account;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.components.GoogleService;
 
 public class GoogleHelper {
     private static final String COOKIES2                                      = "googleComCookies";
@@ -391,7 +390,6 @@ public class GoogleHelper {
         }
         String number = br.getRegex("<span\\s+class\\s*=\\s*\"twostepphone\".*?>(.*?)</span>").getMatch(0);
         if (number != null) {
-            StatsManager.I().track("google/twofactor/1");
             InputDialog d = new InputDialog(0, _JDT.T.Google_helper_2factor_sms_dialog_title(), _JDT.T.Google_helper_2factor_sms_dialog_msg(number.trim()), null, new AbstractIcon(IconKey.ICON_TEXT, 32), null, null);
             InputDialogInterface handler = UIOManager.I().show(InputDialogInterface.class, d);
             handler.throwCloseExceptions();
@@ -404,7 +402,6 @@ public class GoogleHelper {
             submitForm(br, form);
         } else {
             // new version implemented on 31th july 2015
-            StatsManager.I().track("google/twofactor/2");
             number = br.getRegex("<span\\s+class\\s*=\\s*\"twostepphone\".*?>(.*?)</span>").getMatch(0);
             InputDialog d = new InputDialog(0, _JDT.T.Google_helper_2factor_sms_dialog_title(), _JDT.T.Google_helper_2factor_sms_dialog_msg(number.trim()), null, new AbstractIcon(IconKey.ICON_TEXT, 32), null, null);
             InputDialogInterface handler = UIOManager.I().show(InputDialogInterface.class, d);
@@ -422,7 +419,6 @@ public class GoogleHelper {
 
     private void handle2FactorAuthSmsNew2(Form form) throws Exception {
         // //*[@id="verifyText"]
-        StatsManager.I().track("activecheck/googlehelper/handle2FactorAuthSmsNew2");
         if (br.containsHTML("idv-delivery-error-container")) {
             // <div class="infobanner">
             // <p class="error-msg infobanner-content"
@@ -497,7 +493,6 @@ public class GoogleHelper {
 
     private void handle2FactorAuthSmsNew(Form form) throws Exception {
         // //*[@id="verifyText"]
-        StatsManager.I().track("activecheck/googlehelper/handle2FactorAuthSmsNew");
         if (br.containsHTML("idv-delivery-error-container")) {
             // <div class="infobanner">
             // <p class="error-msg infobanner-content"

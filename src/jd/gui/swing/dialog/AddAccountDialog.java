@@ -46,6 +46,17 @@ import javax.swing.KeyStroke;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
+import jd.controlling.AccountController;
+import jd.controlling.accountchecker.AccountChecker;
+import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
+import jd.gui.UserIO;
+import jd.gui.swing.jdgui.JDGui;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountError;
+import jd.plugins.AccountInfo;
+import jd.plugins.PluginForHost;
+import net.miginfocom.swing.MigLayout;
+
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.StringUtils;
@@ -74,19 +85,7 @@ import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
-import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.translate._JDT;
-
-import jd.controlling.AccountController;
-import jd.controlling.accountchecker.AccountChecker;
-import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
-import jd.gui.UserIO;
-import jd.gui.swing.jdgui.JDGui;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountError;
-import jd.plugins.AccountInfo;
-import jd.plugins.PluginForHost;
-import net.miginfocom.swing.MigLayout;
 
 public class AddAccountDialog extends AbstractDialog<Integer> implements InputChangedCallbackInterface {
     public static void showDialog(final PluginForHost pluginForHost, Account acc) {
@@ -339,27 +338,27 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
         };
         filter.getDocument().addDocumentListener(new DocumentListener() {
             private DelayedRunnable delayedRefresh = new DelayedRunnable(200, 1000) {
-                String lastText = null;
+                                                       String lastText = null;
 
-                @Override
-                public String getID() {
-                    return "AddAccountDialog";
-                }
+                                                       @Override
+                                                       public String getID() {
+                                                           return "AddAccountDialog";
+                                                       }
 
-                @Override
-                public void delayedrun() {
-                    new EDTRunner() {
-                        @Override
-                        protected void runInEDT() {
-                            final String text = filter.getText();
-                            if (!StringUtils.equals(lastText, text)) {
-                                lastText = text;
-                                hoster.refresh(text);
-                            }
-                        }
-                    }.waitForEDT();
-                }
-            };
+                                                       @Override
+                                                       public void delayedrun() {
+                                                           new EDTRunner() {
+                                                               @Override
+                                                               protected void runInEDT() {
+                                                                   final String text = filter.getText();
+                                                                   if (!StringUtils.equals(lastText, text)) {
+                                                                       lastText = text;
+                                                                       hoster.refresh(text);
+                                                                   }
+                                                               }
+                                                           }.waitForEDT();
+                                                       }
+                                                   };
 
             @Override
             public void removeUpdate(DocumentEvent e) {
@@ -383,9 +382,6 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
             public void actionPerformed(final ActionEvent e) {
                 try {
                     final PluginForHost plugin = hoster.getSelectedPlugin().newInstance(cl);
-                    if (plugin != null) {
-                        StatsManager.I().openAfflink(plugin, null, "accountmanager/table");
-                    }
                 } catch (UpdateRequiredClassNotFoundException e1) {
                     e1.printStackTrace();
                 }

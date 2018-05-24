@@ -30,7 +30,6 @@ import org.jdownloader.captcha.v2.JobRunnable;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaCategoryChallenge;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaPuzzleChallenge;
 import org.jdownloader.captcha.v2.challenge.oauth.AccountLoginOAuthChallenge;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptcha2FallbackChallenge;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
@@ -62,9 +61,6 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
             return true;
         }
         if (c instanceof KeyCaptchaCategoryChallenge && super.canHandle(c)) {
-            return true;
-        }
-        if (c instanceof AbstractRecaptcha2FallbackChallenge) {
             return true;
         }
         if (c instanceof RecaptchaV2Challenge) {

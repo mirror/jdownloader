@@ -25,7 +25,6 @@ import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.SolverStatus;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptcha2FallbackChallenge;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.CESChallengeSolver;
@@ -72,7 +71,7 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> {
         if (!validateBlackWhite(c) || !isAccountLoginSupported(c)) {
             return false;
         }
-        if (c instanceof BasicCaptchaChallenge || c instanceof RecaptchaV2Challenge || c instanceof AbstractRecaptcha2FallbackChallenge) {
+        if (c instanceof BasicCaptchaChallenge || c instanceof RecaptchaV2Challenge) {
             return true;
         } else {
             return false;
@@ -82,9 +81,6 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> {
     @Override
     protected void solveCES(CESSolverJob<String> job) throws InterruptedException, SolverException {
         Challenge<?> challenge = job.getChallenge();
-        if (challenge instanceof AbstractRecaptcha2FallbackChallenge) {
-            challenge = ((AbstractRecaptcha2FallbackChallenge) challenge).getRecaptchaV2Challenge();
-        }
         job.showBubble(this, getBubbleTimeout(challenge));
         checkInterruption();
         // final Client client = getClient();

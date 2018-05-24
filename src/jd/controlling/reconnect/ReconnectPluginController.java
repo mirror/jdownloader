@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 import java.util.regex.Matcher;
@@ -42,7 +41,6 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.statistics.StatsManager;
 
 public class ReconnectPluginController {
     private static final String                    JD_CONTROLLING_RECONNECT_PLUGINS = "jd/controlling/reconnect/plugins/";
@@ -71,7 +69,6 @@ public class ReconnectPluginController {
     }
 
     public java.util.List<ReconnectResult> autoFind(final ProcessCallBack feedback) throws InterruptedException {
-        StatsManager.I().track("reconnectAutoFind/start");
         final java.util.List<ReconnectResult> scripts = new ArrayList<ReconnectResult>();
         for (final RouterPlugin plg : ReconnectPluginController.this.plugins) {
             if (Thread.currentThread().isInterrupted()) {
@@ -92,13 +89,6 @@ public class ReconnectPluginController {
                 } catch (Exception e) {
                 }
             }
-        }
-        if (scripts.size() > 0) {
-            HashMap<String, String> map = new HashMap<String, String>();
-            map.put("plg", scripts.get(0).getInvoker().getPlugin().getID());
-            StatsManager.I().track("reconnectAutoFind/success", map);
-        } else {
-            StatsManager.I().track("reconnectAutoFind/failed");
         }
         if (JsonConfig.create(ReconnectConfig.class).getOptimizationRounds() > 1 && scripts.size() > 0) {
             int i = 1;

@@ -63,57 +63,32 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.translate._JDT;
 
 public class LiveHeaderDetectionWizard {
-
     private String                  mac;
-
     private String                  manufactor;
-
     private InetAddress             gatewayAdress;
-
     private String                  username;
-
     private String                  password;
-
     private String                  firmware;
-
     private String                  sslResponse;
-
     private String                  sslTitle;
-
     private int                     sslPTagsCount;
-
     private int                     sslFrameTagCount;
-
     private String                  sslFavIconHash;
-
     private String                  sslException;
-
     private int                     sslResponseCode;
-
     private HashMap<String, String> sslResponseHeaders;
-
     private String                  response;
-
     private String                  title;
-
     private int                     pTagsCount;
-
     private int                     frameTagCount;
-
     private String                  favIconHash;
-
     private String                  exception;
-
     private int                     responseCode;
-
     private HashMap<String, String> responseHeaders;
-
     private String                  sslTagFootprint;
-
     private String                  tagFootprint;
     private LogSource               logger;
 
@@ -140,7 +115,6 @@ public class LiveHeaderDetectionWizard {
     // }
     //
     // }
-
     private LiveHeaderReconnect getPlugin() {
         return (LiveHeaderReconnect) ReconnectPluginController.getInstance().getPluginByID(LiveHeaderReconnect.ID);
     }
@@ -236,18 +210,13 @@ public class LiveHeaderDetectionWizard {
     // }
     //
     // }
-
     private java.util.List<ReconnectResult> runTests(java.util.List<RouterData> tests, ProcessCallBack processCallBack) throws InterruptedException, DialogClosedException, DialogCanceledException {
-
         boolean pre = JsonConfig.create(ReconnectConfig.class).isIPCheckGloballyDisabled();
         try {
             if (pre) {
-
                 UIOManager.I().showConfirmDialog(0, _GUI.T.literally_warning(), T.T.ipcheck());
                 JsonConfig.create(ReconnectConfig.class).setIPCheckGloballyDisabled(false);
-
             }
-
             java.util.List<RouterData> bestMatches = filterBestMatches(tests);
             java.util.List<ReconnectResult> ret = testList(bestMatches, processCallBack);
             if (ret != null && ret.size() > 0 && JsonConfig.create(LiveHeaderReconnectSettings.class).isAutoSearchBestMatchFilterEnabled()) {
@@ -255,16 +224,13 @@ public class LiveHeaderDetectionWizard {
             }
             // test all if best matches did not succeed
             ret = testList(tests, processCallBack);
-
             return ret;
         } finally {
-
             JsonConfig.create(ReconnectConfig.class).setIPCheckGloballyDisabled(pre);
             if (pre) {
                 UIOManager.I().showMessageDialog(T.T.ipcheckreverted());
             }
         }
-
     }
 
     private java.util.List<RouterData> filterBestMatches(java.util.List<RouterData> tests) {
@@ -276,7 +242,6 @@ public class LiveHeaderDetectionWizard {
         java.util.List<RouterData> ret = new ArrayList<RouterData>();
         for (Iterator<RouterData> it = tests.iterator(); it.hasNext();) {
             RouterData next = it.next();
-
             if (isTopMatch(next, avg)) {
                 ret.add(next);
                 it.remove();
@@ -290,19 +255,16 @@ public class LiveHeaderDetectionWizard {
             return null;
         }
         final String ret = routerName.replaceAll("[^a-zA-Z0-9]+", ".*");
-
         // add wildcard between number and non-numbers
         final StringBuilder r = new StringBuilder();
         r.append(ret.charAt(0));
         for (int i = 1; i < ret.length(); i++) {
             final char c = ret.charAt(i - 1);
             final char c1 = ret.charAt(i);
-
             if (Character.isDigit(c) && !Character.isDigit(c1) || !Character.isDigit(c) && Character.isDigit(c1)) {
                 r.append(".*");
             }
             r.append(c1);
-
         }
         return r.toString();
     }
@@ -312,7 +274,6 @@ public class LiveHeaderDetectionWizard {
         if (rd.getPriorityIndicator() > avg * 2) {
             return true;
         }
-
         if (!matches(firmware, rd.getFirmware())) {
             return false;
         }
@@ -322,13 +283,11 @@ public class LiveHeaderDetectionWizard {
         if (!matches(manufactor, rd.getManufactor())) {
             return false;
         }
-
         return true;
     }
 
     private boolean matches(String userInput, String database) {
         String regex = getRegex(userInput);
-
         if (regex != null) {
             //
             if (database == null) {
@@ -342,7 +301,6 @@ public class LiveHeaderDetectionWizard {
     }
 
     public java.util.List<ReconnectResult> testList(java.util.List<RouterData> tests, ProcessCallBack processCallBack) throws InterruptedException, DialogClosedException, DialogCanceledException {
-
         if (username.trim().length() < 2 || password.trim().length() < 2) {
             for (int i = 0; i < tests.size(); i++) {
                 String sc = tests.get(i).getScript().toLowerCase(Locale.ENGLISH);
@@ -351,7 +309,6 @@ public class LiveHeaderDetectionWizard {
                     DataCompareDialog dcd = new DataCompareDialog(gatewayAdressHost, firmware, manufactor, routerName, JsonConfig.create(LiveHeaderReconnectSettings.class).getUserName(), JsonConfig.create(LiveHeaderReconnectSettings.class).getPassword());
                     dcd.setLoginsOnly(true);
                     DataCompareDialog impl = UIOManager.I().show(null, dcd);
-
                     username = impl.getUsername();
                     password = impl.getPassword();
                     break;
@@ -359,13 +316,10 @@ public class LiveHeaderDetectionWizard {
             }
         }
         java.util.List<ReconnectResult> ret = new ArrayList<ReconnectResult>();
-
         for (int i = 0; i < tests.size(); i++) {
-
             RouterData test = tests.get(i);
             processCallBack.setStatusString(getPlugin(), T.T.jd_controlling_reconnect_plugins_liveheader_LiveHeaderDetectionWizard_runTests((i + 1), tests.size(), test.getManufactor() + " - " + test.getRouterName()));
             String sc = tests.get(i).getScript().toLowerCase(Locale.ENGLISH);
-
             if ((username.trim().length() < 2 && (sc.contains("%%%username%%%") || sc.contains("%%%user%%%"))) || (password.trim().length() < 2 && (sc.contains("%%%pass%%%") || sc.contains("%%%password%%%")))) {
                 // script requires data which is not available
                 processCallBack.setProgress(getPlugin(), Math.min(99, (i + 1) * 100 / tests.size()));
@@ -373,10 +327,8 @@ public class LiveHeaderDetectionWizard {
                 continue;
                 // System.out.println("WILL FAIL");
             }
-
             ReconnectResult res;
             try {
-
                 if (processCallBack.isMethodConfirmEnabled()) {
                     LiveHeaderScriptConfirmDialog d = new LiveHeaderScriptConfirmDialog(test, gatewayAdressHost, test.getRouterName()) {
                         // @Override
@@ -397,7 +349,6 @@ public class LiveHeaderDetectionWizard {
                     } else if (answer.getCloseReason() == CloseReason.CLOSE) {
                         break;
                     } else if (answer.getCloseReason() == CloseReason.CANCEL) {
-
                         if (answer.isDontShowAgainSelected()) {
                             break;
                         } else {
@@ -409,14 +360,10 @@ public class LiveHeaderDetectionWizard {
                 }
                 LiveHeaderInvoker inv = new LiveHeaderInvoker(getPlugin(), test.getScript(), username, password, gatewayAdressHost, routerName != null && routerName.trim().length() > 0 ? routerName : test.getRouterName());
                 res = inv.validate(test);
-
                 if (res != null && res.isSuccess()) {
-
                     ret.add(res);
                     processCallBack.setStatus(this, ret);
-
                     if (i < tests.size() - 1) {
-
                         if (ret.size() == 1) {
                             if (!UIOManager.I().showConfirmDialog(0, _GUI.T.LiveHeaderDetectionWizard_testList_firstSuccess_title(), _GUI.T.LiveHeaderDetectionWizard_testList_firstsuccess_msg(TimeFormatter.formatMilliSeconds(res.getSuccessDuration(), 0)), new AbstractIcon(IconKey.ICON_OK, 32), _GUI.T.LiveHeaderDetectionWizard_testList_ok(), _GUI.T.LiveHeaderDetectionWizard_testList_use())) {
                                 break;
@@ -425,9 +372,7 @@ public class LiveHeaderDetectionWizard {
                         return ret;
                     }
                 } else {
-
                 }
-
             } catch (ReconnectException e) {
                 org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
             }
@@ -461,48 +406,37 @@ public class LiveHeaderDetectionWizard {
             processCallBack.setStatusString(this, _GUI.T.LiveaheaderDetection_wait_for_online());
             IPController.getInstance().waitUntilWeAreOnline();
             processCallBack.setStatusString(getPlugin(), T.T.LiveHeaderDetectionWizard_runOnlineScan_collect());
-
             if (!RecollController.getInstance().isAlive()) {
                 UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, T.T.LiveHeaderDetectionWizard_runOnlineScan_notavailable_t(), T.T.LiveHeaderDetectionWizard_runOnlineScan_notavailable_mm(), new AbstractIcon(IconKey.ICON_ERROR, 32), null, _JDT.T.lit_hide());
-
                 throw new InterruptedException("RecollServ not available");
             }
-
             collectInfo();
             specialCollectInfo();
             while (true) {
                 userConfirm();
-
                 if (!IP.isValidRouterIP(gatewayAdressIP)) {
-
                     if (!UIOManager.I().showConfirmDialog(0, _GUI.T.literally_warning(), T.T.LiveHeaderDetectionWizard_runOnlineScan_warning_badip(gatewayAdressHost), new AbstractIcon(IconKey.ICON_WARNING, 32), _GUI.T.literally_yes(), _GUI.T.literally_edit())) {
                         continue;
                     }
                 }
                 break;
-
             }
             scanRemoteInfo();
             specials();
             java.util.List<RouterData> list = downloadRouterDatasByAutoDetectValues();
             HashMap<String, String> map = new HashMap<String, String>();
             map.put("amount", list.size() + "");
-            StatsManager.I().track("reconnectAutoFind/LH/found", map);
             return runTests(list, processCallBack);
-
         } catch (DialogNoAnswerException e) {
             throw new InterruptedException();
         } catch (InterruptedException e) {
             throw e;
         }
-
     }
 
     private void specialCollectInfo() throws InterruptedException {
-
         // speedports
         if ("speedport.ip".equalsIgnoreCase(gatewayAdressHost)) {
-
             try {
                 String status = getBrowser().getPage("http://speedport.ip/top_status.stm");
                 String fw = new Regex(status, "runtime_code_version=\"(.*?)\"").getMatch(0);
@@ -513,7 +447,6 @@ public class LiveHeaderDetectionWizard {
                 if (name != null) {
                     routerName = name.replace("_", " ");
                 }
-
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -521,9 +454,7 @@ public class LiveHeaderDetectionWizard {
                 throw new InterruptedException();
                 // speedports
             }
-
             // extract name from sourc
-
             try {
                 String status = getBrowser().getPage("https://speedport.ip/top_status.stm");
                 String name = new Regex(status, "var prodname=\"(.*?)\"").getMatch(0);
@@ -535,24 +466,18 @@ public class LiveHeaderDetectionWizard {
                     firmware = fw;
                 }
             } catch (Exception e) {
-
             }
-
         }
-
     }
 
     private void specials() {
-
     }
 
     private String trim(final String stringToTrim) {
-
         return stringToTrim == null ? null : stringToTrim.trim();
     }
 
     protected void scanRemoteInfo() {
-
         final Browser br = getBrowser();
         try {
             this.sslResponse = br.getPage("https://" + this.gatewayAdressHost);
@@ -573,16 +498,13 @@ public class LiveHeaderDetectionWizard {
                 fos.close();
                 this.sslFavIconHash = Hash.getMD5(imageFile);
             } catch (final Exception e) {
-
             } finally {
                 try {
                     fos.close();
                 } catch (final Throwable e) {
                 }
             }
-
         } catch (final Throwable e) {
-
             this.sslException = e.getClass().getSimpleName() + ": " + e.getMessage();
         }
         // ToDO: filter dynamic contents in headers
@@ -590,7 +512,6 @@ public class LiveHeaderDetectionWizard {
         if (con != null) {
             this.sslResponseCode = con.getResponseCode();
             this.sslResponseHeaders = new HashMap<String, String>();
-
             for (final Entry<String, List<String>> next : con.getHeaderFields().entrySet()) {
                 for (final String value : next.getValue()) {
                     this.sslResponseHeaders.put(next.getKey().toLowerCase(), value);
@@ -598,7 +519,6 @@ public class LiveHeaderDetectionWizard {
             }
             filterHeaders(sslResponseHeaders);
         }
-
         try {
             this.response = br.getPage("http://" + this.gatewayAdressHost);
             tagFootprint = createHtmlFootprint(response.toLowerCase(Locale.ENGLISH));
@@ -626,9 +546,7 @@ public class LiveHeaderDetectionWizard {
             }
         } catch (final IOException e) {
             this.exception = e.getClass().getSimpleName() + ": " + e.getMessage();
-
         }
-
         con = br.getHttpConnection();
         if (con != null) {
             this.responseCode = con.getResponseCode();
@@ -643,7 +561,6 @@ public class LiveHeaderDetectionWizard {
     }
 
     final static private HashSet<String> ALLOWED_HEADER_KEYS = new HashSet<String>();
-
     static {
         ALLOWED_HEADER_KEYS.add("Accept-Ranges".toLowerCase());
         ALLOWED_HEADER_KEYS.add("Allow".toLowerCase());
@@ -670,22 +587,18 @@ public class LiveHeaderDetectionWizard {
     }
 
     private void filterHeaders(HashMap<String, String> headerMap) {
-
         Entry<String, String> next;
         for (Iterator<Entry<String, String>> it = headerMap.entrySet().iterator(); it.hasNext();) {
             next = it.next();
             if (!ALLOWED_HEADER_KEYS.contains(next.getKey().toLowerCase())) {
                 it.remove();
             }
-
         }
-
     }
 
     private Browser getBrowser() {
         Browser br = new Browser();
         br.setProxy(HTTPProxy.NONE);
-
         return br;
     }
 
@@ -700,15 +613,10 @@ public class LiveHeaderDetectionWizard {
     }
 
     private java.util.List<RouterData> downloadRouterDatasByAutoDetectValues() throws InterruptedException {
-
         RouterData rd = getRouterData();
-
         java.util.List<RouterData> scripts = RecollController.getInstance().findRouter(rd);
-
         // final java.util.List<RouterData> unique = toUnique(scripts);
-
         return scripts;
-
     }
 
     public static ArrayList<RouterData> toUnique(java.util.List<RouterData> scripts) {
@@ -728,7 +636,6 @@ public class LiveHeaderDetectionWizard {
                     System.out.println("DUPE");
                     final RouterData m = helper.get(script);
                     m.setPriorityIndicator(m.getPriorityIndicator() + 1 + e.getSuccess() - e.getFailed() + e.getCommitDupe());
-
                 }
             }
         }
@@ -747,7 +654,6 @@ public class LiveHeaderDetectionWizard {
         // Pattern.CASE_INSENSITIVE).matcher(script).replaceAll("[[[$1RESPONSE");
         // script = Pattern.compile("\\[\\[\\[(/?)parse",
         // Pattern.CASE_INSENSITIVE).matcher(script).replaceAll("[[[$1PARSE");
-
         return script;
     }
 
@@ -788,7 +694,6 @@ public class LiveHeaderDetectionWizard {
             DataCompareDialog impl = UIOManager.I().show(null, dcd);
             dcd.throwCloseExceptions();
             username = impl.getUsername();
-
             password = impl.getPassword();
             manufactor = impl.getManufactor();
             routerName = impl.getRouterName();
@@ -800,29 +705,22 @@ public class LiveHeaderDetectionWizard {
                 break;
             } catch (IOException e) {
                 new ConfirmDialog(0, _GUI.T.literall_error(), T.T.LiveHeaderDetectionWizard_runOnlineScan_warning_badhost(dcd.getHostName()), new AbstractIcon(IconKey.ICON_ERROR, 32), _GUI.T.literally_edit(), null).show().throwCloseExceptions();
-
             }
         }
     }
 
     private UpnpRouterDevice myUpnpDevice = null;
-
     private String           routerName;
-
     private String           gatewayAdressHost;
-
     private String           gatewayAdressIP;
 
     private void collectInfo() throws UnknownHostException, InterruptedException {
         final UPNPRouterPlugin upnp = (UPNPRouterPlugin) ReconnectPluginController.getInstance().getPluginByID(UPNPRouterPlugin.ID);
-
         java.util.List<UpnpRouterDevice> devices = upnp.getCachedDevices();
         if (devices == null) {
             devices = upnp.getDevices();
         }
-
         String gatewayIP = JsonConfig.create(LiveHeaderReconnectSettings.class).getRouterIP();
-
         if (!IP.isValidRouterIP(gatewayIP)) {
             final InetAddress ia = RouterUtils.getAddress(true);
             if (ia != null && IP.isValidRouterIP(ia.getHostAddress())) {
@@ -836,7 +734,6 @@ public class LiveHeaderDetectionWizard {
         gatewayAdressIP = gatewayAdress.getHostAddress();
         try {
             mac = RouterUtils.getMacAddress(gatewayAdress).replace(":", "").toUpperCase(Locale.ENGLISH);
-
             manufactor = RecollController.getInstance().getManufactor(mac);
         } catch (final InterruptedException e) {
             throw e;
@@ -860,20 +757,17 @@ public class LiveHeaderDetectionWizard {
         if (myUpnpDevice != null && myUpnpDevice.getManufactor() != null) {
             manufactor = myUpnpDevice.getManufactor();
         }
-
         if (myUpnpDevice != null) {
             if (myUpnpDevice.getModelname() != null) {
                 routerName = myUpnpDevice.getModelname();
             } else if (myUpnpDevice.getFriendlyname() != null) {
                 routerName = myUpnpDevice.getFriendlyname();
             }
-
         }
     }
 
     public RouterData collectRouterDataInfo() throws InterruptedException, UnknownHostException {
         try {
-
             collectInfo();
             specialCollectInfo();
             scanRemoteInfo();
@@ -890,7 +784,6 @@ public class LiveHeaderDetectionWizard {
             }
             RouterData rd = getRouterData();
             return rd;
-
         } catch (InterruptedException e) {
             logger.log(e);
             throw e;
@@ -899,7 +792,6 @@ public class LiveHeaderDetectionWizard {
 
     public void sendRouter(ProcessCallBackAdapter processCallBack) throws UnknownHostException, InterruptedException {
         try {
-
             LiveHeaderReconnectSettings settings = JsonConfig.create(LiveHeaderReconnectSettings.class);
             String script = settings.getScript();
             // wait until we are online
@@ -910,7 +802,6 @@ public class LiveHeaderDetectionWizard {
                 UIOManager.I().showErrorMessage(_GUI.T.LiveHeaderDetectionWizard_sendRouter_na());
                 return;
             }
-            StatsManager.I().track("shareReconnectScript/start");
             // if (JsonConfig.create(ReconnectConfig.class).getSuccessCounter() < 3 && false) {
             // // we have to validate the script first
             //
@@ -921,22 +812,18 @@ public class LiveHeaderDetectionWizard {
             // }
             //
             // }
-
             processCallBack.setStatusString(getPlugin(), T.T.LiveHeaderDetectionWizard_runOnlineScan_collect());
             collectInfo();
             specialCollectInfo();
-            StatsManager.I().track("shareReconnectScript/collect1");
             while (true) {
                 try {
                     while (true) {
                         while (true) {
-
                             DataCompareDialog dcd = new DataCompareDialog(gatewayAdressHost, firmware, manufactor, routerName, JsonConfig.create(LiveHeaderReconnectSettings.class).getUserName(), JsonConfig.create(LiveHeaderReconnectSettings.class).getPassword());
                             dcd.setLoginsText(T.T.LiveHeaderDetectionWizard_userConfirm_loginstext());
                             DataCompareDialog impl = UIOManager.I().show(null, dcd);
                             dcd.throwCloseExceptions();
                             username = impl.getUsername();
-
                             password = impl.getPassword();
                             manufactor = impl.getManufactor();
                             routerName = impl.getRouterName();
@@ -945,31 +832,22 @@ public class LiveHeaderDetectionWizard {
                                 gatewayAdress = InetAddress.getByName(impl.getHostName());
                                 gatewayAdressIP = gatewayAdress.getHostAddress();
                                 gatewayAdressHost = gatewayAdress.getHostName();
-
                                 break;
                             } catch (IOException e) {
-
                                 if (UIOManager.I().showConfirmDialog(0, _GUI.T.literall_error(), T.T.LiveHeaderDetectionWizard_runOnlineScan_warning_badhost(dcd.getHostName()), new AbstractIcon(IconKey.ICON_ERROR, 32), _GUI.T.literally_edit(), null)) {
                                     continue;
                                 } else {
                                     return;
                                 }
-
                             }
-
                         }
-
                         if (!IP.isValidRouterIP(gatewayAdressIP)) {
-
                             if (!UIOManager.I().showConfirmDialog(0, _GUI.T.literally_warning(), T.T.LiveHeaderDetectionWizard_runOnlineScan_warning_badip(gatewayAdressHost), new AbstractIcon(IconKey.ICON_WARNING, 32), _GUI.T.literally_yes(), _GUI.T.literally_edit())) {
                                 continue;
                             }
-
                         }
                         break;
-
                     }
-
                     script = validateBeforeSend(script);
                     RouterData rd = getRouterData();
                     rd.setScript(script);
@@ -977,7 +855,6 @@ public class LiveHeaderDetectionWizard {
                     UIOManager.I().show(null, confirm).throwCloseExceptions();
                     script = rd.getScript();
                     test(processCallBack, script);
-
                     if (StringUtils.isNotEmpty(password)) {
                         settings.setPassword(password);
                     }
@@ -986,36 +863,29 @@ public class LiveHeaderDetectionWizard {
                     }
                     settings.setScript(script);
                     settings.setRouterData(rd);
-
                     break;
                 } catch (ScriptValidationExeption e) {
                     logger.log(e);
-
                     if (StringUtils.isNotEmpty(e.getMessage())) {
                         ConfirmDialog d = new ConfirmDialog(0, _AWU.T.DIALOG_ERROR_TITLE(), T.T.LiveHeaderDetectionWizard_share_reconnectFailed2(e.getMessage()), new AbstractIcon(IconKey.ICON_WARNING_RED, 32), T.T.try_again(), null);
                         UIOManager.I().show(ConfirmDialogInterface.class, d).throwCloseExceptions();
                     } else {
                         ConfirmDialog d = new ConfirmDialog(0, _AWU.T.DIALOG_ERROR_TITLE(), T.T.LiveHeaderDetectionWizard_share_reconnectFailed(), new AbstractIcon(IconKey.ICON_WARNING_RED, 32), T.T.try_again(), null);
                         UIOManager.I().show(ConfirmDialogInterface.class, d).throwCloseExceptions();
-
                     }
                 } catch (ReconnectException e) {
                     logger.log(e);
-
                     if (StringUtils.isNotEmpty(e.getMessage())) {
                         ConfirmDialog d = new ConfirmDialog(0, _AWU.T.DIALOG_ERROR_TITLE(), T.T.LiveHeaderDetectionWizard_share_reconnectFailed2(e.getMessage()), new AbstractIcon(IconKey.ICON_WARNING_RED, 32), T.T.try_again(), null);
                         UIOManager.I().show(ConfirmDialogInterface.class, d).throwCloseExceptions();
                     } else {
                         ConfirmDialog d = new ConfirmDialog(0, _AWU.T.DIALOG_ERROR_TITLE(), T.T.LiveHeaderDetectionWizard_share_reconnectFailed(), new AbstractIcon(IconKey.ICON_WARNING_RED, 32), T.T.try_again(), null);
                         UIOManager.I().show(ConfirmDialogInterface.class, d).throwCloseExceptions();
-
                     }
                 }
             }
-            StatsManager.I().track("shareReconnectScript/validated");
             scanRemoteInfo();
             specials();
-            StatsManager.I().track("shareReconnectScript/upload");
             uploadData(script);
         } catch (DialogNoAnswerException e) {
             throw new InterruptedException();
@@ -1031,7 +901,6 @@ public class LiveHeaderDetectionWizard {
     private void test(ProcessCallBackAdapter processCallBack, String script) throws ReconnectException, InterruptedException, DialogClosedException, DialogCanceledException {
         ConfirmDialog d = new ConfirmDialog(0, T.T.test_required(), T.T.test_required_msg(), null, _GUI.T.lit_continue(), null);
         UIOManager.I().show(ConfirmDialogInterface.class, d).throwCloseExceptions();
-
         processCallBack.setStatusString(this, _GUI.T.LiveHeaderDetectionWizard_sendRouter_havetovalidate());
         LiveHeaderInvoker ret = new LiveHeaderInvoker(getPlugin(), script, this.username, this.password, StringUtils.isEmpty(this.gatewayAdressHost) ? gatewayAdressIP : gatewayAdressHost, routerName);
         ReconnectDialog reconnect = new ReconnectDialog() {
@@ -1042,7 +911,6 @@ public class LiveHeaderDetectionWizard {
 
             protected void onFinished() {
                 new EDTRunner() {
-
                     @Override
                     protected void runInEDT() {
                         dispose();
@@ -1058,7 +926,6 @@ public class LiveHeaderDetectionWizard {
         if (reconnect.getResult() == null || !reconnect.getResult().isSuccess()) {
             throw new ReconnectException("Reconnect Failed");
         }
-
         ConfirmDialog confirm = new ConfirmDialog(0, T.T.confirm_success_title(), T.T.confirm_success_message(), new AbstractIcon(IconKey.ICON_QUESTION, 32), _GUI.T.lit_yes(), _GUI.T.lit_no());
         confirm.setPreferredWidth(500);
         UIOManager.I().show(ConfirmDialogInterface.class, confirm).throwCloseExceptions();
@@ -1069,7 +936,6 @@ public class LiveHeaderDetectionWizard {
         rd.setScript(script);
         try {
             new Scriptvalidator(rd) {
-
                 private HashSet<String> confirmed = new HashSet<String>();
 
                 protected void replaceAuthHeader(String authorization, String lUsername, String lPassword) throws jd.controlling.reconnect.pluginsinc.liveheader.validate.RetryWithReplacedScript, Exception {
@@ -1077,23 +943,18 @@ public class LiveHeaderDetectionWizard {
                         return;
                     }
                     if (StringUtils.isEmpty(password)) {
-
                         password = (lPassword);
                     }
-
                     if (StringUtils.isEmpty(username)) {
                         username = (lUsername);
-
                     }
                     if (StringUtils.isNotEmpty(password) && !StringUtils.equals(password, lPassword)) {
-
                         if (UIOManager.I().showConfirmDialog(0, T.T.please_check(), T.T.please_confirm_password_change(authorization, lPassword), null, _GUI.T.lit_yes(), _GUI.T.lit_no())) {
                             password = (lPassword);
                         } else {
                             throw new Exception("Password Mismatch " + LiveHeaderDetectionWizard.this.password + "!=" + lPassword);
                         }
                     }
-
                     if (StringUtils.isNotEmpty(username) && !StringUtils.equals(username, lUsername)) {
                         if (UIOManager.I().showConfirmDialog(0, T.T.please_check(), T.T.please_confirm_username_change(authorization, lUsername), null, _GUI.T.lit_yes(), _GUI.T.lit_no())) {
                             password = (lPassword);
@@ -1101,7 +962,6 @@ public class LiveHeaderDetectionWizard {
                             throw new Exception("Username Mismatch " + LiveHeaderDetectionWizard.this.username + "!=" + lUsername);
                         }
                     }
-
                     throw new RetryWithReplacedScript(this.rd.getScript(), authorization.substring("Basic ".length()), "%%%basicauth%%%");
                 };
 
@@ -1134,7 +994,6 @@ public class LiveHeaderDetectionWizard {
                 protected boolean confirm(String key, String value) {
                     ConfirmDialog d = new ConfirmDialog(0, T.T.please_check(), T.T.please_check_sensitive_data_before_share(key + "=" + value), new AbstractIcon(IconKey.ICON_QUESTION, 32), T.T.yes_replace(), T.T.no_keep());
                     d.setPreferredWidth(500);
-
                     try {
                         UIOManager.I().show(ConfirmDialogInterface.class, d).throwCloseExceptions();
                         return true;
@@ -1163,7 +1022,6 @@ public class LiveHeaderDetectionWizard {
                     if (StringUtils.equals(value, username)) {
                         super.replaceUsernameParameter(key, value);
                     } else if (confirm(key, value)) {
-
                         if (StringUtils.isNotEmpty(LiveHeaderDetectionWizard.this.username) && !StringUtils.equals(LiveHeaderDetectionWizard.this.username, value)) {
                             if (UIOManager.I().showConfirmDialog(0, T.T.please_check(), T.T.please_confirm_username_change_parameter(value), null, _GUI.T.lit_yes(), _GUI.T.lit_no())) {
                                 username = value;
@@ -1190,7 +1048,6 @@ public class LiveHeaderDetectionWizard {
     }
 
     private void uploadData(String script) {
-
         RouterData rd = getRouterData();
         rd.setScript(script);
         AddRouterResponse resp = RecollController.getInstance().addRouter(rd);
@@ -1208,7 +1065,5 @@ public class LiveHeaderDetectionWizard {
         } else {
             UIOManager.I().showMessageDialog(T.T.LiveHeaderDetectionWizard_uploadData_sent_failed());
         }
-
     }
-
 }

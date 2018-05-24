@@ -57,6 +57,20 @@ import javax.swing.Timer;
 import javax.swing.ToolTipManager;
 import javax.swing.WindowConstants;
 
+import jd.SecondLevelLaunch;
+import jd.config.ConfigContainer;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.gui.UIConstants;
+import jd.gui.swing.jdgui.components.StatusBarImpl;
+import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
+import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
+import jd.gui.swing.jdgui.interfaces.View;
+import jd.gui.swing.jdgui.menu.JDMenuBar;
+import jd.gui.swing.jdgui.views.myjd.MyJDownloaderView;
+import jd.gui.swing.jdgui.views.settings.ConfigurationView;
+import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
+import net.miginfocom.swing.MigLayout;
+
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
@@ -129,7 +143,6 @@ import org.jdownloader.settings.GraphicalUserInterfaceSettings.ShowSpeedInWindow
 import org.jdownloader.settings.SilentModeSettings.DialogDuringSilentModeAction;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
-import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.updatev2.InstallLog;
 import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.SmartRlyExitRequest;
@@ -137,20 +150,6 @@ import org.jdownloader.updatev2.SmartRlyRestartRequest;
 import org.jdownloader.updatev2.UpdateController;
 import org.jdownloader.updatev2.UpdateHandler;
 import org.jdownloader.updatev2.UpdaterListener;
-
-import jd.SecondLevelLaunch;
-import jd.config.ConfigContainer;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.gui.UIConstants;
-import jd.gui.swing.jdgui.components.StatusBarImpl;
-import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
-import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
-import jd.gui.swing.jdgui.interfaces.View;
-import jd.gui.swing.jdgui.menu.JDMenuBar;
-import jd.gui.swing.jdgui.views.myjd.MyJDownloaderView;
-import jd.gui.swing.jdgui.views.settings.ConfigurationView;
-import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
-import net.miginfocom.swing.MigLayout;
 
 public class JDGui implements UpdaterListener, OwnerFinder {
     private static final String TITLE_PATTERN_UPDATE            = "\\|([^\\|]*)\\#UPDATENOTIFY([^\\|]*)\\|";
@@ -1603,22 +1602,6 @@ public class JDGui implements UpdaterListener, OwnerFinder {
         scrollPane.setBorder(null);
         scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         // this.mainTabbedPane.getSelectedView().setInfoPanel(col);
-    }
-
-    protected void showStatsDialog() {
-        ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.JDGui_showStatsDialog_title_(), _GUI.T.JDGui_showStatsDialog_message_(), new AbstractIcon(IconKey.ICON_BUG, 32), _GUI.T.JDGui_showStatsDialog_yes_(), _GUI.T.JDGui_showStatsDialog_no_());
-        d.setDoNotShowAgainSelected(true);
-        try {
-            Dialog.getInstance().showDialog(d);
-            if (!d.isHiddenByDontShowAgain()) {
-                StatsManager.I().setEnabled(true);
-            }
-            return;
-        } catch (DialogClosedException e) {
-            e.printStackTrace();
-        } catch (DialogCanceledException e) {
-            e.printStackTrace();
-        }
     }
 
     protected void updateTitle() {

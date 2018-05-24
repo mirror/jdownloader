@@ -1,6 +1,5 @@
 package org.jdownloader.captcha.api;
 
-import java.io.File;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -11,12 +10,10 @@ import jd.http.Browser;
 
 import org.appwork.remoteapi.exceptions.FileNotFound404Exception;
 import org.appwork.remoteapi.exceptions.InternalApiException;
-import org.appwork.utils.Application;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.phantomjs.Recaptcha2FallbackChallengeViaPhantomJS;
 
 public class CaptchaForwarder implements CaptchaForwarderAPIInterface {
     private static final CaptchaForwarder INSTANCE = new CaptchaForwarder();
@@ -82,40 +79,6 @@ public class CaptchaForwarder implements CaptchaForwarderAPIInterface {
 
                             public String getHost() {
                                 return domain;
-                            };
-
-                            @Override
-                            protected org.jdownloader.captcha.v2.challenge.recaptcha.v2.phantomjs.Recaptcha2FallbackChallengeViaPhantomJS createPhantomJSChallenge() {
-                                Recaptcha2FallbackChallengeViaPhantomJS ret = new Recaptcha2FallbackChallengeViaPhantomJS(this) {
-                                    @Override
-                                    public DomainInfo getDomainInfo() {
-                                        return DomainInfo.getInstance(domain);
-                                    };
-
-                                    @Override
-                                    public String getExplain() {
-                                        return reason;
-                                    };
-
-                                    @Override
-                                    public synchronized File getImageFile() {
-                                        if (this.imageFile == null) {
-                                            this.imageFile = Application.getResource("tmp/" + System.currentTimeMillis() + ".png");
-                                        }
-                                        return this.imageFile;
-                                    };
-
-                                    @Override
-                                    public int getTimeout() {
-                                        return 6 * 60 * 1000;
-                                    };
-
-                                    @Override
-                                    public String getHost() {
-                                        return domain;
-                                    };
-                                };
-                                return ret;
                             };
                         };
                     };

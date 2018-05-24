@@ -23,9 +23,7 @@ import org.appwork.utils.swing.dialog.ExtFileSystemViewSettings;
 import org.jdownloader.controlling.ffmpeg.FFmpegSetup;
 import org.jdownloader.gui.notify.gui.CFG_BUBBLE;
 import org.jdownloader.gui.shortcuts.ShortcutSettings;
-import org.jdownloader.jdserv.stats.StatsManagerConfigV2;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.phantomjs.PhantomJSConfig;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.PluginClassLoader;
@@ -76,7 +74,6 @@ public class AdvancedConfigManager {
         register(CFG_MYJD.CFG);
         register(JsonConfig.create(AccountSettings.class));
         register(CFG_GUI.CFG);
-        register(JsonConfig.create(PhantomJSConfig.class));
         register(JsonConfig.create(LinkCheckerConfig.class));
         register(JsonConfig.create(LinkCrawlerConfig.class));
         register(JsonConfig.create(DownloadControllerConfig.class));
@@ -86,7 +83,6 @@ public class AdvancedConfigManager {
         register(CFG_API.CFG);
         register(CFG_PACKAGIZER.CFG);
         register(JsonConfig.create(FFmpegSetup.class));
-        register(JsonConfig.create(StatsManagerConfigV2.class));
         register(JsonConfig.create(LogConfig.class));
         register(JsonConfig.create(ShortcutSettings.class));
         register(JsonConfig.create(RtmpdumpSettings.class));

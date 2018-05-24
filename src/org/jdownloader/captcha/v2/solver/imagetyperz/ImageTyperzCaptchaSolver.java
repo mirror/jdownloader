@@ -5,13 +5,17 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.FormData;
+import jd.http.requests.PostFormDataRequest;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.SolverStatus;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptcha2FallbackChallenge;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.CESChallengeSolver;
@@ -21,13 +25,7 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_IMAGE_TYPERZ;
 import org.seamless.util.io.IO;
 
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.FormData;
-import jd.http.requests.PostFormDataRequest;
-
 public class ImageTyperzCaptchaSolver extends CESChallengeSolver<String> {
-
     private final ImageTyperzConfigInterface      config;
     private static final ImageTyperzCaptchaSolver INSTANCE   = new ImageTyperzCaptchaSolver();
     private final ThreadPoolExecutor              threadPool = new ThreadPoolExecutor(0, 1, 30000, TimeUnit.MILLISECONDS, new LinkedBlockingDeque<Runnable>(), Executors.defaultThreadFactory());
@@ -57,7 +55,7 @@ public class ImageTyperzCaptchaSolver extends CESChallengeSolver<String> {
 
     @Override
     public boolean canHandle(Challenge<?> c) {
-        if (c instanceof RecaptchaV2Challenge || c instanceof AbstractRecaptcha2FallbackChallenge) {
+        if (c instanceof RecaptchaV2Challenge) {
             return true;
         }
         return c instanceof BasicCaptchaChallenge && super.canHandle(c);
@@ -145,22 +143,12 @@ public class ImageTyperzCaptchaSolver extends CESChallengeSolver<String> {
             // Put your CAPTCHA image file, file object, input stream,
             // or vector of bytes here:
             job.setStatus(SolverStatus.SOLVING);
-            final PostFormDataRequest r;
-            if (challenge instanceof AbstractRecaptcha2FallbackChallenge) {
-                r = new PostFormDataRequest("http://captchatypers.com/Forms/UploadGoogleCaptcha.ashx");
-            } else {
-                r = new PostFormDataRequest("http://captchatypers.com/Forms/UploadFileAndGetTextNew.ashx");
-            }
+            final PostFormDataRequest r = new PostFormDataRequest("http://captchatypers.com/Forms/UploadFileAndGetTextNew.ashx");
             r.addFormData(new FormData("action", "UPLOADCAPTCHA"));
             r.addFormData(new FormData("username", (config.getUserName())));
             r.addFormData(new FormData("password", (config.getPassword())));
             r.addFormData(new FormData("chkCase", "0"));
-            final byte[] data;
-            if (challenge instanceof AbstractRecaptcha2FallbackChallenge) {
-                data = challenge.getAnnotatedImageBytes();
-            } else {
-                data = IO.readBytes(challenge.getImageFile());
-            }
+            final byte[] data = IO.readBytes(challenge.getImageFile());
             r.addFormData(new FormData("file", org.appwork.utils.encoding.Base64.encodeToString(data, false)));
             conn = br.openRequestConnection(r);
             // ERROR: INVALID_REQUEST = It will be returned when the program tries to send the invalid request.
@@ -219,7 +207,6 @@ public class ImageTyperzCaptchaSolver extends CESChallengeSolver<String> {
     public boolean setInvalid(final AbstractResponse<?> response) {
         if (config.isFeedBackSendingEnabled() && response instanceof ImageTyperzResponse) {
             threadPool.execute(new Runnable() {
-
                 @Override
                 public void run() {
                     URLConnectionAdapter conn = null;

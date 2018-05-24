@@ -50,7 +50,6 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.statistics.StatsManager;
 
 public abstract class RecaptchaV1Handler {
     public static String load(Browser rcBr, final String siteKey) throws IOException, InterruptedException {
@@ -190,13 +189,11 @@ public abstract class RecaptchaV1Handler {
             final ConfirmDialogInterface impl = UIOManager.I().show(ConfirmDialogInterface.class, d);
             try {
                 impl.throwCloseExceptions();
-                StatsManager.I().track("browserloop/enabled");
                 BrowserSolverService.getInstance().getConfig().setBrowserLoopUserConfirmed(true);
             } catch (DialogCanceledException e) {
                 if (!e.isCausedByTimeout()) {
                     BrowserSolverService.getInstance().getConfig().setBrowserLoopUserConfirmed(true);
                     BrowserSolverService.getInstance().getConfig().setBrowserLoopEnabled(false);
-                    StatsManager.I().track("browserloop/disabled");
                 }
             } catch (DialogClosedException e) {
             }

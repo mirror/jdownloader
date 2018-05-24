@@ -29,7 +29,6 @@ import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.jac.KeyCaptchaAutoSolver;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.jdownloader.statistics.StatsManager;
 
 public class KeyCaptcha {
     public static enum KeyCaptchaType {
@@ -60,7 +59,6 @@ public class KeyCaptcha {
     private String[]                     sscStc;
     private LinkedHashMap<String, int[]> fmsImg;
     private KeyCaptcha.KeyCaptchaType    type;
-
     private Plugin                       plugin;
     private DownloadLink                 link;
     private PuzzleData                   puzzleData;
@@ -117,20 +115,17 @@ public class KeyCaptcha {
 
     private String getCapsUrl(String string) throws ScriptException {
         final ScriptEngine engine = getScriptEngine();
-
         /* creating pseudo functions: document.location */
         engine.eval("var document = { loc : function() { return \"" + downloadUrl + "\";}}");
         engine.eval("document.location = document.loc();");
         engine.put("s_s_c_user_id", PARAMS.get("s_s_c_user_id"));
         engine.eval(string);
         return engine.get("_13").toString();
-
     }
 
     private void load() throws Exception {
         rcBr = br.cloneBrowser();
         rcBr.setFollowRedirects(true);
-
         prepareBrowser(rcBr, "application/javascript, */*;q=0.8");
         String base = null;
         String capsUrl = null;
@@ -149,25 +144,20 @@ public class KeyCaptcha {
             }
             capsUrl = getCapsUrl(rcBr.getRegex("(var _13=[^;]+;)").getMatch(0));
             rcBr.getHeaders().put("Referer", downloadUrl);
-
             rcBr.getPage(base + "swfs/session.html?r=" + Math.random());
             Form form = rcBr.getFormbyKey("a");
             if (form != null) {
                 rcBr.submitForm(form);
             }
             PARAMS.put("src", downloadUrl);
-
         }
-
         rcBr.getHeaders().put("Referer", downloadUrl);
         rcBr.getPage(capsUrl);
         rcBr.getHeaders().put("Referer", downloadUrl);
         rcBr.cloneBrowser().getPage(base + "js/keycaptcha-logo?r=" + Math.random());
-
         rcBr.getHeaders().put("Referer", downloadUrl);
         rcBr.cloneBrowser().getPage(base + "swfs/ckf");
         // rcBr.getPage(SERVERSTRING.replaceAll("/, replacement));
-
         this.capJs = rcBr.toString();
         SERVERSTRING = null;
         PARAMS.put("s_s_c_web_server_sign4", rcBr.getRegex("s_s_c_web_server_sign4\\s*=\\s*\"(.*?)\"").getMatch(0));
@@ -187,26 +177,20 @@ public class KeyCaptcha {
         // additionalQuery = getAdditionalQuery(q);
         // String ads = getAdditionalQuery(true);
         // String ads2 = getAdditionalQuery(false);
-
         // System.out.println(ads2);
-
         rcBr.getHeaders().put("Referer", downloadUrl);
         gjsUrl = gjsUrl + Encoding.urlEncode(getGjsParameter() + getAdditionalQuery(false) + "|" + endParameter) + "&r=" + Math.random() + "&sr=1920.1080";
         rcBr.getPage(gjsUrl);
-
         rcBr.getHeaders().put("Referer", downloadUrl);
         rcBr.cloneBrowser().getPage(base + "swfs/ckf");
         // rcBr.getRequest().setHtmlCode(IO.readURLToString(getClass().getResource("LnkCrptWs.java.js")));
         // additionalQuery = additionalQuery.substring(0, additionalQuery.lastIndexOf("|"));
         PARAMS.put("s_s_c_web_server_sign3", rcBr.getRegex("s_s_c_setnewws\\(\"(.*?)\",").getMatch(0));
-
         String categoryImagesList = rcBr.getRegex("var imgs\\s*=\\s*new Array\\s*\\(\\s*(.+?)\\s*\\)").getMatch(0);
         if (categoryImagesList != null) {
             type = KeyCaptchaType.CATEGORY;
-
         } else {
             type = KeyCaptchaType.PUZZLE;
-
             stImgs = rcBr.getRegex("\\(\'([0-9a-f]+)\',\'(http.*?\\.png)\',(.*?),(true|false)\\)").getRow(0);
             sscStc = rcBr.getRegex("\\(\'([0-9a-f]+)\',\'(http.*?\\.png)\',(.*?),(true|false)\\)").getRow(1);
         }
@@ -214,47 +198,31 @@ public class KeyCaptcha {
         if (signFour.length() < 33) {
             // signFour = signFour.substring(0, 10) + "378" + signFour.substring(10);
             signFour = signFour.substring(0, 10) + "310" + signFour.substring(10);
-
             PARAMS.put("s_s_c_web_server_sign4", signFour);
         }
-
         if (type == KeyCaptchaType.CATEGORY) {
-
             String categoriesUrl = rcBr.getRegex("cnv\\.innerHTML\\s*=\\s*\\'<img\\s+style=\"background\\:none\\;\"\\s+src=\"(http[^\"]+\\.png)").getMatch(0);
-            HashMap<String, String> infos = new HashMap<String, String>();
-            infos.put("host", br.getHost());
-            infos.put("type", type.name());
-            StatsManager.I().track("KeyCaptcha/type");
             Browser picLoad = rcBr.cloneBrowser();
-
             prepareBrowser(picLoad, "image/png,image/svg+xml,image/*;q=0.8,*/*;q=0.5");
             CategoryData data = new CategoryData();
             // ArrayList<String> requests = new ArrayList<String>();
             data.setBackground(readImage(categoriesUrl, picLoad));
-
             // if (categoryImage != null) {
             //
             // imagesList.add(categoryImage);
             // requests.add(picLoad.getRequest() + "");
             // }
-
             String[] images = new Regex(categoryImagesList, "'(http[^']+)").getColumn(0);
             for (String im : images) {
                 prepareBrowser(picLoad, "image/png,image/svg+xml,image/*;q=0.8,*/*;q=0.5");
                 data.addImage(readImage(im, picLoad));
-
             }
             String resultUrl = rcBr.getRegex("resscript\\.setAttribute\\('src'\\s*\\,\\s*'([^\']+)").getMatch(0);
-
             data.setResultUrl(resultUrl);
-
             // SERVERSTRING += Encoding.urlEncode(getGjsParameter() + additionalQuery);
-
             final String pS = sscFsmCheckTwo(PARAMS.get("s_s_c_web_server_sign"), PARAMS.get("s_s_c_web_server_sign") + "Khd21M47");
-
             String mmUrlReq = base + "swfs/mm?pS=" + pS + "&cP=" + getGjsParameter() + getAdditionalQuery(false);
             mmUrlReq = mmUrlReq + "&mms=" + Math.random() + "&r=" + Math.random();
-
             // KeyCaptchaImageGetter imgGetter = new KeyCaptchaImageGetter(new String[] { stImgs[1], sscStc[1] }, fmsImg, rcBr,
             // mmUrlReq);
             //
@@ -263,16 +231,13 @@ public class KeyCaptcha {
             Thread.sleep(1000);
             // is sent on first touch of an image
             rcBr.cloneBrowser().getPage(mmUrlReq);
-
             Thread.sleep(3000);
             // is sent 5112 ms afterwards
             String dh38 = base + "swfs/dh38?pS=" + sscFsmCheckTwo(PARAMS.get("s_s_c_web_server_sign"), PARAMS.get("s_s_c_web_server_sign") + "KdEfOMM");
             dh38 += "&cP=" + getGjsParameter() + getAdditionalQuery(false);
             dh38 += "&mms=" + Math.random() + "&r=" + Math.random();
             rcBr.cloneBrowser().getPage(dh38);
-
             this.categoryData = data;
-
             //
             // KeyCaptchaCategoryChallenge challenge = new KeyCaptchaCategoryChallenge(imagesList, categoryImage);
             // ArrayList<Integer> marray = new ArrayList<Integer>();
@@ -304,10 +269,8 @@ public class KeyCaptcha {
             // return;
             // }
             // throw new Exception("KeyCaptcha Module fails: Category Type not supported");
-
         } else {
             SERVERSTRING = rcBr.getRegex("\\.s_s_c_resurl=\'([^\']+)\'\\+").getMatch(0);
-
             SERVERSTRING += Encoding.urlEncode(getGjsParameter() + getAdditionalQuery(false));
             if (stImgs == null || sscStc == null || SERVERSTRING == null) {
                 throw new Exception("KeyCaptcha Module fails");
@@ -316,11 +279,9 @@ public class KeyCaptcha {
             /* Bilderdownload und Verarbeitung */
             sscGetImagest(stImgs[0], stImgs[1], stImgs[2], Boolean.parseBoolean(stImgs[3]));// fragmentierte Puzzleteile
             sscGetImagest(sscStc[0], sscStc[1], sscStc[2], Boolean.parseBoolean(sscStc[3]));// fragmentiertes Hintergrundbild
-
             if (sscStc == null || sscStc.length == 0 || stImgs == null || stImgs.length == 0 || fmsImg == null || fmsImg.size() == 0) {
                 throw new PluginException(LinkStatus.ERROR_FATAL);
             }
-
             // String out = null;
             // ArrayList<Integer> marray = new ArrayList<Integer>();
             Thread.sleep(1000);
@@ -328,16 +289,12 @@ public class KeyCaptcha {
             String mmUrlReq = SERVERSTRING.replaceAll("cjs\\?pS=\\d+&cOut", "mm\\?pS=" + pS + "&cP");
             mmUrlReq = mmUrlReq + "&mms=" + Math.random() + "&r=" + Math.random();
             rcBr.cloneBrowser().getPage(mmUrlReq);
-
             KeyCaptchaImageGetter imgGetter = new KeyCaptchaImageGetter(this, new String[] { stImgs[1], sscStc[1] }, fmsImg, rcBr, mmUrlReq);
-
             // KeyCaptchaAutoSolver kcSolver = new KeyCaptchaAutoSolver();
             KeyCaptchaImages imgs = imgGetter.getKeyCaptchaImage();
             // rcBr.cloneBrowser().getPage(mmUrlReq);
             puzzleData = new PuzzleData(fmsImg, imgs, mmUrlReq);
-
         }
-
     }
 
     public static class ScriptEnv {
@@ -348,22 +305,17 @@ public class KeyCaptcha {
         }
 
         public void log(String log) {
-
             System.out.println(log);
         }
 
         public void eval(String eval) throws ScriptException {
-
             engine.eval(eval);
-
         }
 
         public String atob(String string) {
             String ret = Encoding.Base64Decode(string);
-
             return ret;
         }
-
     }
 
     private ScriptEngine getScriptEngine() {
@@ -376,28 +328,22 @@ public class KeyCaptcha {
         try {
             final ScriptEngine engine = getScriptEngine();
             JavaScriptEngineFactory.runTrusted(new ThrowingRunnable<ScriptException>() {
-
                 @Override
                 public void run() throws ScriptException {
-
                     ScriptEnv env = new ScriptEnv(engine);
                     // atob requires String to be loaded for its parameter and return type
                     engine.put("env", env);
                     engine.eval("var string=" + String.class.getName() + ";");
-
                     engine.eval("log=function(str){return env.log(str);};");
                     engine.eval("alert=function(str){return env.log(str);};");
                     engine.eval("eval=function(str){return env.eval(str);};");
-
                     engine.eval("atob=function(str){return env.atob(str);};");
                     // cleanup
                     engine.eval("delete java;");
                     engine.eval("delete jd;");
                     // load Env in Trusted Thread
                     engine.eval("log('Java Env Loaded');");
-
                 }
-
             });
             String env = IO.readURLToString(getClass().getResource("env.js"));
             engine.eval(env);
@@ -411,7 +357,6 @@ public class KeyCaptcha {
             String ret;
             String signMethod = rcBr.getRegex("(\\w+\\.\\w+)\\(s_s_c_web_server_sign\\,\\s*s_s_c_web_server_sign").getMatch(0);
             ret = engine.eval(signMethod + "(arg1,arg2);").toString();
-
             return ret;
         } catch (Exception e) {
             e.printStackTrace();
@@ -433,17 +378,12 @@ public class KeyCaptcha {
         if (next == null) {
             throw new Exception("KeyCaptcha Module fails");
         }
-
         String reg = "var\\s+" + next[1] + "\\s*=.*?s_s_c_web_server_sign4\\s*\\+\\s*(.*?);";
         String q = new Regex(capJs, reg).getMatch(0);
-
         String[] methods = new Regex(q, "([\\w\\d]+)\\(\\).*?([\\w\\d]+)\\(\\)").getRow(0);
         final ScriptEngine engine = getScriptEngine();
-
         String env = "s_s_c_get_form=function(){return null;};s_s_c_captcha_field_id=\"\";document={};" + "document.getElementById=function(){var obj={};obj.s_s_c_check_process=" + inProcess + ";return obj;};" + "document.s_s_c_popupmode=false;" + "document.s_s_c_do_not_auto_show=true;";
-
         engine.eval(env);
-
         /* creating pseudo functions: document.location */
         engine.eval(capJs);
         Object a = engine.eval(methods[0] + "();");
@@ -452,7 +392,6 @@ public class KeyCaptcha {
         }
         String b = engine.eval(methods[1] + "();").toString();
         return "|" + a + "|" + b;
-
     }
 
     public Browser getBrowser() {
@@ -538,7 +477,6 @@ public class KeyCaptcha {
     // return showDialog(parameter);
     // }
     // }
-
     /**
      * This methods just displays a dialog. You can use {@link #handleKeyCaptcha(String, DownloadLink) handleKeyCaptcha} instead, which
      * tries to autosolve it first. Or you can use {@link #autoSolve(String) autosolve}, which tries to solve the captcha directly.
@@ -628,7 +566,6 @@ public class KeyCaptcha {
     // LOCKDIALOG.unlock();
     // }
     // }
-
     private String sscFsmCheckFour(String arg0, final String arg1) {
         try {
             if (arg0 == null || arg0.length() < 8 || arg1 == null) {
@@ -669,7 +606,6 @@ public class KeyCaptcha {
 
     private String sscFsmCheckTwo(final String arg0, final String arg1) {
         try {
-
             // String org = evalGHS(arg0, arg1);
             if (arg1 == null) {
                 return null;
@@ -755,13 +691,11 @@ public class KeyCaptcha {
 
     // ===== BEGIN autosolve stuff
     public String autoSolve(final String parameter) throws Exception {
-
         downloadUrl = parameter;
         try {
             parse();
             load();
         } catch (final Throwable e) {
-
             throw new Exception(e);
         } finally {
             try {
@@ -769,30 +703,21 @@ public class KeyCaptcha {
             } catch (final Throwable e) {
             }
         }
-
         /* Bilderdownload und Verarbeitung */
         sscGetImagest(stImgs[0], stImgs[1], stImgs[2], Boolean.parseBoolean(stImgs[3]));// fragmentierte Puzzleteile
         sscGetImagest(sscStc[0], sscStc[1], sscStc[2], Boolean.parseBoolean(sscStc[3]));// fragmentiertes Hintergrundbild
-
         if (sscStc == null || sscStc.length == 0 || stImgs == null || stImgs.length == 0 || fmsImg == null || fmsImg.size() == 0) {
             return "CANCEL";
         }
-
         String out = null;
         ArrayList<Integer> marray = new ArrayList<Integer>();
-
         final String pS = sscFsmCheckTwo(PARAMS.get("s_s_c_web_server_sign"), PARAMS.get("s_s_c_web_server_sign") + Encoding.Base64Decode("S2hkMjFNNDc="));
         String mmUrlReq = SERVERSTRING.replaceAll("cjs\\?pS=\\d+&cOut", "mm\\?pS=" + pS + "&cP");
         mmUrlReq = mmUrlReq + "&mms=" + Math.random() + "&r=" + Math.random();
-
         KeyCaptchaImageGetter imgGetter = new KeyCaptchaImageGetter(this, new String[] { stImgs[1], sscStc[1] }, fmsImg, rcBr, mmUrlReq);
-
         KeyCaptchaAutoSolver kcSolver = new KeyCaptchaAutoSolver();
-
         rcBr.cloneBrowser().getPage(mmUrlReq);
-
         out = kcSolver.solve(imgGetter.getKeyCaptchaImage());
-
         marray.addAll(kcSolver.getMouseArray());
         if (out == null) {
             return null;
@@ -801,12 +726,10 @@ public class KeyCaptcha {
             System.out.println("KeyCaptcha: User aborted captcha dialog.");
             return out;
         }
-
         String key = rcBr.getRegex("\\|([0-9a-zA-Z]+)\'\\.split").getMatch(0);
         if (key == null) {
             key = Encoding.Base64Decode("OTNodk9FZmhNZGU=");
         }
-
         String cOut = "";
         for (Integer i : marray) {
             if (cOut.length() > 1) {
@@ -814,7 +737,6 @@ public class KeyCaptcha {
             }
             cOut += String.valueOf(i);
         }
-
         SERVERSTRING = SERVERSTRING.replace("cOut=", "cOut=" + sscFsmCheckTwo(out, key) + "..." + cOut + "&cP=");
         rcBr.clearCookies(rcBr.getHost());
         out = rcBr.getPage(SERVERSTRING.substring(0, SERVERSTRING.lastIndexOf("%7C")));
@@ -827,7 +749,6 @@ public class KeyCaptcha {
     }
 
     public Challenge<String> createChallenge(boolean noAutoSolver, Plugin plg) throws Exception {
-
         try {
             parse();
             load();
@@ -842,17 +763,12 @@ public class KeyCaptcha {
         if (type == null) {
             throw new PluginException(LinkStatus.ERROR_FATAL);
         }
-
         switch (type) {
         case CATEGORY:
             return new KeyCaptchaCategoryChallenge(this, plg, noAutoSolver);
-
         case PUZZLE:
-
             return new KeyCaptchaPuzzleChallenge(this, plg, noAutoSolver);
-
         }
-
         return null;
     }
 
@@ -887,7 +803,6 @@ public class KeyCaptcha {
             }
             cOut += String.valueOf(i);
         }
-
         SERVERSTRING = SERVERSTRING.replace("cOut=", "cOut=" + sscFsmCheckTwo(out, key) + "..." + cOut + "&cP=");
         rcBr.clearCookies(rcBr.getHost());
         out = rcBr.getPage(SERVERSTRING.substring(0, SERVERSTRING.lastIndexOf("%7C")));

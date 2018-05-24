@@ -68,7 +68,6 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.utils.Application;
 import org.appwork.utils.CompareUtils;
-import org.appwork.utils.Exceptions;
 import org.appwork.utils.Hash;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -108,8 +107,6 @@ import org.jdownloader.plugins.components.youtube.variants.generics.GenericAudio
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
-import org.jdownloader.statistics.StatsManager;
-import org.jdownloader.statistics.StatsManager.CollectionName;
 import org.jdownloader.updatev2.FilterList;
 import org.jdownloader.updatev2.FilterList.Type;
 import org.jdownloader.updatev2.UpdateController;
@@ -1656,10 +1653,6 @@ public class YoutubeHelper {
                     logger.log(e);
                 } catch (Throwable e) {
                     logger.log(e);
-                    Map<String, String> infos = new HashMap<String, String>();
-                    infos.put("name", e.getMessage());
-                    infos.put("stacktrace", Exceptions.getStackTrace(e));
-                    StatsManager.I().track(0, null, "loadVideo/Exception", infos, CollectionName.PLUGINS);
                 }
             }
         }
