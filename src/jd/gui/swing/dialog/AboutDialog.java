@@ -207,16 +207,6 @@ public class AboutDialog extends AbstractDialog<Integer> {
         } catch (final Throwable e) {
             org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
         }
-        // contentpane.add(lbl = new JLabel("<html>" + _GUI.T.about_3rdparty() + "</html>"), "gaptop 10,spanx");
-        // lbl.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        // lbl.addMouseListener(new MouseAdapter() {
-        // @Override
-        // public void mouseClicked(MouseEvent e) {
-        // CreditsDialog d = new CreditsDialog(getDialog());
-        // UIOManager.I().show(null, d);
-        //
-        // }
-        // });
         stats.add(new JLabel("JSON Support:"), "");
         stats.add(disable("Jackson JSON Processor 2.7.9 (http://wiki.fasterxml.com/JacksonHome/)"));
         stats.add(new JLabel("RTMP Support:"), "");
