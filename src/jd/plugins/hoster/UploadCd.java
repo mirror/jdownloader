@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -47,17 +46,16 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upload.cd" }, urls = { "http://(www\\.)?upload\\.cd/(files/)?[a-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upload.cd" }, urls = { "https?://(www\\.)?upload\\.cd/(files/)?[a-z0-9]+" })
 public class UploadCd extends PluginForHost {
-
     public UploadCd(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://upload.cd/premium/");
+        this.enablePremium("https://upload.cd/premium/");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://upload.cd/tos";
+        return "https://upload.cd/tos";
     }
 
     /* Connection stuff */
@@ -70,11 +68,9 @@ public class UploadCd extends PluginForHost {
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-
     /* don't touch the following! */
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
-
-    private static final String  INVALIDLINKS                 = "http://(www\\.)?upload\\.cd/premium";
+    private static final String  INVALIDLINKS                 = "https?://(www\\.)?upload\\.cd/premium";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -182,16 +178,13 @@ public class UploadCd extends PluginForHost {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.getHeaders().put("Accept", "*/*");
             br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-            br.postPage("http://" + this.getHost() + "/download/startTimer", "fid=" + fid);
-
+            br.postPage("https://" + this.getHost() + "/download/startTimer", "fid=" + fid);
             final String seconds = getJson("seconds");
             final String sid = getJson("sid");
             if (seconds == null || sid == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-
             this.sleep((Integer.parseInt(seconds) + 5) * 1001l, downloadLink);
-
             /* 2017-03-08: Added 5 extra seconds to avoid failures! */
             br.postPage("/download/checkTimer", "sid=" + sid);
             /* E.g. positive response: {"status":"success","state":"ended"} */
@@ -199,7 +192,6 @@ public class UploadCd extends PluginForHost {
                 /* E.g. bad response: {"status":"error","msg":"There are some errors. Please try again later"} */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-
             /* 2017-03-08: On failure/when we get blocked: "Hello downloaders! ;)" */
             /* 2017-03-08: 'rand' parameter has been addd and is required! */
             final String uuid = UUID.randomUUID().toString().split("-")[0];
@@ -210,7 +202,7 @@ public class UploadCd extends PluginForHost {
             for (int i = 1; i <= 5; i++) {
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                 final String c = getCaptchaCode("recaptcha", cf, downloadLink);
-                br.postPage("http://" + this.getHost() + "/download/url", "fileid=" + fid + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&CaptchaForm%5Bvalidacion%5D=");
+                br.postPage("https://" + this.getHost() + "/download/url", "fileid=" + fid + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&CaptchaForm%5Bvalidacion%5D=");
                 if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
                     rc.reload();
                     continue;
@@ -261,7 +253,11 @@ public class UploadCd extends PluginForHost {
                 }
                 br.setFollowRedirects(true);
                 br.postPage("https://upload.cd/user/auth/", "User%5Buemail%5D=" + Encoding.urlEncode(account.getUser()) + "&User%5Bupass%5D=" + Encoding.urlEncode(account.getPass()) + "&User%5BrememberMe%5D=0&User%5BrememberMe%5D=1&logink=111&backurl=http%3A%2F%2Fupload.cd%2F");
-                if (!br.containsHTML("\"status\":\"success\"") && !br.containsHTML("href=\"/site/logout/\">Logout \\(")) {
+                boolean okay = br.containsHTML("href=\"(https?://upload.cd)?/site/logout/\">Logout \\(");
+                if (!okay) {
+                    okay = br.containsHTML("\"status\":\"success\"");
+                }
+                if (!okay) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -278,7 +274,9 @@ public class UploadCd extends PluginForHost {
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", cookies);
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.setProperty("cookies", Property.NULL);
+                }
                 throw e;
             }
         }
@@ -288,14 +286,9 @@ public class UploadCd extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account, true);
         ai.setUnlimitedTraffic();
-        br.getPage("http://upload.cd/user/profile/");
+        br.getPage("https://upload.cd/user/profile/");
         final String space = br.getRegex("class=\"pull\\-right\">([^<>\"]*?)<span>\\(of maximum \\d+ GB\\)</span>").getMatch(0);
         if (space != null) {
             ai.setUsedSpace(space.trim());
@@ -351,8 +344,8 @@ public class UploadCd extends PluginForHost {
         } else {
             String dllink = this.checkDirectLink(link, "premium_directlink");
             if (dllink == null) {
-                br.postPage("http://upload.cd/download/url", "fileid=" + getFID(link) + "&usid=&referer=&premium_dl=1");
-                dllink = br.getRegex("class=\"btn download-btn btn-success\" href=\"(http://[^<>\"]*?)\"").getMatch(0);
+                br.postPage("https://upload.cd/download/url", "fileid=" + getFID(link) + "&usid=&referer=&premium_dl=1");
+                dllink = br.getRegex("class=\"btn download-btn btn-success\" href=\"(https?://[^<>\"]*?)\"").getMatch(0);
                 if (dllink == null) {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
