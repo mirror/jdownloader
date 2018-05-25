@@ -20,11 +20,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -38,6 +33,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 
 /*Similar websites: bca-onlive.de, asscompact.de*/
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alphatv.gr" }, urls = { "https?://(?:www\\.)?alphatvdecrypted\\.gr/shows/.+" })
@@ -177,7 +177,15 @@ public class AlphatvGr extends PluginForHost {
     }
 
     public static boolean isOffline(final Browser br) {
-        return br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("jwplayer\\.flash\\.swf\"");
+        final String hls_master = br.getRegex("(?:\\'|\")(http://[^<>\"]*?\\.m3u8)(?:\\'|\")").getMatch(0);
+        final String url_rtmp = br.getRegex("(?:\\'|\")(rtmp://[^<>\"]*?\\.mp4)(?:\\'|\")").getMatch(0);
+        /* 2018-03-29: http streaming is new and the only streaming method at the moment! */
+        final String url_http = br.getRegex("file\\s*?:\\s*?window\\.[^\"]+\\(\"(path[^<>\"]+\\.mp4)\"\\)\\s*?\\}").getMatch(0);
+        if (hls_master != null || url_rtmp != null || url_http != null) {
+            return false;
+        } else {
+            return br.getHttpConnection().getResponseCode() == 404;
+        }
     }
 
     public static String getFilenameFromUrl(final String url) {
