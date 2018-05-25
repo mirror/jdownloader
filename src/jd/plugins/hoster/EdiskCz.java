@@ -33,7 +33,7 @@ import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "edisk.cz" }, urls = { "http://(?:www\\.)?edisk\\.(?:cz|sk|eu)/(?:[a-z]{2}/)?(?:stahni|download)/[0-9]+/.+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "edisk.cz" }, urls = { "https?://(?:www\\.)?edisk\\.(?:cz|sk|eu)/(?:[a-z]{2}/)?(?:stahni|download)/[0-9]+/.+\\.html" })
 public class EdiskCz extends PluginForHost {
     private static final String MAINPAGE = "https://www.edisk.eu/";
 
@@ -44,7 +44,7 @@ public class EdiskCz extends PluginForHost {
 
     public void correctDownloadLink(final DownloadLink link) {
         final String linkpart = new Regex(link.getDownloadURL(), "(stahni|download)/(.+)").getMatch(1);
-        link.setUrlDownload("http://www.edisk.eu/download/" + linkpart);
+        link.setUrlDownload("https://www.edisk.eu/download/" + linkpart);
     }
 
     @Override
@@ -162,7 +162,7 @@ public class EdiskCz extends PluginForHost {
             }
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.postPage("/cz/" + premiumPage, "");
-            String dllink = br.getRegex("class=\"wide\">[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
+            String dllink = br.getRegex("class=\"wide\">[\t\n\r ]+<a href=\"(https?://.*?)\"").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("Pokud se tak nestane, <a href=\"(/stahni-.*?)\"").getMatch(0);
                 if (dllink == null) {
