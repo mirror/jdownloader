@@ -70,7 +70,7 @@ public class EightTracksCom extends PluginForDecrypt {
         /* nachfolgender UA sorgt für bessere Audioqualität */
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (webOS/2.1.0; U; en-US) AppleWebKit/532.2 (KHTML, like Gecko) Version/1.0 Safari/532.2 Pre/1.2");
         br.getPage(parameter);
-        if (br.containsHTML(">Sorry, that page doesn't exist")) {
+        if (br.containsHTML(">Sorry, that page doesn't exist|>This page has vanished")) {
             logger.info("Link offline: " + parameter);
             decryptedLinks.add(offline);
             return decryptedLinks;
