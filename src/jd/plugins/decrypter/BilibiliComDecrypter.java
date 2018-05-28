@@ -20,9 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.JDHash;
@@ -30,6 +27,9 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bilibili.com" }, urls = { "https?://(?:www\\.)?bilibili\\.com/(?:mobile/)?video/av\\d+" })
 public class BilibiliComDecrypter extends PluginForDecrypt {
@@ -65,9 +65,9 @@ public class BilibiliComDecrypter extends PluginForDecrypt {
         if (parameter.contains("/bangumi/")) {
         } else {
             String title = (String) JavaScriptEngineFactory.walkJson(entries, "videoData/title");
-            List<Map> pages = (List<Map>) JavaScriptEngineFactory.walkJson(entries, "videoData/pages");
+            List<Map<String, Object>> pages = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "videoData/pages");
             int pageCnt = 1;
-            for (Map p : pages) {
+            for (Map<String, Object> p : pages) {
                 // default
                 String cid = String.valueOf(p.get("cid"));
                 int page = (int) p.get("page");
