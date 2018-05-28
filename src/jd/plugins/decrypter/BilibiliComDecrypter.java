@@ -70,7 +70,7 @@ public class BilibiliComDecrypter extends PluginForDecrypt {
             for (Map<String, Object> p : pages) {
                 // default
                 String cid = String.valueOf(p.get("cid"));
-                int page = (int) p.get("page");
+                Number page = (Number) p.get("page");
                 String part = (String) p.get("part");
                 final String query1 = String.format(API_QUERY_FORMAT1, APP_KEY, cid);
                 String query2 = String.format(API_QUERY_FORMAT2, query1, "0", "0");
