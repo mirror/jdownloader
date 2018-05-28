@@ -51,6 +51,7 @@ import jd.plugins.download.HashInfo;
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
@@ -539,6 +540,10 @@ public class RealDebridCom extends PluginForHost {
                     }
                 }
 
+                private final boolean isInvalid(Browser br) {
+                    return br.containsHTML("Your login informations are incorrect") || (Application.isHeadless() && br.containsHTML("The validity period of your password has been exceeded"));
+                }
+
                 @Override
                 public boolean autoSolveChallenge(SolverJob<Boolean> job) {
                     try {
@@ -559,7 +564,7 @@ public class RealDebridCom extends PluginForHost {
                         loginForm.getInputField("p").setValue(Encoding.urlEncode(getAccount().getPass()));
                         loginForm.getInputField("u").setValue(Encoding.urlEncode(getAccount().getUser()));
                         autoSolveBr.submitForm(loginForm);
-                        if (autoSolveBr.containsHTML("Your login informations are incorrect")) {
+                        if (isInvalid(autoSolveBr)) {
                             loginsInvalid.set(true);
                             job.addAnswer(new AbstractResponse<Boolean>(this, this, 100, false));
                             return false;
@@ -580,7 +585,7 @@ public class RealDebridCom extends PluginForHost {
                             loginForm.getInputField("p").setValue(Encoding.urlEncode(getAccount().getPass()));
                             loginForm.getInputField("u").setValue(Encoding.urlEncode(getAccount().getUser()));
                             autoSolveBr.submitForm(loginForm);
-                            if (autoSolveBr.containsHTML("Your login informations are incorrect")) {
+                            if (isInvalid(autoSolveBr)) {
                                 loginsInvalid.set(true);
                                 job.addAnswer(new AbstractResponse<Boolean>(this, this, 100, false));
                                 return false;
