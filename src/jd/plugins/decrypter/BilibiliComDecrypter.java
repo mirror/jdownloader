@@ -20,6 +20,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.JDHash;
@@ -27,9 +30,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bilibili.com" }, urls = { "https?://(?:www\\.)?bilibili\\.com/(?:mobile/)?video/av\\d+" })
 public class BilibiliComDecrypter extends PluginForDecrypt {
@@ -70,7 +70,6 @@ public class BilibiliComDecrypter extends PluginForDecrypt {
             for (Map<String, Object> p : pages) {
                 // default
                 String cid = String.valueOf(p.get("cid"));
-                Number page = (Number) p.get("page");
                 String part = (String) p.get("part");
                 final String query1 = String.format(API_QUERY_FORMAT1, APP_KEY, cid);
                 String query2 = String.format(API_QUERY_FORMAT2, query1, "0", "0");
@@ -86,9 +85,9 @@ public class BilibiliComDecrypter extends PluginForDecrypt {
                 // dllink
                 Map<String, Object> entries3 = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
                 String ext = (String) entries3.get("format");
-                List<Map> durls = (List<Map>) entries3.get("durl");
+                List<Map<String, Object>> durls = (List<Map<String, Object>>) entries3.get("durl");
                 int partCnt = 1;
-                for (Map durl : durls) {
+                for (Map<String, Object> durl : durls) {
                     // There are multiple possibilities, in that case need to join with ffmpeg.
                     DownloadLink dl = createDownloadlink("https://bilibilidecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(10000));
                     dl.setProperty("mainLink", durl.get("url"));
