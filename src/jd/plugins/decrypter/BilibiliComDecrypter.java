@@ -16,134 +16,100 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
+import jd.nutils.JDHash;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bilibili.com" }, urls = { "https?://(?:www\\.)?bilibili\\.com/(?:mobile/)?video/av\\d+/?|https?://(?:www\\.)?bilibilijj\\.com/video/av\\d+/|https?://static\\.hdslb\\.com/miniloader\\.swf\\?aid=\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bilibili.com" }, urls = { "https?://(?:www\\.)?bilibili\\.com/(?:mobile/)?video/av\\d+" })
 public class BilibiliComDecrypter extends PluginForDecrypt {
     public BilibiliComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    private static final long   SUCCESS_OK        = 200l;
+    private static final String API_URL           = "//interface.bilibili.com/v2/playurl?";
+    private static final String API_QUERY_FORMAT1 = "appkey=%s&cid=%s&otype=json";
+    private static final String API_QUERY_FORMAT2 = "%s&qn=%s&quality=%s&type=";
+    private static final String API_QUERY_FORMAT3 = "%s%s&sign=%s";
+    private static final String APP_KEY           = "84956560bc028eb7";
+    private static final String SEC_KEY           = "94aba54af9065f71de72f5508f1cd42e";
+
+    @SuppressWarnings("unchecked")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        jd.plugins.hoster.BilibiliCom.prepBR(this.br);
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        final String vid = getFID(parameter);
-        final String url_video_main = "http://www.bilibili.com/video/av" + vid + "/";
-        final String url_download_overview = "http://www.bilibilijj.com/video/av" + vid + "/";
-        this.br.getPage(url_video_main);
-        if (jd.plugins.hoster.BilibiliCom.isOffline(this.br)) {
+        br.getPage(parameter);
+        final String jsonString = br.getRegex("window\\.__INITIAL_STATE__=(\\{.+?\\});").getMatch(0);
+        Map<String, Object> entries = null;
+        long errCode = SUCCESS_OK;
+        if (jsonString != null) {
+            entries = JavaScriptEngineFactory.jsonToJavaMap(jsonString);
+            errCode = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "error/code"), SUCCESS_OK);
+        }
+        if (errCode == 404 || entries == null) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        /* Find packagename */
-        String fpName = jd.plugins.hoster.BilibiliCom.getTitle(this.br);
-        if (fpName == null) {
-            fpName = vid;
-        }
-        /* Find video-parts */
-        String[] links = br.getRegex("<option value=\\'(/video/av" + vid + "/index_\\d+\\.html)\\'>").getColumn(0);
-        if (links == null || links.length == 0) {
-            /* Probably a video with only one part */
-            links = new String[1];
-            links[0] = "/video/av" + vid + "/index_1.html";
-        }
-        for (String singleURL : links) {
-            final String contenturl = "http://www.bilibili.com" + singleURL;
-            singleURL = "http://www.bilibilidecrypted.com" + singleURL;
-            final DownloadLink dl = createDownloadlink(singleURL);
-            dl.setContentUrl(contenturl);
-            decryptedLinks.add(dl);
-        }
-        try {
-            /* Now let's decrypt the (ctdisk.com) downloadurls. */
-            br.getPage(url_download_overview);
-            if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 502) {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
-            }
-            links = br.getRegex("/Files/DownLoad/(\\d+)\\.mp4").getColumn(0);
-            if (links == null || links.length == 0) {
-                links = br.getRegex("/DownLoad/Cid/(\\d+)\\'").getColumn(0);
-            }
-            if (links == null || links.length == 0) {
-                /*
-                 * Return links because maybe there simply are no downloadlinks available. From the code above we should at least have one
-                 * stream-url which the user can download!
-                 */
-                logger.warning("Downloadlink-Decrypter might be broken for link: " + parameter);
-                return decryptedLinks;
-            }
-            for (final String singleID : links) {
-                this.br.setFollowRedirects(true);
-                String continue_url = "http://www.bilibilijj.com/DownLoad/Cid/" + singleID;
-                this.br.getPage(continue_url);
-                final String html_with_multiple_downloadurls = this.br.getRegex("<div class=\"D\">(.*?)</div>").getMatch(0);
-                if (html_with_multiple_downloadurls != null) {
-                    final String[] dlurls = new Regex(html_with_multiple_downloadurls, "<a href=\\'(http[^<>\"\\']+)\\' target=\\'_blank\\'>").getColumn(0);
-                    for (final String dlurl : dlurls) {
-                        decryptedLinks.add(createDownloadlink("directhttp://" + dlurl));
+        String aid = (String) entries.get("aid");
+        if (parameter.contains("/bangumi/")) {
+        } else {
+            String title = (String) JavaScriptEngineFactory.walkJson(entries, "videoData/title");
+            List<Map> pages = (List<Map>) JavaScriptEngineFactory.walkJson(entries, "videoData/pages");
+            int pageCnt = 1;
+            for (Map p : pages) {
+                // default
+                String cid = String.valueOf(p.get("cid"));
+                int page = (int) p.get("page");
+                String part = (String) p.get("part");
+                final String query1 = String.format(API_QUERY_FORMAT1, APP_KEY, cid);
+                String query2 = String.format(API_QUERY_FORMAT2, query1, "0", "0");
+                String url = String.format(API_QUERY_FORMAT3, API_URL, query2, JDHash.getMD5(query2 + SEC_KEY));
+                br.getPage(url);
+                // best quality
+                Map<String, Object> entries2 = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                List<Object> acceptQualityList = (List<Object>) entries2.get("accept_quality");
+                String acceptQualityMax = String.valueOf(acceptQualityList.get(0));
+                query2 = String.format(API_QUERY_FORMAT2, query1, acceptQualityMax, acceptQualityMax);
+                url = String.format(API_QUERY_FORMAT3, API_URL, query2, JDHash.getMD5(query2 + SEC_KEY));
+                br.getPage(url);
+                // dllink
+                Map<String, Object> entries3 = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                String ext = (String) entries3.get("format");
+                List<Map> durls = (List<Map>) entries3.get("durl");
+                int partCnt = 1;
+                for (Map durl : durls) {
+                    // There are multiple possibilities, in that case need to join with ffmpeg.
+                    DownloadLink dl = createDownloadlink("https://bilibilidecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(10000));
+                    dl.setProperty("mainLink", durl.get("url"));
+                    StringBuilder fileName = new StringBuilder(title);
+                    if (StringUtils.isNotEmpty(part)) {
+                        fileName.append(String.format(" P%d %s", pageCnt, part));
                     }
-                } else {
-                    continue_url = this.br.getRegex("Base64\\.encodeURI\\(\"(https?://[^<>\"]+)\"").getMatch(0);
-                    if (continue_url == null) {
-                        /*
-                         * Return links because maybe there simply are no downloadlinks available. From the code above we should at least
-                         * have one stream-url which the user can download!
-                         */
-                        logger.warning("Downloadlink-Decrypter might be broken for link: " + parameter);
-                        return decryptedLinks;
+                    if (durls.size() > 2) {
+                        fileName.append(".part");
+                        fileName.append(String.valueOf(partCnt));
+                        partCnt++;
                     }
-                    String finallink = null;
-                    if (continue_url.contains("http://www.bilibilijj.comhttp")) {
-                        finallink = continue_url.replace("http://www.bilibilijj.comhttp://", "http");
-                    } else {
-                        this.br.setFollowRedirects(false);
-                        this.br.getPage(continue_url);
-                        /* Usually finallink is a ctdisk.com downloadurl. */
-                        finallink = this.br.getRedirectLocation();
-                        if (finallink == null) {
-                            /*
-                             * Return links because maybe there simply are no downloadlinks available. From the code above we should at
-                             * least have one stream-url which the user can download!
-                             */
-                            logger.warning("Downloadlink-Decrypter might be broken for link: " + parameter);
-                            return decryptedLinks;
-                        }
-                    }
-                    /*
-                     * Make sure directlinks with endings and parameters get added correctly. TODO: Maybe find a better way o identify
-                     * directlinks!
-                     */
-                    if ((finallink.contains(".mp4") || finallink.contains(".flv")) && finallink.contains("?")) {
-                        finallink = "directhttp://" + finallink;
-                    }
-                    decryptedLinks.add(createDownloadlink(finallink));
+                    fileName.append(".");
+                    fileName.append(ext);
+                    dl.setFinalFileName(fileName.toString());
+                    dl.setDownloadSize(JavaScriptEngineFactory.toLong(durl.get("size"), -1));
+                    decryptedLinks.add(dl);
                 }
+                pageCnt++;
             }
-        } catch (final Throwable e) {
-            logger.warning("Failed to grab downloadurls");
         }
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(fpName.trim()));
-        fp.addLinks(decryptedLinks);
         return decryptedLinks;
-    }
-
-    private String getFID(final String url_source) {
-        String fid = new Regex(url_source, "/av(\\d+)").getMatch(0);
-        if (fid == null) {
-            fid = new Regex(url_source, "/av(\\d+)").getMatch(0);
-        }
-        return new Regex(url_source, "/av(\\d+)").getMatch(0);
     }
 }
