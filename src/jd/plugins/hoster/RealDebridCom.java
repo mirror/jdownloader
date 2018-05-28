@@ -23,6 +23,31 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.Property;
+import jd.config.SubConfiguration;
+import jd.controlling.AccountController;
+import jd.controlling.captcha.SkipException;
+import jd.http.Browser;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.CaptchaException;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.HashInfo;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -50,34 +75,8 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.translate._JDT;
 
-import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.Property;
-import jd.config.SubConfiguration;
-import jd.controlling.AccountController;
-import jd.controlling.captcha.SkipException;
-import jd.http.Browser;
-import jd.http.Request;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
-import jd.plugins.CaptchaException;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.download.DownloadLinkDownloadable;
-import jd.plugins.download.HashInfo;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "real-debrid.com" }, urls = { "https?://(?:\\w+(?:\\.download)?\\.)?(?:real\\-debrid\\.com|rdb\\.so|rdeb\\.io)/dl?/\\w+(?:/.+)?" })
 public class RealDebridCom extends PluginForHost {
-
     private static final String CLIENT_SECRET_KEY = "client_secret";
     private static final String CLIENT_ID_KEY     = "client_id";
     private static final String CLIENT_SECRET     = "CLIENT_SECRET";
@@ -85,7 +84,6 @@ public class RealDebridCom extends PluginForHost {
     private static final String AUTHORIZATION     = "Authorization";
 
     private static class APIException extends Exception {
-
         private final URLConnectionAdapter connection;
 
         public APIException(URLConnectionAdapter connection, Error error, String msg) {
@@ -272,7 +270,6 @@ public class RealDebridCom extends PluginForHost {
         }
         final String host = Browser.getHost(downloadLink);
         final DownloadLinkDownloadable downloadLinkDownloadable = new DownloadLinkDownloadable(link) {
-
             @Override
             public HashInfo getHashInfo() {
                 if (linkresp == null || linkresp.getCrc() == 1) {
@@ -519,7 +516,6 @@ public class RealDebridCom extends PluginForHost {
             final AtomicReference<ClientSecret> clientSecretResult = new AtomicReference<ClientSecret>(null);
             final AtomicBoolean loginsInvalid = new AtomicBoolean(false);
             final AccountLoginOAuthChallenge challenge = new AccountLoginOAuthChallenge(getHost(), null, account, code.getDirect_verification_url()) {
-
                 private volatile long lastValidation = -1;
 
                 @Override
@@ -664,7 +660,7 @@ public class RealDebridCom extends PluginForHost {
 
     private boolean isDirectRealDBUrl(DownloadLink dl) {
         final String url = dl.getDownloadURL();
-        if (url.contains("download.")) {
+        if (url.contains("download.") || url.matches("https?://\\w+\\.(rdb\\.so|rdeb\\.io)/dl?/\\w+(/.+)?")) {
             return true;
         } else {
             return false;

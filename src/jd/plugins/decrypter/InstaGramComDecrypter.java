@@ -120,7 +120,10 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 }
                 final Browser brc = br.cloneBrowser();
                 brc.getPage(profilePageContainer);
-                final String queryHash = brc.getRegex("profilePosts\\.byUserId.get\\(t\\)\\)\\?[a-z]\\.pagination:[a-z]\\},queryID\\s*:\\s*\"([0-9A-z]{32,32})\"").getMatch(0);
+                String queryHash = brc.getRegex("profilePosts\\.byUserId.get\\(t\\)\\)\\?[a-z]\\.pagination:[a-z]\\},queryI(?:d|D)\\s*:\\s*\"([0-9A-z]{32,32})\"").getMatch(0);
+                if (queryHash == null) {
+                    queryHash = brc.getRegex("profilePosts\\.byUserId.get\\([a-z]\\)\\)[^}]*?[a-z]\\.pagination(?::[a-z])?\\},queryI(?:d|D)\\s*:\\s*\"([0-9A-z]{32,32})\"").getMatch(0);
+                }
                 if (queryHash != null) {
                     QUERY_HASH.put(profilePageContainer, queryHash);
                     return queryHash;
