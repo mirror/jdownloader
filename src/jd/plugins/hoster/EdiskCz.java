@@ -155,18 +155,21 @@ public class EdiskCz extends PluginForHost {
             requestFileInformation(link);
             br.setFollowRedirects(true);
             br.getPage(link.getDownloadURL());
-            String fileID = new Regex(link.getDownloadURL(), "/(\\d+)/[^/]+\\.html$").getMatch(0);
-            String premiumPage = br.getRegex("\"(x-premium/\\d+)\"").getMatch(0);
-            if (fileID == null || premiumPage == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.postPage("/cz/" + premiumPage, "");
-            String dllink = br.getRegex("class=\"wide\">[\t\n\r ]+<a href=\"(https?://.*?)\"").getMatch(0);
+            String dllink = br.getRegex("href\\s*=\\s*\"(/download-fast/\\d+[^\"]*?)\"").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("Pokud se tak nestane, <a href=\"(/stahni-.*?)\"").getMatch(0);
+                String fileID = new Regex(link.getDownloadURL(), "/(\\d+)/[^/]+\\.html$").getMatch(0);
+                String premiumPage = br.getRegex("\"(x-premium/\\d+)\"").getMatch(0);
+                if (fileID == null || premiumPage == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.postPage("/cz/" + premiumPage, "");
+                dllink = br.getRegex("class=\"wide\">[\t\n\r ]+<a href=\"(https?://.*?)\"").getMatch(0);
                 if (dllink == null) {
-                    dllink = br.getRegex("(/stahni-rychle/\\d+/.*?\\.html)\"").getMatch(0);
+                    dllink = br.getRegex("Pokud se tak nestane, <a href=\"(/stahni-.*?)\"").getMatch(0);
+                    if (dllink == null) {
+                        dllink = br.getRegex("(/stahni-rychle/\\d+/.*?\\.html)\"").getMatch(0);
+                    }
                 }
             }
             if (dllink == null) {
@@ -209,16 +212,21 @@ public class EdiskCz extends PluginForHost {
         if (!br.getURL().endsWith("/account/stats/")) {
             br.getPage("/account/stats/");
         }
-        String availabletraffic = br.getRegex("\\(Credit:\\s*(\\d+)\\s*\\)\\s*</strong>").getMatch(0);
+        String availabletraffic = br.getRegex("\\(Credit:\\s*([0-9\\.]+\\s*[TGMB]*)\\)\\s*</strong>").getMatch(0);
+        final long traffic;
         if (availabletraffic != null && !"0".equals(availabletraffic)) {
-            ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic + "MB"));
+            traffic = SizeFormatter.getSize(availabletraffic + "MB");
+        } else {
+            traffic = -1;
+        }
+        if (traffic > 0) {
+            ai.setTrafficLeft(traffic);
             account.setValid(true);
             account.setType(AccountType.PREMIUM);
             if (ia == null) {
                 account.setAccountInfo(ai);
             }
-        }
-        if (availabletraffic == null || ai.getTrafficLeft() <= 0) {
+        } else {
             /* Check if credit = zero == free account - till now there is no better way to verify this!. */
             /* 20170102 If revert is needed, revert to revision: 35520 */
             account.setValid(true);
