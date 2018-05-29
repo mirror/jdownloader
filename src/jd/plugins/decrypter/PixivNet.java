@@ -194,6 +194,10 @@ public class PixivNet extends PluginForDecrypt {
                 }
                 if (page > 0) {
                     br.getPage(String.format("/member_illust.php?id=%s&type=all&p=%s", lid, Integer.toString(page)));
+                    if (br.getURL().matches(".*?/member\\.php\\?id=\\d+$")) {
+                        logger.info("Abort: it seems account is required to access more items!");
+                        break;
+                    }
                 }
                 if (br.containsHTML("No results found for your query")) {
                     break;

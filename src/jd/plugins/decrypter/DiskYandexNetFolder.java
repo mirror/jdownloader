@@ -20,11 +20,10 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Random;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -34,6 +33,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "disk.yandex.net", "docviewer.yandex.com" }, urls = { "https?://(?:www\\.)?(((((mail|disk)\\.)?yandex\\.(?:net|com|com\\.tr|ru|ua)|yadi\\.sk)/(disk/)?public/(\\?hash=.+|#.+))|(?:yadi\\.sk|yadisk\\.cc)/(?:d|i)/[A-Za-z0-9\\-_]+(/[^/]+){0,}|yadi\\.sk/mail/\\?hash=.+)|https?://yadi\\.sk/a/[A-Za-z0-9\\-_]+", "https?://docviewer\\.yandex\\.(?:net|com|com\\.tr|ru|ua)/\\?url=ya\\-disk\\-public%3A%2F%2F.+" })
 public class DiskYandexNetFolder extends PluginForDecrypt {
@@ -55,6 +57,18 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
     @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         br.setFollowRedirects(true);
+        CrawledLink current = getCurrentLink();
+        String subFolderBase = "";
+        while (current != null) {
+            if (current.getDownloadLink() != null && getSupportedLinks().matcher(current.getURL()).matches()) {
+                final String path = current.getDownloadLink().getStringProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, null);
+                if (path != null) {
+                    subFolderBase = path;
+                }
+                break;
+            }
+            current = current.getSourceLink();
+        }
         jd.plugins.hoster.DiskYandexNet.prepbrAPI(this.br);
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -185,6 +199,9 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                     dl.setLinkID(mainhashID + path_main);
                     /* Required by hoster plugin to get filepath (filename) */
                     dl.setProperty("plain_filename", PluginJSonUtils.getJsonValue(br, "name"));
+                    if (StringUtils.isNotEmpty(subFolderBase)) {
+                        dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subFolderBase);
+                    }
                     decryptedLinks.add(dl);
                     return decryptedLinks;
                 }
@@ -216,7 +233,11 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                     if (type.equals(JSON_TYPE_DIR)) {
                         /* Subfolders go back into our decrypter! */
                         final String folderlink = "https://disk.yandex.com/public/?hash=" + Encoding.urlEncode(hash) + "%3A" + Encoding.urlEncode(path);
-                        decryptedLinks.add(createDownloadlink(folderlink));
+                        final DownloadLink dl = createDownloadlink(folderlink);
+                        if (StringUtils.isNotEmpty(path) && !StringUtils.equals(path, "/")) {
+                            dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, path);
+                        }
+                        decryptedLinks.add(dl);
                     } else {
                         if (name == null || hash == null) {
                             return null;
@@ -244,6 +265,9 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                         }
                         /* All items decrypted here are part of a folder! */
                         dl.setProperty("is_part_of_a_folder", true);
+                        if (StringUtils.isNotEmpty(subFolderBase)) {
+                            dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subFolderBase);
+                        }
                         dl.setContentUrl(url_content);
                         dl.setLinkID(hash + path);
                         dl._setFilePackage(fp);
