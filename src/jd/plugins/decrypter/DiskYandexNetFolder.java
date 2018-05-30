@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.io.IOException;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Random;
@@ -77,6 +78,9 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         String fpName = null;
         String mainhashID = null;
         String path_main = new Regex(parameter, type_shortURLs_d).getMatch(1);
+        if (path_main != null) {
+            path_main = URLDecoder.decode(path_main, "UTF-8");
+        }
         boolean is_part_of_a_folder = false;
         boolean parameter_correct = false;
         final DownloadLink main = createDownloadlink("http://yandexdecrypted.net/" + System.currentTimeMillis() + new Random().nextInt(10000000));
@@ -169,7 +173,8 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                     logger.info("Decryption aborted by user");
                     return decryptedLinks;
                 }
-                getPage("https://cloud-api.yandex.net/v1/disk/public/resources?limit=" + entries_per_request + "&offset=" + offset + "&public_key=" + Encoding.urlEncode(mainhashID) + "&path=" + Encoding.urlEncode(path_main));
+                final String encodedMainPath = Encoding.urlEncode(path_main).replace("+", "%20");
+                getPage("https://cloud-api.yandex.net/v1/disk/public/resources?limit=" + entries_per_request + "&offset=" + offset + "&public_key=" + Encoding.urlEncode(mainhashID) + "&path=" + encodedMainPath);
                 if (PluginJSonUtils.getJsonValue(br, "error") != null) {
                     main.setAvailable(false);
                     main.setProperty("offline", true);
@@ -306,7 +311,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
     }
 
     private String regexHashFromURL(final String url) {
-        return new Regex(url, "hash=([A-Za-z0-9=%\\+\\-]+)").getMatch(0);
+        return new Regex(url, "hash=([^&#]+)").getMatch(0);
     }
 
     private void decryptSingleFile(final DownloadLink dl, final LinkedHashMap<String, Object> entries) throws Exception {
