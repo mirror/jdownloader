@@ -89,9 +89,9 @@ public class DiskYandexNet extends PluginForHost {
     /* Other constants */
     /* Important constant which seems to be unique for every account. It's needed for most of the requests when logged in. */
     private String                ACCOUNT_SK                         = null;
-    private static final String   TYPE_VIDEO                         = "http://video\\.yandex\\.ru/(iframe/[A-Za-z0-9]+/[A-Za-z0-9]+\\.\\d+|users/[A-Za-z0-9]+/view/\\d+)";
-    private static final String   TYPE_VIDEO_USER                    = "http://video\\.yandex\\.ru/users/[A-Za-z0-9]+/view/\\d+";
-    private static final String   TYPE_DISK                          = "http://yandexdecrypted\\.net/\\d+";
+    private static final String   TYPE_VIDEO                         = "https?://video\\.yandex\\.ru/(iframe/[A-Za-z0-9]+/[A-Za-z0-9]+\\.\\d+|users/[A-Za-z0-9]+/view/\\d+)";
+    private static final String   TYPE_VIDEO_USER                    = "https?://video\\.yandex\\.ru/users/[A-Za-z0-9]+/view/\\d+";
+    private static final String   TYPE_DISK                          = "https?://yandexdecrypted\\.net/\\d+";
     private static final String   ACCOUNTONLYTEXT                    = "class=\"nb-panel__warning aside\\-public__warning\\-speed\"|>File download limit exceeded";
     private Account               currAcc                            = null;
     private String                currHash                           = null;
@@ -143,14 +143,14 @@ public class DiskYandexNet extends PluginForHost {
                 if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<title>Ролик не найден</title>|>Здесь пока пусто<|class=\"error\\-container\"")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                String iframe_url = br.getRegex("property=\"og:video:ifrаme\" content=\"(http://video\\.yandex\\.ru/iframe/[^<>\"]*?)\"").getMatch(0);
+                String iframe_url = br.getRegex("property=\"og:video:ifrаme\" content=\"(https?://video\\.yandex\\.ru/iframe/[^<>\"]*?)\"").getMatch(0);
                 if (iframe_url == null) {
                     iframe_url = br.getRegex("class=\"video\\-frame\"><iframe src=\"(//video\\.yandex\\.ru/[^<>\"]*?)\"").getMatch(0);
                 }
                 if (iframe_url == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                if (!iframe_url.startsWith("http:")) {
+                if (!iframe_url.startsWith("http:") && !iframe_url.startsWith("https:")) {
                     iframe_url = "http:" + iframe_url;
                 }
                 link.setUrlDownload(iframe_url);
@@ -396,7 +396,7 @@ public class DiskYandexNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         getPage("http://streaming.video.yandex.ru/get-location/" + linkpart + "/" + file + "?token=" + token + "&ref=video.yandex.ru");
-        String dllink = br.getRegex("<video\\-location>(http://[^<>\"]*?)</video\\-location>").getMatch(0);
+        String dllink = br.getRegex("<video\\-location>(https?://[^<>\"]*?)</video\\-location>").getMatch(0);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
