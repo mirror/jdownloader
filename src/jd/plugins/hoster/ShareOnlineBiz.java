@@ -135,7 +135,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                 br.setKeepResponseContentBytes(true);
                 // because Request.setHTML(String) it nullifies byte array it will cause NPE here. .. do not call antiddos methods and hope
                 // it will work.
-                postPage(br, userProtocol() + "://api.share-online.biz/cgi-bin?q=checklinks&md5=1", sb.toString());
+                postPage(br, userProtocolApi() + "://api.share-online.biz/cgi-bin?q=checklinks&md5=1", sb.toString());
                 final byte[] responseBytes = br.getRequest().getResponseBytes();
                 final String infosUTF8[][] = new Regex(new String(responseBytes, "UTF-8"), Pattern.compile("(.*?);\\s*?(OK)\\s*?;(.*?)\\s*?;(\\d+);([0-9a-fA-F]{32})")).getMatches();
                 final String infosISO88591[][] = new Regex(new String(responseBytes, "ISO-8859-1"), Pattern.compile("(.*?);\\s*?(OK)\\s*?;(.*?)\\s*?;(\\d+);([0-9a-fA-F]{32})")).getMatches();
@@ -216,6 +216,10 @@ public class ShareOnlineBiz extends antiDDoSForHost {
         } else {
             return "http";
         }
+    }
+
+    private String userProtocolApi() {
+        return "https";
     }
 
     private boolean userPrefersHttps() {
@@ -373,7 +377,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
             try {
                 final Browser br2 = new Browser();
                 final String id = this.getID(downloadLink);
-                getPage(br2, userProtocol() + "://api.share-online.biz/api/account.php?act=fileError&fid=" + id);
+                getPage(br2, userProtocolApi() + "://api.share-online.biz/api/account.php?act=fileError&fid=" + id);
             } catch (Throwable e) {
             }
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -926,7 +930,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
             // loadAPIWorkAround(br);
             br.setFollowRedirects(true);
             br.setKeepResponseContentBytes(true);
-            getPage(userProtocol() + "://api.share-online.biz/cgi-bin?q=linkdata&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&lid=" + linkID);
+            getPage(userProtocolApi() + "://api.share-online.biz/cgi-bin?q=linkdata&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&lid=" + linkID);
             final byte[] responseBytes = br.getRequest().getResponseBytes();
             final String responseUTF8 = new String(responseBytes, "UTF-8");
             final String responseISO88591 = new String(responseBytes, "ISO-8859-1");
@@ -1041,7 +1045,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                     br.setFollowRedirects(true);
                     final String page;
                     try {
-                        page = apiGetPage(userProtocol() + "://api.share-online.biz/cgi-bin?q=userdetails&aux=traffic&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                        page = apiGetPage(userProtocolApi() + "://api.share-online.biz/cgi-bin?q=userdetails&aux=traffic&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                     } finally {
                         br.setFollowRedirects(follow);
                     }
@@ -1165,7 +1169,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
         br.setFollowRedirects(true);
         br.setKeepResponseContentBytes(true);
         try {
-            postPage(userProtocol() + "://api.share-online.biz/cgi-bin?q=checklinks&md5=1&snr=1", "links=" + id);
+            postPage(userProtocolApi() + "://api.share-online.biz/cgi-bin?q=checklinks&md5=1&snr=1", "links=" + id);
             final byte[] responseBytes = br.getRequest().getResponseBytes();
             if (br.getRequest().getHtmlCode().matches("\\s*")) {
                 // web method failover.
