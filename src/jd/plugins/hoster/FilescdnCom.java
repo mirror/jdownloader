@@ -64,7 +64,7 @@ public class FilescdnCom extends antiDDoSForHost {
     private static final String            NICE_HOST                       = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty               = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                         = "(filescdn\\.net)";
+    private static final String            DOMAINS                         = "(filescdn\\.com|filescdn\\.net)";
     /* Errormessages inside URLs */
     private static final String            URL_ERROR_PREMIUMONLY           = "/?op=login&redirect=";
     /* All kinds of XFS-plugin-configuration settings - be sure to configure this correctly when developing new XFS plugins! */
@@ -1141,7 +1141,7 @@ public class FilescdnCom extends antiDDoSForHost {
                 prepBrowser(br);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force) {
-                    this.br.setCookies(this.getHost(), cookies);
+                    this.br.setCookies(COOKIE_HOST, cookies);
                     return;
                 }
                 br.setFollowRedirects(true);
@@ -1176,7 +1176,7 @@ public class FilescdnCom extends antiDDoSForHost {
                 } else {
                     account.setType(AccountType.PREMIUM);
                 }
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                account.saveCookies(this.br.getCookies(COOKIE_HOST), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;
