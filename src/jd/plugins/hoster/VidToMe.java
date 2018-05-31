@@ -64,30 +64,30 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vidto.me", "vidtome.co" }, urls = { "https?://(www\\.)?vidto\\.me/((vid)?embed\\-)?[a-z0-9]{12}", "https?://(www\\.)?vidtome\\.co/((vid)?embed\\-)?[a-z0-9]{12}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vidto.me", "vidtome.co" }, urls = { "https?://(www\\.)?vidto\\.(me|se)/((vid)?embed\\-)?[a-z0-9]{12}", "https?://(www\\.)?vidtome\\.co/((vid)?embed\\-)?[a-z0-9]{12}" })
 @SuppressWarnings("deprecation")
 public class VidToMe extends antiDDoSForHost {
     // Site Setters
     // primary website url, take note of redirects
-    private final String               COOKIE_HOST                  = "http://" + getHost();
+    private final String         COOKIE_HOST                  = "http://" + getHost();
     // domain names used within download links.
-    private final String               DOMAINS                      = "(" + Pattern.quote(getHost()) + ")";
-    private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
-    private final String               MAINTENANCE                  = ">This server is in maintenance mode";
-    private final String               dllinkRegex                  = getHost().equals("vidtome.co") ? "https?://([\\w\\-]+\\.)?" + DOMAINS + "(:\\d{1,5})?/vtmp/\\w+/.*?\\.(mp4|flv|mkv|avi)" : "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+";
-    private final boolean              supportsHTTPS                = false;
-    private final boolean              enforcesHTTPS                = false;
-    private final boolean              useRUA                       = true;
-    private final boolean              useAltLinkCheck              = false;
-    private final boolean              useVidEmbed                  = false;
-    private final boolean              useAltEmbed                  = false;
-    private final boolean              useAltExpire                 = true;
-    private final long                 useLoginIndividual           = 6 * 3480000l;
-    private final boolean              waitTimeSkipableReCaptcha    = true;
-    private final boolean              waitTimeSkipableSolveMedia   = false;
-    private final boolean              waitTimeSkipableKeyCaptcha   = false;
-    private final boolean              captchaSkipableSolveMedia    = false;
-    private static final boolean       ENABLE_HTML_FILESIZE_CHECK   = false;
+    private final String         DOMAINS                      = "(" + Pattern.quote(getHost()) + ")";
+    private final String         PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
+    private final String         MAINTENANCE                  = ">This server is in maintenance mode";
+    private final String         dllinkRegex                  = getHost().equals("vidtome.co") ? "https?://([\\w\\-]+\\.)?" + DOMAINS + "(:\\d{1,5})?/vtmp/\\w+/.*?\\.(mp4|flv|mkv|avi)" : "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+";
+    private final boolean        supportsHTTPS                = false;
+    private final boolean        enforcesHTTPS                = false;
+    private final boolean        useRUA                       = true;
+    private final boolean        useAltLinkCheck              = false;
+    private final boolean        useVidEmbed                  = false;
+    private final boolean        useAltEmbed                  = false;
+    private final boolean        useAltExpire                 = true;
+    private final long           useLoginIndividual           = 6 * 3480000l;
+    private final boolean        waitTimeSkipableReCaptcha    = true;
+    private final boolean        waitTimeSkipableSolveMedia   = false;
+    private final boolean        waitTimeSkipableKeyCaptcha   = false;
+    private final boolean        captchaSkipableSolveMedia    = false;
+    private static final boolean ENABLE_HTML_FILESIZE_CHECK   = false;
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
