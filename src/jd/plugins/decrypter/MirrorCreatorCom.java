@@ -151,7 +151,7 @@ public class MirrorCreatorCom extends PluginForDecrypt {
         final String[] redirectLinks = br2.getRegex("(\"|')(?![^\"']*optic4u\\.info)(/[^/\r\n\t]+/" + uid + "/[^\"\r\n\t]+)\\1").getColumn(1);
         if (redirectLinks == null || redirectLinks.length == 0) {
             // not redirects but final download link in html.
-            String finallink = br2.getRegex("<a href=(http[^ ]+)\\s+TARGET='_blank'>Your").getMatch(0);
+            String finallink = br2.getRegex("<a href=(http[^ ]+)\\s*(?:TARGET\\s*=\\s*'_blank')?>Your").getMatch(0);
             if (finallink == null) {
                 finallink = br2.getRegex("<div class=\"highlight redirecturl\">\\s*(.*?)\\s*</div>").getMatch(0);
             }
