@@ -879,6 +879,9 @@ public class VidozaNet extends antiDDoSForHost {
             if (inValidate(dllink)) {
                 dllink = new Regex(correctedBR, "file:[\t\n\r ]*?\"(http[^<>\"]*?\\.(?:mp4|flv))\"").getMatch(0);
             }
+            if (inValidate(dllink)) {
+                dllink = new Regex(correctedBR, "<source src=\"(http[^<>\"]*?\\.(?:mp4|flv))\"").getMatch(0);
+            }
         }
         if (dllink == null && IMAGEHOSTER) {
             /* Used for image-hosts */
