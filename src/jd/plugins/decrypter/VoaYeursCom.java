@@ -46,6 +46,9 @@ public class VoaYeursCom extends PornEmbedParser {
             br.getPage(reproductor);
         }
         decryptedLinks.addAll(findEmbedUrls(filename));
+        if (decryptedLinks.isEmpty() && br.containsHTML("<source src=\"\"")) {
+            decryptedLinks.add(createOfflinelink(parameter));
+        }
         if (decryptedLinks.isEmpty()) {
             throw new DecrypterException("Decrypter broken for link: " + parameter);
         }
