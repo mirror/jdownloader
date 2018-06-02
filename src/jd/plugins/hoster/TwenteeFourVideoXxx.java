@@ -31,20 +31,20 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "24video.xxx" }, urls = { "http://(?:www\\.)?24video\\.(?:net|xxx|sex|adult)/video/view/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "24video.xxx" }, urls = { "https?://(?:www\\.)?24video\\.(?:net|xxx|sex|adult|sexy)/video/view/\\d+" })
 public class TwenteeFourVideoXxx extends PluginForHost {
     public TwenteeFourVideoXxx(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceFirst("24video\\.(net|xxx|sex)/", "24video.adult/"));
-        link.setContentUrl(link.getDownloadURL().replaceFirst("24video\\.(net|xxx|sex)/", "24video.adult/"));
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("24video\\.(net|xxx|sex|adult)/", "24video.sexy/"));
+        link.setContentUrl(link.getDownloadURL().replaceFirst("24video\\.(net|xxx|sex|adult)/", "24video.sexy/"));
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.24video.adult/staticPage/view/agreement_en";
+        return "http://www.24video.sexy/staticPage/view/agreement_en";
     }
 
     @Override
