@@ -983,6 +983,9 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
         if (externID == null) { // <source src="https://smog-02.tnaflix.com/15/15845fb87f8c5eae3cbf/.+
             externID = br.getRegex("<source src=\"([^\"]+(cdn(?!\\.perfectgirls)|smog)[^\"]+)\"").getMatch(0);
         }
+        if (externID == null) {
+            externID = br.getRegex("<source src=\"(http[^\"]*?)\"").getMatch(0);
+        }
         if (externID != null) {
             final DownloadLink dl = createDownloadlink(externID);
             dl.setFinalFileName(title + ".mp4");
