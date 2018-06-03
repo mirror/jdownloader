@@ -283,7 +283,7 @@ public class FilefoxCc extends antiDDoSForHost {
             fileInfo[0] = this.removeDoubleExtensions(fileInfo[0], "mp4");
         }
         /* Finally set the name but do not yet set the finalFilename! */
-        link.setName(fileInfo[0]);
+        link.setName(Encoding.htmlDecode(fileInfo[0]));
         if (inValidate(fileInfo[1]) && SUPPORTS_AVAILABLECHECK_ALT) {
             /*
              * We failed to find Do alt availablecheck here but don't check availibility based on alt availablecheck html because we already
@@ -325,6 +325,9 @@ public class FilefoxCc extends antiDDoSForHost {
                     }
                 }
             }
+        }
+        if (inValidate(fileInfo[0])) {
+            fileInfo[0] = br.getRegex(">Download File:?(.*?)\\(\\d+(\\.\\d*)? (K|M|G)b\\)<").getMatch(0);
         }
         if (inValidate(fileInfo[0])) {
             fileInfo[0] = new Regex(correctedBR, "class=\"dfilename\">([^<>\"]*?)<").getMatch(0);
