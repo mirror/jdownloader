@@ -30,7 +30,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "naughtyblog.org" }, urls = { "https?://(www\\.)?naughtyblog\\.org/(?!webmasters|contact)[a-z0-9\\-]+/?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "naughtyblog.org" }, urls = { "https?://(www\\.)?naughtyblog\\.org/(?!webmasters|contact|images|site|trending-videos|.*?popular-alltime)[a-z0-9\\-]+/?" })
 public class NaughtyBlgOrg extends PluginForDecrypt {
     private enum Category {
         UNDEF,
@@ -57,9 +57,9 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String contentReleaseName = br.getRegex("<h2 class=\"post-title\">(.*?)</h2>").getMatch(0);
+        String contentReleaseName = br.getRegex("<h2 class=\"post-title.*?\">(.*?)</h2>").getMatch(0);
         if (contentReleaseName == null) {
-            contentReleaseName = br.getRegex("<h1 class=\"post-title\">([^<>\"]*?)</h1>").getMatch(0);
+            contentReleaseName = br.getRegex("<h1 class=\"post-title.*?\">([^<>\"]*?)</h1>").getMatch(0);
         }
         if (contentReleaseName == null) {
             // easier to return offline than throw error.
