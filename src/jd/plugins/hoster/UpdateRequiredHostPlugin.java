@@ -10,6 +10,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 /**
  * This plugin only serves as a FallBack in case another plugin could not be initiated
  *
@@ -80,6 +82,11 @@ public class UpdateRequiredHostPlugin extends PluginForHost {
             return true;
         }
         return false;
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.INTERNAL };
     }
 
     @Override
