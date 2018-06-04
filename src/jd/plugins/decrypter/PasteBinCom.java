@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -27,14 +26,13 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pastebin.com" }, urls = { "http://(www\\.)?pastebin\\.com/(?:download\\.php\\?i=|raw.*?=|raw/|dl/)?[0-9A-Za-z]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pastebin.com" }, urls = { "https?://(www\\.)?pastebin\\.com/(?:download\\.php\\?i=|raw.*?=|raw/|dl/)?[0-9A-Za-z]+" })
 public class PasteBinCom extends PluginForDecrypt {
-
     public PasteBinCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private final String type_invalid = "http://(www\\.)?pastebin\\.com/(messages|report|dl|scraping|languages|trends|signup|login|pro|profile|tools|archive|login\\.php|faq|search|settings|alerts|domains|contact|stats|etc|favicon|users|api|download|privacy|passmailer)";
+    private final String type_invalid = "https?://(www\\.)?pastebin\\.com/(messages|report|dl|scraping|languages|trends|signup|login|pro|profile|tools|archive|login\\.php|faq|search|settings|alerts|domains|contact|stats|etc|favicon|users|api|download|privacy|passmailer)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -50,7 +48,7 @@ public class PasteBinCom extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
         /* Error handling for invalid links */
-        if (br.containsHTML("(Unknown paste ID|Unknown paste ID, it may have expired or been deleted)") || br.getURL().equals("http://pastebin.com/") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML("(Unknown paste ID|Unknown paste ID, it may have expired or been deleted)") || br.getURL().equals("http://pastebin.com/") || br.getURL().equals("https://pastebin.com/") || br.getHttpConnection().getResponseCode() == 404) {
             logger.info("Link offline: " + parameter);
             final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
             offline.setAvailable(false);
@@ -77,12 +75,11 @@ public class PasteBinCom extends PluginForDecrypt {
         }
         logger.info("Found " + links.length + " links in total.");
         for (String dl : links) {
-            if (!dl.contains(parameter) && !new Regex(dl, "http://(www\\.)?pastebin\\.com/(raw.*?=)?[0-9A-Za-z]+").matches()) {
+            if (!dl.contains(parameter) && !new Regex(dl, "https?://(www\\.)?pastebin\\.com/(raw.*?=)?[0-9A-Za-z]+").matches()) {
                 final DownloadLink link = createDownloadlink(dl);
                 decryptedLinks.add(link);
             }
         }
-
         return decryptedLinks;
     }
 
@@ -90,5 +87,4 @@ public class PasteBinCom extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

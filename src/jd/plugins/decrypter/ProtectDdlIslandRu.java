@@ -34,7 +34,7 @@ import jd.plugins.PluginForDecrypt;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "protect.ddl-island.ru", "protect.emule-island.ru" }, urls = { "http://(?:www\\.)?protect\\.ddl\\-island\\.(?:ru|su)/(?:other\\?id=)?([A-Za-z0-9]+)", "http://(?:www\\.)?protect\\.emule-island\\.ru/(?:other\\?id=)?([A-Za-z0-9]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "protect.ddl-island.ru", "protect.emule-island.ru", "dl-protect.ru" }, urls = { "http://(?:www\\.)?protect\\.ddl\\-island\\.(?:ru|su)/(?:other\\?id=)?([A-Za-z0-9]+)", "http://(?:www\\.)?protect\\.emule-island\\.ru/(?:other\\?id=)?([A-Za-z0-9]+)", "http://(?:www\\.)?dl-protect\\.ru/(?:other\\?id=)?([A-Za-z0-9]+)" })
 public class ProtectDdlIslandRu extends PluginForDecrypt {
     public ProtectDdlIslandRu(PluginWrapper wrapper) {
         super(wrapper);

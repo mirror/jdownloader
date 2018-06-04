@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +25,7 @@ import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Browser;
 import jd.http.Cookies;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -31,7 +33,9 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.Files;
+import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
 import org.jdownloader.plugins.components.hds.HDSContainer;
@@ -75,6 +79,28 @@ public class GenericF4MDecrypter extends PluginForDecrypt {
                 break;
             } else {
                 source = source.getSourceLink();
+            }
+        }
+        String forced_referer = new Regex(param.getCryptedUrl(), "((\\&|\\?|#)forced_referer=.+)").getMatch(0);
+        if (forced_referer != null) {
+            forced_referer = new Regex(forced_referer, "forced_referer=([A-Za-z0-9=]+)").getMatch(0);
+            if (forced_referer != null) {
+                String ref = null;
+                if (forced_referer.matches("^[a-fA-F0-9]+$") && forced_referer.length() % 2 == 0) {
+                    final byte[] bytes = HexFormatter.hexToByteArray(forced_referer);
+                    ref = bytes != null ? new String(bytes) : null;
+                }
+                if (ref == null) {
+                    ref = Encoding.Base64Decode(forced_referer);
+                }
+                if (ref != null) {
+                    try {
+                        br.getPage(ref);
+                        referer = ref;
+                    } catch (final IOException e) {
+                        logger.log(e);
+                    }
+                }
             }
         }
         final String urlName = getFileNameFromURL(new URL(param.getCryptedUrl()));

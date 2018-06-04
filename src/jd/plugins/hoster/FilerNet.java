@@ -195,7 +195,7 @@ public class FilerNet extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            handleErrors();
+            handleErrors(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.setAllowFilenameFromURL(true);
@@ -207,7 +207,7 @@ public class FilerNet extends PluginForHost {
         String dllink = checkDirectLink(downloadLink, DIRECT_WEB);
         if (dllink == null) {
             br.getPage(downloadLink.getDownloadURL());
-            handleErrors();
+            handleErrors(false);
             Form continueForm = br.getFormbyKey("token");
             if (continueForm != null) {
                 /* Captcha is not always required! */
@@ -250,7 +250,7 @@ public class FilerNet extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            handleErrors();
+            handleErrors(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.setAllowFilenameFromURL(true);
@@ -450,7 +450,7 @@ public class FilerNet extends PluginForHost {
         return dllink;
     }
 
-    private void handleErrors() throws PluginException {
+    private void handleErrors(final boolean afterDownload) throws PluginException {
         // Temporary errorhandling for a bug which isn't handled by the API
         if (br.getURL().equals("http://filer.net/error/500")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfehler", 60 * 60 * 1000l);
@@ -458,7 +458,7 @@ public class FilerNet extends PluginForHost {
         if (br.getURL().equals("http://filer.net/error/430") || br.containsHTML("Diese Adresse ist nicht bekannt oder")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (br.containsHTML("filer\\.net/register")) {
+        if (afterDownload && br.containsHTML("filer\\.net/register")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available, wait or buy premium!", 10 * 60 * 1000l);
         }
         if (br.containsHTML(">Maximale Verbindungen erreicht<")) {
