@@ -25,6 +25,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 /**
  * The idea behind this is to speed up linkchecking for host providers that go permanently offline. URLs tend to stay cached/archived on the
  * intrawebs longer than host provider. By providing the original plugin regular expression(s) we do not have to rely on directhttp plugin
@@ -208,6 +210,11 @@ public class Offline extends PluginForHost {
 
     @Override
     public void reset() {
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.INTERNAL };
     }
 
     @Override

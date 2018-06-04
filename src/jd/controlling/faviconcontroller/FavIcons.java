@@ -220,7 +220,7 @@ public class FavIcons {
                 THREAD_POOL.execute(new Runnable() {
                     public void run() {
                         final LazyHostPlugin existingHostPlugin = HostPluginController.getInstance().get(host);
-                        if (existingHostPlugin != null && ("jd.plugins.hoster.Offline".equals(existingHostPlugin.getClassName()) || "jd.plugins.hoster.JdLog".equals(existingHostPlugin.getClassName()))) {
+                        if (existingHostPlugin != null && existingHostPlugin.hasFeature(LazyHostPlugin.FEATURE.INTERNAL)) {
                             synchronized (LOCK) {
                                 QUEUE.remove(host);
                                 if (!REFRESHED_ICONS.contains(host) && FAILED_ICONS.get(host) == null) {
@@ -424,7 +424,12 @@ public class FavIcons {
         byte[] bytes = null;
         try {
             favBr.setFollowRedirects(true);
-            favBr.getPage("http://" + host);
+            try {
+                favBr.getPage("https://" + host);
+            } catch (final IOException e) {
+                logger.log(e);
+                favBr.getPage("http://" + host);
+            }
             String url = favBr.getRegex("rel=('|\")(SHORTCUT )?ICON('|\")[^>]*?href=('|\")([^>'\"]*?\\.(ico|png).*?)('|\")").getMatch(4);
             if (StringUtils.isEmpty(url)) {
                 url = favBr.getRegex("href=('|\")([^>'\"]*?\\.(ico|png).*?)('|\")[^>]*?rel=('|\")(SHORTCUT )?ICON('|\")").getMatch(1);

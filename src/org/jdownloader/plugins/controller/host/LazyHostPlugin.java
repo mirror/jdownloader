@@ -11,9 +11,7 @@ import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.translate._JDT;
 
 public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
-
     public static enum FEATURE implements LabelInterface, TooltipInterface {
-
         USENET {
             @Override
             public String getLabel() {
@@ -46,9 +44,19 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
             public String getTooltip() {
                 return _JDT.T.LazyHostPlugin_FEATURE_GENERIC_TOOLTIP();
             }
-        };
+        },
+        INTERNAL {
+            @Override
+            public String getLabel() {
+                return "INTERNAL";
+            }
 
-        public static final long CACHEVERSION = 25082016l; // change when you add/change enums!
+            @Override
+            public String getTooltip() {
+                return "INTERNAL";
+            }
+        };
+        public static final long CACHEVERSION = 04062017l; // change when you add/change enums!
 
         public boolean isSet(FEATURE[] features) {
             if (features != null) {
@@ -60,7 +68,6 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
             }
             return false;
         }
-
     }
 
     private static enum PROPERTY {
@@ -72,11 +79,8 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
     }
 
     private String        premiumUrl;
-
     private volatile byte properties     = 0;
-
     private volatile long parsesLifetime = 0;
-
     private FEATURE[]     features       = null;
 
     public FEATURE[] getFeatures() {
@@ -222,7 +226,6 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
                 }
             }
             throw e;
-
         }
     }
 
@@ -252,5 +255,4 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
             throw e;
         }
     }
-
 }
