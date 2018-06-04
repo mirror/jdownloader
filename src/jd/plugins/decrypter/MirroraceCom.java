@@ -15,9 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -30,9 +27,11 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mirrorace.com" }, urls = { "https?://(?:www\\.)?mirrorace.com/m/[A-Za-z0-9]+" })
 public class MirroraceCom extends antiDDoSForDecrypt {
-
     public MirroraceCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -73,7 +72,7 @@ public class MirroraceCom extends antiDDoSForDecrypt {
                     submitForm(br, captchaForm);
                 }
             }
-            final String finallink = br.getRegex("<a class=\"uk-button uk-button-primary\" href=\"(http[^<>\"]+)").getMatch(0);
+            final String finallink = br.getRegex("<a class=\"uk-button\\s*(?:uk-button-large)?\\s*uk-button-primary\" href=\"(http[^<>\"]+)").getMatch(0);
             if (finallink == null) {
                 return null;
             }

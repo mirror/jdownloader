@@ -224,6 +224,7 @@ public class GoogleDrive extends PluginForDecrypt {
                     LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
                     final ArrayList<Object> items = (ArrayList<Object>) entries.get("items");
                     if (items == null) {
+                        logger.info("break1");
                         break;
                     }
                     nextPageToken = (String) entries.get("nextPageToken");
@@ -266,9 +267,11 @@ public class GoogleDrive extends PluginForDecrypt {
                         decryptedLinks.add(dl);
                     }
                     if (nextPageToken == null || nextPageToken.equals("")) {
+                        logger.info("break2");
                         /* Either we found everything or plugin failure ... */
                         break;
                     }
+                    logger.info("added:" + addedlinks);
                 } else {
                     /* Grab items from html --> Old! */
                     for (String result : results) {

@@ -200,7 +200,8 @@ public class RealityKingsCom extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    private static Object LOCK = new Object();
+    private static Object LOCK          = new Object();
+    private final String  MEMBER_DOMAIN = "MEMBER_DOMAIN";
 
     public void login(Browser br, final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
@@ -214,7 +215,11 @@ public class RealityKingsCom extends PluginForHost {
                      * when the user logs in via browser.
                      */
                     br.setCookies(account.getHoster(), cookies);
-                    br.getPage("https://site-ma.realitykings.com");
+                    if (StringUtils.containsIgnoreCase(account.getStringProperty(MEMBER_DOMAIN, null), "members.")) {
+                        br.getPage("https://members.realitykings.com/");
+                    } else {
+                        br.getPage("https://site-ma.realitykings.com");
+                    }
                     if (StringUtils.containsIgnoreCase(br.getURL(), "/access/login")) {
                         logger.info("Cookie login failed --> Performing full login");
                         br = prepBR(new Browser());
@@ -257,7 +262,13 @@ public class RealityKingsCom extends PluginForHost {
                         br.submitForm(continueform);
                     }
                 }
-                br.getPage("https://site-ma.realitykings.com");
+                if (br.getURL().matches("^https?://members\\..+")) {
+                    account.setProperty(MEMBER_DOMAIN, br._getURL().getHost());
+                    br.getPage("https://members.realitykings.com/");
+                } else {
+                    account.setProperty(MEMBER_DOMAIN, br._getURL().getHost());
+                    br.getPage("https://site-ma.realitykings.com");
+                }
                 if (StringUtils.containsIgnoreCase(br.getURL(), "/access/login")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername,Passwort und/oder login Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -269,25 +280,18 @@ public class RealityKingsCom extends PluginForHost {
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
+                    account.removeProperty(MEMBER_DOMAIN);
                 }
                 throw e;
             }
         }
     }
 
-    @Override
-    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+    private AccountInfo fetchAccountInfoMembers(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        login(this.br, account, true);
-        final GetRequest get = br.createGetRequest("https://site-api.realitykings.com/v1/self");
-        get.getHeaders().put("Authorization", br.getCookie(getHost(), "access_token_ma"));
-        get.getHeaders().put("Instance", br.getCookie(getHost(), "instance_token"));
-        get.getHeaders().put("Origin", "https://site-ma.realitykings.com");
-        br.getPage(get);
-        Map<String, Object> map = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        final Boolean isExpired = (Boolean) map.get("isExpired");
-        final Boolean isTrial = (Boolean) map.get("isTrial");
-        if (Boolean.TRUE.equals(isTrial) || Boolean.TRUE.equals(isExpired)) {
+        br.getPage("/member/profile/");
+        final boolean isPremium = br.containsHTML("<dt>Membership type:</dt>\\s*?<dd>Paying</dd>");
+        if (!isPremium) {
             /*
              * 2017-02-28: Added free account support. Advantages: View trailers (also possible without account), view picture galleries
              * (only possible via free/premium account, free is limited to max 99 viewable pictures!)
@@ -295,12 +299,10 @@ public class RealityKingsCom extends PluginForHost {
             account.setType(AccountType.FREE);
             ai.setStatus("Free Account");
         } else {
-            final String expiryDate = (String) map.get("expiryDate");
-            if (expiryDate != null) {
-                final long expireTimestamp = TimeFormatter.getMilliSeconds(expiryDate, "yyyy'-'MM'-'dd'T'HH':'mm':'ss", null);
-                if (expireTimestamp > 0) {
-                    ai.setValidUntil(expireTimestamp, br);
-                }
+            final String days_remaining = br.getRegex("Remaining membership:</dt>\\s*?<dd>(\\d+) days</dd>").getMatch(0);
+            if (days_remaining != null) {
+                /* 2018-03-09: Expiredate might not always be available */
+                ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(days_remaining) * 24 * 60 * 60 * 1000, br);
             }
             account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium Account");
@@ -310,6 +312,75 @@ public class RealityKingsCom extends PluginForHost {
         ai.setUnlimitedTraffic();
         account.setValid(true);
         return ai;
+    }
+
+    private AccountInfo fetchAccountInfoSiteMa(final Account account) throws Exception {
+        synchronized (account) {
+            try {
+                final AccountInfo ai = new AccountInfo();
+                final GetRequest get = br.createGetRequest("https://site-api.realitykings.com/v1/self");
+                get.getHeaders().put("Authorization", br.getCookie(getHost(), "access_token_ma"));
+                get.getHeaders().put("Instance", br.getCookie(getHost(), "instance_token"));
+                get.getHeaders().put("Origin", "https://site-ma.realitykings.com");
+                br.getPage(get);
+                if (br.getRequest().getHttpConnection().getResponseCode() == 401) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                final Map<String, Object> map = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final Boolean isExpired = (Boolean) map.get("isExpired");
+                final Boolean isTrial = (Boolean) map.get("isTrial");
+                if (Boolean.TRUE.equals(isTrial) || Boolean.TRUE.equals(isExpired)) {
+                    /*
+                     * 2017-02-28: Added free account support. Advantages: View trailers (also possible without account), view picture
+                     * galleries (only possible via free/premium account, free is limited to max 99 viewable pictures!)
+                     */
+                    account.setType(AccountType.FREE);
+                    ai.setStatus("Free Account");
+                } else {
+                    final String expiryDate = (String) map.get("expiryDate");
+                    if (expiryDate != null) {
+                        final long expireTimestamp = TimeFormatter.getMilliSeconds(expiryDate, "yyyy'-'MM'-'dd'T'HH':'mm':'ss", null);
+                        if (expireTimestamp > 0) {
+                            ai.setValidUntil(expireTimestamp, br);
+                        }
+                    }
+                    account.setType(AccountType.PREMIUM);
+                    ai.setStatus("Premium Account");
+                }
+                account.setMaxSimultanDownloads(ACCOUNT_MAXDOWNLOADS);
+                account.setConcurrentUsePossible(true);
+                ai.setUnlimitedTraffic();
+                account.setValid(true);
+                return ai;
+            } catch (PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                    account.removeProperty(MEMBER_DOMAIN);
+                }
+                throw e;
+            }
+        }
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        synchronized (account) {
+            login(this.br, account, true);
+            if (StringUtils.containsIgnoreCase(account.getStringProperty(MEMBER_DOMAIN, null), "members.")) {
+                return fetchAccountInfoMembers(account);
+            } else {
+                try {
+                    return fetchAccountInfoSiteMa(account);
+                } catch (final PluginException e) {
+                    if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                        login(this.br, account, true);
+                        return fetchAccountInfoSiteMa(account);
+                    } else {
+                        throw e;
+                    }
+                }
+            }
+        }
     }
 
     @Override

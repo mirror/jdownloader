@@ -68,7 +68,7 @@ public class DlPrteCom extends antiDDoSForDecrypt {
             if (continu != null) {
                 submitForm(continu);
                 // test link had no magic/captcha
-                final String link = br.getRegex("<div class=\"lienet\"><a href=\"(.*?)\">").getMatch(0);
+                final String link = br.getRegex("<div class=\"lienet\"><a[^<>]*href=\"(.*?)\">").getMatch(0);
                 if (link != null) {
                     final DownloadLink dl = createDownloadlink(link);
                     decryptedLinks.add(dl);
