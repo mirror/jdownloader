@@ -327,14 +327,14 @@ public class FilefoxCc extends antiDDoSForHost {
             }
         }
         if (inValidate(fileInfo[0])) {
+            /* 2017-07-25: Special */
+            fileInfo[0] = new Regex(correctedBR, "class=\"pfo pfo\\-dl1\"></i>\\s*([^<>]+)\\s*<").getMatch(0);
+        }
+        if (inValidate(fileInfo[0])) {
             fileInfo[0] = br.getRegex(">Download File:?(.*?)\\(\\d+(\\.\\d*)? (K|M|G)b\\)<").getMatch(0);
         }
         if (inValidate(fileInfo[0])) {
             fileInfo[0] = new Regex(correctedBR, "class=\"dfilename\">([^<>\"]*?)<").getMatch(0);
-        }
-        if (inValidate(fileInfo[0])) {
-            /* 2017-07-25: Special */
-            fileInfo[0] = new Regex(correctedBR, "class=\"pfo pfo\\-dl1\"></i>([^<>]+)<").getMatch(0);
         }
         if (inValidate(fileInfo[0])) {
             /* 2017-04-11: Typically for XVideoSharing sites */
@@ -342,6 +342,10 @@ public class FilefoxCc extends antiDDoSForHost {
         }
         if (SUPPORTS_HTML_FILESIZE_CHECK) {
             if (inValidate(fileInfo[1])) {
+                if (inValidate(fileInfo[1])) {
+                    /* 2017-07-25: Special */
+                    fileInfo[1] = new Regex(correctedBR, "class=\"pfo pfo\\-dl1\"></i>[^<>]+<span>\\s*\\(\\s*(\\d+(?:\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+                }
                 fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
                 if (inValidate(fileInfo[1])) {
                     fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"'/]+)\\)(.*?)</font>").getMatch(0);
