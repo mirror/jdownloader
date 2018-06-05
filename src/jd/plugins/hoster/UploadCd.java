@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
@@ -44,7 +43,7 @@ import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upload.cd" }, urls = { "https?://(www\\.)?upload\\.cd/(files/)?[a-z0-9]+" })
 public class UploadCd extends PluginForHost {
@@ -141,7 +140,7 @@ public class UploadCd extends PluginForHost {
             // try {
             // throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             // } catch (final Throwable e) {
-            // if (e instanceof PluginException) {
+            // if (e instanceof PluginException) {r
             // throw (PluginException) e;
             // }
             // }
@@ -196,23 +195,25 @@ public class UploadCd extends PluginForHost {
             /* 2017-03-08: 'rand' parameter has been addd and is required! */
             final String uuid = UUID.randomUUID().toString().split("-")[0];
             br.postPage("/download/url", "fileid=" + fid + "&usid=" + sid + "&rand=" + uuid + "&referer=&premium_dl=0");
-            final Recaptcha rc = new Recaptcha(br, this);
-            rc.findID();
-            rc.load();
             for (int i = 1; i <= 5; i++) {
-                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                final String c = getCaptchaCode("recaptcha", cf, downloadLink);
-                br.postPage("https://" + this.getHost() + "/download/url", "fileid=" + fid + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&CaptchaForm%5Bvalidacion%5D=");
+                final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br);
+                final String recaptchaV2Response = rc2.getToken();
+                if (recaptchaV2Response == null) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+                br.postPage("https://" + this.getHost() + "/download/url", "fileid=" + fid + "&CaptchaForm%5BverifyCode%5D=" + Encoding.urlEncode(recaptchaV2Response) + "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
                 if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
-                    rc.reload();
                     continue;
+                }
+                if (br.containsHTML("Hello downloader")) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 break;
             }
             if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-            dllink = br.getRegex("class=\"btn download\\-btn btn\\-success\" href=\"(http[^<>\"]*?)\"").getMatch(0);
+            dllink = br.getRegex("class=\"btn download\\-btn btn\\-success\" href=\"(https?[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
