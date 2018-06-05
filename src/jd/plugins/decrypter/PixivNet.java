@@ -108,10 +108,19 @@ public class PixivNet extends PluginForDecrypt {
                 }
                 links = br.getRegex("data-illust-id=\"\\d+\"><img src=\"(http[^<>\"']+)\"").getColumn(0);
                 if (links.length == 0) {
+                    // old layout
                     links = br.getRegex("data-title=\"registerImage\"><img src=\"(http[^<>\"']+)\"").getColumn(0);
+                    if (links.length == 0) {
+                        // regular(new layout)
+                        links = br.getRegex("\"illustId\"\\s*:\\s*\"" + lid + "\".*?\"regular\"\\s*:\\s*\"(http[^<>\"']+)\"").getColumn(0);
+                    }
                 }
                 if (links.length == 0) {
                     links = br.getRegex("data-src=\"(http[^<>\"]+)\"[^>]+class=\"original-image\"").getColumn(0);
+                    if (links.length == 0) {
+                        // original(new layout)
+                        links = br.getRegex("\"illustId\"\\s*:\\s*\"" + lid + "\".*?\"original\"\\s*:\\s*\"(http[^<>\"']+)\"").getColumn(0);
+                    }
                 }
                 if (links.length == 0) {
                     links = br.getRegex("pixiv\\.context\\.ugokuIllustFullscreenData\\s*=\\s*\\{\\s*\"src\"\\s*:\\s*\"(https?.*?)\"").getColumn(0);
@@ -119,7 +128,7 @@ public class PixivNet extends PluginForDecrypt {
                 if (links.length == 0) {
                     links = br.getRegex("pixiv\\.context\\.ugokuIllustData\\s*=\\s*\\{\\s*\"src\"\\s*:\\s*\"(https?.*?)\"").getColumn(0);
                 }
-                if (links.length == 0 && isAdultImageLoginRequired() && !loggedIn) {
+                if (links.length == 0 && isAdultImageLoginRequired(lid) && !loggedIn) {
                     logger.info("Adult content: Account required");
                     return decryptedLinks;
                 }
@@ -132,7 +141,7 @@ public class PixivNet extends PluginForDecrypt {
                 } else if (isAccountOrRightsRequired(br) && !loggedIn) {
                     logger.info("Account required to crawl this particular content");
                     return decryptedLinks;
-                } else if (isAdultImageLoginRequired() && !loggedIn) {
+                } else if (isAdultImageLoginRequired(lid) && !loggedIn) {
                     logger.info("Adult content: Account required");
                     return decryptedLinks;
                 }
@@ -140,7 +149,11 @@ public class PixivNet extends PluginForDecrypt {
                 if (fpName == null) {
                     fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
                 }
+                // old layout
                 links = br.getRegex("pixiv\\.context\\.images\\[\\d+\\]\\s*=\\s*\"(http[^\"]+)\"").getColumn(0);
+                if (links.length == 0) {
+                    // new layout, no changes yet?
+                }
             }
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -240,8 +253,8 @@ public class PixivNet extends PluginForDecrypt {
         return br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("この作品は削除されました。|>This work was deleted|>Artist has made their work private\\.");
     }
 
-    private boolean isAdultImageLoginRequired() {
-        return br.containsHTML("r18=true");
+    private boolean isAdultImageLoginRequired(String lid) {
+        return br.containsHTML("r18=true") || br.containsHTML("\"illustId\"\\s*:\\s*\"" + lid + "\".*?\"xRestrict\"\\s*:\\s*1");
     }
 
     public static boolean isAccountOrRightsRequired(final Browser br) {
