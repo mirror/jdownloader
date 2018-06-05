@@ -18,9 +18,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Map;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
@@ -29,9 +26,11 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wetransfer.com" }, urls = { "https?://(?:www\\.)?((?:wtrns\\.fr|we\\.tl)/[\\w\\-]+|wetransfer\\.com/downloads/(?:[a-f0-9]{46}/[a-f0-9]{46}/[a-f0-9]{4,12}|[a-f0-9]{46}/[a-f0-9]{4,12}))" })
 public class WeTransferComFolder extends PluginForDecrypt {
-
     public WeTransferComFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -78,9 +77,9 @@ public class WeTransferComFolder extends PluginForDecrypt {
         }
         final ArrayList<Object> ressourcelist = entries.get("files") != null ? (ArrayList<Object>) entries.get("files") : (ArrayList) entries.get("items");
         /* TODO: Handle this case */
-        final boolean per_file_download_available = ((Boolean) entries.get("per_file_download_available")).booleanValue();
+        final boolean per_file_download_available = entries.containsKey("per_file_download_available") && Boolean.TRUE.equals(entries.get("per_file_download_available"));
         /* TODO: Handle this case */
-        final boolean password_protected = ((Boolean) entries.get("password_protected")).booleanValue();
+        final boolean password_protected = entries.containsKey("password_protected") && Boolean.TRUE.equals(entries.get("password_protected"));
         /* E.g. okay would be "downloadable" */
         final String state = (String) entries.get("state");
         for (final Object fileo : ressourcelist) {
