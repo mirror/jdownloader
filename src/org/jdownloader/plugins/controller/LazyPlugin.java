@@ -244,7 +244,12 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
         if (lCompiledPattern != null && (ret = lCompiledPattern.get()) != null) {
             return ret;
         }
-        compiledPattern = new MinTimeWeakReference<Pattern>(ret = Pattern.compile(getPatternSource(), Pattern.CASE_INSENSITIVE), 60 * 1000l, displayName, this);
+        if (Application.getJavaVersion() >= Application.JAVA17) {
+            ret = Pattern.compile(getPatternSource(), Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CHARACTER_CLASS);
+        } else {
+            ret = Pattern.compile(getPatternSource(), Pattern.CASE_INSENSITIVE);
+        }
+        compiledPattern = new MinTimeWeakReference<Pattern>(ret, 60 * 1000l, displayName, this);
         return ret;
     }
 
