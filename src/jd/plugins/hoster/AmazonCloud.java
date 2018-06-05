@@ -326,7 +326,7 @@ public class AmazonCloud extends PluginForHost {
     }
 
     public static boolean isOffline(final Browser br) {
-        if (br.containsHTML("\"message\":\"ShareId does not exist") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML("\"message\":\"(ShareId does not exist|Due to)") || br.getHttpConnection().getResponseCode() == 404) {
             return true;
         }
         return false;
