@@ -159,6 +159,7 @@ public class FileCryptCc extends PluginForDecrypt {
         }
         // captcha time!
         counter = -1;
+        int cutCaptcha = 15;
         while (counter++ < retry && containsCaptcha()) {
             Form captchaForm = null;
             final Form[] allForms = br.getForms();
@@ -236,8 +237,14 @@ public class FileCryptCc extends PluginForDecrypt {
                 logger.info("Coinhive captcha is not yet supported");
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             } else if (StringUtils.containsIgnoreCase(captcha, "cutcaptcha")) {
-                logger.info("cutcaptcha captcha is not yet supported");
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                logger.info("cutcaptcha captcha is not yet supported:retry left:" + cutCaptcha);
+                if (cutCaptcha-- == 0) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                } else {
+                    counter--;
+                    br.getPage(br.getURL());
+                    sleep(1000, param);
+                }
             } else if (captcha != null) {
                 final String code = getCaptchaCode(captcha, param);
                 if (StringUtils.isEmpty(code)) {
