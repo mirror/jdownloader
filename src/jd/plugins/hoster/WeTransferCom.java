@@ -15,15 +15,13 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.util.LinkedHashMap;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
+import jd.http.requests.PostRequest;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -31,16 +29,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-import jd.utils.JDHexUtils;
+
+import org.appwork.storage.JSonStorage;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wetransfer.com" }, urls = { "http://wetransferdecrypted/[a-f0-9]{46}/[a-f0-9]{4,12}/[a-f0-9]{46}" })
 public class WeTransferCom extends PluginForHost {
-    private String security_hash = null;
-    private String id_main       = null;
-    private String id_single     = null;
-    private String dllink        = null;
-    private String param         = null;
-
     public WeTransferCom(final PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -48,16 +41,6 @@ public class WeTransferCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://wetransfer.info/terms/";
-    }
-
-    private String getAMFRequest() {
-        final String data = "0A000000020200" + getHexLength(id_main) + JDHexUtils.getHexString(id_main) + "0200" + getHexLength(security_hash) + JDHexUtils.getHexString(security_hash);
-        return JDHexUtils.toString("000000000001002177657472616E736665722E446F776E6C6F61642E636865636B446F776E6C6F616400022F31000000" + getHexLength(JDHexUtils.toString(data)) + data);
-    }
-
-    private String getHexLength(final String s) {
-        final String result = Integer.toHexString(s.length());
-        return result.length() % 2 > 0 ? "0" + result : result;
     }
 
     @Override
@@ -71,120 +54,45 @@ public class WeTransferCom extends PluginForHost {
         return br;
     }
 
+    private String dlLink = null;
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br = prepBR(new Browser());
         setBrowserExclusive();
         final String[] dlinfo = link.getDownloadURL().replace("http://wetransferdecrypted/", "").split("/");
-        id_main = dlinfo[0];
-        security_hash = dlinfo[1];
-        id_single = dlinfo[2];
-        if (security_hash == null || id_main == null) {
+        final String id_main = dlinfo[0];
+        final String security_hash = dlinfo[1];
+        final String id_single = dlinfo[2];
+        if (security_hash == null || id_main == null || id_single == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        /*
-         * https://wetransfer.com/api/ui/transfers/0d9f92839e6772d79ce5ee4256d936a620170524074451/4fd9d9/files/
-         * cbd496b1ef50e4ff5d98ffb9337e394920170524074451/download
-         */
         final String referer = link.getStringProperty("referer");
+        if (referer == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.getPage(referer);
-        // now without id_single
-        br.getHeaders().put("Accept", "application/json");
-        br.getHeaders().put("Content-Type", "application/json");
         final String[] recipient_id = referer.replaceFirst("https?://[^/]+/+", "").split("/");
         if (recipient_id == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        final Map<String, Object> map = new HashMap<String, Object>();
+        map.put("security_hash", security_hash);
+        map.put("file_ids", Arrays.asList(new String[] { id_single }));
         if (recipient_id.length == 4) {
-            br.postPageRaw("/api/ui/transfers/" + this.id_main + "/" + this.security_hash + "/download", "{\"recipient_id\":\"" + recipient_id[2] + "\"}");
-        } else if (recipient_id.length == 3) {
-            br.postPageRaw("/api/ui/transfers/" + this.id_main + "/" + this.security_hash + "/download", "{}");
-        } else {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            map.put("recipient_id", recipient_id[2]);
         }
+        final PostRequest post = new PostRequest(br.getURL(("/api/v4/transfers/" + id_main + "/download")));
+        post.getHeaders().put("Accept", "application/json");
+        post.getHeaders().put("Content-Type", "application/json");
+        post.setPostDataString(JSonStorage.toString(map));
+        br.getPage(post);
         if ("invalid_transfer".equals(PluginJSonUtils.getJsonValue(br, "error"))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        dllink = PluginJSonUtils.getJsonValue(br, "direct_link");
-        String filename1 = null;
-        long filesize1 = 0;
-        if (dllink == null) {
-            // 20160415-raztoki
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
-            final LinkedHashMap<String, Object> field = (LinkedHashMap<String, Object>) entries.get("fields");
-            final String action = (String) JavaScriptEngineFactory.walkJson(entries, "formdata/action");
-            final String method = (String) JavaScriptEngineFactory.walkJson(entries, "formdata/method");
-            if (action != null && field != null) {
-                if ("GET".equalsIgnoreCase(method)) {
-                    dllink = action + "?" + processJson(field.toString().substring(1, field.toString().length() - 1));
-                } else {
-                    dllink = action;
-                    param = processJson(field.toString().substring(1, field.toString().length() - 1));
-                }
-            }
-        }
-        if (dllink != null) {
-            String filename = new Regex(Encoding.htmlDecode(dllink), "filename=([^&]+)").getMatch(0);
-            if (filename == null) {
-                filename = PluginJSonUtils.getJsonValue(br, "filename");
-            }
-            if (filename == null) {
-                filename = filename1;
-            }
-            if (filename != null) {
-                /* 2017-05-30: Filename will usually be set already within decrypter. */
-                link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-            }
-            if (filesize1 > 0) {
-                link.setDownloadSize(filesize1);
-            }
-        } else {
-            /** Old way */
-            // AMF-Request
-            br.getHeaders().put("Pragma", null);
-            br.getHeaders().put("Accept-Charset", null);
-            br.getHeaders().put("Accept", "*/*");
-            br.getHeaders().put("Content-Type", "application/x-amf");
-            br.getHeaders().put("Referer", "https://www.wetransfer.com/index.swf?nocache=" + String.valueOf(System.currentTimeMillis() / 1000));
-            br.postPageRaw("https://v1.wetransfer.com/amfphp/gateway.php", getAMFRequest());
-            // successfully request?
-            // final int rC = br.getHttpConnection().getResponseCode();
-            // if (rC != 200) {
-            // logger.warning("File not found! Link: " + dlink);
-            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            // }
-            final StringBuffer sb = new StringBuffer();
-            /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
-            for (final byte element : br.toString().getBytes()) {
-                if (element < 127) {
-                    if (element > 31) {
-                        sb.append((char) element);
-                    } else {
-                        sb.append("#");
-                    }
-                }
-            }
-            final String result = sb.toString();
-            if (new Regex(result, "(download_error_no_download|download_error_file_expired)").matches()) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            String filename = new Regex(result, "#filename[#]+\\$?([^<>#]+)").getMatch(0);
-            if (filename == null) {
-                filename = filename1;
-            }
-            if (filesize1 == 0) {
-                final String filesize = new Regex(result, "#size[#]+(\\d+)[#]+").getMatch(0);
-                if (filesize != null) {
-                    link.setDownloadSize(SizeFormatter.getSize(filesize));
-                }
-            } else {
-                link.setDownloadSize(filesize1);
-            }
-            dllink = new Regex(result, "#awslink[#]+\\??([^<>#]+)").getMatch(0);
-            if (filename != null) {
-                /* 2017-05-30: Filename will usually be set already within decrypter. */
-                link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-            }
+        dlLink = PluginJSonUtils.getJsonValue(br, "direct_link");
+        if (dlLink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         return AvailableStatus.TRUE;
     }
@@ -192,15 +100,7 @@ public class WeTransferCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        // More chunks are possible for some links but not for all
-        if (param != null) {
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, param, true, -2);
-        } else {
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, -2);
-        }
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dlLink, true, -2);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("<title>Error while downloading your file")) {
@@ -209,15 +109,6 @@ public class WeTransferCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         }
         dl.startDownload();
-    }
-
-    private String processJson(final String s) {
-        String fields = s;
-        final String callback = new Regex(fields, "callback=(\\{.*?\\}\\}$)").getMatch(0);
-        fields = fields.replace(callback, "-JDTEMPREMOVED-");
-        String postString = fields.replace(", ", "&");
-        postString = postString.replace("-JDTEMPREMOVED-", Encoding.urlEncode(callback));
-        return postString;
     }
 
     @Override
