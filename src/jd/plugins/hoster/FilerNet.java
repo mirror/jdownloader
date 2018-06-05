@@ -28,6 +28,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -122,19 +123,19 @@ public class FilerNet extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        doFree(downloadLink);
+        doFree(null, downloadLink);
     }
 
     @SuppressWarnings({ "deprecation" })
-    public void doFree(final DownloadLink downloadLink) throws Exception {
+    public void doFree(final Account account, final DownloadLink downloadLink) throws Exception {
         if (this.getPluginConfig().getBooleanProperty("ENABLE_API_FOR_FREE_AND_FREE_ACCOUNT_DOWNLOADS", true)) {
-            doFreeAPI(downloadLink);
+            doFreeAPI(account, downloadLink);
         } else {
-            doFreeWebsite(downloadLink);
+            doFreeWebsite(account, downloadLink);
         }
     }
 
-    private void doFreeAPI(final DownloadLink downloadLink) throws Exception {
+    private void doFreeAPI(final Account account, final DownloadLink downloadLink) throws Exception {
         handleDownloadErrors();
         if (checkShowFreeDialog(getHost())) {
             showFreeDialog(getHost());
@@ -195,7 +196,7 @@ public class FilerNet extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            handleErrors(true);
+            handleErrors(account, true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.setAllowFilenameFromURL(true);
@@ -203,11 +204,11 @@ public class FilerNet extends PluginForHost {
         this.dl.startDownload();
     }
 
-    private void doFreeWebsite(final DownloadLink downloadLink) throws Exception {
+    private void doFreeWebsite(final Account account, final DownloadLink downloadLink) throws Exception {
         String dllink = checkDirectLink(downloadLink, DIRECT_WEB);
         if (dllink == null) {
             br.getPage(downloadLink.getDownloadURL());
-            handleErrors(false);
+            handleErrors(account, false);
             Form continueForm = br.getFormbyKey("token");
             if (continueForm != null) {
                 /* Captcha is not always required! */
@@ -250,7 +251,7 @@ public class FilerNet extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            handleErrors(true);
+            handleErrors(account, true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.setAllowFilenameFromURL(true);
@@ -371,7 +372,7 @@ public class FilerNet extends PluginForHost {
         if (account.getType() == AccountType.FREE) {
             loginWebsite(account, false);
             requestFileInformation(downloadLink);
-            doFree(downloadLink);
+            doFree(account, downloadLink);
         } else {
             requestFileInformation(downloadLink);
             handleDownloadErrors();
@@ -450,7 +451,7 @@ public class FilerNet extends PluginForHost {
         return dllink;
     }
 
-    private void handleErrors(final boolean afterDownload) throws PluginException {
+    private void handleErrors(final Account account, final boolean afterDownload) throws PluginException {
         // Temporary errorhandling for a bug which isn't handled by the API
         if (br.getURL().equals("http://filer.net/error/500")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfehler", 60 * 60 * 1000l);
@@ -463,6 +464,21 @@ public class FilerNet extends PluginForHost {
         }
         if (br.containsHTML(">Maximale Verbindungen erreicht<")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available, wait or buy premium!", 10 * 60 * 1000l);
+        }
+        if (br.containsHTML(">Free Download Limit erreicht<")) {
+            final String time = br.getRegex("<span id=\"time\">(\\d+)<").getMatch(0);
+            if (account != null) {
+                if (time != null) {
+                    throw new AccountUnavailableException("Limit reached", (Integer.parseInt(time) + 60) * 1000l);
+                } else {
+                    throw new AccountUnavailableException("Limit reached", 60 * 60 * 1000l);
+                }
+            }
+            if (time != null) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Free limit reached", (Integer.parseInt(time) + 60) * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Free limit reached", 60 * 60 * 1000l);
+            }
         }
     }
 
