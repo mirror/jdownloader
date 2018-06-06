@@ -83,6 +83,7 @@ AdvancedSettings_onShow_title_=Modificando le seguenti impostazioni perderai qua
 AdvancedTableModel_initColumns_desc_=Descrizione
 AdvancedTableModel_initColumns_key_=Chiave
 AdvancedTableModel_initColumns_type_=Tipo
+AdvancedTable_onContextMenu_advanced_value_edit=Modifica avanzata per questo valore
 AdvancedTable_onContextMenu_reset_selection=Ripristina elementi selezionati ai valori predefiniti
 AdvancedTablecontextmenu_reset=Vuoi veramente ripristinare %s1 elementi della configurazione avanzata al loro valore predefinito?
 AdvancedValueColumn_AdvancedValueColumn_object_=Valore
