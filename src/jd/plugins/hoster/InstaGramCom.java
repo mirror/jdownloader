@@ -19,18 +19,15 @@ import java.io.IOException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
+import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -269,41 +266,41 @@ public class InstaGramCom extends PluginForHost {
         return MAXDOWNLOADS;
     }
 
-    @SuppressWarnings("unchecked")
     public static void login(final Browser br, final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
                 prepBR(br);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            br.setCookie(MAINPAGE, key, value);
-                        }
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    br.setCookies(MAINPAGE, cookies);
+                    br.getPage(MAINPAGE + "/");
+                    if (br.getCookies(MAINPAGE).get("sessionid", Cookies.NOTDELETEDPATTERN) == null || br.getCookies(MAINPAGE).get("ds_user_id", Cookies.NOTDELETEDPATTERN) == null) {
+                        br.clearCookies(MAINPAGE);
+                    } else {
+                        account.saveCookies(br.getCookies(MAINPAGE), "");
                         return;
                     }
                 }
                 br.getPage(MAINPAGE + "/");
-                try {
-                    br.setHeader("Accept", "*/*");
-                    br.setHeader("X-Instagram-AJAX", "1");
-                    br.setHeader("X-CSRFToken", br.getCookie("instagram.com", "csrftoken"));
-                    br.setHeader("X-Requested-With", "XMLHttpRequest");
-                    br.postPage("/accounts/login/ajax/", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                } finally {
-                    br.setHeader("X-Instagram-AJAX", null);
-                    br.setHeader("X-CSRFToken", null);
-                    br.setHeader("X-Requested-With", null);
+                final String csrftoken = br.getRegex("\"csrf_token\"\\s*:\\s*\"(.*?)\"").getMatch(0);
+                if (csrftoken == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                br.setCookie(MAINPAGE, "csrftoken", csrftoken);
+                final String rollout_hash = br.getRegex("\"rollout_hash\"\\s*:\\s*\"(.*?)\"").getMatch(0);
+                if (rollout_hash == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                PostRequest post = new PostRequest("https://www.instagram.com/accounts/login/ajax/");
+                post.getHeaders().put("Accept", "*/*");
+                post.getHeaders().put("X-Instagram-AJAX", rollout_hash);
+                post.getHeaders().put("X-CSRFToken", csrftoken);
+                post.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                post.setContentType("application/x-www-form-urlencoded");
+                post.setPostDataString("username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&queryParams=%7B%7D");
+                br.getPage(post);
                 if ("fail".equals(PluginJSonUtils.getJsonValue(br, "status"))) {
                     // 2 factor (Coded semi blind).
                     if ("checkpoint_required".equals(PluginJSonUtils.getJsonValue(br, "message"))) {
@@ -344,37 +341,24 @@ public class InstaGramCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(MAINPAGE);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.saveCookies(br.getCookies(MAINPAGE), "");
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(this.br, account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(this.br, account, true);
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
         account.setConcurrentUsePossible(true);
         ai.setStatus("Free Account");
-        account.setValid(true);
         return ai;
     }
 
