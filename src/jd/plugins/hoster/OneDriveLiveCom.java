@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -32,9 +31,8 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "onedrive.live.com" }, urls = { "http://onedrivedecrypted\\.live\\.com/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "onedrive.live.com" }, urls = { "http://onedrivedecrypted\\.live\\.com/\\d+" })
 public class OneDriveLiveCom extends PluginForHost {
-
     public OneDriveLiveCom(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
@@ -104,18 +102,21 @@ public class OneDriveLiveCom extends PluginForHost {
             // maxchunks = 1;
             /* Only registered users can download all files of folders as .zip file */
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-
         }
         /* This header is especially important for smaller files! See DirectHTTP Host Plugin. */
         br.getHeaders().put("Accept-Encoding", "identity");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
+            try {
+                br.followConnection();
+            } catch (IOException e) {
+                logger.log(e);
+            }
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -173,5 +174,4 @@ public class OneDriveLiveCom extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }

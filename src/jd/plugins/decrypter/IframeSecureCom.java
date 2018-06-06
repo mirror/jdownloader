@@ -36,7 +36,7 @@ import jd.plugins.PluginException;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "protect-video.com", "iframe-secure.com", "protect-iframe.com", "ifp.re", "ifrp.xyz", "mp3free.pw" }, urls = { "https?://(?:www\\.)?protect-video\\.com/embed\\.php\\?id=\\d+", "https?://(?:www\\.)?iframe\\-secure\\.com/embed/[a-z0-9]+", "https?://(?:www\\.)?protect\\-iframe\\.com/embed\\-[a-z0-9]+", "https?://ifp\\.re/[a-z0-9]+", "https?://ifrp\\.xyz/[a-z0-9]+", "https?://mp3free\\.pw/[a-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "protect-video.com", "iframe-secure.com", "iframe-secured.com", "protect-iframe.com", "ifp.re", "ifrp.xyz", "mp3free.pw" }, urls = { "https?://(?:www\\.)?protect-video\\.com/embed\\.php\\?id=\\d+", "https?://(?:www\\.)?iframe\\-secure\\.com/embed/[a-z0-9]+", "https?://(?:www\\.)?iframe\\-secured\\.com/embed/[a-z0-9]+", "https?://(?:www\\.)?protect\\-iframe\\.com/embed\\-[a-z0-9]+", "https?://ifp\\.re/[a-z0-9]+", "https?://ifrp\\.xyz/[a-z0-9]+", "https?://mp3free\\.pw/[a-z0-9]+" })
 public class IframeSecureCom extends antiDDoSForDecrypt {
     public IframeSecureCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -66,6 +66,13 @@ public class IframeSecureCom extends antiDDoSForDecrypt {
             final String code = this.getCaptchaCode("/captcha/image2.php?u=" + fid, param);
             this.postPage(url_embed, "captcha=" + Encoding.urlEncode(code));
         } else if ("iframe-secure.com".equals(getHost())) {
+            getPage("iframe.php?u=" + fid);
+            // some form
+            final Form f = br.getForm(0);
+            if (f != null) {
+                submitForm(f);
+            }
+        } else if ("iframe-secured.com".equals(getHost())) {
             getPage("iframe.php?u=" + fid);
             // some form
             final Form f = br.getForm(0);

@@ -14,6 +14,7 @@ import org.appwork.storage.config.annotations.ValidatorFactory;
 import org.appwork.storage.config.defaults.AbstractDefaultFactory;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.settings.advanced.AdvancedValueEditorFactory;
 
 public interface FFmpegSetup extends ConfigInterface {
     class BinayPathValidator extends AbstractValidator<String> {
@@ -77,6 +78,7 @@ public interface FFmpegSetup extends ConfigInterface {
     @AboutConfig
     @ValidatorFactory(BinayPathValidator.class)
     @DefaultFactory(DefaultFFMpegBinary.class)
+    @AdvancedValueEditorFactory(FFmpegBinaryValueEditor.class)
     @DescriptionForConfigEntry("full path (including binary filename) to ffmpeg")
     String getBinaryPath();
 
@@ -85,6 +87,7 @@ public interface FFmpegSetup extends ConfigInterface {
     @AboutConfig
     @ValidatorFactory(BinayPathValidator.class)
     @DefaultFactory(DefaultFFProbeBinary.class)
+    @AdvancedValueEditorFactory(FFmpegBinaryValueEditor.class)
     @DescriptionForConfigEntry("full path (including binary filename) to ffprobe")
     String getBinaryPathProbe();
 
