@@ -83,6 +83,7 @@ AdvancedSettings_onShow_title_=Om det någonsin har funnits någon garanti för 
 AdvancedTableModel_initColumns_desc_=Beskrivning
 AdvancedTableModel_initColumns_key_=Nyckel
 AdvancedTableModel_initColumns_type_=Typ
+AdvancedTable_onContextMenu_advanced_value_edit=Avancerad redigerare för detta värde
 AdvancedTable_onContextMenu_reset_selection=Återställ valda alternativ till deras standardvärden
 AdvancedTablecontextmenu_reset=Vill du verkligen återställa konfigurationsvärdet %s1 till sitt standardvärde?
 AdvancedValueColumn_AdvancedValueColumn_object_=Värde
