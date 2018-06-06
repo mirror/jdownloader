@@ -26,7 +26,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
 public class AdvancedConfigEntry {
-
     private final ConfigInterface configInterface;
     private final KeyHandler<?>   keyHandler;
 
@@ -106,6 +105,15 @@ public class AdvancedConfigEntry {
 
     public String getDescription() {
         final DescriptionForConfigEntry an = keyHandler.getAnnotation(DescriptionForConfigEntry.class);
+        if (an != null) {
+            return an.value();
+        } else {
+            return null;
+        }
+    }
+
+    public Class<? extends AdvandedValueEditor> getAdvancedValueEditor() {
+        final AdvancedValueEditorFactory an = keyHandler.getAnnotation(AdvancedValueEditorFactory.class);
         if (an != null) {
             return an.value();
         } else {

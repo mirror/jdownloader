@@ -30,7 +30,6 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -42,10 +41,11 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.URLHelper;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bandcamp.com" }, urls = { "https?://(www\\.)?[a-z0-9\\-]+\\.bandcamp\\.com/album/[a-z0-9\\-_]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bandcamp.com" }, urls = { "https?://((www\\.)?[a-z0-9\\-]+\\.bandcamp\\.com/album/[a-z0-9\\-_]+|(?<!www\\.)?[a-z0-9\\-]+\\.bandcamp\\.com/?$)" })
 public class BandCampComDecrypter extends PluginForDecrypt {
     public BandCampComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -66,10 +66,12 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final Regex inforegex = br.getRegex("<title>(.*?) \\| (.*?)</title>");
-        final String[][] links = br.getRegex("\"(/track/[a-z0-9\\-]+)\" itemprop=\"url\"><span itemprop=\"name\">([^<>\"]*?)</span>").getMatches();
+        final String[][] links = br.getRegex("\"(/track/[a-z0-9\\-]+)\" itemprop=\"url\"><span itemprop=\"name\">([^<>\"]*?)</span>.*?<meta itemprop=\"duration\"\\s*content=\"(.*?)\"").getMatches();
         String artist = br.getRegex("artist: \"([^<>\"]*?)\"").getMatch(0);
-        String album = inforegex.getMatch(0);
+        String album = br.getRegex("<title>\\s*(.*?)\\s*\\|.*?</title>").getMatch(0);
+        if (album == null) {
+            album = br.getRegex("<title>\\s*(.*?)\\s*</title>").getMatch(0);
+        }
         final String date = br.getRegex("<meta itemprop=\"datePublished\" content=\"(\\d+)\"/>").getMatch(0);
         if (links == null || links.length == 0 || artist == null || album == null || date == null) {
             if (br.containsHTML("class='download-link buy-link'")) {
@@ -88,13 +90,12 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             df = new DecimalFormat("000");
         }
         int trackcounter = 1;
-        final String bcLink = new Regex(parameter, "(https?://.*?\\.bandcamp\\.com)/album/").getMatch(0);
         hostPlugin = JDUtilities.getPluginForHost("bandcamp.com");
         if (hostPlugin == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         for (final String linkinfo[] : links) {
-            final String dllink = bcLink + linkinfo[0];
+            final String dllink = br.getURL(linkinfo[0]).toString();
             final String fname = Encoding.htmlDecode(linkinfo[1].trim());
             final DownloadLink dl = createDownloadlink(dllink);
             dl.setProperty("fromdecrypter", true);
@@ -107,6 +108,12 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             String formattedFilename = ((jd.plugins.hoster.BandCampCom) hostPlugin).getFormattedFilename(dl);
             dl.setName(formattedFilename);
             if (CFG.getBooleanProperty(jd.plugins.hoster.BandCampCom.FASTLINKCHECK, false)) {
+                dl.setAvailable(true);
+            }
+            final String duration[] = new Regex(linkinfo[2], "P(\\d+)H(\\d+)M(\\d+)S").getRow(0);
+            if (duration != null && duration.length == 3) {
+                final long length = 128 * 1024l / 8 * ((Integer.parseInt(duration[0]) * 60 * 60) + (Integer.parseInt(duration[1]) * 60) + (Integer.parseInt(duration[2])));
+                dl.setDownloadSize(length);
                 dl.setAvailable(true);
             }
             decryptedLinks.add(dl);
