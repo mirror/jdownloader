@@ -37,6 +37,14 @@ public class MarkDownloadFinishedAction extends CustomizableTableContextAppActio
                 public void interrupt() {
                 }
 
+                private void setFinished(DownloadLink downloadlink) {
+                    downloadlink.setFinalLinkState(FinalLinkState.FINISHED);
+                    final long knownSize = downloadlink.getKnownDownloadSize();
+                    if (knownSize >= 0) {
+                        downloadlink.setDownloadCurrent(knownSize);
+                    }
+                }
+
                 @Override
                 public void execute(DownloadSession currentSession) {
                     for (final DownloadLink link : selection) {
@@ -54,11 +62,11 @@ public class MarkDownloadFinishedAction extends CustomizableTableContextAppActio
 
                                 @Override
                                 public void execute(DownloadSession currentSession) {
-                                    link.setFinalLinkState(FinalLinkState.FINISHED);
+                                    setFinished(link);
                                 }
                             });
                         } else {
-                            link.setFinalLinkState(FinalLinkState.FINISHED);
+                            setFinished(link);
                         }
                     }
                 }
