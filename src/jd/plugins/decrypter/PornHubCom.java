@@ -71,7 +71,7 @@ public class PornHubCom extends PluginForDecrypt {
         final Account account = AccountController.getInstance().getValidAccount(this);
         if (account != null) {
             try {
-                jd.plugins.hoster.PornHubCom.login(br, account, false);
+                jd.plugins.hoster.PornHubCom.login(this, br, account, false);
                 if (account.getType().toString().equals("PREMIUM")) {
                     premium = true;
                 }
@@ -99,7 +99,7 @@ public class PornHubCom extends PluginForDecrypt {
         }
         if (br.containsHTML(">Sorry, but this video is private") && br.containsHTML("href=\"/login\"") && account != null) {
             logger.info("Debug info: href= /login is found for private video + registered user, re-login now");
-            jd.plugins.hoster.PornHubCom.login(br, account, true);
+            jd.plugins.hoster.PornHubCom.login(this, br, account, true);
             jd.plugins.hoster.PornHubCom.getPage(br, parameter);
             if (br.containsHTML("href=\"/login\"")) {
                 logger.info("Debug info: href= /login is found for registered user, re-login failed?");
