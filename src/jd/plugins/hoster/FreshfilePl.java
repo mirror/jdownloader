@@ -197,6 +197,9 @@ public class FreshfilePl extends PluginForHost {
         }
         final long wait = Long.parseLong(download) * 1000 - System.currentTimeMillis();
         if (wait > 0) {
+            if (wait > 5 * 60 * 1000l) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait);
+            }
             sleep(wait, downloadLink);
         }
         br.postPage("http://freshfile.pl/ajax.php?load=doLoadFreeLink", "hashId=" + getHashID() + "&id=" + getFileID(downloadLink));
