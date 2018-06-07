@@ -181,12 +181,12 @@ public class PornHubCom extends PluginForHost {
             prepBr(br);
             final Account aa = AccountController.getInstance().getValidAccount(this);
             if (aa != null) {
-                this.login(br, aa, false);
+                this.login(this, br, aa, false);
             }
             br.setFollowRedirects(true);
             getPage(br, createPornhubVideolink(viewkey, aa));
             if (aa != null && !isLoggedInHtml(br) && br.containsHTML(html_privatevideo)) {
-                login(br, aa, true);
+                login(this, br, aa, true);
                 getPage(br, createPornhubVideolink(viewkey, aa));
             }
             if (br.containsHTML(html_privatevideo)) {
@@ -443,7 +443,7 @@ public class PornHubCom extends PluginForHost {
     private static final String PORNHUB_FREE    = "pornhub.com";
     private static final String PORNHUB_PREMIUM = "pornhubpremium.com";
 
-    public static void login(final Browser br, final Account account, final boolean force) throws Exception {
+    public static void login(Plugin plugin, final Browser br, final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
                 // Load cookies
@@ -455,6 +455,7 @@ public class PornHubCom extends PluginForHost {
                 if (!force && cookies != null && cookies.get("il") != null && System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age) {
                     br.setCookies(account.getHoster(), cookies);
                     br.setCookies(getProtocolPremium() + PORNHUB_PREMIUM, cookies);
+                    plugin.getLogger().info("Trust login cookies");
                     /* We trust these cookies --> Do not check them */
                     return;
                 }
@@ -486,8 +487,11 @@ public class PornHubCom extends PluginForHost {
                         }
                         saveCookies(br, account);
                         return;
+                    } else {
+                        plugin.getLogger().info("Cached login cookies failed!");
                     }
                 }
+                plugin.getLogger().info("Fresh login");
                 getPage(br, "https://www." + account.getHoster());
                 getPage(br, "https://www." + account.getHoster() + "/login");
                 if (br.containsHTML("Sorry we couldn't find what you were looking for")) {
@@ -576,7 +580,7 @@ public class PornHubCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        login(br, account, true);
+        login(this, br, account, true);
         ai.setUnlimitedTraffic();
         if (isLoggedInHtmlPremium(br)) {
             account.setType(AccountType.PREMIUM);
