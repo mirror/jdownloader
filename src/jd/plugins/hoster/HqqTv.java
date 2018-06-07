@@ -18,12 +18,6 @@ package jd.plugins.hoster;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.Regex;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -33,6 +27,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.Regex;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision: 35559 $", interfaceVersion = 3, names = { "hqq.tv" }, urls = { "https?://(?:www\\.)?hqq\\.(?:tv|watch)/.+|https?://waaw\\.tv/watch_video\\.php\\?v=[A-Za-z0-9]+" })
 public class HqqTv extends antiDDoSForHost {
@@ -71,6 +71,9 @@ public class HqqTv extends antiDDoSForHost {
         String jsWise = br.getRegex(";eval\\((function\\(w,i,s,e.+?)\\);\\s*</").getMatch(0);
         String decode = decodeWise(jsWise);
         String[] data = new Regex(decode, "var vid=\"([^\"]*).*?var at=\"([^\"]*).*?var autoplayed=\"([^\"]*).*?var referer=\"([^\"]*).*var http_referer=\"([^\"]*).*var pass=\"([^\"]*).*var embed_from=\"([^\"]*).*var need_captcha=\"([^\"]*).*var hash_from=\"([^\"]*)").getRow(0);
+        if (data == null || data.length == 0) {
+            data = new Regex(decode, "vid=([^&]*)&at=([^&]*)&autoplayed=([^&]*)&referer=([^&]*)&http_referer=([^&]*)&pass=([^&]*)&embed_from=([^&]*)&need_captcha=([^&]*)&hash_from=([^&]*)").getRow(0);
+        }
         if (data == null || data.length == 0) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
