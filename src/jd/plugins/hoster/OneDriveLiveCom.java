@@ -50,11 +50,10 @@ public class OneDriveLiveCom extends PluginForHost {
     }
 
     /* Use less than in the decrypter to not to waste traffic & time */
-    private static final int    MAX_ENTRIES_PER_REQUEST = 50;
-    private static final String DOWNLOAD_ZIP            = "DOWNLOAD_ZIP_2";
+    private static final String DOWNLOAD_ZIP = "DOWNLOAD_ZIP_2";
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         if (link.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -65,21 +64,35 @@ public class OneDriveLiveCom extends PluginForHost {
         final String id = link.getStringProperty("plain_id", null);
         final String authkey = link.getStringProperty("plain_authkey", null);
         final String original_link = link.getStringProperty("original_link", null);
-        String additional_data = "&ps=" + MAX_ENTRIES_PER_REQUEST;
+        final String additional_data;
         if (authkey != null) {
-            additional_data += "&authkey=" + Encoding.urlEncode(authkey);
+            additional_data = "&authkey=" + Encoding.urlEncode(authkey);
+        } else {
+            additional_data = "";
         }
         if (isCompleteFolder(link)) {
             /* Case is not yet present */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
-            jd.plugins.decrypter.OneDriveLiveCom.accessItems_API(br, original_link, cid, id, additional_data);
+            final int maxItems;
+            int startIndex = link.getIntegerProperty("plain_item_si", -1);
+            if (startIndex == -1) {
+                startIndex = 0;
+                maxItems = 1000;// backwards compatibility
+            } else {
+                maxItems = jd.plugins.decrypter.OneDriveLiveCom.MAX_ENTRIES_PER_REQUEST;
+            }
+            jd.plugins.decrypter.OneDriveLiveCom.accessItems_API(br, original_link, cid, id, additional_data, startIndex, maxItems);
             if (br.getRequest().getHttpConnection().getResponseCode() == 500) {
                 link.getLinkStatus().setStatusText("Server error 500");
                 return AvailableStatus.UNCHECKABLE;
             }
             if (br.containsHTML("\"code\":154")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final String dllink = getDownloadURL(br, link);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         final String filename = link.getStringProperty("plain_name", null);
@@ -167,10 +180,12 @@ public class OneDriveLiveCom extends PluginForHost {
         final Map<String, Object> folder = (Map<String, Object>) item.get("folder");
         if (folder != null) {
             final List<Map<String, Object>> children = (List<Map<String, Object>>) folder.get("children");
-            for (Map<String, Object> child : children) {
-                final String ret = findDownloadURL(child, id);
-                if (ret != null) {
-                    return ret;
+            if (children != null) {
+                for (Map<String, Object> child : children) {
+                    final String ret = findDownloadURL(child, id);
+                    if (ret != null) {
+                        return ret;
+                    }
                 }
             }
         }
