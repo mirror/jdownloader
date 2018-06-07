@@ -82,13 +82,13 @@ public class PornHubCom extends PluginForHost {
     /* Note: Video bitrates and resolutions are not exact, they can vary. */
     /* Quality, { videoCodec, videoBitrate, videoResolution, audioCodec, audioBitrate } */
     public static LinkedHashMap<String, String[]> formats                   = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
-                                                                                {
-                                                                                    put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
-                                                                                    put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
-                                                                                    put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
-                                                                                    put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
-                                                                                }
-                                                                            });
+        {
+            put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
+            put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
+            put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
+            put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
+        }
+    });
     public static final String                    BEST_ONLY                 = "BEST_ONLY";
     public static final String                    FAST_LINKCHECK            = "FAST_LINKCHECK";
 
@@ -455,7 +455,7 @@ public class PornHubCom extends PluginForHost {
                 if (!force && cookies != null && cookies.get("il") != null && System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age) {
                     br.setCookies(account.getHoster(), cookies);
                     br.setCookies(getProtocolPremium() + PORNHUB_PREMIUM, cookies);
-                    plugin.getLogger().info("Trust login cookies");
+                    plugin.getLogger().info("Trust login cookies:" + account.getType());
                     /* We trust these cookies --> Do not check them */
                     return;
                 }
@@ -485,6 +485,7 @@ public class PornHubCom extends PluginForHost {
                         } else {
                             account.setType(AccountType.FREE);
                         }
+                        plugin.getLogger().info("Verified login cookies:" + account.getType());
                         saveCookies(br, account);
                         return;
                     } else {
