@@ -22,6 +22,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -62,10 +63,10 @@ public class FreshfilePl extends PluginForHost {
             return false;
         }
         // correct link stuff goes here, stable is lame!
-        for (DownloadLink link : urls) {
-            if (link.getProperty("FILEID") == null) {
-                String downloadUrl = link.getDownloadURL();
-                String fileID = new Regex(downloadUrl, "https?://freshfile\\.pl/dl/([A-Za-z0-9]+)/?").getMatch(0);
+        for (final DownloadLink link : urls) {
+            if (getFileID(link) == null) {
+                final String downloadUrl = link.getDownloadURL();
+                final String fileID = new Regex(downloadUrl, "https?://freshfile\\.pl/dl/([A-Za-z0-9]+)/?").getMatch(0);
                 link.setProperty("FILEID", fileID);
             }
         }
@@ -93,7 +94,7 @@ public class FreshfilePl extends PluginForHost {
                     if (!first) {
                         sb.append(",");
                     }
-                    sb.append(dl.getProperty("FILEID"));
+                    sb.append(getFileID(dl));
                     first = false;
                 }
                 // API: http://freshfile.pl/api/doFile/ - info about links
@@ -179,9 +180,51 @@ public class FreshfilePl extends PluginForHost {
         }
     }
 
+    private String getHashID() {
+        final StringBuilder sb = new StringBuilder();
+        final Random random = new Random();
+        for (int i = 0; i < 10; i++) {
+            sb.append(random.nextInt(10));
+        }
+        return sb.toString();
+    }
+
+    void doFreeDownloads(final DownloadLink downloadLink) throws Exception {
+        br.postPage("http://freshfile.pl/ajax.php?load=doCheckFreeDownload", "hashId=" + getHashID());
+        final String download = getJson("download", br.toString());
+        if (download == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final long wait = Long.parseLong(download) * 1000 - System.currentTimeMillis();
+        if (wait > 0) {
+            sleep(wait, downloadLink);
+        }
+        br.postPage("http://freshfile.pl/ajax.php?load=doLoadFreeLink", "hashId=" + getHashID() + "&id=" + getFileID(downloadLink));
+        final String href = getJson("href", br.toString());
+        if (href == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String dllink = href.replace("\\", "");
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!" + "Response: " + dl.getConnection().getResponseMessage() + ", code: " + dl.getConnection().getResponseCode() + "\n" + dl.getConnection().getContentType());
+            br.followConnection();
+            logger.warning("br returns:" + br.toString());
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    private String getFileID(DownloadLink downloadLink) {
+        return downloadLink.getStringProperty("FILEID", null);
+    }
+
     void doDownloads(final DownloadLink downloadLink, final Account account) throws PluginException, Exception {
+        if (account == null) {
+            doFreeDownloads(downloadLink);
+            return;
+        }
         boolean retry;
-        boolean accountFound = !(account == null);
         String loginInfo = "";
         setMainPage(downloadLink.getPluginPatternMatcher());
         String response = "";
@@ -191,7 +234,7 @@ public class FreshfilePl extends PluginForHost {
         do {
             retry = false;
             requestFileInformation(downloadLink);
-            if (accountFound) {
+            if (account != null) {
                 // thid in case we will need something from account
                 loginInfo = login(account, false);
             }
@@ -200,24 +243,24 @@ public class FreshfilePl extends PluginForHost {
             // Input POST:
             // for Registered: login - user login, password - user password, id - file id
             // for Unregistered: login=null, password= null, id - file id
-            if (accountFound) {
-                br.postPage("http://freshfile.pl/api/doDownloadFile/", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&id=" + downloadLink.getProperty("FILEID"));
+            if (account != null) {
+                br.postPage("http://freshfile.pl/api/doDownloadFile/", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&id=" + getFileID(downloadLink));
             } else {
-                br.postPage("http://freshfile.pl/api/doDownloadFile/", "login=&password=&id=" + downloadLink.getProperty("FILEID"));
+                br.postPage("http://freshfile.pl/api/doDownloadFile/", "login=null&password=null&id=" + getFileID(downloadLink));
             }
             response = br.toString();
-            retry = handleErrors(response, downloadLink);
+            retry = handleErrors(account, response, downloadLink);
         } while (retry);
         String fileLocation = getJson("downloadUrl", response);
         if (fileLocation == null) {
             logger.info("Hoster: FreshFile.pl reports: filelocation not found with link: " + downloadLink.getDownloadURL());
             throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, "filelocation not found");
         }
-        if (accountFound) {
+        if (account != null) {
             setLoginData(account);
         }
         String dllink = fileLocation.replace("\\", "");
-        if (accountFound) {
+        if (account != null) {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         } else {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
@@ -236,7 +279,7 @@ public class FreshfilePl extends PluginForHost {
         doDownloads(downloadLink, account);
     }
 
-    private boolean handleErrors(String response, DownloadLink downloadLink) throws Exception, PluginException {
+    private boolean handleErrors(final Account account, String response, DownloadLink downloadLink) throws Exception, PluginException {
         // Response for: API: http://freshfile.pl/api/doDownloadFile/ - file download
         // trafficEmpty: no traffic left
         // notFound: file not found
@@ -245,7 +288,9 @@ public class FreshfilePl extends PluginForHost {
         String errors = checkForErrors(response, "error");
         boolean retry = false;
         if (errors != null) {
-            if (errors.contains("nextDownload")) {
+            if ("accountLost".equals(errors) && account != null) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else if (errors.contains("nextDownload")) {
                 String nextDownload = checkForErrors(response, "nextDownload");
                 SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
                 Date newStartDate = df.parse(nextDownload);
