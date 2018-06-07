@@ -97,16 +97,16 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
             contentReleaseLinks = br.getRegex(">Download:?</(.*?)</div>").getMatch(0);
             // Nothing found? Get all links from title till comment field
             if (contentReleaseLinks == null) {
-                contentReleaseLinks = br.getRegex("<h[12] class=\"post-title\">(.*?)function validatecomment\\(form\\)\\{").getMatch(0);
+                contentReleaseLinks = br.getRegex("<h[12] class=\"post-title.*?\">(.*?)function validatecomment\\(form\\)\\{").getMatch(0);
             }
             if (contentReleaseLinks == null) {
-                contentReleaseLinks = br.getRegex("<h[12] class=\"post-title\">(.*?)class=\"comments\">Comments are closed").getMatch(0);
+                contentReleaseLinks = br.getRegex("<h[12] class=\"post-title.*?\">(.*?)class=\"comments\">Comments are closed").getMatch(0);
             }
         } else {
             // Get all links from title till comment field
-            contentReleaseLinks = br.getRegex("<h2 class=\"post-title\">(.*?)function validatecomment\\(form\\)\\{").getMatch(0);
+            contentReleaseLinks = br.getRegex("<h2 class=\"post-title.*?\">(.*?)function validatecomment\\(form\\)\\{").getMatch(0);
             if (contentReleaseLinks == null) {
-                contentReleaseLinks = br.getRegex("<h\\d+ class=\"post-title\">(.*?)class=\"comments\">").getMatch(0);
+                contentReleaseLinks = br.getRegex("<h\\d+ class=\"post-title.*?\">(.*?)class=\"comments\">").getMatch(0);
             }
         }
         if (contentReleaseLinks == null) {
