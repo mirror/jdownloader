@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.io.IOException;
@@ -37,40 +36,36 @@ import jd.plugins.PluginForDecrypt;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "onedrive.live.com" }, urls = { "https?://(www\\.)?(onedrive\\.live\\.com/.+|skydrive\\.live\\.com/.+|(sdrv|1drv)\\.ms/[A-Za-z0-9&!=#\\.,-_]+)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "onedrive.live.com" }, urls = { "https?://(www\\.)?(onedrive\\.live\\.com/.+|skydrive\\.live\\.com/.+|(sdrv|1drv)\\.ms/[A-Za-z0-9&!=#\\.,-_]+)" })
 public class OneDriveLiveCom extends PluginForDecrypt {
-
     public OneDriveLiveCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String     TYPE_DRIVE_ALL               = "https?://(www\\.)?(onedrive\\.live\\.com/(redir)?\\?[A-Za-z0-9\\&\\!=#\\.,]+|skydrive\\.live\\.com/(\\?cid=[a-z0-9]+[A-Za-z0-9&!=#\\.,-_]+|redir\\.aspx\\?cid=[a-z0-9]+[A-Za-z0-9&!=#\\.,-_]+|redir\\?resid=[A-Za-z0-9&!=#\\.,-_]+))";
-    private static final String     TYPE_ONEDRIVE_REDIRECT_RESID = "https?://(www\\.)?onedrive\\.live\\.com/redir\\?resid=[a-z0-9]+[A-Za-z0-9&!=#\\.,-_]+";
-    private static final String     TYPE_SKYDRIVE_REDIRECT_RESID = "https?://(www\\.)?skydrive\\.live\\.com/redir\\?resid=[a-z0-9]+[A-Za-z0-9&!=#\\.,-_]+";
-    private static final String     TYPE_ONEDRIVE_VIEW_RESID     = "https?://(www\\.)?onedrive\\.live\\.com/view\\.aspx\\?resid=.+";
-    private static final String     TYPE_SKYDRIVE_REDIRECT       = "https?://(www\\.)?skydrive\\.live\\.com/redir\\.aspx\\?cid=[a-z0-9]+[A-Za-z0-9&!=#\\.,-_]+";
-    private static final String     TYPE_SKYDRIVE_SHORT          = "https?://(www\\.)?(1|s)drv\\.ms/[A-Za-z0-9&!=#\\.,-_]+";
-    private static final String     TYPE_ONEDRIVE_ROOT           = "https?://onedrive\\.live\\.com/\\?cid=[a-z0-9]+";
+    private static final String TYPE_DRIVE_ALL               = "https?://(www\\.)?(onedrive\\.live\\.com/(redir)?\\?[A-Za-z0-9\\&\\!=#\\.,]+|skydrive\\.live\\.com/(\\?cid=[a-z0-9]+[A-Za-z0-9&!=#\\.,-_]+|redir\\.aspx\\?cid=[a-z0-9]+[A-Za-z0-9&!=#\\.,-_]+|redir\\?resid=[A-Za-z0-9&!=#\\.,-_]+))";
+    private static final String TYPE_ONEDRIVE_REDIRECT_RESID = "https?://(www\\.)?onedrive\\.live\\.com/redir\\?resid=[a-z0-9]+[A-Za-z0-9&!=#\\.,-_]+";
+    private static final String TYPE_SKYDRIVE_REDIRECT_RESID = "https?://(www\\.)?skydrive\\.live\\.com/redir\\?resid=[a-z0-9]+[A-Za-z0-9&!=#\\.,-_]+";
+    private static final String TYPE_ONEDRIVE_VIEW_RESID     = "https?://(www\\.)?onedrive\\.live\\.com/view\\.aspx\\?resid=.+";
+    private static final String TYPE_SKYDRIVE_REDIRECT       = "https?://(www\\.)?skydrive\\.live\\.com/redir\\.aspx\\?cid=[a-z0-9]+[A-Za-z0-9&!=#\\.,-_]+";
+    private static final String TYPE_SKYDRIVE_SHORT          = "https?://(www\\.)?(1|s)drv\\.ms/[A-Za-z0-9&!=#\\.,-_]+";
+    private static final String TYPE_ONEDRIVE_ROOT           = "https?://onedrive\\.live\\.com/\\?cid=[a-z0-9]+";
     /* Constants */
-    private static final int        MAX_ENTRIES_PER_REQUEST      = 1000;
-    private static final long       ITEM_TYPE_FILE               = 1;
-    private static final long       ITEM_TYPE_PICTURE            = 3;
-    private static final long       ITEM_TYPE_VIDEO              = 5;
-    private static final int        ITEM_TYPE_FOLDER             = 32;
+    private static final int    MAX_ENTRIES_PER_REQUEST      = 1000;
+    private static final long   ITEM_TYPE_FILE               = 1;
+    private static final long   ITEM_TYPE_PICTURE            = 3;
+    private static final long   ITEM_TYPE_VIDEO              = 5;
+    private static final int    ITEM_TYPE_FOLDER             = 32;
     /* Plugin settings */
-    private static final String     DOWNLOAD_ZIP                 = "DOWNLOAD_ZIP_2";
-
-    private ArrayList<DownloadLink> decryptedLinks               = new ArrayList<DownloadLink>();
-    private String                  parameter                    = null;
-    private String                  original_link                = null;
-    private String                  cid                          = null;
-    private String                  id                           = null;
-    private String                  authkey                      = null;
-
-    private long                    totalSize                    = 0;
+    private static final String DOWNLOAD_ZIP                 = "DOWNLOAD_ZIP_2";
+    private String              parameter                    = null;
+    private String              original_link                = null;
+    private String              cid                          = null;
+    private String              id                           = null;
+    private String              authkey                      = null;
 
     @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         parameter = Encoding.urlDecode(param.toString(), false);
         original_link = parameter;
         String fpName = null;
@@ -137,13 +132,11 @@ public class OneDriveLiveCom extends PluginForDecrypt {
                 decryptedLinks.add(main);
                 return decryptedLinks;
             }
-
             cid = cid.toUpperCase();
             parameter = "https://onedrive.live.com/?cid=" + cid;
             if (id != null) {
                 parameter += "&id=" + id;
             }
-
             param.setCryptedUrl(parameter);
             prepBrAPI(this.br);
             String additional_data = "&ps=" + MAX_ENTRIES_PER_REQUEST;
@@ -157,7 +150,6 @@ public class OneDriveLiveCom extends PluginForDecrypt {
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
-
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         final Object error = entries.get("error");
         if (error != null) {
@@ -175,10 +167,9 @@ public class OneDriveLiveCom extends PluginForDecrypt {
         entries = (LinkedHashMap<String, Object>) ressourcelist.get(0);
         fpName = (String) entries.get("name");
         totalItemType = ((Number) entries.get("itemType")).longValue();
-
         if (totalItemType == ITEM_TYPE_FILE || totalItemType == ITEM_TYPE_PICTURE || totalItemType == ITEM_TYPE_VIDEO) {
             /* Single file */
-            parseFile(entries);
+            decryptedLinks.add(parseFile(entries));
         } else {
             entries = (LinkedHashMap<String, Object>) entries.get("folder");
             ressourcelist = (ArrayList) entries.get("children");
@@ -189,7 +180,6 @@ public class OneDriveLiveCom extends PluginForDecrypt {
             /* Folder, maybe with subfolders */
             totalCount = ((Number) entries.get("totalCount")).longValue();
             childCount = ((Number) entries.get("childCount")).longValue();
-
             if (br.containsHTML("\"code\":154")) {
                 main.setFinalFileName(fpName);
                 main.setAvailable(false);
@@ -203,13 +193,11 @@ public class OneDriveLiveCom extends PluginForDecrypt {
                 decryptedLinks.add(main);
                 return decryptedLinks;
             }
-
             main.setProperty("mainlink", parameter);
             main.setProperty("original_link", original_link);
             main.setProperty("plain_cid", cid);
             main.setProperty("plain_id", id);
             main.setProperty("plain_authkey", authkey);
-
             for (final Object ressource : ressourcelist) {
                 final LinkedHashMap<String, Object> entry = (LinkedHashMap<String, Object>) ressource;
                 final long type = ((Number) entry.get("itemType")).longValue();
@@ -230,10 +218,9 @@ public class OneDriveLiveCom extends PluginForDecrypt {
                     decryptedLinks.add(dl);
                 } else {
                     /* File --> Grab information & return to decrypter. All found links are usually ONLINE and downloadable! */
-                    parseFile(entry);
+                    decryptedLinks.add(parseFile(entry));
                 }
             }
-
             if (decryptedLinks.size() > 1 && SubConfiguration.getConfig("onedrive.live.com").getBooleanProperty(DOWNLOAD_ZIP, false)) {
                 /* = all files (links) of the folder as .zip archive */
                 final String main_name = fpName + ".zip";
@@ -245,25 +232,19 @@ public class OneDriveLiveCom extends PluginForDecrypt {
                 // decryptedLinks.add(main);
             }
         }
-
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(fpName);
         fp.addLinks(decryptedLinks);
-
         return decryptedLinks;
     }
 
-    @SuppressWarnings({ "unchecked", "deprecation" })
-    private void parseFile(final LinkedHashMap<String, Object> entry) throws DecrypterException {
+    private DownloadLink parseFile(final LinkedHashMap<String, Object> entry) throws DecrypterException {
         /* File --> Grab information & return to decrypter. All found links are usually ONLINE and downloadable! */
         final LinkedHashMap<String, Object> urls = (LinkedHashMap<String, Object>) entry.get("urls");
-        String filename = (String) entry.get("name");
-        String view_url = (String) urls.get("viewInBrowser");
-        final String download_url = (String) urls.get("download");
+        final String name = (String) entry.get("name");
+        final String view_url = (String) urls.get("viewInBrowser");
         final String iconType = (String) entry.get("iconType");
         final String extension = (String) entry.get("extension");
-        final long size = Long.parseLong((String) entry.get("size"));
-
         /* For single pictures, get the highest quality pic */
         if ("Photo".equals(iconType) && extension == null) {
             /* Download and view of the original picture only possible via account */
@@ -277,48 +258,41 @@ public class OneDriveLiveCom extends PluginForDecrypt {
             /* TODO: */
             throw new DecrypterException("Decrypter broken");
         }
-
-        if (filename == null) {
+        if (name == null) {
             throw new DecrypterException("Decrypter broken");
         }
-        String linkid = null;
         final DownloadLink dl = createDownloadlink("http://onedrivedecrypted.live.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
         /* Files without extension == possible */
+        final String filename;
         if (extension != null) {
-            filename += extension;
+            filename = name + extension;
+        } else {
+            filename = name;
         }
-        linkid = id + "_" + filename;
-        dl.setDownloadSize(size);
-        totalSize += size;
+        final long size = JavaScriptEngineFactory.toLong(entry.get("size"), -1);
+        if (size >= 0) {
+            dl.setVerifiedFileSize(size);
+        }
         dl.setFinalFileName(filename);
         dl.setProperty("mainlink", parameter);
         dl.setProperty("original_link", original_link);
         dl.setProperty("plain_name", filename);
         dl.setProperty("plain_filesize", size);
-        /*
-         * Add this because urls cannot be used to differ between the links, also the RegEx to split the links might fail so the same file
-         * gets added multiple times
-         */
-        if (view_url == null) {
-            view_url = "https://onedrive.live.com/?cid=" + cid + "&id=" + id;
-            if (authkey != null) {
-                /* Don't forget to add authKey if needed */
-                view_url += "&authkey=" + authkey;
-            }
-        }
-        dl.setProperty("plain_view_url", view_url);
         dl.setContentUrl(view_url);
-        dl.setLinkID(linkid);
+        final String download_url = (String) urls.get("download");
         if (download_url != null) {
             dl.setProperty("plain_download_url", download_url);
         } else {
             dl.setProperty("account_only", true);
         }
+        final String itemId = (String) entry.get("id");
+        dl.setProperty("plain_item_id", itemId);
         dl.setProperty("plain_cid", cid);
         dl.setProperty("plain_id", id);
         dl.setProperty("plain_authkey", authkey);
+        dl.setLinkID(getHost() + "://" + id + "/" + itemId);
         dl.setAvailable(true);
-        decryptedLinks.add(dl);
+        return dl;
     }
 
     public static String getJson(final String parameter, final String source) {
@@ -394,5 +368,4 @@ public class OneDriveLiveCom extends PluginForDecrypt {
             }
         }
     }
-
 }

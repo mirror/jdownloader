@@ -16,11 +16,14 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.Property;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -30,6 +33,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "onedrive.live.com" }, urls = { "http://onedrivedecrypted\\.live\\.com/\\d+" })
 public class OneDriveLiveCom extends PluginForHost {
@@ -65,6 +71,7 @@ public class OneDriveLiveCom extends PluginForHost {
         }
         if (isCompleteFolder(link)) {
             /* Case is not yet present */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
             jd.plugins.decrypter.OneDriveLiveCom.accessItems_API(br, original_link, cid, id, additional_data);
             if (br.getRequest().getHttpConnection().getResponseCode() == 500) {
@@ -76,12 +83,10 @@ public class OneDriveLiveCom extends PluginForHost {
             }
         }
         final String filename = link.getStringProperty("plain_name", null);
-        final long filesize = getLongProperty(link, "", -1);
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setFinalFileName(filename);
-        link.setDownloadSize(filesize);
         return AvailableStatus.TRUE;
     }
 
@@ -94,7 +99,7 @@ public class OneDriveLiveCom extends PluginForHost {
         if (br.getRequest().getHttpConnection().getResponseCode() == 500) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500", 30 * 60 * 1000l);
         }
-        final String dllink = getdllink(downloadLink);
+        final String dllink = getDownloadURL(br, downloadLink);
         boolean resume = true;
         int maxchunks = 0;
         if (isCompleteFolder(downloadLink)) {
@@ -102,6 +107,9 @@ public class OneDriveLiveCom extends PluginForHost {
             // maxchunks = 1;
             /* Only registered users can download all files of folders as .zip file */
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* This header is especially important for smaller files! See DirectHTTP Host Plugin. */
         br.getHeaders().put("Accept-Encoding", "identity");
@@ -122,36 +130,51 @@ public class OneDriveLiveCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private String getdllink(final DownloadLink dl) throws PluginException {
-        String dllink = null;
+    private String getDownloadURL(final Browser br, final DownloadLink dl) throws Exception {
         if (isCompleteFolder(dl)) {
+            return null;
         } else {
-            dllink = dl.getStringProperty("plain_download_url", null);
-            if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            final Object error = entries.get("error");
+            if (error != null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, error.toString());
             }
+            final List<Object> ressourcelist = (ArrayList) entries.get("items");
+            final String itemId = dl.getStringProperty("plain_item_id", null);
+            if (itemId != null) {
+                for (Object ressource : ressourcelist) {
+                    final String ret = findDownloadURL((Map<String, Object>) ressource, itemId);
+                    if (ret != null) {
+                        dl.setProperty("plain_download_url", ret);
+                        return ret;
+                    }
+                }
+            }
+            return dl.getStringProperty("plain_download_url", null);
         }
-        return dllink;
     }
 
-    /* Stable workaround */
-    public static long getLongProperty(final Property link, final String key, final long def) {
-        try {
-            return link.getLongProperty(key, def);
-        } catch (final Throwable e) {
-            try {
-                Object r = link.getProperty(key, def);
-                if (r instanceof String) {
-                    r = Long.parseLong((String) r);
-                } else if (r instanceof Integer) {
-                    r = ((Integer) r).longValue();
-                }
-                final Long ret = (Long) r;
-                return ret;
-            } catch (final Throwable e2) {
-                return def;
+    private String findDownloadURL(Map<String, Object> item, final String id) throws Exception {
+        if (StringUtils.equals(id, (String) item.get("id"))) {
+            final Map<String, Object> urls = (Map<String, Object>) item.get("urls");
+            final String downloadURL = urls != null ? (String) urls.get("download") : null;
+            if (downloadURL == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                return downloadURL;
             }
         }
+        final Map<String, Object> folder = (Map<String, Object>) item.get("folder");
+        if (folder != null) {
+            final List<Map<String, Object>> children = (List<Map<String, Object>>) folder.get("children");
+            for (Map<String, Object> child : children) {
+                final String ret = findDownloadURL(child, id);
+                if (ret != null) {
+                    return ret;
+                }
+            }
+        }
+        return null;
     }
 
     private boolean isCompleteFolder(final DownloadLink dl) {
