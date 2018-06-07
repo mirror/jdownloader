@@ -21,10 +21,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -47,9 +43,12 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to", "pornfile.cz" }, urls = { "https?://(?:www\\.)?(?:uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)/(?!soubory/)[\\!a-zA-Z0-9]+/[^\\?\\s]+", "https?://(?:www\\.)?pornfile\\.(?:cz|ulozto\\.net)/[\\!a-zA-Z0-9]+/[^\\?\\s]+" })
 public class UlozTo extends PluginForHost {
-
     private boolean              passwordProtected            = false;
     private static final String  REPEAT_CAPTCHA               = "REPEAT_CAPTCHA";
     private static final String  CAPTCHA_TEXT                 = "CAPTCHA_TEXT";
@@ -147,7 +146,8 @@ public class UlozTo extends PluginForHost {
                 br.setFollowRedirects(false);
             } else if (br.containsHTML("id=\"frm\\-askAgeForm\"")) {
                 /*
-                 * 2016-05-24: Uloz.to recognizes porn files and moves them from uloz.to to pornfile.cz (usually with the same filename- and link-ID.
+                 * 2016-05-24: Uloz.to recognizes porn files and moves them from uloz.to to pornfile.cz (usually with the same filename- and
+                 * link-ID.
                  */
                 this.br.setFollowRedirects(true);
                 /* Agree to redirect from uloz.to to pornfile.cz */
@@ -379,6 +379,7 @@ public class UlozTo extends PluginForHost {
                     br2.setDebug(true);
                     con = br2.openGetConnection(dllink);
                     if (!con.getContentType().contains("html")) {
+                        dllink = con.getRequest().getUrl();
                         failed = false;
                         break;
                     } else {
@@ -394,8 +395,8 @@ public class UlozTo extends PluginForHost {
                             // Error in user authentication, try again
                             throw new PluginException(LinkStatus.ERROR_RETRY);
                         }
-                        br.clearCookies("//ulozto.net/");
-                        br.clearCookies("//uloz.to/");
+                        br.clearCookies("ulozto.net");
+                        br.clearCookies("uloz.to");
                         dllink = handleDownloadUrl(downloadLink);
                         if (dllink != null) {
                             failed = false;
@@ -412,17 +413,20 @@ public class UlozTo extends PluginForHost {
             }
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (dllink.contains("/error404/?fid=file_not_found")) {
+            } else if (dllink.contains("/error404/?fid=file_not_found")) {
                 logger.info("The user entered the correct captcha but this file is offline...");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (failed) {
+            } else if (failed) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
+            try {
+                br.followConnection();
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
@@ -435,7 +439,6 @@ public class UlozTo extends PluginForHost {
                 }
             }
             logger.warning("The finallink doesn't seem to be a file: " + dllink);
-            br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty("directlink_free", dllink);
@@ -531,13 +534,12 @@ public class UlozTo extends PluginForHost {
     @SuppressWarnings("deprecation")
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         br = new Browser();
+        login(account, false);
         if (account.getType() == AccountType.FREE) {
             /* Free Account */
-            login(account, false);
             doFree(link);
         } else {
             /* Premium Account */
-            login(account, false);
             requestFileInformation(link);
             String dllink = finalDirectDownloadURL;
             if (dllink == null) {
@@ -704,8 +706,8 @@ public class UlozTo extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree which
-     * allows the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
+     * which allows the next singleton download to start, or at least try.
      *
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
