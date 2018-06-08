@@ -83,6 +83,7 @@ AdvancedSettings_onShow_title_=Ako je ikada bilo ikakve garancije za bilo šta, 
 AdvancedTableModel_initColumns_desc_=Opis
 AdvancedTableModel_initColumns_key_=Ključ
 AdvancedTableModel_initColumns_type_=Tip
+AdvancedTable_onContextMenu_advanced_value_edit=Napredni uređivač za ovu vrijednosti
 AdvancedTable_onContextMenu_reset_selection=Resetuj selektovane unose na unaprijed podrazumijevane vrijednsoti
 AdvancedTablecontextmenu_reset=Da li stvarno želite da resetujete %s1 naprednih konfiguracijskih postavki na podrazumijevane vrijednosti?
 AdvancedValueColumn_AdvancedValueColumn_object_=Vrijednost
