@@ -25,15 +25,6 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -55,18 +46,27 @@ import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "up-4ever.com" }, urls = { "https?://(?:www\\.)?up\\-4ever\\.com/(?:(?:embed\\-)?[a-z0-9]{12}|d/[A-Za-z0-9]+)" })
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "up-4ever.com", "up-4.net" }, urls = { "", "https?://(?:www\\.)?(up\\-4ever\\.com|up-4\\.net)/(?:(?:embed\\-)?[a-z0-9]{12}|d/[A-Za-z0-9]+)" })
 public class Up4everCom extends antiDDoSForHost {
     /* Some HTML code to identify different (error) states */
     private static final String  HTML_PASSWORDPROTECTED             = "<br><b>Passwor(d|t):</b> <input";
     private static final String  HTML_MAINTENANCE_MODE              = ">This server is in maintenance mode";
     /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
-    private static final String  COOKIE_HOST                        = "https://www.up-4ever.com";
+    private static final String  COOKIE_HOST                        = "https://www.up-4.net";
     private static final String  NICE_HOST                          = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String  NICE_HOSTproperty                  = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String  DOMAINS                            = "(up\\-4ever\\.com)";
+    private static final String  DOMAINS                            = "(up\\-4ever\\.com|up-4\\.net)";
     /* Errormessages inside URLs */
     private static final String  URL_ERROR_PREMIUMONLY              = "/?op=login&redirect=";
     /* All kinds of XFS-plugin-configuration settings - be sure to configure this correctly when developing new XFS plugins! */
@@ -151,7 +151,7 @@ public class Up4everCom extends antiDDoSForHost {
     }
 
     private String buildDownloadURL(final String fuid) {
-        return String.format("%s%s/%s", correctProtocol("https://"), this.getHost(), fuid);
+        return String.format("%s%s/%s", correctProtocol("https://"), NICE_HOST, fuid);
     }
 
     @Override
@@ -389,7 +389,7 @@ public class Up4everCom extends antiDDoSForHost {
         }
         String filesize = null;
         try {
-            postPage(br, correctProtocol("https://") + "www." + this.getHost() + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(buildDownloadURL(fid)), false);
+            postPage(br, correctProtocol("https://") + "www." + NICE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(buildDownloadURL(fid)), false);
             filesize = br.getRegex(fid + "</td>\\s*?<td style=\"color:green;\">Found</td>\\s*?<td>([^<>\"]*?)</td>").getMatch(0);
         } catch (final Throwable e) {
         }
@@ -1273,7 +1273,7 @@ public class Up4everCom extends antiDDoSForHost {
                 br = new Browser();
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force) {
-                    br.setCookies(this.getHost(), cookies);
+                    br.setCookies(COOKIE_HOST, cookies);
                     return;
                 }
                 br.setFollowRedirects(true);
@@ -1290,7 +1290,7 @@ public class Up4everCom extends antiDDoSForHost {
                 }
                 // recaptcha v2
                 if (loginform.containsHTML("\"g-recaptcha\"")) {
-                    final DownloadLink dummyLink = new DownloadLink(this, "Account Login", getHost(), getHost(), true);
+                    final DownloadLink dummyLink = new DownloadLink(this, "Account Login", COOKIE_HOST, COOKIE_HOST, true);
                     final DownloadLink odl = this.getDownloadLink();
                     this.setDownloadLink(dummyLink);
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
@@ -1319,7 +1319,7 @@ public class Up4everCom extends antiDDoSForHost {
                 } else {
                     account.setType(AccountType.PREMIUM);
                 }
-                account.saveCookies(br.getCookies(this.getHost()), "");
+                account.saveCookies(br.getCookies(COOKIE_HOST), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;
