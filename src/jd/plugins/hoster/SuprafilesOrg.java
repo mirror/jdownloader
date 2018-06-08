@@ -196,7 +196,7 @@ public class SuprafilesOrg extends antiDDoSForHost {
         getPage(link.getPluginPatternMatcher());
         setFUID(link);
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
-            if (!br.containsHTML("hidden\">File Not Found</font>")) {
+            if (!br.containsHTML("hidden\"\\s*>\\s*File Not Found\\s*</font>") && !br.containsHTML("hidden\"\\s*>\\s*No such file\\s*</font>")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }
