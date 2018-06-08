@@ -233,7 +233,7 @@ public class NitroFlareCom extends antiDDoSForHost {
     private AvailableStatus requestFileInformationWeb(final DownloadLink link) throws Exception {
         br.setFollowRedirects(true);
         getPage(link.getDownloadURL());
-        if (br.containsHTML(">File doesn't exist<|This file has been removed due|>\\s*This file has been removed by its owner\\.\\s*<")) {
+        if (br.containsHTML(">\\s*This file has been removed|>\\s*File doesn't exist<|This file has been removed due|>\\s*This file has been removed by its owner")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<b>File Name: </b><span title=\"([^<>\"]*?)\"").getMatch(0);

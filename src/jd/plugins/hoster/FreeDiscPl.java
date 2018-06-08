@@ -71,7 +71,6 @@ public class FreeDiscPl extends PluginForHost {
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-    private static final String  KNOWN_EXTENSIONS             = "asf|avi|flv|m4u|m4v|mov|mkv|mp4|mpeg4?|mpg|ogm|vob|wmv|webm";
     protected static Cookies     botSafeCookies               = new Cookies();
 
     private Browser prepBR(final Browser br) {
@@ -208,19 +207,6 @@ public class FreeDiscPl extends PluginForHost {
                     }
                     if (dllink != null) {
                         logger.info("Stream download handling seems to have worked successfully");
-                        String ext = null;
-                        final String currentFname = downloadLink.getName();
-                        if (currentFname.contains(".")) {
-                            ext = currentFname.substring(currentFname.lastIndexOf("."));
-                        }
-                        if (ext == null || (ext != null && ext.length() <= 5)) {
-                            downloadLink.setFinalFileName(downloadLink.getName() + ".mp4");
-                        } else if (ext.length() > 5) {
-                            ext = dllink.substring(dllink.lastIndexOf(".") + 1);
-                            if (ext.matches(KNOWN_EXTENSIONS)) {
-                                downloadLink.setFinalFileName(downloadLink.getName() + "." + ext);
-                            }
-                        }
                         downloadLink.setProperty("isvideo", true);
                     } else {
                         logger.info("Stream download handling seems to have failed");

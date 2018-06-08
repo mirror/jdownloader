@@ -296,7 +296,6 @@ public class UlozTo extends PluginForHost {
             if (passwordProtected) {
                 handlePassword(downloadLink);
             }
-            final Browser br2 = br.cloneBrowser();
             boolean failed = true;
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             Browser cbr = null;
@@ -374,41 +373,43 @@ public class UlozTo extends PluginForHost {
                 if (dllink == null) {
                     break;
                 }
-                URLConnectionAdapter con = null;
-                try {
-                    br2.setDebug(true);
-                    con = br2.openGetConnection(dllink);
-                    if (!con.getContentType().contains("html")) {
-                        dllink = con.getRequest().getUrl();
-                        failed = false;
-                        break;
-                    } else {
-                        br2.followConnection();
-                        if (br2.containsHTML("Stránka nenalezena")) {
-                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                        }
-                        if (br2.containsHTML("dla_backend/uloz\\.to\\.overloaded\\.html")) {
-                            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available", 10 * 60 * 1000l);
-                        }
-                        if (br2.containsHTML("Chyba při ověření uživatele, zkus to znovu|Nastala chyba při odeslání textu\\. Znovu opiš text z obrázku\\.")) {
-                            /* \"errors\":\\[\"Chyba při ověření uživatele, zkus to znovu */
-                            // Error in user authentication, try again
-                            throw new PluginException(LinkStatus.ERROR_RETRY);
-                        }
-                        br.clearCookies("ulozto.net");
-                        br.clearCookies("uloz.to");
-                        dllink = handleDownloadUrl(downloadLink);
-                        if (dllink != null) {
+                dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 1);
+                if (!dl.getConnection().getContentType().contains("html") || dl.getConnection().isContentDisposition()) {
+                    failed = false;
+                    break;
+                } else {
+                    try {
+                        br.followConnection();
+                    } catch (final IOException e) {
+                        logger.log(e);
+                    }
+                    if (br.containsHTML("Stránka nenalezena")) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    } else if (br.containsHTML("dla_backend/uloz\\.to\\.overloaded\\.html")) {
+                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available", 10 * 60 * 1000l);
+                    } else if (br.containsHTML("Chyba při ověření uživatele, zkus to znovu|Nastala chyba při odeslání textu\\. Znovu opiš text z obrázku\\.")) {
+                        /* \"errors\":\\[\"Chyba při ověření uživatele, zkus to znovu */
+                        // Error in user authentication, try again
+                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                    }
+                    br.clearCookies("ulozto.net");
+                    br.clearCookies("uloz.to");
+                    dllink = handleDownloadUrl(downloadLink);
+                    if (dllink != null) {
+                        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 1);
+                        if (!dl.getConnection().getContentType().contains("html") || dl.getConnection().isContentDisposition()) {
                             failed = false;
                             break;
+                        } else {
+                            try {
+                                br.followConnection();
+                            } catch (final IOException e) {
+                                logger.log(e);
+                            }
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
-                        continue;
                     }
-                } finally {
-                    try {
-                        con.disconnect();
-                    } catch (Throwable e) {
-                    }
+                    continue;
                 }
             }
             if (dllink == null) {
@@ -420,7 +421,9 @@ public class UlozTo extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 1);
+        if (dl == null) {
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 1);
+        }
         if (dl.getConnection().getContentType().contains("html")) {
             try {
                 br.followConnection();
