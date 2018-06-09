@@ -26,6 +26,7 @@ import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -77,15 +78,15 @@ public class BoxCom extends antiDDoSForDecrypt {
                     return decryptedLinks;
                 }
                 // single link should still have fuid
-                final String fuid = br.getRegex("data-typed-id=\"f_(\\d+)\"").getMatch(0);
-                final String filename = br.getRegex("<span class=\"item-name\">(.*?)</span>").getMatch(0);
+                final String fuid = br.getRegex("typedID\":\"f_(\\d+)\"").getMatch(0);
+                final String filename = br.getRegex("\"name\":\"([^<>\"]*?)\"").getMatch(0);
                 if (fuid == null) {
                     if (br.containsHTML("/login\\?redirect_url=" + Pattern.quote(br._getURL().getPath()))) {
                         // login required
                         decryptedLinks.add(createOfflinelink(cryptedlink, filename, "Login Required, unsupported feature"));
                         return decryptedLinks;
                     }
-                    return null;
+                    throw new DecrypterException("Decrypter broken for link: " + cryptedlink);
                 }
                 final String url = br.getURL() + "/file/" + fuid;
                 final DownloadLink dl = createDownloadlink(url);
