@@ -22,7 +22,6 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -106,22 +105,24 @@ public class BoxCom extends antiDDoSForDecrypt {
         // 20170711
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final HashSet<String> dupe = new HashSet<String>();
-        final String fpName = br.getRegex("title=\"(.*?)\"[^>]*>\\1</a>").getMatch(0);
+        final String fpName = br.getRegex("\"currentFolderName\":\"([^\"]*?)\"").getMatch(0);
         final FilePackage fp = fpName != null ? FilePackage.getInstance() : null;
         if (fp != null) {
             fp.setName(Encoding.htmlDecode(fpName));
         }
         do {
-            final String[] results = br.getRegex("<li class=\"tbl-list-item.*?</div>\\s*</li>").getColumn(-1);
+            // final String[] results = br.getRegex("<li class=\"tbl-list-item.*?</div>\\s*</li>").getColumn(-1);
+            final String[] results = br.getRegex("(\\{\"typedID\".*?\\]\\}\\})").getColumn(0);
             if (results != null && results.length > 0) {
+                logger.info("Links found: " + results.length);
                 for (final String result : results) {
-                    final String type = new Regex(result, "data-item-type=\"(\\w+)\"").getMatch(0);
+                    final String type = new Regex(result, "\"type\":\"([^\"]*?)\"").getMatch(0);
                     final String url = new Regex(result, "<a href=\"(/.*?)\"").getMatch(0);
                     if ("file".equals(type)) {
-                        final String size = new Regex(result, "data-size=\"(\\d+)\"").getMatch(0);
-                        final String filename = new Regex(result, "data-name=\"(.*?)\"").getMatch(0);
-                        final String fuid = new Regex(result, "data-id=\"f_(\\d+)\"").getMatch(0);
-                        final String link = Request.getLocation(url, br.getRequest());
+                        final String size = new Regex(result, "\"itemSize\":(\\d+),").getMatch(0);
+                        final String filename = new Regex(result, "\"name\":\"([^\"]*?)\"").getMatch(0);
+                        final String fuid = new Regex(result, "\"typedID\":\"f_(\\d+)\"").getMatch(0);
+                        final String link = new Regex(cryptedlink, "(.*?)/folder/\\d+").getMatch(0) + "/file/" + fuid;
                         if (!dupe.add(link)) {
                             continue;
                         }
@@ -137,8 +138,8 @@ public class BoxCom extends antiDDoSForDecrypt {
                         distribute(dl);
                     } else {
                         // directory
-                        final String duid = new Regex(result, "data-id=\"d_(\\d+)\"").getMatch(0);
-                        final String link = Request.getLocation(url, br.getRequest());
+                        final String duid = new Regex(result, "\"typedID\":\"d_(\\d+)\"").getMatch(0);
+                        final String link = cryptedlink + "/folder/" + duid;
                         if (!dupe.add(link)) {
                             continue;
                         }
