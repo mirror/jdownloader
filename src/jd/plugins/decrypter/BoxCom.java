@@ -34,7 +34,8 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "box.com" }, urls = { "https?://(?:\\w+\\.)*box\\.(?:net|com)/s(?:hared)?/(?:[a-z0-9]{32}|[a-z0-9]{20})(?:/folder/\\d+)?" })
 public class BoxCom extends antiDDoSForDecrypt {
-    private static final String TYPE_APP = "https?://(?:\\w+\\.)*box\\.(?:net|com)/s(?:hared)?/(?:[a-z0-9]{32}|[a-z0-9]{20})(?:/folder/\\d+)?";
+    private static final String TYPE_APP    = "https?://(?:\\w+\\.)*box\\.(?:net|com)/s(?:hared)?/(?:[a-z0-9]{32}|[a-z0-9]{20})(?:/folder/\\d+)?";
+    private String              cryptedlink = null;
 
     public BoxCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -44,7 +45,7 @@ public class BoxCom extends antiDDoSForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink parameter, final ProgressController progress) throws Exception {
         br = new Browser();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String cryptedlink = parameter.toString().replace("box.net/", "box.com/");
+        cryptedlink = parameter.toString().replace("box.net/", "box.com/");
         logger.finer("Decrypting: " + cryptedlink);
         br.setFollowRedirects(true);
         // our default is german, this returns german!!
@@ -117,12 +118,13 @@ public class BoxCom extends antiDDoSForDecrypt {
                 logger.info("Links found: " + results.length);
                 for (final String result : results) {
                     final String type = new Regex(result, "\"type\":\"([^\"]*?)\"").getMatch(0);
-                    final String url = new Regex(result, "<a href=\"(/.*?)\"").getMatch(0);
                     if ("file".equals(type)) {
                         final String size = new Regex(result, "\"itemSize\":(\\d+),").getMatch(0);
                         final String filename = new Regex(result, "\"name\":\"([^\"]*?)\"").getMatch(0);
                         final String fuid = new Regex(result, "\"typedID\":\"f_(\\d+)\"").getMatch(0);
-                        final String link = new Regex(cryptedlink, "(.*?)/folder/\\d+").getMatch(0) + "/file/" + fuid;
+                        final String link = new Regex(cryptedlink, "(https?://[^/]*?box.com/s/[a-z0-9]+)").getMatch(0) + "/file/" + fuid;
+                        // logger.info("cryptedlink: " + cryptedlink);
+                        // logger.info("link: " + link);
                         if (!dupe.add(link)) {
                             continue;
                         }
@@ -158,6 +160,13 @@ public class BoxCom extends antiDDoSForDecrypt {
     }
 
     private boolean hasNextPage() throws Exception {
+        final int pageCount = Integer.parseInt(br.getRegex("\"pageCount\":(\\d+),").getMatch(0));
+        final int pageNumber = Integer.parseInt(br.getRegex("\"pageNumber\":(\\d+),").getMatch(0));
+        if (pageCount > pageNumber) {
+            final int nextPage = pageNumber + 1;
+            br.getPage(cryptedlink + "?page=" + nextPage);
+            return true;
+        }
         final String r = "<a href=\"([^\"]+pageNumber=\\d+)\"[^>]+aria-label=\"Next Page\"[^>]+";
         final String result = br.getRegex(r).getMatch(-1);
         final boolean nextPage = result != null ? !new Regex(result, "btn page-forward is-disabled").matches() : false;
