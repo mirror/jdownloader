@@ -13,15 +13,13 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -38,16 +36,17 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "esoubory.cz" }, urls = { "http://(www\\.)?esoubory\\.cz/soubor/[a-z0-9]+/([a-z0-9\\-]+/|[a-z0-9\\-]+\\.html)" })
 public class EsouboryCz extends PluginForHost {
-
     public EsouboryCz(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.esoubory.cz/credits/buy/");
     }
 
     /* Using similar API (and same owner): esoubory.cz, filesloop.com */
-
     @Override
     public String getAGBLink() {
         return "http://www.esoubory.cz/";
@@ -104,7 +103,8 @@ public class EsouboryCz extends PluginForHost {
             if (br.getURL().contains("/search/")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final Regex linkinfo = br.getRegex("<h1>([^<>\"]*?)<span class=\"bluetext upper\">\\(([^<>\"]*?)\\)</span>");
+            // final Regex linkinfo = br.getRegex("<h1>([^<>\"]*?)<span class=\"bluetext upper\">\\(([^<>\"]*?)\\)</span>");
+            final Regex linkinfo = br.getRegex("<h1>\\s*([^<>\\(]*?)\\((\\d+(,\\d+)? (K|M|G)B)\\)\\s*</h1>");
             filename = linkinfo.getMatch(0);
             filesize = linkinfo.getMatch(1);
             if (filename == null || filesize == null) {
@@ -168,7 +168,6 @@ public class EsouboryCz extends PluginForHost {
 
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap != null) {
@@ -184,7 +183,6 @@ public class EsouboryCz extends PluginForHost {
                 }
             }
         }
-
         handleDL(link, account);
     }
 
@@ -208,7 +206,6 @@ public class EsouboryCz extends PluginForHost {
             ai.setMultiHostSupport(this, supportedHosts);
         }
         ai.setStatus("Premium account");
-
         return ai;
     }
 
@@ -281,5 +278,4 @@ public class EsouboryCz extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
