@@ -87,12 +87,14 @@ public class BoxCom extends antiDDoSForHost {
             if (isOffline(br)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final String results = br.getRegex("<script type=\"text/x-config\">\\s*.*?\"fileName\".*?</script>").getMatch(-1);
+            // final String results = br.getRegex("<script type=\"text/x-config\">\\s*.*?\"fileName\".*?</script>").getMatch(-1);
+            final String results = br.getRegex("\"items\":(.*?\\}\\])").getMatch(0);
             if (results == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final String filename = PluginJSonUtils.getJson(results, "fileName");
-            final String filesize = br.getRegex("Size:\\s*([\\d\\.]+\\s*[KMGT]{0,1}B)").getMatch(0);
+            final String filename = PluginJSonUtils.getJson(results, "name");
+            // final String filesize = br.getRegex("Size:\\s*([\\d\\.]+\\s*[KMGT]{0,1}B)").getMatch(0);
+            final String filesize = PluginJSonUtils.getJson(results, "itemSize");
             if (filename == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
