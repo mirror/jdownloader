@@ -104,7 +104,7 @@ public class EsouboryCz extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             // final Regex linkinfo = br.getRegex("<h1>([^<>\"]*?)<span class=\"bluetext upper\">\\(([^<>\"]*?)\\)</span>");
-            final Regex linkinfo = br.getRegex("<h1>\\s*([^<>\\(]*?)\\((\\d+(,\\d+)? (K|M|G)B)\\)\\s*</h1>");
+            final Regex linkinfo = br.getRegex("<h1>\\s*([^<>]*?)\\((\\d+(,\\d+)? (K|M|G)B)\\)\\s*</h1>");
             filename = linkinfo.getMatch(0);
             filesize = linkinfo.getMatch(1);
             if (filename == null || filesize == null) {
