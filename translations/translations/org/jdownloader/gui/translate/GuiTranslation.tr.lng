@@ -83,6 +83,7 @@ AdvancedSettings_onShow_title_=Eğer herhangi birşeyin garantisi vardıysa, son
 AdvancedTableModel_initColumns_desc_=Açıklama
 AdvancedTableModel_initColumns_key_=Anahtar
 AdvancedTableModel_initColumns_type_=Türü
+AdvancedTable_onContextMenu_advanced_value_edit=Bu değer için gelişmiş düzenleyici
 AdvancedTable_onContextMenu_reset_selection=Seçilen girişleri varsayılan değerlere sıfırla
 AdvancedTablecontextmenu_reset=Gerçekten %s1 gelişmiş yapılandırma girişini kendi varsayılan değerlerine sıfırlamak istiyor musunuz?
 AdvancedValueColumn_AdvancedValueColumn_object_=Değer
