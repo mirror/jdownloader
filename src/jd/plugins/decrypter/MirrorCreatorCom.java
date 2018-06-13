@@ -96,7 +96,10 @@ public class MirrorCreatorCom extends PluginForDecrypt {
                 return decryptedLinks;
             }
             // lots of forms
-            final Form[] forms = br.getFormsByActionRegex("/downlink\\.php\\?uid=" + uid);
+            Form[] forms = br.getFormsByActionRegex("/downlink\\.php\\?uid=" + uid);
+            if (forms == null || forms.length == 0) {
+                forms = br.getFormsByActionRegex("/downlink/[A-Z0-9]+");
+            }
             if (forms != null && forms.length > 0) {
                 logger.info("Found " + forms.length + " links");
                 for (final Form form : forms) {
