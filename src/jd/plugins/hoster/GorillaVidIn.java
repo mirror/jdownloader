@@ -37,13 +37,6 @@ import javax.script.ScriptEngineManager;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -74,29 +67,36 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gorillavid.in" }, urls = { "https?://(www\\.)?gorillavid\\.in/((vid)?embed-)?[a-z0-9]{12}" })
 @SuppressWarnings("deprecation")
 public class GorillaVidIn extends PluginForHost {
     // Site Setters
     // primary website url, take note of redirects
-    private final String               COOKIE_HOST                  = "http://gorillavid.in";
+    private final String         COOKIE_HOST                  = "http://gorillavid.in";
     // domain names used within download links.
-    private final String               DOMAINS                      = "(gorillavid\\.in)";
-    private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
-    private final String               MAINTENANCE                  = ">This server is in maintenance mode";
-    private final String               dllinkRegex                  = "https?://\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}(:\\d{1,5})?/(\\d+/)?((?!script/)[a-z0-9]+/)[^/<>\r\n\t]+";
-    private final boolean              supportsHTTPS                = false;
-    private final boolean              enforcesHTTPS                = false;
-    private final boolean              useRUA                       = true;
-    private final boolean              useAltLinkCheck              = false;
-    private final boolean              useVidEmbed                  = false;
-    private final boolean              useAltEmbed                  = true;
-    private final boolean              useAltExpire                 = true;
-    private final long                 useLoginIndividual           = 6 * 3480000l;
-    private final boolean              waitTimeSkipableReCaptcha    = true;
-    private final boolean              waitTimeSkipableSolveMedia   = false;
-    private final boolean              waitTimeSkipableKeyCaptcha   = false;
-    private final boolean              captchaSkipableSolveMedia    = false;
+    private final String         DOMAINS                      = "(gorillavid\\.in)";
+    private final String         PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
+    private final String         MAINTENANCE                  = ">This server is in maintenance mode";
+    private final String         dllinkRegex                  = "https?://\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}(:\\d{1,5})?/(\\d+/)?([a-z0-9]+/)[^/<>\r\n\t]+";
+    private final boolean        supportsHTTPS                = false;
+    private final boolean        enforcesHTTPS                = false;
+    private final boolean        useRUA                       = true;
+    private final boolean        useAltLinkCheck              = false;
+    private final boolean        useVidEmbed                  = false;
+    private final boolean        useAltEmbed                  = true;
+    private final boolean        useAltExpire                 = true;
+    private final long           useLoginIndividual           = 6 * 3480000l;
+    private final boolean        waitTimeSkipableReCaptcha    = true;
+    private final boolean        waitTimeSkipableSolveMedia   = false;
+    private final boolean        waitTimeSkipableKeyCaptcha   = false;
+    private final boolean        captchaSkipableSolveMedia    = false;
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
@@ -541,9 +541,11 @@ public class GorillaVidIn extends PluginForHost {
     private void getDllink() {
         dllink = br.getRedirectLocation();
         if (inValidate(dllink) || (!inValidate(dllink) && !dllink.matches(dllinkRegex))) {
-            dllink = cbr.getRegex("file ?:\"(https?://[^<>\"]*?)\"").getMatch(0);
+            // dllink = cbr.getRegex("file ?:\"(https?://[^<>\"]*?)\"").getMatch(0);
+            dllink = cbr.getRegex("src: '(https?://[^<>']*?.mp4)'").getMatch(0);
             if (inValidate(dllink)) {
                 dllink = regexDllink(cbr.toString());
+                logger.info("dllink: " + dllink);
                 if (inValidate(dllink)) {
                     final String cryptedScripts[] = cbr.getRegex("p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
                     if (cryptedScripts != null && cryptedScripts.length != 0) {
