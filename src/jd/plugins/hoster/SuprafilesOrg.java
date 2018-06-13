@@ -195,9 +195,11 @@ public class SuprafilesOrg extends antiDDoSForHost {
         correctDownloadLink(link);
         getPage(link.getPluginPatternMatcher());
         setFUID(link);
+        Boolean notFound = false;
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
             if (!br.containsHTML("hidden\"\\s*>\\s*File Not Found\\s*</font>") && !br.containsHTML("hidden\"\\s*>\\s*No such file\\s*</font>") && !br.containsHTML("hidden\"\\s*>\\s*The file was removed by\\s*</font>")) {
                 // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                notFound = true;
             }
         }
         altbr = br.cloneBrowser();
@@ -274,6 +276,9 @@ public class SuprafilesOrg extends antiDDoSForHost {
             if (correctedBR.contains("You have reached the download(\\-| )limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
                 return AvailableStatus.UNCHECKABLE;
+            }
+            if (notFound) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             logger.warning("filename equals null, throwing \"plugin defect\"");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
