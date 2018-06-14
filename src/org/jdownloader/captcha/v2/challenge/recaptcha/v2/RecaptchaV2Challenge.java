@@ -6,11 +6,8 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Locale;
 import java.util.regex.Pattern;
-
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.Plugin;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
@@ -25,6 +22,7 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.net.httpserver.requests.GetRequest;
+import org.appwork.utils.net.httpserver.requests.HttpRequest;
 import org.appwork.utils.net.httpserver.requests.PostRequest;
 import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.appwork.utils.parser.UrlQuery;
@@ -38,6 +36,10 @@ import org.jdownloader.captcha.v2.solver.browser.BrowserViewport;
 import org.jdownloader.captcha.v2.solver.browser.BrowserWindow;
 import org.jdownloader.captcha.v2.solver.service.BrowserSolverService;
 import org.jdownloader.gui.translate._GUI;
+
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Plugin;
 
 public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
     public static final String             RAWTOKEN    = "rawtoken";
@@ -569,13 +571,18 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
     }
 
     @Override
-    public String getHTML(String id) {
+    public String getHTML(HttpRequest request, String id) {
         try {
+            final String userAgent = request.getRequestHeaders().getValue(HTTPConstants.HEADER_REQUEST_USER_AGENT);
+            final boolean isSafari = userAgent != null && userAgent.toLowerCase(Locale.ENGLISH).matches("(?s).*^((?!chrome|android|crios|fxios).)*safari.*");
+            final boolean isEdge = userAgent != null && userAgent.toLowerCase(Locale.ENGLISH).matches(".*edge\\/.*");
             final URL url = RecaptchaV2Challenge.class.getResource("recaptcha.html");
             String html = IO.readURLToString(url);
             html = html.replace("%%%headTitle%%%", _GUI.T.recaptchav2_head_title());
             html = html.replace("%%%headDescription%%%", _GUI.T.recaptchav2_head_description());
             html = html.replace("%%%captchaHeader%%%", _GUI.T.recaptchav2_header());
+            html = html.replace("%%%unsupportedBrowserHeader%%%", _GUI.T.extension_unsupported_browser_header());
+            html = html.replace("%%%unsupportedBrowserDescription%%%", _GUI.T.extension_unsupported_browser_description());
             html = html.replace("%%%helpHeader%%%", _GUI.T.extension_help_header());
             html = html.replace("%%%helpDescription%%%", _GUI.T.extension_help_description());
             html = html.replace("%%%helpDescriptionLinkTitle%%%", _GUI.T.extension_help_description_link_title());
@@ -585,6 +592,7 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
             html = html.replace("%%%siteUrl%%%", StringUtils.valueOrEmpty(getSiteUrl()));
             html = html.replace("%%%siteDomain%%%", getSiteDomain());
             html = html.replace("%%%sitekey%%%", getSiteKey());
+            html = html.replace("%%%unsupportedBrowser%%%", (isSafari || isEdge) ? "block" : "none");
             if (isBoundToDomain()) {
                 html = html.replace("%%%display%%%", "none");
                 html = html.replace("%%%noExtensionHeader%%%", _GUI.T.extension_required_header());
