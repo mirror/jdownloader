@@ -11,6 +11,7 @@ import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.net.httpserver.requests.GetRequest;
+import org.appwork.utils.net.httpserver.requests.HttpRequest;
 import org.appwork.utils.net.httpserver.requests.PostRequest;
 import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.jdownloader.captcha.v2.solver.browser.AbstractBrowserChallenge;
@@ -19,7 +20,6 @@ import org.jdownloader.captcha.v2.solver.browser.BrowserReference;
 import jd.plugins.Plugin;
 
 public abstract class GeeTestChallenge extends AbstractBrowserChallenge {
-
     private String siteKey;
 
     public String getSiteKey() {
@@ -32,7 +32,6 @@ public abstract class GeeTestChallenge extends AbstractBrowserChallenge {
         if (siteKey == null || !siteKey.matches("^[a-f0-9]{32}$")) {
             throw new WTFException("Bad SiteKey");
         }
-
     }
 
     @Override
@@ -42,9 +41,7 @@ public abstract class GeeTestChallenge extends AbstractBrowserChallenge {
             browserReference.onResponse(parameter);
             response.setResponseCode(ResponseCode.SUCCESS_OK);
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, "text/html; charset=utf-8"));
-
             response.getOutputStream(true).write("Please Close the Browser now".getBytes("UTF-8"));
-
             return true;
         }
         return super.onGetRequest(browserReference, request, response);
@@ -52,18 +49,15 @@ public abstract class GeeTestChallenge extends AbstractBrowserChallenge {
 
     @Override
     public boolean onPostRequest(BrowserReference browserReference, PostRequest request, HttpResponse response) throws IOException, RemoteAPIException {
-
         return false;
-
     }
 
     @Override
-    public String getHTML(String id) {
+    public String getHTML(HttpRequest request, String id) {
         String html;
         try {
             URL url = GeeTestChallenge.class.getResource("geetestchallenge.html");
             html = IO.readURLToString(url);
-
             html = html.replace("%%%sitekey%%%", siteKey);
             return html;
         } catch (IOException e) {
@@ -94,5 +88,4 @@ public abstract class GeeTestChallenge extends AbstractBrowserChallenge {
     protected final String getSecret() {
         return null;
     }
-
 }

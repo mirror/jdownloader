@@ -11,6 +11,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.HTTPHeader;
+import org.appwork.utils.net.httpserver.requests.HttpRequest;
 import org.appwork.utils.net.httpserver.requests.PostRequest;
 import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.jdownloader.captcha.v2.solver.browser.AbstractBrowserChallenge;
@@ -55,7 +56,7 @@ public abstract class SweetCaptchaChallenge extends AbstractBrowserChallenge {
     }
 
     @Override
-    public String getHTML(String id) {
+    public String getHTML(HttpRequest request, String id) {
         String html;
         try {
             URL url = SweetCaptchaChallenge.class.getResource("sweetcaptcha.html");

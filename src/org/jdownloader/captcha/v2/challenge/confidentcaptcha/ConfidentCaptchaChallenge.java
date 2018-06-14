@@ -5,10 +5,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.Plugin;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
@@ -17,14 +13,18 @@ import org.appwork.remoteapi.exceptions.RemoteAPIException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.utils.IO;
 import org.appwork.utils.net.HTTPHeader;
+import org.appwork.utils.net.httpserver.requests.HttpRequest;
 import org.appwork.utils.net.httpserver.requests.KeyValuePair;
 import org.appwork.utils.net.httpserver.requests.PostRequest;
 import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.jdownloader.captcha.v2.solver.browser.AbstractBrowserChallenge;
 import org.jdownloader.captcha.v2.solver.browser.BrowserReference;
 
-public abstract class ConfidentCaptchaChallenge extends AbstractBrowserChallenge {
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Plugin;
 
+public abstract class ConfidentCaptchaChallenge extends AbstractBrowserChallenge {
     private String siteKey;
 
     public String getSiteKey() {
@@ -50,7 +50,6 @@ public abstract class ConfidentCaptchaChallenge extends AbstractBrowserChallenge
                 t.add(tt);
             }
         }
-
         if (t.size() == 0) {
             // some exception
             throw new BadRequestException("Missing 'confidentcaptcha' values!");
@@ -62,7 +61,6 @@ public abstract class ConfidentCaptchaChallenge extends AbstractBrowserChallenge
         browserReference.onResponse(JSonStorage.serializeToJson(output));
         response.setResponseCode(ResponseCode.SUCCESS_OK);
         response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, "text/html; charset=utf-8"));
-
         response.getOutputStream(true).write("Please Close the Browser now".getBytes("UTF-8"));
         return true;
     }
@@ -99,7 +97,6 @@ public abstract class ConfidentCaptchaChallenge extends AbstractBrowserChallenge
                     c.getHeaders().remove(h3K);
                 }
             }
-
             String postargs = "";
             final List<KeyValuePair> params = request.getPostParameter();
             for (final KeyValuePair param : params) {
@@ -118,12 +115,11 @@ public abstract class ConfidentCaptchaChallenge extends AbstractBrowserChallenge
     }
 
     @Override
-    public String getHTML(String id) {
+    public String getHTML(HttpRequest request, String id) {
         String html;
         try {
             URL url = ConfidentCaptchaChallenge.class.getResource("confidentcaptcha.html");
             html = IO.readURLToString(url);
-
             html = html.replace("%%%sitekey%%%", siteKey);
             return html;
         } catch (IOException e) {
