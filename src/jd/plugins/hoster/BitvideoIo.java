@@ -226,8 +226,8 @@ public class BitvideoIo extends PluginForHost {
                 for (String s : source) {
                     final String d = new Regex(s, "src=(\"|')(.*?)\\1").getMatch(1);
                     final String q = new Regex(s, "data-res=(\"|')(\\d+)p?\\1").getMatch(1);
-                    if (d == null || q == null) {
-                        logger.info("d: " + d + ", q: " + q);
+                    logger.info("d: " + d + ", q: " + q);
+                    if (d == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     if (q != null && d != null) {
@@ -235,6 +235,9 @@ public class BitvideoIo extends PluginForHost {
                             dllink = d;
                             best = Integer.parseInt(q);
                         }
+                    }
+                    if (q == null && d != null && s.contains("data-res=\"Source File\"")) {
+                        dllink = d;
                     }
                 }
             }
