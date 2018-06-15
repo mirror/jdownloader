@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.net.URL;
@@ -44,7 +43,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 // http://tvthek,orf.at/live/... --> HDS
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tvthek.orf.at" }, urls = { "https?://(?:www\\.)?tvthek\\.orf\\.at/(?:index\\.php/)?(?:programs?|topic|profile)/.+" })
 public class ORFMediathekDecrypter extends PluginForDecrypt {
-
     private static final String Q_SUBTITLES   = "Q_SUBTITLES";
     private static final String Q_BEST        = "Q_BEST_2";
     private static final String Q_LOW         = "Q_LOW";
@@ -53,7 +51,6 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
     private static final String Q_VERYHIGH    = "Q_VERYHIGH";
     private static final String HTTP_STREAM   = "HTTP_STREAM";
     private boolean             BEST          = false;
-
     private static final String TYPE_TOPIC    = "http://(www\\.)?tvthek\\.orf\\.at/topic/.+";
     private static final String TYPE_PROGRAMM = "http://(www\\.)?tvthek\\.orf\\.at/programs?/.+";
 
@@ -89,9 +86,7 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
             decryptedLinks.add(link);
             return decryptedLinks;
         }
-
         decryptedLinks.addAll(getDownloadLinks(parameter, cfg));
-
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
             if (parameter.matches(TYPE_TOPIC)) {
                 logger.warning("MAYBE Decrypter out of date for link: " + parameter);
@@ -106,7 +101,7 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
     @SuppressWarnings({ "deprecation", "unchecked", "unused", "rawtypes" })
     private ArrayList<DownloadLink> getDownloadLinks(final String data, final SubConfiguration cfg) {
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String nicehost = new Regex(data, "http://(?:www\\.)?([^/]+)").getMatch(0);
+        final String nicehost = new Regex(data, "https?://(?:www\\.)?([^/]+)").getMatch(0);
         final String decryptedhost = "http://" + nicehost + "decrypted";
         String id_episode = null;
         String date_formatted = null;
@@ -114,10 +109,8 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
         if (date != null) {
             date_formatted = formatDate(date);
         }
-
         try {
             String json = this.br.getRegex("class=\"jsb_ jsb_VideoPlaylist\" data\\-jsb=\"([^<>\"]+)\"").getMatch(0);
-
             if (json != null) {
                 String quality = null, key = null, title = null;
                 /* jsonData --> HashMap */
@@ -132,7 +125,6 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                 }
                 ArrayList<Object> video = (ArrayList) entries.get("videos");
                 ArrayList<DownloadLink> part = new ArrayList<DownloadLink>();
-
                 if (title == null) {
                     title = getTitle(br);
                 }
@@ -144,7 +136,6 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                 if (br.getRegex("new MediaCollection\\(\"audio\",").matches()) {
                     extension = ".mp3";
                 }
-
                 for (final Object videoo : video) {
                     final LinkedHashMap<String, Object> entries_video = (LinkedHashMap<String, Object>) videoo;
                     final ArrayList<Object> sources_video = (ArrayList) entries_video.get("sources");
@@ -154,7 +145,6 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                     if (id_individual_video.equals("0")) {
                         return null;
                     }
-
                     final String description = (String) entries_video.get("description");
                     String titlethis = (String) entries_video.get("title");
                     if (titlethis == null) {
@@ -163,7 +153,6 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                     if (titlethis != null && titlethis.length() > 80) {
                         titlethis = titlethis.substring(0, 80);
                     }
-
                     String vIdTemp = "";
                     String bestFMT = null;
                     String subtitle = null;
@@ -175,12 +164,10 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                         fp = FilePackage.getInstance();
                         fp.setName(fpName);
                     }
-
                     for (final Object sourceo : sources_video) {
                         subtitle = null;
                         is_best = false;
                         final LinkedHashMap<String, Object> entry_source = (LinkedHashMap<String, Object>) sourceo;
-
                         /* Backward compatibility with xml method */
                         final String url_directlink_video = (String) entry_source.get("src");
                         String fmt = (String) entry_source.get("quality");
@@ -202,7 +189,6 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                             }
                         }
                         long filesize = 0;
-
                         // available protocols: http, rtmp, rtsp, hds, hls
                         if (!"http".equals(protocol) || !"progressive".equals(delivery)) {
                             continue;
@@ -211,29 +197,24 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                         // if (cfg.getBooleanProperty(HTTP_STREAM, false) && "rtmp".equals(protocol)) {
                         // continue;
                         // }
-
                         if (url_directlink_video == null || isEmpty(fmt)) {
                             continue;
                         }
                         final String selector = protocol + delivery;
-
                         String fileName = titlethis + "@" + selector;
                         fileName += "_" + id_episode + "_" + id_individual_video;
                         fileName += "@" + humanReadableQualityIdentifier(fmt.toUpperCase(Locale.ENGLISH).trim());
                         fileName = fileName.replaceAll("\"", "");
                         fileName = fileName.replaceAll(":\\s|\\s\\|\\s", " - ").trim();
-
                         final String ext_from_directurl = getFileNameExtensionFromString(url_directlink_video);
                         if (ext_from_directurl.length() == 4) {
                             extension = ext_from_directurl;
                         }
                         fmt = humanReadableQualityIdentifier(fmt.toUpperCase(Locale.ENGLISH).trim());
-
                         boolean sub = true;
                         if (fileName.equals(vIdTemp)) {
                             sub = false;
                         }
-
                         if ("VERYHIGH".equals(fmt) || BEST) {
                             /*
                              * VERYHIGH is always available but is not always REALLY available which means we have to check this here and
@@ -303,7 +284,6 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                             /* Server filename should always be available! */
                             linkid_video += server_filename;
                         }
-
                         link.setFinalFileName(final_filename_video);
                         link.setContentUrl(data);
                         link.setProperty("directURL", url_directlink_video);
@@ -327,7 +307,6 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                             link._setFilePackage(fp);
                         }
                         link.setLinkID(linkid_video);
-
                         if (bestQuality == null || link.getDownloadSize() > bestQuality.getDownloadSize()) {
                             bestQuality = link;
                             is_best = true;
@@ -451,5 +430,4 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
