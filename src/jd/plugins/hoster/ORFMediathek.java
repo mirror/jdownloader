@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -33,12 +32,10 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "orf.at" }, urls = { "http://tvthek\\.orf\\.atdecrypted\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "orf.at" }, urls = { "https?://tvthek\\.orf\\.atdecrypted\\d+" })
 public class ORFMediathek extends PluginForHost {
-
-    private static final String NEW_URLFORMAT = "http://tvthek\\.orf\\.atdecrypted\\d+";
-    private static final String TYPE_AUDIO    = "http://ooe\\.orf\\.at/radio/stories/\\d+/";
-
+    private static final String NEW_URLFORMAT = "https?://tvthek\\.orf\\.atdecrypted\\d+";
+    private static final String TYPE_AUDIO    = "https?://ooe\\.orf\\.at/radio/stories/\\d+/";
     private static final String Q_SUBTITLES   = "Q_SUBTITLES";
     private static final String Q_BEST        = "Q_BEST_2";
     private static final String Q_LOW         = "Q_LOW";
@@ -83,7 +80,7 @@ public class ORFMediathek extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             br.getPage("http://bits.orf.at/filehandler/static-api/json/current/data.json?file=" + audioID);
-            dllink = br.getRegex("\"url\":\"(http[^<>\"]*?)\"").getMatch(0);
+            dllink = br.getRegex("\"url\":\"(https?[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -220,5 +217,4 @@ public class ORFMediathek extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), HTTP_STREAM, JDL.L("plugins.hoster.orf.loadhttp", "Load http streams ONLY")).setDefaultValue(true).setEnabled(false));
     }
-
 }

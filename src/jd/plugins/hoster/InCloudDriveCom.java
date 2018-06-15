@@ -41,7 +41,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "inclouddrive.com" }, urls = { "https?://(www\\.)?inclouddrive\\.com/(link_download/\\?token=[A-Za-z0-9=_]+|(?:#/)?((?:file_download|link)/[0-9a-zA-Z=_-]+(?:/[^/]+)?|file/[0-9a-zA-Z=_-]+/[^/]+))" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "inclouddrive.com" }, urls = { "https?://(www\\.)?inclouddrive\\.com/(link_download/\\?token=[A-Za-z0-9=_]+|(?:#/)?((?:file_download|link)/[0-9a-zA-Z=_-]+(?:/[^/]+)?|file/[0-9a-zA-Z=_-]+/[^/]+))" })
 public class InCloudDriveCom extends PluginForHost {
     // DEV NOTE:
     // links are not correctable to a standard url format
@@ -148,20 +148,27 @@ public class InCloudDriveCom extends PluginForHost {
         doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
+    private void checkErrors(Browser br, DownloadLink downloadLink) throws PluginException {
+        if (br.containsHTML(">we are performing a service upgrade please try again!")) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Maintenance is being done", 1 * 60 * 60 * 1000l);
+        }
+        if (br.containsHTML(">As a Free User; You cannot download more then one file at the moment")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+        }
+        if (downloadLink.getBooleanProperty("premiumRequired", false)) {
+            // canHandle for JD2, non JD2 here.
+            premiumDownloadRestriction(downloadLink, downloadLink.getStringProperty("premiumRestrictionMsg", null));
+        }
+        // premium only check can be done here now (20141117)
+        if (br.containsHTML(">The requested file is too? big for a guest or free download|>This link only for premium user")) {
+            premiumDownloadRestriction(downloadLink, "The requested file is to big / only for premium user");
+        }
+    }
+
     public void doFree(final DownloadLink downloadLink, final boolean resume, final int maxchunks, final String directlinkparam) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, directlinkparam);
         if (dllink == null) {
-            if (br.containsHTML(">we are performing a service upgrade please try again!")) {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Maintenance is being done", 1 * 60 * 60 * 1000l);
-            }
-            if (downloadLink.getBooleanProperty("premiumRequired", false)) {
-                // canHandle for JD2, non JD2 here.
-                premiumDownloadRestriction(downloadLink, downloadLink.getStringProperty("premiumRestrictionMsg", null));
-            }
-            // premium only check can be done here now (20141117)
-            if (br.containsHTML(">The requested file is to big for a guest or free download|>This link only for premium user")) {
-                premiumDownloadRestriction(downloadLink, "The requested file is to big / only for premium user");
-            }
+            checkErrors(br, downloadLink);
             final String token = Encoding.urlDecode(br.getRegex("freetoken=\"(.*?)\"").getMatch(0), false);
             final String predlwait = br.getRegex("id=\"freetimer\"[^>]*>*(\\d+)</div>").getMatch(0);
             final String dlserver = br.getRegex("freeaccess=\"(.*?)\"").getMatch(0);
@@ -201,6 +208,7 @@ public class InCloudDriveCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            checkErrors(br, downloadLink);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty(directlinkparam, dllink);

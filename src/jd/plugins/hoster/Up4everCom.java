@@ -66,7 +66,7 @@ public class Up4everCom extends antiDDoSForHost {
     private static final String  NICE_HOST                          = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String  NICE_HOSTproperty                  = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String  DOMAINS                            = "(up\\-4ever\\.com|up-4\\.net)";
+    private static final String  DOMAINS                            = "(up\\-4ever\\.com|up-4\\.net|up4ever.download)";
     /* Errormessages inside URLs */
     private static final String  URL_ERROR_PREMIUMONLY              = "/?op=login&redirect=";
     /* All kinds of XFS-plugin-configuration settings - be sure to configure this correctly when developing new XFS plugins! */

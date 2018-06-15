@@ -15,6 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.util.Map;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
@@ -24,6 +26,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
@@ -72,7 +76,7 @@ public class DbrEe extends antiDDoSForHost {
     }
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        final Form form = br.getFormbyActionRegex(".*/d$");
+        final Form form = br.getFormbyActionRegex(".*/d.*?$");
         if (form == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -82,7 +86,13 @@ public class DbrEe extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, resumable, maxchunks);
+        br.submitForm(form);
+        final Map<String, Object> response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final String download_url = response != null ? (String) response.get("download_url") : null;
+        if (download_url == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, download_url, resumable, maxchunks);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

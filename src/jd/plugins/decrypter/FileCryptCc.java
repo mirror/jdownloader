@@ -238,7 +238,8 @@ public class FileCryptCc extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             } else if (StringUtils.containsIgnoreCase(captcha, "cutcaptcha")) {
                 logger.info("cutcaptcha captcha is not yet supported:retry left:" + cutCaptcha);
-                if (cutCaptcha-- == 0) {
+                if (cutCaptcha-- == 0 || true) {
+                    // fallback to rc2 no longer working
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 } else {
                     counter--;

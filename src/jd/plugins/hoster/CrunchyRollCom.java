@@ -40,23 +40,6 @@ import javax.xml.bind.DatatypeConverter;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
-import org.appwork.utils.formatter.TimeFormatter;
-import org.bouncycastle.crypto.BufferedBlockCipher;
-import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.engines.AESEngine;
-import org.bouncycastle.crypto.modes.CBCBlockCipher;
-import org.bouncycastle.crypto.params.KeyParameter;
-import org.bouncycastle.crypto.params.ParametersWithIV;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.w3c.dom.DOMException;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -74,6 +57,23 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.TimeFormatter;
+import org.bouncycastle.crypto.BufferedBlockCipher;
+import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.engines.AESEngine;
+import org.bouncycastle.crypto.modes.CBCBlockCipher;
+import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.w3c.dom.DOMException;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "crunchyroll.com" }, urls = { "http://(?:\\w+.\\w+|www)\\.crunchyroll\\.com/(xml/\\?req=RpcApiVideoPlayer_GetStandardConfig\\&media_id=[0-9]+.*|xml/\\?req=RpcApiSubtitle_GetXml\\&subtitle_script_id=[0-9]+.*|i/croll_manga/e/\\w+)" })
 public class CrunchyRollCom extends antiDDoSForHost {
@@ -506,15 +506,16 @@ public class CrunchyRollCom extends antiDDoSForHost {
     }
 
     /**
-     * Pad and format version numbers so that the String.compare() method can be used simply. ("9.10.2", ".", 4) would result in "000900100002".
+     * Pad and format version numbers so that the String.compare() method can be used simply. ("9.10.2", ".", 4) would result in
+     * "000900100002".
      *
      * @param version
      *            The version number string to format (e.g. '9.10.2')
      * @param sep
      *            The character(s) to split the numbers by (e.g. '.')
      * @param maxWidth
-     *            The number of digits to pad the numbers to (e.g. 5 would make '12' become '00012'). Note that numbers which exceed this are
-     *            not truncated.
+     *            The number of digits to pad the numbers to (e.g. 5 would make '12' become '00012'). Note that numbers which exceed this
+     *            are not truncated.
      * @return The formatted version number ready to be compared
      */
     private String normaliseRtmpVersion(final String version, final String sep, final int maxWidth) {
@@ -586,16 +587,17 @@ public class CrunchyRollCom extends antiDDoSForHost {
                 final long respCode = conn.getResponseCode();
                 final long length = conn.getLongContentLength();
                 final String contType = conn.getContentType();
-                if (respCode == 200 && contType.endsWith("xml")) {
+                if (respCode == 200 && contType != null && contType.contains("text/xml")) {
                     // Check if the file is too small to be subtitles
                     // 20130719 length isn't given anymore so will equal -1
                     // 20141123 length is always -1, code below is not usable, getpage and error check is added above
                     if (length != -1 && length < 200) {
                         return AvailableStatus.FALSE;
+                    } else {
+                        // File valid, set details
+                        downloadLink.setDownloadSize(length);
+                        downloadLink.setProperty("valid", true);
                     }
-                    // File valid, set details
-                    downloadLink.setDownloadSize(length);
-                    downloadLink.setProperty("valid", true);
                 }
             } finally {
                 try {
@@ -649,20 +651,20 @@ public class CrunchyRollCom extends antiDDoSForHost {
         // Calculate magic number
         final int magic1 = (int) Math.floor(Math.sqrt(6.9) * Math.pow(2, 25));
         final long magic2 = id ^ magic1 ^ (id ^ magic1) >>> 3 ^ (magic1 ^ id) * 32l;
-        magicStr += magic2;
-        // Calculate the hash using SHA-1
-        final MessageDigest md = MessageDigest.getInstance("SHA-1");
-        /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
-        final byte[] magicBytes = magicStr.getBytes();
-        md.update(magicBytes, 0, magicBytes.length);
-        final byte[] hashBytes = md.digest();
-        // Create the key using the given length
-        final byte[] key = new byte[size];
-        Arrays.fill(key, (byte) 0);
-        for (int i = 0; i < key.length && i < hashBytes.length; i++) {
-            key[i] = hashBytes[i];
-        }
-        return key;
+                    magicStr += magic2;
+                    // Calculate the hash using SHA-1
+                    final MessageDigest md = MessageDigest.getInstance("SHA-1");
+                    /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
+                    final byte[] magicBytes = magicStr.getBytes();
+                    md.update(magicBytes, 0, magicBytes.length);
+                    final byte[] hashBytes = md.digest();
+                    // Create the key using the given length
+                    final byte[] key = new byte[size];
+                    Arrays.fill(key, (byte) 0);
+                    for (int i = 0; i < key.length && i < hashBytes.length; i++) {
+                        key[i] = hashBytes[i];
+                    }
+                    return key;
     }
 
     /**
