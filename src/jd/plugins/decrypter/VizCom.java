@@ -18,8 +18,6 @@ package jd.plugins.decrypter;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -28,6 +26,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "viz.com" }, urls = { "https?://(?:www\\.)?viz\\.com/[^/]+/[^/]+/(?:chapter/|issue/|manga/product/|manga/product/digital/)\\d+" })
 public class VizCom extends antiDDoSForDecrypt {
@@ -41,13 +41,13 @@ public class VizCom extends antiDDoSForDecrypt {
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Sorry, this website is not available in your country.")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         /*
-         * Fog: Length: x pages is always visible. but not always correct for pages available (e.g. previews) so we check the javascript for the
-         * proper amount of pages, and then only use Length: x pages if var pages = 0
+         * Fog: Length: x pages is always visible. but not always correct for pages available (e.g. previews) so we check the javascript for
+         * the proper amount of pages, and then only use Length: x pages if var pages = 0
          */
         // String pages_str = br.getRegex("<strong>Length</strong>\\s*?(\\d+)\\s*?pages\\s*?</div>").getMatch(0);
         String pages_str = br.getRegex("var pages\\s*=\\s*(\\d+);").getMatch(0);
