@@ -130,6 +130,7 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             title = Encoding.htmlDecode(title).trim();
             title = encodeUnicode(title);
         }
+        logger.info("PornEmbedParser is being executed...");
         // xvideos.com 1
         String externID = br.getRegex("xvideos\\.com/embedframe/(\\d+)\"").getMatch(0);
         // xvideos.com 2
@@ -871,6 +872,14 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
         externID = br.getRegex("<iframe [^<>]+ src=\"(https?://www.mcfucker.com/embed/\\d+)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(externID);
+            if (!processAll) {
+                return decryptedLinks;
+            }
+        }
+        // 2018-06-16 cliphunter.com
+        externID = br.getRegex("<iframe [^<>]+ src=(?:'|\")(https?://www.cliphunter.com/embed/\\d+)(?:'|\")").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(externID.replace("/embed/", "/w/") + "/anything");
             if (!processAll) {
                 return decryptedLinks;
             }

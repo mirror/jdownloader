@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -33,9 +32,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cliphunter.com" }, urls = { "http://(www\\.)?cliphunter\\.com/w/\\d+/\\w+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cliphunter.com" }, urls = { "https?://(www\\.)?cliphunter\\.com/w/\\d+/\\w+" })
 public class ClipHunterComDecrypt extends PluginForDecrypt {
-
     public ClipHunterComDecrypt(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -45,7 +43,6 @@ public class ClipHunterComDecrypt extends PluginForDecrypt {
      * sync with hoster
      */
     public static final String[][] qualities     = { { "_fhd.mp4", "p1080.mp4" }, { "_hd.mp4", "_p720.mp4", "p720.mp4" }, { "_h.flv", "_p540.mp4", "540p.flv" }, { "_p.mp4", "_p480.mp4", "480p.mp4", "_p.mp4" }, { "_l.flv", "_p360.mp4", "360pflv.flv" }, { "_i.mp4", "360p.mp4" }, { "unknown", "_s.flv", "_p.mp4" } };
-
     private String                 parameter     = null;
     private String                 title         = null;
     private boolean                fastlinkcheck = false;
@@ -73,7 +70,6 @@ public class ClipHunterComDecrypt extends PluginForDecrypt {
             return null;
         }
         title = Encoding.htmlDecode(title.trim());
-
         final LinkedHashMap<String, String> foundQualities = jd.plugins.hoster.ClipHunterCom.findAvailableVideoQualities(this.br);
         if (foundQualities == null) {
             logger.warning("Decrypter broken for link: " + parameter);
@@ -161,7 +157,7 @@ public class ClipHunterComDecrypt extends PluginForDecrypt {
 
     private DownloadLink createDownloadlinkFromVideoid(final String[] quality, final String dllink) {
         final DownloadLink dl = createDownloadlink("http://cliphunterdecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
-        String thisfilename = title + "_" + quality[1];
+        String thisfilename = title; // + "_" + quality[1];
         if (!thisfilename.endsWith(".mp4") && !thisfilename.endsWith(".flv")) {
             /* Add extension if necessary */
             if (dllink.contains(".mp4")) {
@@ -180,5 +176,4 @@ public class ClipHunterComDecrypt extends PluginForDecrypt {
         }
         return dl;
     }
-
 }
