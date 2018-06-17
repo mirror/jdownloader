@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.LinkedHashMap;
@@ -22,8 +21,6 @@ import java.util.Map;
 import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -39,9 +36,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cliphunter.com" }, urls = { "http://cliphunterdecrypted\\.com/\\d+" })
 public class ClipHunterCom extends PluginForHost {
-
     private String dllink = null;
 
     public ClipHunterCom(final PluginWrapper wrapper) {
@@ -81,7 +79,6 @@ public class ClipHunterCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         dllink = downloadLink.getStringProperty("directlink");
-
         if (!linkOk(downloadLink)) {
             br.getPage(downloadLink.getStringProperty("originallink"));
             if (br.getURL().contains("error/missing") || br.containsHTML("(>Ooops, This Video is not available|>This video was removed and is no longer available at our site|<title></title>)")) {
@@ -157,6 +154,7 @@ public class ClipHunterCom extends PluginForHost {
         final String jsUrl = br.getRegex("<script.*?src=\"(https?://\\S+gexo\\S+player[_a-z\\d]+\\.js)\"").getMatch(0);
         final String[] encryptedUrls = br.getRegex("\"url\":\"([^<>\"]*?)\"").getColumn(0);
         final String json_full = br.getRegex("var gexoFiles = (\\{.+\\});").getMatch(0);
+        // System.out.println("json_full: " + json_full);
         if (jsUrl == null || ((encryptedUrls == null || encryptedUrls.length == 0) && json_full == null)) {
             if (!br.containsHTML("var flashVars")) {
                 /* Offline / Player missing */
@@ -185,7 +183,9 @@ public class ClipHunterCom extends PluginForHost {
                 ext = (String) videoinfo.get("fmt");
                 final String url = (String) videoinfo.get("url");
                 tmpUrl = decryptUrl(decryptAlgo, url);
+                System.out.println("tmpUrl: " + tmpUrl);
                 currentSr = new Regex(videoname, "(_[A-Za-z0-9]+\\.(?:mp4|flv))$").getMatch(0);
+                // System.out.println("currentSr: " + currentSr);
                 if (currentSr == null || tmpUrl == null) {
                     continue;
                 }
@@ -197,7 +197,6 @@ public class ClipHunterCom extends PluginForHost {
                             foundKnownQuality = true;
                             break;
                         }
-
                     } else {
                         if (currentSr.contains(quality[0])) {
                             foundQualities.put(quality[0], tmpUrl);
@@ -232,7 +231,6 @@ public class ClipHunterCom extends PluginForHost {
                     if (foundFittingQuality) {
                         break;
                     }
-
                 }
             }
         }
@@ -274,5 +272,4 @@ public class ClipHunterCom extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
-
 }
