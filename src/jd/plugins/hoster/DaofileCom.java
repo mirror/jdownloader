@@ -259,7 +259,8 @@ public class DaofileCom extends PluginForHost {
         if (fileInfo[1] == null) {
             fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
             if (fileInfo[1] == null) {
-                fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
+                // fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
+                fileInfo[1] = new Regex(correctedBR, ">([^<>]+)</font>\\]</h2>").getMatch(0);
                 // next two are details from sharing box
                 if (fileInfo[1] == null) {
                     fileInfo[1] = new Regex(correctedBR, sharebox0).getMatch(1);
