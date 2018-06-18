@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
@@ -27,9 +26,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "film.bild.de" }, urls = { "http://(www\\.)?bild\\.de/video/[^<>\"]+\\.bild\\.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "film.bild.de" }, urls = { "http://(www\\.)?bild\\.de/video/[^<>\"]+\\.bild\\.html" })
 public class FilmBildDe extends PluginForHost {
-
     public FilmBildDe(final PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -52,7 +50,7 @@ public class FilmBildDe extends PluginForHost {
         final String linkpart = Encoding.htmlDecode(new Regex(downloadLink.getDownloadURL(), "video/([^<>\"]+\\d{5,8})").getMatch(0));
         if (linkpart == null) {
             /* Fail safe as the input RegEx is more open than this. */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         br.getPage("http://www.bild.de/video/" + linkpart + ",view=xml.bild.xml");
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -62,10 +60,15 @@ public class FilmBildDe extends PluginForHost {
         }
         final String title = br.getRegex("ueberschrift=\"([^<>\"]*?)\"").getMatch(0);
         final String subtitle = br.getRegex("title=\"([^<>\"]*?)\"").getMatch(0);
-        if (title == null || subtitle == null) {
+        if (title == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String filename = Encoding.htmlDecode(title).trim() + " - " + Encoding.htmlDecode(subtitle).trim();
+        String filename = null;
+        if (subtitle == null) {
+            filename = Encoding.htmlDecode(title).trim();
+        } else {
+            filename = Encoding.htmlDecode(title).trim() + " - " + Encoding.htmlDecode(subtitle).trim();
+        }
         downloadLink.setFinalFileName(filename.trim() + ".mp4");
         return AvailableStatus.TRUE;
     }
