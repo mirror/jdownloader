@@ -39,7 +39,7 @@ public class MegabooruCom extends PluginForDecrypt {
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">No Images Found<")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
