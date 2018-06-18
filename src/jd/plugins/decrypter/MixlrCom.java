@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -30,9 +29,8 @@ import jd.plugins.PluginForDecrypt;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mixlr.com" }, urls = { "http://(?:www\\.)?mixlr\\.com/[a-z0-9\\-]+/[a-z0-9\\-]+/?([a-z0-9\\-]+/?|\\?page=[0-9]+)?" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mixlr.com" }, urls = { "http://(?:www\\.)?mixlr\\.com/[a-z0-9\\-]+/[a-z0-9\\-]+/?([a-z0-9\\-]+/?|\\?page=[0-9]+)?" })
 public class MixlrCom extends PluginForDecrypt {
-
     public MixlrCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -94,11 +92,11 @@ public class MixlrCom extends PluginForDecrypt {
             // Some artists use the same title for every show, so adding the number from the slug and the date helps to differentiate files
             final String slug = (String) entries.get("slug");
             final String[] slugParts = slug.split("-");
-            final String lastSlugPart = slugParts[slugParts.length - 1];
-            final String lastTitlePart = title.substring(title.length() - lastSlugPart.length(), title.length());
-            // Add number if the broadcast has a number at the end of the slug, but not at the end of the title
-            if (lastSlugPart.matches("\\d+") && !lastTitlePart.matches("\\d+")) {
-                title = title.concat(" " + lastSlugPart);
+            // Add the last portion of the slug (normally a sequence number) if the slugified title has fewer parts than the slug
+            final String slugifiedTitle = title.toLowerCase().replaceAll("[\\\\!,./]", "").replaceAll("\\s+", "-");
+            final String[] slugifiedTitleParts = slugifiedTitle.split("-");
+            if (slugParts.length == slugifiedTitleParts.length + 1) {
+                title += " " + slugParts[slugParts.length - 1];
             }
             String broadcastDate = (String) entries.get("started_at");
             // Fall back to the date it was uploaded to Mixlr if the start date is not found
@@ -112,13 +110,11 @@ public class MixlrCom extends PluginForDecrypt {
             dl.setAvailable(true);
             decryptedLinks.add(dl);
         }
-
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
         }
-
         return decryptedLinks;
     }
 }
