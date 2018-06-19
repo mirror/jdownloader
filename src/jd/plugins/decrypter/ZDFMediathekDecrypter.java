@@ -50,7 +50,7 @@ import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de", "neo-magazin-royale.de", "heute.de" }, urls = { "https?://(?:www\\.)?zdf\\.de/.+/[A-Za-z0-9_\\-]+\\.html|https?://(?:www\\.)?zdf\\.de/uri/(syncvideoimport_beitrag_\\d+|[a-f0-9\\-]+)", "https?://(?:www\\.)?neo\\-magazin\\-royale\\.de/.+", "https?://(?:www\\.)?heute\\.de/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de", "neo-magazin-royale.de", "heute.de" }, urls = { "https?://(?:www\\.)?zdf\\.de/.+/[A-Za-z0-9_\\-]+\\.html|https?://(?:www\\.)?zdf\\.de/uri/(syncvideoimport_beitrag_\\d+|[a-z0-9\\-]+)", "https?://(?:www\\.)?neo\\-magazin\\-royale\\.de/.+", "https?://(?:www\\.)?heute\\.de/.+" })
 public class ZDFMediathekDecrypter extends PluginForDecrypt {
     ArrayList<DownloadLink>    decryptedLinks                = new ArrayList<DownloadLink>();
     private String             PARAMETER                     = null;
@@ -61,7 +61,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
     private boolean            grabSubtitles                 = false;
     private long               filesizeSubtitle              = 0;
     private final String       TYPE_ZDF                      = "https?://(?:www\\.)?zdf\\.de/.+";
-    private final String       TYPER_ZDF_REDIRECT            = ".+/uri/(syncvideoimport_beitrag_\\d+|[a-f0-9\\-]+)";
+    private final String       TYPER_ZDF_REDIRECT            = ".+/uri/(syncvideoimport_beitrag_\\d+|[a-z0-9\\-]+)";
     private final String       TYPE_ZDF_EMBEDDED_HEUTE       = "https?://(?:www\\.)?heute\\.de/.+";
     private final String       TYPE_ZDF_EMBEDDED_NEO_MAGAZIN = "https?://(?:www\\.)?neo\\-magazin\\-royale\\.de/.+";
     private final String       API_BASE                      = "https://api.zdf.de/";

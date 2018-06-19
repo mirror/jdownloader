@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -44,7 +43,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
@@ -55,26 +53,24 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hitfile.net" }, urls = { "http://(www\\.)?hitfile\\.net/(download/free/)?[A-Za-z0-9]+" })
-public class HitFileNet extends PluginForHost {
-
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hitfile.net" }, urls = { "https?://(www\\.)?hitfile\\.net/(download/free/)?[A-Za-z0-9]+" })
+public class HitFileNet extends antiDDoSForHost {
     /* Settings */
     private static final String  SETTING_JAC                          = "SETTING_JAC";
     private static final String  SETTING_FREE_PARALLEL_DOWNLOADSTARTS = "SETTING_FREE_PARALLEL_DOWNLOADSTARTS";
     private static final int     FREE_MAXDOWNLOADS_PLUGINSETTING      = 20;
-
     private final String         UA                                   = RandomUserAgent.generate();
     private static final String  HTML_RECAPTCHATEXT                   = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
     private static final String  HTML_CAPTCHATEXT                     = "hitfile\\.net/captcha/";
     /* Website will say something like "Searching file..." which means that it is offline. */
     public static final String   HTML_FILE_OFFLINE                    = "class=\"code\\-404\"|<h1>Searching for the file\\.\\.\\.Please wait… </h1>";
-    private static final String  MAINPAGE                             = "http://hitfile.net";
+    private static final String  MAINPAGE                             = "https://hitfile.net";
     public static Object         LOCK                                 = new Object();
     private static final String  BLOCKED                              = "Hitfile.net is blocking JDownloader: Please contact the hitfile.net support and complain!";
     private static final boolean ENABLE_CRYPTO_STUFF                  = false;
-
     /* Connection stuff */
     private static final boolean FREE_RESUME                          = true;
     private static final int     FREE_MAXCHUNKS                       = 1;
@@ -90,7 +86,7 @@ public class HitFileNet extends PluginForHost {
     public HitFileNet(final PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
-        this.enablePremium("http://hitfile.net/premium/emoney/5");
+        this.enablePremium("https://hitfile.net/premium/emoney/5");
     }
 
     @SuppressWarnings("deprecation")
@@ -137,7 +133,7 @@ public class HitFileNet extends PluginForHost {
                  * '/linkchecker/csv' is the official "API" method but this will only return fileID and online/offline - not even the
                  * filename
                  */
-                br.postPage("http://" + getHost() + "/linkchecker/check", sb.toString());
+                br.postPage("https://" + getHost() + "/linkchecker/check", sb.toString());
                 for (final DownloadLink dllink : links) {
                     final String linkID = getID(dllink.getDownloadURL());
                     final Regex fileInfo = br.getRegex(Pattern.compile("<td>" + linkID + "</td>[\t\n\r ]+<td>([^<>/\"]*?)</td>[\t\n\r ]+<td style=\"text\\-align:center;\">(?:[\t\n\r ]+)<img src=\"(?:[^<>\"]+)?/img/icon/(done|error)\\.png\""));
@@ -206,7 +202,7 @@ public class HitFileNet extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://hitfile.net/rules";
+        return "https://hitfile.net/rules";
     }
 
     private String getID(final String downloadlink) {
@@ -230,7 +226,6 @@ public class HitFileNet extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        br.getPage("http://ipcheck3.jdownloader.org");
         br = new Browser();
         JDUtilities.getPluginForDecrypt("linkcrypt.ws");
         requestFileInformation(downloadLink);
@@ -239,7 +234,7 @@ public class HitFileNet extends PluginForHost {
         dupe.clear();
         prepareBrowser(UA);
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        getPage(downloadLink.getDownloadURL());
         simulateBrowser();
         if (br.containsHTML("'File not found\\. Probably it was deleted") || br.containsHTML(HTML_FILE_OFFLINE)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -255,11 +250,11 @@ public class HitFileNet extends PluginForHost {
         if (fileID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.getPage("/download/free/" + fileID);
+        getPage("/download/free/" + fileID);
         if (br.getHttpConnection().getCompleteContentLength() < 200) {
             final String redirect = br.getRegex("window\\.location\\.href\\s*=\\s*(\"|')(.*?)\\1").getMatch(1);
             if (redirect != null) {
-                br.getPage(redirect);
+                getPage(redirect);
             }
         }
         simulateBrowser();
@@ -276,12 +271,10 @@ public class HitFileNet extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
         }
-
         if (!(br.containsHTML(HTML_RECAPTCHATEXT) || br.containsHTML(HTML_CAPTCHATEXT))) {
             if (br.containsHTML(hf(0))) {
                 waittime = br.getRegex(hf(1)).getMatch(0);
                 final int wait = waittime != null ? Integer.parseInt(waittime) : -1;
-
                 if (wait > 31) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l);
                 } else if (wait < 0) {
@@ -294,7 +287,6 @@ public class HitFileNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 1001l);
             }
         }
-
         Form captchaform = br.getForm(2);
         if (captchaform == null) {
             captchaform = br.getForm(1);
@@ -305,7 +297,6 @@ public class HitFileNet extends PluginForHost {
         if (captchaform == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-
         if (br.containsHTML(HTML_RECAPTCHATEXT)) {
             final Recaptcha rc = new Recaptcha(br, this);
             rc.parse();
@@ -399,11 +390,8 @@ public class HitFileNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Limit reached or IP already loading", tt * 1001l);
             }
         }
-
         boolean waittimeFail = true;
-
         String res = "/download/getLinkTimeout/" + fileID;
-
         // final Browser tOut = br.cloneBrowser();
         // final String to = br.getRegex("(?i)(/\\w+/timeout\\.js\\?\\w+=[^\"\'<>]+)").getMatch(0);
         // tOut.getPage(to == null ? "/files/timeout.js?ver=" + JDHash.getMD5(String.valueOf(Math.random())).toUpperCase(Locale.ENGLISH)
@@ -445,7 +433,7 @@ public class HitFileNet extends PluginForHost {
         if (res.matches(hf(10)) && this.ENABLE_CRYPTO_STUFF) {
             sleep(tt * 1001, downloadLink);
             for (int i = 0; i <= 4; i++) {
-                br2.getPage(res);
+                getPage(br2, res);
                 final String additionalWaittime = br.getRegex(hf(1)).getMatch(0);
                 if (additionalWaittime != null) {
                     sleep(Integer.parseInt(additionalWaittime) * 1001l, downloadLink);
@@ -467,7 +455,7 @@ public class HitFileNet extends PluginForHost {
             }
             sleep(tt * 1001, downloadLink);
             br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br2.getPage(res);
+            getPage(br2, res);
         }
         downloadUrl = br2.getRegex("<br/><h1><a href=\\'(/.*?)\\'").getMatch(0);
         if (downloadUrl == null) {
@@ -477,14 +465,12 @@ public class HitFileNet extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
                 // downloadUrl = rhino(escape(br.toString()) + "@" + rtUpdate, 999);
-
             }
         }
         if (downloadUrl == null) {
             getPluginConfig().setProperty("isUpdateNeeded", true);
             getPluginConfig().save();
             logger.warning("dllink couldn't be found...");
-
             if (attemps > 1) {
                 // getPluginConfig().setProperty("isUpdateNeeded", false);
                 // getPluginConfig().setProperty("attemps", 1);
@@ -498,7 +484,7 @@ public class HitFileNet extends PluginForHost {
         br.setFollowRedirects(false);
         // Future redirects at this point! We want to catch them and not process in order to get the MD5sum! example url structure
         // http://s\\d{2}.turbobit.ru:\\d+/download.php?name=FILENAME.FILEEXTENTION&md5=793379e72eef01ed1fa3fec91eff5394&fid=b5w4jikojflm&uid=free&speed=59&till=1356198536&trycount=1&ip=YOURIP&sid=60193f81464cca228e7bb240a0c39130&browser=201c88fd294e46f9424f724b0d1a11ff&did=800927001&sign=7c2e5d7b344b4a205c71c18c923f96ab
-        br.getPage(downloadUrl);
+        getPage(downloadUrl);
         downloadUrl = br.getRedirectLocation() != null ? br.getRedirectLocation() : br.getURL();
         final String md5sum = new Regex(downloadUrl, "md5=([a-f0-9]{32})").getMatch(0);
         if (md5sum != null) {
@@ -525,8 +511,7 @@ public class HitFileNet extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account);
-        br.getPage(link.getDownloadURL());
-
+        getPage(link.getDownloadURL());
         String dllink = br.getRegex("<h1><a href='(https?://.*?)'><b>").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("('|\")(https?://hitfile\\.net//download/redirect/[a-z0-9]+/[A-Za-z0-9]+)\\1").getMatch(1);
@@ -553,7 +538,7 @@ public class HitFileNet extends PluginForHost {
         br.setFollowRedirects(false);
         // Future redirects at this point! We want to catch them and not process in order to get the MD5sum! example url structure
         // http://s\\d{2}.turbobit.ru:\\d+/download.php?name=FILENAME.FILEEXTENTION&md5=793379e72eef01ed1fa3fec91eff5394&fid=b5w4jikojflm&uid=free&speed=59&till=1356198536&trycount=1&ip=YOURIP&sid=60193f81464cca228e7bb240a0c39130&browser=201c88fd294e46f9424f724b0d1a11ff&did=800927001&sign=7c2e5d7b344b4a205c71c18c923f96ab
-        br.getPage(dllink);
+        getPage(dllink);
         dllink = br.getRedirectLocation() != null ? br.getRedirectLocation() : br.getURL();
         final String md5sum = new Regex(dllink, "md5=([a-f0-9]{32})").getMatch(0);
         if (md5sum != null) {
@@ -609,19 +594,17 @@ public class HitFileNet extends PluginForHost {
         s[9] = "ff88";
         s[10] = "f9def8a1fa02c9b21ac5b5c9da0746ae2ac671be0c0fd99f194e5b69113a85d65c8bf86e8d00e23d254751eded741d72e7262ecdc19c6267af72d2e26b5e326a59a5ce295d28f89e21ae29ea523acfb545fd8adb";
         s[11] = "f980fea5fa0ac9ef1bc7b694de0142f1289075bd0d0ddb9d1b195a6d103d82865cddff69890ae76a251b53efef711d74e07e299bc098";
-        JDUtilities.getPluginForDecrypt("linkcrypt.ws");
         return JDHexUtils.toString(jd.plugins.decrypter.LnkCrptWs.IMAGEREGEX(s[i]));
     }
 
     /* TODO: Make an unique login function which works for turbobit.net AND hitfile.net (same system) */
     private void login(final Account account) throws Exception {
         /* Load sister site plugin */
-        JDUtilities.getPluginForHost("turbobit.net");
         setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(MAINPAGE);
+        getPage(MAINPAGE);
         br.setCookie(MAINPAGE, "user_lang", "en");
-        br.postPage("http://hitfile.net/user/login", "user%5Blogin%5D=" + Encoding.urlEncode(account.getUser()) + "&user%5Bpass%5D=" + Encoding.urlEncode(account.getPass()) + "&user%5Bmemory%5D=on&user%5Bsubmit%5D=");
+        postPage("https://hitfile.net/user/login", "user%5Blogin%5D=" + Encoding.urlEncode(account.getUser()) + "&user%5Bpass%5D=" + Encoding.urlEncode(account.getPass()) + "&user%5Bmemory%5D=on&user%5Bsubmit%5D=");
         jd.plugins.hoster.TurboBitNet.universalLoginErrorhandling(this.br);
         if (!"1".equals(br.getCookie(MAINPAGE, "user_isloggedin"))) {
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -677,7 +660,7 @@ public class HitFileNet extends PluginForHost {
         correctDownloadLink(downloadLink);
         br.setCookie(MAINPAGE, "user_lang", "en");
         br.setCookiesExclusive(true);
-        br.getPage(downloadLink.getDownloadURL());
+        getPage(downloadLink.getDownloadURL());
         final String filename = br.getRegex("You download: \\&nbsp; <span class=\\'[a-z0-9\\- ]+\\'></span><span>([^<>\"]*?)</span>").getMatch(0);
         final String filesize = br.getRegex("\\((\\d+(,\\d+)? (b|Kb|Mb|Gb))\\)").getMatch(0);
         if (filename == null) {
@@ -686,7 +669,6 @@ public class HitFileNet extends PluginForHost {
         if (filesize == null) {
             return AvailableStatus.FALSE;
         }
-
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         downloadLink.setName(filename);
         // if (!downloadLink.isAvailabilityStatusChecked()) {
@@ -781,11 +763,9 @@ public class HitFileNet extends PluginForHost {
 
     private void simulateBrowser() throws InterruptedException {
         // dupe.clear();
-
         final AtomicInteger requestQ = new AtomicInteger(0);
         final AtomicInteger requestS = new AtomicInteger(0);
         final ArrayList<String> links = new ArrayList<String>();
-
         String[] l1 = new Regex(br, "\\s+(?:src)=(\"|')(.*?)\\1").getColumn(1);
         if (l1 != null) {
             links.addAll(Arrays.asList(l1));
@@ -799,9 +779,7 @@ public class HitFileNet extends PluginForHost {
             final String correctedLink = Request.getLocation(link, br.getRequest());
             if (this.getHost().equals(Browser.getHost(correctedLink)) && !correctedLink.endsWith(this.getHost() + "/") && !correctedLink.contains(".html") && !correctedLink.equals(br.getURL()) && !correctedLink.contains("/captcha/") && !correctedLink.contains("'")) {
                 if (dupe.add(correctedLink)) {
-
                     final Thread simulate = new Thread("SimulateBrowser") {
-
                         public void run() {
                             final Browser rb = br.cloneBrowser();
                             rb.getHeaders().put("Cache-Control", null);
@@ -827,11 +805,9 @@ public class HitFileNet extends PluginForHost {
                             }
                             return;
                         }
-
                     };
                     simulate.start();
                     Thread.sleep(100);
-
                 }
             }
         }
@@ -844,5 +820,4 @@ public class HitFileNet extends PluginForHost {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.Turbobit_Turbobit;
     }
-
 }

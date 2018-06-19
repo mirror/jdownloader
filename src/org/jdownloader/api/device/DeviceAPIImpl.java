@@ -13,6 +13,7 @@ import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
 import jd.controlling.reconnect.ipcheck.IP;
 
 import org.appwork.remoteapi.RemoteAPIRequest;
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.net.Base64OutputStream;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
@@ -21,6 +22,7 @@ import org.jdownloader.api.myjdownloader.MyJDownloaderConnectThread;
 import org.jdownloader.api.myjdownloader.MyJDownloaderController;
 import org.jdownloader.api.myjdownloader.MyJDownloaderDirectServer;
 import org.jdownloader.api.myjdownloader.MyJDownloaderHttpConnection;
+import org.jdownloader.api.myjdownloader.MyJDownloaderSettings;
 import org.jdownloader.api.myjdownloader.MyJDownloaderSettings.DIRECTMODE;
 import org.jdownloader.myjdownloader.client.json.DirectConnectionInfo;
 import org.jdownloader.myjdownloader.client.json.DirectConnectionInfos;
@@ -57,6 +59,24 @@ public class DeviceAPIImpl implements DeviceAPI {
         }
     }
 
+    private DirectConnectionInfo buildDirectConnectionInfo(InetAddress inetAddress, int port) {
+        if (inetAddress.isLoopbackAddress() && inetAddress instanceof Inet6Address) {
+            // we don't need loopback via IPv4 and IPv6
+            return null;
+        } else if (inetAddress.isLinkLocalAddress()) {
+            return null;
+        } else {
+            final DirectConnectionInfo ret = new DirectConnectionInfo();
+            ret.setPort(port);
+            if (inetAddress instanceof Inet6Address) {
+                ret.setIp("[" + inetAddress.getHostAddress().replaceFirst("%.+", "") + "]");
+            } else {
+                ret.setIp(inetAddress.getHostAddress());
+            }
+            return ret;
+        }
+    }
+
     @Override
     public DirectConnectionInfos getDirectConnectionInfos(final RemoteAPIRequest request) {
         final DirectConnectionInfos ret = new DirectConnectionInfos();
@@ -70,6 +90,8 @@ public class DeviceAPIImpl implements DeviceAPI {
         if (directServer == null || !directServer.isAlive() || directServer.getLocalPort() < 0) {
             return ret;
         }
+        final int localPort = directServer.getLocalPort();
+        final int removePort = directServer.getRemotePort();
         ret.setMode(directServer.getConnectMode().name());
         final List<DirectConnectionInfo> infos = new ArrayList<DirectConnectionInfo>();
         final List<InetAddress> localIPs = HTTPProxyUtils.getLocalIPs(true);
@@ -94,24 +116,26 @@ public class DeviceAPIImpl implements DeviceAPI {
                 ret.setRebindProtectionDetected(true);
             }
             for (final InetAddress localIP : localIPs) {
-                if (localIP.isLoopbackAddress() && localIP instanceof Inet6Address) {
-                    // we don't need loopback via IPv4 and IPv6
-                    continue;
-                } else if (localIP.isLinkLocalAddress()) {
-                    continue;
-                } else {
-                    final DirectConnectionInfo info = new DirectConnectionInfo();
-                    info.setPort(directServer.getLocalPort());
-                    if (localIP instanceof Inet6Address) {
-                        info.setIp("[" + localIP.getHostAddress().replaceFirst("%.+", "") + "]");
-                    } else {
-                        info.setIp(localIP.getHostAddress());
-                    }
+                final DirectConnectionInfo info = buildDirectConnectionInfo(localIP, localPort);
+                if (info != null) {
                     infos.add(info);
                 }
             }
         }
-        if (directServer.getRemotePort() > 0) {
+        final String customDeviceIPs[] = JsonConfig.create(MyJDownloaderSettings.class).getCustomDeviceIPs();
+        if (customDeviceIPs != null) {
+            for (final String customDeviceIP : customDeviceIPs) {
+                try {
+                    final InetAddress inetAddress = InetAddress.getByName(customDeviceIP);
+                    final DirectConnectionInfo info = buildDirectConnectionInfo(inetAddress, localPort);
+                    if (info != null) {
+                        infos.add(info);
+                    }
+                } catch (Throwable e) {
+                }
+            }
+        }
+        if (removePort > 0) {
             try {
                 final BalancedWebIPCheck ipCheck = new BalancedWebIPCheck() {
                     {
@@ -122,7 +146,7 @@ public class DeviceAPIImpl implements DeviceAPI {
                 final IP externalIP = ipCheck.getExternalIP();
                 if (externalIP.getIP() != null) {
                     final DirectConnectionInfo info = new DirectConnectionInfo();
-                    info.setPort(directServer.getRemotePort());
+                    info.setPort(removePort);
                     info.setIp(externalIP.getIP());
                     infos.add(info);
                 }

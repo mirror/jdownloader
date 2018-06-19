@@ -51,6 +51,11 @@ public interface MyJDownloaderSettings extends ConfigInterface {
     public void setDeviceConnectPorts(int port[]);
 
     @AboutConfig
+    public String[] getCustomDeviceIPs();
+
+    public void setCustomDeviceIPs(String deviceIPs[]);
+
+    @AboutConfig
     @DefaultBooleanValue(false)
     public boolean isDebugEnabled();
 

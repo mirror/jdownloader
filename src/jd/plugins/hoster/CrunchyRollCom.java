@@ -58,6 +58,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
@@ -251,21 +252,27 @@ public class CrunchyRollCom extends antiDDoSForHost {
         downloadLink.getLinkStatus().setStatusText("Decrypting image...");
         try {
             final File source = new File(downloadLink.getFileOutput());
+            final ByteArrayOutputStream input_stream = new ByteArrayOutputStream();
             final BufferedInputStream input = new BufferedInputStream(new FileInputStream(source));
-            ByteArrayOutputStream input_stream = new ByteArrayOutputStream();
-            while (input.available() > 0) {
-                input_stream.write(input.read());
+            try {
+                while (input.available() > 0) {
+                    input_stream.write(input.read());
+                }
+            } finally {
+                input.close();
             }
-            input.close();
             byte[] input_array = input_stream.toByteArray();
             for (int i = 0; i < input_array.length; i++) {
                 input_array[i] ^= 'B';
             }
-            BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(source));
-            for (int i = 0; i < input_array.length; i++) {
-                output.write(input_array[i]);
+            final BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(source));
+            try {
+                for (int i = 0; i < input_array.length; i++) {
+                    output.write(input_array[i]);
+                }
+            } finally {
+                output.close();
             }
-            output.close();
             downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.crunchyrollcom.decryptimage", "Image decrypted"));
         } catch (final Throwable e) {
             e.printStackTrace();
@@ -308,13 +315,14 @@ public class CrunchyRollCom extends antiDDoSForHost {
     private void downloadSubs(final DownloadLink downloadLink) throws Exception {
         if ((Boolean) downloadLink.getProperty("valid", false)) {
             this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, downloadLink.getDownloadURL(), true, 1);
-            if (!this.dl.getConnection().isContentDisposition() && !this.dl.getConnection().getContentType().endsWith("xml")) {
+            if (dl.getConnection().isContentDisposition() || StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "text/xml")) {
+                if (this.dl.startDownload()) {
+                    this.convertSubs(downloadLink);
+                }
+            } else {
                 downloadLink.setProperty("valid", false);
                 this.dl.getConnection().disconnect();
                 throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
-            if (this.dl.startDownload()) {
-                this.convertSubs(downloadLink);
             }
         }
     }
@@ -343,13 +351,14 @@ public class CrunchyRollCom extends antiDDoSForHost {
      */
     private void downloadManga(final DownloadLink downloadLink) throws Exception {
         this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, downloadLink.getDownloadURL(), true, 1);
-        if (!this.dl.getConnection().isContentDisposition() && !this.dl.getConnection().getContentType().startsWith("image")) {
+        if (dl.getConnection().isContentDisposition() || StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "image")) {
+            if (this.dl.startDownload()) {
+                this.decryptImage(downloadLink);
+            }
+        } else {
             downloadLink.setProperty("valid", false);
             this.dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_RETRY);
-        }
-        if (this.dl.startDownload()) {
-            this.decryptImage(downloadLink);
         }
     }
 
@@ -415,6 +424,7 @@ public class CrunchyRollCom extends antiDDoSForHost {
         } else if (downloadLink.getDownloadURL().contains(CrunchyRollCom.CROLL_MANGA)) {
             this.downloadManga(downloadLink);
         }
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
     @Override
@@ -431,6 +441,7 @@ public class CrunchyRollCom extends antiDDoSForHost {
         } else if (downloadLink.getDownloadURL().contains(CrunchyRollCom.CROLL_MANGA)) {
             this.downloadManga(downloadLink);
         }
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
     /**

@@ -80,25 +80,25 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 public class TusFilesNet extends PluginForHost {
     // Site Setters
     // primary website url, take note of redirects
-    private final String               COOKIE_HOST                  = "http://tusfiles.net";
+    private final String         COOKIE_HOST                  = "http://tusfiles.com";
     // domain names used within download links.
-    private final String               DOMAINS                      = "(tusfil(es\\.(net|com|co\\.nz)|\\.es))";
-    private final String               PASSWORDTEXT                 = ">Passwor(d|t):</small> <input|lock\\.png\" border=\"0\"";
-    private final String               MAINTENANCE                  = ">This server is in maintenance mode";
-    private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/((files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+|[a-z0-9]{58}/v(ideo)?\\.mp4)";
-    private final boolean              supportsHTTPS                = true;
-    private final boolean              enforcesHTTPS                = false;
-    private final boolean              useRUA                       = false;
-    private final boolean              useAltLinkCheck              = false;
-    private final boolean              useVidEmbed                  = false;
-    private final boolean              useAltEmbed                  = false;
-    private final boolean              useAltExpire                 = true;
-    private final long                 useLoginIndividual           = 6 * 3480000l;
-    private final boolean              waitTimeSkipableReCaptcha    = true;
-    private final boolean              waitTimeSkipableSolveMedia   = false;
-    private final boolean              waitTimeSkipableKeyCaptcha   = false;
-    private final boolean              captchaSkipableSolveMedia    = false;
-    private static final int           ACCOUNT_PREMIUM_MAXDOWNLOADS = 10;
+    private final String         DOMAINS                      = "(tusfil(es\\.(net|com|co\\.nz)|\\.es))";
+    private final String         PASSWORDTEXT                 = ">Passwor(d|t):</small> <input|lock\\.png\" border=\"0\"";
+    private final String         MAINTENANCE                  = ">This server is in maintenance mode";
+    private final String         dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/((files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+|[a-z0-9]{58}/v(ideo)?\\.mp4)";
+    private final boolean        supportsHTTPS                = true;
+    private final boolean        enforcesHTTPS                = false;
+    private final boolean        useRUA                       = false;
+    private final boolean        useAltLinkCheck              = false;
+    private final boolean        useVidEmbed                  = false;
+    private final boolean        useAltEmbed                  = false;
+    private final boolean        useAltExpire                 = true;
+    private final long           useLoginIndividual           = 6 * 3480000l;
+    private final boolean        waitTimeSkipableReCaptcha    = true;
+    private final boolean        waitTimeSkipableSolveMedia   = false;
+    private final boolean        waitTimeSkipableKeyCaptcha   = false;
+    private final boolean        captchaSkipableSolveMedia    = false;
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 10;
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
@@ -223,7 +223,7 @@ public class TusFilesNet extends PluginForHost {
                 } catch (final BrowserException e) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                if (!con.getContentType().contains("html")) {
+                if (con.isOK() && (con.isContentDisposition() || !con.getContentType().contains("html"))) {
                     downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
                     downloadLink.setDownloadSize(con.getLongContentLength());
                 } else {
@@ -1375,12 +1375,13 @@ public class TusFilesNet extends PluginForHost {
                 Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
                 URLConnectionAdapter con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                if (!con.isOK() || con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(directlinkproperty, Property.NULL);
                     dllink = null;
                 }
                 con.disconnect();
             } catch (Exception e) {
+                logger.log(e);
                 downloadLink.setProperty(directlinkproperty, Property.NULL);
                 dllink = null;
             }
