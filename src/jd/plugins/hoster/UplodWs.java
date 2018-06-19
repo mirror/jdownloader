@@ -39,7 +39,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
@@ -47,9 +46,10 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uplod.ws" }, urls = { "https?://(?:www\\.)?(?:uploadshub\\.com|upload\\.so|uplod\\.ws|uplod\\.cc|uplod\\.org)/(?:embed\\-)?[a-z0-9]{12}" })
-public class UplodWs extends PluginForHost {
+public class UplodWs extends antiDDoSForHost {
     /* Some HTML code to identify different (error) states */
     private static final String            HTML_PASSWORDPROTECTED          = "<br><b>Passwor(d|t):</b> <input";
     private static final String            HTML_MAINTENANCE_MODE           = ">This server is in maintenance mode";
@@ -779,34 +779,32 @@ public class UplodWs extends PluginForHost {
         return finallink;
     }
 
-    private void getPage(final String page) throws Exception {
+    @Override
+    protected void getPage(String page) throws Exception {
         getPage(br, page, true);
     }
 
-    private void getPage(final Browser br, final String page, final boolean correctBr) throws Exception {
-        br.getPage(page);
+    private void getPage(final Browser br, String page, final boolean correctBr) throws Exception {
+        getPage(br, page);
         if (correctBr) {
             correctBR();
         }
     }
 
-    private void postPage(final String page, final String postdata) throws Exception {
-        postPage(br, page, postdata, true);
-    }
-
-    private void postPage(final Browser br, final String page, final String postdata, final boolean correctBr) throws Exception {
-        br.postPage(page, postdata);
+    private void postPage(final Browser br, String page, final String postdata, final boolean correctBr) throws Exception {
+        postPage(br, page, postdata);
         if (correctBr) {
             correctBR();
         }
     }
 
-    private void submitForm(final Form form) throws Exception {
+    @Override
+    protected void submitForm(final Form form) throws Exception {
         submitForm(br, form, true);
     }
 
     private void submitForm(final Browser br, final Form form, final boolean correctBr) throws Exception {
-        br.submitForm(form);
+        submitForm(br, form);
         if (correctBr) {
             correctBR();
         }
@@ -857,7 +855,7 @@ public class UplodWs extends PluginForHost {
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
      * @author raztoki
      */
-    private boolean inValidate(final String s) {
+    protected boolean inValidate(final String s) {
         if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
             return true;
         } else {
