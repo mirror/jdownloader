@@ -252,12 +252,15 @@ public class RapidGatorNet extends antiDDoSForHost {
         }
         try {
             // end of experiment
-            if (br.containsHTML("You have reached your daily downloads limit\\. Please try")) {
+            if (br.containsHTML("File is temporarily unavailable, please try again later. Maintenance in data center.")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File is temporarily not available, please try again later");
+            } else if (br.containsHTML("File is temporarily not available, please try again later")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File is temporarily not available, please try again later");
+            } else if (br.containsHTML("You have reached your daily downloads limit\\. Please try")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You have reached your daily downloads limit", FREE_RECONNECTWAIT_DAILYLIMIT);
             } else if (br.containsHTML(">[\\r\n ]+You have reached your hourly downloads limit\\.")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You have reached your hourly downloads limit", FREE_RECONNECTWAIT_GENERAL);
-            }
-            if (br.containsHTML("(You can`t download not more than 1 file at a time in free mode\\.<|>Wish to remove the restrictions\\?)")) {
+            } else if (br.containsHTML("(You can`t download not more than 1 file at a time in free mode\\.<|>Wish to remove the restrictions\\?)")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You can't download more than one file within a certain time period in free mode", FREE_RECONNECTWAIT_OTHERS);
             }
             final String freedlsizelimit = br.getRegex("'You can download files up to ([\\d\\.]+ ?(MB|GB)) in free mode<").getMatch(0);
@@ -969,9 +972,9 @@ public class RapidGatorNet extends antiDDoSForHost {
             /*
              * This can happen if links go offline in the moment when the user is trying to download them - I (psp) was not able to
              * reproduce this so this is just a bad workaround! Correct server response would be:
-             * 
+             *
              * {"response":null,"response_status":404,"response_details":"Error: File not found"}
-             * 
+             *
              * TODO: Maybe move this info handleErrors_api
              */
             if (br.containsHTML("\"response_details\":null")) {
@@ -1036,24 +1039,25 @@ public class RapidGatorNet extends antiDDoSForHost {
                 }
             }
             if (dllink == null) {
-                if (br.containsHTML("File is temporarily not available, please try again later")) {
+                if (br.containsHTML("File is temporarily unavailable, please try again later. Maintenance in data center.")) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File is temporarily not available, please try again later");
-                }
-                if (br.containsHTML("You have reached quota|You have reached daily quota of downloaded information for premium accounts")) {
+                } else if (br.containsHTML("File is temporarily not available, please try again later")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File is temporarily not available, please try again later");
+                } else if (br.containsHTML("You have reached quota|You have reached daily quota of downloaded information for premium accounts")) {
                     logger.info("You've reached daily download quota for " + account.getUser() + " account");
                     final AccountInfo ac = new AccountInfo();
                     ac.setTrafficLeft(0);
                     account.setAccountInfo(ac);
                     throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-                if (br.getCookie(RapidGatorNet.MAINPAGE, "user__") == null) {
+                } else if (br.getCookie(RapidGatorNet.MAINPAGE, "user__") == null) {
                     logger.info("Account seems to be invalid!");
                     // throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     account.setProperty("cookies", Property.NULL);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
+                    logger.warning("Could not find 'dllink'. Please report to JDownloader Development Team");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                logger.warning("Could not find 'dllink'. Please report to JDownloader Development Team");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (this.getPluginConfig().getBooleanProperty(EXPERIMENTAL_ENFORCE_SSL, false)) {
                 dllink = dllink.replaceFirst("^http://", "https://");
