@@ -68,7 +68,7 @@ public class IsraCloud extends antiDDoSForHost {
     private static final String  HTML_PASSWORDPROTECTED             = "<br><b>Passwor(d|t):</b> <input";
     private static final String  HTML_MAINTENANCE_MODE              = ">This server is in maintenance mode";
     /* Here comes our XFS-configuration */
-    private final boolean        SUPPORTS_HTTPS                     = false;
+    private final boolean        SUPPORTS_HTTPS                     = true;
     /* primary website url, take note of redirects */
     private final String         COOKIE_HOST                        = "http://isra.cloud".replaceFirst("https?://", SUPPORTS_HTTPS ? "https://" : "http://");
     private final String         NICE_HOSTproperty                  = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");

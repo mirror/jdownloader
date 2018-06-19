@@ -47,6 +47,7 @@ public class SrBoxLife extends antiDDoSForDecrypt {
         final String parameter = param.toString();
         br.setFollowRedirects(false);
         getPage(parameter);
+        Browser.setRequestIntervalLimitGlobal(br.getHost(), 1000);
         final String redirect = br.getRedirectLocation();
         if (br.containsHTML("(An error has occurred|The article cannot be found)") || (redirect != null && redirect.matches(base))) {
             decryptedLinks.add(createOfflinelink(parameter));
@@ -464,5 +465,10 @@ public class SrBoxLife extends antiDDoSForDecrypt {
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
+    }
+
+    @Override
+    public int getMaxConcurrentProcessingInstances() {
+        return 1;
     }
 }

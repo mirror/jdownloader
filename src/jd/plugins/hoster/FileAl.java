@@ -1053,12 +1053,7 @@ public class FileAl extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         /* reset maxPrem workaround on every fetchaccount info */
         maxPrem.set(1);
-        try {
-            login(account, true);
-        } catch (final PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account, true);
         final String space[] = new Regex(correctedBR, ">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
         if ((space != null && space.length != 0) && (space[0] != null && space[1] != null)) {
             /* free users it's provided by default */
@@ -1148,6 +1143,18 @@ public class FileAl extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
+                final String captchaURL = loginform.getRegex("img\\s*src\\s*=\\s*\"((?:https?://file\\.al)?/captchas/.*?)\"").getMatch(0);
+                if (captchaURL != null) {
+                    if (getDownloadLink() == null) {
+                        final DownloadLink dummyLink = new DownloadLink(this, "Account", getHost(), "http://" + getHost(), true);
+                        setDownloadLink(dummyLink);
+                    }
+                    final String code = getCaptchaCode("xfilesharingprobasic", captchaURL, getDownloadLink());
+                    if (code == null) {
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
+                    loginform.put("code", code);
+                }
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 submitForm(loginform);
@@ -1178,7 +1185,9 @@ public class FileAl extends PluginForHost {
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", cookies);
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.setProperty("cookies", Property.NULL);
+                }
                 throw e;
             }
         }

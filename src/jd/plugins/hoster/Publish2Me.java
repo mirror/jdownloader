@@ -340,6 +340,17 @@ public class Publish2Me extends K2SApi {
                 }
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 postPage("/login.html", postData);
+                if (br.containsHTML("The verification code is incorrect.")) {
+                    logincaptcha = br.getRegex("\"(/auth/captcha\\.html[^<>\"]*?)\"").getMatch(0);
+                    postData = "LoginForm%5BrememberMe%5D=0&LoginForm%5BrememberMe%5D=1&LoginForm%5Busername%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass());
+                    if (logincaptcha != null) {
+                        final DownloadLink dummyLink = new DownloadLink(this, "Account", Browser.getHost(MAINPAGE), MAINPAGE, true);
+                        final String c = getCaptchaCode(logincaptcha, dummyLink);
+                        postData += "&LoginForm%5BverifyCode%5D=" + Encoding.urlEncode(c);
+                    }
+                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    postPage("/login.html", postData);
+                }
                 if (!br.containsHTML("\"url\":\"")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, ungültiges Passwort oder ungültiges Login Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -357,8 +368,12 @@ public class Publish2Me extends K2SApi {
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", cookies);
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.setProperty("cookies", Property.NULL);
+                }
                 throw e;
+            } finally {
+                br.getHeaders().remove("X-Requested-With");
             }
         }
     }

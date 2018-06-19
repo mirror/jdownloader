@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -27,15 +26,14 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tusfiles.net" }, urls = { "https?://(www\\.)?(tusfiles\\.net/go/[a-z0-9]{12}/|j\\-b\\.tusfil\\.es/[A-Z0-9]+|tusfil(es\\.(net|co\\.nz)|\\.es)/d/[0-9A-Z]+)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tusfiles.net" }, urls = { "https?://(www\\.)?(tusfiles\\.(net|com)/go/[a-z0-9]{12}/|j\\-b\\.tusfil\\.es/[A-Z0-9]+|tusfil(es\\.(net|com|co\\.nz)|\\.es)/d/[0-9A-Z]+)" })
 public class TusFilesNet extends PluginForDecrypt {
-
     public TusFilesNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     private final String TYPE_SHORT1 = "https?://(www\\.)?j\\-b\\.tusfil\\.es/[A-Z0-9]+";
-    private final String TYPE_SHORT2 = "https?://(www\\.)?tusfil(es\\.(net|co\\.nz)|\\.es)/d/[0-9A-Z]+";
+    private final String TYPE_SHORT2 = "https?://(www\\.)?tusfil(es\\.(net|com|co\\.nz)|\\.es)/d/[0-9A-Z]+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -93,8 +91,8 @@ public class TusFilesNet extends PluginForDecrypt {
                         break;
                     }
                 }
-                final String[] folders = br.getRegex("\"(https?://(www\\.)?tusfiles\\.net/go/[a-z0-9]{12}/)\"").getColumn(0);
-                final String[] links = br.getRegex("\"(https?://(www\\.)?tusfiles\\.net/[a-z0-9]{12})\"").getColumn(0);
+                final String[] folders = br.getRegex("\"(https?://(www\\.)?tusfiles\\.(?:net|com)/go/[a-z0-9]{12}/)\"").getColumn(0);
+                final String[] links = br.getRegex("\"(https?://(www\\.)?tusfiles\\.(?:net|com)/[a-z0-9]{12})\"").getColumn(0);
                 if ((links == null || links.length == 0) && (folders == null || folders.length == 0)) {
                     /* The RegExes above are very open so if we find no links, the folder must be empty/offline */
                     decryptedLinks.add(this.createOfflinelink(parameter));
@@ -114,5 +112,4 @@ public class TusFilesNet extends PluginForDecrypt {
         }
         return decryptedLinks;
     }
-
 }

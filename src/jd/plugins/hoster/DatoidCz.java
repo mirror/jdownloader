@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -36,7 +35,6 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datoid.cz" }, urls = { "https?://(www\\.)?datoid\\.(cz|sk)/[A-Za-z0-9]+(?:/.*)?" })
 public class DatoidCz extends PluginForHost {
-
     public DatoidCz(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://datoid.cz/cenik");
@@ -59,10 +57,22 @@ public class DatoidCz extends PluginForHost {
         br = new Browser();
         this.setBrowserExclusive();
         String downloadURL = link.getDownloadURL();
-        br.getPage("http://api.datoid.cz/v1/get-file-details?url=" + Encoding.urlEncode(downloadURL));
+        br.getPage("https://api.datoid.cz/v1/get-file-details?url=" + Encoding.urlEncode(downloadURL));
         if (br.containsHTML("\"error\":\"File not found\"") && StringUtils.startsWithCaseInsensitive(downloadURL, "https://")) {
             downloadURL = downloadURL.replace("https://", "http://");
-            br.getPage("http://api.datoid.cz/v1/get-file-details?url=" + Encoding.urlEncode(downloadURL));
+            br.getPage("https://api.datoid.cz/v1/get-file-details?url=" + Encoding.urlEncode(downloadURL));
+            if (br.containsHTML("\"error\":\"File not found\"")) {
+                final Browser brc = br.cloneBrowser();
+                brc.setFollowRedirects(true);
+                brc.getPage(downloadURL);
+                final String filename = brc.getRegex("class=\"filename\">(.*?)<").getMatch(0);
+                final String filesize = brc.getRegex("class=\"icon-size\"></i>(.*?)<").getMatch(0);
+                if (filename != null && filesize != null) {
+                    link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+                    link.setDownloadSize(SizeFormatter.getSize(filesize));
+                    return AvailableStatus.TRUE;
+                }
+            }
         }
         if (br.containsHTML("\"error\":\"(File not found|File was blocked|File was deleted)\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -132,7 +142,6 @@ public class DatoidCz extends PluginForHost {
             account.removeProperty("logintoken");
             throw e;
         }
-
     }
 
     @Override
@@ -205,5 +214,4 @@ public class DatoidCz extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
