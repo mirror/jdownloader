@@ -90,8 +90,8 @@ public class DeviceAPIImpl implements DeviceAPI {
         if (directServer == null || !directServer.isAlive() || directServer.getLocalPort() < 0) {
             return ret;
         }
-        final int localPort = directServer.getLocalPort();
-        final int removePort = directServer.getRemotePort();
+        final int lanPort = directServer.getLocalPort();
+        final int wanPort = directServer.getRemotePort();
         ret.setMode(directServer.getConnectMode().name());
         final List<DirectConnectionInfo> infos = new ArrayList<DirectConnectionInfo>();
         final List<InetAddress> localIPs = HTTPProxyUtils.getLocalIPs(true);
@@ -116,7 +116,7 @@ public class DeviceAPIImpl implements DeviceAPI {
                 ret.setRebindProtectionDetected(true);
             }
             for (final InetAddress localIP : localIPs) {
-                final DirectConnectionInfo info = buildDirectConnectionInfo(localIP, localPort);
+                final DirectConnectionInfo info = buildDirectConnectionInfo(localIP, lanPort);
                 if (info != null) {
                     infos.add(info);
                 }
@@ -127,7 +127,7 @@ public class DeviceAPIImpl implements DeviceAPI {
             for (final String customDeviceIP : customDeviceIPs) {
                 try {
                     final InetAddress inetAddress = InetAddress.getByName(customDeviceIP);
-                    final DirectConnectionInfo info = buildDirectConnectionInfo(inetAddress, localPort);
+                    final DirectConnectionInfo info = buildDirectConnectionInfo(inetAddress, lanPort);
                     if (info != null) {
                         infos.add(info);
                     }
@@ -135,7 +135,7 @@ public class DeviceAPIImpl implements DeviceAPI {
                 }
             }
         }
-        if (removePort > 0) {
+        if (wanPort > 0) {
             try {
                 final BalancedWebIPCheck ipCheck = new BalancedWebIPCheck() {
                     {
@@ -146,7 +146,7 @@ public class DeviceAPIImpl implements DeviceAPI {
                 final IP externalIP = ipCheck.getExternalIP();
                 if (externalIP.getIP() != null) {
                     final DirectConnectionInfo info = new DirectConnectionInfo();
-                    info.setPort(removePort);
+                    info.setPort(wanPort);
                     info.setIp(externalIP.getIP());
                     infos.add(info);
                 }
