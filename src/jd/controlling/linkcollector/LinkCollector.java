@@ -1325,9 +1325,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     * 
+     *
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     * 
+     *
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, java.util.List<CrawledLink> plinks) {
@@ -2007,6 +2007,10 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     public LinkedList<CrawledPackage> loadFile(File file, Map<CrawledPackage, CrawledPackageStorable> restoreMap) throws IOException {
+        return loadFile(file, restoreMap, false);
+    }
+
+    public LinkedList<CrawledPackage> loadFile(File file, Map<CrawledPackage, CrawledPackageStorable> restoreMap, boolean rescueMode) throws IOException {
         LinkedList<CrawledPackage> ret = null;
         if (file != null && file.exists()) {
             FileInputStream fis = null;
@@ -2108,7 +2112,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         if (entry != null) {
                             logger.info("Entry:" + entry + "|Size:" + entry.getSize() + "|Compressed Size:" + entry.getCompressedSize());
                         }
-                        throw e;
+                        if (rescueMode) {
+                            break;
+                        } else {
+                            throw e;
+                        }
                     }
                 }
                 if (entries == 0) {
@@ -2167,21 +2175,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 }
                 ret = new LinkedList<CrawledPackage>(ret2);
             } catch (final Throwable e) {
-                try {
-                    if (zis != null) {
-                        zis.close();
-                        zis = null;
-                        fis = null;
-                    } else if (fis != null) {
-                        fis.close();
-                        fis = null;
-                    }
-                } catch (final Throwable ignore) {
-                }
                 if (e instanceof IOException) {
                     throw (IOException) e;
+                } else {
+                    throw new IOException(e);
                 }
-                throw new IOException(e);
             } finally {
                 try {
                     if (zis != null) {

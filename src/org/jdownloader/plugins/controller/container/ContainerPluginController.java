@@ -4,13 +4,17 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
+import javax.swing.filechooser.FileFilter;
+
+import jd.nutils.io.JDFileFilter;
 import jd.plugins.PluginsC;
 
 import org.appwork.utils.Regex;
+import org.jdownloader.logging.LogController;
 
 public class ContainerPluginController {
-
     private static final ContainerPluginController INSTANCE = new ContainerPluginController();
 
     public static ContainerPluginController getInstance() {
@@ -135,21 +139,29 @@ public class ContainerPluginController {
         return null;
     }
 
-    public Pattern getContainerExtensions(final String filter) {
-        final StringBuilder sb = new StringBuilder(".*(");
+    public FileFilter[] getContainerFileFilter(final String filter) {
+        final List<FileFilter> ret = new ArrayList<FileFilter>();
+        final StringBuilder sb = new StringBuilder();
+        sb.append("(");
         for (final PluginsC act : list()) {
             if (filter != null && !new Regex(act.getName(), filter).matches()) {
                 continue;
-            }
-            final String regex = new Regex(act.getSupportedLinks().pattern(), "file:/\\.\\+(.+?)\\$").getMatch(0);
-            if (regex != null) {
-                if (sb.length() > 3) {
+            } else {
+                final String match = new Regex(act.getSupportedLinks().pattern(), "file:/\\.\\+(.+?)\\$").getMatch(0);
+                if (match != null) {
+                    ret.add(new JDFileFilter(act.getName(), Pattern.compile(".*" + match + "$"), true));
+                    sb.append(match);
                     sb.append("|");
                 }
-                sb.append(regex);
             }
         }
-        sb.append(")$");
-        return Pattern.compile(sb.toString(), Pattern.CASE_INSENSITIVE);
+        sb.setLength(sb.length() - 1);
+        sb.append(")");
+        try {
+            ret.add(0, new JDFileFilter(null, Pattern.compile(sb.toString()), true));
+        } catch (final PatternSyntaxException e) {
+            LogController.CL().log(e);
+        }
+        return ret.toArray(new FileFilter[0]);
     }
 }

@@ -28,7 +28,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 
 public class JD2Import extends PluginsC {
-
     public JD2Import() {
         super("JD2 Import", "file:/.+((downloadList|linkcollector)(\\d+)?(\\.zip|\\.zip\\.backup))$", "$Revision: 21176 $");
     }
@@ -60,8 +59,8 @@ public class JD2Import extends PluginsC {
         final ContainerStatus cs = new ContainerStatus(importFile);
         cls = new ArrayList<CrawledLink>();
         try {
-            if (importFile.getName().matches("downloadList(\\d+)?\\.zip")) {
-                final LinkedList<FilePackage> packages = DownloadController.getInstance().loadFile(importFile);
+            if (importFile.getName().matches("downloadList(\\d+)?\\.zip(\\.backup)?")) {
+                final LinkedList<FilePackage> packages = DownloadController.getInstance().loadFile(importFile, true);
                 int links = 0;
                 for (final FilePackage p : packages) {
                     p.getUniqueID().refresh();
@@ -80,7 +79,6 @@ public class JD2Import extends PluginsC {
                     UIOManager.I().show(ConfirmDialogInterface.class, d).throwCloseExceptions();
                 }
                 DownloadController.getInstance().getQueue().add(new QueueAction<Void, Throwable>() {
-
                     @Override
                     protected Void run() throws Throwable {
                         DownloadController.getInstance().importList(packages);
@@ -89,9 +87,9 @@ public class JD2Import extends PluginsC {
                 });
                 cs.setStatus(ContainerStatus.STATUS_FINISHED);
                 return cs;
-            } else if (importFile.getName().matches("linkcollector(\\d+)?\\.zip")) {
+            } else if (importFile.getName().matches("linkcollector(\\d+)?\\.zip(\\.backup)?")) {
                 final HashMap<CrawledPackage, CrawledPackageStorable> restoreMap = new HashMap<CrawledPackage, CrawledPackageStorable>();
-                final LinkedList<CrawledPackage> packages = LinkCollector.getInstance().loadFile(importFile, restoreMap);
+                final LinkedList<CrawledPackage> packages = LinkCollector.getInstance().loadFile(importFile, restoreMap, true);
                 int links = 0;
                 for (final CrawledPackage p : packages) {
                     p.getUniqueID().refresh();
@@ -110,7 +108,6 @@ public class JD2Import extends PluginsC {
                     UIOManager.I().show(ConfirmDialogInterface.class, d).throwCloseExceptions();
                 }
                 LinkCollector.getInstance().getQueue().addWait(new QueueAction<Void, Throwable>() {
-
                     @Override
                     protected Void run() throws Throwable {
                         LinkCollector.getInstance().importList(packages, restoreMap);
@@ -137,5 +134,4 @@ public class JD2Import extends PluginsC {
     public String[] encrypt(String plain) {
         return null;
     }
-
 }

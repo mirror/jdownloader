@@ -3,12 +3,12 @@ package org.jdownloader.gui.views.linkgrabber.actions;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.io.File;
-import java.util.regex.Pattern;
+
+import javax.swing.filechooser.FileFilter;
 
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkOrigin;
-import jd.nutils.io.JDFileFilter;
 
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
@@ -27,7 +27,6 @@ public class AddContainerAction extends CustomizableAppAction {
      *
      */
     public AddContainerAction() {
-
         setSmallIcon(new BadgeIcon("logo/dlc", "add", 32, 24, 2, 6));
         setName(_GUI.T.AddContainerAction());
         setAccelerator(KeyEvent.VK_O);
@@ -41,22 +40,18 @@ public class AddContainerAction extends CustomizableAppAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-
         try {
-            final Pattern exts = ContainerPluginController.getInstance().getContainerExtensions(null);
-
+            final FileFilter[] fileFilter = ContainerPluginController.getInstance().getContainerFileFilter(null);
             ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI.T.AddContainerAction_actionPerformed_(), null, null);
             d.setFileSelectionMode(FileChooserSelectionMode.FILES_ONLY);
-            d.setFileFilter(new JDFileFilter(_GUI.T.AddContainerAction_actionPerformed_extensions(exts.pattern()), exts, true));
+            d.setFileFilter(fileFilter);
             d.setType(FileChooserType.OPEN_DIALOG);
             d.setMultiSelection(true);
             Dialog.I().showDialog(d);
-
             final File[] files = d.getSelection();
             if (files == null || files.length == 0) {
                 return;
             }
-
             final StringBuilder sb = new StringBuilder();
             for (final File file : files) {
                 if (sb.length() > 0) {
@@ -68,5 +63,4 @@ public class AddContainerAction extends CustomizableAppAction {
         } catch (DialogNoAnswerException e1) {
         }
     }
-
 }

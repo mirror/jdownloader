@@ -5,8 +5,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.regex.Pattern;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -25,7 +23,9 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "crunchyroll.com" }, urls = { "http://(?:www.)?crunchyroll.com(?:.br)?/(?!forumtopic)(?:comics_read(?:/(?:manga|comipo|artistalley))?\\?(?:volume_id|series_id)=[0-9]+&chapter_num=[0-9]+\\.[0-9]+|[\\w_\\-]+/[\\w\\_\\-]+\\-[0-9]+)" })
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "crunchyroll.com" }, urls = { "https?://(?:www.)?crunchyroll.com(?:.br)?/(?!forumtopic)(?:comics_read(?:/(?:manga|comipo|artistalley))?\\?(?:volume_id|series_id)=[0-9]+&chapter_num=[0-9]+\\.[0-9]+|[\\w_\\-]+/[\\w\\_\\-]+\\-[0-9]+)" })
 public class CrhyRllCom extends PluginForDecrypt {
     // Define the video quality codes used for RTMP
     public static enum DestinationQuality {
@@ -59,15 +59,15 @@ public class CrhyRllCom extends PluginForDecrypt {
         }
     }
 
-    static private final Pattern CONFIG_SUBS = Pattern.compile("<subtitle id='([0-9]+?)' link='(http://www\\.crunchyroll\\.com/xml/\\?req=RpcApiSubtitle_GetXml&amp;subtitle_script_id=[0-9]+?)' title='(.+?)'.*?/>", Pattern.CASE_INSENSITIVE);
-    static private final Pattern CONFIG_URL  = Pattern.compile("(http://www\\.crunchyroll\\.com/xml/\\?req=RpcApiVideoPlayer_GetStandardConfig&media_id=([0-9]+).*video_quality=)([0-9]*)(.*)", Pattern.CASE_INSENSITIVE);
+    static private final Pattern CONFIG_SUBS = Pattern.compile("<subtitle id='([0-9]+?)' link='(https?://www\\.crunchyroll\\.com/xml/\\?req=RpcApiSubtitle_GetXml&amp;subtitle_script_id=[0-9]+?)' title='(.+?)'.*?/>", Pattern.CASE_INSENSITIVE);
+    static private final Pattern CONFIG_URL  = Pattern.compile("(https?://www\\.crunchyroll\\.com/xml/\\?req=RpcApiVideoPlayer_GetStandardConfig&media_id=([0-9]+).*video_quality=)([0-9]*)(.*)", Pattern.CASE_INSENSITIVE);
     static private final Pattern RTMP_FILE   = Pattern.compile("<file>(.*?)</file>", Pattern.CASE_INSENSITIVE);
     static private final Pattern RTMP_HOST   = Pattern.compile("<host>(rtmp.*)</host>", Pattern.CASE_INSENSITIVE);
     static private final Pattern RTMP_QUAL   = Pattern.compile("<video_encode_quality>(.*?)</video_encode_quality>", Pattern.CASE_INSENSITIVE);
     static private final Pattern RTMP_SWF    = Pattern.compile("<default:chromelessPlayerUrl>([^<>\"]+\\.swf.*)</default:chromelessPlayerUrl>", Pattern.CASE_INSENSITIVE);
     /* 2016-04-29: http://static.ak.crunchyroll.com/versioned_assets/StandardVideoPlayer.cc7e8515.swf */
     /* 2016-10-19: http://static.ak.crunchyroll.com/vendor/StandardVideoPlayer-10dff2a.swf */
-    static private final Pattern SWF_URL     = Pattern.compile("((http://static\\.ak\\.crunchyroll\\.com/[a-z0-9\\-_]+/(?:[a-f0-9\\.]+/)?)StandardVideoPlayer(?:.+)?\\.swf)", Pattern.CASE_INSENSITIVE);
+    static private final Pattern SWF_URL     = Pattern.compile("((https?://static\\.ak\\.crunchyroll\\.com/[a-z0-9\\-_]+/(?:[a-f0-9\\.]+/)?)StandardVideoPlayer(?:.+)?\\.swf)", Pattern.CASE_INSENSITIVE);
     static private final String  SWF_DIR     = "http://static.ak.crunchyroll.com/flash/20120424185935.0acb0eac20ff1d5f75c78ac39a889d03/";
     private final int            EPISODE_PAD = 3;
     private final char           SEPARATOR   = '-';
@@ -122,7 +122,7 @@ public class CrhyRllCom extends PluginForDecrypt {
                 }
                 String chapter_number = br.getRegex("chapterNumber\\=(\\d+(\\.*)(\\d+))").getMatch(0);
                 filePackage.setName(name + "-" + chapter_number.replace(".", "-"));
-                getPage("http://api-manga.crunchyroll.com/chapters?series_id=" + series_id);
+                getPage("https://api-manga.crunchyroll.com/chapters?series_id=" + series_id);
                 if (br.toString().contains("\"error\"")) {
                     decryptedLinks.add(createOfflinelink(cryptedLink.getCryptedUrl(), "Unable to grab series information"));
                     return decryptedLinks;
@@ -140,7 +140,7 @@ public class CrhyRllCom extends PluginForDecrypt {
                         break;
                     }
                 }
-                getPage("http://api-manga.crunchyroll.com/list_chapter?session_id=" + session_id + "&chapter_id=" + chapter_id + "&auth=" + auth);
+                getPage("https://api-manga.crunchyroll.com/list_chapter?session_id=" + session_id + "&chapter_id=" + chapter_id + "&auth=" + auth);
                 if (br.toString().contains("\"error\"")) {
                     decryptedLinks.add(createOfflinelink(cryptedLink.getCryptedUrl(), "Unable to grab chapter information"));
                     return decryptedLinks;
@@ -359,9 +359,9 @@ public class CrhyRllCom extends PluginForDecrypt {
     }
 
     /**
-     * Try and find the RTMP details for the given link. If the details are successfully found, then set the properties of the link. rtmphost =
-     * TcUrl. rtmpfile = playpath. rtmpswf = swfVfy (without full path). filename = output filename without extension. qualityname = text
-     * definition of the quality found ("360p", "480p", etc).
+     * Try and find the RTMP details for the given link. If the details are successfully found, then set the properties of the link.
+     * rtmphost = TcUrl. rtmpfile = playpath. rtmpswf = swfVfy (without full path). filename = output filename without extension.
+     * qualityname = text definition of the quality found ("360p", "480p", etc).
      *
      * @param downloadLink
      *            The DownloadLink file to check
