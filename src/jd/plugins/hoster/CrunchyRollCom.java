@@ -76,7 +76,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "crunchyroll.com" }, urls = { "http://(?:\\w+.\\w+|www)\\.crunchyroll\\.com/(xml/\\?req=RpcApiVideoPlayer_GetStandardConfig\\&media_id=[0-9]+.*|xml/\\?req=RpcApiSubtitle_GetXml\\&subtitle_script_id=[0-9]+.*|i/croll_manga/e/\\w+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "crunchyroll.com" }, urls = { "https?://(?:\\w+.\\w+|www|api-manga)\\.crunchyroll\\.com/(xml/\\?req=RpcApiVideoPlayer_GetStandardConfig\\&media_id=[0-9]+.*|xml/\\?req=RpcApiSubtitle_GetXml\\&subtitle_script_id=[0-9]+.*|i/croll_manga/e/\\w+)" })
 public class CrunchyRollCom extends antiDDoSForHost {
     static private Object                                    lock                 = new Object();
     static private HashMap<Account, HashMap<String, String>> loginCookies         = new HashMap<Account, HashMap<String, String>>();

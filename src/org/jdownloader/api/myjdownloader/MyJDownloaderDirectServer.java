@@ -138,7 +138,7 @@ public class MyJDownloaderDirectServer extends Thread {
             for (final UDAServiceType udaService : udaServices) {
                 for (final Device device : upnpService.getRegistry().getDevices(udaService)) {
                     final Service service = device.findService(udaService);
-                    if (service == null) {
+                    if (service == null || service.getAction("AddPortMapping") == null) {
                         continue;
                     }
                     String deviceIP = null;
@@ -178,7 +178,7 @@ public class MyJDownloaderDirectServer extends Thread {
                         }
                         final PortMapping desiredMapping = new PortMapping(upnpPort, localIP.getHostAddress(), PortMapping.Protocol.TCP, "MyJDownloader");
                         desiredMapping.setInternalPort(new UnsignedIntegerTwoBytes(CFG_MYJD.CFG.getLastLocalPort()));
-                        Future<?> result = upnpService.getControlPoint().execute(new PortMappingAdd(service, desiredMapping) {
+                        final PortMappingAdd action = new PortMappingAdd(service, desiredMapping) {
                             @Override
                             public void success(ActionInvocation invocation) {
                                 upnpPortMapped.set(true);
@@ -189,7 +189,8 @@ public class MyJDownloaderDirectServer extends Thread {
                             public void failure(ActionInvocation invocation, UpnpResponse operation, String defaultMsg) {
                                 logger.info("PortMapping(" + portMappingTry.get() + ") " + desiredMapping.getExternalPort() + " to " + desiredMapping.getInternalClient() + ":" + desiredMapping.getInternalPort() + " failed");
                             }
-                        });
+                        };
+                        final Future<?> result = upnpService.getControlPoint().execute(action);
                         result.get();
                         if (upnpPortMapped.get()) {
                             CFG_MYJD.CFG.setLastUpnpPort(upnpPort);

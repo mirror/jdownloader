@@ -91,7 +91,7 @@ public class SrBoxLife extends antiDDoSForDecrypt {
             }
         }
         // Some link can be crypted in this site, see if it is the case
-        String[] linksCrypted = br.getRegex("\"(" + base + "engine/go\\.php\\?url=.*?)\"").getColumn(0);
+        String[] linksCrypted = br.getRegex("\"(" + base + "[^\"]*go(?:\\.php)?(?:\\?|&|&amp;)url=.*?)\"").getColumn(0);
         // Added crypted links
         for (String redirectlink : linksCrypted) {
             final String base64 = new Regex(redirectlink, "url=((?:aHR0c|ZnRwOi).+?)(\\?|$)").getMatch(0);

@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
@@ -24,7 +23,6 @@ import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkOrigin;
 import jd.gui.UserIO;
-import jd.nutils.io.JDFileFilter;
 
 import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.gui.IconKey;
@@ -32,7 +30,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.controller.container.ContainerPluginController;
 
 public class AddContainerAction extends CustomizableAppAction {
-
     private static final long serialVersionUID = 4713690050852393405L;
 
     public AddContainerAction() {
@@ -44,7 +41,7 @@ public class AddContainerAction extends CustomizableAppAction {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        final File[] files = UserIO.getInstance().requestFileChooser("_LOADSAVEDLC", _GUI.T.gui_filechooser_loaddlc(), UserIO.FILES_ONLY, new JDFileFilter(null, ContainerPluginController.getInstance().getContainerExtensions(null), true), true);
+        final File[] files = UserIO.getInstance().requestFileChooser("_LOADSAVEDLC", _GUI.T.gui_filechooser_loaddlc(), UserIO.FILES_ONLY, true, ContainerPluginController.getInstance().getContainerFileFilter(null));
         if (files == null || files.length == 0) {
             return;
         }
@@ -57,5 +54,4 @@ public class AddContainerAction extends CustomizableAppAction {
         }
         LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(LinkOrigin.ADD_CONTAINER_ACTION.getLinkOriginDetails(), sb.toString()));
     }
-
 }

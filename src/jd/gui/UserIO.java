@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.gui;
 
 import java.io.File;
@@ -22,6 +21,8 @@ import javax.swing.Icon;
 import javax.swing.JFileChooser;
 import javax.swing.ListCellRenderer;
 import javax.swing.filechooser.FileFilter;
+
+import jd.nutils.JDFlags;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.ComboBoxDialogInterface;
@@ -46,16 +47,12 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
-import jd.nutils.JDFlags;
-
 public class UserIO {
-
     public static final int FILES_ONLY                     = JFileChooser.FILES_ONLY;
     public static final int DIRECTORIES_ONLY               = JFileChooser.DIRECTORIES_ONLY;
     public static final int FILES_AND_DIRECTORIES          = JFileChooser.FILES_AND_DIRECTORIES;
     public static final int OPEN_DIALOG                    = JFileChooser.OPEN_DIALOG;
     public static final int SAVE_DIALOG                    = JFileChooser.SAVE_DIALOG;
-
     /**
      * do not display a countdown
      */
@@ -96,7 +93,6 @@ public class UserIO {
      * the textfield will be renderer as a passwordfield
      */
     public static final int STYLE_PASSWORD                 = 1 << 11;
-
     /**
      * pressed ok
      */
@@ -122,12 +118,10 @@ public class UserIO {
     public static final int ICON_WARNING                   = 1;
     public static final int ICON_ERROR                     = 2;
     public static final int ICON_QUESTION                  = 3;
-
     protected static UserIO INSTANCE                       = new UserIO();
 
     public UserIO() {
         setCountdownTime(UserIO.getUserCountdownTime());
-
     }
 
     /**
@@ -206,7 +200,6 @@ public class UserIO {
      */
     private int convertFlagToAWDialog(final int flag) {
         int ret = 0;
-
         if (BinaryLogic.containsNone(flag, UserIO.NO_COUNTDOWN)) {
             ret |= UIOManager.LOGIC_COUNTDOWN;
         }
@@ -281,11 +274,8 @@ public class UserIO {
      * @return
      */
     public int requestComboDialog(int flag, final String title, final String question, final Object[] options, final int defaultSelection, final Icon icon, final String okText, final String cancelText, final ListCellRenderer renderer) {
-
         flag = this.convertFlagToAWDialog(flag);
-
         ComboBoxDialog d = new ComboBoxDialog(flag, title, question, options, defaultSelection, icon, okText, cancelText, renderer) {
-
             @Override
             protected boolean isResizable() {
                 return true;
@@ -295,11 +285,8 @@ public class UserIO {
             public boolean isRemoteAPIEnabled() {
                 return true;
             }
-
         };
-
         return UIOManager.I().show(ComboBoxDialogInterface.class, d).getSelectedIndex();
-
     }
 
     public int requestConfirmDialog(final int flag, final String question) {
@@ -317,29 +304,24 @@ public class UserIO {
     <T extends UserIODefinition> int requestUIOManagerDialog(Class<T> class1, T impl) {
         int response = 0;
         try {
-
             T d = UIOManager.I().show(class1, impl);
-
             switch (d.getCloseReason()) {
             case CANCEL:
             case CLOSE:
             case INTERRUPT:
                 response |= UserIO.RETURN_CANCEL;
                 break;
-
             case OK:
                 response |= UserIO.RETURN_OK;
                 break;
             case TIMEOUT:
                 response |= UserIO.RETURN_COUNTDOWN_TIMEOUT;
                 break;
-
             }
             if (d.isDontShowAgainSelected()) {
                 response |= UserIO.RETURN_DONT_SHOW_AGAIN;
             }
             d.throwCloseExceptions();
-
         } catch (DialogClosedException e) {
             response |= UserIO.RETURN_CANCEL;
             if (e.isCausedByDontShowAgain()) {
@@ -360,8 +342,17 @@ public class UserIO {
         return response;
     }
 
+    @Deprecated
     public File[] requestFileChooser(final String id, final String title, final Integer fileSelectionMode, final FileFilter fileFilter, final Boolean multiSelection) {
-        return this.requestFileChooser(id, title, fileSelectionMode, fileFilter, multiSelection, null, null);
+        if (fileFilter == null) {
+            return this.requestFileChooser(id, title, fileSelectionMode, multiSelection, null, null, new FileFilter[0]);
+        } else {
+            return this.requestFileChooser(id, title, fileSelectionMode, multiSelection, null, null, new FileFilter[] { fileFilter });
+        }
+    }
+
+    public File[] requestFileChooser(final String id, final String title, final Integer fileSelectionMode, final Boolean multiSelection, final FileFilter... fileFilter) {
+        return this.requestFileChooser(id, title, fileSelectionMode, multiSelection, null, null, fileFilter);
     }
 
     /**
@@ -383,10 +374,17 @@ public class UserIO {
      *            mode for the dialog type (like {@link UserIO#OPEN_DIALOG}) or null for default
      * @return an array of files or null if the user cancel the dialog
      */
+    @Deprecated
     public File[] requestFileChooser(final String id, final String title, final Integer fileSelectionMode, final FileFilter fileFilter, final Boolean multiSelection, final File startDirectory, final Integer dialogType) {
+        if (fileFilter == null) {
+            return requestFileChooser(id, title, fileSelectionMode, multiSelection, startDirectory, dialogType, new FileFilter[0]);
+        } else {
+            return requestFileChooser(id, title, fileSelectionMode, multiSelection, startDirectory, dialogType, new FileFilter[] { fileFilter });
+        }
+    }
 
+    public File[] requestFileChooser(final String id, final String title, final Integer fileSelectionMode, final Boolean multiSelection, final File startDirectory, final Integer dialogType, final FileFilter... fileFilter) {
         FileChooserSelectionMode fsm = FileChooserSelectionMode.FILES_AND_DIRECTORIES;
-
         for (final FileChooserSelectionMode f : FileChooserSelectionMode.values()) {
             if (f.getId() == fileSelectionMode) {
                 fsm = f;
@@ -402,7 +400,6 @@ public class UserIO {
                 }
             }
         }
-
         ExtFileChooserDialog d = new ExtFileChooserDialog(0, title, null, null);
         d.setStorageID(id);
         d.setFileSelectionMode(fsm);
@@ -419,7 +416,6 @@ public class UserIO {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-
         return d.getSelection();
     }
 
@@ -438,22 +434,16 @@ public class UserIO {
     }
 
     public String requestInputDialog(final int flag, final String title, final String message, final String defaultMessage, final Icon icon, final String okOption, final String cancelOption) {
-
         try {
-
             InputDialogInterface d = UIOManager.I().show(InputDialogInterface.class, new InputDialog(this.convertFlagToAWDialog(flag), title, message, defaultMessage, icon, okOption, cancelOption));
-
             switch (d.getCloseReason()) {
             case OK:
                 return d.getText();
             default:
             }
             d.throwCloseExceptions();
-
         } catch (DialogClosedException e) {
-
         } catch (DialogCanceledException e) {
-
         }
         return null;
     }
@@ -500,5 +490,4 @@ public class UserIO {
         }
         return null;
     }
-
 }

@@ -604,15 +604,15 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
 
         private final ArrayList<IndexedDownloadLink>         downloadLinks = new ArrayList<IndexedDownloadLink>();
         private final static Comparator<IndexedDownloadLink> COMPARATOR    = new Comparator<IndexedDownloadLink>() {
-                                                                               private final int compare(int x, int y) {
-                                                                                   return (x < y) ? -1 : ((x == y) ? 0 : 1);
-                                                                               }
+            private final int compare(int x, int y) {
+                return (x < y) ? -1 : ((x == y) ? 0 : 1);
+            }
 
-                                                                               @Override
-                                                                               public int compare(IndexedDownloadLink o1, IndexedDownloadLink o2) {
-                                                                                   return compare(o1.getIndex(), o2.getIndex());
-                                                                               }
-                                                                           };
+            @Override
+            public int compare(IndexedDownloadLink o1, IndexedDownloadLink o2) {
+                return compare(o1.getIndex(), o2.getIndex());
+            }
+        };
 
         private FilePackage getLoadedPackage() {
             final FilePackage filePackage = this.filePackage;
@@ -655,6 +655,10 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
     }
 
     public LinkedList<FilePackage> loadFile(File file) throws IOException {
+        return loadFile(file, true);
+    }
+
+    public LinkedList<FilePackage> loadFile(File file, boolean rescueMode) throws IOException {
         logger.info("Load List: " + file);
         LinkedList<FilePackage> ret = null;
         if (file != null && file.exists()) {
@@ -752,7 +756,11 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                         if (entry != null) {
                             logger.info("Entry:" + entry + "|EntryIndex:" + entries + "|Size:" + entry.getSize() + "|Compressed Size:" + entry.getCompressedSize());
                         }
-                        throw e;
+                        if (rescueMode) {
+                            break;
+                        } else {
+                            throw e;
+                        }
                     }
                 }
                 if (entries == 0) {
@@ -811,21 +819,11 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                 }
                 ret = new LinkedList<FilePackage>(ret2);
             } catch (final Throwable e) {
-                try {
-                    if (zis != null) {
-                        zis.close();
-                        zis = null;
-                        fis = null;
-                    } else if (fis != null) {
-                        fis.close();
-                        fis = null;
-                    }
-                } catch (final Throwable ignore) {
-                }
                 if (e instanceof IOException) {
                     throw (IOException) e;
+                } else {
+                    throw new IOException(e);
                 }
-                throw new IOException(e);
             } finally {
                 try {
                     if (zis != null) {
