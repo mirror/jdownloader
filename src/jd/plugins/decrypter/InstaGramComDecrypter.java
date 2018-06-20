@@ -333,7 +333,17 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             }
         }
         final ArrayList<Object> resource_data_list = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "edge_sidecar_to_children/edges");
-        if (typename != null && typename.matches("Graph[A-Z][a-zA-Z0-9]+") && resource_data_list == null && !this.parameter.matches(TYPE_GALLERY)) {
+        if (StringUtils.equalsIgnoreCase("GraphSidecar", typename) && !this.parameter.matches(TYPE_GALLERY) && (resource_data_list == null || resource_data_list.size() > 1)) {
+            final DownloadLink dl = this.createDownloadlink(createSingle_P_url(linkid_main));
+            this.decryptedLinks.add(dl);
+            distribute(dl);
+        } else if (StringUtils.equalsIgnoreCase("GraphImage", typename) && (resource_data_list == null || resource_data_list.size() == 0)) {
+            /* Single image */
+            decryptSingleImage(entries, linkid_main, date, description, null);
+        } else if (StringUtils.equalsIgnoreCase("GraphVideo", typename) && (resource_data_list == null || resource_data_list.size() == 0)) {
+            /* Single video */
+            decryptSingleImage(entries, linkid_main, date, description, null);
+        } else if (typename != null && typename.matches("Graph[A-Z][a-zA-Z0-9]+") && resource_data_list == null && !this.parameter.matches(TYPE_GALLERY)) {
             /*
              * 2017-05-09: User has added a 'User' URL and in this case a single post contains multiple images (=album) but at this stage
              * the json does not contain the other images --> This has to go back into the decrypter and get crawled as a single item.
