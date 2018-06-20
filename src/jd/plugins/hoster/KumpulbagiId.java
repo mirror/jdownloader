@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -39,9 +38,8 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kbagi.com" }, urls = { "http://kumpulbagidecrypted\\.com/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kbagi.com" }, urls = { "https?://kumpulbagidecrypted\\.com/\\d+" })
 public class KumpulbagiId extends PluginForHost {
-
     public KumpulbagiId(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(MAINPAGE);
@@ -49,7 +47,7 @@ public class KumpulbagiId extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://kbagi.com/termosecondicoes.aspx";
+        return "http://k-bagi.com/termosecondicoes.aspx";
     }
 
     @Override
@@ -104,7 +102,7 @@ public class KumpulbagiId extends PluginForHost {
         }
         final String fid = downloadLink.getStringProperty("plain_fid", null);
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
-        final String dllink_stream = this.br.getRegex("data\\-player=\"video\" data\\-player\\-file=\"(http[^<>\"]+)\"").getMatch(0);
+        final String dllink_stream = this.br.getRegex("data\\-player=\"video\" data\\-player\\-file=\"(https?[^<>\"]+)\"").getMatch(0);
         if (dllink == null) {
             if (req_token != null) {
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -186,7 +184,7 @@ public class KumpulbagiId extends PluginForHost {
         }
     }
 
-    private static final String MAINPAGE = "http://kbagi.com";
+    private static final String MAINPAGE = "http://k-bagi.com";
     private static Object       LOCK     = new Object();
 
     @SuppressWarnings("deprecation")
@@ -200,7 +198,7 @@ public class KumpulbagiId extends PluginForHost {
                     this.br.setCookies(MAINPAGE, cookies);
                     return;
                 }
-                // br.setAllowedResponseCodes(500);
+                br.setAllowedResponseCodes(500);
                 br.getPage(MAINPAGE + "/");
                 br.getPage("/action/Account/Login?returnUrl=%2F&TimeStamp=" + System.currentTimeMillis());
                 String req_token = br.getRegex("name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
@@ -213,7 +211,6 @@ public class KumpulbagiId extends PluginForHost {
                 if (req_token == null) {
                     req_token = "undefined";
                 }
-
                 this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 // this.br.getHeaders().put("Content-Type", "application/json; charset=utf-8");
                 this.br.getHeaders().put("Referer", MAINPAGE + "/");
@@ -226,9 +223,11 @@ public class KumpulbagiId extends PluginForHost {
                     }
                 }
                 br.getPage(MAINPAGE + "/");
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                account.saveCookies(this.br.getCookies(MAINPAGE), "");
             } catch (final PluginException e) {
-                account.clearCookies("");
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
@@ -238,12 +237,7 @@ public class KumpulbagiId extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account, true);
         ai.setUnlimitedTraffic();
         /* Only free accounts are supported so far */
         if (true) {
