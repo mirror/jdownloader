@@ -49,6 +49,7 @@ public class KumpulbagiId extends PluginForDecrypt {
         String passCode = null;
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replaceAll("(?:k-?bagi\\.com|kumpulbagi\\.(?:id|com))/", "k-bagi.com/");
+        br.setAllowedResponseCodes(500);
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.containsHTML(">Você não tem permissão para ver este arquivo<"))
