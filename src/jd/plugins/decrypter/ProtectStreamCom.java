@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protect-stream.com" }, urls = { "https?://(www\\.)?protect\\-stream\\.com/PS_(DL|SM)_[A-Za-z0-9\\-_]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protect-stream.com" }, urls = { "https?://(www\\.)?protect\\-stream\\.com/(PS_(DL|SM)|VID)_[A-Za-z0-9\\-_]+" })
 public class ProtectStreamCom extends PluginForDecrypt {
     public ProtectStreamCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -36,7 +36,17 @@ public class ProtectStreamCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         final String prtcid = new Regex(parameter, "protect\\-stream\\.com/PS_(?:DL|SM)_([A-Za-z0-9\\-_]+)").getMatch(0);
-        if (parameter.contains("PS_SM")) {
+        if (parameter.contains("VID")) {
+            br.getPage(parameter);
+            br.followRedirect();
+            final String cheap = br.getRegex("var k=\"([^<>\"]*?)\";").getMatch(0);
+            if (cheap == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            this.sleep(5 * 1000l, param);
+            br.postPage("/secur2.php", "k=" + Encoding.urlEncode(cheap));
+        } else if (parameter.contains("PS_SM")) {
             br.getPage(parameter);
             br.followRedirect();
             final String cheap = br.getRegex("var k=\"([^<>\"]*?)\";").getMatch(0);
@@ -59,10 +69,13 @@ public class ProtectStreamCom extends PluginForDecrypt {
             this.sleep(10 * 1000l, param);
             br.postPage("/secur.php", "k=" + Encoding.urlEncode(cheap));
         }
-        final String finallink = br.getRegex("(?:href|src)\\s*=\\s*\"(https?[^<>\"]*?)\"").getMatch(0);
+        String finallink = br.getRegex("class=\"button\"\\s*(?:href|src)\\s*=\\s*\"(https?[^<>\"]*?)\"").getMatch(0);
         if (finallink == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            finallink = br.getRegex("(?:href|src)\\s*=\\s*\"(https?[^<>\"]*?)\"").getMatch(0);
+            if (finallink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
         }
         decryptedLinks.add(createDownloadlink(finallink));
         return decryptedLinks;
