@@ -110,6 +110,7 @@ public class CrunchyRollCom extends antiDDoSForHost {
                     xmltext.append(in.nextLine() + lineseparator);
                 }
             } catch (Exception e) {
+                logger.log(e);
             } finally {
                 in.close();
             }
@@ -223,6 +224,7 @@ public class CrunchyRollCom extends antiDDoSForHost {
                 subOut.write(subStyles + "\n");
                 subOut.write(subEvents);
             } catch (final Throwable e) {
+                logger.log(e);
                 subOut.close();
                 subOutFile.close();
                 throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, "Error writing decrypted subtitles!");
@@ -231,13 +233,15 @@ public class CrunchyRollCom extends antiDDoSForHost {
             subOutFile.close();
             downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.crunchyrollcom.decryptedsubtitles", "Subtitles decrypted"));
         } catch (final SAXException e) {
+            logger.log(e);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Error decrypting subtitles: Invalid XML file!");
         } catch (final DOMException e) {
+            logger.log(e);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Error decrypting subtitles: XML file changed!");
         } catch (final PluginException e) {
             throw e;
         } catch (final Throwable e) {
-            e.printStackTrace();
+            logger.log(e);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Error decrypting subtitles!");
         }
     }
@@ -275,7 +279,7 @@ public class CrunchyRollCom extends antiDDoSForHost {
             }
             downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.crunchyrollcom.decryptimage", "Image decrypted"));
         } catch (final Throwable e) {
-            e.printStackTrace();
+            logger.log(e);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Error decrypting image!");
         }
     }

@@ -50,7 +50,7 @@ public class DbrEe extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        this.setBrowserExclusive();
+        br.setCookiesExclusive(false);// site sets rc_pass cookie to bypass recaptcha
         br.setFollowRedirects(true);
         getPage(br, link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("header\\-file__title")) {
@@ -80,12 +80,14 @@ public class DbrEe extends antiDDoSForHost {
         if (form == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br);
-        final String recaptchaV2Response = rc2.getToken();
-        if (recaptchaV2Response == null) {
-            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (br.containsHTML("data-sitekey")) {
+            final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br);
+            final String recaptchaV2Response = rc2.getToken();
+            if (recaptchaV2Response == null) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
+            form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
         }
-        form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
         br.submitForm(form);
         final Map<String, Object> response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final String download_url = response != null ? (String) response.get("download_url") : null;
