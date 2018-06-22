@@ -29,7 +29,7 @@ import jd.plugins.FilePackage;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangahost.com" }, urls = { "https?://(?:www\\.)?(?:br\\.)?(mangahost(?:br)?\\.(?:com|net|me|org|cc)|mangahosts\\.com|yesmangas\\.net)/manga/[^/]+/([^\\s]*\\d+(\\.\\d+|[a-z])?|one-shot)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangahost.com" }, urls = { "https?://(?:www\\.)?(?:br\\.)?(mangahost(?:-?br)?\\.(?:com|net|me|org|cc)|mangahosts\\.com|yesmangas\\.net)/manga/[^/]+/([^\\s]*\\d+(\\.\\d+|[a-z])?|one-shot)" })
 public class MangahostCom extends antiDDoSForDecrypt {
     public MangahostCom(PluginWrapper wrapper) {
         super(wrapper);

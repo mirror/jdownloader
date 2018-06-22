@@ -327,6 +327,9 @@ public class FilefoxCc extends antiDDoSForHost {
             }
         }
         if (inValidate(fileInfo[0])) {
+            fileInfo[0] = new Regex(correctedBR, "class=\"[^\"]*file-name\">.*?<p>\\s*(.*?)\\s*<span>").getMatch(0);
+        }
+        if (inValidate(fileInfo[0])) {
             /* 2017-07-25: Special */
             fileInfo[0] = new Regex(correctedBR, "class=\"pfo pfo\\-dl1\"></i>\\s*([^<>]+)\\s*<").getMatch(0);
         }
@@ -1191,6 +1194,9 @@ public class FilefoxCc extends antiDDoSForHost {
             if (correctedBR.contains("\">Skipped countdown<")) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Fatal countdown error (countdown skipped)");
             }
+        }
+        if (new Regex(correctedBR, "class\\s*=\\s*\"paid-only\"").matches()) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Paid Only");
         }
         /** Wait time reconnect handling */
         if (new Regex(correctedBR, "(You have reached the download(\\-| )limit|>\\s*You have to wait|>\\s*Wait[^<>]*?or )").matches()) {
