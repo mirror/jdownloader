@@ -318,6 +318,7 @@ public class CrunchyRollCom extends antiDDoSForHost {
      */
     private void downloadSubs(final DownloadLink downloadLink) throws Exception {
         if ((Boolean) downloadLink.getProperty("valid", false)) {
+            this.br.getHeaders().put("Accept-Encoding", "identity");
             this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, downloadLink.getDownloadURL(), true, 1);
             if (dl.getConnection().isContentDisposition() || StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "text/xml")) {
                 if (this.dl.startDownload()) {
@@ -354,6 +355,7 @@ public class CrunchyRollCom extends antiDDoSForHost {
      *            The DownloadLink to download manga pages
      */
     private void downloadManga(final DownloadLink downloadLink) throws Exception {
+        this.br.getHeaders().put("Accept-Encoding", "identity");
         this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, downloadLink.getDownloadURL(), true, 1);
         if (dl.getConnection().isContentDisposition() || StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "image")) {
             if (this.dl.startDownload()) {
@@ -427,8 +429,9 @@ public class CrunchyRollCom extends antiDDoSForHost {
             this.downloadSubs(downloadLink);
         } else if (downloadLink.getDownloadURL().contains(CrunchyRollCom.CROLL_MANGA)) {
             this.downloadManga(downloadLink);
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
     @Override
@@ -444,8 +447,9 @@ public class CrunchyRollCom extends antiDDoSForHost {
             this.downloadSubs(downloadLink);
         } else if (downloadLink.getDownloadURL().contains(CrunchyRollCom.CROLL_MANGA)) {
             this.downloadManga(downloadLink);
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
     /**
@@ -598,6 +602,7 @@ public class CrunchyRollCom extends antiDDoSForHost {
             // Get the HTTP response headers of the XML file to check for validity
             URLConnectionAdapter conn = null;
             try {
+                br.getHeaders().put("Accept-Encoding", "identity");
                 conn = this.br.openGetConnection(downloadLink.getDownloadURL());
                 final long respCode = conn.getResponseCode();
                 final long length = conn.getLongContentLength();
@@ -652,7 +657,7 @@ public class CrunchyRollCom extends antiDDoSForHost {
      *            The number of bytes to make the key (e.g. 32 bytes for 256-bit key)
      * @return The byte formatted key to be used in AES decryption
      */
-    private byte[] subsGenerateKey(final int id, final int size) throws NoSuchAlgorithmException {
+    private static byte[] subsGenerateKey(final int id, final int size) throws NoSuchAlgorithmException {
         // Generate fibonacci salt
         String magicStr = "";
         int fibA = 1;
@@ -666,20 +671,20 @@ public class CrunchyRollCom extends antiDDoSForHost {
         // Calculate magic number
         final int magic1 = (int) Math.floor(Math.sqrt(6.9) * Math.pow(2, 25));
         final long magic2 = id ^ magic1 ^ (id ^ magic1) >>> 3 ^ (magic1 ^ id) * 32l;
-                    magicStr += magic2;
-                    // Calculate the hash using SHA-1
-                    final MessageDigest md = MessageDigest.getInstance("SHA-1");
-                    /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
-                    final byte[] magicBytes = magicStr.getBytes();
-                    md.update(magicBytes, 0, magicBytes.length);
-                    final byte[] hashBytes = md.digest();
-                    // Create the key using the given length
-                    final byte[] key = new byte[size];
-                    Arrays.fill(key, (byte) 0);
-                    for (int i = 0; i < key.length && i < hashBytes.length; i++) {
-                        key[i] = hashBytes[i];
-                    }
-                    return key;
+        magicStr += magic2;
+        // Calculate the hash using SHA-1
+        final MessageDigest md = MessageDigest.getInstance("SHA-1");
+        /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
+        final byte[] magicBytes = magicStr.getBytes();
+        md.update(magicBytes, 0, magicBytes.length);
+        final byte[] hashBytes = md.digest();
+        // Create the key using the given length
+        final byte[] key = new byte[size];
+        Arrays.fill(key, (byte) 0);
+        for (int i = 0; i < key.length && i < hashBytes.length; i++) {
+            key[i] = hashBytes[i];
+        }
+        return key;
     }
 
     /**
