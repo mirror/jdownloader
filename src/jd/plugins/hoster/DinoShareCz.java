@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -35,7 +36,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dinoshare.cz" }, urls = { "http://(www\\.)?dinoshare\\.cz/[a-z0-9\\-]+/[A-Za-z0-9]+/" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dinoshare.cz" }, urls = { "http://(www\\.)?dinoshare\\.cz/[a-z0-9\\-]+/[A-Za-z0-9]+/?" })
 public class DinoShareCz extends PluginForHost {
     public DinoShareCz(PluginWrapper wrapper) {
         super(wrapper);
@@ -45,6 +46,13 @@ public class DinoShareCz extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.dinoshare.cz/terms-dinoshare.pdf";
+    }
+
+    @SuppressWarnings("deprecation")
+    public void correctDownloadLink(final DownloadLink link) throws IOException {
+        if (!link.getDownloadURL().endsWith("/")) {
+            link.setUrlDownload(link.getDownloadURL() + "/");
+        }
     }
 
     /* Connection stuff */
