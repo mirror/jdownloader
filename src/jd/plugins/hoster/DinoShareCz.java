@@ -61,8 +61,7 @@ public class DinoShareCz extends PluginForHost {
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
 
     @SuppressWarnings("deprecation")
-    @Override
-    public boolean checkLinks(final DownloadLink[] urls) {
+    public boolean xxx(final DownloadLink[] urls) { // checkLinks uses API, gets no response 2018-06-22
         if (urls == null || urls.length == 0) {
             return false;
         }
@@ -123,7 +122,16 @@ public class DinoShareCz extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        checkLinks(new DownloadLink[] { downloadLink });
+        // checkLinks(new DownloadLink[] { downloadLink }); // Using API gets no response 2018-06-22
+        br.getPage(downloadLink.getDownloadURL());
+        String filename = br.getRegex("<h2>([^<>]*?)</h2>").getMatch(0);
+        if (filename != null) {
+            downloadLink.setFinalFileName(filename);
+        }
+        String dllink = br.getRegex("download-button[^<>]*?href=\"([^<>\\s]*?)\\s").getMatch(0);
+        if (dllink != null) {
+            return AvailableStatus.TRUE;
+        }
         if (!downloadLink.isAvailabilityStatusChecked()) {
             return AvailableStatus.UNCHECKED;
         }
@@ -136,14 +144,27 @@ public class DinoShareCz extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        try {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        } catch (final Throwable e) {
-            if (e instanceof PluginException) {
-                throw (PluginException) e;
+        String dllink = br.getRegex("download-button[^<>]*?href=\"([^<>\\s]*?)\\s").getMatch(0);
+        if (dllink != null) {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+            if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getLongContentLength() == -1) {
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                if (br.containsHTML("maximalni")) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Maximum free downloads reached", 60 * 60 * 1000l);
+                }
             }
+            dl.startDownload();
+        } else {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by registered- and premium users");
         }
-        throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by registered- and premium users");
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
@@ -156,6 +177,8 @@ public class DinoShareCz extends PluginForHost {
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
+                } else {
+                    downloadLink.setDownloadSize(con.getLongContentLength());
                 }
             } catch (final Exception e) {
                 downloadLink.setProperty(property, Property.NULL);
