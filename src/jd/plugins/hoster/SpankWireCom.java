@@ -134,8 +134,8 @@ public class SpankWireCom extends PluginForHost {
         final URLConnectionAdapter con = br2.openHeadConnection(dllink);
         if (!con.getContentType().contains("html")) {
             downloadLink.setDownloadSize(con.getLongContentLength());
-        } else {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else { // Sometimes we get 401 here
+            // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         return AvailableStatus.TRUE;
     }
@@ -148,6 +148,9 @@ public class SpankWireCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This video is temporarily unavailable!");
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        if (dl.getConnection().getResponseCode() == 401 || dl.getConnection().getResponseCode() == 403) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 401 / 403", 60 * 60 * 1000l);
+        }
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
