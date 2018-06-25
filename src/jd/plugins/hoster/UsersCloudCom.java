@@ -241,6 +241,23 @@ public class UsersCloudCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @Override
+    public String filterPackageID(String packageIdentifier) {
+        return packageIdentifier.replaceAll("([^a-zA-Z0-9]+)", "");
+    }
+
+    private char[] FILENAMEREPLACES = new char[] { ' ', '_' };
+
+    @Override
+    public char[] getFilenameReplaceMap() {
+        return FILENAMEREPLACES;
+    }
+
+    @Override
+    public boolean isHosterManipulatesFilenames() {
+        return true;
+    }
+
     private String[] scanInfo(final String[] fileInfo) {
         /* standard traits from base page */
         if (fileInfo[0] == null) {

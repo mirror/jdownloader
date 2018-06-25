@@ -169,12 +169,21 @@ public class ProLeechLink extends antiDDoSForHost {
                 }
                 if (br.containsHTML(">\\s*No link entered\\.?\\s*<")) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                if (br.containsHTML(">\\s*Error getting the link from this account\\.?\\s*<")) {
-                    final AccountInfo ai = account.getAccountInfo();
-                    if (ai != null) {
-                        ai.removeMultiHostSupport(downloadLink.getHost());
-                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                } else if (br.containsHTML(">\\s*Error getting the link from this account\\.?\\s*<")) {
+                    synchronized (account) {
+                        final AccountInfo ai = account.getAccountInfo();
+                        if (ai != null) {
+                            ai.removeMultiHostSupport(downloadLink.getHost());
+                            throw new PluginException(LinkStatus.ERROR_RETRY);
+                        }
+                    }
+                } else if (br.containsHTML(">\\s*Our account has reached traffic limit\\.?\\s*<")) {
+                    synchronized (account) {
+                        final AccountInfo ai = account.getAccountInfo();
+                        if (ai != null) {
+                            ai.removeMultiHostSupport(downloadLink.getHost());
+                            throw new PluginException(LinkStatus.ERROR_RETRY);
+                        }
                     }
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

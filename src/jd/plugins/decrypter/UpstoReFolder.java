@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -25,9 +24,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upsto.re" }, urls = { "http://(www\\.)?(upsto\\.re|upstore\\.net)/d/[A-Za-z0-9]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upsto.re" }, urls = { "https?://(www\\.)?(upsto\\.re|upstore\\.net)/d/[A-Za-z0-9]+" })
 public class UpstoReFolder extends PluginForDecrypt {
-
     public UpstoReFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -53,7 +51,6 @@ public class UpstoReFolder extends PluginForDecrypt {
         for (String singleLink : links) {
             decryptedLinks.add(createDownloadlink("http://upsto.re" + singleLink));
         }
-
         return decryptedLinks;
     }
 
@@ -61,5 +58,4 @@ public class UpstoReFolder extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

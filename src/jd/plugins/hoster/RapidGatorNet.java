@@ -117,6 +117,23 @@ public class RapidGatorNet extends antiDDoSForHost {
         }
     }
 
+    @Override
+    public String filterPackageID(String packageIdentifier) {
+        return packageIdentifier.replaceAll("([^a-zA-Z0-9]+)", "");
+    }
+
+    private char[] FILENAMEREPLACES = new char[] { ' ', '_' };
+
+    @Override
+    public char[] getFilenameReplaceMap() {
+        return FILENAMEREPLACES;
+    }
+
+    @Override
+    public boolean isHosterManipulatesFilenames() {
+        return true;
+    }
+
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
     @Override
     public boolean hasCaptcha(final DownloadLink link, final jd.plugins.Account acc) {
@@ -972,9 +989,9 @@ public class RapidGatorNet extends antiDDoSForHost {
             /*
              * This can happen if links go offline in the moment when the user is trying to download them - I (psp) was not able to
              * reproduce this so this is just a bad workaround! Correct server response would be:
-             *
+             * 
              * {"response":null,"response_status":404,"response_details":"Error: File not found"}
-             *
+             * 
              * TODO: Maybe move this info handleErrors_api
              */
             if (br.containsHTML("\"response_details\":null")) {

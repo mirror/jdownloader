@@ -94,7 +94,7 @@ public class XTubeCom extends PluginForHost {
         if (br.getURL().contains("play.php?preview_id=")) {
             filename = br.getRegex("class=\"sectionNoStyleHeader\">([^<>\"]*?)</div>").getMatch(0);
         } else {
-            filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
+            filename = br.getRegex("<h1>\\s*(.*?)\\s*</h1>").getMatch(0);
             // For DVD preview links
             if (filename == null) {
                 filename = br.getRegex("id=\"videoDetails\">[\t\n\r ]+<p class=\"title\">([^<>\"]*?)</p>").getMatch(0);
@@ -118,13 +118,20 @@ public class XTubeCom extends PluginForHost {
             if (fileID == null) {
                 fileID = br.getRegex("contentId\" value=\"([^\"]+)\"").getMatch(0);
             }
+            if ("undefined".equals(ownerName)) {
+                final String contentOwnerId = br.getRegex("contentOwnerId\" value=\"([^\"]+)\"").getMatch(0);
+                if (contentOwnerId != null) {
+                    ownerName = contentOwnerId;
+                }
+            }
             if (fileID == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.postPage("http://www.xtube.com/find_video.php", "user%5Fid=" + Encoding.urlEncode(ownerName) + "&clip%5Fid=&video%5Fid=" + Encoding.urlEncode(fileID));
-            DLLINK = br.getRegex("\\&filename=(http.*?)($|\r|\n| )").getMatch(0);
+            final Browser brc = br.cloneBrowser();
+            brc.postPage("http://www.xtube.com/find_video.php", "user%5Fid=" + Encoding.urlEncode(ownerName) + "&clip%5Fid=&video%5Fid=" + Encoding.urlEncode(fileID));
+            DLLINK = brc.getRegex("\\&filename=(http.*?)($|\r|\n| )").getMatch(0);
             if (DLLINK == null) {
-                DLLINK = br.getRegex("\\&filename=(%2Fvideos.*?hash.+)").getMatch(0);
+                DLLINK = brc.getRegex("\\&filename=(%2Fvideos.*?hash.+)").getMatch(0);
             }
         }
         if (filename == null || DLLINK == null || DLLINK.length() > 500) {
