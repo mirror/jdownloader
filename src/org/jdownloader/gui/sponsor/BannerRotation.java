@@ -478,7 +478,7 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
         }
 
         public boolean hasChanges() {
-            return updateData() || hasChanges.getAndSet(false);
+            return updateData() || hasChanges.compareAndSet(true, false);
         }
 
         protected void onChange() {
@@ -499,6 +499,24 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
 
         private final long getTimestamp() {
             return timeStamp;
+        }
+
+        @Override
+        public int hashCode() {
+            return getBanner().getHost().hashCode();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == null) {
+                return false;
+            } else if (obj == this) {
+                return true;
+            } else if (obj instanceof Banner) {
+                return StringUtils.equals(getBanner().getHost(), ((Banner) obj).getBanner().getHost());
+            } else {
+                return false;
+            }
         }
 
         private final Icon getIcon() {
@@ -528,7 +546,7 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
                     current = new Banner(rotateBanners.get(0));
                 } else {
                     if (System.currentTimeMillis() - old.getTimestamp() > bannerMinimumShowtime) {
-                        final int index = rotateBanners.indexOf(old.banner);
+                        final int index = rotateBanners.indexOf(old.getBanner());
                         if (index == -1 || index + 1 == rotateBanners.size() || rotateBanners.size() == 1) {
                             current = new Banner(rotateBanners.get(0));
                         } else {
@@ -557,7 +575,7 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
     private List<AvailableBanner> updateRotation() {
         final ArrayList<AvailableBanner> rotation = new ArrayList<AvailableBanner>();
         final ArrayList<AvailableBanner> fallback = new ArrayList<AvailableBanner>();
-        for (final AvailableBanner banner : allBanners) {
+        for (final AvailableBanner banner : getAllBanners()) {
             if (banner.hasChanges()) {
                 // required to process changes
             }
