@@ -119,7 +119,7 @@ public class FilePathSandbox {
             } else {
                 return false;
             }
-            if (dest.exists() && overwrite == false || !dest.delete()) {
+            if (dest.exists() && (overwrite == false || !dest.delete())) {
                 return false;
             }
             if (!dest.getParentFile().exists()) {
