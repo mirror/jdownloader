@@ -56,7 +56,10 @@ public class RlGalleriesNt extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final String fpName = br.getRegex("border='0' /></a></div>(?:\\s*<h\\d+[^>]*>\\s*)?(.*?)(?:\\s*</h\\d+>\\s*)?</td></tr><tr>").getMatch(0);
+        String fpName = br.getRegex("border='0' /></a></div>(?:\\s*<h\\d+[^>]*>\\s*)?(.*?)(?:\\s*</h\\d+>\\s*)?</td></tr><tr>").getMatch(0);
+        if (fpName == null) {
+            fpName = br.getRegex("<h\\d+[^<]*>\\s*([^<]*?)\\s*porn galleries\\s*</h\\d+").getMatch(0);
+        }
         final String[] links = br.getRegex("'(/image\\.php\\?cn=\\d+&uid=[A-Za-z0-9]+&where=.*?)'").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
