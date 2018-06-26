@@ -549,11 +549,11 @@ public class Keep2ShareCc extends K2SApi {
     @Override
     public void getPage(String page) throws Exception {
         super.getPage(page);
-        if (br.getHost().startsWith("spa.")) {
+        if (br._getURL().getHost().startsWith("spa.")) {
             super.getPage(MAINPAGE + "/site/refusesplittest");
             logger.info("refusesplittest");
             super.getPage(page);
-            if (br.getHost().startsWith("spa.")) {
+            if (br._getURL().getHost().startsWith("spa.")) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
