@@ -113,7 +113,7 @@ public class BoxCom extends antiDDoSForDecrypt {
         }
         do {
             // final String[] results = br.getRegex("<li class=\"tbl-list-item.*?</div>\\s*</li>").getColumn(-1);
-            final String[] results = br.getRegex("(\\{\"typedID\".*?\\]\\}\\})").getColumn(0);
+            final String[] results = br.getRegex("(\\{\"typedID\".*?\\]\\})").getColumn(0);
             if (results != null && results.length > 0) {
                 logger.info("Links found: " + results.length);
                 for (final String result : results) {
