@@ -546,6 +546,19 @@ public class Keep2ShareCc extends K2SApi {
         return false;
     }
 
+    @Override
+    public void getPage(String page) throws Exception {
+        super.getPage(page);
+        if (br.getHost().startsWith("spa.")) {
+            super.getPage(MAINPAGE + "/site/refusesplittest");
+            logger.info("refusesplittest");
+            super.getPage(page);
+            if (br.getHost().startsWith("spa.")) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
+    }
+
     private void login(final Account account, final boolean force, final String MAINPAGE) throws Exception {
         synchronized (ACCLOCK) {
             try {
