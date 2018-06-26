@@ -18,18 +18,11 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 
 import javax.swing.JComponent;
 import javax.swing.JLabel;
-
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -48,6 +41,14 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zevera.com" }, urls = { "" })
 public class ZeveraCom extends PluginForHost {
@@ -175,6 +176,9 @@ public class ZeveraCom extends PluginForHost {
     }
 
     private void handleDL(final Account account, final DownloadLink link, final String dllink) throws Exception {
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setProperty(NICE_HOSTproperty + "directlink", dllink);
         try {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
@@ -259,8 +263,18 @@ public class ZeveraCom extends PluginForHost {
         br.getPage("/api/services/list?client_id=" + clientID + "&pin=" + Encoding.urlEncode(account.getPass()));
         final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         // final ArrayList<String> supportedHosts = new ArrayList<String>();
-        final ArrayList<String> ressourcelist = (ArrayList<String>) entries.get("directdl");
-        ai.setMultiHostSupport(this, ressourcelist);
+        final ArrayList<String> directdl = (ArrayList<String>) entries.get("directdl");
+        final ArrayList<String> cache = (ArrayList<String>) entries.get("cache");
+        final HashSet<String> list = new HashSet<String>();
+        if (directdl != null) {
+            list.addAll(directdl);
+        }
+        if (cache != null) {
+            // FIXME: zevera has a bug and reporting supported hosts /eg rapidgator in cache only but it still works with directdl api
+            // method
+            list.addAll(cache);
+        }
+        ai.setMultiHostSupport(this, new ArrayList<String>(list));
         return ai;
     }
 
