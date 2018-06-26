@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -21,6 +20,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.PluginTaskID;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -37,36 +43,26 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.PluginTaskID;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "easyfiles.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "easyfiles.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
 public class EasyFilesPl extends PluginForHost {
-
     // IMPORTANT: Sync ALL: EasyFilesPl, TurbixPl, Rapids24Pl
-    // Based on API: http://easyfiles.pl/api_dokumentacja.php?api_en=1
+    // Based on API: easyfiles.pl/api_dokumentacja.php?api_en=1
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static AtomicInteger                           maxPrem            = new AtomicInteger(20);
     private static final String                            NOCHUNKS           = "NOCHUNKS";
-
     private static final String                            NICE_HOST          = "easyfiles.pl";
-    private static final String                            API_HTTP           = "http://";
+    private static final String                            API_PROTOCOL       = "https://";
     private static final String                            NICE_HOSTproperty  = NICE_HOST.replaceAll("(\\.|\\-)", "");
-
     private int                                            STATUSCODE         = 0;
 
     public EasyFilesPl(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://" + NICE_HOST + "/cennik.html");
+        this.enablePremium(API_PROTOCOL + NICE_HOST + "/cennik.html");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://" + NICE_HOST + "/regulamin.html";
+        return API_PROTOCOL + NICE_HOST + "/regulamin.html";
     }
 
     @Override
@@ -96,18 +92,18 @@ public class EasyFilesPl extends PluginForHost {
         ac.setProperty("multiHostSupport", Property.NULL);
         // check if account is valid
         // TODO: Add support for 1 stupid login captcha type
-        safeAPIRequest(API_HTTP + NICE_HOST + "/api2.php?login=" + username + "&pass=" + pass + "&cmd=get_acc_details", account, null);
+        safeAPIRequest(API_PROTOCOL + NICE_HOST + "/api2.php?login=" + username + "&pass=" + pass + "&cmd=get_acc_details", account, null);
         // Check for reCaptcha
         final String rcID = br.getRegex("google\\.com/recaptcha/api/challenge\\?k=(.+)").getMatch(0);
         if (rcID != null) {
-            final DownloadLink dummyLink = new DownloadLink(this, "Account", NICE_HOST, "http://" + NICE_HOST, true);
+            final DownloadLink dummyLink = new DownloadLink(this, "Account", NICE_HOST, API_PROTOCOL + NICE_HOST, true);
             final Recaptcha rc = new Recaptcha(br, this);
             rc.setId(rcID);
             rc.load();
             for (int i = 1; i <= 5; i++) {
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                 final String c = getCaptchaCode("recaptcha", cf, dummyLink);
-                apiRequest(API_HTTP + NICE_HOST + "/api2.php?login=" + username + "&pass=" + pass + "&recaptcha_challenge=" + Encoding.urlEncode(rc.getChallenge()) + "&recaptcha_response=" + Encoding.urlEncode(c) + "&cmd=get_acc_details", account, null);
+                apiRequest(API_PROTOCOL + NICE_HOST + "/api2.php?login=" + username + "&pass=" + pass + "&recaptcha_challenge=" + Encoding.urlEncode(rc.getChallenge()) + "&recaptcha_response=" + Encoding.urlEncode(c) + "&cmd=get_acc_details", account, null);
                 if (STATUSCODE == 3) {
                     rc.reload();
                     continue;
@@ -133,7 +129,7 @@ public class EasyFilesPl extends PluginForHost {
         }
         ac.setStatus("Premium User");
         // now let's get a list of all supported hosts:
-        br.getPage(API_HTTP + NICE_HOST + "/api2.php?cmd=get_hosts");
+        br.getPage(API_PROTOCOL + NICE_HOST + "/api2.php?cmd=get_hosts");
         hosts = br.toString().split(":");
         ArrayList<String> supportedHosts = new ArrayList<String>();
         for (String host : hosts) {
@@ -174,7 +170,6 @@ public class EasyFilesPl extends PluginForHost {
 
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap != null) {
@@ -190,7 +185,6 @@ public class EasyFilesPl extends PluginForHost {
                 }
             }
         }
-
         this.br = newBrowser();
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "finallink");
         if (dllink == null) {
@@ -198,7 +192,7 @@ public class EasyFilesPl extends PluginForHost {
             if (dlid == null) {
                 final String url = Encoding.urlEncode(link.getDownloadURL());
                 showMessage(link, "Phase 1/3: Starting internal download on " + NICE_HOST);
-                safeAPIRequest(API_HTTP + NICE_HOST + "/api.php?cmd=download_files_direct&links=" + url + "&login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()), account, link);
+                safeAPIRequest(API_PROTOCOL + NICE_HOST + "/api.php?cmd=download_files_direct&links=" + url + "&login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()), account, link);
                 final String[] data = br.toString().split(":");
                 dlid = data[1];
                 link.setProperty(NICE_HOSTproperty + "dlid", dlid);
@@ -247,7 +241,7 @@ public class EasyFilesPl extends PluginForHost {
             try {
                 link.addPluginProgress(waitProgress);
                 for (int i = 1; i <= 120; i++) {
-                    apiRequest(API_HTTP + NICE_HOST + "/api.php?cmd=get_file_status&id=" + dlid + "&login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()), account, link);
+                    apiRequest(API_PROTOCOL + NICE_HOST + "/api.php?cmd=get_file_status&id=" + dlid + "&login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()), account, link);
                     String progress = br.toString().trim();
                     if (br.containsHTML("downloaded")) {
                         success = true;
@@ -275,8 +269,7 @@ public class EasyFilesPl extends PluginForHost {
                 handleAPIErrors(this.br, account, link);
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
             }
-            safeAPIRequest(API_HTTP + NICE_HOST + "/api.php?cmd=get_link&id=" + dlid + "&login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()), account, link);
-
+            safeAPIRequest(API_PROTOCOL + NICE_HOST + "/api.php?cmd=get_link&id=" + dlid + "&login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()), account, link);
             if (br.toString().trim().equals("error")) {
                 logger.info(NICE_HOST + ": Final link is null_1");
                 int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "failedtimes_dllinknull_1", 0);
@@ -313,7 +306,6 @@ public class EasyFilesPl extends PluginForHost {
         if (link.getBooleanProperty(EasyFilesPl.NOCHUNKS, false)) {
             maxChunks = 1;
         }
-
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -418,7 +410,6 @@ public class EasyFilesPl extends PluginForHost {
                 /* Wrong captcha code -> disable account */
                 statusMessage = "Wrong captcha code entered";
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
-
             case 4:
                 /* Wrong reCaptcha code -> disable account */
                 statusMessage = "Wrong reCaptcha code entered";
@@ -432,7 +423,6 @@ public class EasyFilesPl extends PluginForHost {
                 /* Wrong login or password -> disable account */
                 statusMessage = "Wrong login or password";
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
-
             case 7:
                 /* No hosts available -> disable account */
                 statusMessage = "No hosts available";
@@ -528,7 +518,6 @@ public class EasyFilesPl extends PluginForHost {
                 /* Unknown errorcode -> disable account */
                 statusMessage = "Unknown errorcode";
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
-
             }
         } catch (final PluginException e) {
             logger.info(NICE_HOST + ": Exception: statusCode: " + STATUSCODE + " statusMessage: " + statusMessage);
