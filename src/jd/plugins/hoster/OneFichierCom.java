@@ -17,17 +17,16 @@ package jd.plugins.hoster;
 
 import java.net.ConnectException;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
+import jd.http.requests.GetRequest;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -47,8 +46,9 @@ import jd.utils.locale.JDL;
 
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.config.TakeValueFromSubconfig;
@@ -62,14 +62,13 @@ public class OneFichierCom extends PluginForHost {
     private final String         PROPERTY_PREMLINK            = "premLink";
     private final String         PREFER_RECONNECT             = "PREFER_RECONNECT";
     private final String         PREFER_SSL                   = "PREFER_SSL";
-    private static final String  MAINPAGE                     = "http://1fichier.com/";
+    private static final String  MAINPAGE                     = "https://1fichier.com/";
     private boolean              pwProtected                  = false;
-    private Account              currAcc                      = null;
     private DownloadLink         currDownloadLink             = null;
     /* Max total connections for premium = 50 (RE: admin) */
     private static final boolean resume_account_premium       = true;
     private static final int     maxchunks_account_premium    = -4;
-    private static final int     maxdownloads_account_premium = -12;
+    private static final int     maxdownloads_account_premium = 12;
     /* 2015-07-10: According to admin, resume is free mode is not possible anymore. On attempt this will lead to 404 server error! */
     private static final int     maxchunks_free               = 1;
     private static final boolean resume_free                  = true;
@@ -79,7 +78,7 @@ public class OneFichierCom extends PluginForHost {
      * as premium users).
      */
     private static final boolean resume_free_hotlink          = true;
-    private static final int     maxchunks_free_hotlink       = maxdownloads_account_premium;
+    private static final int     maxchunks_free_hotlink       = -4;
 
     public OneFichierCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -115,7 +114,6 @@ public class OneFichierCom extends PluginForHost {
     }
 
     private void setConstants(final Account acc, final DownloadLink dl) {
-        this.currAcc = acc;
         this.currDownloadLink = dl;
     }
 
@@ -224,12 +222,15 @@ public class OneFichierCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         this.setConstants(null, downloadLink);
         requestFileInformation(downloadLink);
-        doFree(downloadLink);
+        if (checkShowFreeDialog(getHost())) {
+            showFreeDialog(getHost());
+        }
+        doFree(null, downloadLink);
     }
 
     private String regex_dllink_middle = "align:middle\">\\s+<a href=(\"|')(https?://[a-zA-Z0-9_\\-]+\\.(1fichier|desfichiers)\\.com/[a-zA-Z0-9]+.*?)\\1";
 
-    public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
+    public void doFree(final Account account, final DownloadLink downloadLink) throws Exception, PluginException {
         checkDownloadable();
         // to prevent wasteful requests.
         int i = 0;
@@ -325,12 +326,11 @@ public class OneFichierCom extends PluginForHost {
                 if (br2.containsHTML("not possible to unregistered users")) {
                     final Account aa = AccountController.getInstance().getValidAccount(this);
                     if (aa != null) {
-                        this.currAcc = aa;
                         try {
-                            login(true);
-                            ensureSiteLogin();
+                            login(aa, true);
+                            ensureSiteLogin(aa);
                         } catch (final PluginException e) {
-                            LogSource.exception(logger, e);
+                            logger.log(e);
                         }
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
@@ -468,56 +468,75 @@ public class OneFichierCom extends PluginForHost {
             return ai;
         }
         br.setAllowedResponseCodes(503, 403);
-        // API login workaround for slow servers
-        for (int i = 1; i <= 3; i++) {
-            logger.info("1fichier.com: API login try 1 / " + i);
-            try {
-                br.getPage("https://" + this.getHost() + "/console/account.pl?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + JDHash.getMD5(account.getPass()));
-                break;
-            } catch (final ConnectException c) {
-                if (i + 1 == 3) {
-                    throw c;
+        String timeStamp = null;
+        String freeCredits = null;
+        final boolean hasCookies = account.loadCookies("") != null;
+        if (!hasCookies) {
+            // API login workaround for slow servers
+            for (int i = 1; i <= 3; i++) {
+                logger.info("1fichier.com: API login try 1 / " + i);
+                try {
+                    br.getPage("https://" + this.getHost() + "/console/account.pl?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + JDHash.getMD5(account.getPass()));
+                    break;
+                } catch (final ConnectException c) {
+                    if (i + 1 == 3) {
+                        throw c;
+                    }
+                    logger.info("1fichier.com: API login try 1 / " + i + " FAILED, trying again...");
+                    Thread.sleep(3 * 1000l);
+                    continue;
                 }
-                logger.info("1fichier.com: API login try 1 / " + i + " FAILED, trying again...");
-                Thread.sleep(3 * 1000l);
-                continue;
             }
+            checkConnection(br);
+            if (br.containsHTML("your IP address is temporarily locked") && br.getRequest().getHttpConnection().getResponseCode() == 403) {
+                throw new AccountUnavailableException("Your IP address is temporarily locked", 60 * 60 * 1000l);
+            }
+            timeStamp = br.getRegex("(\\d+)").getMatch(0);
+            freeCredits = br.getRegex("0[\r\n]+([0-9\\.]+)").getMatch(0);
         }
-        checkConnection(br);
-        if (br.containsHTML("your IP address is temporarily locked") && br.getRequest().getHttpConnection().getResponseCode() == 403) {
-            throw new AccountUnavailableException("Your IP address is temporarily locked", 60 * 60 * 1000l);
-        }
-        String timeStamp = br.getRegex("(\\d+)").getMatch(0);
-        String freeCredits = br.getRegex("0[\r\n]+([0-9\\.]+)").getMatch(0);
         // Use site login/site download if either API is not working or API says that there are no credits available
-        if ("error".equalsIgnoreCase(br.toString()) || ("0".equals(timeStamp) && freeCredits == null || (timeStamp == null && freeCredits == null && "23764902a26fbd6345d3cc3533d1d5eb".equals(JDHash.getMD5(br.toString()))))) {
+        if (hasCookies || true || "error".equalsIgnoreCase(br.toString()) || ("0".equals(timeStamp) && freeCredits == null || (timeStamp == null && freeCredits == null && "23764902a26fbd6345d3cc3533d1d5eb".equals(JDHash.getMD5(br.toString()))))) {
             /**
              * Only used if the API fails and is wrong but that usually doesn't happen!
              */
-            try {
-                br = new Browser();
-                login(true);
-            } catch (final Exception e) {
-                ai.setStatus("Username/Password also invalid via site login!");
-                account.setValid(false);
-                throw e;
-            }
+            br = new Browser();
+            login(account, true);
             /* And yet another workaround for broken API case ... */
             br.getPage("https://" + this.getHost() + "/en/console/index.pl");
             final boolean isPremium = br.containsHTML("Premium offer Account");
             if (isPremium) {
+                final GetRequest get = new GetRequest("https://" + this.getHost() + "/en/console/abo.pl");
+                get.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.setFollowRedirects(true);
+                br.getPage(get);
+                final String validUntil = br.getRegex("subscription is valid until\\s*<[^<]*>(\\d+-\\d+-\\d+)").getMatch(0);
+                if (validUntil != null) {
+                    final long validUntilTimestamp = TimeFormatter.getMilliSeconds(validUntil, "yyyy'-'MM'-'dd", Locale.ENGLISH);
+                    if (validUntilTimestamp > 0) {
+                        ai.setValidUntil(validUntilTimestamp + (24 * 60 * 60 * 1000l));
+                    }
+                }
+                // final String traffic=br.getRegex("Your account have ([^<>\"]*?) of CDN credits").getMatch(0);
                 setBasicPremiumAccountInfo(account, ai);
             } else {
-                ai.setStatus("Free Account (Credits available)");
                 setBasicFreeAccountInfo(account, ai);
                 account.setProperty("freeAPIdisabled", true);
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                final GetRequest get = new GetRequest("https://" + this.getHost() + "/en/console/params.pl");
+                get.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.setFollowRedirects(true);
-                br.getPage("https://" + this.getHost() + "/en/console/details.pl");
-                String freeCredits2 = br.getRegex(">Your account have ([^<>\"]*?) of direct download credits").getMatch(0);
-                if (freeCredits2 != null) {
-                    ai.setTrafficLeft(SizeFormatter.getSize(freeCredits2));
+                br.getPage(get);
+                final String credits = br.getRegex(">\\s*Your account have ([^<>\"]*?) of (?:Hotlinks|direct download) credits").getMatch(0);
+                final boolean useOwnCredits = StringUtils.equalsIgnoreCase("checked", br.getRegex("<input\\s*type=\"checkbox\"\\s*checked=\"(.*?)\"\\s*name=\"own_credit\"").getMatch(0));
+                if (credits != null) {
+                    if (useOwnCredits) {
+                        ai.setStatus("Free Account (Credits available(hotlink enabled))");
+                    } else {
+                        ai.setStatus("Free Account (Credits available(hotlink disabled))");
+                    }
+                    account.setMaxSimultanDownloads(maxdownloads_account_premium);
+                    ai.setTrafficLeft(SizeFormatter.getSize(credits));
                 } else {
+                    ai.setStatus("Free Account");
                     ai.setUnlimitedTraffic();
                 }
             }
@@ -526,9 +545,9 @@ public class OneFichierCom extends PluginForHost {
             if (freeCredits != null) {
                 /* not finished yet */
                 if (Float.parseFloat(freeCredits) > 0) {
-                    ai.setStatus("Free Account (Credits available)");
+                    ai.setStatus("Free Account(2) (Credits available)");
                 } else {
-                    ai.setStatus("Free Account (No credits available)");
+                    ai.setStatus("Free Account(2) (No credits available)");
                 }
                 ai.setTrafficLeft(SizeFormatter.getSize(freeCredits + " GB"));
                 account.setProperty("freeAPIdisabled", false);
@@ -563,55 +582,51 @@ public class OneFichierCom extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private void login(final boolean force) throws Exception {
-        synchronized (LOCK) {
+    private boolean checkSID(Browser br) {
+        final String sid = br.getCookie(MAINPAGE, "SID");
+        return !StringUtils.isEmpty(sid) && !StringUtils.equalsIgnoreCase(sid, "deleted");
+    }
+
+    private void login(final Account account, final boolean force) throws Exception {
+        synchronized (account) {
             try {
                 /* Load cookies */
                 prepareBrowser(br);
-                final Object ret = this.currAcc.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(this.currAcc.getUser()).equals(this.currAcc.getStringProperty("name", Encoding.urlEncode(this.currAcc.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(this.currAcc.getPass()).equals(this.currAcc.getStringProperty("pass", Encoding.urlEncode(this.currAcc.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (this.currAcc.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            br.setCookie(this.getHost(), key, value);
-                        }
+                Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    br.setCookies(MAINPAGE, cookies);
+                    if (!force) {
+                        setBasicAuthHeader(br, account);
                         return;
+                    } else {
+                        br.getPage("https://1fichier.com/console/index.pl");
+                        if (!checkSID(br)) {
+                            cookies = null;
+                            br.clearCookies(MAINPAGE);
+                        }
                     }
                 }
-                logger.info("Using site login because API is either wrong or no free credits...");
-                br.postPage("https://1fichier.com/login.pl", "lt=on&valider=Send&mail=" + Encoding.urlEncode(this.currAcc.getUser()) + "&pass=" + Encoding.urlEncode(this.currAcc.getPass()));
-                final String logincheck = br.getCookie(MAINPAGE, "SID");
-                if (logincheck == null || logincheck.equals("")) {
-                    logger.info("Username/Password also invalid via site login!");
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (cookies == null) {
+                    logger.info("Using site login because API is either wrong or no free credits...");
+                    br.postPage("https://1fichier.com/login.pl", "lt=on&valider=Send&mail=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+                    if (!checkSID(br)) {
+                        if (br.containsHTML("following many identification errors") && br.containsHTML("Your account will be unlock")) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your account will be unlock within 1 hour", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                        }
+                        logger.info("Username/Password also invalid via site login!");
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
-                /* Save cookies */
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(this.getHost());
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                this.currAcc.setProperty("name", Encoding.urlEncode(this.currAcc.getUser()));
-                this.currAcc.setProperty("pass", Encoding.urlEncode(this.currAcc.getPass()));
-                this.currAcc.setProperty("cookies", cookies);
+                account.saveCookies(br.getCookies(getHost()), "");
+                setBasicAuthHeader(br, account);
             } catch (final PluginException e) {
-                this.currAcc.setProperty("cookies", Property.NULL);
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
-            } finally {
-                /* Important! Basic Auth works safe on all of their domains - using only cookies could cause issues! */
-                setBasicAuthHeader(br, this.currAcc);
             }
         }
     }
-
-    private static final Object LOCK = new Object();
 
     @Override
     public String getAGBLink() {
@@ -633,9 +648,9 @@ public class OneFichierCom extends PluginForHost {
             /**
              * Only used if the API fails and is wrong but that usually doesn't happen!
              */
-            login(false);
-            ensureSiteLogin();
-            doFree(link);
+            login(account, false);
+            ensureSiteLogin(account);
+            doFree(account, link);
             return;
         }
         String dllink = link.getStringProperty("directlink");
@@ -663,8 +678,8 @@ public class OneFichierCom extends PluginForHost {
         if (dllink == null) {
             // for some silly reason we have reverted from api to webmethod, so we need cookies!. 20150201
             br = new Browser();
-            login(false);
-            ensureSiteLogin();
+            login(account, false);
+            ensureSiteLogin(account);
             br.setFollowRedirects(false);
             br.getPage(link.getDownloadURL());
             // error checking, offline links can happen here.
@@ -894,17 +909,18 @@ public class OneFichierCom extends PluginForHost {
     }
 
     /** This function is there to make sure that we're really logged in (handling without API). */
-    private boolean ensureSiteLogin() throws Exception {
+    private boolean ensureSiteLogin(Account account) throws Exception {
         br.getPage("https://1fichier.com/console/index.pl");
-        final String logincheck = br.getCookie(MAINPAGE, "SID");
-        if (logincheck == null || logincheck.equals("") || !br.containsHTML("id=\"fileTree\"")) {
+        if (!checkSID(br) || !br.containsHTML("id=\"fileTree\"")) {
             logger.info("Site login seems not to be valid anymore - trying to refresh cookie");
-            this.login(true);
-            if (!ensureSiteLogin()) {
+            if (account != null) {
+                this.login(account, true);
+                ensureSiteLogin(null);
+                logger.info("Successfully refreshed login cookie");
+            } else {
                 logger.warning("Failed to refresh login cookie");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            logger.info("Successfully refreshed login cookie");
         } else {
             logger.info("Success: our login cookie is fine - no need to do anything");
         }

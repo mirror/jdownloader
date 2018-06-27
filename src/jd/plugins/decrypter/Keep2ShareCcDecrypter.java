@@ -17,8 +17,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -33,9 +31,10 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keep2share.cc" }, urls = { "https?://((www|new)\\.)?(keep2share|k2s|k2share|keep2s|keep2)\\.cc/file/(info/)?[a-z0-9]+" })
-public class Keep2ShareCcDecrypter extends PluginForDecrypt {
+import org.appwork.utils.formatter.SizeFormatter;
 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keep2share.cc" }, urls = { "https?://((www|new|spa)\\.)?(keep2share|k2s|k2share|keep2s|keep2)\\.cc/file/(info/)?[a-z0-9]+" })
+public class Keep2ShareCcDecrypter extends PluginForDecrypt {
     public Keep2ShareCcDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -58,9 +57,8 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
         // return null;
         // }
         // final String parameter = host + "/file/" + uid;
-
         // DO NOT AUTO CORRECT, links redirect to there default server
-        final String parameter = param.toString().replaceFirst("https?://", ((jd.plugins.hoster.Keep2ShareCc) plugin).getProtocol());
+        final String parameter = param.toString().replaceFirst("https?://(spa\\.)?", ((jd.plugins.hoster.Keep2ShareCc) plugin).getProtocol());
         br.setFollowRedirects(true);
         ((jd.plugins.hoster.Keep2ShareCc) plugin).getPage(parameter);
         ((jd.plugins.hoster.Keep2ShareCc) plugin).followRedirectNew(br);

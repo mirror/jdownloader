@@ -48,7 +48,7 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPlugin
  * @author raztoki
  *
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keep2share.cc" }, urls = { "https?://((www|new)\\.)?(keep2share|k2s|k2share|keep2s|keep2)\\.cc/file/(info/)?[a-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keep2share.cc" }, urls = { "https?://((www|new|spa)\\.)?(keep2share|k2s|k2share|keep2s|keep2)\\.cc/file/(info/)?[a-z0-9]+" })
 public class Keep2ShareCc extends K2SApi {
     public Keep2ShareCc(PluginWrapper wrapper) {
         super(wrapper);
@@ -157,7 +157,7 @@ public class Keep2ShareCc extends K2SApi {
         }
         // DO NOT AUTOCORRECT DOMAINS
         // final String linkID = getFUID(link);
-        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replaceFirst("https?://", getProtocol()));
+        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replaceFirst("https?://(spa\\.)?", getProtocol()));
     }
 
     public void followRedirectNew(Browser br) throws Exception {
