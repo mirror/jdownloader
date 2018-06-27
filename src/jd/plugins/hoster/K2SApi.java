@@ -600,8 +600,8 @@ public abstract class K2SApi extends PluginForHost {
         return nbr;
     }
 
-    public Browser newWebBrowser() {
-        Browser nbr = new Browser() {
+    public Browser newWebBrowser(boolean followRedirects) {
+        final Browser nbr = new Browser() {
             @Override
             public void updateCookies(Request request) {
                 super.updateCookies(request);
@@ -634,6 +634,7 @@ public abstract class K2SApi extends PluginForHost {
                 }
             }
         };
+        nbr.setFollowRedirects(followRedirects);
         return nbr;
     }
 

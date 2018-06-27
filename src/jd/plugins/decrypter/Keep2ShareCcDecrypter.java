@@ -45,7 +45,7 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
         if (plugin == null) {
             throw new IllegalStateException("keep2share plugin not found!");
         }
-        br = ((jd.plugins.hoster.Keep2ShareCc) plugin).newWebBrowser();
+        br = ((jd.plugins.hoster.Keep2ShareCc) plugin).newWebBrowser(true);
         // set cross browser support
         ((jd.plugins.hoster.Keep2ShareCc) plugin).setBrowser(br);
         // // corrections
@@ -59,7 +59,6 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
         // final String parameter = host + "/file/" + uid;
         // DO NOT AUTO CORRECT, links redirect to there default server
         final String parameter = param.toString().replaceFirst("https?://(spa\\.)?", ((jd.plugins.hoster.Keep2ShareCc) plugin).getProtocol());
-        br.setFollowRedirects(true);
         ((jd.plugins.hoster.Keep2ShareCc) plugin).getPage(parameter);
         ((jd.plugins.hoster.Keep2ShareCc) plugin).followRedirectNew(br);
         // empty folder
