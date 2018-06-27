@@ -174,8 +174,7 @@ public class Keep2ShareCc extends K2SApi {
             return super.requestFileInformation(link);
         }
         correctDownloadLink(link);
-        br = newWebBrowser();
-        br.setFollowRedirects(true);
+        br = newWebBrowser(true);
         super.prepBrowserForWebsite(br);
         getPage(buildExternalDownloadURL(link, this));
         followRedirectNew(br);
@@ -563,8 +562,7 @@ public class Keep2ShareCc extends K2SApi {
         synchronized (ACCLOCK) {
             try {
                 // clear cookies/headers etc. this should nullify redirects to /file/
-                br = newWebBrowser();
-                br.setFollowRedirects(true);
+                br = newWebBrowser(true);
                 // reduce cpu cycles, do not enter and do evaluations when they are not needed.
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
@@ -580,7 +578,7 @@ public class Keep2ShareCc extends K2SApi {
                     }
                     logger.info("Login via cached cookies failed:" + account.getType());
                     // dump session
-                    br = newWebBrowser();
+                    br = newWebBrowser(true);
                 }
                 getPage(this.MAINPAGE + "/login.html");
                 Form login = br.getFormbyActionRegex("/login.html");

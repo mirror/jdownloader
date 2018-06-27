@@ -57,9 +57,9 @@ public class LaFileCom extends antiDDoSForHost {
     private String               passCode                     = null;
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     // primary website url, take note of redirects
-    private static final String  COOKIE_HOST                  = "http://florenfile.com";
+    private static final String  COOKIE_HOST                  = "https://florenfile.com";
     // domain names used within download links.
-    private static final String  DOMAINS                      = "(florenfile\\.com)";
+    private static final String  DOMAINS                      = "(florenfile\\.com|lafile\\.com)";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
