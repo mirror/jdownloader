@@ -13,11 +13,7 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -36,9 +32,11 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "link.tl" }, urls = { "https?://(www\\.)?link\\.tl/(?!advertising|\\w+/.+)?[A-Za-z0-9\\-]{4,}" })
 public class LnkTl extends antiDDoSForDecrypt {
-
     public LnkTl(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -64,7 +62,6 @@ public class LnkTl extends antiDDoSForDecrypt {
         final String parameter = param.toString();
         br.setFollowRedirects(false);
         getPage(parameter);
-
         /* Check for direct redirect */
         String redirect = br.getRedirectLocation();
         if (redirect == null) {
@@ -133,6 +130,12 @@ public class LnkTl extends antiDDoSForDecrypt {
             }
         }
         String url = PluginJSonUtils.getJsonValue(ajax, "url");
+        if (url == null) {
+            final String id = new Regex(parameter, "tl/(?!advertising|\\w+/.+)?([A-Za-z0-9\\-]{4,})").getMatch(0);
+            if (id != null) {
+                url = "http://link.tl/d/" + id;
+            }
+        }
         if (url != null && url.contains("link.tl/d/")) {
             getPage(url);
             br.followRedirect();
@@ -190,5 +193,4 @@ public class LnkTl extends antiDDoSForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
