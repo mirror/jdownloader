@@ -119,6 +119,10 @@ public class LnkShnkNt extends antiDDoSForDecrypt {
                             // same shit different js/placement 201710xx
                             continu = br.getRegex("\\.onclick\\s*=\\s*function\\(\\)\\s*\\{\\s*window\\.open\\(revC\\(\"(.*?)\"\\)").getMatch(0);
                         }
+                        if (continu == null) {
+                            // same shit different js/placement 2018xxxx
+                            continu = br.getRegex("document\\.location\\.href\\s*=\\s*revC\\(\"(.*?)\"").getMatch(0);
+                        }
                         if (continu != null) {
                             continu = "/" + Encoding.Base64Decode(continu);
                         }
