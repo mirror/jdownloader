@@ -95,10 +95,13 @@ public class BitvideoIo extends PluginForHost {
             if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Object not found<")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+            filename = link.getFinalFileName(); // From decrypter
             if (filename == null) {
-                /* Fallback */
-                filename = fid;
+                filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+                if (filename == null) {
+                    /* Fallback */
+                    filename = fid;
+                }
             }
             json_source = br.getRegex("\"sources\"\\s*?:\\s*?(\\[.*?\\])").getMatch(0);
         } else {

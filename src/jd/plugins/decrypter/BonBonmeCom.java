@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -27,7 +26,6 @@ import jd.plugins.DownloadLink;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bonbonme.com" }, urls = { "http://(?:(?:av|dl)\\.)?(?:bonbonme\\.com|bonbonyou\\.com|jizz99\\.com)/(?!makemoney|data/|forum/)(?:a/)?[A-Za-z0-9\\-_]+/(?!list_)[A-Za-z0-9\\-_]+\\.html" })
 public class BonBonmeCom extends PornEmbedParser {
-
     public BonBonmeCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -52,22 +50,26 @@ public class BonBonmeCom extends PornEmbedParser {
         }
         String filename = br.getRegex("<div class=\"title\">[\t\n\r ]+<h2>([^<>\"]*?)(</h2>| 觀看次數:<script)").getMatch(0);
         // player url internal. you cant hit this url without having correct referer info
-        final String[] player = br.getRegex("=('|\")((?:https?:)?(?://(?:www\\.)?(?:bonbonme\\.com|bonbonyou\\.com|jizz99\\.com))?/player/.*?)\\1").getColumn(1);
+        String[] player = br.getRegex("=('|\")((?:https?:)?(?://(?:www\\.)?(?:bonbonme\\.com|bonbonyou\\.com|jizz99\\.com))?/player/.*?)\\1").getColumn(1);
+        if (player == null || player.length <= 0) {
+            player = br.getRegex("(https?://[^/]+/player/.*?)&quot;").getColumn(0);
+        }
         if (player == null || player.length <= 0) {
             return null;
         }
         for (final String playr : player) {
             final Browser br2 = br.cloneBrowser();
             getPage(br2, playr);
+            if (br2.getHttpConnection().getResponseCode() == 404) {
+                decryptedLinks.add(createOfflinelink(parameter, "Offline Content"));
+            }
             decryptedLinks.addAll(findEmbedUrls(br2, filename));
         }
         return decryptedLinks;
-
     }
 
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
