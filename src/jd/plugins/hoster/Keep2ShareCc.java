@@ -566,17 +566,18 @@ public class Keep2ShareCc extends K2SApi {
                 // reduce cpu cycles, do not enter and do evaluations when they are not needed.
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
+                    final String cookieAge = TimeFormatter.formatMilliSeconds(System.currentTimeMillis() - account.getCookiesTimeStamp(""), 0);
                     br.setCookies(MAINPAGE, cookies);
                     getPage(MAINPAGE + "/site/profile.html");
                     if (!br._getURL().getFile().equals("/login.html")) {
                         if (br.containsHTML("Your Premium account has expired")) {
                             account.setType(Account.AccountType.FREE);
                         }
-                        logger.info("Login via ached cookies successful:" + account.getType());
+                        logger.info("Login via ached cookies successful:" + account.getType() + "|CookieAge:" + cookieAge);
                         account.saveCookies(br.getCookies(MAINPAGE), "");
                         return;
                     }
-                    logger.info("Login via cached cookies failed:" + account.getType());
+                    logger.info("Login via cached cookies failed:" + account.getType() + "|CookieAge:" + cookieAge);
                     // dump session
                     br = newWebBrowser(true);
                 }
