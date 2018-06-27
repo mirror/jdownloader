@@ -327,7 +327,7 @@ public class FilefoxCc extends antiDDoSForHost {
             }
         }
         if (inValidate(fileInfo[0])) {
-            fileInfo[0] = new Regex(correctedBR, "class=\"[^\"]*file-name\">.*?<p>\\s*(.*?)\\s*<span>").getMatch(0);
+            fileInfo[0] = new Regex(correctedBR, "class=\"[^\"]*file-name\">.*?<p>\\s*([^<]*?)\\s*<span>").getMatch(0);
         }
         if (inValidate(fileInfo[0])) {
             /* 2017-07-25: Special */
