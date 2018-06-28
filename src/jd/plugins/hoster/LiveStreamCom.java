@@ -13,12 +13,12 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -37,7 +37,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livestream.com" }, urls = { "https?://(www\\.)?livestream\\.com/[^<>\"]+/videos/\\d+" })
 public class LiveStreamCom extends PluginForHost {
-
     @SuppressWarnings("deprecation")
     public LiveStreamCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -47,7 +46,6 @@ public class LiveStreamCom extends PluginForHost {
     // Tags:
     // protocol: https + http available
     // other:
-
     /* Example main: http://livestream.com/cnet/LG/videos/85498136 */
     /*
      * http:
@@ -63,12 +61,10 @@ public class LiveStreamCom extends PluginForHost {
      * Thumbnail url (also containing important info):
      * http://img.new.livestream.com/events/00000000003cfce1/893bc539-0412-415a-b0be-438b5f81b086_1320.jpg
      */
-
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
 
     @Override
@@ -76,13 +72,26 @@ public class LiveStreamCom extends PluginForHost {
         return "http://livestream.com/terms";
     }
 
-    @SuppressWarnings({ "deprecation", "unchecked", "rawtypes", "unused" })
+    private Map<String, Object> getEntry(long entryID, List<Map<String, Object>> entries) {
+        for (final Map<String, Object> entry : entries) {
+            final String type = (String) entry.get("type");
+            if (type == null || !type.equals("video")) {
+                continue;
+            }
+            final Map<String, Object> data = (Map<String, Object>) entry.get("data");
+            final long id = JavaScriptEngineFactory.toLong(data.get("id"), -1);
+            if (id == entryID) {
+                return data;
+            }
+        }
+        return null;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         String filename = null;
         dllink = null;
-        final String lid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
-        final long llidlong = Long.parseLong(lid);
+        final long entryId = Long.parseLong(new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -96,32 +105,38 @@ public class LiveStreamCom extends PluginForHost {
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
         entries = (LinkedHashMap<String, Object>) entries.get("event");
         entries = (LinkedHashMap<String, Object>) entries.get("feed");
-        final ArrayList<Object> ressourcelist = (ArrayList) entries.get("data");
-        for (final Object reso : ressourcelist) {
-            entries = (LinkedHashMap<String, Object>) reso;
-            final String type = (String) entries.get("type");
-            if (type == null || !type.equals("video")) {
-                continue;
+        Map<String, Object> entry = getEntry(entryId, (List<Map<String, Object>>) entries.get("data"));
+        if (entry == null) {
+            final String eventsID = new Regex(downloadLink.getPluginPatternMatcher(), "/events/(\\d+)/").getMatch(0);
+            final String accountID = br.getRegex("/accounts/(\\d+)/events/" + eventsID).getMatch(0);
+            if (eventsID != null) {
+                final Browser brc = br.cloneBrowser();
+                brc.getPage("https://api.new.livestream.com/accounts/" + accountID + "/events/" + eventsID + "/feed.json?id=" + entryId + "&type=video&newer=1&older=1");
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(brc.toString());
+                entry = getEntry(entryId, (List<Map<String, Object>>) entries.get("data"));
             }
-            entries = (LinkedHashMap<String, Object>) entries.get("data");
-            final long tempid = JavaScriptEngineFactory.toLong(entries.get("id"), -1);
-            if (tempid == llidlong) {
-                if (isJDStable()) {
-                    /* http */
-                    dllink = (String) entries.get("progressive_url");
-                } else {
-                    /* https */
-                    dllink = (String) entries.get("secure_progressive_url");
-                }
-                filename = (String) entries.get("caption");
-                break;
+        }
+        if (entry == null) {
+            final String title = br.getRegex("og:title\"\\s*content\\s*=\\s*\"(.*?)\"").getMatch(0);
+            if (title != null && !downloadLink.isNameSet()) {
+                downloadLink.setName(title);
             }
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else {
+            if (isJDStable()) {
+                /* http */
+                dllink = (String) entry.get("progressive_url");
+            } else {
+                /* https */
+                dllink = (String) entry.get("secure_progressive_url");
+            }
+            filename = (String) entry.get("caption");
         }
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.htmlDecode(dllink);
-        filename = lid + "_" + filename;
+        filename = entryId + "_" + filename;
         filename = encodeUnicode(filename);
         final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         if (!filename.endsWith(ext)) {

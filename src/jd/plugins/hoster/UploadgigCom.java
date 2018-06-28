@@ -179,6 +179,9 @@ public class UploadgigCom extends antiDDoSForHost {
                 /* Usually only happens with wrong POST values */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403");
             }
+            if ("0".equals(br2.toString())) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+            }
             int wait = 60;
             final String waittime_str = PluginJSonUtils.getJsonValue(br2, "cd");
             if (waittime_str != null) {
@@ -220,6 +223,8 @@ public class UploadgigCom extends antiDDoSForHost {
                     final String d = PluginJSonUtils.getJson(br, p[1]);
                     if (d != null) {
                         href = href.replace(p[0], d);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
                 href = href.replace("'", "").replace("+", "");
