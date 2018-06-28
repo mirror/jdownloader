@@ -27,14 +27,12 @@ import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.GetRequest;
-import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
-import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -327,8 +325,10 @@ public class OneFichierCom extends PluginForHost {
                     final Account aa = AccountController.getInstance().getValidAccount(this);
                     if (aa != null) {
                         try {
-                            login(aa, true);
-                            ensureSiteLogin(aa);
+                            synchronized (aa) {
+                                login(aa, true);
+                                ensureSiteLogin(aa);
+                            }
                         } catch (final PluginException e) {
                             logger.log(e);
                         }
@@ -468,112 +468,59 @@ public class OneFichierCom extends PluginForHost {
             return ai;
         }
         br.setAllowedResponseCodes(503, 403);
-        String timeStamp = null;
-        String freeCredits = null;
-        final boolean hasCookies = account.loadCookies("") != null;
-        if (!hasCookies) {
-            // API login workaround for slow servers
-            for (int i = 1; i <= 3; i++) {
-                logger.info("1fichier.com: API login try 1 / " + i);
-                try {
-                    br.getPage("https://" + this.getHost() + "/console/account.pl?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + JDHash.getMD5(account.getPass()));
-                    break;
-                } catch (final ConnectException c) {
-                    if (i + 1 == 3) {
-                        throw c;
-                    }
-                    logger.info("1fichier.com: API login try 1 / " + i + " FAILED, trying again...");
-                    Thread.sleep(3 * 1000l);
-                    continue;
+        br = new Browser();
+        login(account, true);
+        /* And yet another workaround for broken API case ... */
+        br.getPage("https://" + this.getHost() + "/en/console/index.pl");
+        final boolean isPremium = br.containsHTML(">\\s*Premium\\s*(offer)\\s*Account\\s*<");
+        final boolean isAccess = br.containsHTML(">\\s*Access\\s*(offer)\\s*Account\\s*<");
+        // final boolean isFree = br.containsHTML(">\\s*Free\\s*(offer)\\s*Account\\s*<");
+        if (isPremium || isAccess) {
+            final GetRequest get = new GetRequest("https://" + this.getHost() + "/en/console/abo.pl");
+            get.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.setFollowRedirects(true);
+            br.getPage(get);
+            final String validUntil = br.getRegex("subscription is valid until\\s*<[^<]*>(\\d+-\\d+-\\d+)").getMatch(0);
+            if (validUntil != null) {
+                final long validUntilTimestamp = TimeFormatter.getMilliSeconds(validUntil, "yyyy'-'MM'-'dd", Locale.ENGLISH);
+                if (validUntilTimestamp > 0) {
+                    ai.setValidUntil(validUntilTimestamp + (24 * 60 * 60 * 1000l));
                 }
             }
-            checkConnection(br);
-            if (br.containsHTML("your IP address is temporarily locked") && br.getRequest().getHttpConnection().getResponseCode() == 403) {
-                throw new AccountUnavailableException("Your IP address is temporarily locked", 60 * 60 * 1000l);
-            }
-            timeStamp = br.getRegex("(\\d+)").getMatch(0);
-            freeCredits = br.getRegex("0[\r\n]+([0-9\\.]+)").getMatch(0);
-        }
-        // Use site login/site download if either API is not working or API says that there are no credits available
-        if (hasCookies || true || "error".equalsIgnoreCase(br.toString()) || ("0".equals(timeStamp) && freeCredits == null || (timeStamp == null && freeCredits == null && "23764902a26fbd6345d3cc3533d1d5eb".equals(JDHash.getMD5(br.toString()))))) {
-            /**
-             * Only used if the API fails and is wrong but that usually doesn't happen!
-             */
-            br = new Browser();
-            login(account, true);
-            /* And yet another workaround for broken API case ... */
-            br.getPage("https://" + this.getHost() + "/en/console/index.pl");
-            final boolean isPremium = br.containsHTML("Premium offer Account");
+            // final String traffic=br.getRegex("Your account have ([^<>\"]*?) of CDN credits").getMatch(0);
             if (isPremium) {
-                final GetRequest get = new GetRequest("https://" + this.getHost() + "/en/console/abo.pl");
-                get.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.setFollowRedirects(true);
-                br.getPage(get);
-                final String validUntil = br.getRegex("subscription is valid until\\s*<[^<]*>(\\d+-\\d+-\\d+)").getMatch(0);
-                if (validUntil != null) {
-                    final long validUntilTimestamp = TimeFormatter.getMilliSeconds(validUntil, "yyyy'-'MM'-'dd", Locale.ENGLISH);
-                    if (validUntilTimestamp > 0) {
-                        ai.setValidUntil(validUntilTimestamp + (24 * 60 * 60 * 1000l));
-                    }
-                }
-                // final String traffic=br.getRegex("Your account have ([^<>\"]*?) of CDN credits").getMatch(0);
-                setBasicPremiumAccountInfo(account, ai);
+                ai.setStatus("Premium Account");
             } else {
-                setBasicFreeAccountInfo(account, ai);
-                account.setProperty("freeAPIdisabled", true);
-                final GetRequest get = new GetRequest("https://" + this.getHost() + "/en/console/params.pl");
-                get.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.setFollowRedirects(true);
-                br.getPage(get);
-                final String credits = br.getRegex(">\\s*Your account have ([^<>\"]*?) of (?:Hotlinks|direct download) credits").getMatch(0);
-                final boolean useOwnCredits = StringUtils.equalsIgnoreCase("checked", br.getRegex("<input\\s*type=\"checkbox\"\\s*checked=\"(.*?)\"\\s*name=\"own_credit\"").getMatch(0));
+                ai.setStatus("Access Account");
+            }
+            ai.setUnlimitedTraffic();
+            account.setType(AccountType.PREMIUM);
+            account.setMaxSimultanDownloads(maxdownloads_account_premium);
+            account.setConcurrentUsePossible(true);
+        } else {
+            account.setType(AccountType.FREE);
+            account.setMaxSimultanDownloads(maxdownloads_free);
+            account.setConcurrentUsePossible(false);
+            account.setProperty("freeAPIdisabled", true);
+            final GetRequest get = new GetRequest("https://" + this.getHost() + "/en/console/params.pl");
+            get.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.setFollowRedirects(true);
+            br.getPage(get);
+            final String credits = br.getRegex(">\\s*Your account have ([^<>\"]*?) of (?:Hotlinks|direct download) credits").getMatch(0);
+            final boolean useOwnCredits = StringUtils.equalsIgnoreCase("checked", br.getRegex("<input\\s*type=\"checkbox\"\\s*checked=\"(.*?)\"\\s*name=\"own_credit\"").getMatch(0));
+            if (credits != null && useOwnCredits) {
+                ai.setStatus("Free Account (Credits available(hotlink enabled))");
+                ai.setTrafficLeft(SizeFormatter.getSize(credits));
+            } else {
                 if (credits != null) {
-                    if (useOwnCredits) {
-                        ai.setStatus("Free Account (Credits available(hotlink enabled))");
-                    } else {
-                        ai.setStatus("Free Account (Credits available(hotlink disabled))");
-                    }
-                    account.setMaxSimultanDownloads(maxdownloads_account_premium);
-                    ai.setTrafficLeft(SizeFormatter.getSize(credits));
+                    ai.setStatus("Free Account (Credits available(hotlink disabled))");
                 } else {
                     ai.setStatus("Free Account");
-                    ai.setUnlimitedTraffic();
                 }
+                ai.setUnlimitedTraffic();
             }
-            return ai;
-        } else if ("0".equalsIgnoreCase(timeStamp)) {
-            if (freeCredits != null) {
-                /* not finished yet */
-                if (Float.parseFloat(freeCredits) > 0) {
-                    ai.setStatus("Free Account(2) (Credits available)");
-                } else {
-                    ai.setStatus("Free Account(2) (No credits available)");
-                }
-                ai.setTrafficLeft(SizeFormatter.getSize(freeCredits + " GB"));
-                account.setProperty("freeAPIdisabled", false);
-                setBasicFreeAccountInfo(account, ai);
-            }
-            return ai;
-        } else {
-            ai.setValidUntil(Long.parseLong(timeStamp) * 1000l + (24 * 60 * 60 * 1000l));
-            setBasicPremiumAccountInfo(account, ai);
-            return ai;
         }
-    }
-
-    private void setBasicPremiumAccountInfo(final Account acc, final AccountInfo ai) {
-        ai.setStatus("Premium Account");
-        /* Premiumusers have no (daily) trafficlimits */
-        ai.setUnlimitedTraffic();
-        acc.setType(AccountType.PREMIUM);
-        acc.setMaxSimultanDownloads(maxdownloads_account_premium);
-        acc.setConcurrentUsePossible(true);
-    }
-
-    private void setBasicFreeAccountInfo(final Account acc, final AccountInfo ai) {
-        acc.setType(AccountType.FREE);
-        acc.setMaxSimultanDownloads(maxdownloads_free);
-        acc.setConcurrentUsePossible(false);
+        return ai;
     }
 
     private void checkConnection(final Browser br) throws PluginException {
@@ -648,8 +595,10 @@ public class OneFichierCom extends PluginForHost {
             /**
              * Only used if the API fails and is wrong but that usually doesn't happen!
              */
-            login(account, false);
-            ensureSiteLogin(account);
+            synchronized (account) {
+                login(account, false);
+                ensureSiteLogin(account);
+            }
             doFree(account, link);
             return;
         }
@@ -678,8 +627,10 @@ public class OneFichierCom extends PluginForHost {
         if (dllink == null) {
             // for some silly reason we have reverted from api to webmethod, so we need cookies!. 20150201
             br = new Browser();
-            login(account, false);
-            ensureSiteLogin(account);
+            synchronized (account) {
+                login(account, false);
+                ensureSiteLogin(account);
+            }
             br.setFollowRedirects(false);
             br.getPage(link.getDownloadURL());
             // error checking, offline links can happen here.
