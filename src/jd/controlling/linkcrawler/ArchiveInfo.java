@@ -7,7 +7,6 @@ import org.jdownloader.extensions.extraction.BooleanStatus;
 
 public class ArchiveInfo {
     public ArchiveInfo() {
-
     }
 
     private HashSet<String> extractionPasswords = new HashSet<String>();
@@ -45,5 +44,4 @@ public class ArchiveInfo {
         getExtractionPasswords().addAll(ai.getExtractionPasswords());
         return this;
     }
-
 }

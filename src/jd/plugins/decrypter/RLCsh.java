@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -33,7 +32,6 @@ import jd.utils.RazStringBuilder;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class RLCsh extends PluginForDecrypt {
-
     /**
      * Returns the annotations names array
      *
@@ -41,7 +39,6 @@ public class RLCsh extends PluginForDecrypt {
      */
     public static String[] getAnnotationNames() {
         return new String[] { "urlcash.net", "bat5.com", "urlcash.org", "clb1.com", "celebclk.com", "smilinglinks.com", "peekatmygirlfriend.com", "looble.net" };
-
     }
 
     /**
@@ -52,10 +49,8 @@ public class RLCsh extends PluginForDecrypt {
     public static String[] getAnnotationUrls() {
         String[] names = getAnnotationNames();
         String[] ret = new String[names.length];
-
         for (int i = 0; i < ret.length; i++) {
-            ret[i] = "(http://[\\w\\.]*?" + Pattern.quote(names[i]) + "/(?!\\?ref=|promote|sitemap|reset_password|register_new|mailto|(.*?)\\.php|https:).+)|(http://(?!master)[\\w\\-]{5,16}\\." + Pattern.quote(names[i]) + ")";
-
+            ret[i] = "(https?://[\\w\\.]*?" + Pattern.quote(names[i]) + "/(?!\\?ref=|promote|sitemap|reset_password|register_new|mailto|(.*?)\\.php|https?:).+)|(https?://(?!master)[\\w\\-]{5,16}\\." + Pattern.quote(names[i]) + ")";
         }
         return ret;
     }
@@ -70,15 +65,12 @@ public class RLCsh extends PluginForDecrypt {
     public void correctBR() throws NumberFormatException, PluginException {
         correctedBR = br.toString();
         ArrayList<String> regexStuff = new ArrayList<String>();
-
         // remove custom rules first!!! As html can change because of generic
         // cleanup rules.
-
         // generic cleanup
         regexStuff.add("<\\!(--.*?--)>");
         regexStuff.add("(display: ?none;\">.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
-
         for (String aRegex : regexStuff) {
             String results[] = new Regex(correctedBR, aRegex).getColumn(0);
             if (results != null) {
@@ -122,7 +114,6 @@ public class RLCsh extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
             return decryptedLinks;
         }
-
         // image galleries.
         final String fpName = br.getRegex("<strong>(.*?)</strong>").getMatch(0);
         final FilePackage fp;
@@ -165,7 +156,6 @@ public class RLCsh extends PluginForDecrypt {
             logger.warning("Decrypter broken for link:" + parameter);
             return null;
         }
-
         return decryptedLinks;
     }
 
@@ -173,5 +163,4 @@ public class RLCsh extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
