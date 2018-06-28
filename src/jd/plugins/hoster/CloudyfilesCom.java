@@ -1114,7 +1114,7 @@ public class CloudyfilesCom extends PluginForHost {
         }
         /** Wait time reconnect handling */
         // if (new Regex(correctedBR, "(You have reached the download(\\-| )limit|You have to wait)").matches()) {
-        if (new Regex(correctedBR, "(font-size:15px;\">You have to wait)").matches()) {
+        if (!new Regex(correctedBR, "(visibility:hidden[^<>]+>You have to wait)").matches()) {
             /* adjust this regex to catch the wait time string for COOKIE_HOST */
             String wait = new Regex(correctedBR, "((You have reached the download(\\-| )limit|You have to wait)[^<>]+)").getMatch(0);
             String tmphrs = new Regex(wait, "\\s+(\\d+)\\s+hours?").getMatch(0);
@@ -1150,7 +1150,7 @@ public class CloudyfilesCom extends PluginForHost {
                 if (waittime < 180000) {
                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.xfilesharingprobasic.allwait", USERTEXT_ALLWAIT_SHORT), waittime);
                 }
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "JD is blocked", waittime);
             }
         }
         if (correctedBR.contains("You're using all download slots for IP")) {
