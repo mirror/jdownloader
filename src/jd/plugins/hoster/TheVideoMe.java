@@ -29,15 +29,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -62,17 +53,26 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "thevideo.me" }, urls = { "https?://(www\\.)?thevideo\\.(me|cc)/((?:vid)?embed\\-)?[a-z0-9]{12}" })
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "thevideo.me" }, urls = { "https?://(www\\.)?(thevideo\\.me|thevideo\\.cc|vev\\.io)/((?:vid)?embed\\-|embed/)?[a-z0-9]{12}" })
 public class TheVideoMe extends antiDDoSForHost {
     private String               correctedBR                  = "";
     private String               passCode                     = null;
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     /* primary website url, take note of redirects */
-    private static final String  COOKIE_HOST                  = "http://thevideo.cc";
+    private static final String  COOKIE_HOST                  = "https://vev.io";
     private static final String  NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String  NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String  DOMAINS                      = "(thevideo\\.me|thevideo\\.cc)";
+    private static final String  DOMAINS                      = "(thevideo\\.me|thevideo\\.cc|vev\\.io)";
     private static final String  MAINTENANCE                  = ">\\s*?This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -83,7 +83,7 @@ public class TheVideoMe extends antiDDoSForHost {
     private static final boolean VIDEOHOSTER_3                = false;
     /* 'Pairing' */
     private static final boolean VIDEOHOSTER_4                = true;
-    private static final boolean SUPPORTSHTTPS                = false;
+    private static final boolean SUPPORTSHTTPS                = true;
     private final boolean        ENABLE_HTML_FILESIZE_CHECK   = false;
     /* Connection stuff */
     private static final boolean FREE_RESUME                  = true;
@@ -119,9 +119,18 @@ public class TheVideoMe extends antiDDoSForHost {
         if (!SUPPORTSHTTPS) {
             link.setUrlDownload(link.getDownloadURL().replaceFirst("https://", "http://"));
         }
-        final String fid = new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
-        link.setUrlDownload(COOKIE_HOST + "/" + fid);
-        link.setContentUrl(COOKIE_HOST + "/embed-" + fid + "-640x360.html");
+        if (!StringUtils.containsIgnoreCase("vev.io/", link.getDownloadURL())) {
+            try {
+                Browser br = new Browser();
+                br.setFollowRedirects(true);
+                br.getPage(link.getDownloadURL());
+                if (canHandle(br.getURL()) && StringUtils.containsIgnoreCase("vev.io", br._getURL().getHost())) {
+                    link.setUrlDownload(br.getURL());
+                }
+            } catch (final Throwable e) {
+                logger.log(e);
+            }
+        }
     }
 
     @Override
@@ -203,7 +212,10 @@ public class TheVideoMe extends antiDDoSForHost {
             }
         }
         if (fileInfo[0] == null) {
-            fileInfo[0] = new Regex(correctedBR, "title\" content=\"([^<>\"]*?)\"").getMatch(0);
+            fileInfo[0] = br.getRegex("video\"\\s*:\\s*\\{\\s*\"title\"\\s*:\\s*\"(.*?)\"").getMatch(0);
+        }
+        if (fileInfo[0] == null) {
+            fileInfo[0] = new Regex(correctedBR, "<title>(?:Watch)?\\s*(.*?)(\\s*-\\s*Vevio)?</title>").getMatch(0);
         }
         if (ENABLE_HTML_FILESIZE_CHECK) {
             if (fileInfo[1] == null) {
@@ -717,8 +729,8 @@ public class TheVideoMe extends antiDDoSForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree which
-     * allows the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
+     * which allows the next singleton download to start, or at least try.
      *
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
@@ -1131,7 +1143,8 @@ public class TheVideoMe extends antiDDoSForHost {
     }
 
     /**
-     * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before throwing the out of date error.
+     * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before throwing the out of date
+     * error.
      *
      * @param dl
      *            : The DownloadLink

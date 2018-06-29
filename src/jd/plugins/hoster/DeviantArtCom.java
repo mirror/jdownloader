@@ -42,31 +42,31 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/art/[\\w\\-]+|https?://[\\w\\.\\-]*?\\.deviantart\\.com/status/\\d+|https?://[\\w\\.\\-]*?deviantartdecrypted\\.com/journal/[\\w\\-]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/(?:[^/]+/)?art/[\\w\\-]+|https?://[\\w\\.\\-]*?\\.deviantart\\.com/status/\\d+|https?://[\\w\\.\\-]*?deviantartdecrypted\\.com/(?:[^/]+/)?journal/[\\w\\-]+" })
 public class DeviantArtCom extends PluginForHost {
     private boolean             DOWNLOADS_STARTED                = false;
     private String              DLLINK                           = null;
     private final String        COOKIE_HOST                      = "http://www.deviantart.com";
     private static final String NICE_HOST                        = "deviantart.com";
     private static final String NICE_HOSTproperty                = "deviantartcom";
-    private final String        INVALIDLINKS                     = "https?://(www\\.)?forum\\.deviantart\\.com/art/general";
+    private final String        INVALIDLINKS                     = "https?://(www\\.)?forum\\.deviantart\\.com/(?:[^/]+/)?art/general";
     private final String        MATURECONTENTFILTER              = ">Mature Content Filter<";
     private static Object       LOCK                             = new Object();
     public static String        FASTLINKCHECK_2                  = "FASTLINKCHECK_2";
     public static String        FORCEHTMLDOWNLOAD                = "FORCEHTMLDOWNLOAD";
     public static String        CRAWL_GIVEN_OFFSETS_INDIVIDUALLY = "CRAWL_GIVEN_OFFSETS_INDIVIDUALLY";
     private static final String GENERALFILENAMEREGEX             = "<title>([^<>\"]*?) on deviantART</title>";
-    private static final String DLLINK_REFRESH_NEEDED            = "https?://(www\\.)?deviantart\\.com/download/.+";
+    // private static final String DLLINK_REFRESH_NEEDED = "https?://(www\\.)?deviantart\\.com/download/.+";
     private static final String TYPE_DOWNLOADALLOWED_GENERAL     = "\"label\">\\s*Download";
     private static final String TYPE_DOWNLOADALLOWED_HTML        = "class=\"text\">HTML download</span>";
     private static final String TYPE_DOWNLOADFORBIDDEN_HTML      = "<div class=\"grf\\-indent\"";
     private static final String TYPE_DOWNLOADFORBIDDEN_SWF       = "class=\"flashtime\"";
     private static final String TYPE_ACCOUNTNEEDED               = "has limited the viewing of this artwork<";
     private boolean             HTMLALLOWED                      = false;
-    private static final String LINKTYPE_ART                     = "https?://[\\w\\.\\-]*?deviantart\\.com/art/[^<>\"/]+";
-    private static final String LINKTYPE_JOURNAL                 = "https?://[\\w\\.\\-]*?deviantart\\.com/journal/[\\w\\-]+";
+    private static final String LINKTYPE_ART                     = "https?://[\\w\\.\\-]*?deviantart\\.com/(?:[^/]+/)?art/[^<>\"/]+";
+    private static final String LINKTYPE_JOURNAL                 = "https?://[\\w\\.\\-]*?deviantart\\.com/(?:[^/]+/)?journal/[\\w\\-]+";
     private static final String LINKTYPE_STATUS                  = "https?://[\\w\\.\\-]*?\\.deviantart\\.com/status/\\d+";
-    private static final String TYPE_BLOG_OFFLINE                = "https?://[\\w\\.\\-]*?deviantart\\.com/blog/.+";
+    private static final String TYPE_BLOG_OFFLINE                = "https?://[\\w\\.\\-]*?deviantart\\.com/(?:[^/]+/)?blog/.+";
 
     /**
      * @author raztoki
