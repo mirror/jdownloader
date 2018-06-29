@@ -27,16 +27,18 @@ import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.InputField;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "protect-video.com", "iframe-secure.com", "iframe-secured.com", "protect-iframe.com", "ifp.re", "ifrp.xyz", "mp3free.pw" }, urls = { "https?://(?:www\\.)?protect-video\\.com/embed\\.php\\?id=\\d+", "https?://(?:www\\.)?iframe\\-secure\\.com/embed/[a-z0-9]+", "https?://(?:www\\.)?iframe\\-secured\\.com/embed/[a-z0-9]+", "https?://(?:www\\.)?protect\\-iframe\\.com/embed\\-[a-z0-9]+", "https?://ifp\\.re/[a-z0-9]+", "https?://ifrp\\.xyz/[a-z0-9]+", "https?://mp3free\\.pw/[a-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "protect-video.com", "iframe-secure.com", "iframe-secured.com", "protect-iframe.com", "ifp.re", "ifrp.xyz", "mp3free.pw" }, urls = { "https?://(?:www\\.)?protect-video\\.com/embed\\.php\\?id=\\d+", "https?://(?:www\\.)?iframe\\-secure\\.com/embed/[a-z0-9]+", "https?://(?:www\\.)?iframe\\-secured\\.com/embed/[a-z0-9]+", "https?://(?:www\\.)?protect\\-iframe\\.com/embed\\-[a-z0-9]+", "https?://ifp\\.re/[a-z0-9]+", "https?://(ifrp|ptlink|ifpp|cpxkf)\\.xyz/[a-z0-9]+", "https?://mp3free\\.pw/[a-z0-9]+" })
 public class IframeSecureCom extends antiDDoSForDecrypt {
     public IframeSecureCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -47,6 +49,7 @@ public class IframeSecureCom extends antiDDoSForDecrypt {
         final String parameter = param.toString();
         final String fid = new Regex(parameter, "([a-z0-9]+)$").getMatch(0);
         getPage(parameter);
+        br.followRedirect();
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
@@ -57,6 +60,16 @@ public class IframeSecureCom extends antiDDoSForDecrypt {
             br.setCookie(br.getHost(), "cookie_name", "popads");
             br.setCookie(br.getHost(), "cookie_name2", "popads");
             getPage(url_embed);
+            final Form f = br.getForm(0);
+            if (f != null) {
+                for (InputField field : f.getInputFields()) {
+                    if (StringUtils.equals("range", field.getType())) {
+                        field.setValue("100");
+                        break;
+                    }
+                }
+                submitForm(f);
+            }
         } else if ("ifp.re".equals(getHost())) {
             hasCaptcha = true;
             final String url_embed = String.format("/embed.php?u=%s&d=ifp.re", fid);
@@ -70,6 +83,12 @@ public class IframeSecureCom extends antiDDoSForDecrypt {
             // some form
             final Form f = br.getForm(0);
             if (f != null) {
+                for (InputField field : f.getInputFields()) {
+                    if (StringUtils.equals("range", field.getType())) {
+                        field.setValue("100");
+                        break;
+                    }
+                }
                 submitForm(f);
             }
         } else if ("iframe-secured.com".equals(getHost())) {
@@ -77,6 +96,12 @@ public class IframeSecureCom extends antiDDoSForDecrypt {
             // some form
             final Form f = br.getForm(0);
             if (f != null) {
+                for (InputField field : f.getInputFields()) {
+                    if (StringUtils.equals("range", field.getType())) {
+                        field.setValue("100");
+                        break;
+                    }
+                }
                 submitForm(f);
             }
         } else if ("protect-iframe.com".equals(getHost())) {

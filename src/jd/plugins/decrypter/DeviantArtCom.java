@@ -37,7 +37,7 @@ import jd.utils.JDUtilities;
 
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/(?!art/|status/)[^<>\"]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/(?!(?:[^/]+/)?art/|status/)[^<>\"]+" })
 public class DeviantArtCom extends PluginForDecrypt {
     /**
      * @author raztoki
@@ -63,12 +63,12 @@ public class DeviantArtCom extends PluginForDecrypt {
     // much, content as they wish. Hopefully this wont create any
     // issues.
     private static final String TYPE_COLLECTIONS              = "https?://[\\w\\.\\-]*?deviantart\\.com/.*?/collections(/.+)?";
-    private static final String TYPE_CATPATH_ALL              = "https?://[\\w\\.\\-]*?deviantart\\.com/(gallery|favourites)/\\?catpath(=.+)?";
-    private static final String TYPE_CATPATH_1                = "https?://[\\w\\.\\-]*?deviantart\\.com/(gallery|favourites)/\\?catpath(=(/|%2F([a-z0-9]+)?|[a-z0-9]+)(\\&offset=\\d+)?)?";
-    private static final String TYPE_CATPATH_2                = "https?://[\\w\\.\\-]*?deviantart\\.com/(gallery|favourites)/\\?catpath=[a-z0-9]{1,}(\\&offset=\\d+)?";
-    private static final String TYPE_JOURNAL                  = "https?://[\\w\\.\\-]*?deviantart\\.com/journal.+";
-    private static final String LINKTYPE_JOURNAL              = "https?://[\\w\\.\\-]*?deviantart\\.com/journal/[\\w\\-]+/?";
-    private static final String TYPE_BLOG                     = "https?://[\\w\\.\\-]*?deviantart\\.com/blog/(\\?offset=\\d+)?";
+    private static final String TYPE_CATPATH_ALL              = "https?://[\\w\\.\\-]*?deviantart\\.com/(?:[^/]+/)?(gallery|favourites)/\\?catpath(=.+)?";
+    private static final String TYPE_CATPATH_1                = "https?://[\\w\\.\\-]*?deviantart\\.com/(?:[^/]+/)?(gallery|favourites)/\\?catpath(=(/|%2F([a-z0-9]+)?|[a-z0-9]+)(\\&offset=\\d+)?)?";
+    private static final String TYPE_CATPATH_2                = "https?://[\\w\\.\\-]*?deviantart\\.com/(?:[^/]+/)?(gallery|favourites)/\\?catpath=[a-z0-9]{1,}(\\&offset=\\d+)?";
+    private static final String TYPE_JOURNAL                  = "https?://[\\w\\.\\-]*?deviantart\\.com/(?:[^/]+/)?journal.+";
+    private static final String LINKTYPE_JOURNAL              = "https?://[\\w\\.\\-]*?deviantart\\.com/(?:[^/]+/)?journal/[\\w\\-]+/?";
+    private static final String TYPE_BLOG                     = "https?://[\\w\\.\\-]*?deviantart\\.com/(?:[^/]+/)?blog/(\\?offset=\\d+)?";
     // private static final String TYPE_INVALID = "https?://[\\w\\.\\-]*?deviantart\\.com/stats/*?";
     private String              parameter                     = null;
     private boolean             fastLinkCheck                 = false;
@@ -99,7 +99,7 @@ public class DeviantArtCom extends PluginForDecrypt {
         parameter = parameter.replaceAll("/(poll|stats)/", "/");
         if (parameter.matches(LINKTYPE_JOURNAL)) {
             final DownloadLink journal = createDownloadlink(parameter.replace("deviantart.com/", "deviantartdecrypted.com/"));
-            journal.setName(new Regex(parameter, "deviantart\\.com/journal/([\\w\\-]+)").getMatch(0));
+            journal.setName(new Regex(parameter, "deviantart\\.com/(?:[^/]+/)?journal/([\\w\\-]+)").getMatch(0));
             if (fastLinkCheck) {
                 journal.setAvailable(true);
             }
@@ -182,12 +182,12 @@ public class DeviantArtCom extends PluginForDecrypt {
                 }
                 br.getPage(paramdecrypt + next);
             }
-            final String jinfo[] = br.getRegex("data\\-deviationid=\"\\d+\" href=\"(https?://[\\w\\.\\-]*?\\.deviantart\\.com/journal/[\\w\\-]+)\"").getColumn(0);
+            final String jinfo[] = br.getRegex("data\\-deviationid=\"\\d+\" href=\"(https?://[\\w\\.\\-]*?\\.deviantart\\.com/(?:[^/]+/)?journal/[\\w\\-]+)\"").getColumn(0);
             if (jinfo == null || jinfo.length == 0) {
                 throw new DecrypterException("Decrypter broken for link: " + parameter);
             }
             for (final String link : jinfo) {
-                final String urltitle = new Regex(link, "deviantart\\.com/journal/([\\w\\-]+)").getMatch(0);
+                final String urltitle = new Regex(link, "deviantart\\.com/(?:[^/]+/)?journal/([\\w\\-]+)").getMatch(0);
                 final DownloadLink dl = createDownloadlink(link.replace("deviantart.com/", "deviantartdecrypted.com/"));
                 if (fastLinkCheck) {
                     dl.setAvailable(true);
@@ -209,7 +209,7 @@ public class DeviantArtCom extends PluginForDecrypt {
     }
 
     private void decryptCollections() throws DecrypterException {
-        final String[] links = br.getRegex("<a href=\"(https?://[^<>\"/]+\\.deviantart\\.com/(art|journal)/[^<>\"]*?)\"").getColumn(0);
+        final String[] links = br.getRegex("<a href=\"(https?://[^<>\"/]+\\.deviantart\\.com/(?:[^/]+/)?(art|journal)/[^<>\"]*?)\"").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Plugin broken for link: " + parameter);
             throw new DecrypterException("Decrypter broken for link: " + parameter);
@@ -253,7 +253,7 @@ public class DeviantArtCom extends PluginForDecrypt {
             if (currentOffset > 0) {
                 accessOffset(currentOffset);
             }
-            final String[] links = br.getRegex("<a href=\"(https?://[^<>\"/]+\\.deviantart\\.com/journal/[^<>\"]*?)\"").getColumn(0);
+            final String[] links = br.getRegex("<a href=\"(https?://[^<>\"/]+\\.deviantart\\.com/(?:[^/]+/)?journal/[^<>\"]*?)\"").getColumn(0);
             if (links == null || links.length == 0) {
                 logger.warning("Plugin broken for link: " + parameter);
                 throw new DecrypterException("Decrypter broken for link: " + parameter);
@@ -279,8 +279,8 @@ public class DeviantArtCom extends PluginForDecrypt {
             return;
         }
         /* Correct input links */
-        if (parameter.matches("https?://[^<>\"/]+\\.deviantart\\.com/gallery/\\?\\d+")) {
-            final Regex paramregex = new Regex(parameter, "(https?://[^<>\"/]+\\.deviantart\\.com/gallery/\\?)(\\d+)");
+        if (parameter.matches("https?://[^<>\"/]+\\.deviantart\\.com/(?:[^/]+/)?gallery/\\?\\d+")) {
+            final Regex paramregex = new Regex(parameter, "(https?://[^<>\"/]+\\.deviantart\\.com/(?:[^/]+/)?gallery/\\?)(\\d+)");
             parameter = paramregex.getMatch(0) + "set=" + paramregex.getMatch(1);
         }
         /* only non /art/ requires packagename */
@@ -296,7 +296,7 @@ public class DeviantArtCom extends PluginForDecrypt {
         // find and set page type
         String pagetype = "";
         if (parameter.matches(TYPE_CATPATH_2)) {
-            pagetype = new Regex(parameter, "deviantart\\.com/gallery/\\?catpath=([a-z0-9]+)").getMatch(0);
+            pagetype = new Regex(parameter, "deviantart\\.com/(?:[^/]+/)?gallery/\\?catpath=([a-z0-9]+)").getMatch(0);
             /* First letter = capital letter */
             pagetype = pagetype.substring(0, 1).toUpperCase() + pagetype.substring(1, pagetype.length());
         } else if (parameter.contains("/favourites/")) {
@@ -414,7 +414,7 @@ public class DeviantArtCom extends PluginForDecrypt {
                     /* Unescape json */
                     grab = this.br.toString().replace("\\", "");
                 }
-                final String[] links = new Regex(grab, "\"(https?://[\\w\\.\\-]*?deviantart\\.com/(art|journal)/[\\w\\-]+)\"").getColumn(0);
+                final String[] links = new Regex(grab, "\"(https?://[\\w\\.\\-]*?deviantart\\.com/(?:[^/]+/)?(art|journal)/[\\w\\-]+)\"").getColumn(0);
                 if (links == null || links.length == 0) {
                     /* "deviation in storage" links are no links - that are empty items so there is no reason to stop. */
                     final String[] empty_links = br.getRegex("class=\"(instorage)\"").getColumn(0);
