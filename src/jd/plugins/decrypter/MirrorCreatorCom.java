@@ -85,7 +85,7 @@ public class MirrorCreatorCom extends PluginForDecrypt {
                 }
             }
             {
-                final String continuelink = br.getRegex("\"(/mstats?\\.php\\?uid=" + uid + "&[^\"]+=[a-f0-9]{32}[^\"]*)\"").getMatch(0);
+                final String continuelink = br.getRegex("\"(/m(?:ir)?stats?\\.php\\?uid=" + uid + "&[^\"]+=[a-f0-9]{32}[^\"]*)\"").getMatch(0);
                 if (continuelink != null) {
                     br.getPage(continuelink);
                 }
