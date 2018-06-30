@@ -84,7 +84,7 @@ public class VPornCom extends PluginForHost {
         }
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().equals("http://www.vporn.com/") || br.containsHTML("This video (is|has been) deleted|>404 not found<")) {
+        if (br.getURL().equals("http://www.vporn.com/") || br.containsHTML("This video (is|has been) deleted|>404 not found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("videoname = '([^']*?)'").getMatch(0);
