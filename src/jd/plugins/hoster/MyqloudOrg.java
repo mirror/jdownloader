@@ -27,16 +27,6 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -62,6 +52,16 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "myqloud.org" }, urls = { "https?://(?:www\\.)?myqloud\\.org/(?:embed\\-)?[a-z0-9]{12}" })
 public class MyqloudOrg extends antiDDoSForHost {
     /* Some HTML code to identify different (error) states */
@@ -70,7 +70,7 @@ public class MyqloudOrg extends antiDDoSForHost {
     /* Here comes our XFS-configuration */
     private final boolean        SUPPORTS_HTTPS                     = false;
     /* primary website url, take note of redirects */
-    private final String         COOKIE_HOST                        = "http://myqloud.org".replaceFirst("https?://", SUPPORTS_HTTPS ? "https://" : "http://");
+    private final String         COOKIE_HOST                        = "https://myqloud.org".replaceFirst("https?://", SUPPORTS_HTTPS ? "https://" : "http://");
     private final String         NICE_HOSTproperty                  = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
     private final static String  DOMAINS                            = "(?:myqloud\\.org)";
@@ -317,7 +317,7 @@ public class MyqloudOrg extends antiDDoSForHost {
                                 fileInfo[0] = new Regex(correctedBR, sharebox1).getMatch(0);
                                 if (inValidate(fileInfo[0])) {
                                     /* Link of the box without filesize */
-                                    fileInfo[0] = new Regex(correctedBR, "onFocus=\"copy\\(this\\);\">http://(www\\.)?" + DOMAINS + "/" + fuid + "/([^<>\"]*?)</textarea").getMatch(1);
+                                    fileInfo[0] = new Regex(correctedBR, "onFocus=\"copy\\(this\\);\">https?://(www\\.)?" + DOMAINS + "/" + fuid + "/([^<>\"]*?)</textarea").getMatch(1);
                                 }
                             }
                         }
@@ -1488,7 +1488,7 @@ public class MyqloudOrg extends antiDDoSForHost {
                     if (br.containsHTML("class=\"g\\-recaptcha\"")) {
                         final DownloadLink dlinkbefore = this.getDownloadLink();
                         if (dlinkbefore == null) {
-                            this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "http://" + account.getHoster(), true));
+                            this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true));
                         }
                         final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                         if (dlinkbefore != null) {
