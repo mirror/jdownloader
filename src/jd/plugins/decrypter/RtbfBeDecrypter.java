@@ -63,7 +63,7 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
         fastLinkcheck = cfg.isFastLinkcheckEnabled();
         this.br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
+        if (br.getRequest().getHttpConnection().getResponseCode() == 404 || br.containsHTML("Ce contenu n'est plus disponible") || br.getURL().equals("https://www.rtbf.be/auvio/")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
