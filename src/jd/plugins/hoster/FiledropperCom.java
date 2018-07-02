@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -31,9 +30,8 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filedropper.com" }, urls = { "http://[\\w\\.]*?filedropper\\.com/[A-Za-z0-9-_]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filedropper.com" }, urls = { "https?://[\\w\\.]*?filedropper\\.com/[A-Za-z0-9-_]+" })
 public class FiledropperCom extends PluginForHost {
-
     public FiledropperCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -71,13 +69,11 @@ public class FiledropperCom extends PluginForHost {
         Form captchaForm = null;
         URLConnectionAdapter con = null;
         boolean valid = false;
-
         for (int i = 0; i <= 5; i++) {
             captchaForm = br.getForm(0);
             if (captchaForm == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-
             String captchaUrl = br.getRegex("src=\"(securimage/securimage_show\\.php\\?sid=[0-9a-z]{32})\"").getMatch(0);
             String code = getCaptchaCode(captchaUrl, downloadLink);
             captchaForm.put("code", code);
