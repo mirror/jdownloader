@@ -31,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bondagebox.com", "fetishbox.com", "luxuretv.com", "homemoviestube.com" }, urls = { "https?://(?:www\\.)?bondagebox\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.)?fetishbox\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.|en\\.)?luxuretv\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?homemoviestube\\.com/videos/\\d+/[a-z0-9\\-]+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bondagebox.com", "fetishbox.com", "luxuretv.com", "homemoviestube.com" }, urls = { "https?://(?:www\\.)?bondagebox\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.)?fetishbox\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.|en\\.)?luxuretv\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.)?homemoviestube\\.com/videos/\\d+/[a-z0-9\\-]+\\.html" })
 public class UnknownPornScript4 extends PluginForHost {
     public UnknownPornScript4(PluginWrapper wrapper) {
         super(wrapper);
@@ -43,16 +43,14 @@ public class UnknownPornScript4 extends PluginForHost {
     // other:
     /* Extension which will be used if no correct extension is found */
     /** 2018-05-17: Bondagebox.com is still using rtmp + flash which often does not even work via browser! */
-    private static final String  type_1            = "^https?://(?:www\\.)?[^/]+/videos/[a-z0-9\\-]+\\-\\d+\\.html$";
+    private static final String type_1            = "^https?://(?:www\\.)?[^/]+/videos/[a-z0-9\\-]+\\-\\d+\\.html$";
     /* E.g. homemoviestube.com */
-    private static final String  type_2            = "^http://(?:www\\.)?[^/]+/videos/\\d+/[a-z0-9\\-]+\\.html$";
-    private static final String  default_Extension = ".mp4";
+    private static final String type_2            = "^https?://(?:www\\.)?[^/]+/videos/\\d+/[a-z0-9\\-]+\\.html$";
+    private static final String default_Extension = ".mp4";
     /* Connection stuff */
-    private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
-    private static final int     free_maxdownloads = -1;
-    private String               dllink            = null;
-    private String               rtmpurl           = null;
+    private static final int    free_maxdownloads = -1;
+    private String              dllink            = null;
+    private String              rtmpurl           = null;
 
     @Override
     public String getAGBLink() {
@@ -95,7 +93,7 @@ public class UnknownPornScript4 extends PluginForHost {
             flashvars = this.br.getRegex("flashvars=\"([^<>\"]+)").getMatch(0);
         }
         if (flashvars != null) {
-            dllink = new Regex(flashvars, "(http://(?:www\\.)?[^/]+/playerConfig\\.php[^<>\"/\\&]+)").getMatch(0);
+            dllink = new Regex(flashvars, "(https?://(?:www\\.)?[^/]+/playerConfig\\.php[^<>\"/\\&]+)").getMatch(0);
             if (dllink != null) {
                 dllink = Encoding.htmlDecode(dllink);
                 br2.getPage(dllink);
@@ -139,6 +137,22 @@ public class UnknownPornScript4 extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    private int getMaxChunks() {
+        if ("homemoviestube.com".equals(getHost())) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
+    private boolean isResumeSupported() {
+        if ("homemoviestube.com".equals(getHost())) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
@@ -149,7 +163,7 @@ public class UnknownPornScript4 extends PluginForHost {
         if (dllink.startsWith("http")) {
             /* 99% use http - e.g. homemoviestube.com */
             downloadLink.setFinalFileName(downloadLink.getName());
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, isResumeSupported(), getMaxChunks());
             if (dl.getConnection().getContentType().contains("html")) {
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
