@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.text.ParseException;
@@ -35,9 +34,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imagefap.com" }, urls = { "http://(www\\.)?imagefap.com/(imagedecrypted/\\d+|video\\.php\\?vid=\\d+)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imagefap.com" }, urls = { "https?://(www\\.)?imagefap.com/(imagedecrypted/\\d+|video\\.php\\?vid=\\d+)" })
 public class ImageFap extends PluginForHost {
-
     public ImageFap(final PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
@@ -49,18 +47,17 @@ public class ImageFap extends PluginForHost {
     public void correctDownloadLink(DownloadLink link) {
         final String addedLink = link.getDownloadURL();
         if (addedLink.contains("imagedecrypted/")) {
-            final String newurl = "http://www.imagefap.com/photo/" + new Regex(addedLink, "(\\d+)$").getMatch(0) + "/";
+            final String newurl = "https://www.imagefap.com/photo/" + new Regex(addedLink, "(\\d+)$").getMatch(0) + "/";
             link.setUrlDownload(newurl);
             link.setContentUrl(newurl);
         }
     }
 
-    private static final String VIDEOLINK = "http://(www\\.)?imagefap.com/video\\.php\\?vid=\\d+";
+    private static final String VIDEOLINK = "https?://(www\\.)?imagefap.com/video\\.php\\?vid=\\d+";
 
     private String DecryptLink(final String code) {
         try {
             final String s1 = Encoding.htmlDecode(code.substring(0, code.length() - 1));
-
             String t = "";
             for (int i = 0; i < s1.length(); i++) {
                 // logger.info("decrypt4 " + i);
@@ -73,7 +70,6 @@ public class ImageFap extends PluginForHost {
                 t = t + Character.valueOf((char) charcode).toString();
                 // t+=new Character((char)
                 // (s1.charAt(i)-code.charAt(code.length()-1)));
-
             }
             // logger.info(t);
             // var s1=unescape(s.substr(0,s.length-1)); var t='';
@@ -97,7 +93,8 @@ public class ImageFap extends PluginForHost {
     private String getGalleryName(final DownloadLink dl) {
         String galleryName = dl.getStringProperty("galleryname");
         if (galleryName == null) {
-            galleryName = br.getRegex("<font face=verdana size=3>([^<>\"]*?)<BR>").getMatch(0);
+            // galleryName = br.getRegex("<font face=verdana size=3>([^<>\"]*?)<BR>").getMatch(0);
+            galleryName = br.getRegex("<font[^<>]*?itemprop=\"name\"[^<>]*?>([^<>]+)<").getMatch(0);
             if (galleryName == null) {
                 galleryName = br.getRegex("<title>.*? in gallery ([^<>\"]*?) \\(Picture \\d+\\) uploaded by").getMatch(0);
             }
@@ -118,12 +115,12 @@ public class ImageFap extends PluginForHost {
         String pfilename = downloadLink.getName();
         br.getPage(downloadLink.getDownloadURL());
         if (downloadLink.getDownloadURL().matches(VIDEOLINK)) {
-            final String configLink = br.getRegex("flashvars\\.config = escape\\(\"(http://[^<>\"]*?)\"").getMatch(0);
+            final String configLink = br.getRegex("flashvars\\.config = escape\\(\"(https?://[^<>\"]*?)\"").getMatch(0);
             if (configLink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             br.getPage(configLink);
-            final String finallink = br.getRegex("<videoLink>(http://[^<>\"]*?)</videoLink>").getMatch(0);
+            final String finallink = br.getRegex("<videoLink>(https?://[^<>\"]*?)</videoLink>").getMatch(0);
             if (finallink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -145,9 +142,9 @@ public class ImageFap extends PluginForHost {
                     imagelink = DecryptLink(returnID);
                 }
                 if (imagelink == null) {
-                    imagelink = br.getRegex("onclick=\"OnPhotoClick\\(\\);\" src=\"(http://.*?)\"").getMatch(0);
+                    imagelink = br.getRegex("onclick=\"OnPhotoClick\\(\\);\" src=\"(https?://.*?)\"").getMatch(0);
                     if (imagelink == null) {
-                        imagelink = br.getRegex("href=\"#\" onclick=\"javascript:window\\.open\\(\\'(http://.*?)\\'\\)").getMatch(0);
+                        imagelink = br.getRegex("href=\"#\" onclick=\"javascript:window\\.open\\(\\'(https?://.*?)\\'\\)").getMatch(0);
                     }
                 }
             }
@@ -204,7 +201,10 @@ public class ImageFap extends PluginForHost {
                 if (br.containsHTML("(>The image you are trying to access does not exist|<title> \\(Picture 1\\) uploaded by  on ImageFap\\.com</title>)")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                final String picture_name = br.getRegex("<title>(.*?) in gallery").getMatch(0);
+                String picture_name = br.getRegex("<title>(.*?) in gallery").getMatch(0);
+                if (picture_name == null) {
+                    picture_name = br.getRegex("<title>(.*?) uploaded by").getMatch(0);
+                }
                 String galleryName = getGalleryName(downloadLink);
                 String username = downloadLink.getStringProperty("directusername");
                 if (username == null) {
@@ -220,20 +220,17 @@ public class ImageFap extends PluginForHost {
                     }
                 }
                 if (galleryName == null || picture_name == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    logger.info("galleryName: " + galleryName + " picture_name: " + picture_name);
+                    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-
                 galleryName = Encoding.htmlDecode(galleryName).trim();
                 if (username != null) {
                     username = username.trim();
                 }
-
                 downloadLink.setProperty("galleryname", galleryName);
                 downloadLink.setProperty("directusername", username);
                 downloadLink.setProperty("original_filename", picture_name);
-
                 downloadLink.setFinalFileName(getFormattedFilename(downloadLink));
-
                 /* only set filepackage if not set yet */
                 try {
                     if (FilePackage.isDefaultFilePackage(downloadLink.getFilePackage())) {
@@ -270,7 +267,6 @@ public class ImageFap extends PluginForHost {
         final String original_filename = downloadLink.getStringProperty("original_filename", null);
         final String galleryname = downloadLink.getStringProperty("galleryname", null);
         final String orderid = downloadLink.getStringProperty("orderid", "-");
-
         /* Date: Maybe add this in the future, if requested by a user. */
         // final long date = getLongProperty(downloadLink, "originaldate", 0l);
         // String formattedDate = null;
@@ -295,13 +291,10 @@ public class ImageFap extends PluginForHost {
         // /* prevent user error killing plugin */
         // time = "0000";
         // }
-
         String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME, defaultCustomFilename);
-
         if (!formattedFilename.contains("*username*") && !formattedFilename.contains("*title*") && !formattedFilename.contains("*galleryname*")) {
             formattedFilename = defaultCustomFilename;
         }
-
         formattedFilename = formattedFilename.replace("*orderid*", orderid);
         formattedFilename = formattedFilename.replace("*username*", username);
         formattedFilename = formattedFilename.replace("*galleryname*", galleryname);
@@ -315,7 +308,6 @@ public class ImageFap extends PluginForHost {
                                                       put("LABEL_FILENAME", "Define custom filename for pictures:");
                                                   }
                                               };
-
     private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
                                                   {
                                                       put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der den Inhalt veröffentlicht hat \r\n*title* = Originaler Dateiname mitsamt Dateiendung\r\n*galleryname* = Name der Gallerie, in der sich das Bild befand\r\n*orderid* = Position des Bildes in einer Gallerie z.B. '0001'");

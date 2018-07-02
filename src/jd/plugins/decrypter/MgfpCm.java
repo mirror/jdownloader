@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
@@ -26,6 +25,7 @@ import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -33,9 +33,8 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.StringUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagefap.com" }, urls = { "http://(www\\.)?imagefap\\.com/(gallery\\.php\\?p?gid=.+|gallery/.+|pictures/\\d+/.*|photo/\\d+|organizer/\\d+|(usergallery|showfavorites)\\.php\\?userid=\\d+(&folderid=-?\\d+)?)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagefap.com" }, urls = { "https?://(www\\.)?imagefap\\.com/(gallery\\.php\\?p?gid=.+|gallery/.+|pictures/\\d+/.*|photo/\\d+|organizer/\\d+|(usergallery|showfavorites)\\.php\\?userid=\\d+(&folderid=-?\\d+)?)" })
 public class MgfpCm extends PluginForDecrypt {
-
     public MgfpCm(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -45,7 +44,6 @@ public class MgfpCm extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-
         br.setFollowRedirects(false);
         String parameter = param.toString();
         final String oid = new Regex(parameter, "(?:organizer)/(\\d+)").getMatch(0);
@@ -54,14 +52,14 @@ public class MgfpCm extends PluginForDecrypt {
             int pageIndex = 0;
             br.setFollowRedirects(true);
             while (true) {
-                br.getPage("http://www.imagefap.com/organizer/" + oid + "/?page=" + (pageIndex > 0 ? Integer.toString(pageIndex) : ""));
+                br.getPage("https://www.imagefap.com/organizer/" + oid + "/?page=" + (pageIndex > 0 ? Integer.toString(pageIndex) : ""));
                 pageIndex++;
                 final String galleries[] = br.getRegex("(/gallery/\\d+|/gallery\\.php\\?gid=\\d+)").getColumn(0);
                 if (galleries == null || galleries.length == 0) {
                     break;
                 }
                 for (final String gallery : galleries) {
-                    final DownloadLink link = createDownloadlink("http://www.imagefap.com" + gallery);
+                    final DownloadLink link = createDownloadlink("https://www.imagefap.com" + gallery);
                     decryptedLinks.add(link);
                 }
             }
@@ -77,9 +75,9 @@ public class MgfpCm extends PluginForDecrypt {
             br.setFollowRedirects(true);
             while (true) {
                 if (userGallery) {
-                    br.getPage("http://www.imagefap.com/usergallery.php?userid=" + userID + "&folderid=" + folderID + "&page=" + (pageIndex > 0 ? Integer.toString(pageIndex) : ""));
+                    br.getPage("https://www.imagefap.com/usergallery.php?userid=" + userID + "&folderid=" + folderID + "&page=" + (pageIndex > 0 ? Integer.toString(pageIndex) : ""));
                 } else if (favoriteGallery) {
-                    br.getPage("http://www.imagefap.com/showfavorites.php?userid=" + userID + "&folderid=" + folderID + "&page=" + (pageIndex > 0 ? Integer.toString(pageIndex) : ""));
+                    br.getPage("https://www.imagefap.com/showfavorites.php?userid=" + userID + "&folderid=" + folderID + "&page=" + (pageIndex > 0 ? Integer.toString(pageIndex) : ""));
                 } else {
                     return null;
                 }
@@ -89,7 +87,7 @@ public class MgfpCm extends PluginForDecrypt {
                     break;
                 }
                 for (final String gallery : galleries) {
-                    final DownloadLink link = createDownloadlink("http://www.imagefap.com" + gallery);
+                    final DownloadLink link = createDownloadlink("https://www.imagefap.com" + gallery);
                     decryptedLinks.add(link);
                 }
             }
@@ -100,7 +98,7 @@ public class MgfpCm extends PluginForDecrypt {
             final String galleries[] = br.getRegex("((usergallery|showfavorites)\\.php\\?userid=\\d+&folderid=-?\\d+)").getColumn(0);
             if (galleries != null) {
                 for (final String gallery : galleries) {
-                    final DownloadLink link = createDownloadlink("http://www.imagefap.com/" + gallery);
+                    final DownloadLink link = createDownloadlink("https://www.imagefap.com/" + gallery);
                     decryptedLinks.add(link);
                 }
             }
@@ -113,15 +111,15 @@ public class MgfpCm extends PluginForDecrypt {
         final ArrayList<String> allPages = new ArrayList<String>();
         allPages.add("0");
         if (parameter.matches(type_invalid)) {
-            final DownloadLink link = createDownloadlink("http://imagefap.com/imagedecrypted/" + new Random().nextInt(1000000));
+            final DownloadLink link = createDownloadlink("https://imagefap.com/imagedecrypted/" + new Random().nextInt(1000000));
             link.setFinalFileName(new Regex(parameter, "imagefap\\.com/(.+)").getMatch(0));
             link.setAvailable(false);
             link.setProperty("offline", true);
             decryptedLinks.add(link);
             return decryptedLinks;
         }
-        if (parameter.matches("http://(www\\.)?imagefap\\.com/photo/\\d+")) {
-            final DownloadLink link = createDownloadlink("http://imagefap.com/imagedecrypted/" + new Regex(parameter, "(\\d+)$").getMatch(0));
+        if (parameter.matches("https?://(www\\.)?imagefap\\.com/photo/\\d+")) {
+            final DownloadLink link = createDownloadlink("https://imagefap.com/imagedecrypted/" + new Regex(parameter, "(\\d+)$").getMatch(0));
             try {
                 link.setContentUrl(parameter + "/");
             } catch (final Throwable e) {
@@ -134,7 +132,7 @@ public class MgfpCm extends PluginForDecrypt {
                 /**
                  * Workaround to get all images on one page for private galleries (site buggy)
                  */
-                br.getPage("http://www.imagefap.com/gallery.php?view=2");
+                br.getPage("https://www.imagefap.com/gallery.php?view=2");
             } else if (!parameter.contains("view=2")) {
                 parameter = addParameter(parameter, "view=2");
                 parameter = addParameter(parameter, "gid=" + gid);
@@ -142,7 +140,7 @@ public class MgfpCm extends PluginForDecrypt {
             try {
                 br.getPage(parameter);
             } catch (final BrowserException e) {
-                final DownloadLink link = createDownloadlink("http://imagefap.com/imagedecrypted/" + new Random().nextInt(1000000));
+                final DownloadLink link = createDownloadlink("https://imagefap.com/imagedecrypted/" + new Random().nextInt(1000000));
                 link.setFinalFileName(new Regex(parameter, "imagefap\\.com/(.+)").getMatch(0));
                 link.setAvailable(false);
                 link.setProperty("offline", true);
@@ -150,14 +148,13 @@ public class MgfpCm extends PluginForDecrypt {
                 return decryptedLinks;
             }
             if (br.containsHTML(">This gallery has been flagged")) {
-                final DownloadLink link = createDownloadlink("http://imagefap.com/imagedecrypted/" + new Random().nextInt(1000000));
+                final DownloadLink link = createDownloadlink("https://imagefap.com/imagedecrypted/" + new Random().nextInt(1000000));
                 link.setFinalFileName(new Regex(parameter, "imagefap\\.com/(.+)").getMatch(0));
                 link.setAvailable(false);
                 link.setProperty("offline", true);
                 decryptedLinks.add(link);
                 return decryptedLinks;
             }
-
             if (br.getRedirectLocation() != null) {
                 if (br.getRedirectLocation().contains("/pictures/")) {
                     parameter = br.getRedirectLocation();
@@ -169,16 +166,14 @@ public class MgfpCm extends PluginForDecrypt {
                     br.getPage(br.getRedirectLocation());
                 }
             }
-
             if (br.getURL().contains("imagefap.com/404.php") || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Could not find gallery<")) {
-                final DownloadLink link = createDownloadlink("http://imagefap.com/imagedecrypted/" + new Random().nextInt(1000000));
+                final DownloadLink link = createDownloadlink("https://imagefap.com/imagedecrypted/" + new Random().nextInt(1000000));
                 link.setFinalFileName(new Regex(parameter, "imagefap\\.com/(.+)").getMatch(0));
                 link.setAvailable(false);
                 link.setProperty("offline", true);
                 decryptedLinks.add(link);
                 return decryptedLinks;
             }
-
             // First find all the information we need (name of the gallery, name of
             // the galleries author)
             String galleryName = br.getRegex("<title>Porn pics of (.*?) \\(Page 1\\)</title>").getMatch(0);
@@ -187,21 +182,23 @@ public class MgfpCm extends PluginForDecrypt {
                 if (galleryName == null) {
                     galleryName = br.getRegex("<meta name=\"description\" content=\"Airplanes porn pics - Imagefap\\.com\\. The ultimate social porn pics site\" />").getMatch(0);
                 }
+                if (galleryName == null) {
+                    galleryName = br.getRegex("<font[^<>]*?itemprop=\"name\"[^<>]*?>([^<>]+)<").getMatch(0);
+                }
             }
             String authorsName = br.getRegex("<b><font size=\"3\" color=\"#CC0000\">Uploaded by ([^<>\"]+)</font></b>").getMatch(0);
             if (authorsName == null) {
-                authorsName = br.getRegex("<td class=\"mnu0\"><a href=\"http://(www\\.)?imagefap\\.com/profile\\.php\\?user=([^<>\"]+)\"").getMatch(0);
+                authorsName = br.getRegex("<td class=\"mnu0\"><a href=\"https?://(www\\.)?imagefap\\.com/profile\\.php\\?user=([^<>\"]+)\"").getMatch(0);
             }
             if (galleryName == null) {
                 logger.warning("Gallery name could not be found!");
-                return null;
+                throw new DecrypterException("Decrypter broken for link: " + parameter);
             }
             if (authorsName == null) {
                 authorsName = "Anonymous";
             }
             galleryName = Encoding.htmlDecode(galleryName.trim());
             authorsName = Encoding.htmlDecode(authorsName.trim());
-
             /**
              * Max number of images per page = 1000, if we got more we always have at least 2 pages
              */
@@ -221,17 +218,14 @@ public class MgfpCm extends PluginForDecrypt {
                 }
                 final String info[][] = br.getRegex("<span id=\"img_(\\d+)_desc\">.*?<font face=verdana color=\"#000000\"><i>([^<>\"]*?)</i>").getMatches();
                 if (info == null || info.length == 0) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
+                    throw new DecrypterException("Decrypter broken for link: " + parameter);
                 }
                 for (final String elements[] : info) {
                     final String orderID = df.format(counter);
                     final String fid = elements[0];
                     final String original_filename = Encoding.htmlDecode(elements[1].trim());
-                    final DownloadLink link = createDownloadlink("http://imagefap.com/imagedecrypted/" + fid);
-
-                    link.setContentUrl("http://www.imagefap.com/photo/" + fid + "/");
-
+                    final DownloadLink link = createDownloadlink("https://imagefap.com/imagedecrypted/" + fid);
+                    link.setContentUrl("https://www.imagefap.com/photo/" + fid + "/");
                     link.setProperty("orderid", orderID);
                     link.setProperty("galleryname", galleryName);
                     link.setProperty("directusername", authorsName);
@@ -266,5 +260,4 @@ public class MgfpCm extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
