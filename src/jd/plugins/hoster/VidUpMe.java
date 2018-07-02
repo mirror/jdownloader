@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -24,10 +23,6 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -47,15 +42,18 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vidup.me" }, urls = { "https?://(?:www\\.|beta\\.)?vidup\\.me/((vid)?embed-)?[a-z0-9]{12}" })
-public class VidUpMe extends antiDDoSForHost {
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vidup.me" }, urls = { "https?://(?:www\\.|beta\\.)?vidup\\.(me|tv)/((vid)?embed-)?[a-z0-9]{12}" })
+public class VidUpMe extends antiDDoSForHost {
     private String               correctedBR                  = "";
     private String               fuid                         = null;
     private static final boolean VIDEOHOSTER                  = false;
     private static final boolean VIDEOHOSTER_2                = true;
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
-    private final String         COOKIE_HOST                  = "http://beta.vidup.me";
+    private final String         COOKIE_HOST                  = "http://vidup.tv";
     private static final String  MAINTENANCE                  = "We will be back soon";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -76,13 +74,12 @@ public class VidUpMe extends antiDDoSForHost {
     // protocol: no https
     // captchatype: null
     // other: no redirects
-
     @Override
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
         // strip video hosting url's to reduce possible duped links.
         link.setUrlDownload(link.getDownloadURL().replaceAll("/(vid)?embed-", "/"));
-        link.setUrlDownload(link.getDownloadURL().replaceAll("http://(?:www\\.|beta\\.)vidup\\.me/", "http://beta.vidup.me/"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("http://(?:www\\.|beta\\.)vidup\\.me/", "http://vidup.tv/"));
     }
 
     @Override
@@ -641,26 +638,21 @@ public class VidUpMe extends antiDDoSForHost {
 
     private String decodeDownloadLink(String s) {
         String decoded = null;
-
         try {
             Regex params = new Regex(s, "\\'(.*?[^\\\\])\\',(\\d+),(\\d+),\\'(.*?)\\'");
-
             String p = params.getMatch(0).replaceAll("\\\\", "");
             int a = Integer.parseInt(params.getMatch(1));
             int c = Integer.parseInt(params.getMatch(2));
             String[] k = params.getMatch(3).split("\\|");
-
             while (c != 0) {
                 c--;
                 if (k[c].length() != 0) {
                     p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
                 }
             }
-
             decoded = p;
         } catch (Exception e) {
         }
-
         String finallink = null;
         if (decoded != null) {
             final String[] qualities = { "1080p", "720p", "480p", "360p", "240p", "180p" };
@@ -772,5 +764,4 @@ public class VidUpMe extends antiDDoSForHost {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.SibSoft_XFileShare;
     }
-
 }
