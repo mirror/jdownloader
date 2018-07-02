@@ -1325,9 +1325,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     *
+     * 
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     *
+     * 
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, java.util.List<CrawledLink> plinks) {
@@ -1967,7 +1967,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     private LinkedList<CrawledPackage> load(File file, HashMap<CrawledPackage, CrawledPackageStorable> restoreMap) {
         try {
-            return loadFile(file, restoreMap);
+            return loadFile(file, restoreMap, false);
         } catch (Throwable e) {
             if (file != null) {
                 final File backupTo = new File(file.getAbsolutePath() + ".backup");
@@ -2004,10 +2004,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             logger.log(e);
         }
         return null;
-    }
-
-    public LinkedList<CrawledPackage> loadFile(File file, Map<CrawledPackage, CrawledPackageStorable> restoreMap) throws IOException {
-        return loadFile(file, restoreMap, false);
     }
 
     public LinkedList<CrawledPackage> loadFile(File file, Map<CrawledPackage, CrawledPackageStorable> restoreMap, boolean rescueMode) throws IOException {

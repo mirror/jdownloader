@@ -634,7 +634,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
     private LinkedList<FilePackage> load(final File file) {
         synchronized (SAVELOADLOCK) {
             try {
-                return loadFile(file);
+                return loadFile(file, false);
             } catch (final Throwable e) {
                 final File renameTo = new File(file.getAbsolutePath() + ".backup");
                 boolean backup = false;
@@ -652,10 +652,6 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
             }
             return null;
         }
-    }
-
-    public LinkedList<FilePackage> loadFile(File file) throws IOException {
-        return loadFile(file, true);
     }
 
     public LinkedList<FilePackage> loadFile(File file, boolean rescueMode) throws IOException {
