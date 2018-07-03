@@ -61,13 +61,13 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
         final String decryptedhost = "http://" + this.getHost() + "decrypted/";
         String date_formatted = null;
         fastLinkcheck = cfg.isFastLinkcheckEnabled();
-        this.br.setFollowRedirects(true);
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getRequest().getHttpConnection().getResponseCode() == 404 || br.containsHTML("Ce contenu n'est plus disponible") || br.getURL().equals("https://www.rtbf.be/auvio/")) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
+            decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String video_id = this.br.getRegex("/embed/media\\?id=(\\d+)").getMatch(0);
+        String video_id = br.getRegex("/embed/media\\?id=(\\d+)").getMatch(0);
         if (video_id == null) {
             /*
              * Fallback - that is a bad fallback as this must not be the ID we're looking for but it could sometimes work fine as a
@@ -91,8 +91,8 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
             date_formatted = new Regex(uploadDate, "^(\\d{4}\\-\\d{2}\\-\\d{2})").getMatch(0);
         }
         br.getPage("/auvio/embed/media?id=" + video_id + "&autoplay=1");
-        if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
+        if (br.getRequest().getHttpConnection().getResponseCode() == 404 || br.containsHTML("Ce contenu (n'est plus disponible|est visible uniquement en Belgique)")) {
+            decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
         // final String video_json_metadata = this.br.getRegex("<script type=\"application/ld\\+json\">(.*?)</script>").getMatch(0);
