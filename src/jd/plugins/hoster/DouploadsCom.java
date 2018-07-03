@@ -388,7 +388,7 @@ public class DouploadsCom extends antiDDoSForHost {
      */
     private String getFnameViaAbuseLink(final Browser br, final DownloadLink dl) throws Exception {
         getPage(br, COOKIE_HOST + "/?op=report_file&id=" + fuid, false);
-        return br.getRegex("<b>Filename\\s*:?\\s*</b></td><td>([^<>\"]*?)</td>").getMatch(0);
+        return br.getRegex(">Filename[^~]*?<span>([^<>]*?)</span>").getMatch(0);
     }
 
     /**
