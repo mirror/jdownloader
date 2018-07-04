@@ -80,14 +80,14 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 public class TusFilesNet extends PluginForHost {
     // Site Setters
     // primary website url, take note of redirects
-    private final String         COOKIE_HOST                  = "http://tusfiles.com";
+    private final String         COOKIE_HOST                  = "https://tusfiles.com";
     // domain names used within download links.
     private final String         DOMAINS                      = "(tusfil(es\\.(net|com|co\\.nz)|\\.es))";
     private final String         PASSWORDTEXT                 = ">Passwor(d|t):</small> <input|lock\\.png\" border=\"0\"";
     private final String         MAINTENANCE                  = ">This server is in maintenance mode";
     private final String         dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/((files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+|[a-z0-9]{58}/v(ideo)?\\.mp4)";
     private final boolean        supportsHTTPS                = true;
-    private final boolean        enforcesHTTPS                = false;
+    private final boolean        enforcesHTTPS                = true;
     private final boolean        useRUA                       = false;
     private final boolean        useAltLinkCheck              = false;
     private final boolean        useVidEmbed                  = false;
@@ -909,7 +909,7 @@ public class TusFilesNet extends PluginForHost {
                 loginform = captchaForm(dummyLink, loginform);
                 // end of check form for login captcha crap.
                 loginform.remove(null);
-                loginform.setAction("https://tusfiles.net/");
+                loginform.setAction("https://tusfiles.com/");
                 sendForm(loginform);
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
                     if ("de".equalsIgnoreCase(language)) {
