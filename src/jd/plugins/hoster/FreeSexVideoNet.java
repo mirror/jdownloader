@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
@@ -31,9 +30,8 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.appwork.utils.Regex;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hotclips24.com" }, urls = { "http://(?:www\\.)?(?:free-sex-video\\.net|hotclips24\\.com)/video/[a-z0-9\\-]+\\d+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hotclips24.com" }, urls = { "https?://(?:www\\.)?(?:free-sex-video\\.net|hotclips24\\.com)/video/[a-z0-9\\-]+\\d+\\.html" })
 public class FreeSexVideoNet extends PluginForHost {
-
     public FreeSexVideoNet(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -42,12 +40,10 @@ public class FreeSexVideoNet extends PluginForHost {
     // Tags:
     // protocol: no https
     // other:
-
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 1;   // https://svn.jdownloader.org/issues/83286
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
 
     @Override
