@@ -20,6 +20,7 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
+import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -32,6 +33,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nexusmods.com" }, urls = { "https?://(?:www\\.)?nexusmods\\.com+/[^/]+/ajax/downloadfile\\?id=\\d+" })
@@ -164,35 +166,58 @@ public class NexusmodsCom extends antiDDoSForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    private static Object LOCK = new Object();
-
     private boolean isCookieSet(Account account, String key) {
         final String value = br.getCookie(account.getHoster(), key);
         return StringUtils.isNotEmpty(value) && !StringUtils.equalsIgnoreCase(value, "deleted");
     }
 
-    public void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+    public void login(final Account account) throws Exception {
+        synchronized (account) {
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null && !force) {
+                if (cookies != null) {
                     br.setCookies(account.getHoster(), cookies);
-                    return;
-                }
-                getPage("https://www.nexusmods.com");
-                postPage("/Sessions/?Login&uri=%2F%2Fwww.nexusmods.com%2Fgames%2F", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                if (!isCookieSet(account, "member_id") || !isCookieSet(account, "sid") || !isCookieSet(account, "pass_hash")) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    getPage("https://www.nexusmods.com");
+                    if (!isCookieSet(account, "member_id") || !isCookieSet(account, "sid") || !isCookieSet(account, "pass_hash")) {
+                        br.clearCookies(getHost());
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        account.saveCookies(br.getCookies(account.getHoster()), "");
+                        return;
                     }
+                }
+                getPage("https://www.nexusmods.com/Core/Libs/Common/Widgets/LoginPopUp?url=%2F%2Fwww.nexusmods.com%2F");
+                final PostRequest request = new PostRequest("https://www.nexusmods.com");
+                request.put("go_login", "1");
+                request.put("username", Encoding.urlEncode(account.getUser()));
+                request.put("password", Encoding.urlEncode(account.getPass()));
+                request.put("uri", "%2F%2Fwww.nexusmods.com%2F");
+                final DownloadLink original = this.getDownloadLink();
+                if (original == null) {
+                    this.setDownloadLink(new DownloadLink(this, "Account", getHost(), "http://" + br.getRequest().getURL().getHost(), true));
+                }
+                try {
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    if (recaptchaV2Response == null) {
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
+                    request.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                } finally {
+                    if (original == null) {
+                        this.setDownloadLink(null);
+                    }
+                }
+                request.setContentType("application/x-www-form-urlencoded");
+                sendRequest(request);
+                if (!isCookieSet(account, "member_id") || !isCookieSet(account, "sid") || !isCookieSet(account, "pass_hash")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(br.getCookies(account.getHoster()), "");
             } catch (final PluginException e) {
-                account.clearCookies("");
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
@@ -202,17 +227,17 @@ public class NexusmodsCom extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        login(account, true);
+        login(account);
         ai.setUnlimitedTraffic();
-        getPage("/games/users/userarea/");
-        if (StringUtils.equalsIgnoreCase(br.getRegex(">Premium Member:\\s*</div>.*?>\\s*(.*?)\\s*<").getMatch(0), "yes")) {
-            account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-            account.setConcurrentUsePossible(true);
-        } else {
+        getPage("/users/myaccount");
+        if (StringUtils.equalsIgnoreCase(br.getRegex("\"premium-desc\">\\s*(.*?)\\s*<").getMatch(0), "Inactive")) {
             account.setType(AccountType.FREE);
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             account.setConcurrentUsePossible(false);
+        } else {
+            account.setType(AccountType.PREMIUM);
+            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            account.setConcurrentUsePossible(true);
         }
         account.setValid(true);
         return ai;
@@ -220,7 +245,7 @@ public class NexusmodsCom extends antiDDoSForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        login(account, false);
+        login(account);
         requestFileInformation(link);
         /* Free- and premium download is the same. */
         doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");

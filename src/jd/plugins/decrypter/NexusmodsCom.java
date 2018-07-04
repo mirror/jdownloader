@@ -34,7 +34,9 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nexusmods.com" }, urls = { "https?://(?:www\\.)?nexusmods\\.com/[^/]+/mods/\\d+/" })
+import org.appwork.utils.logging2.LogSource;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nexusmods.com" }, urls = { "https?://(?:www\\.)?nexusmods\\.com/[^/]+/mods/\\d+/?" })
 public class NexusmodsCom extends PluginForDecrypt {
     public NexusmodsCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -46,9 +48,17 @@ public class NexusmodsCom extends PluginForDecrypt {
         final PluginForHost plugin = JDUtilities.getPluginForHost(this.getHost());
         ((jd.plugins.hoster.NexusmodsCom) plugin).setBrowser(br);
         final String fid = ((jd.plugins.hoster.NexusmodsCom) plugin).getFID(parameter);
-        final Account aa = AccountController.getInstance().getValidAccount(plugin);
-        if (aa != null) {
-            ((jd.plugins.hoster.NexusmodsCom) plugin).login(aa, false);
+        final Account account = AccountController.getInstance().getValidAccount(plugin);
+        if (account != null) {
+            try {
+                ((jd.plugins.hoster.NexusmodsCom) plugin).login(account);
+            } catch (PluginException e) {
+                if (getLogger() instanceof LogSource) {
+                    plugin.handleAccountException(account, (LogSource) getLogger(), e);
+                } else {
+                    plugin.handleAccountException(account, null, e);
+                }
+            }
         }
         ((jd.plugins.hoster.NexusmodsCom) plugin).getPage(br, parameter);
         if (((jd.plugins.hoster.NexusmodsCom) plugin).isOffline(br)) {
