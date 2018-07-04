@@ -1459,7 +1459,7 @@ public class MyqloudOrg extends antiDDoSForHost {
                 boolean loggedInViaCookies = false;
                 if (cookies != null) {
                     br.setCookies(this.getHost(), cookies);
-                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l) {
+                    if (!force && System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l) {
                         /* We trust these cookies as they're not that old --> Do not check them */
                         return;
                     }
