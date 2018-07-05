@@ -242,7 +242,7 @@ public class RAFChunk extends Thread {
                 };
             };
             dl.getManagedConnetionHandler().addThrottledConnection(inputStream);
-            int towrite = 0;
+            int toWrite = 0;
             int read = 0;
             boolean reachedEOF = false;
             long lastFlush = 0;
@@ -253,10 +253,10 @@ public class RAFChunk extends Thread {
                     buffer.reset();
                     if (reachedEOF == true) {
                         /* we already reached EOF, so nothing more to read */
-                        towrite = -1;
+                        toWrite = -1;
                     } else {
                         /* lets try to read some data */
-                        towrite = 0;
+                        toWrite = 0;
                     }
                     lastFlush = System.currentTimeMillis();
                     while (!reachedEOF && buffer.free() > 0 && buffer.size() <= flushLevel && !isExternalyAborted() && !connectionclosed.get()) {
@@ -277,7 +277,7 @@ public class RAFChunk extends Thread {
                             try {
                                 read = inputStream.read(buffer.getInternalBuffer(), buffer.size(), readMaxNext);
                             } catch (IOException e) {
-                                logger.warning(e.getMessage() + ":" + bytes2Do + "|" + readMaxNext);
+                                logger.warning("Chunk(" + getID() + "):" + e.getMessage() + "|todo:" + bytes2Do + "|readMax" + readMaxNext);
                                 throw e;
                             }
                             if (read > 0) {
@@ -287,7 +287,7 @@ public class RAFChunk extends Thread {
                                     logger.warning("reached artificial EOF");
                                     reachedEOF = true;
                                 } else if (bytes2Do < 0) {
-                                    logger.warning("WTF, where is EOF?!:" + bytes2Do + "|" + bytes2DoBf + "|" + readMaxNext);
+                                    logger.warning("Chunk(" + getID() + "):WTF, where is EOF?!|todo:" + bytes2Do + "|todoBf:" + bytes2DoBf + "|readMax:" + readMaxNext);
                                     reachedEOF = true;
                                 }
                             }
@@ -299,9 +299,9 @@ public class RAFChunk extends Thread {
                         if (read > 0) {
                             /* we read some data */
                             bytesRead += read;
-                            towrite += read;
+                            toWrite += read;
                             dl.totalLinkBytesLoadedLive.getAndAdd(read);
-                            buffer.setUsed(towrite);
+                            buffer.setUsed(toWrite);
                         } else if (read == -1) {
                             /* we reached EOF */
                             logger.warning("reached EOF");
@@ -324,22 +324,52 @@ public class RAFChunk extends Thread {
                     throw e;
                 } catch (IOException e4) {
                     LogSource.exception(logger, e4);
+                    if (toWrite > 0) {
+                        logger.warning("flush:exClosed:" + isExternalyAborted() + "|conClosed:" + connectionclosed + "|read:" + bytesRead + "|toWrite:" + toWrite + "|written:" + bytesWritten);
+                        try {
+                            final long flush = toWrite;
+                            toWrite = -1;
+                            dl.addToTotalLinkBytesLoaded(flush, false);
+                            addChunkBytesLoaded(flush);
+                            dl.writeBytes(this);
+                            bytesWritten += flush;
+                            logger.warning("flushed:exClosed:" + isExternalyAborted() + "|conClosed:" + connectionclosed + "|read:" + bytesRead + "|toWrite:" + toWrite + "|written:" + bytesWritten);
+                        } catch (final Throwable throwable) {
+                            LogSource.exception(logger, throwable);
+                        }
+                    }
                     if (!isExternalyAborted() && !connectionclosed.get()) {
                         throw e4;
                     }
-                    towrite = -1;
+                    toWrite = -1;
                     break;
                 }
-                if (towrite == -1 || isExternalyAborted() || connectionclosed.get()) {
-                    logger.warning("towrite: " + towrite + " exClosed: " + isExternalyAborted() + " conClosed: " + connectionclosed + " read:" + bytesRead + " written:" + bytesWritten);
+                if (toWrite == -1 || isExternalyAborted() || connectionclosed.get()) {
+                    if (toWrite > 0) {
+                        logger.warning("flush:exClosed:" + isExternalyAborted() + "|conClosed:" + connectionclosed + "|read:" + bytesRead + "|toWrite:" + toWrite + "|written:" + bytesWritten);
+                        try {
+                            final long flush = toWrite;
+                            toWrite = -1;
+                            dl.addToTotalLinkBytesLoaded(flush, false);
+                            addChunkBytesLoaded(flush);
+                            dl.writeBytes(this);
+                            bytesWritten += flush;
+                            logger.warning("flushed:exClosed:" + isExternalyAborted() + "|conClosed:" + connectionclosed + "|read:" + bytesRead + "|toWrite:" + toWrite + "|written:" + bytesWritten);
+                        } catch (final Throwable throwable) {
+                            LogSource.exception(logger, throwable);
+                        }
+                    }
+                    logger.warning("break:exClosed:" + isExternalyAborted() + "|conClosed:" + connectionclosed + "|read:" + bytesRead + "|toWrite:" + toWrite + "|written:" + bytesWritten);
                     break;
                 }
-                if (towrite > 0) {
+                if (toWrite > 0) {
                     remoteIO = false;
-                    dl.addToTotalLinkBytesLoaded(towrite, false);
-                    addChunkBytesLoaded(towrite);
+                    final long flush = toWrite;
+                    toWrite = -1;
+                    dl.addToTotalLinkBytesLoaded(flush, false);
+                    addChunkBytesLoaded(flush);
                     dl.writeBytes(this);
-                    bytesWritten += towrite;
+                    bytesWritten += flush;
                 }
                 /* enough bytes loaded */
                 if (bytes2Do == 0 && endByte > 0) {

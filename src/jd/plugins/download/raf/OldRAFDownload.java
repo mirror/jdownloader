@@ -272,24 +272,26 @@ public class OldRAFDownload extends DownloadInterface {
         final long fileSize = getFileSize();
         int chunks = chunksP.length;
         final long part = fileSize / chunks;
-        long dif;
         long last = -1;
-        logger.info("FileSize: " + fileSize + " Chunks: " + chunks + " PartSize: " + part);
+        logger.info("FileSize: " + fileSize + " Chunks: " + chunks + "(" + Arrays.toString(chunksP) + ") ChunkSize: " + part);
         for (int i = 0; i < chunks; i++) {
-            dif = chunksP[i] - i * part;
-            if (dif < 0) {
+            final long dif = chunksP[i] - i * part;
+            if (dif < 0 || chunksP[i] < 0) {
                 logger.info("Invalid Chunk " + i + ": " + chunksP[i] + " dif= " + dif);
-                return false;
+                final long fix = Math.max(0, (i * part - 1024));
+                logger.info("Fix Chunk " + i + ": " + chunksP[i] + " to " + fix);
+                chunksP[i] = fix;
             }
             if (chunksP[i] <= last) {
-                logger.info("Invalid Chunk " + i + ": " + chunksP[i] + " <= " + last);
-                return false;
-            }
-            if (chunksP[i] >= (i + 1) * part - 1) {
-                logger.info("Fix Chunk " + i + ": " + chunksP[i] + " to " + (((i + 1) * part) - 1));
-                chunksP[i] = Math.max(0, ((i + 1) * part) - 1024);
+                logger.info("Suspicious Chunk " + i + ": " + chunksP[i] + " <= " + last);
             } else {
-                logger.info("Valid Chunk " + i + ": " + chunksP[i]);
+                if (chunksP[i] >= (i + 1) * part - 1) {
+                    final long fix = Math.max(0, ((i + 1) * part) - 1024);
+                    logger.info("Fix Chunk " + i + ": " + chunksP[i] + " to " + fix);
+                    chunksP[i] = fix;
+                } else {
+                    logger.info("Valid Chunk " + i + ": " + chunksP[i]);
+                }
             }
             last = chunksP[i];
         }
