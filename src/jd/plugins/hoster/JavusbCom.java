@@ -32,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: $", interfaceVersion = 3, names = { "javusb.com" }, urls = { "https?://(?:www\\.)?javusb\\.com/.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "javusb.com" }, urls = { "https?://(?:www\\.)?javusb\\.com/.+" })
 public class JavusbCom extends PluginForHost {
     public JavusbCom(PluginWrapper wrapper) {
         super(wrapper);
