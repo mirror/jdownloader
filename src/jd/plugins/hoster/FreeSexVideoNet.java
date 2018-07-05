@@ -30,7 +30,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.appwork.utils.Regex;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hotclips24.com" }, urls = { "https?://(?:www\\.)?(?:free-sex-video\\.net|hotclips24\\.com)/video/[a-z0-9\\-]+\\d+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "free-sex-video.net", "hotclips24.com" }, urls = { "https?://(?:www\\.)?free-sex-video\\.net/video/[a-z0-9\\-]+\\d+\\.html", "https?://(?:www\\.)?hotclips24\\.com/video/[a-z0-9\\-]+\\d+\\.html" })
 public class FreeSexVideoNet extends PluginForHost {
     public FreeSexVideoNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -53,7 +53,10 @@ public class FreeSexVideoNet extends PluginForHost {
 
     @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
-        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("free-sex-video.net/", "hotclips24.com/"));
+        // link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("free-sex-video.net/", "hotclips24.com/"));
+        // Not the same: (https://svn.jdownloader.org/issues/85655)
+        // https://free-sex-video.net/video/-51455.html
+        // https://hotclips24.com/video/-51455.html
     }
 
     @SuppressWarnings("deprecation")
@@ -67,8 +70,11 @@ public class FreeSexVideoNet extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String url_filename = new Regex(link.getDownloadURL(), "/video/([a-z0-9\\-]+)\\-\\d+\\.html").getMatch(0).replace("-", " ");
+        final String url_filename = new Regex(link.getDownloadURL(), "/video/([a-z0-9\\-]*\\-\\d+)\\.html").getMatch(0).replace("-", " ");
         String filename = br.getRegex("title: '([^<>\"']*?)',").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>([^<>]*?)(at (Free Sex Video|HotClips24))?</title>").getMatch(0);
+        }
         if (filename == null) {
             filename = url_filename;
         }
