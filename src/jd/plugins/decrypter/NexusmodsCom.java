@@ -34,6 +34,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.logging2.LogSource;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nexusmods.com" }, urls = { "https?://(?:www\\.)?nexusmods\\.com/[^/]+/mods/\\d+/?" })
@@ -73,16 +74,24 @@ public class NexusmodsCom extends PluginForDecrypt {
             fpName = fid;
         }
         final Browser br2 = br.cloneBrowser();
-        ((jd.plugins.hoster.NexusmodsCom) plugin).getPage(br2, "../../ajax/modfiles/?id=" + fid + "&gid=110");
-        String[] links = br2.getRegex("(https?://(?:www\\.)?nexusmods\\.com+/[^/]+/ajax/downloadfile\\?id=\\d+)").getColumn(0);
-        if (((jd.plugins.hoster.NexusmodsCom) plugin).isOffline(br2)) {
-            links = br.getRegex("href=\"([^\"]+)\" onclick=").getColumn(0);
-        }
-        if (links == null || links.length == 0) {
+        final String game_id = br.getRegex("game_id\\s*=\\s*(\\d+)").getMatch(0);
+        if (game_id == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        for (final String singleLink : links) {
-            decryptedLinks.add(createDownloadlink(singleLink));
+        ((jd.plugins.hoster.NexusmodsCom) plugin).getPage(br2, "/Core/Libs/Common/Widgets/ModFilesTab?id=" + fid + "&game_id=" + game_id);
+        final String[][] downloads = br2.getRegex("<span>([^<]*?)</span>.*?<li class=\"stat-filesize\">.*?class=\"stat\">(.*?)</.*?\"(/Core/Libs/Common/Widgets/DownloadPopUp?\\?id=\\d+.*?)\"").getMatches();
+        if (downloads == null || downloads.length == 0) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        for (final String download[] : downloads) {
+            final DownloadLink downloadLink = createDownloadlink(br2.getURL(download[2]).toString());
+            final long size = SizeFormatter.getSize(download[1]);
+            if (size > 0) {
+                downloadLink.setDownloadSize(size);
+            }
+            downloadLink.setName(Encoding.htmlOnlyDecode(download[0]));
+            downloadLink.setAvailable(true);
+            decryptedLinks.add(downloadLink);
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName.trim()));

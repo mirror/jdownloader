@@ -559,7 +559,7 @@ public class Keep2ShareCc extends K2SApi {
     }
 
     private void login(final Account account, final boolean force, final String MAINPAGE) throws Exception {
-        synchronized (ACCLOCK) {
+        synchronized (account) {
             try {
                 // clear cookies/headers etc. this should nullify redirects to /file/
                 br = newWebBrowser(true);
@@ -878,7 +878,8 @@ public class Keep2ShareCc extends K2SApi {
 
     @Override
     protected boolean isUseAPIDefaultEnabled() {
-        return false;
+        // ERROR_NO_ALLOW_ACCESS_FROM_NETWORK got disabled/removed on 05.07.2018
+        return true;
     }
 
     /**
