@@ -356,7 +356,7 @@ public class FileBoomMe extends K2SApi {
     }
 
     private void login(final Account account, final boolean force) throws Exception {
-        synchronized (ACCLOCK) {
+        synchronized (account) {
             final String cookieHost = MAINPAGE;
             try {
                 boolean login = true;

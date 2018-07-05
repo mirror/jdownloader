@@ -774,10 +774,8 @@ public abstract class K2SApi extends PluginForHost {
         }
     }
 
-    public static Object ACCLOCK = new Object();
-
     private String getAuthToken(final Account account) throws Exception {
-        synchronized (ACCLOCK) {
+        synchronized (account) {
             String currentAuthToken = account.getStringProperty(AUTHTOKEN, authToken);
             try {
                 if (StringUtils.isEmpty(currentAuthToken)) {
@@ -1224,7 +1222,7 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     private void dumpAuthToken(Account account) {
-        synchronized (ACCLOCK) {
+        synchronized (account) {
             // only wipe token when authToken equals current storable
             try {
                 final boolean dump = StringUtils.equals(account.getStringProperty(AUTHTOKEN, null), this.authToken);
