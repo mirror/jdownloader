@@ -17,8 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.nutils.encoding.Encoding;
@@ -32,7 +30,9 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "upfile.mobi" }, urls = { "http://(?:www\\.)?upfile\\.mobi/(\\d+(\\.[a-f0-9]{32})?|index\\.php\\?page=file\\&f=\\d+|[a-zA-Z0-9]{6,12})" })
+import org.appwork.utils.formatter.SizeFormatter;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "upfile.mobi" }, urls = { "http://(?:www\\.)?up(file|vid)\\.mobi/(\\d+(\\.[a-f0-9]{32})?|index\\.php\\?page=file\\&f=\\d+|[a-zA-Z0-9]{6,12})" })
 public class UpfileMobi extends PluginForHost {
     private final String password_required = "Enter password:<br/>";
 
@@ -63,7 +63,7 @@ public class UpfileMobi extends PluginForHost {
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setName(Encoding.htmlDecode(filename.trim()));
+        link.setName(Encoding.htmlDecode(filename.trim().replace(" . ", ".")));
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
@@ -104,28 +104,38 @@ public class UpfileMobi extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        br.cloneBrowser().openGetConnection("//upfile.mobi/index.php?page=screen&id=" + fid + "&p=");
+        br.cloneBrowser().getPage("/index.php?page=screen&id=" + fid + "&p=");
         final String ad_sht = br.getRegex("\"(ga\\.php[^<>\"]*?)\"").getMatch(0);
         if (ad_sht != null) {
-            br.cloneBrowser().openGetConnection("//upfile.mobi/" + ad_sht);
+            br.cloneBrowser().getPage("/" + ad_sht);
         }
-        String dllink = br.getRegex("\"(https?://(www\\.)?upfile\\.mobi/download/[^<>\"]*?)\"").getMatch(0);
+        String dllink = br.getRegex("\"(https?://(www\\.)?up(?:file|vid)\\.mobi/download/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("\"(/download/\\?page=download[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                dllink = br.getRegex("\"(https?://(www\\.)?up(?:file|vid)\\.mobi/\\?page=download[^<>\"]*?)\"").getMatch(0);
             }
+        }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("Download key is incorrect")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: 'Download key is incorrect'", 10 * 30 * 1000l);
+            dllink = br.getRegex("\"(https?://[^\"]*?page=dl[^\"]*?)\"").getMatch(0);
+            if (dllink != null) {
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
             }
-            if (br.containsHTML("file and needs moderation, after moderation")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: 'This is a video file and needs moderation, after moderation you can download this file'", 30 * 30 * 1000l);
+            if (dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
+                if (br.containsHTML("Download key is incorrect")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: 'Download key is incorrect'", 10 * 30 * 1000l);
+                }
+                if (br.containsHTML("file and needs moderation, after moderation")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: 'This is a video file and needs moderation, after moderation you can download this file'", 30 * 30 * 1000l);
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
@@ -134,11 +144,11 @@ public class UpfileMobi extends PluginForHost {
         if (downloadLink == null) {
             return null;
         }
-        String s = new Regex(downloadLink.getDownloadURL(), "https?://(?:www\\.)?upfile\\.mobi/(\\d+)").getMatch(0);
+        String s = new Regex(downloadLink.getDownloadURL(), "https?://(?:www\\.)?up(?:file|vid)\\.mobi/(\\d+)").getMatch(0);
         if (s == null) {
-            s = new Regex(downloadLink.getDownloadURL(), "https?://(?:www\\.)?upfile\\.mobi/index\\.php\\?page=file&f=(\\d+)").getMatch(0);
+            s = new Regex(downloadLink.getDownloadURL(), "https?://(?:www\\.)?up(?:file|vid)\\.mobi/index\\.php\\?page=file&f=(\\d+)").getMatch(0);
             if (s == null) {
-                s = new Regex(downloadLink.getDownloadURL(), "upfile\\.mobi/([a-zA-Z0-9]{6,12})").getMatch(0);
+                s = new Regex(downloadLink.getDownloadURL(), "up(?:file|vid)\\.mobi/([a-zA-Z0-9]{6,12})").getMatch(0);
             }
         }
         return s;
