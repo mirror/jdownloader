@@ -13,13 +13,10 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.HashMap;
 import java.util.Map;
-
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -34,9 +31,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "veehd.com" }, urls = { "https?://(?:www\\.)?veehd\\.com/video/\\d+" }) 
-public class VeeHdCom extends antiDDoSForHost {
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "veehd.com" }, urls = { "https?://(?:www\\.)?veehd\\.com/video/\\d+" })
+public class VeeHdCom extends antiDDoSForHost {
     public VeeHdCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://veehd.com/register");
@@ -49,7 +47,7 @@ public class VeeHdCom extends antiDDoSForHost {
 
     /* More simultan downloads will cause server errors */
     private static final int     FREE_MAXDOWNLOADS = 2;
-    private static final boolean registered_only   = true;
+    private static final boolean registered_only   = false;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -264,5 +262,4 @@ public class VeeHdCom extends antiDDoSForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

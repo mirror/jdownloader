@@ -47,6 +47,7 @@ public class NexusmodsCom extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replaceFirst("^http://", "https://");
         final PluginForHost plugin = JDUtilities.getPluginForHost(this.getHost());
+        ((jd.plugins.hoster.NexusmodsCom) plugin).setLogger(getLogger());
         ((jd.plugins.hoster.NexusmodsCom) plugin).setBrowser(br);
         final String fid = ((jd.plugins.hoster.NexusmodsCom) plugin).getFID(parameter);
         final Account account = AccountController.getInstance().getValidAccount(plugin);

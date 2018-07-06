@@ -36,7 +36,7 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nexusmods.com" }, urls = { "https?://(?:www\\.)?nexusmods\\.com+/[^/]+/ajax/downloadfile\\?id=\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nexusmods.com" }, urls = { "https?://(?:www\\.)?nexusmods\\.com+/Core/Libs/Common/Widgets/DownloadPopUp\\?id=\\d+.+" })
 public class NexusmodsCom extends antiDDoSForHost {
     public NexusmodsCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -71,6 +71,8 @@ public class NexusmodsCom extends antiDDoSForHost {
             return true;
         } else if (br.containsHTML("You need to be a member and logged in to download files larger")) {
             // large files
+            return true;
+        } else if (br.containsHTML(">Please login or signup to download this file<")) {
             return true;
         } else {
             return false;
@@ -133,7 +135,11 @@ public class NexusmodsCom extends antiDDoSForHost {
     }
 
     public String getFID(final String dlurl) {
-        return new Regex(dlurl, "(\\d+)/?$").getMatch(0);
+        String ret = new Regex(dlurl, "id=(\\d+)").getMatch(0);
+        if (ret == null) {
+            ret = new Regex(dlurl, "mods/(\\d+)").getMatch(0);
+        }
+        return ret;
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
