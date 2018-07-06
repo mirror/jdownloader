@@ -40,6 +40,7 @@ import jd.plugins.components.UserAgents.BrowserName;
 
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
@@ -344,7 +345,11 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         final InputStream is = getInputStream(con, ibr);
         final byte[] responseBytes = IO.readStream(-1, is);
         ibr.getRequest().setResponseBytes(responseBytes);
-        logger.fine("\r\n" + ibr.getRequest().getHtmlCode());
+        LogInterface log = ibr.getLogger();
+        if (log == null) {
+            log = logger;
+        }
+        log.fine("\r\n" + ibr.getRequest().getHtmlCode());
         if (ibr.getRequest().isKeepByteArray() || ibr.isKeepResponseContentBytes()) {
             ibr.getRequest().setKeepByteArray(true);
             ibr.getRequest().setResponseBytes(responseBytes);

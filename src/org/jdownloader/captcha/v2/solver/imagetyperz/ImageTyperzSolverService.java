@@ -40,9 +40,7 @@ public class ImageTyperzSolverService extends AbstractSolverService implements S
 
     public ImageTyperzSolverService() {
         config = JsonConfig.create(ImageTyperzConfigInterface.class);
-
         AdvancedConfigManager.getInstance().register(config);
-
         if (!Application.isHeadless()) {
             ServicePanel.getInstance().addExtender(this);
             initServicePanel(CFG_IMAGE_TYPERZ.USER_NAME, CFG_IMAGE_TYPERZ.PASSWORD, CFG_IMAGE_TYPERZ.ENABLED);
@@ -63,7 +61,6 @@ public class ImageTyperzSolverService extends AbstractSolverService implements S
     public AbstractCaptchaSolverConfigPanel getConfigPanel() {
         AbstractCaptchaSolverConfigPanel ret = new AbstractCaptchaSolverConfigPanel() {
             private TextInput     username;
-
             private PasswordInput password;
 
             @Override
@@ -74,38 +71,30 @@ public class ImageTyperzSolverService extends AbstractSolverService implements S
             {
                 addHeader(getTitle(), new AbstractIcon(IconKey.ICON_LOGO_IMAGE_TYPERZ, 32));
                 addDescription(_GUI.T.AntiCaptchaConfigPanel_onShow_description_paid_service());
-
                 add(new SettingsButton(new AppAction() {
                     {
                         setName(_GUI.T.lit_open_website());
-
                     }
 
                     @Override
                     public void actionPerformed(ActionEvent e) {
                         CrossSystem.openURL("http://www.ImageTyperz.com/");
-
                     }
                 }), "gapleft 37,spanx,pushx,growx");
                 username = new TextInput(CFG_IMAGE_TYPERZ.USER_NAME);
                 password = new PasswordInput(CFG_IMAGE_TYPERZ.PASSWORD);
-
                 this.addHeader(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_logins_(), NewTheme.I().getIcon(IconKey.ICON_LOGINS, 32));
                 // addPair(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_enabled(), null, checkBox);
                 this.addDescriptionPlain(_GUI.T.captchasolver_configpanel_my_account_description(ImageTyperzSolverService.this.getName()));
                 addPair(_GUI.T.captchasolver_configpanel_enabled(ImageTyperzSolverService.this.getName()), null, new Checkbox(CFG_IMAGE_TYPERZ.ENABLED, username, password));
                 addPair(_GUI.T.captchabrotherhoodService_createPanel_username(), null, username);
                 addPair(_GUI.T.captchabrotherhoodService_createPanel_password(), null, password);
-
                 addPair(_GUI.T.DeatchbyCaptcha_Service_createPanel_feedback(), null, new Checkbox(CFG_IMAGE_TYPERZ.FEED_BACK_SENDING_ENABLED));
-
                 addBlackWhiteList(CFG_IMAGE_TYPERZ.CFG);
-
             }
 
             @Override
             public void save() {
-
             }
 
             @Override
@@ -121,7 +110,6 @@ public class ImageTyperzSolverService extends AbstractSolverService implements S
             public String getTitle() {
                 return "ImageTyperz.com";
             }
-
         };
         return ret;
     }
@@ -145,7 +133,6 @@ public class ImageTyperzSolverService extends AbstractSolverService implements S
     public void extendServicePabel(List<ServiceCollection<?>> services) {
         if (solver.validateLogins()) {
             services.add(new ServiceCollection<ImageTyperzCaptchaSolver>() {
-
                 @Override
                 public Icon getIcon() {
                     return DomainInfo.getInstance("ImageTyperz.com").getFavIcon();
@@ -170,7 +157,6 @@ public class ImageTyperzSolverService extends AbstractSolverService implements S
                 public ExtTooltip createTooltip(ServicePanel owner) {
                     return new ServicePanelImageTyperzTooltip(owner, solver);
                 }
-
             });
         }
     }
@@ -178,7 +164,6 @@ public class ImageTyperzSolverService extends AbstractSolverService implements S
     @Override
     public Map<String, Integer> getWaitForOthersDefaultMap() {
         HashMap<String, Integer> ret = new HashMap<String, Integer>();
-
         ret.put(JacSolverService.ID, 30000);
         // ret.put(DeathByCaptchaSolverService.ID, 60000);
         ret.put(NineKwSolverService.ID, 120000);
@@ -186,7 +171,6 @@ public class ImageTyperzSolverService extends AbstractSolverService implements S
         // ret.put(CheapCaptchaSolverService.ID, 60000);
         // ret.put(EndCaptchaSolverService.ID, 60000);
         ret.put(TwoCaptchaSolverService.ID, 60000);
-
         return ret;
     }
 
