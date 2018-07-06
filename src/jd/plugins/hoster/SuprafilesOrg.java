@@ -1225,7 +1225,7 @@ public class SuprafilesOrg extends antiDDoSForHost {
                 if (waittime < 180000) {
                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.xfilesharingprobasic.allwait", USERTEXT_ALLWAIT_SHORT), waittime);
                 }
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "JD is blocked", waittime);
+                // throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "JD is blocked", waittime);
             }
         }
         if (correctedBR.contains("You're using all download slots for IP")) {
