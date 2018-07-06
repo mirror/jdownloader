@@ -65,6 +65,14 @@ public class NexusmodsCom extends antiDDoSForHost {
         return br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("No files have been uploaded yet|>File not found<|/noimage-1.png");
     }
 
+    @Override
+    public void correctDownloadLink(DownloadLink link) throws Exception {
+        final String url = link.getPluginPatternMatcher();
+        if (StringUtils.contains(url, "nmm=1")) {
+            link.setPluginPatternMatcher(url.replace("nmm=1", "nmm=0"));
+        }
+    }
+
     public boolean isLoginRequired(final Browser br) {
         if (br.containsHTML("<h1>Error</h1>") && br.containsHTML("<h2>Adult-only content</h2>")) {
             // adult only content.
