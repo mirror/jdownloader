@@ -359,6 +359,8 @@ public class HardSexTubeCom extends antiDDoSForHost {
                 ext = ".flv";
             } else if (ext.contains(".mp4") && !ext.matches("\\.[A-Za-z0-9]{2,5}")) {
                 ext = ".mp4";
+            } else if (ext.equals(".")) { // finallink might be "encoded" so ext == .
+                ext = ".mp4";
             }
         } else {
             ext = ".mp4";
