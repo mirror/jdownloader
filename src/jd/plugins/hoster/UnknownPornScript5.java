@@ -78,6 +78,10 @@ public class UnknownPornScript5 extends PluginForHost {
         final String host = downloadLink.getHost();
         br = new Browser();
         br.setFollowRedirects(true);
+        if (downloadLink.getDownloadURL().contains("bigcamtube.com")) {
+            br.setCookie("www.bigcamtube.com", "age_verify", "1");
+            br.addAllowedResponseCodes(500);
+        }
         br.getPage(downloadLink.getDownloadURL());
         if (br.getHost().equals("bigcamtube.com") && br.toString().length() <= 100) {
             /*
@@ -86,7 +90,7 @@ public class UnknownPornScript5 extends PluginForHost {
              */
             br.getPage(downloadLink.getDownloadURL());
         }
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Sorry, we couldn't find")) {
             /* E.g. responsecode 404: boyfriendtv.com */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -180,7 +184,7 @@ public class UnknownPornScript5 extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private void getDllink() throws PluginException {
+    private void getDllink() throws Exception {
         /* Find correct js-source, then find dllink inside of it. */
         String jwplayer_source = null;
         final String[] scripts = br.getRegex("<script[^>]*?>(.*?)</script>").getColumn(0);
@@ -195,12 +199,12 @@ public class UnknownPornScript5 extends PluginForHost {
             }
         }
         if (dllink == null) {
-            dllink = br.getRegex("<source src=\"([^<>\"]+)\"").getMatch(0);
+            dllink = br.getRegex("<(?:source|video)[^<>]*? src=(?:'|\")([^<>'\"]+)(?:'|\")").getMatch(0);
         }
         if (jwplayer_source == null && dllink == null) {
             /*
              * No player found --> Chances are high that there is no playable content --> Video offline
-             * 
+             *
              * This can also be seen as a "last chance offline" errorhandling for websites for which the above offline-errorhandling doesn't
              * work!
              */
