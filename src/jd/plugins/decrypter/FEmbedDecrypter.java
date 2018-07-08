@@ -14,7 +14,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision: 34675 $", interfaceVersion = 2, names = { "fembed.com" }, urls = { "https?://(www\\.)?fembed.com/(f|v)/([a-zA-Z0-9_-]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fembed.com" }, urls = { "https?://(www\\.)?fembed.com/(f|v)/([a-zA-Z0-9_-]+)" })
 public class FEmbedDecrypter extends PluginForDecrypt {
     public FEmbedDecrypter(PluginWrapper wrapper) {
         super(wrapper);
