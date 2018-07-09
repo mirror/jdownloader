@@ -540,7 +540,7 @@ public class CloudyfilesCom extends PluginForHost {
                 }
                 /* end of backward compatibility */
                 submitForm(download1);
-                checkErrors(downloadLink, false);
+                // checkErrors(downloadLink, false);
                 dllink = getDllink();
             }
         }
