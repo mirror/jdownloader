@@ -170,6 +170,9 @@ public class UnknownPornScript5 extends PluginForHost {
                 if (!con.getContentType().contains("html")) {
                     downloadLink.setDownloadSize(con.getLongContentLength());
                 } else {
+                    if (con.getResponseCode() == 404) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
                     server_issues = true;
                 }
             } finally {
@@ -204,7 +207,7 @@ public class UnknownPornScript5 extends PluginForHost {
         if (jwplayer_source == null && dllink == null) {
             /*
              * No player found --> Chances are high that there is no playable content --> Video offline
-             *
+             * 
              * This can also be seen as a "last chance offline" errorhandling for websites for which the above offline-errorhandling doesn't
              * work!
              */
