@@ -62,6 +62,7 @@ public class DailyMotionCom extends PluginForHost {
     private static final String  COUNTRYBLOCKUSERTEXT   = "This video is not available for your country";
     /** Settings stuff */
     private static final String  ALLOW_BEST             = "ALLOW_BEST";
+    private static final String  ALLOW_144              = "ALLOW_0";
     private static final String  ALLOW_240              = "ALLOW_1";
     private static final String  ALLOW_380              = "ALLOW_2";
     private static final String  ALLOW_480              = "ALLOW_3";
@@ -485,6 +486,7 @@ public class DailyMotionCom extends PluginForHost {
     private void setConfigElements() {
         final ConfigEntry hq = addConfigElementBestOnly();
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_144, JDL.L("plugins.hoster.dailymotioncom.check144", "Grab 144p?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_240, JDL.L("plugins.hoster.dailymotioncom.check240", "Grab 240p?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_380, JDL.L("plugins.hoster.dailymotioncom.check380", "Grab 380p?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_480, JDL.L("plugins.hoster.dailymotioncom.check480", "Grab 480p?")).setDefaultValue(true).setEnabledCondidtion(hq, false));

@@ -13,9 +13,9 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
+import java.net.URL;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -27,9 +27,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "https?://(www\\.)?(uploaded\\.(to|net)|ul\\.to)/(f|folder)/[a-z0-9]+" }) 
-public class UploadedToFolder extends PluginForDecrypt {
+import org.appwork.utils.net.URLHelper;
 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "https?://(www\\.)?(uploaded\\.(to|net)|ul\\.to)/(f|folder)/[a-z0-9]+" })
+public class UploadedToFolder extends PluginForDecrypt {
     public UploadedToFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -39,7 +40,9 @@ public class UploadedToFolder extends PluginForDecrypt {
         String parameter = param.toString().replaceAll("(www\\.)?(ul\\.to|uploaded\\to)/(f|folder)/", "uploaded.net/f/");
         br.setFollowRedirects(true);
         String baseURL = "http://uploaded.net/";
-        if (parameter.contains("https://")) baseURL = baseURL.replace("http://", "https://");
+        if (parameter.contains("https://")) {
+            baseURL = baseURL.replace("http://", "https://");
+        }
         br.setCookie(baseURL, "lang", "de");
         br.getPage(parameter);
         if (br.containsHTML("(title=\"enthaltene Dateien\" style=\"cursor:help\">\\(0\\)</span>|<i>enthält keine Dateien</i>)")) {
@@ -51,21 +54,28 @@ public class UploadedToFolder extends PluginForDecrypt {
             return decryptedLinks;
         }
         String fpName = br.getRegex("<h1><a href=\"folder/[a-z0-9]+\">(.*?)</a></h1>").getMatch(0);
-        if (fpName == null) fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
-        final String[] links = br.getRegex("\"(file/[a-z0-9]+)/from/").getColumn(0);
-        final String[] folders = br.getRegex("\"(folder/[a-z0-9]+)\"").getColumn(0);
+        if (fpName == null) {
+            fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        }
+        final String[] links = br.getRegex("\"(/?file/[a-z0-9]+)/from/").getColumn(0);
+        final String[] folders = br.getRegex("\"(/?folder/[a-z0-9]+)\"").getColumn(0);
         if ((links == null || links.length == 0) && (folders == null || folders.length == 0)) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
+        final URL url = new URL(baseURL);
         if (links != null && links.length != 0) {
-            for (final String dl : links)
-                decryptedLinks.add(createDownloadlink(baseURL + dl));
+            for (final String dl : links) {
+                decryptedLinks.add(createDownloadlink(URLHelper.parseLocation(url, dl)));
+            }
         }
         if (folders != null && folders.length != 0) {
             final String fid = new Regex(parameter, "([a-z0-9]+)$").getMatch(0);
-            for (final String dl : folders)
-                if (!dl.contains(fid)) decryptedLinks.add(createDownloadlink(baseURL + dl));
+            for (final String dl : folders) {
+                if (!dl.contains(fid)) {
+                    decryptedLinks.add(createDownloadlink(URLHelper.parseLocation(url, dl)));
+                }
+            }
         }
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
@@ -79,5 +89,4 @@ public class UploadedToFolder extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

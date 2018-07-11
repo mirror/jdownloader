@@ -36,11 +36,11 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
  * @version raz_Template
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dl-protecte.com" }, urls = { "https?://(?:www\\.)?(?:dl-protecte\\.(?:com|org)|protect-lien\\.com|protect-zt\\.com|protecte-link\\.com|liens-telechargement\\.com|dl-protect1\\.com|dl-protect\\.top)/\\S+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dl-protecte.com" }, urls = { "https?://(?:www\\.)?(?:dl-protecte\\.(?:com|org)|protect-lien\\.com|protect-zt\\.com|protecte-link\\.com|liens-telechargement\\.com|dl-protect1\\.com?|dl-protect\\.top)/\\S+" })
 public class DlPrteCom extends antiDDoSForDecrypt {
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "dl-protect.top", "dl-protecte.com", "dl-protecte.org", "protect-lien.com", "protect-zt.com", "protecte-link.com", "liens-telechargement.com", "dl-protect1.com" };
+        return new String[] { "dl-protect.top", "dl-protecte.com", "dl-protecte.org", "protect-lien.com", "protect-zt.com", "protecte-link.com", "liens-telechargement.com", "dl-protect1.com", "dl-protect1.co" };
     }
 
     public DlPrteCom(PluginWrapper wrapper) {

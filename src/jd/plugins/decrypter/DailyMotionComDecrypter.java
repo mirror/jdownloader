@@ -19,6 +19,7 @@ import java.math.BigDecimal;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 
 import jd.PluginWrapper;
@@ -39,6 +40,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -477,13 +479,13 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         final SubConfiguration cfg = SubConfiguration.getConfig("dailymotion.com");
         final boolean best = cfg.getBooleanProperty(ALLOW_BEST, false);
         boolean noneSelected = true;
-        for (final String quality : new String[] { "7", "6", "5", "4", "3", "2", "1" }) {
+        for (final String quality : new String[] { "7", "6", "5", "4", "3", "2", "1", "0" }) {
             if (cfg.getBooleanProperty("ALLOW_" + quality, true)) {
                 noneSelected = false;
                 break;
             }
         }
-        for (final String quality : new String[] { "7", "6", "5", "4", "3", "2", "1" }) {
+        for (final String quality : new String[] { "7", "6", "5", "4", "3", "2", "1", "0" }) {
             if (foundQualities.containsKey(quality) && (best || noneSelected || cfg.getBooleanProperty("ALLOW_" + quality, true))) {
                 selectedQualities.add(quality);
                 if (best) {
@@ -530,22 +532,31 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
                 LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(videosource);
                 entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "metadata/qualities");
                 /* TODO: Maybe add HLS support in case it gives us more/other formats/qualities */
-                final String[][] qualities_2 = { { "2160", "7" }, { "1440", "6" }, { "1080", "5" }, { "720", "4" }, { "480", "3" }, { "380", "2" }, { "240", "1" } };
+                final String[][] qualities_2 = { { "2160@60", "7" }, { "2160", "7" }, { "1440@60", "6" }, { "1440", "6" }, { "1080@60", "5" }, { "1080", "5" }, { "720@60", "4" }, { "720", "4" }, { "480", "3" }, { "380", "2" }, { "240", "1" }, { "144", "0" } };
                 for (final String quality[] : qualities_2) {
                     final String qualityName = quality[0];
                     final String qualityNumber = quality[1];
                     final Object jsono = entries.get(qualityName);
-                    final String currentQualityUrl = (String) JavaScriptEngineFactory.walkJson(jsono, "{0}/url");
-                    if (currentQualityUrl != null) {
-                        final String[] dlinfo = new String[4];
-                        dlinfo[0] = currentQualityUrl;
-                        dlinfo[1] = null;
-                        dlinfo[2] = qualityName;
-                        dlinfo[3] = qualityNumber;
-                        QUALITIES.put(qualityNumber, dlinfo);
+                    if (jsono != null) {
+                        for (int i = 0; i < ((List) jsono).size(); i++) {
+                            final String currentQualityType = (String) JavaScriptEngineFactory.walkJson(jsono, "{" + i + "}/type");
+                            final String currentQualityUrl = (String) JavaScriptEngineFactory.walkJson(jsono, "{" + i + "}/url");
+                            if (currentQualityUrl != null) {
+                                final String[] dlinfo = new String[4];
+                                dlinfo[0] = currentQualityUrl;
+                                dlinfo[1] = null;
+                                dlinfo[2] = qualityName;
+                                dlinfo[3] = qualityNumber;
+                                QUALITIES.put(qualityNumber, dlinfo);
+                                if (StringUtils.containsIgnoreCase(currentQualityType, "mp4")) {
+                                    break;
+                                }
+                            }
+                        }
                     }
                 }
             } catch (final Throwable e) {
+                e.printStackTrace();
             }
         }
         // List empty or only 1 link found -> Check for (more) links

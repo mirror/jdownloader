@@ -16,18 +16,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.Hash;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.IPVERSION;
-import org.w3c.dom.Document;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
 import jd.controlling.proxy.NoProxySelector;
 import jd.controlling.reconnect.ReconnectConfig;
 import jd.controlling.reconnect.ReconnectException;
@@ -44,6 +32,18 @@ import jd.nutils.Formatter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.Hash;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.IPVERSION;
+import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 public class LiveHeaderInvoker extends ReconnectInvoker {
     private String script;

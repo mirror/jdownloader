@@ -20,10 +20,12 @@ import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.StringUtils;
@@ -70,23 +72,23 @@ public class WeTransferComFolder extends PluginForDecrypt {
         // recepientID = "";
         // }
         final String json = br.getRegex(">\\s*var _preloaded_transfer_\\s*=\\s*(\\{.*?\\});\\s*</script>").getMatch(0);
-        Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
-        if ("invalid".equals(entries.get("state"))) {
+        Map<String, Object> map = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+        if ("invalid".equals(map.get("state"))) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final ArrayList<Object> ressourcelist = entries.get("files") != null ? (ArrayList<Object>) entries.get("files") : (ArrayList) entries.get("items");
+        final ArrayList<Object> ressourcelist = map.get("files") != null ? (ArrayList<Object>) map.get("files") : (ArrayList) map.get("items");
         /* TODO: Handle this case */
-        final boolean per_file_download_available = entries.containsKey("per_file_download_available") && Boolean.TRUE.equals(entries.get("per_file_download_available"));
+        final boolean per_file_download_available = map.containsKey("per_file_download_available") && Boolean.TRUE.equals(map.get("per_file_download_available"));
         /* TODO: Handle this case */
-        final boolean password_protected = entries.containsKey("password_protected") && Boolean.TRUE.equals(entries.get("password_protected"));
+        final boolean password_protected = map.containsKey("password_protected") && Boolean.TRUE.equals(map.get("password_protected"));
         /* E.g. okay would be "downloadable" */
-        final String state = (String) entries.get("state");
+        final String state = (String) map.get("state");
         for (final Object fileo : ressourcelist) {
-            entries = (Map<String, Object>) fileo;
-            final String id_single = (String) entries.get("id");
-            final String filename = (String) entries.get("name");
-            final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
+            final Map<String, Object> entry = (Map<String, Object>) fileo;
+            final String id_single = (String) entry.get("id");
+            final String filename = (String) entry.get("name");
+            final long filesize = JavaScriptEngineFactory.toLong(entry.get("size"), 0);
             if (StringUtils.isEmpty(id_single) || StringUtils.isEmpty(filename) || filesize == 0) {
                 continue;
             }
@@ -98,10 +100,19 @@ public class WeTransferComFolder extends PluginForDecrypt {
             dl.setAvailable(true);
             decryptedLinks.add(dl);
         }
-        // String fpName = null;
-        // final FilePackage fp = FilePackage.getInstance();
-        // fp.setName(Encoding.htmlDecode(fpName.trim()));
-        // fp.addLinks(decryptedLinks);
+        final String shortened_url = (String) map.get("shortened_url");
+        final String id = (String) map.get("id");
+        final String fpName;
+        if (StringUtils.isNotEmpty(shortened_url)) {
+            fpName = new Regex(shortened_url, "/([\\w\\-]+)$").getMatch(0);
+        } else {
+            fpName = id;
+        }
+        if (StringUtils.isNotEmpty(fpName)) {
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(Encoding.htmlDecode(fpName.trim()));
+            fp.addLinks(decryptedLinks);
+        }
         return decryptedLinks;
     }
 }
