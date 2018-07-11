@@ -50,6 +50,7 @@ public class FiledropperCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCustomCharset("ISO-8859-1");
+        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         String filename = br.getRegex("File Details:.*?Filename: (.*?) <br>").getMatch(0);
         String filesize = br.getRegex("File Details:.*?Size: (.*?), Type:.*?<br>").getMatch(0);
