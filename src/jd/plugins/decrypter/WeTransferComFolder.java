@@ -100,18 +100,20 @@ public class WeTransferComFolder extends PluginForDecrypt {
             dl.setAvailable(true);
             decryptedLinks.add(dl);
         }
-        final String shortened_url = (String) map.get("shortened_url");
-        final String id = (String) map.get("id");
-        final String fpName;
-        if (StringUtils.isNotEmpty(shortened_url)) {
-            fpName = new Regex(shortened_url, "/([\\w\\-]+)$").getMatch(0);
-        } else {
-            fpName = id;
-        }
-        if (StringUtils.isNotEmpty(fpName)) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
+        if (decryptedLinks.size() > 1) {
+            final String shortened_url = (String) map.get("shortened_url");
+            final String id = (String) map.get("id");
+            final String fpName;
+            if (StringUtils.isNotEmpty(shortened_url)) {
+                fpName = new Regex(shortened_url, "/([\\w\\-]+)$").getMatch(0);
+            } else {
+                fpName = id;
+            }
+            if (StringUtils.isNotEmpty(fpName)) {
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(Encoding.htmlDecode(fpName.trim()));
+                fp.addLinks(decryptedLinks);
+            }
         }
         return decryptedLinks;
     }
