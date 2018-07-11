@@ -62,7 +62,7 @@ public class NexusmodsCom extends antiDDoSForHost {
     private boolean              loginRequired;
 
     public boolean isOffline(final Browser br) {
-        return br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("No files have been uploaded yet|>File not found<|/noimage-1.png");
+        return br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("No files have been uploaded yet|>File not found<|>Not found<|/noimage-1.png");
     }
 
     @Override
