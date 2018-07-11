@@ -74,6 +74,9 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         }
         final String date = br.getRegex("<meta itemprop=\"datePublished\" content=\"(\\d+)\"/>").getMatch(0);
         if (links == null || links.length == 0 || artist == null || album == null || date == null) {
+            if (br.getURL().endsWith("bandcamp.com/")) {
+                return decryptedLinks;
+            }
             if (br.containsHTML("class='download-link buy-link'")) {
                 logger.info("Seems like this album can't be downloaded: " + parameter);
                 return decryptedLinks;

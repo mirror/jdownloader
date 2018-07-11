@@ -67,10 +67,10 @@ public class HrnOxCm extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink("http:" + externID));
         }
         // Check if we have a single video
-        final String file = br.getRegex("file\":\"(https?://videos\\.hornoxe\\.com/[^\"]+)").getMatch(0);
+        final String file = br.getRegex("(file\":|src\\s*=\\s*)\"(https?://videos\\.hornoxe\\.com/[^\"]+)").getMatch(1);
         if (file != null) {
             final DownloadLink vid = createDownloadlink(file.replace("hornoxe.com", "hornoxedecrypted.com"));
-            vid.setFinalFileName(pageName + file.substring(file.lastIndexOf(".")));
+            vid.setFinalFileName(pageName + getFileNameExtensionFromURL(file));
             vid.setProperty("Referer", parameter);
             decryptedLinks.add(vid);
             return decryptedLinks;
