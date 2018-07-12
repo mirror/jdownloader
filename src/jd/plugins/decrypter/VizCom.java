@@ -29,7 +29,7 @@ import jd.plugins.FilePackage;
 
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "viz.com" }, urls = { "https?://(?:www\\.)?viz\\.com/[^/]+/[^/]+/(?:chapter/|issue/|manga/product/|manga/product/digital/)\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "viz.com" }, urls = { "https?://(?:www\\.)?viz\\.com/(read/)?[^/]+/[^/]+/(?:chapter/|issue/|product/|manga/product/|manga/product/digital/)\\d+" })
 public class VizCom extends antiDDoSForDecrypt {
     public VizCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -41,6 +41,9 @@ public class VizCom extends antiDDoSForDecrypt {
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         getPage(parameter);
+        final Regex urlinfo = new Regex(parameter, "([^/]+)/(?:[^/]+)/(\\d+)");
+        final String url_name = urlinfo.getMatch(0);
+        final String manga_id = urlinfo.getMatch(1);
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Sorry, this website is not available in your country.")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
@@ -56,9 +59,6 @@ public class VizCom extends antiDDoSForDecrypt {
             pages_str = br.getRegex("<strong>Length</strong>\\s*(\\d+)\\s*pages\\s*</div>").getMatch(0);
         }
         final int pages = Integer.parseInt(pages_str);
-        final Regex urlinfo = new Regex(parameter, "([^/]+)/(?:[^/]+)/(\\d+)");
-        final String url_name = urlinfo.getMatch(0);
-        final String manga_id = urlinfo.getMatch(1);
         final DecimalFormat page_formatter_page = new DecimalFormat("000");
         final String ext = ".jpg";
         int page_added_num = 0;
