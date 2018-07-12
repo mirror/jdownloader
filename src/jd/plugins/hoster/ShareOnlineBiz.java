@@ -83,7 +83,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
     private static final int                                        account_premium_vipspecial_maxdownloads = 2;
     private static final int                                        account_premium_penalty_maxdownloads    = 2;
     private boolean                                                 hideID                                  = true;
-    private static AtomicInteger                                    maxChunksnew                            = new AtomicInteger(-2);
+    private static AtomicInteger                                    maxChunksnew                            = new AtomicInteger(0);
     private char[]                                                  FILENAMEREPLACES                        = new char[] { '_', '&', 'ü' };
     private final String                                            SHARED_IP_WORKAROUND                    = "SHARED_IP_WORKAROUND";
     private final String                                            TRAFFIC_WORKAROUND                      = "TRAFFIC_WORKAROUND";
@@ -353,8 +353,8 @@ public class ShareOnlineBiz extends antiDDoSForHost {
         }
         if (url.contains("failure/chunks")) {
             /* max chunks reached */
-            String maxCN = new Regex(url, "failure/chunks/(\\d+)").getMatch(0);
-            if (maxCN != null) {
+            final String maxCN = new Regex(url, "failure/chunks/(\\d+)").getMatch(0);
+            if (maxCN != null && acc != null) {
                 maxChunksnew.set(-Integer.parseInt(maxCN));
             }
             downloadLink.setChunksProgress(null);
@@ -1013,11 +1013,12 @@ public class ShareOnlineBiz extends antiDDoSForHost {
             logger.info("used url: " + dlURL);
             br.setDebug(true);
             br.setCookie(dlURL, "version", String.valueOf(getVersion()));
-            int maxchunks = account_premium_maxchunks;
-            maxchunks = maxChunksnew.get();
+            int maxchunks = maxChunksnew.get();
             if ("Penalty-Premium".equalsIgnoreCase(account.getStringProperty("group", null))) {
                 logger.info("Account is in penalty, limiting max chunks to 1");
                 maxchunks = 1;
+            } else if (maxchunks == 0) {
+                maxchunks = account_premium_maxchunks;
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlURL, account_premium_resume, maxchunks);
             if (dl.getConnection().isContentDisposition() || (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("octet-stream"))) {

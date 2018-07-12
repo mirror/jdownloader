@@ -949,12 +949,7 @@ public class FileJokerNet extends antiDDoSForHost {
         }
         final AccountInfo ai = new AccountInfo();
         /* reset maxPrem workaround on every fetchaccount info */
-        try {
-            login(account, true);
-        } catch (final PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account, true);
         final String space[] = new Regex(correctedBR, ">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
         if ((space != null && space.length != 0) && (space[0] != null && space[1] != null)) {
             /* free users it's provided by default */
@@ -1017,22 +1012,38 @@ public class FileJokerNet extends antiDDoSForHost {
                 getPage("https://" + this.getHost() + "/");
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 getPage("/login");
+                boolean hadCaptcha = false;
                 String postdata = "op=login&redirect=&rand=&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
                 if (correctedBR.contains("data-sitekey=")) {
-                    /* 2016-11-29: New */
                     final DownloadLink dlinkbefore = this.getDownloadLink();
                     if (dlinkbefore == null) {
                         this.setDownloadLink(new DownloadLink(this, "Account", account.getHoster(), "http://" + account.getHoster(), true));
                     }
-                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, this.br).getToken();
-                    if (dlinkbefore != null) {
-                        this.setDownloadLink(dlinkbefore);
+                    try {
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, this.br).getToken();
+                        postdata += "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response);
+                    } finally {
+                        if (dlinkbefore != null) {
+                            this.setDownloadLink(dlinkbefore);
+                        }
                     }
-                    postdata += "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response);
-                } else {
-                    postdata += "&recaptcha_response_field=";
+                    hadCaptcha = true;
                 }
                 postPage("/login", postdata);
+                if (!hadCaptcha && br.containsHTML("data-sitekey=") && (br.getCookie(COOKIE_HOST, "email") == null || br.getCookie(COOKIE_HOST, "xfss") == null)) {
+                    final DownloadLink dlinkbefore = this.getDownloadLink();
+                    if (dlinkbefore == null) {
+                        this.setDownloadLink(new DownloadLink(this, "Account", account.getHoster(), "http://" + account.getHoster(), true));
+                    }
+                    try {
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, this.br).getToken();
+                        postPage("/login", "op=login&redirect=&rand=&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
+                    } finally {
+                        if (dlinkbefore != null) {
+                            this.setDownloadLink(dlinkbefore);
+                        }
+                    }
+                }
                 if (br.getCookie(COOKIE_HOST, "email") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);

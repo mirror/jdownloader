@@ -558,6 +558,10 @@ public class Keep2ShareCc extends K2SApi {
         }
     }
 
+    private boolean isCaptchaInvalid(Browser br) {
+        return br.containsHTML(">Invalid reCAPTCHA<") || br.containsHTML(">Please pass reCAPTCHA<") || br.containsHTML("The verification code is incorrect.");
+    }
+
     private void login(final Account account, final boolean force, final String MAINPAGE) throws Exception {
         synchronized (account) {
             try {
@@ -590,7 +594,7 @@ public class Keep2ShareCc extends K2SApi {
                 login.put("LoginForm%5Bpassword%5D", Encoding.urlEncode(account.getPass()));
                 boolean hasCaptcha = handleLoginCaptcha(account, br, login);
                 sendForm(login);
-                if (!hasCaptcha && (br.containsHTML(">Invalid reCAPTCHA<") || br.containsHTML("The verification code is incorrect."))) {
+                if (!hasCaptcha && isCaptchaInvalid(br)) {
                     login = br.getFormbyActionRegex("/login.html");
                     if (login == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -603,7 +607,7 @@ public class Keep2ShareCc extends K2SApi {
                     }
                     sendForm(login);
                 }
-                if (br.containsHTML(">Invalid reCAPTCHA<")) {
+                if (isCaptchaInvalid(br)) {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 } else if (br.containsHTML("The verification code is incorrect.")) {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
