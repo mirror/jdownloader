@@ -77,7 +77,7 @@ public class FrancetelevisionsCom extends PluginForDecrypt {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
-            videoid = br.getRegex("data\\-main\\-video=\"(\\d+)\"").getMatch(0);
+            videoid = br.getRegex("data\\-main\\-video=\"(.*?)\"").getMatch(0);
             /* 2017-05-10: The 'catalogue' parameter is not required anymore or not required for these URLs --> nullify that. */
             videoids.add(videoid + "@null");
         } else {
