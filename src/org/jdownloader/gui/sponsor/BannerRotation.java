@@ -98,6 +98,15 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
             AccountController.getInstance().getEventSender().addListener(this, true);
         }
 
+        public boolean hasRunningDownloads() {
+            for (final SingleDownloadController singleDownloadController : DownloadWatchDog.getInstance().getRunningDownloadLinks()) {
+                if (StringUtils.equalsIgnoreCase(getHost(), singleDownloadController.getDownloadLink().getHost())) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         public String getHost() {
             return domainInfo.getTld();
         }
@@ -580,7 +589,7 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
                 // required to process changes
             }
             if (!banner.hasAccounts) {
-                if (banner.hasDownloadLinks) {
+                if (banner.hasDownloadLinks || banner.hasRunningDownloads()) {
                     rotation.add(0, banner);
                 } else if (banner.hasLinks) {
                     rotation.add(banner);
