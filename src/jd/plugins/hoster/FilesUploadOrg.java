@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -38,7 +37,6 @@ import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesupload.org" }, urls = { "https?://(www\\.)?filesupload\\.org/([a-f0-9]{32}/.+|[A-Za-z0-9]+)" })
 public class FilesUploadOrg extends antiDDoSForHost {
-
     public FilesUploadOrg(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(MAINPAGE + "/upgrade." + TYPE);
@@ -50,7 +48,6 @@ public class FilesUploadOrg extends antiDDoSForHost {
     // limit-info:
     // protocol: no https
     // captchatype: null
-
     @Override
     public String getAGBLink() {
         return MAINPAGE + "/terms." + TYPE;
@@ -71,7 +68,6 @@ public class FilesUploadOrg extends antiDDoSForHost {
     private static final int     ADDITIONAL_WAIT_SECONDS                      = 3;
     /* In case there is no information when accessing the main link */
     private static final boolean AVAILABLE_CHECK_OVER_INFO_PAGE               = true;
-
     /* Connection stuff */
     private static final boolean FREE_RESUME                                  = true;
     private static final int     FREE_MAXCHUNKS                               = 1;
@@ -109,7 +105,7 @@ public class FilesUploadOrg extends antiDDoSForHost {
         } else {
             getPage(link.getDownloadURL());
             handleErrors();
-            if (br.getURL().contains(WAIT_BETWEEN_DOWNLOADS_LIMIT)) {
+            if (br.getURL().contains(WAIT_BETWEEN_DOWNLOADS_LIMIT) || br.containsHTML(">Please wait before download<")) {
                 link.setName(new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
                 link.getLinkStatus().setStatusText(WAIT_BETWEEN_DOWNLOADS_LIMIT_USERTEXT);
                 return AvailableStatus.TRUE;
@@ -175,23 +171,32 @@ public class FilesUploadOrg extends antiDDoSForHost {
         } else {
             if (br.getURL().contains(SIMULTANDLSLIMIT)) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, SIMULTANDLSLIMITUSERTEXT, 1 * 60 * 1000l);
-            } else if (br.getURL().contains(WAIT_BETWEEN_DOWNLOADS_LIMIT)) {
-                final String wait_minutes = new Regex(br.getURL(), "wait\\+(\\d+)\\+minutes?").getMatch(0);
+            } else if (br.getURL().contains(WAIT_BETWEEN_DOWNLOADS_LIMIT) || br.containsHTML(">Please wait before download<")) {
+                final String wait_minutes = new Regex(br.getURL(), "wait\\s*(\\d+)\\s*minutes?").getMatch(0);
                 if (wait_minutes != null) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, WAIT_BETWEEN_DOWNLOADS_LIMIT_USERTEXT, Integer.parseInt(wait_minutes) * 60 * 1001l);
+                }
+                final String wait_seconds = new Regex(br.getURL(), "\"DateCountdown\"\\s*data-timer\\s*=\\s*\"(\\d+)\"").getMatch(0);
+                if (wait_seconds != null) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, WAIT_BETWEEN_DOWNLOADS_LIMIT_USERTEXT, Integer.parseInt(wait_minutes) * 1001l);
                 }
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, WAIT_BETWEEN_DOWNLOADS_LIMIT_USERTEXT, WAIT_BETWEEN_DOWNLOADS_LIMIT_MINUTES_DEFAULT * 60 * 1001l);
             } else if (br.getURL().contains(SERVERERROR)) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, SERVERERRORUSERTEXT, 5 * 60 * 1000l);
             }
-
             /* Handle up to 3 pre-download pages before the (eventually existing) captcha */
             for (int i = 1; i <= 3; i++) {
                 if (isNewLinkType(downloadLink)) {
                     continue_link = br.getRegex("<a href=\"(/download-or-watch/" + fuid + "/[^\"]+)").getMatch(0);
+                    if (continue_link == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                     getPage(continue_link);
                     continue_link = br.getRegex("src=\"(https?://[A-Za-z0-9_\\-\\.]+filesupload\\.org(?::\\d+)?/[^\"]+md5=[a-f0-9]{32}[^\"]+)").getMatch(0);
                     continue_link = HTMLEntities.unhtmlentities(continue_link);
+                    if (continue_link == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                     dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, resume, maxchunks);
                     if (dl.getConnection().isContentDisposition()) {
                         break;
@@ -323,5 +328,4 @@ public class FilesUploadOrg extends antiDDoSForHost {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.MFScripts_YetiShare;
     }
-
 }

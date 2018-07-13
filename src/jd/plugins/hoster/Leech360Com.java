@@ -23,12 +23,6 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map.Entry;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -46,6 +40,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "leech360.com" }, urls = { "" })
 public class Leech360Com extends PluginForHost {
@@ -430,19 +430,15 @@ public class Leech360Com extends PluginForHost {
         this.getAPISafe("https://" + account.getHoster() + "/api/get_token?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
         this.currAPIToken = PluginJSonUtils.getJson(this.br, "token");
         if (StringUtils.isEmpty(this.currAPIToken)) {
-            if ("Free members do not support API.".equalsIgnoreCase(PluginJSonUtils.getJson(br, "error_message"))) {
+            final String error_message = PluginJSonUtils.getJson(br, "error_message");
+            if (StringUtils.equalsIgnoreCase("Free members do not support API.", error_message)) {
                 /*
                  * 2018-01-15: Free accounts would get accepted via website but you cannot use them to download anything. API will
                  * completely refuse them.
                  */
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nFree accounts are not supported!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-            /* No matter why this token is empty, this should mean that our account is not valid. */
-            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, error_message, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         account.setProperty(PROPERTY_API_TOKEN, this.currAPIToken);
         /* 2017-11-16: According to API docmentation, these tokens are valid for 10 minutes so let's trust them for 8 minutes. */
@@ -490,7 +486,9 @@ public class Leech360Com extends PluginForHost {
         final String errorStr = PluginJSonUtils.getJson(br, "error");
         final String errorMessage = PluginJSonUtils.getJson(br, "error_message");
         if ("true".equalsIgnoreCase(errorStr)) {
-            if ("Invalid token".equalsIgnoreCase(errorMessage)) {
+            if (this.currDownloadLink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, errorMessage);
+            } else if ("Invalid token".equalsIgnoreCase(errorMessage)) {
                 /* TODO_ check */
                 /* Reset token and retry via full login. */
                 this.currDownloadLink.setProperty(PROPERTY_API_TOKEN, Property.NULL);
