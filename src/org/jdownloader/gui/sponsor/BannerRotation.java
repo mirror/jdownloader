@@ -669,10 +669,16 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
                             }
                         });
                         isBannerEnabled.set(CFG_GUI.BANNER_ENABLED.isEnabled());
+                        if (StringUtils.equalsIgnoreCase("de", TranslationFactory.getDesiredLanguage())) {
+                            getAllBanners().add(new AvailableBanner(DomainInfo.getInstance("share-online.biz")));
+                            getAllBanners().add(new AvailableBanner(DomainInfo.getInstance("rapidgator.net")));
+                            getAllBanners().add(new AvailableBanner(DomainInfo.getInstance("keep2share.cc")));
+                        } else {
+                            getAllBanners().add(new AvailableBanner(DomainInfo.getInstance("rapidgator.net")));
+                            getAllBanners().add(new AvailableBanner(DomainInfo.getInstance("keep2share.cc")));
+                            getAllBanners().add(new AvailableBanner(DomainInfo.getInstance("share-online.biz")));
+                        }
                         getAllBanners().add(new AvailableBanner(DomainInfo.getInstance("uploaded.to")));
-                        getAllBanners().add(new AvailableBanner(DomainInfo.getInstance("keep2share.cc")));
-                        getAllBanners().add(new AvailableBanner(DomainInfo.getInstance("rapidgator.net")));
-                        getAllBanners().add(new AvailableBanner(DomainInfo.getInstance("share-online.biz")));
                         getAllBanners().add(new AvailableBanner(DomainInfo.getInstance("filejoker.net")));
                         updateDelayer.resetAndStart();
                         refreshThread.start();
