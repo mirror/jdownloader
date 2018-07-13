@@ -78,7 +78,6 @@ public class ShareOnlineBiz extends antiDDoSForHost {
     private static final int                                        free_maxchunks                          = 1;
     private static final int                                        free_maxdownloads                       = 1;
     private static final boolean                                    account_premium_resume                  = true;
-    private static final int                                        account_premium_maxchunks               = 0;
     private static final int                                        account_premium_maxdownloads            = 10;
     private static final int                                        account_premium_vipspecial_maxdownloads = 2;
     private static final int                                        account_premium_penalty_maxdownloads    = 2;
@@ -86,6 +85,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
     private static AtomicInteger                                    maxChunksnew                            = new AtomicInteger(0);
     private char[]                                                  FILENAMEREPLACES                        = new char[] { '_', '&', 'ü' };
     private final String                                            SHARED_IP_WORKAROUND                    = "SHARED_IP_WORKAROUND";
+    private final String                                            UNLIMIT_CHUNKS                          = "UNLIMIT_CHUNKS";
     private final String                                            TRAFFIC_WORKAROUND                      = "TRAFFIC_WORKAROUND";
     private final String                                            PREFER_HTTPS                            = "PREFER_HTTPS";
     private final String                                            TRAFFIC_LIMIT                           = "TRAFFIC_LIMIT";
@@ -246,6 +246,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SHARED_IP_WORKAROUND, _GUI.T.gui_plugin_settings_share_online_shared_ip_workaround()).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), TRAFFIC_WORKAROUND, _GUI.T.gui_plugin_settings_share_online_traffic_workaround()).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), UNLIMIT_CHUNKS, "Disable connection limit(2) per download? (Warning: may cause (temporarily) IP bans!)").setDefaultValue(false));
         /**
          * https downloads are speed-limited serverside
          */
@@ -1018,7 +1019,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                 logger.info("Account is in penalty, limiting max chunks to 1");
                 maxchunks = 1;
             } else if (maxchunks == 0) {
-                maxchunks = account_premium_maxchunks;
+                maxchunks = getMaxChunks(account);
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlURL, account_premium_resume, maxchunks);
             if (dl.getConnection().isContentDisposition() || (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("octet-stream"))) {
@@ -1028,6 +1029,16 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                 errorHandling(br, link, account, infos);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+        }
+    }
+
+    public int getMaxChunks(Account account) {
+        if (account == null || AccountType.FREE.equals(account.getType())) {
+            return 1;
+        } else if (getPluginConfig().getBooleanProperty(UNLIMIT_CHUNKS, false)) {
+            return 0;
+        } else {
+            return 2;
         }
     }
 
