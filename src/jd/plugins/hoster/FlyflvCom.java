@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "flyflv.com" }, urls = { "http://(?:www\\.)?flyflv\\.com/movies/\\d+/[A-Za-z0-9\\-_]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "flyflv.com" }, urls = { "https?://(?:www\\.)?flyflv\\.com/movies/\\d+/[A-Za-z0-9\\-_]+" })
 public class FlyflvCom extends PluginForHost {
     public FlyflvCom(PluginWrapper wrapper) {
         super(wrapper);
