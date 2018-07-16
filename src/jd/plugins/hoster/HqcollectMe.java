@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hqcollect.me" }, urls = { "https?://(?:www\\.)?hqcollect\\.me/pack/[^/]+/(?!page)[^/]+/" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hqcollect.me" }, urls = { "https?://(?:www\\.)?hqcollect\\.(?:me|net)/(?:pack|downloads)/[^/]+/(?!page)[^/]+/" })
 public class HqcollectMe extends PluginForHost {
     public HqcollectMe(PluginWrapper wrapper) {
         super(wrapper);
@@ -73,6 +73,9 @@ public class HqcollectMe extends PluginForHost {
         /* 2016-10-07: Limit happens after fully watching/downloading one file - linkchecking does NOT make the limit appear earlier! */
         limit_reached = this.br.containsHTML("Your limit for browsing videos was reached");
         String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<h1>([^<>\"]+)</h1>").getMatch(0);
+        }
         if (filename == null) {
             filename = url_filename;
         }
