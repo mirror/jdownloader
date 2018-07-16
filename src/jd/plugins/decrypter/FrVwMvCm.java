@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -25,9 +24,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freeviewmovies.com" }, urls = { "http://(www\\.)?freeviewmovies\\.com/(porn|video)/\\d+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freeviewmovies.com" }, urls = { "https?://(www\\.)?freeviewmovies\\.com/(porn|video)/\\d+" })
 public class FrVwMvCm extends PluginForDecrypt {
-
     public FrVwMvCm(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -46,7 +44,6 @@ public class FrVwMvCm extends PluginForDecrypt {
             logger.info("Link broken: " + parameter);
             return decryptedLinks;
         }
-
         // this supports freeviewmovies hosted files
         String result = br.getRegex("file: \'(http[^']+)").getMatch(0);
         if (result != null) {
@@ -68,5 +65,4 @@ public class FrVwMvCm extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

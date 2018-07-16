@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -30,9 +29,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freeviewmovies.com" }, urls = { "http://(www\\.)?freeviewmoviesdecrypted/(porn|video)/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freeviewmovies.com" }, urls = { "https?://(www\\.)?freeviewmoviesdecrypted/(porn|video)/\\d+" })
 public class FreeViewMoviesCom extends PluginForHost {
-
     private String dllink = null;
 
     public FreeViewMoviesCom(PluginWrapper wrapper) {
