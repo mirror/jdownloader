@@ -25,14 +25,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.config.MediathekProperties;
-import org.jdownloader.plugins.components.config.WatchboxDeConfigInterface;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -44,6 +36,14 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.MediathekHelper;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.config.MediathekProperties;
+import org.jdownloader.plugins.components.config.WatchboxDeConfigInterface;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "watchbox.de" }, urls = { "https?://(?:www\\.)?watchbox\\.de/(?:serien|filme)/[^<>\"]+\\d+\\.html" })
 public class WatchboxDe extends PluginForDecrypt {
@@ -59,15 +59,15 @@ public class WatchboxDe extends PluginForDecrypt {
         heigth_to_bitrate.put("360", 984000l);
         heigth_to_bitrate.put("540", 3104000l);
     }
-    private String subtitleLink   = null;
-    private String parameter      = null;
-    private String title          = null;
-    private String show           = null;
-    private String description    = null;
-    private int    seasonnumber   = -1;
-    private int    episodenumber  = -1;
-    private long   date_timestamp = -1;
-    private String contentID      = null;
+    private String                              subtitleLink        = null;
+    private String                              parameter           = null;
+    private String                              title               = null;
+    private String                              show                = null;
+    private String                              description         = null;
+    private int                                 seasonnumber        = -1;
+    private int                                 episodenumber       = -1;
+    private long                                date_timestamp      = -1;
+    private String                              contentID           = null;
 
     public WatchboxDe(final PluginWrapper wrapper) {
         super(wrapper);
@@ -134,13 +134,13 @@ public class WatchboxDe extends PluginForDecrypt {
             this.decryptedLinks.add(this.createOfflinelink(this.parameter));
             return;
         }
-        this.contentID = br.getRegex("(?:\\'|\")videoId(?:\\'|\"):(?:\\'|\")?(\\d+)(?:\\'|\")?").getMatch(0);
+        this.contentID = br.getRegex("(?:\\'|\"|&quot;)videoId(?:\\'|\"|&quot;)\\s*:\\s*(?:\\'|\"|&quot;)?(\\d+)(?:\\'|\"|&quot;)?").getMatch(0);
         /*
          * 2018-04-11: E.g. hls:
          * https://vodwbusohls.secure.footprint.net/proxy/manifest-wb-clear/at-ch-de/<videoID>-1-12332.ism/fairplay.m3u8
          */
         /* 2018-04-11: E.g. dash: https://vodwbusodash.secure.footprint.net/proxy/manifest-wb-clear/at-ch-de/<videoID>-1-12332.ism/.mpd */
-        String hls_master = br.getRegex("(?:\\'|\")hls(?:\\'|\"):(?:\\'|\")(http[^<>\"\\']*?)(?:\\'|\")").getMatch(0);
+        String hls_master = br.getRegex("(?:\\'|\"||&quot;)hls(?:\\'|\"||&quot;)\\s*:\\s*(?:\\'|\"|&quot;)(https?[^<>\"\\']*?)(?:\\'|\"|&quot;)").getMatch(0);
         if (StringUtils.isEmpty(hls_master) || StringUtils.isEmpty(this.contentID)) {
             logger.warning("Decrypter broken for link: " + parameter);
             throw new DecrypterException("Plugin broken");

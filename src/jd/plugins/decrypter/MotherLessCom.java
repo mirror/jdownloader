@@ -28,7 +28,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "motherless.com" }, urls = { "http://(www\\.)?(members\\.)?motherless\\.com/(g(i|v)?/[\\w\\-_]+/[A-Z0-9]{7}|[A-Z0-9]{6,9}(/[A-Z0-9]{7})?)|http://(?:www\\.)?motherless\\.com/f/[^/]+/videos" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "motherless.com" }, urls = { "https?://(www\\.)?(members\\.)?motherless\\.com/(g(i|v)?/[\\w\\-_]+/[A-Z0-9]{7}|[A-Z0-9]{6,9}(/[A-Z0-9]{7})?)|https?://(?:www\\.)?motherless\\.com/f/[^/]+/videos" })
 public class MotherLessCom extends PluginForDecrypt {
     private String      fpName = null;
     private FilePackage fp;
@@ -50,8 +50,8 @@ public class MotherLessCom extends PluginForDecrypt {
     // - Server issues can return many 503's in high load situations.
     // - Server also punishes user who downloads with too many connections. This is a linkchecking issue also, as grabs info from headers.
     // - To reduce server loads associated with linkchecking, I've set 'setAvailable(true) for greater than 5 pages.
-    private static final String TYPE_INVALID           = "http://(?:www\\.)?(members\\.)?motherless\\.com/(?:privacy|popular|register|premium|members|galleries|contact).*?";
-    private static final String TYPE_FAVOURITES_VIDEOS = "http://(?:www\\.)?motherless\\.com/f/[^/]+/videos";
+    private static final String TYPE_INVALID           = "https?://(?:www\\.)?(members\\.)?motherless\\.com/(?:privacy|popular|register|premium|members|galleries|contact).*?";
+    private static final String TYPE_FAVOURITES_VIDEOS = "https?://(?:www\\.)?motherless\\.com/f/[^/]+/videos";
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -120,7 +120,7 @@ public class MotherLessCom extends PluginForDecrypt {
             String[] SubGal = br.getRegex("<a href=\"(/[A-Z0-9]+)\" title=\"More [^ ]+ in this gallery\" class=\"pop plain more\">See More &raquo;</a>").getColumn(0);
             if (SubGal != null && SubGal.length != 0) {
                 for (String subuid : SubGal) {
-                    br.getPage("http://motherless.com" + subuid);
+                    br.getPage("://motherless.com" + subuid);
                     gallery(decryptedLinks, parameter, progress);
                 }
                 return decryptedLinks;
@@ -152,7 +152,7 @@ public class MotherLessCom extends PluginForDecrypt {
         if (singlelink.startsWith("/")) {
             singlelink = "http://motherless.com" + singlelink;
         }
-        String ID = new Regex(singlelink, "http://motherless\\.com/[A-Z0-9]+/([A-Z0-9]+)").getMatch(0);
+        String ID = new Regex(singlelink, "https?://motherless\\.com/[A-Z0-9]+/([A-Z0-9]+)").getMatch(0);
         if (ID != null) {
             singlelink = "http://motherless.com/" + ID;
         }
@@ -218,7 +218,7 @@ public class MotherLessCom extends PluginForDecrypt {
                     ret.add(dl);
                 }
             }
-            String[] videolinks = br.getRegex("<[^>]+data-mediatype=\"video\"[^>]+>[\r\n\t ]+<a href=\"((http://(?:www\\.)?motherless\\.com)?/[a-zA-Z0-9]+){1,2}\" class=\"img-container\"").getColumn(0);
+            String[] videolinks = br.getRegex("<[^>]+data-mediatype=\"video\"[^>]+>[\r\n\t ]+<a href=\"((https?://(?:www\\.)?motherless\\.com)?/[a-zA-Z0-9]+){1,2}\" class=\"img-container\"").getColumn(0);
             if (videolinks != null && videolinks.length != 0) {
                 for (String singlelink : videolinks) {
                     String linkID = new Regex(singlelink, "/g/.*?/([A-Z0-9]+$)").getMatch(0);

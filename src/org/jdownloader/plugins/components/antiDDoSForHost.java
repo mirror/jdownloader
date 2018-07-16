@@ -38,7 +38,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 
-import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.parser.UrlQuery;
@@ -341,7 +340,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
      */
     public void readConnection(final URLConnectionAdapter con, final Browser ibr) throws IOException, PluginException {
         final InputStream is = getInputStream(con, ibr);
-        final byte[] responseBytes = IO.readStream(-1, is);
+        final byte[] responseBytes = Request.read(con, con.getRequest().getReadLimit());
         ibr.getRequest().setResponseBytes(responseBytes);
         LogInterface log = ibr.getLogger();
         if (log == null) {

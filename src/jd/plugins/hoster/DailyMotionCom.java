@@ -35,6 +35,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.DailyMotionComDecrypter;
@@ -52,8 +53,8 @@ public class DailyMotionCom extends PluginForHost {
         return jd.plugins.decrypter.DailyMotionComDecrypter.getVideosource(br);
     }
 
-    public static LinkedHashMap<String, String[]> findVideoQualities(final Browser br, final String parameter, String videosource) throws Exception {
-        return jd.plugins.decrypter.DailyMotionComDecrypter.findVideoQualities(br, parameter, videosource);
+    public static LinkedHashMap<String, String[]> findVideoQualities(final Plugin plugin, final Browser br, final String parameter, String videosource) throws Exception {
+        return jd.plugins.decrypter.DailyMotionComDecrypter.findVideoQualities(plugin, br, parameter, videosource);
     }
 
     public String                dllink                 = null;
@@ -62,6 +63,7 @@ public class DailyMotionCom extends PluginForHost {
     private static final String  COUNTRYBLOCKUSERTEXT   = "This video is not available for your country";
     /** Settings stuff */
     private static final String  ALLOW_BEST             = "ALLOW_BEST";
+    private static final String  PREFER_MP4             = "PREFER_MP4";
     private static final String  ALLOW_144              = "ALLOW_0";
     private static final String  ALLOW_240              = "ALLOW_1";
     private static final String  ALLOW_380              = "ALLOW_2";
@@ -126,7 +128,7 @@ public class DailyMotionCom extends PluginForHost {
             }
             final String videoSource = DailyMotionComDecrypter.getVideosource(this.br);
             if (videoSource != null) {
-                final LinkedHashMap<String, String[]> foundQualities = DailyMotionComDecrypter.findVideoQualities(this.br, videoURL, videoSource);
+                final LinkedHashMap<String, String[]> foundQualities = DailyMotionComDecrypter.findVideoQualities(this, this.br, videoURL, videoSource);
                 final String qualityValue = downloadLink.getStringProperty("qualityvalue", null);
                 if (foundQualities != null && foundQualities.containsKey(qualityValue)) {
                     downloadLink.setProperty("directlink", Encoding.htmlDecode(foundQualities.get(qualityValue)[0]));
@@ -269,7 +271,7 @@ public class DailyMotionCom extends PluginForHost {
                 logger.info("videosource: " + videosource);
                 return null;
             }
-            LinkedHashMap<String, String[]> foundqualities = findVideoQualities(this.br, mainlink, videosource);
+            LinkedHashMap<String, String[]> foundqualities = findVideoQualities(this, this.br, mainlink, videosource);
             final String qualityvalue = dl.getStringProperty("qualityvalue", null);
             final String directlinkinfo[] = foundqualities.get(qualityvalue);
             dllink = Encoding.htmlDecode(directlinkinfo[0]);
@@ -497,6 +499,7 @@ public class DailyMotionCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_AUDIO, JDL.L("plugins.hoster.dailymotioncom.checkaudio", "Allow audio download")).setDefaultValue(defaultAllowAudio));
         /* 2016-06-10: Disabled rtmp and hds - should not be needed anymore! */
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_OTHERS, JDL.L("plugins.hoster.dailymotioncom.checkother", "Grab other available qualities (RTMP/OTHERS)?")).setDefaultValue(true).setEnabledCondidtion(hq, false).setEnabled(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_MP4, JDL.L("plugins.hoster.dailymotioncom.prefermp4", "Prefer MP4 Stream?")).setDefaultValue(false));
         addConfigElementHDS(hq);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filenames"));

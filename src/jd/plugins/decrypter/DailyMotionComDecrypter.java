@@ -34,6 +34,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
@@ -467,7 +468,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
                 }
             }
         }
-        foundQualities = findVideoQualities(this.br, parameter, videoSource);
+        foundQualities = findVideoQualities(this, this.br, parameter, videoSource);
         if (foundQualities.isEmpty() && decryptedLinks.size() == 0) {
             logger.warning("Found no quality for link: " + parameter);
             decryptedLinks = null;
@@ -510,7 +511,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
     }
 
     @SuppressWarnings("unchecked")
-    public static LinkedHashMap<String, String[]> findVideoQualities(final Browser br, final String parameter, String videosource) throws Exception {
+    public static LinkedHashMap<String, String[]> findVideoQualities(final Plugin plugin, final Browser br, final String parameter, String videosource) throws Exception {
         final LinkedHashMap<String, String[]> QUALITIES = new LinkedHashMap<String, String[]>();
         final String[][] qualities = { { "hd1080URL", "5" }, { "hd720URL", "4" }, { "hqURL", "3" }, { "sdURL", "2" }, { "ldURL", "1" }, { "video_url", "6" } };
         for (final String quality[] : qualities) {
@@ -529,6 +530,8 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         if (QUALITIES.isEmpty() && videosource.startsWith("{\"context\"")) {
             /* "New" player July 2015 */
             try {
+                final SubConfiguration cfg = SubConfiguration.getConfig("dailymotion.com");
+                final boolean preferMP4 = cfg.getBooleanProperty("PREFER_MP4", false);
                 LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(videosource);
                 entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "metadata/qualities");
                 /* TODO: Maybe add HLS support in case it gives us more/other formats/qualities */
@@ -539,6 +542,8 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
                     final Object jsono = entries.get(qualityName);
                     if (jsono != null) {
                         for (int i = 0; i < ((List) jsono).size(); i++) {
+                            // HLS first item
+                            // MP4 second item
                             final String currentQualityType = (String) JavaScriptEngineFactory.walkJson(jsono, "{" + i + "}/type");
                             final String currentQualityUrl = (String) JavaScriptEngineFactory.walkJson(jsono, "{" + i + "}/url");
                             if (currentQualityUrl != null) {
@@ -547,8 +552,10 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
                                 dlinfo[1] = null;
                                 dlinfo[2] = qualityName;
                                 dlinfo[3] = qualityNumber;
-                                QUALITIES.put(qualityNumber, dlinfo);
-                                if (StringUtils.containsIgnoreCase(currentQualityType, "mp4")) {
+                                if (!QUALITIES.containsKey(qualityNumber) || preferMP4) {
+                                    QUALITIES.put(qualityNumber, dlinfo);
+                                }
+                                if (preferMP4 && StringUtils.containsIgnoreCase(currentQualityType, "mp4")) {
                                     break;
                                 }
                             }
