@@ -153,7 +153,11 @@ public class UseNet extends PluginForHost {
     }
 
     protected void setIncomplete(DownloadLink link, boolean b) {
-        link.setProperty("incomplete", Boolean.valueOf(b));
+        if (b) {
+            link.setProperty("incomplete", Boolean.valueOf(b));
+        } else {
+            link.removeProperty("incomplete");
+        }
     }
 
     @Override
@@ -413,6 +417,7 @@ public class UseNet extends PluginForHost {
     public void resetDownloadlink(final DownloadLink link) {
         if (link != null) {
             link.removeProperty(PRECHECK_DONE);
+            setIncomplete(link, false);
         }
     }
 

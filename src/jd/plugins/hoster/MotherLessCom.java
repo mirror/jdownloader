@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -34,9 +33,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "motherless.com" }, urls = { "http://(?:www\\.)?(?:members\\.)?(?:motherless\\.com/(?:movies|thumbs).*|(?:premium)?motherlesspictures(?:media)?\\.com/[a-zA-Z0-9/\\.]+|motherlessvideos\\.com/[a-zA-Z0-9/\\.]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "motherless.com" }, urls = { "https?://(?:www\\.)?(?:members\\.)?(?:motherless\\.com/(?:movies|thumbs).*|(?:premium)?motherlesspictures(?:media)?\\.com/[a-zA-Z0-9/\\.]+|motherlessvideos\\.com/[a-zA-Z0-9/\\.]+)" })
 public class MotherLessCom extends PluginForHost {
-
     public static final String html_subscribedFailed       = "Failed to subscribe to the owner of the video";
     public static final String html_contentRegistered      = "This link is only downloadable for registered users.";
     public static final String html_contentSubscriberOnly  = "The upload is subscriber only. You can subscribe to the member from their";
@@ -277,9 +275,9 @@ public class MotherLessCom extends PluginForHost {
     }
 
     private void getVideoLink() {
-        dllink = br.getRegex("addVariable\\(\\'file\\', \\'(http://.*?\\.(flv|mp4))\\'\\)").getMatch(0);
+        dllink = br.getRegex("addVariable\\(\\'file\\', \\'(https?://.*?\\.(flv|mp4))\\'\\)").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("(http://s\\d+\\.motherlessmedia\\.com/dev[0-9]+/[^<>\"]*?\\.(flv|mp4))\"").getMatch(0);
+            dllink = br.getRegex("(https?://s\\d+\\.motherlessmedia\\.com/dev[0-9]+/[^<>\"]*?\\.(flv|mp4))\"").getMatch(0);
             if (dllink == null) {
                 dllink = PluginJSonUtils.getJsonValue(br, "file");
             }
@@ -305,16 +303,16 @@ public class MotherLessCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("Subscribers Only")) {
-            String profileToSubscribe = br.getRegex("You can subscribe to the member from[\t\n\r ]+their <a href=(\"|')(http://motherless\\.com)?/m/(.*?)\\1").getMatch(2);
+            String profileToSubscribe = br.getRegex("You can subscribe to the member from[\t\n\r ]+their <a href=(\"|')(https?://motherless\\.com)?/m/(.*?)\\1").getMatch(2);
             if (profileToSubscribe == null) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, html_subscribedFailed);
             }
-            br.getPage("http://motherless.com/subscribe/" + profileToSubscribe);
+            br.getPage("https://motherless.com/subscribe/" + profileToSubscribe);
             String token = br.getRegex("name=\"_token\" value=\"(.*?)\"").getMatch(0);
             if (token == null) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, html_subscribedFailed);
             }
-            br.postPage("http://motherless.com/subscribe/" + profileToSubscribe, "_token=" + token);
+            br.postPage("https://motherless.com/subscribe/" + profileToSubscribe, "_token=" + token);
             if (!br.containsHTML("(>You are already subscribed to|>You are now subscribed to)")) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, html_subscribedFailed);
             }
