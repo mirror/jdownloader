@@ -32,7 +32,7 @@ import jd.plugins.components.UserAgents;
 
 import org.jdownloader.plugins.components.AbortException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mirrorcreator.com" }, urls = { "https?://(www\\.)?(mirrorcreator\\.com/(files/|download\\.php\\?uid=)|mir\\.cr/)[0-9A-Z]{8}" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mirrorcreator.com" }, urls = { "https?://(www\\.)?((mirrorcreator\\.com|mirrored\\.to)/(files/|download\\.php\\?uid=)|mir\\.cr/)[0-9A-Z]{8}" })
 public class MirrorCreatorCom extends PluginForDecrypt {
     private String                  userAgent      = null;
     private ArrayList<DownloadLink> decryptedLinks = null;
@@ -54,14 +54,14 @@ public class MirrorCreatorCom extends PluginForDecrypt {
                 userAgent = UserAgents.stringUserAgent();
             }
             br.getHeaders().put("User-Agent", userAgent);
-            final String parameter = "https://www.mirrorcreator.com/download.php?uid=" + uid;
+            final String parameter = "https://www.mirrored.to/download.php?uid=" + uid;
             param.setCryptedUrl(parameter);
             br.setFollowRedirects(true);
             br.getPage(parameter);
             br.setFollowRedirects(false);
             // set packagename
             // because mirror creator is single file uploader. we want a single packagename for all these uploads vs one for each part!
-            String fpName = br.getRegex("<title>Download links for ([^<]+) - Mirrorcreator").getMatch(0);
+            String fpName = br.getRegex("<title>Download links for ([^<]+) - (Mirrorcreator|Mirrored\\.to)").getMatch(0);
             if (fpName != null) {
                 // here we will strip extensions!
                 String ext;
