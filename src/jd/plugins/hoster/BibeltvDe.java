@@ -34,7 +34,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bibeltv.de" }, urls = { "https?://(?:www\\.)?bibeltv\\.de/mediathek/video/[a-z0-9\\-]+/\\?no_cache=1\\&cHash=[a-f0-9]{32}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bibeltv.de" }, urls = { "https?://(?:www\\.)?bibeltv\\.de/mediathek/videos/[a-z0-9\\-]+" })
 public class BibeltvDe extends PluginForHost {
     public BibeltvDe(PluginWrapper wrapper) {
         super(wrapper);
@@ -49,6 +49,7 @@ public class BibeltvDe extends PluginForHost {
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
     private String               dllink            = null;
+    private long                 filesize          = 0;
     private boolean              tempunavailable   = false;
 
     @Override
@@ -62,7 +63,7 @@ public class BibeltvDe extends PluginForHost {
         dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final String url_filename = new Regex(link.getDownloadURL(), "/mediathek/video/([^/]*?)(?:\\-\\d+)?/").getMatch(0).replace("-", " ");
+        final String url_filename = new Regex(link.getDownloadURL(), "/mediathek/videos/([a-z0-9\\-]+)").getMatch(0).replace("-", " ");
         link.setName(url_filename);
         br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -70,76 +71,78 @@ public class BibeltvDe extends PluginForHost {
         } else if (this.br.containsHTML("An error occurred while trying to")) {
             /* Wrong url */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (this.br.containsHTML(">Das Video ist derzeit nicht öffentlich")) {
+        } else if (br.containsHTML(">Das Video ist derzeit nicht öffentlich")) {
             /* Video not available at this moment. */
             tempunavailable = true;
             return AvailableStatus.TRUE;
-        } else if (this.br.containsHTML(">Video nicht verf")) {
+        } else if (br.containsHTML(">Video nicht verf|alert\">\\s*Dieses Video ist leider aus lizenzrechtlichen")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("itemprop=\"name\" content=\"([^<>\"]+)\"").getMatch(0);
+        String filename = br.getRegex("\"video-title\">([^<>]+)<").getMatch(0);
         if (filename == null) {
             filename = url_filename;
         }
-        String player_embed_url = this.br.getRegex("(//api\\.medianac\\.com/p/\\d+/sp/\\d+/embedIframeJs/[^<>\"]+)\"").getMatch(0);
-        if (player_embed_url == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        player_embed_url = Encoding.htmlDecode(player_embed_url);
-        player_embed_url = "http:" + player_embed_url;
-        String partner_id = new Regex(player_embed_url, "/partner_id/(\\d+)").getMatch(0);
-        if (partner_id == null) {
-            partner_id = "107";
-        }
-        String uiconf_id = this.br.getRegex("uiconf_id/(\\d+)").getMatch(0);
-        if (uiconf_id == null) {
-            uiconf_id = "11601650";
-        }
-        String sp = new Regex(player_embed_url, "/sp/(\\d+)/").getMatch(0);
-        if (sp == null) {
-            sp = "10700";
-        }
-        String entry_id = new Regex(player_embed_url, "/entry_id/([^/]+)").getMatch(0);
-        if (entry_id == null) {
-            entry_id = new Regex(player_embed_url, "entry_id=([^\\&=]+)").getMatch(0);
-        }
-        if (entry_id == null) {
-            /* New 2016-12-07 */
-            entry_id = this.br.getRegex("/entry_id/([^/]+)").getMatch(0);
-        }
-        if (entry_id == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        this.br.getPage("https://api.medianac.com/html5/html5lib/v2.39/mwEmbedFrame.php?&wid=_" + partner_id + "&uiconf_id=" + uiconf_id + "&cache_st=0&entry_id=" + entry_id + "&flashvars[streamerType]=auto&playerId=kaltura_player_664&ServiceUrl=http%3A%2F%2Fapi.medianac.com&CdnUrl=http%3A%2F%2Fapi.medianac.com&ServiceBase=%2Fapi_v3%2Findex.php%3Fservice%3D&UseManifestUrls=false&forceMobileHTML5=true&urid=2.39&callback=mwi_kalturaplayer6640");
-        String js = this.br.getRegex("kalturaIframePackageData = (\\{.*?\\}\\}\\});").getMatch(0);
-        if (js == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        js = js.replace("\\\"", "\"");
-        js = new Regex(js, "\"flavorAssets\":(\\[.*?\\])").getMatch(0);
-        if (js == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        final ArrayList<Object> ressourcelist = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(js);
-        long filesize = 0;
-        long max_bitrate = 0;
-        long max_bitrate_temp = 0;
-        LinkedHashMap<String, Object> entries = null;
-        for (final Object videoo : ressourcelist) {
-            entries = (LinkedHashMap<String, Object>) videoo;
-            final String flavourid = (String) entries.get("id");
-            if (flavourid == null) {
-                continue;
-            }
-            max_bitrate_temp = JavaScriptEngineFactory.toLong(entries.get("bitrate"), 0);
-            if (max_bitrate_temp > max_bitrate) {
-                dllink = "https://api.medianac.com/p/" + partner_id + "/sp/" + sp + "/playManifest/entryId/" + entry_id + "/flavorId/" + flavourid + "/format/url/protocol/http/a.mp4";
-                max_bitrate = max_bitrate_temp;
-                filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
-            }
-        }
+        dllink = br.getRegex("<source src=\"([^\"]+)\"").getMatch(0);
         if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            String player_embed_url = this.br.getRegex("(//api\\.medianac\\.com/p/\\d+/sp/\\d+/embedIframeJs/[^<>\"]+)\"").getMatch(0);
+            if (player_embed_url == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            player_embed_url = Encoding.htmlDecode(player_embed_url);
+            player_embed_url = "http:" + player_embed_url;
+            String partner_id = new Regex(player_embed_url, "/partner_id/(\\d+)").getMatch(0);
+            if (partner_id == null) {
+                partner_id = "107";
+            }
+            String uiconf_id = this.br.getRegex("uiconf_id/(\\d+)").getMatch(0);
+            if (uiconf_id == null) {
+                uiconf_id = "11601650";
+            }
+            String sp = new Regex(player_embed_url, "/sp/(\\d+)/").getMatch(0);
+            if (sp == null) {
+                sp = "10700";
+            }
+            String entry_id = new Regex(player_embed_url, "/entry_id/([^/]+)").getMatch(0);
+            if (entry_id == null) {
+                entry_id = new Regex(player_embed_url, "entry_id=([^\\&=]+)").getMatch(0);
+            }
+            if (entry_id == null) {
+                /* New 2016-12-07 */
+                entry_id = this.br.getRegex("/entry_id/([^/]+)").getMatch(0);
+            }
+            if (entry_id == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            this.br.getPage("https://api.medianac.com/html5/html5lib/v2.39/mwEmbedFrame.php?&wid=_" + partner_id + "&uiconf_id=" + uiconf_id + "&cache_st=0&entry_id=" + entry_id + "&flashvars[streamerType]=auto&playerId=kaltura_player_664&ServiceUrl=http%3A%2F%2Fapi.medianac.com&CdnUrl=http%3A%2F%2Fapi.medianac.com&ServiceBase=%2Fapi_v3%2Findex.php%3Fservice%3D&UseManifestUrls=false&forceMobileHTML5=true&urid=2.39&callback=mwi_kalturaplayer6640");
+            String js = this.br.getRegex("kalturaIframePackageData = (\\{.*?\\}\\}\\});").getMatch(0);
+            if (js == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            js = js.replace("\\\"", "\"");
+            js = new Regex(js, "\"flavorAssets\":(\\[.*?\\])").getMatch(0);
+            if (js == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final ArrayList<Object> ressourcelist = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(js);
+            long max_bitrate = 0;
+            long max_bitrate_temp = 0;
+            LinkedHashMap<String, Object> entries = null;
+            for (final Object videoo : ressourcelist) {
+                entries = (LinkedHashMap<String, Object>) videoo;
+                final String flavourid = (String) entries.get("id");
+                if (flavourid == null) {
+                    continue;
+                }
+                max_bitrate_temp = JavaScriptEngineFactory.toLong(entries.get("bitrate"), 0);
+                if (max_bitrate_temp > max_bitrate) {
+                    dllink = "https://api.medianac.com/p/" + partner_id + "/sp/" + sp + "/playManifest/entryId/" + entry_id + "/flavorId/" + flavourid + "/format/url/protocol/http/a.mp4";
+                    max_bitrate = max_bitrate_temp;
+                    filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
+                }
+            }
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
