@@ -1,8 +1,8 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-
-import org.appwork.utils.Regex;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -12,59 +12,61 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fembed.com" }, urls = { "https?://(www\\.)?fembed.com/(f|v)/([a-zA-Z0-9_-]+)" })
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fembed.com" }, urls = { "https?://(www\\.)?fembed.com/(f|v)/([a-zA-Z0-9_-]+)(#javclName=[a-fA-F0-9]+)?" })
 public class FEmbedDecrypter extends PluginForDecrypt {
     public FEmbedDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String _filename;
-
-    public void setFilename(String filename) {
-        this._filename = filename;
-    }
-
-    public String getFilename() {
-        return this._filename;
-    }
-
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        String filename = getFilename();
-        String file_id = new Regex(parameter.getCryptedUrl(), "/(?:f|v)/([a-zA-Z0-9_-]+)$").getMatch(0);
+        String file_id = new Regex(parameter.getCryptedUrl(), "/(?:f|v)/([a-zA-Z0-9_-]+)").getMatch(0);
+        String name = new Regex(parameter.getCryptedUrl(), "#javclName=([a-fA-F0-9]+)").getMatch(0);
+        if (name != null) {
+            name = new String(HexFormatter.hexToByteArray(name), "UTF-8");
+        }
         final PostRequest postRequest = new PostRequest("https://www.fembed.com/api/source/" + file_id);
-        String data = br.getPage(postRequest);
-        String success = PluginJSonUtils.getJson(PluginJSonUtils.unescape(data), "success");
-        if (success.equals("false")) {
-            DownloadLink link = createDownloadlink(parameter.getCryptedUrl().replaceAll("https?://", "decryptedforFEmbedHosterPlugin://"));
-            link.setForcedFileName(filename + ".mp4");
+        final Map<String, Object> response = JSonStorage.restoreFromString(br.getPage(postRequest), TypeRef.HASHMAP);
+        if (!Boolean.TRUE.equals(response.get("success"))) {
+            final DownloadLink link = createDownloadlink(parameter.getCryptedUrl().replaceAll("https?://", "decryptedforFEmbedHosterPlugin://"));
             link.setAvailable(false);
             ret.add(link);
             return ret;
         }
-        String json_data = PluginJSonUtils.getJson(PluginJSonUtils.unescape(data), "data");
-        String[] json_data_ar = PluginJSonUtils.getJsonResultsFromArray(json_data);
-        for (String data_ar : json_data_ar) {
-            String label = PluginJSonUtils.getJson(data_ar, "label");
-            String type = PluginJSonUtils.getJson(data_ar, "type");
+        final List<Map<String, Object>> videos;
+        if (response.get("data") instanceof String) {
+            videos = (List<Map<String, Object>>) JSonStorage.restoreFromString((String) response.get("data"), TypeRef.OBJECT);
+        } else {
+            videos = (List<Map<String, Object>>) response.get("data");
+        }
+        for (Map<String, Object> video : videos) {
+            String label = (String) video.get("label");
+            String type = (String) video.get("type");
             DownloadLink link = createDownloadlink(parameter.getCryptedUrl().replaceAll("https?://", "decryptedforFEmbedHosterPlugin://"));
             link.setProperty("label", label);
+            link.setProperty("fembedid", file_id);
             link.setLinkID("fembed" + "." + file_id + "." + label);
-            if (!filename.isEmpty()) {
-                link.setFinalFileName(filename + "-" + label + "." + type);
+            if (StringUtils.isEmpty(name)) {
+                link.setFinalFileName(name + "-" + label + "." + type);
             } else {
                 link.setForcedFileName(file_id + "-" + label + "." + type);
             }
+            link.setAvailable(true);
             ret.add(link);
         }
-        if (json_data_ar.length > 1) {
+        if (videos.size() > 1) {
             final FilePackage filePackage = FilePackage.getInstance();
-            String title;
-            if (filename != null && !filename.isEmpty()) {
-                title = filename;
+            final String title;
+            if (!StringUtils.isEmpty(name)) {
+                title = name;
             } else {
                 title = file_id;
             }

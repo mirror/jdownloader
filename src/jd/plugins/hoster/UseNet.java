@@ -140,8 +140,9 @@ public class UseNet extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         if (isIncomplete(parameter)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else {
+            return AvailableStatus.UNCHECKABLE;
         }
-        return AvailableStatus.UNCHECKABLE;
     }
 
     protected ProxySelectorInterface getProxySelector() {
@@ -301,11 +302,12 @@ public class UseNet extends PluginForHost {
             try {
                 dl.startDownload();
             } catch (MessageBodyNotFoundException e) {
+                logger.log(e);
                 setIncomplete(downloadLink, true);
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, null, e);
             }
         } catch (InvalidAuthException e) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, null, PluginException.VALUE_ID_PREMIUM_DISABLE, e);
         } catch (HTTPProxyException e) {
             ProxyController.getInstance().reportHTTPProxyException(proxy, url, e);
             throw e;
@@ -363,6 +365,7 @@ public class UseNet extends PluginForHost {
                 }
                 status = AvailableStatus.TRUE;
             } catch (final UnrecognizedCommandException e) {
+                logger.log(e);
                 status = AvailableStatus.UNCHECKABLE;
             } finally {
                 link.setAvailableStatus(status);

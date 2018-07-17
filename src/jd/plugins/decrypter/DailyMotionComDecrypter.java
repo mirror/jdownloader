@@ -479,6 +479,12 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         final ArrayList<String> selectedQualities = new ArrayList<String>();
         final SubConfiguration cfg = SubConfiguration.getConfig("dailymotion.com");
         final boolean best = cfg.getBooleanProperty(ALLOW_BEST, false);
+        boolean mp4 = cfg.getBooleanProperty("ALLOW_MP4", false);
+        boolean hls = cfg.getBooleanProperty("ALLOW_HLS", false);
+        if (!mp4 && !hls) {
+            hls = true;
+            mp4 = true;
+        }
         boolean noneSelected = true;
         for (final String quality : new String[] { "7", "6", "5", "4", "3", "2", "1", "0" }) {
             if (cfg.getBooleanProperty("ALLOW_" + quality, true)) {
@@ -487,10 +493,17 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             }
         }
         for (final String quality : new String[] { "7", "6", "5", "4", "3", "2", "1", "0" }) {
-            if (foundQualities.containsKey(quality) && (best || noneSelected || cfg.getBooleanProperty("ALLOW_" + quality, true))) {
-                selectedQualities.add(quality);
-                if (best) {
-                    break;
+            if (selectedQualities.size() > 0 && best) {
+                break;
+            }
+            for (String foundQuality : foundQualities.keySet()) {
+                if (foundQuality.startsWith(quality) && (best || noneSelected || cfg.getBooleanProperty("ALLOW_" + quality, true))) {
+                    if (!mp4 && foundQuality.endsWith("_MP4")) {
+                        continue;
+                    } else if (!hls && foundQuality.endsWith("_HLS")) {
+                        continue;
+                    }
+                    selectedQualities.add(foundQuality);
                 }
             }
         }
@@ -530,8 +543,6 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         if (QUALITIES.isEmpty() && videosource.startsWith("{\"context\"")) {
             /* "New" player July 2015 */
             try {
-                final SubConfiguration cfg = SubConfiguration.getConfig("dailymotion.com");
-                final boolean preferMP4 = cfg.getBooleanProperty("PREFER_MP4", false);
                 LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(videosource);
                 entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "metadata/qualities");
                 /* TODO: Maybe add HLS support in case it gives us more/other formats/qualities */
@@ -542,8 +553,6 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
                     final Object jsono = entries.get(qualityName);
                     if (jsono != null) {
                         for (int i = 0; i < ((List) jsono).size(); i++) {
-                            // HLS first item
-                            // MP4 second item
                             final String currentQualityType = (String) JavaScriptEngineFactory.walkJson(jsono, "{" + i + "}/type");
                             final String currentQualityUrl = (String) JavaScriptEngineFactory.walkJson(jsono, "{" + i + "}/url");
                             if (currentQualityUrl != null) {
@@ -552,11 +561,12 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
                                 dlinfo[1] = null;
                                 dlinfo[2] = qualityName;
                                 dlinfo[3] = qualityNumber;
-                                if (!QUALITIES.containsKey(qualityNumber) || preferMP4) {
+                                if (StringUtils.equalsIgnoreCase("application/x-mpegURL", currentQualityType)) {
+                                    QUALITIES.put(qualityNumber + "_HLS", dlinfo);
+                                } else if (StringUtils.equalsIgnoreCase("video/mp4", currentQualityType)) {
+                                    QUALITIES.put(qualityNumber + "_MP4", dlinfo);
+                                } else {
                                     QUALITIES.put(qualityNumber, dlinfo);
-                                }
-                                if (preferMP4 && StringUtils.containsIgnoreCase(currentQualityType, "mp4")) {
-                                    break;
                                 }
                             }
                         }
@@ -649,6 +659,8 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
                         qualityName = "640X380";
                     } else if (qualityName.equals("480")) {
                         qualityName = "640X480";
+                    } else if (qualityName.equals("720")) {
+                        qualityName = "1280x720";
                     } else {
                         /* TODO / leave that untouched */
                     }

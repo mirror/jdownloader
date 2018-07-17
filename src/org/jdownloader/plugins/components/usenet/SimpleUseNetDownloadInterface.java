@@ -314,9 +314,10 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
             }
         } catch (IOException e) {
             if (localIO) {
-                throw new SkipReasonException(SkipReason.DISK_FULL);
+                throw new SkipReasonException(SkipReason.DISK_FULL, e);
+            } else {
+                throw e;
             }
-            throw e;
         } finally {
             close(raf);
             cleanupDownladInterface();
@@ -347,7 +348,7 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
                             downloadable.lockFiles(outputCompleteFile, outputFinalCompleteFile, outputPartFile);
                         } catch (FileIsLockedException e) {
                             downloadable.unlockFiles(outputCompleteFile, outputFinalCompleteFile, outputPartFile);
-                            throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
+                            throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS, null, e);
                         }
                     }
                 }, null)) {
@@ -359,6 +360,7 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
                 downloadable.setAvailable(AvailableStatus.TRUE);
                 download();
             } catch (MessageBodyNotFoundException e) {
+                LogSource.exception(logger, e);
                 deletePartFile = true;
                 throw e;
             } finally {
