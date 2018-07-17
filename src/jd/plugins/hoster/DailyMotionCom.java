@@ -63,7 +63,8 @@ public class DailyMotionCom extends PluginForHost {
     private static final String  COUNTRYBLOCKUSERTEXT   = "This video is not available for your country";
     /** Settings stuff */
     private static final String  ALLOW_BEST             = "ALLOW_BEST";
-    private static final String  PREFER_MP4             = "PREFER_MP4";
+    private static final String  ALLOW_HLS              = "ALLOW_HLS";
+    private static final String  ALLOW_MP4              = "ALLOW_MP4";
     private static final String  ALLOW_144              = "ALLOW_0";
     private static final String  ALLOW_240              = "ALLOW_1";
     private static final String  ALLOW_380              = "ALLOW_2";
@@ -277,6 +278,7 @@ public class DailyMotionCom extends PluginForHost {
             dllink = Encoding.htmlDecode(directlinkinfo[0]);
             onNewDirectLink(dl, dllink);
         } catch (final Throwable e) {
+            logger.log(e);
             dllink = null;
             return null;
         }
@@ -313,7 +315,7 @@ public class DailyMotionCom extends PluginForHost {
                         br.getHeaders().put("Referer", dllink);
                         con = br.openHeadConnection(dllink);
                     }
-                    if (con.getResponseCode() == 410 || con.getContentType().contains("html")) {
+                    if (con.getResponseCode() != 200 || con.getContentType().contains("html")) {
                         return false;
                     }
                     downloadLink.setDownloadSize(con.getLongContentLength());
@@ -324,6 +326,7 @@ public class DailyMotionCom extends PluginForHost {
                     }
                 }
             } catch (final Exception e) {
+                logger.log(e);
                 return false;
             }
             return true;
@@ -499,7 +502,8 @@ public class DailyMotionCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_AUDIO, JDL.L("plugins.hoster.dailymotioncom.checkaudio", "Allow audio download")).setDefaultValue(defaultAllowAudio));
         /* 2016-06-10: Disabled rtmp and hds - should not be needed anymore! */
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_OTHERS, JDL.L("plugins.hoster.dailymotioncom.checkother", "Grab other available qualities (RTMP/OTHERS)?")).setDefaultValue(true).setEnabledCondidtion(hq, false).setEnabled(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_MP4, JDL.L("plugins.hoster.dailymotioncom.prefermp4", "Prefer MP4 Stream?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_HLS, JDL.L("plugins.hoster.dailymotioncom.allowhls", "Grab HLS?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_MP4, JDL.L("plugins.hoster.dailymotioncom.allowmp4", "Grab MP4?")).setDefaultValue(false));
         addConfigElementHDS(hq);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filenames"));

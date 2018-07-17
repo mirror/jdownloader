@@ -1,8 +1,10 @@
 package jd.plugins.hoster;
 
-import org.appwork.utils.Regex;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.PostRequest;
 import jd.plugins.DownloadLink;
@@ -11,7 +13,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fembed.com" }, urls = { "decryptedforFEmbedHosterPlugin://.*" })
 public class FEmbedCom extends PluginForHost {
@@ -24,8 +30,7 @@ public class FEmbedCom extends PluginForHost {
         return "https://www.fembed.com/";
     }
 
-    private String data = "";
-    private String url;
+    private String url = null;
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
@@ -35,51 +40,48 @@ public class FEmbedCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
-        if (parameter.getDownloadSize() > 0 && url != null && !url.isEmpty()) {
-            return AvailableStatus.TRUE;
-        }
-        String file_id = new Regex(parameter.getPluginPatternMatcher(), "/(?:f|v)/([a-zA-Z0-9_-]+)$").getMatch(0);
+        String file_id = new Regex(parameter.getPluginPatternMatcher(), "/(?:f|v)/([a-zA-Z0-9_-]+)").getMatch(0);
         final PostRequest postRequest = new PostRequest("https://www.fembed.com/api/source/" + file_id);
-        data = br.getPage(postRequest);
-        String success = PluginJSonUtils.getJson(PluginJSonUtils.unescape(data), "success");
-        if (success == "false") {
-            return AvailableStatus.FALSE;
+        final Map<String, Object> response = JSonStorage.restoreFromString(br.getPage(postRequest), TypeRef.HASHMAP);
+        if (!Boolean.TRUE.equals(response.get("success"))) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String label = parameter.getStringProperty("label");
-        String data2 = PluginJSonUtils.getJson(PluginJSonUtils.unescape(data), "data");
-        String[] data2_ar = PluginJSonUtils.getJsonResultsFromArray(data2);
-        int index = 0;
-        int cur = -1;
-        for (String ar : data2_ar) {
-            String url2 = PluginJSonUtils.getJson(ar, "file");
-            String label2 = PluginJSonUtils.getJson(ar, "label");
-            if (label.equals(label2) || data2_ar.length == 1) {
-                cur = index;
-                url = url2;
-                URLConnectionAdapter con = null;
-                con = this.br.openHeadConnection(url2);
-                if (!con.getContentType().contains("html")) {
-                    long size = con.getLongContentLength();
-                    parameter.setDownloadSize(size);
+        final List<Map<String, Object>> videos;
+        if (response.get("data") instanceof String) {
+            videos = (List<Map<String, Object>>) JSonStorage.restoreFromString((String) response.get("data"), TypeRef.OBJECT);
+        } else {
+            videos = (List<Map<String, Object>>) response.get("data");
+        }
+        final String searchLabel = parameter.getStringProperty("label", null);
+        for (Map<String, Object> video : videos) {
+            final String label = (String) video.get("label");
+            final String file = (String) video.get("file");
+            if (StringUtils.equals(label, searchLabel) && StringUtils.isNotEmpty(file)) {
+                url = file;
+                if (!(Thread.currentThread() instanceof SingleDownloadController)) {
+                    final URLConnectionAdapter con = br.cloneBrowser().openHeadConnection(file);
+                    try {
+                        if (con.getResponseCode() == 200 && con.getLongContentLength() > 0 && !StringUtils.contains(con.getContentType(), "html")) {
+                            parameter.setVerifiedFileSize(con.getCompleteContentLength());
+                        }
+                    } finally {
+                        con.disconnect();
+                    }
                 }
-                con.disconnect();
-                break;
+                return AvailableStatus.TRUE;
             }
-            index++;
         }
-        data = br.getPage(postRequest);
-        if (cur != -1) {
-            url = PluginJSonUtils.getJson(PluginJSonUtils.getJsonResultsFromArray(PluginJSonUtils.getJson(PluginJSonUtils.unescape(data), "data"))[cur], "file");
-        }
-        return AvailableStatus.TRUE;
+        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
         br.clearAuthentications();
+        if (url == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, 1);
-        url = null;
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

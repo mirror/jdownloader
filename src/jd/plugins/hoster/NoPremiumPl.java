@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
@@ -35,9 +34,8 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nopremium.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nopremium.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
 public class NoPremiumPl extends PluginForHost {
-
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static final String                            NICE_HOST          = "nopremium.pl";
     private static final String                            NICE_HOSTproperty  = "nopremiumpl";
@@ -67,7 +65,11 @@ public class NoPremiumPl extends PluginForHost {
         adres = br.getRedirectLocation();
         br.getPage(adres);
         // "Invalid login" / "Banned" / "Valid login"
-        if (br.containsHTML("balance")) {
+        if (br.containsHTML("Zbyt wiele prób logowania - dostęp został tymczasowo zablokowany")) {
+            ac.setStatus("Zbyt wiele prób logowania - dostęp został tymczasowo zablokowany");
+            account.setValid(false);
+            return ac;
+        } else if (br.containsHTML("balance")) {
             ac.setStatus("Premium Account");
             account.setValid(true);
         } else if (br.containsHTML("Nieprawidlowa nazwa uzytkownika/haslo")) {
@@ -110,7 +112,6 @@ public class NoPremiumPl extends PluginForHost {
 
     /* no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap != null) {
@@ -126,11 +127,9 @@ public class NoPremiumPl extends PluginForHost {
                 }
             }
         }
-
         String postData = "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + JDHash.getSHA1(JDHash.getMD5(account.getPass())) + "&info=0&url=" + Encoding.urlEncode(link.getDownloadURL()) + "&site=nopremium";
         String response = br.postPage("http://crypt.nopremium.pl", postData);
         br.setFollowRedirects(true);
-
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, response, true, 0);
         /*
          * I really wanted to use Content Disposition below, but it just don't work for resume at hotfile -> Doesn't matter anymore, hotfile
@@ -211,5 +210,4 @@ public class NoPremiumPl extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
