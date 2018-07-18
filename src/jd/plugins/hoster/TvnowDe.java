@@ -136,8 +136,7 @@ public class TvnowDe extends PluginForHost {
         final LinkedHashMap<String, Object> format = (LinkedHashMap<String, Object>) entries.get("format");
         final String tv_station = (String) format.get("station");
         final String formatTitle = (String) format.get("title");
-        parseInformation(downloadLink, entries, tv_station, formatTitle);
-        return AvailableStatus.TRUE;
+        return parseInformation(downloadLink, entries, tv_station, formatTitle);
     }
 
     /** Returns parameters for API 'fields=' key. */
@@ -145,12 +144,13 @@ public class TvnowDe extends PluginForHost {
         return "*,format,packages,isDrm";
     }
 
-    public static void parseInformation(final DownloadLink downloadLink, final LinkedHashMap<String, Object> entries, final String tv_station, final String formatTitle) {
+    public static AvailableStatus parseInformation(final DownloadLink downloadLink, final LinkedHashMap<String, Object> entries, final String tv_station, final String formatTitle) {
         final MediathekProperties data = downloadLink.bindData(MediathekProperties.class);
         final String date = (String) entries.get("broadcastStartDate");
         final String episode_str = new Regex(downloadLink.getPluginPatternMatcher(), "folge\\-(\\d+)").getMatch(0);
         final int season = (int) JavaScriptEngineFactory.toLong(entries.get("season"), -1);
         int episode = (int) JavaScriptEngineFactory.toLong(entries.get("episode"), -1);
+        final boolean isDRM = ((Boolean) entries.get("isDrm")).booleanValue();
         if (episode == -1 && episode_str != null) {
             /* Fallback which should usually not be required */
             episode = (int) Long.parseLong(episode_str);
@@ -159,7 +159,28 @@ public class TvnowDe extends PluginForHost {
         /* Title or subtitle of a current series-episode */
         String title = (String) entries.get("title");
         if (title == null || formatTitle == null || tv_station == null || date == null) {
-            downloadLink.setAvailableStatus(AvailableStatus.UNCHECKABLE);
+            /* This should never happen */
+            return AvailableStatus.UNCHECKABLE;
+        }
+        String filename_beginning = "";
+        final AvailableStatus status;
+        if (isDRM) {
+            final TvnowConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.TvnowDe.TvnowConfigInterface.class);
+            filename_beginning = "[DRM]";
+            if (cfg.isEnableDRMOffline()) {
+                /* Show as offline although it is online ... but we cannot download it anyways! */
+                downloadLink.setAvailable(false);
+                status = AvailableStatus.FALSE;
+                // downloadLink.setAvailable(false);
+            } else {
+                /* Show as online although we cannot download it */
+                downloadLink.setAvailable(true);
+                status = AvailableStatus.TRUE;
+            }
+        } else {
+            /* Show as online as it is downloadable and online */
+            downloadLink.setAvailable(true);
+            status = AvailableStatus.TRUE;
         }
         data.setShow(formatTitle);
         data.setChannel(tv_station);
@@ -175,7 +196,7 @@ public class TvnowDe extends PluginForHost {
         if (!StringUtils.isEmpty(title)) {
             data.setTitle(title);
         }
-        final String filename = MediathekHelper.getMediathekFilename(downloadLink, data, false, false);
+        final String filename = filename_beginning + MediathekHelper.getMediathekFilename(downloadLink, data, false, false);
         try {
             if (FilePackage.isDefaultFilePackage(downloadLink.getFilePackage())) {
                 final FilePackage fp = FilePackage.getInstance();
@@ -188,6 +209,7 @@ public class TvnowDe extends PluginForHost {
         } catch (final Throwable e) {
         }
         downloadLink.setFinalFileName(filename);
+        return status;
     }
 
     /* Last revision with old handling: BEFORE 38232 (30393) */
@@ -361,25 +383,6 @@ public class TvnowDe extends PluginForHost {
     public void resetPluginGlobals() {
     }
 
-    // private XPath xmlParser(final String linkurl) throws Exception {
-    // URLConnectionAdapter con = null;
-    // try {
-    // con = new Browser().openGetConnection(linkurl);
-    // final DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-    // final XPath xPath = XPathFactory.newInstance().newXPath();
-    // try {
-    // doc = parser.parse(con.getInputStream());
-    // return xPath;
-    // } finally {
-    // try {
-    // con.disconnect();
-    // } catch (final Throwable e) {
-    // }
-    // }
-    // } catch (final Throwable e2) {
-    // return null;
-    // }
-    // }
     /** Formats the existing date to the 'general' date used for german TV online services: yyyy-MM-dd */
     public static long getDateMilliseconds(final String input) {
         if (input == null) {
@@ -399,6 +402,11 @@ public class TvnowDe extends PluginForHost {
                 /* Translation not required for this */
                 return "Enable unlimited simultaneous downloads? [Warning this may cause issues]";
             }
+
+            public String getEnableDRMOffline_label() {
+                /* Translation not required for this */
+                return "Display DRM protected content as offline (because it is not downloadable anyway)?";
+            }
         }
 
         public static final TRANSLATION TRANSLATION = new TRANSLATION();
@@ -408,5 +416,11 @@ public class TvnowDe extends PluginForHost {
         boolean isEnableUnlimitedSimultaneousDownloads();
 
         void setEnableUnlimitedSimultaneousDownloads(boolean b);
+
+        @DefaultBooleanValue(false)
+        @Order(10)
+        boolean isEnableDRMOffline();
+
+        void setEnableDRMOffline(boolean b);
     }
 }

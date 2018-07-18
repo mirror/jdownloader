@@ -29,7 +29,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tvnow.de" }, urls = { "https?://(?:www\\.)?tvnow\\.de/[^/]+/[^/]+/list/" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tvnow.de" }, urls = { "https?://(?:www\\.)?tvnow\\.de/[^/]+/[^/]+/(?:list|jahr)/" })
 public class TvnowDe extends PluginForDecrypt {
     public TvnowDe(PluginWrapper wrapper) {
         super(wrapper);
@@ -38,7 +38,7 @@ public class TvnowDe extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        final Regex urlInfo = new Regex(parameter, "tvnow\\.de/([^/]+)/([^/]+)/list");
+        final Regex urlInfo = new Regex(parameter, "tvnow\\.de/([^/]+)/([^/]+)/.+");
         final String stationName = urlInfo.getMatch(0);
         final String itemName = urlInfo.getMatch(1);
         jd.plugins.hoster.TvnowDe.prepBR(this.br);
@@ -77,8 +77,6 @@ public class TvnowDe extends PluginForDecrypt {
                 final String contentURL = String.format("https://www.tvnow.de/%s/%s/%s", stationName, itemName, videoSeoName);
                 final DownloadLink dl = this.createDownloadlink(contentURL);
                 jd.plugins.hoster.TvnowDe.parseInformation(dl, entries, stationName, formatTitle);
-                /** TODO */
-                dl.setAvailable(true);
                 decryptedLinks.add(dl);
                 distribute(dl);
                 numberofItemsGrabbedTmp++;
