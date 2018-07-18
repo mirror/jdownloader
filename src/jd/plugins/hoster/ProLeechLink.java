@@ -5,6 +5,12 @@ import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.Locale;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.http.Cookies;
 import jd.http.requests.PostRequest;
@@ -17,12 +23,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision: 39245 $", interfaceVersion = 3, names = { "proleech.link" }, urls = { "https?://proleech\\.link/download/[a-zA-Z0-9]+(/.*)?" })
 public class ProLeechLink extends antiDDoSForHost {
@@ -114,14 +114,18 @@ public class ProLeechLink extends antiDDoSForHost {
                         if (ai != null) {
                             ai.setValidUntil(validUntil);
                         }
-                        account.saveCookies(cookies, "");
                         account.setType(AccountType.PREMIUM);
                         account.setConcurrentUsePossible(true);
                         account.setMaxSimultanDownloads(-1);
                         return;
                     }
+                } else {
+                    account.setType(AccountType.FREE);
+                    account.setConcurrentUsePossible(true);
+                    account.setMaxSimultanDownloads(0);
+                    ai.setTrafficLeft(0);
                 }
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                account.saveCookies(cookies, "");
             } catch (PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
