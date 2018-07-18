@@ -715,7 +715,7 @@ public class SuprafilesOrg extends antiDDoSForHost {
                 }
                 submitForm(dlForm);
                 logger.info("Submitted DLForm");
-                checkErrors(downloadLink, true);
+                // checkErrors(downloadLink, true);
                 dllink = getDllink();
                 if (dllink == null && (!br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"") || i == repeat)) {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
