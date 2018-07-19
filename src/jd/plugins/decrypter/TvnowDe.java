@@ -63,6 +63,10 @@ public class TvnowDe extends PluginForDecrypt {
         final int maxItemsPerPage = 100;
         int page = 1;
         int numberofItemsGrabbedTmp;
+        int numberofItemsGrabbedTotal = 0;
+        /* TODO: Add functionality */
+        int maxNumberofItemsToGrab = -1;
+        boolean done = false;
         do {
             numberofItemsGrabbedTmp = 0;
             br.getPage(jd.plugins.hoster.TvnowDe.API_BASE + "/movies?fields=*&filter=%7B%22FormatId%22:" + formatID + "%7D&maxPerPage=" + maxItemsPerPage + "&order=BroadcastStartDate+desc&page=" + page);
@@ -80,9 +84,16 @@ public class TvnowDe extends PluginForDecrypt {
                 decryptedLinks.add(dl);
                 distribute(dl);
                 numberofItemsGrabbedTmp++;
+                numberofItemsGrabbedTotal++;
+                /* Did we crawl the max number of items the user wanted to have? */
+                done = maxNumberofItemsToGrab > 0 && numberofItemsGrabbedTotal >= maxNumberofItemsToGrab;
+            }
+            if (!done) {
+                /* Did we reach the last page? */
+                done = numberofItemsGrabbedTmp < maxItemsPerPage;
             }
             page++;
-        } while (numberofItemsGrabbedTmp >= maxItemsPerPage);
+        } while (!done);
         // String fpName = br.getRegex("").getMatch(0);
         // if (fpName != null) {
         // final FilePackage fp = FilePackage.getInstance();

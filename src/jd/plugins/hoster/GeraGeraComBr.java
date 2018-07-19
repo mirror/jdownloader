@@ -3,6 +3,10 @@ package jd.plugins.hoster;
 import java.util.Arrays;
 import java.util.HashMap;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -16,10 +20,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "geragera.com.br" }, urls = { "" })
 public class GeraGeraComBr extends PluginForHost {
@@ -97,7 +97,7 @@ public class GeraGeraComBr extends PluginForHost {
             account.setMaxSimultanDownloads(1);
             ac.setStatus("Free Account");
         }
-        final String[] hostsList = { "uploaded.net", "rapidgator.net", "bigfile.to", "minhateca.com.br", "mega.co.nz", "alfafile.net", "uptobox.com", "uptostream.com", "datafile.com", "4shared.com", "1fichier.com", "filefactory.com", "file4go.com", "mediafire.com", "turbobit.net", "userscloud.com", "depfile.com", "oboom.com", "sendspace.com", "usersfiles.com", "uppit.com", "aniteca.zlx.com.br", "uploadcloud.pro", "Openload.io" };
+        final String[] hostsList = { "uploaded.net", "rapidgator.net", "bigfile.to", "minhateca.com.br", "mega.co.nz", "alfafile.net", "uptobox.com", "uptostream.com", "datafile.com", "4shared.com", "1fichier.com", "filefactory.com", "file4go.com", "mediafire.com", "turbobit.net", "userscloud.com", "oboom.com", "sendspace.com", "usersfiles.com", "uppit.com", "aniteca.zlx.com.br", "uploadcloud.pro", "Openload.io" };
         ac.setMultiHostSupport(this, Arrays.asList(hostsList));
         return ac;
     }

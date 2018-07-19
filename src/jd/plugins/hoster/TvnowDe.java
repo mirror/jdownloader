@@ -171,7 +171,6 @@ public class TvnowDe extends PluginForHost {
                 /* Show as offline although it is online ... but we cannot download it anyways! */
                 downloadLink.setAvailable(false);
                 status = AvailableStatus.FALSE;
-                // downloadLink.setAvailable(false);
             } else {
                 /* Show as online although we cannot download it */
                 downloadLink.setAvailable(true);
@@ -188,9 +187,13 @@ public class TvnowDe extends PluginForHost {
         if (season != -1 && episode != -1) {
             data.setSeasonNumber(season);
             data.setEpisodeNumber(episode);
+            /* Episodenumber is in title --> Remove it as we insert it via 'S00E00' format so we do not need it twice! */
             if (title.matches("Folge \\d+")) {
-                /* We do not need the episode information twice! */
+                /* No usable title available - remove it completely! */
                 title = null;
+            } else if (title.matches("Folge \\d+: .+")) {
+                /* Improve title by removing redundant episodenumber from it. */
+                title = title.replaceAll("(Folge \\d+: )", "");
             }
         }
         if (!StringUtils.isEmpty(title)) {

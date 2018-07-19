@@ -13,13 +13,14 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -35,11 +36,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "conexaomega.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
 public class ConexaomegaCom extends PluginForHost {
-
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static Object                                  LOCK               = new Object();
     private static final String                            COOKIE_HOST        = "http://conexaomega.com";
@@ -49,7 +47,6 @@ public class ConexaomegaCom extends PluginForHost {
      * 1. conexaomega.com and conexaomega.com.br are two DIFFERENT hosts! <br/>
      * 2. Download never worked for me, I always got server errors, limits are also untested
      */
-
     public ConexaomegaCom(PluginWrapper wrapper) {
         super(wrapper);
         setStartIntervall(1 * 1000l);
@@ -140,11 +137,10 @@ public class ConexaomegaCom extends PluginForHost {
             ac.setStatus("Free Account");
             ac.setTrafficLeft(0);
         }
-
         // now let's get a list of all supported hosts:
         br.getPage("http://www.conexaomega.com/");
         ArrayList<String> supportedHosts = new ArrayList<String>();
-        final String[][] hostsList = { { "Uploaded", "uploaded.net" }, { "i-FileZ", "ifilez.co" }, { "DepFile", "depfile.com" }, { "SendSpace", "sendspace.com" }, { "FileFactory", "filefactory.com" }, { "FreakShare", "freakshare.net" }, { "4shared", "4shared.com" }, { "Mediafire", "mediafire.com" }, { "RapdiGator", "rapidgator.net" } };
+        final String[][] hostsList = { { "Uploaded", "uploaded.net" }, { "SendSpace", "sendspace.com" }, { "FileFactory", "filefactory.com" }, { "FreakShare", "freakshare.net" }, { "4shared", "4shared.com" }, { "Mediafire", "mediafire.com" }, { "RapdiGator", "rapidgator.net" } };
         for (final String[] hostSet : hostsList) {
             if (br.containsHTML(hostSet[0] + ": Disponível")) {
                 supportedHosts.add(hostSet[1]);
@@ -171,7 +167,6 @@ public class ConexaomegaCom extends PluginForHost {
 
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap != null) {
@@ -187,7 +182,6 @@ public class ConexaomegaCom extends PluginForHost {
                 }
             }
         }
-
         login(account, false);
         final String url = Encoding.urlEncode(link.getDownloadURL());
         br.getHeaders().put("Accept", "*/*");
@@ -206,7 +200,6 @@ public class ConexaomegaCom extends PluginForHost {
             }
             logger.info("Unhandled download error on conexaomega.com: " + br.toString());
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-
         }
         dl.startDownload();
     }
@@ -248,5 +241,4 @@ public class ConexaomegaCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

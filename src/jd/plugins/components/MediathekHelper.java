@@ -4,9 +4,9 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-import jd.plugins.DownloadLink;
-
 import org.jdownloader.plugins.components.config.MediathekProperties;
+
+import jd.plugins.DownloadLink;
 
 public class MediathekHelper {
     /* TODO: Ensure mp3 (audioonly) compatibility, put less info in filename if not required e.g. leave out protocol if we only have one */
@@ -68,7 +68,32 @@ public class MediathekHelper {
         }
         ext = "." + ext;
         filename += ext;
+        filename = encodeUnicode(filename);
         return filename;
+    }
+
+    /**
+     * 2018-07-19: Replaces chars not ment to be in filenames (at least under Windows) with similar chars. TODO: move this function
+     * somewhere else. Function inside "Plugin" class is not static.
+     */
+    public static String encodeUnicode(final String input) {
+        if (input != null) {
+            String output = input;
+            output = output.replace(":", ";");
+            output = output.replace("|", "¦");
+            output = output.replace("<", "[");
+            output = output.replace(">", "]");
+            output = output.replace("/", "⁄");
+            output = output.replace("\\", "∖");
+            output = output.replace("*", "#");
+            output = output.replace("?", "¿");
+            // not illegal
+            // output = output.replace("!", "¡");
+            output = output.replace("!", "¡");
+            output = output.replace("\"", "'");
+            return output;
+        }
+        return null;
     }
 
     public static final int getPadLength(final int size) {

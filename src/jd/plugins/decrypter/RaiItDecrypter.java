@@ -26,6 +26,12 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -40,19 +46,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rai.tv" }, urls = { "https?://[A-Za-z0-9\\.]*?(?:rai\\.tv|raiyoyo\\.rai\\.it)/.+\\?day=\\d{4}\\-\\d{2}\\-\\d{2}.*|https?://[A-Za-z0-9\\.]*?(?:rai\\.tv|rai\\.it|raiplay\\.it)/.+\\.html|https?://(?:www\\.)?raiplay\\.it/programmi/[^/]+/[^/]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rai.tv" }, urls = { "https?://[A-Za-z0-9\\.]*?(?:rai\\.tv|raiyoyo\\.rai\\.it)/.+day=\\d{4}\\-\\d{2}\\-\\d{2}.*|https?://[A-Za-z0-9\\.]*?(?:rai\\.tv|rai\\.it|raiplay\\.it)/.+\\.html|https?://(?:www\\.)?raiplay\\.it/programmi/[^/]+/[^/]+" })
 public class RaiItDecrypter extends PluginForDecrypt {
     public RaiItDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String     TYPE_DAY               = ".+\\?day=\\d{4}\\-\\d{2}\\-\\d{2}.*";
+    private static final String     TYPE_DAY               = ".+day=\\d{4}\\-\\d{2}\\-\\d{2}.*";
     private static final String     TYPE_RAIPLAY_PROGRAMMI = ".+raiplay\\.it/programmi/.+";
     private static final String     TYPE_RAIPLAY_IT        = "https?://.+raiplay\\.it/.+";
     private static final String     TYPE_CONTENTITEM       = ".+/dl/[^<>\"]+/ContentItem\\-[a-f0-9\\-]+\\.html$";
@@ -75,7 +75,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
 
     /* Old channel config url (see also rev 35204): http://www.rai.tv/dl/RaiTV/iphone/android/smartphone/advertising_config.html */
     private void decryptWholeDay() throws Exception {
-        final String mainlink_urlpart = new Regex(parameter, "\\?(.+)").getMatch(0);
+        final String mainlink_urlpart = new Regex(parameter, "(?:\\?|#)(.+)").getMatch(0);
         final String[] dates = new Regex(parameter, "(\\d{4}\\-\\d{2}\\-\\d{2})").getColumn(0);
         final String[] channels = new Regex(parameter, "ch=(\\d+)").getColumn(0);
         final String[] videoids = new Regex(parameter, "v=(\\d+)").getColumn(0);
@@ -255,7 +255,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
         if (!StringUtils.isEmpty(name_show) && !StringUtils.isEmpty(name_episode) && name_show.equals(name_episode) && counterString(title.toLowerCase(), name_show.toLowerCase()) > 1) {
             title = name_show;
         }
-        episodenumber = br.getRegex("class=\"subtitle\\-spacing\">Ep (\\d+)</span>").getMatch(0);
+        episodenumber = br.getRegex("class=\"subtitle\\-spacing\">\\s*?Ep (\\d+)</span>").getMatch(0);
         seasonnumber = br.getRegex("class=\"subtitle\\-spacing\">St (\\d+)</span>").getMatch(0);
         final String contentset_id = this.br.getRegex("var[\t\n\r ]*?urlTop[\t\n\r ]*?=[\t\n\r ]*?\"[^<>\"]+/ContentSet([A-Za-z0-9\\-]+)\\.html").getMatch(0);
         final String content_id_from_html = this.br.getRegex("id=\"ContentItem(\\-[a-f0-9\\-]+)\"").getMatch(0);
@@ -365,9 +365,16 @@ public class RaiItDecrypter extends PluginForDecrypt {
         title = Encoding.htmlDecode(title);
         title = date_formatted + "_raitv_" + title;
         /* Add series information if available */
-        if (seasonnumber != null && episodenumber != null) {
+        if (seasonnumber != null || episodenumber != null) {
+            /* 2018-07-19: Also add series information if only seasonnumber or only episodenumber is available. */
+            String seriesString = "";
             final DecimalFormat df = new DecimalFormat("00");
-            final String seriesString = "S" + df.format(Integer.parseInt(seasonnumber)) + "E" + df.format(Integer.parseInt(episodenumber));
+            if (seasonnumber != null) {
+                seriesString += "S" + df.format(Integer.parseInt(seasonnumber));
+            }
+            if (episodenumber != null) {
+                seriesString += "E" + df.format(Integer.parseInt(episodenumber));
+            }
             title += seriesString + "_";
         }
         title = encodeUnicode(title);
@@ -437,7 +444,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
         final String[][] bitrates = { { "1800", "_1800.mp4" }, { "800", "_800.mp4" } };
         String bitrate = null;
         if (dllink.contains(".m3u8")) {
-            final String http_url_part = new Regex(dllink, "https?://[^/]+/i/(podcastcdn/[^/]+/[^/]+/[^/]+/[^/]+_)800\\.mp4/master\\.m3u8").getMatch(0);
+            final String http_url_part = new Regex(dllink, "https?://[^/]+/i/(podcastcdn/[^/]+/[^/]+/[^/]+/[^/]+_)[0-9,]+\\.mp4(?:\\.csmil)?/master\\.m3u8").getMatch(0);
             if (http_url_part != null) {
                 /*
                  * 2017-02-09: Convert hls urls to http urls and add higher quality 1800 url!

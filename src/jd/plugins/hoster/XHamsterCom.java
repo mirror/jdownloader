@@ -20,10 +20,16 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -50,14 +56,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xhamster.com" }, urls = { "https?://(?:www\\.)?(?:[a-z]{2}\\.)?(?:m\\.xhamster\\.com/(?:preview|movies)/\\d+(?:/[^/]+\\.html)?|xhamster\\.(?:com|xxx)/(x?embed\\.php\\?video=\\d+|movies/[0-9]+/[^/]+\\.html|videos/[\\w\\-]+-\\d+))" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xhamster.com" }, urls = { "https?://(?:www\\.)?(?:[a-z]{2}\\.)?(?:m\\.xhamster\\.com/(?:preview|movies|videos)/(?:\\d+[a-z0-9\\-]+|[a-z0-9\\-]+\\-\\d+$)|xhamster\\.(?:com|xxx)/(x?embed\\.php\\?video=\\d+|movies/[0-9]+/[^/]+\\.html|videos/[\\w\\-]+-\\d+))" })
 public class XHamsterCom extends PluginForHost {
     public XHamsterCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -106,7 +105,7 @@ public class XHamsterCom extends PluginForHost {
         return "http://xhamster.com/terms.php";
     }
 
-    private static final String TYPE_MOBILE = "(?i).+m\\.xhamster\\.com/[^/]+/(\\d+)(?:/.+\\.html)?$";
+    private static final String TYPE_MOBILE = "(?i).+m\\.xhamster\\.com/.+";
     private static final String TYPE_EMBED  = "(?i)^https?://(?:www\\.)?xhamster\\.(?:com|xxx)/x?embed\\.php\\?video=\\d+$";
     private static final String NORESUME    = "NORESUME";
     private static Object       ctrlLock    = new Object();
@@ -118,7 +117,7 @@ public class XHamsterCom extends PluginForHost {
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceAll("://(www\\.)?([a-z]{2}\\.)?", "://"));
         if (link.getDownloadURL().matches(TYPE_MOBILE) || link.getDownloadURL().matches(TYPE_EMBED)) {
-            link.setUrlDownload("http://xhamster.com/movies/" + getFID(link) + "/" + System.currentTimeMillis() + new Random().nextInt(10000) + ".html");
+            link.setUrlDownload("https://xhamster.com/videos/" + getLinkpart(link));
         } else {
             final String thisdomain = new Regex(link.getDownloadURL(), "https?://(?:www\\.)?([^/]+)/.+").getMatch(0);
             link.getDownloadURL().replace(thisdomain, DOMAIN_CURRENT);
@@ -131,14 +130,36 @@ public class XHamsterCom extends PluginForHost {
         if (dl.getDownloadURL().matches(TYPE_EMBED)) {
             fid = new Regex(dl.getDownloadURL(), "(\\d+)").getMatch(0);
         } else if (dl.getDownloadURL().matches(TYPE_MOBILE)) {
-            fid = new Regex(dl.getDownloadURL(), TYPE_MOBILE).getMatch(0);
+            fid = new Regex(dl.getDownloadURL(), "xhamster\\.com/[^/]+/(\\d+)").getMatch(0);
+            if (fid == null) {
+                /* 2018-07-19: New */
+                fid = new Regex(dl.getDownloadURL(), "xhamster\\.com/[^/]+/[a-z0-9\\-]+\\-(\\d+)$").getMatch(0);
+            }
         } else {
             fid = new Regex(dl.getDownloadURL(), "movies/(\\d+)/").getMatch(0);
             if (fid == null) {
-                fid = new Regex(dl.getDownloadURL(), "videos/[\\w\\-]+-(\\d+)").getMatch(0);
+                fid = new Regex(dl.getDownloadURL(), "videos/[\\w\\-]+\\-(\\d+)").getMatch(0);
             }
         }
         return fid;
+    }
+
+    /**
+     * Returns string containing url-name AND linkID e.g. xhamster.com/videos/some-name-here-bla-7653421 --> linkpart =
+     * 'some-name-here-bla-7653421'
+     */
+    private String getLinkpart(final DownloadLink dl) {
+        String linkpart = null;
+        if (dl.getDownloadURL().matches(TYPE_MOBILE)) {
+            linkpart = new Regex(dl.getDownloadURL(), "xhamster\\.com/[^/]+/(.+)").getMatch(0);
+        } else if (!dl.getDownloadURL().matches(TYPE_EMBED)) {
+            linkpart = new Regex(dl.getDownloadURL(), "videos/([\\w\\-]+\\-\\d+)").getMatch(0);
+        }
+        if (linkpart == null) {
+            /* Fallback */
+            linkpart = getFID(dl);
+        }
+        return linkpart;
     }
 
     /**

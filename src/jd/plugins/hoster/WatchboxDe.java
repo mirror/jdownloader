@@ -37,6 +37,7 @@ public class WatchboxDe extends PluginForHost {
     private String  dllink        = null;
     private boolean server_issues = false;
 
+    /** Tags: ex website: clipfish.de */
     public WatchboxDe(PluginWrapper wrapper) {
         super(wrapper);
     }

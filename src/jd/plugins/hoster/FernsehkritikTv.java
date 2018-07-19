@@ -24,6 +24,13 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -46,14 +53,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fernsehkritik.tv", "massengeschmack.tv" }, urls = { "https?://(?:www\\.)?fernsehkritik\\.tv/jdownloaderfolgeneu?\\d+", "https?://(?:www\\.)?massengeschmack\\.tv/((?:play|clip)/|index_single\\.php\\?id=)[a-z0-9\\-]+|https?://(?:www\\.)?massengeschmack\\.tv/live/[a-z0-9\\-]+|https?://massengeschmack\\.tv/dl/.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "massengeschmack.tv" }, urls = { "https?://(?:www\\.)?massengeschmack\\.tv/((?:play|clip)/|index_single\\.php\\?id=)[a-z0-9\\-]+|https?://(?:www\\.)?massengeschmack\\.tv/live/[a-z0-9\\-]+|https?://massengeschmack\\.tv/dl/.+" })
 public class FernsehkritikTv extends PluginForHost {
     public static final long trust_cookie_age = 300000l;
 
@@ -66,18 +66,8 @@ public class FernsehkritikTv extends PluginForHost {
     }
 
     @Override
-    public String rewriteHost(String host) {
-        if ("fernsehkritik.tv".equals(getHost())) {
-            if (host == null || "fernsehkritik.tv".equals(host)) {
-                return "massengeschmack.tv";
-            }
-        }
-        return super.rewriteHost(host);
-    }
-
-    @Override
     public String getAGBLink() {
-        return "http://fernsehkritik.tv/datenschutzbestimmungen/";
+        return "https://massengeschmack.tv/AGB";
     }
 
     @Override
@@ -89,22 +79,12 @@ public class FernsehkritikTv extends PluginForHost {
     public void correctDownloadLink(final DownloadLink link) {
         final String url_source = link.getDownloadURL();
         final String mgtv_videoid = new Regex(url_source, "massengeschmack\\.tv/(?:(?:play|clip)/|index_single\\.php\\?id=)([a-z0-9\\-]+)").getMatch(0);
-        final String url_new;
-        if (mgtv_videoid != null) {
-            url_new = String.format("https://massengeschmack.tv/play/%s", mgtv_videoid);
-            link.setLinkID(mgtv_videoid);
-            link.setName(mgtv_videoid);
-        } else {
-            /*
-             * Direct download URLs or old fernsehkritik.tv URLs (2017-05-18: fernsehkritik.tv website does not exist anymore, keep the code
-             * for legacy reasons!)
-             */
-            url_new = url_source.replace("https://", "http://");
-        }
+        final String url_new = String.format("https://massengeschmack.tv/play/%s", mgtv_videoid);
+        link.setLinkID(mgtv_videoid);
+        link.setName(mgtv_videoid);
         link.setUrlDownload(url_new);
     }
 
-    private static final String  TYPE_FOLGE_NEW                            = "http://fernsehkritik\\.tv/jdownloaderfolgeneu\\d+";
     private static final String  TYPE_MASSENGESCHMACK_GENERAL              = ".+massengeschmack\\.tv/play/[a-z0-9\\-]+";
     private static final String  TYPE_MASSENGESCHMACK_LIVE                 = ".+massengeschmack\\.tv/live/[a-z0-9\\-]+";
     private static final String  TYPE_MASSENGESCHMACK_DIRECT               = ".+massengeschmack\\.tv/dl/.+";
@@ -120,7 +100,6 @@ public class FernsehkritikTv extends PluginForHost {
     public static final int      API_RESPONSECODE_ERROR_RATE_LIMIT_REACHED = 500;
     private static final String  HOST_MASSENGESCHMACK                      = "massengeschmack.tv";
     private static final String  PREFER_MP4                                = "PREFER_MP4";
-    private static final String  GRAB_POSTECKE                             = "GRAB_POSTECKE";
     private static final String  CUSTOM_DATE                               = "CUSTOM_DATE_2";
     private static final String  CUSTOM_FILENAME_FKTV                      = "CUSTOM_FILENAME_FKTV_2";
     private static final String  CUSTOM_FILENAME_MASSENGESCHMACK_OTHER     = "CUSTOM_FILENAME_MASSENGESCHMACK_OTHER_5";
@@ -183,41 +162,7 @@ public class FernsehkritikTv extends PluginForHost {
         }
         final Browser br2 = this.br.cloneBrowser();
         try {
-            if (link.getDownloadURL().matches(TYPE_FOLGE_NEW)) {
-                this.dllink = link.getStringProperty("directlink", null);
-                if (inValidate(this.dllink)) {
-                    String dllink_mp4 = null;
-                    String dllink_webm = null;
-                    br.getPage(link.getStringProperty("mainlink", null));
-                    /* This case is nearly impossible */
-                    if (br.containsHTML(HTML_MASSENGESCHMACK_OFFLINE)) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    } else if (br.containsHTML(HTML_MASSENGESCHMACK_CLIP_PREMIUMONLY)) {
-                        link.getLinkStatus().setStatusText("Zurzeit nur für Massengeschmack Abonenten herunterladbar");
-                        this.is_premiumonly_content = true;
-                        return AvailableStatus.TRUE;
-                    }
-                    /* First try general (new) method */
-                    getStreamDllinkMassengeschmackWebsite();
-                    /* No luck? Try manual (older) RegExes. */
-                    /* Prefer webm as the video bitrate is higher than mp4. Audio bitrate is a bit lower but that should be fine. */
-                    dllink_webm = br.getRegex("(?:type=\"video/webm\" src=|type: \"video/webm\",src:  )\"(https?://[a-z0-9]+\\.massengeschmack\\.tv/deliver/t/[^<>\"]+\\.webm)\"").getMatch(0);
-                    dllink_mp4 = br.getRegex("(?:type=\"video/mp4\" src=|type: \"video/mp4\",src:  )\"(https?://[a-z0-9]+\\.massengeschmack\\.tv/deliver/t/[^<>\"]+\\.mp4)\"").getMatch(0);
-                    if (inValidate(dllink_webm)) {
-                        dllink_webm = br.getRegex("\"(https?://[a-z0-9]+\\.massengeschmack\\.tv/deliver/t/[^<>\"]+\\.webm)\"").getMatch(0);
-                    }
-                    if (inValidate(dllink_mp4)) {
-                        dllink_mp4 = br.getRegex("\"(https?://[a-z0-9]+\\.massengeschmack\\.tv/deliver/t/[^<>\"]+\\.mp4)\"").getMatch(0);
-                    }
-                    setSelectedFormat(dllink_mp4, dllink_webm);
-                }
-                if (inValidate(this.dllink)) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                ext = this.dllink.substring(this.dllink.lastIndexOf("."));
-                link.setProperty("directtype", ext);
-                final_filename = getFKTVFormattedFilename(link);
-            } else if (link.getDownloadURL().matches(TYPE_MASSENGESCHMACK_GENERAL) && VIDEOS_ENABLE_API && loggedin) {
+            if (link.getDownloadURL().matches(TYPE_MASSENGESCHMACK_GENERAL) && VIDEOS_ENABLE_API && loggedin) {
                 url_videoid_without_episodenumber = getVideoidWithoutEpisodenumber(url_videoid);
                 apiGetPage(this.br, String.format(API_BASE_URL + API_GET_CLIP, url_videoid));
                 LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
@@ -351,7 +296,7 @@ public class FernsehkritikTv extends PluginForHost {
                      * usually higher than stream quality).
                      */
                     final String[] downloadlink_info = this.br.getRegex("(massengeschmack\\.tv/dl/.*?</small></em></a></li>)").getColumn(0);
-                    if (downloadlink_info != null && (inValidate(dllink) || dllink.contains(".mp4"))) {
+                    if (downloadlink_info != null && downloadlink_info.length > 0 && (inValidate(dllink) || dllink.contains(".mp4"))) {
                         /* Try to get official download url (usually there is none available for free users). */
                         String directurl_download = null;
                         for (final String dlinfo : downloadlink_info) {
@@ -390,10 +335,10 @@ public class FernsehkritikTv extends PluginForHost {
                         } catch (final Throwable e) {
                         }
                     }
-                    channel = br.getRegex("<li><a href=\"/mag\\-cover\\.php\\?pid=\\d+\">([^<<\"]*?)</a>").getMatch(0);
-                    date = br.getRegex("<p class=\"muted\">([^<>\"]*?) /[^<]+</p>").getMatch(0);
-                    description = this.br.getRegex("</h3>[\t\n\r ]+<p>([^<]+)</p>").getMatch(0);
-                    episodename = br.getRegex("<h3>([^<>\"]*?)</h3>").getMatch(0);
+                    channel = br.getRegex("href=\"/mag\\-cover\\.php[^\"]+\">([^<>\"]*?)<").getMatch(0);
+                    date = br.getRegex("<small><a[^>]+></a>([^<>\"]+)</small>").getMatch(0);
+                    description = this.br.getRegex("</h4>[\t\n\r ]+<p>([^<]+)</").getMatch(0);
+                    episodename = br.getRegex("<li class=\"active\"><span>([^<>\"]+)<").getMatch(0);
                     episodenumber = this.br.getRegex("class=\"active\"><span>Folge (\\d+)</span></li>").getMatch(0);
                     if (inValidate(episodenumber) && !inValidate(episodename)) {
                         episodenumber = new Regex(episodename, "Folge (\\d+)").getMatch(0);
@@ -419,6 +364,9 @@ public class FernsehkritikTv extends PluginForHost {
                 }
                 if (ext == null) {
                     ext = getFileNameExtensionFromString(dllink, default_EXT);
+                    if (ext == null) {
+                        ext = default_EXT;
+                    }
                 }
                 if (ext.equals(".m3u8")) {
                     /* HLS is usually .mp4 */
@@ -434,6 +382,7 @@ public class FernsehkritikTv extends PluginForHost {
                         link.setProperty("directepisodename", episodename);
                     }
                     if (!inValidate(date)) {
+                        date = date.trim();
                         link.setProperty("directdate", date);
                     }
                     if (!inValidate(channel)) {
@@ -610,7 +559,7 @@ public class FernsehkritikTv extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         if (!(account.getUser().matches(".+@.+"))) {
-            ai.setStatus("Bitte trage deine E-Mail Adresse ins 'Benutzername' Feld ein!");
+            ai.setStatus("Bitte gib deine E-Mail Adresse ins 'Benutzername' Feld ein!");
             account.setValid(false);
             return ai;
         }
@@ -663,45 +612,12 @@ public class FernsehkritikTv extends PluginForHost {
         return ai;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link, null);
-        if (link.getDownloadURL().matches(TYPE_FOLGE_NEW) && br.containsHTML(HTML_MASSENGESCHMACK_CLIP_PREMIUMONLY)) {
-            /* User added a current fernsehkritik episode which is not yet available for free. */
-            final String date = link.getStringProperty("directdate", null);
-            final long timestamp_released = getTimestampFromDate(date);
-            final long timePassed = System.currentTimeMillis() - timestamp_released;
-            if (timePassed > 14 * 24 * 60 * 60 * 1000l) {
-                /*
-                 * This should never happen - even if the Fernsehkritiker is VERY late but in case the current episode is not available for
-                 * free after 14 days we have to assume that it is only available for Massengeschmack members.!
-                 */
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } else {
-                /* Less than 14 days after the release of the episode --> Wait for free release */
-                final long waitUntilFreeRelease;
-                if (timePassed < 7 * 24 * 60 * 60 * 1000l) {
-                    /*
-                     * The Fernsehkritiker usually releases new episodes for free 7 days after the release for Massengeschmack members.
-                     */
-                    waitUntilFreeRelease = (timestamp_released + 7 * 24 * 60 * 60 * 1000l) - System.currentTimeMillis();
-                } else {
-                    /*
-                     * It's more than 7 days but still less than 14...okay let's ait 3 hours and try again - the new episode should be out
-                     * soon and if we pass 14 days without the release, users will see the PREMIUMONLY message (actually this should never
-                     * happen for Fernsehkritik episodes as all of them get released free after some time.).
-                     */
-                    waitUntilFreeRelease = 1 * 60 * 60 * 1000l;
-                }
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Die kostenlose Version dieser Episode wurde noch nicht freigegeben", waitUntilFreeRelease);
-            }
-        }
-        if (this.is_premiumonly_content) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        }
         if (inValidate(dllink)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /* 2018-07-19: Keep it simple: No downloadlink --> Probably premiumonly content! */
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
         if (dllink.contains(".m3u8")) {
             downloadHLS(link);
@@ -818,7 +734,7 @@ public class FernsehkritikTv extends PluginForHost {
 
     private boolean preferMP4() {
         /* Important: Check plugin config for both domains!! */
-        return SubConfiguration.getConfig("fernsehkritik.tv").getBooleanProperty(PREFER_MP4, defaultPREFER_MP4) || SubConfiguration.getConfig(HOST_MASSENGESCHMACK).getBooleanProperty(PREFER_MP4, defaultPREFER_MP4);
+        return SubConfiguration.getConfig(this.getHost()).getBooleanProperty(PREFER_MP4, defaultPREFER_MP4) || SubConfiguration.getConfig(HOST_MASSENGESCHMACK).getBooleanProperty(PREFER_MP4, defaultPREFER_MP4);
     }
 
     public static void apiGetPage(final Browser br, final String url) throws PluginException, IOException {
@@ -921,9 +837,10 @@ public class FernsehkritikTv extends PluginForHost {
     public void resetPluginGlobals() {
     }
 
+    /** Returns filename for channel "Fernsehkritik-TV" */
     @SuppressWarnings("deprecation")
     public String getFKTVFormattedFilename(final DownloadLink downloadLink) throws ParseException {
-        final SubConfiguration cfg = SubConfiguration.getConfig("fernsehkritik.tv");
+        final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
         String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME_FKTV, defaultCustomFilename);
         if (formattedFilename == null || formattedFilename.equals("")) {
             formattedFilename = defaultCustomFilename;
@@ -999,7 +916,7 @@ public class FernsehkritikTv extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public String getMassengeschmack_other_FormattedFilename(final DownloadLink downloadLink) throws ParseException {
-        final SubConfiguration cfg = SubConfiguration.getConfig("fernsehkritik.tv");
+        final SubConfiguration cfg = SubConfiguration.getConfig("massengeschmach.tv");
         String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME_MASSENGESCHMACK_OTHER, defaultCustomFilename_massengeschmack_other);
         if ((!formattedFilename.contains("*episodenumber*") && !formattedFilename.contains("*episodename*")) || !formattedFilename.contains("*ext*")) {
             formattedFilename = defaultCustomFilename_massengeschmack_other;
@@ -1051,7 +968,10 @@ public class FernsehkritikTv extends PluginForHost {
 
     private long getTimestampFromDate(final String date) {
         final long timestamp;
-        if (date.matches("\\d{2}\\.\\d{2}\\.\\d{2} \\d{2}:\\d{2}")) {
+        if (date.matches("\\d{2}\\.\\d{2}\\.\\d{2} \\d{2}:\\d{2}:{2}")) {
+            /* E.g. TYPE_MASSENGESCHMACK_LIVE */
+            timestamp = TimeFormatter.getMilliSeconds(date, "dd.MM.yy HH:mm", Locale.GERMANY);
+        } else if (date.matches("\\d{2}\\.\\d{2}\\.\\d{2} \\d{2}:\\d{2}")) {
             /* E.g. TYPE_MASSENGESCHMACK_LIVE */
             timestamp = TimeFormatter.getMilliSeconds(date, "dd.MM.yy HH:mm", Locale.GERMANY);
         } else if (date.matches("\\d+")) {
@@ -1080,7 +1000,7 @@ public class FernsehkritikTv extends PluginForHost {
 
     @Override
     public String getDescription() {
-        return "JDownloader's Fernsehkritik Plugin kann Videos von fernsehkritik.tv und massengeschmack.tv herunterladen. Hier kann man eigene Dateinamen definieren und (als Massengeschmack Abonnent) die herunterzuladenden Videoformate wählen.";
+        return "JDownloader's Massengeschmack Plugin kann Videos von massengeschmack.tv herunterladen. Hier kann man eigene Dateinamen definieren und (als Massengeschmack Abonnent) die herunterzuladenden Videoformate wählen.";
     }
 
     private final static String  defaultCustomFilename                       = "Fernsehkritik-TV Folge *episodenumber* vom *date**ext*";
@@ -1090,13 +1010,11 @@ public class FernsehkritikTv extends PluginForHost {
     private static final String  default_empty_tag_separation_mark           = "-";
     private static final String  inputDateformat                             = "dd. MMMMM yyyy";
     private static final boolean defaultPREFER_MP4                           = false;
-    private static final boolean defaultGRAB_POSTECKE                        = false;
     private static final boolean defaultFASTLINKCHECK                        = true;
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Allgemeine Einstellungen:"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_MP4, JDL.L("plugins.hoster.fernsehkritik.preferMP4", "Für den kostenlosen fernsehkritik & massengeschmack.tv Download:\r\nBevorzuge .mp4 Download statt .webm?\r\nBedenke, dass mp4 eine minimal bessere Audio-Bitrate- aber dafür eine niedrigere Video-Bitrate hat!?")).setDefaultValue(defaultPREFER_MP4));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), GRAB_POSTECKE, JDL.L("plugins.hoster.fernsehkritik.grabpostecke", "Beim Hinzufügen von Fktv Episoden:\r\nFüge 'Postecke'/'Massengeschmack Direkt' zu Fktv Episoden ein, falls verfügbar?")).setDefaultValue(defaultGRAB_POSTECKE));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK, JDL.L("plugins.hoster.fernsehkritik.fastLinkcheck", "Aktiviere schnellen Linkcheck (Dateigröße erst bei Download sichtbar)?")).setDefaultValue(defaultFASTLINKCHECK));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Lege eigene Datei-/Paketnamen fest:"));

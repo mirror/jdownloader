@@ -40,6 +40,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 /**
  *
  * @author raztoki
+ * @tags: similar to OuoIo
  *
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "coinlink.co", "zlshorte.net", "igram.im", "bit-url.com", "adbilty.me", "linclik.com", "oke.io", "vivads.net", "cut-urls.com", "pnd.tl", "met.bz", "urlcloud.us" }, urls = { "https?://(?:www\\.)?(?:coinlink\\.co|adlink\\.guru|short\\.es|tmearn\\.com|ibly\\.co|adshort\\.(?:co|me|im)|brlink\\.in|urle\\.co|mitly\\.us|cutwin\\.com)/[A-Za-z0-9]+$", "https?://(?:www\\.)?zlshorte\\.net/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?i?gram\\.im/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?bit\\-url\\.com/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?adbilty\\.me/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?linclik\\.com/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?oke\\.io/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?vivads\\.net/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?(?:cuon\\.io|curs\\.io|cut\\-urls\\.com)/[A-Za-z0-9]{4,}",
@@ -181,8 +182,9 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                 }
             }
             boolean skipWait = true;
-            if (source_host.equalsIgnoreCase("adbilty.me")) {
+            if (source_host.equalsIgnoreCase("adbilty.me") || source_host.equalsIgnoreCase("tmearn.com")) {
                 /* 2018-07-18: Special case - we have to wait! */
+                /** TODO: Fix waittime-detection for tmearn.com */
                 skipWait = false;
             }
             /* 2018-07-18: It is important to keep this exact as some websites have "ad-forms" e.g. urlcloud.us */
