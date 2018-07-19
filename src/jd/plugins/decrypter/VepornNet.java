@@ -29,7 +29,7 @@ import jd.plugins.FilePackage;
 
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "veporn.net" }, urls = { "https?://(?:www\\.)?ve(?:-)?porn\\.net/video/[A-Za-z0-9\\-_]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "veporns.com" }, urls = { "https?://(?:www\\.)?ve(?:-)?porns?\\.(net|com)/video/[A-Za-z0-9\\-_]+" })
 public class VepornNet extends antiDDoSForDecrypt {
     public VepornNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -49,7 +49,7 @@ public class VepornNet extends antiDDoSForDecrypt {
                 }
             }
         }
-        if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains("video/") || br.containsHTML("URL=http://www.ve(?:-)?porn.net'")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains("video/") || br.containsHTML("URL=https?://www.ve(?:-)?porns?.(net|com)'")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
@@ -65,19 +65,19 @@ public class VepornNet extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
             final Browser br = this.br.cloneBrowser();
-            getPage(br, "http://www.ve-porn.net/ajax.php?page=video_play&thumb&theme=&video=&id=" + singleLink + "&server=" + counter);
+            getPage(br, "/ajax.php?page=video_play&thumb&theme=&video=&id=" + singleLink + "&server=" + counter);
             if (br.containsHTML(">Site is too crowded<")) {
                 for (int i = 1; i <= 3; i++) {
                     sleep(i * 3 * 1001l, param);
-                    getPage(br, "http://www.ve-porn.net/ajax.php?page=video_play&thumb&theme=&video=&id=" + singleLink + "&server=" + counter);
+                    getPage(br, "/ajax.php?page=video_play&thumb&theme=&video=&id=" + singleLink + "&server=" + counter);
                     if (!br.containsHTML(">Site is too crowded<")) {
                         break;
                     }
                 }
             }
-            String finallink = br.getRegex("iframe src='(http[^<>']+)'").getMatch(0);
+            String finallink = br.getRegex("iframe src='(https?[^<>']+)'").getMatch(0);
             if (finallink == null) {
-                finallink = br.getRegex("iframe src=\"(http[^<>\"]+)\"").getMatch(0);
+                finallink = br.getRegex("iframe src=\"(https?[^<>\"]+)\"").getMatch(0);
                 if (finallink == null) {
                     continue;
                 }

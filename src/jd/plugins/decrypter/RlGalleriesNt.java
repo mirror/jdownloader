@@ -40,7 +40,7 @@ public class RlGalleriesNt extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString().replace("https://", "http://");
+        final String parameter = param.toString().replace("http://", "https://");
         br.setReadTimeout(3 * 60 * 1000);
         // br.setCookie(".urlgalleries.net", "popundr", "1");
         if (agent == null) {
@@ -60,7 +60,7 @@ public class RlGalleriesNt extends PluginForDecrypt {
         if (fpName == null) {
             fpName = br.getRegex("<h\\d+[^<]*>\\s*([^<]*?)\\s*porn galleries\\s*</h\\d+").getMatch(0);
         }
-        final String[] links = br.getRegex("'(/image\\.php\\?cn=\\d+&uid=[A-Za-z0-9]+&where=.*?)'").getColumn(0);
+        final String[] links = br.getRegex("'(/image(?:_new)?\\.php\\?cn=\\d+&uid=[A-Za-z0-9]+&where=.*?)'").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

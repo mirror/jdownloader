@@ -183,8 +183,7 @@ public class NexusmodsCom extends antiDDoSForHost {
                     }
                 }
                 getPage("https://www.nexusmods.com/Core/Libs/Common/Widgets/LoginPopUp?url=%2F%2Fwww.nexusmods.com%2F");
-                final PostRequest request = new PostRequest("https://www.nexusmods.com");
-                request.put("go_login", "1");
+                final PostRequest request = new PostRequest("https://www.nexusmods.com/Sessions?TryNewLogin");
                 request.put("username", Encoding.urlEncode(account.getUser()));
                 request.put("password", Encoding.urlEncode(account.getPass()));
                 request.put("uri", "%2F%2Fwww.nexusmods.com%2F");
@@ -193,7 +192,7 @@ public class NexusmodsCom extends antiDDoSForHost {
                     this.setDownloadLink(new DownloadLink(this, "Account", getHost(), "http://" + br.getRequest().getURL().getHost(), true));
                 }
                 try {
-                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6LfTA2EUAAAAAIyUT3sr2W8qKUV1IauZl-CduEix").getToken();
                     if (recaptchaV2Response == null) {
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
