@@ -15,7 +15,6 @@ import org.appwork.utils.ClipboardUtils;
 import org.jdownloader.gui.views.components.packagetable.dragdrop.PackageControllerTableTransferable;
 
 public class DownloadsTransferable extends PackageControllerTableTransferable<FilePackage, DownloadLink> {
-
     public DownloadsTransferable(PackageControllerTableTransferable<FilePackage, DownloadLink> transferable) {
         super(transferable);
         final List<DataFlavor> availableFlavors = new ArrayList<DataFlavor>();
@@ -33,20 +32,23 @@ public class DownloadsTransferable extends PackageControllerTableTransferable<Fi
             return getSelectionInfo();
         }
         if (flavor.equals(ClipboardUtils.stringFlavor)) {
-            final StringBuilder sb = new StringBuilder();
-            final Set<String> urls = getURLs();
-            if (urls != null) {
-                final Iterator<String> it = urls.iterator();
-                while (it.hasNext()) {
-                    if (sb.length() > 0) {
-                        sb.append("\r\n");
+            if (stringContent != null) {
+                return stringContent;
+            } else {
+                final StringBuilder sb = new StringBuilder();
+                final Set<String> urls = getURLs();
+                if (urls != null) {
+                    final Iterator<String> it = urls.iterator();
+                    while (it.hasNext()) {
+                        if (sb.length() > 0) {
+                            sb.append("\r\n");
+                        }
+                        sb.append(it.next());
                     }
-                    sb.append(it.next());
                 }
+                return sb.toString();
             }
-            return sb.toString();
         }
         throw new UnsupportedFlavorException(flavor);
     }
-
 }

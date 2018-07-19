@@ -12,7 +12,6 @@ import org.jdownloader.gui.views.components.packagetable.dragdrop.PackageControl
 import org.jdownloader.gui.views.components.packagetable.dragdrop.PackageControllerTableTransferable;
 
 public class LinkGrabberTableTransferHandler extends PackageControllerTableTransferHandler<CrawledPackage, CrawledLink> {
-
     public LinkGrabberTableTransferHandler(PackageControllerTable<CrawledPackage, CrawledLink> table) {
         super(table);
     }
