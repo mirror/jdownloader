@@ -16,9 +16,7 @@ import jd.controlling.packagecontroller.PackageController;
 import org.jdownloader.gui.views.linkgrabber.quickfilter.FilterTable;
 
 public class PackageControllerTableModelData<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends ArrayList<AbstractNode> {
-
     public static interface PackageControllerTableModelDataPackage {
-
         public AbstractPackageNode getPackage();
 
         public boolean isExpanded();
@@ -117,6 +115,27 @@ public class PackageControllerTableModelData<PackageType extends AbstractPackage
         return modelDataPackages;
     }
 
+    public int indexOf(PackageType pkgNode) {
+        int index = 0;
+        for (PackageControllerTableModelDataPackage modelDataPackage : getModelDataPackages()) {
+            if (modelDataPackage.getPackage() == pkgNode) {
+                return index;
+            }
+            index++;
+        }
+        return -1;
+    }
+
+    public int lastIndexOf(PackageType pkgNode) {
+        for (int index = getModelDataPackages().size() - 1; index >= 0; index--) {
+            final PackageControllerTableModelDataPackage modelDataPackage = getModelDataPackages().get(index);
+            if (modelDataPackage.getPackage() == pkgNode) {
+                return index;
+            }
+        }
+        return -1;
+    }
+
     public long getVersion() {
         return version;
     }
@@ -124,7 +143,6 @@ public class PackageControllerTableModelData<PackageType extends AbstractPackage
     public Iterator<ChildrenType> getVisibleChildrenIterator() {
         final Iterator<PackageControllerTableModelDataPackage> it = getModelDataPackages().iterator();
         return new Iterator<ChildrenType>() {
-
             ChildrenType                     ret = null;
             Iterator<? extends AbstractNode> it2 = null;
 
@@ -250,5 +268,4 @@ public class PackageControllerTableModelData<PackageType extends AbstractPackage
     public boolean isHideSingleChildPackages() {
         return !hiddenPackagesSingleChildIndices.isEmpty();
     }
-
 }
