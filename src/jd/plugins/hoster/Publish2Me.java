@@ -16,19 +16,17 @@
 package jd.plugins.hoster;
 
 import java.io.File;
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -41,6 +39,7 @@ import jd.plugins.PluginException;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 /**
  *
@@ -157,6 +156,9 @@ public class Publish2Me extends K2SApi {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         setConstants(null);
+        if (checkShowFreeDialog(getHost())) {
+            showFreeDialog(getHost());
+        }
         if (useAPI()) {
             super.handleDownload(downloadLink, null);
         } else {
@@ -307,73 +309,126 @@ public class Publish2Me extends K2SApi {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private void login(final Account account, final boolean force) throws Exception {
+    private boolean isCaptchaInvalid(Browser br) {
+        return br.containsHTML(">Invalid reCAPTCHA<") || br.containsHTML(">Please pass reCAPTCHA<") || br.containsHTML("The verification code is incorrect.");
+    }
+
+    private boolean handleLoginCaptcha(final Account account, Browser br, Form login) throws Exception {
+        final String captchaLink = login.getRegex("\"(/auth/captcha\\.html\\?v=[a-z0-9]+)\"").getMatch(0);
+        if (captchaLink != null) {
+            final DownloadLink dummyLink = new DownloadLink(this, "Account", account.getHoster(), "http://" + account.getHoster(), true);
+            final String code = getCaptchaCode("https://" + br.getHost() + captchaLink, dummyLink);
+            if (code == null) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
+            login.put("LoginForm%5BverifyCode%5D=", Encoding.urlEncode(code));
+            return true;
+        } else if (login.containsHTML("class=\"g-recaptcha\"")) {
+            // recapthav2
+            final DownloadLink original = this.getDownloadLink();
+            if (original == null) {
+                this.setDownloadLink(new DownloadLink(this, "Account", getHost(), "http://" + br.getRequest().getURL().getHost(), true));
+            }
+            try {
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                if (recaptchaV2Response == null) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+                login.put("LoginForm%5BverifyCode%5D", Encoding.urlEncode(recaptchaV2Response));
+            } finally {
+                if (original == null) {
+                    this.setDownloadLink(null);
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private void login(final Account account, final boolean force, final String MAINPAGE) throws Exception {
         synchronized (account) {
             try {
-                // Load cookies
-                br.setCookiesExclusive(true);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            br.setCookie(MAINPAGE, key, value);
+                // clear cookies/headers etc. this should nullify redirects to /file/
+                br = newWebBrowser(true);
+                // reduce cpu cycles, do not enter and do evaluations when they are not needed.
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    final String cookieAge = TimeFormatter.formatMilliSeconds(System.currentTimeMillis() - account.getCookiesTimeStamp(""), 0);
+                    br.setCookies(MAINPAGE, cookies);
+                    getPage(MAINPAGE + "/site/profile.html");
+                    if (!br._getURL().getFile().equals("/login.html")) {
+                        if (br.containsHTML("Your Premium account has expired")) {
+                            account.setType(Account.AccountType.FREE);
                         }
+                        logger.info("Login via ached cookies successful:" + account.getType() + "|CookieAge:" + cookieAge);
+                        account.saveCookies(br.getCookies(MAINPAGE), "");
                         return;
                     }
+                    logger.info("Login via cached cookies failed:" + account.getType() + "|CookieAge:" + cookieAge);
+                    // dump session
+                    br = newWebBrowser(true);
                 }
-                br.setFollowRedirects(false);
-                getPage(MAINPAGE.replaceFirst("^https?://", getProtocol()) + "/login.html");
-                String logincaptcha = br.getRegex("\"(/auth/captcha\\.html[^<>\"]*?)\"").getMatch(0);
-                String postData = "LoginForm%5BrememberMe%5D=0&LoginForm%5BrememberMe%5D=1&LoginForm%5Busername%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass());
-                if (logincaptcha != null) {
-                    final DownloadLink dummyLink = new DownloadLink(this, "Account", Browser.getHost(MAINPAGE), MAINPAGE, true);
-                    final String c = getCaptchaCode(logincaptcha, dummyLink);
-                    postData += "&LoginForm%5BverifyCode%5D=" + Encoding.urlEncode(c);
+                getPage(this.MAINPAGE + "/login.html");
+                Form login = br.getFormbyActionRegex("/login.html");
+                if (login == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                postPage("/login.html", postData);
-                if (br.containsHTML("The verification code is incorrect.")) {
-                    logincaptcha = br.getRegex("\"(/auth/captcha\\.html[^<>\"]*?)\"").getMatch(0);
-                    postData = "LoginForm%5BrememberMe%5D=0&LoginForm%5BrememberMe%5D=1&LoginForm%5Busername%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass());
-                    if (logincaptcha != null) {
-                        final DownloadLink dummyLink = new DownloadLink(this, "Account", Browser.getHost(MAINPAGE), MAINPAGE, true);
-                        final String c = getCaptchaCode(logincaptcha, dummyLink);
-                        postData += "&LoginForm%5BverifyCode%5D=" + Encoding.urlEncode(c);
+                login.put("LoginForm%5Busername%5D", Encoding.urlEncode(account.getUser()));
+                login.put("LoginForm%5Bpassword%5D", Encoding.urlEncode(account.getPass()));
+                boolean hasCaptcha = handleLoginCaptcha(account, br, login);
+                sendForm(login);
+                if (!hasCaptcha && isCaptchaInvalid(br)) {
+                    login = br.getFormbyActionRegex("/login.html");
+                    if (login == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                    postPage("/login.html", postData);
+                    login.put("LoginForm%5Busername%5D", Encoding.urlEncode(account.getUser()));
+                    login.put("LoginForm%5Bpassword%5D", Encoding.urlEncode(account.getPass()));
+                    hasCaptcha = handleLoginCaptcha(account, br, login);
+                    if (!hasCaptcha) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    sendForm(login);
                 }
-                if (!br.containsHTML("\"url\":\"")) {
+                if (isCaptchaInvalid(br)) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                } else if (br.containsHTML("Incorrect username or password")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, ungültiges Passwort oder ungültiges Login Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
+                } else if (br.containsHTML(">We have a suspicion that your account was stolen, this is why we")) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account temporär gesperrt!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account temporarily blocked!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                } else if (br.containsHTML(">Please fill in the form with your login credentials")) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                } else if (br.containsHTML(">Password cannot be blank.<")) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Passwortfeld darf nicht leer sein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Password field cannot be empty!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                } else if (br.getFormbyActionRegex("/login.html") != null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(MAINPAGE);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
+                if (br.containsHTML("Your Premium account has expired")) {
+                    account.setType(Account.AccountType.FREE);
                 }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                logger.info("Fresh login!");
+                account.saveCookies(br.getCookies(MAINPAGE), "");
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.setProperty("cookies", Property.NULL);
+                    account.clearCookies("");
                 }
                 throw e;
-            } finally {
-                br.getHeaders().remove("X-Requested-With");
             }
         }
     }
@@ -390,7 +445,7 @@ public class Publish2Me extends K2SApi {
             ai = super.fetchAccountInfo(account);
         } else {
             try {
-                login(account, true);
+                login(account, true, MAINPAGE);
             } catch (PluginException e) {
                 account.setValid(false);
                 throw e;
@@ -432,7 +487,7 @@ public class Publish2Me extends K2SApi {
             super.handleDownload(link, account);
         } else {
             requestFileInformation(link);
-            login(account, false);
+            login(account, false, "https://" + Browser.getHost(link.getPluginPatternMatcher()));
             br.setFollowRedirects(false);
             getPage(link.getDownloadURL());
             if (account.getType() == AccountType.FREE) {

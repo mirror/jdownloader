@@ -609,8 +609,6 @@ public class Keep2ShareCc extends K2SApi {
                 }
                 if (isCaptchaInvalid(br)) {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                } else if (br.containsHTML("The verification code is incorrect.")) {
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 } else if (br.containsHTML("Incorrect username or password")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
