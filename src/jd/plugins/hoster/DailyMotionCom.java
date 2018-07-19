@@ -20,6 +20,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedHashMap;
+import java.util.List;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -137,9 +138,9 @@ public class DailyMotionCom extends PluginForHost {
                 final String dllink = getDirectlink(downloadLink);
                 this.br.getPage(dllink);
                 if (this.br.getHttpConnection().isOK()) {
-                    final HlsContainer hlsBest;
+                    final List<HlsContainer> hlsBest;
                     try {
-                        hlsBest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
+                        hlsBest = HlsContainer.findBestVideosByBandwidth(HlsContainer.getHlsQualities(this.br));
                     } catch (final Exception e) {
                         logger.log(e);
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -147,7 +148,7 @@ public class DailyMotionCom extends PluginForHost {
                     if (hlsBest == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     } else {
-                        this.dllink = hlsBest.getDownloadurl();
+                        this.dllink = hlsBest.get(0).getDownloadurl();
                     }
                     if (!(Thread.currentThread() instanceof SingleDownloadController)) {
                         // checkFFProbe(downloadLink, "File Checking a HLS Stream");
