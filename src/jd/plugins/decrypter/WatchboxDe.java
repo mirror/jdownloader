@@ -25,6 +25,14 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.config.MediathekProperties;
+import org.jdownloader.plugins.components.config.WatchboxDeConfigInterface;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -36,14 +44,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.MediathekHelper;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.config.MediathekProperties;
-import org.jdownloader.plugins.components.config.WatchboxDeConfigInterface;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "watchbox.de" }, urls = { "https?://(?:www\\.)?watchbox\\.de/(?:serien|filme)/[^<>\"]+\\d+\\.html" })
 public class WatchboxDe extends PluginForDecrypt {
@@ -59,16 +59,17 @@ public class WatchboxDe extends PluginForDecrypt {
         heigth_to_bitrate.put("360", 984000l);
         heigth_to_bitrate.put("540", 3104000l);
     }
-    private String                              subtitleLink        = null;
-    private String                              parameter           = null;
-    private String                              title               = null;
-    private String                              show                = null;
-    private String                              description         = null;
-    private int                                 seasonnumber        = -1;
-    private int                                 episodenumber       = -1;
-    private long                                date_timestamp      = -1;
-    private String                              contentID           = null;
+    private String subtitleLink   = null;
+    private String parameter      = null;
+    private String title          = null;
+    private String show           = null;
+    private String description    = null;
+    private int    seasonnumber   = -1;
+    private int    episodenumber  = -1;
+    private long   date_timestamp = -1;
+    private String contentID      = null;
 
+    /** Tags: ex website: clipfish.de */
     public WatchboxDe(final PluginWrapper wrapper) {
         super(wrapper);
     }

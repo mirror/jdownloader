@@ -24,6 +24,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -46,13 +53,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "subyshare.com" }, urls = { "https?://(?:www\\.)?subyshare\\.com/(?:vidembed\\-)?[a-z0-9]{12}" })
 public class SubyShareCom extends PluginForHost {
@@ -93,7 +93,9 @@ public class SubyShareCom extends PluginForHost {
     // limit-info:
     // protocol: no https
     // captchatype: reCaptchaV2
-    // other:
+    // other: 2018-07-19: Changed name of captcha recognization-method to "xfilesharingprobasic_subysharecom_special"[original method = for
+    // 4 digits but they have 6 digits and another background & font color] as their captchas are
+    // a little bit different from what our method can handle
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         /* link cleanup, but respect users protocol choosing */
@@ -305,10 +307,7 @@ public class SubyShareCom extends PluginForHost {
             }
         }
         if (dllink == null) {
-            Form dlForm = br.getFormbyProperty("name", "F1");
-            if (dlForm == null) {
-                dlForm = br.getFormByInputFieldKeyValue("op", "download1");
-            }
+            Form dlForm = findFormF1();
             if (dlForm == null) {
                 handlePluginBroken(downloadLink, "dlform_f1_null", 3);
             }
@@ -367,7 +366,7 @@ public class SubyShareCom extends PluginForHost {
                         logger.warning("Standard captcha captchahandling broken!");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    String code = getCaptchaCode("xfilesharingprobasic", captchaurl, downloadLink);
+                    final String code = getCaptchaCode("xfilesharingprobasic_subysharecom_special", captchaurl, downloadLink);
                     dlForm.put("code", code);
                     logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
                 } else if (new Regex(correctedBR, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {
@@ -425,11 +424,15 @@ public class SubyShareCom extends PluginForHost {
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, true);
                 dllink = getDllink();
-                if (dllink == null && (!br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"") || i == repeat)) {
+                if (dllink == null && (findFormF1() == null || i == repeat)) {
+                    if (correctedBR.contains("/captchas/")) {
+                        /* 2018-07-19: Special workaround for wrong captcha as website does not display an errormessage */
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } else if (dllink == null && br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"")) {
-                    dlForm = br.getFormbyProperty("name", "F1");
+                } else if (dllink == null && findFormF1() != null) {
+                    dlForm = findFormF1();
                     continue;
                 } else {
                     break;
@@ -460,6 +463,25 @@ public class SubyShareCom extends PluginForHost {
             /* remove download slot */
             controlFree(-1);
         }
+    }
+
+    private Form findFormF1() {
+        Form dlForm = null;
+        /* First try to find Form for video hosts with multiple qualities. */
+        final Form[] forms = br.getForms();
+        for (final Form aForm : forms) {
+            final InputField op_field = aForm.getInputFieldByName("op");
+            /* 2018-07-19: Special - different from main XFS template! */
+            if (aForm.containsHTML("method_free") && op_field != null && (op_field.getValue().contains("download_") || op_field.getValue().equals("download1"))) {
+                dlForm = aForm;
+                break;
+            }
+        }
+        /* Nothing found? Fallback to standard download handling! */
+        if (dlForm == null) {
+            dlForm = br.getFormbyProperty("name", "F1");
+        }
+        return dlForm;
     }
 
     private String handleVideoembed1(String dllink) {
@@ -651,7 +673,11 @@ public class SubyShareCom extends PluginForHost {
     private void waitTime(long timeBefore, final DownloadLink downloadLink) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
-        final String ttt = new Regex(correctedBR, "id=\"countdown\">[^<>\"]+<[^<>]+>(\\d+)<").getMatch(0);
+        String ttt = new Regex(correctedBR, "id=\"countdown\">[^<>\"]+<[^<>]+>(\\d+)<").getMatch(0);
+        if (ttt == null) {
+            /* 2018-07-19: Special */
+            ttt = new Regex(correctedBR, "class=\"seconds\"[^>]*?>\\s*?(\\d+)\\s*?<").getMatch(0);
+        }
         if (ttt == null) {
             logger.warning("Wait time regex failed.");
         } else {
@@ -883,6 +909,7 @@ public class SubyShareCom extends PluginForHost {
         }
         final long responsecode = con.getResponseCode();
         if (responsecode == 403) {
+            /* 2018-07-19: This may also happen when using a VPN! */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
         } else if (responsecode == 404) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404#1", 5 * 60 * 1000l);
@@ -1009,7 +1036,9 @@ public class SubyShareCom extends PluginForHost {
                     this.br.setCookies(this.getHost(), cookies);
                     getPage(COOKIE_HOST);
                     if (correctedBR.contains("/account/logout")) {
-                        /* Cookies valid --> All good --> Save cookies (because of the new timestamp which might be useful in the future). */
+                        /*
+                         * Cookies valid --> All good --> Save cookies (because of the new timestamp which might be useful in the future).
+                         */
                         if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
                             br.clearCookies(getHost());
                         } else {

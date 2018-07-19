@@ -17,7 +17,6 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megafile.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-dpspwjrlfosjdhgidshg12" })
 public class MegafilePL extends PluginForHost {
-
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
 
     public MegafilePL(PluginWrapper wrapper) {
@@ -33,7 +32,6 @@ public class MegafilePL extends PluginForHost {
         String username = Encoding.urlEncode(account.getUser());
         String password = Encoding.urlEncode(account.getPass());
         final String checkLogin = br.postPage("https://" + this.getHost() + "/managersAPI/accountInfo", "username=" + username + "&password=" + password);
-
         /* ERROR HANDLING */
         try {
             String[] accountInfo = checkLogin.split(":");
@@ -47,11 +45,10 @@ public class MegafilePL extends PluginForHost {
         } catch (ArrayIndexOutOfBoundsException e) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost());
         }
-
         /* 2017-02-22: Use website to get better hostlist as that is impossible via API! */
         this.br.getPage("https://" + this.getHost() + "/howitworks");
         final String[] supportedHostsUgly = this.br.getRegex("/images/([A-Za-z0-9\\.\\-]+)\\.mini\\.png").getColumn(0);
-        final String supportedHostsStatic[] = { "catshare.net", "rapidu.net", "fileshark.pl", "lunaticfiles.com", "sharehost.eu", "uploaded.to", "turbobit.net", "rapidgator.net", "uploadrocket.net", "filefactory.com", "hitfile.net", "fastshare.cz", "hugefiles.net", "1fichier.com", "uptobox.com", "alfafile.net", "datafile.com", "keep2share.cc", "filejoker.net", "depositfiles.com", "depfile.com", "nitroflare.com", "chomikuj.pl", "" };
+        final String supportedHostsStatic[] = { "catshare.net", "rapidu.net", "fileshark.pl", "lunaticfiles.com", "sharehost.eu", "uploaded.to", "turbobit.net", "rapidgator.net", "uploadrocket.net", "filefactory.com", "hitfile.net", "fastshare.cz", "hugefiles.net", "1fichier.com", "uptobox.com", "alfafile.net", "datafile.com", "keep2share.cc", "filejoker.net", "depositfiles.com", "nitroflare.com", "chomikuj.pl", "" };
         final List<String> supportedHosts;
         if (supportedHostsUgly != null && supportedHostsUgly.length > 0) {
             supportedHosts = Arrays.asList(supportedHostsUgly);
@@ -89,15 +86,11 @@ public class MegafilePL extends PluginForHost {
         String password = Encoding.urlEncode(acc.getPass());
         String url = Encoding.urlEncode(link.getDownloadURL()).replace("http://", "");
         showMessage(link, "Phase 1/2: Generating link");
-
         // br.setFollowRedirects(true);
         final String genlink = br.postPage("https://" + this.getHost() + "/managersAPI/downloadLink", "username=" + username + "&password=" + password + "&link=" + url);
-
         // JOptionPane.showMessageDialog(null, genlink);
         showMessage(link, "Phase 2/2: Download begins!");
-
         dl = jd.plugins.BrowserAdapter.openDownload(br.cloneBrowser(), link, genlink, true, 1);
-
         // if (dl.getConnection().getContentType().equalsIgnoreCase("text/html")) {
         // br.followConnection();
         // if (br.containsHTML("You don't have enought transfer to download this file")) {
@@ -108,7 +101,6 @@ public class MegafilePL extends PluginForHost {
         // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // }
         // }
-
         dl.setAllowFilenameFromURL(true);
         if (dl.getConnection().getResponseCode() == 404) {
             /* 2017-03-01: file offline --> Do NOT trust that message for this multihoster! */
@@ -169,5 +161,4 @@ public class MegafilePL extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

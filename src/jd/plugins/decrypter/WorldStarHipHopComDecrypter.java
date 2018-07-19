@@ -88,13 +88,7 @@ public class WorldStarHipHopComDecrypter extends PluginForDecrypt {
         if (externID == null) {
             externID = br.getRegex("<iframe[^<>]*?src=\"([^\"]+)\"").getMatch(0);
             if (!externID.contains("worldstarhiphop")) {
-                logger.info("Link found: " + externID);
-                if (externID.contains("tidal.com")) {
-                    final DownloadLink dl = createOfflinelink(parameter);
-                    decryptedLinks.add(dl);
-                    dl.setFinalFileName("tidal.com is not supported");
-                    return decryptedLinks;
-                }
+                logger.info("External link found: " + externID);
                 decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(externID.trim())));
                 return decryptedLinks;
             }
