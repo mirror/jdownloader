@@ -54,12 +54,12 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "massengeschmack.tv" }, urls = { "https?://(?:www\\.)?massengeschmack\\.tv/((?:play|clip)/|index_single\\.php\\?id=)[a-z0-9\\-]+|https?://(?:www\\.)?massengeschmack\\.tv/live/[a-z0-9\\-]+|https?://massengeschmack\\.tv/dl/.+" })
-public class FernsehkritikTv extends PluginForHost {
+public class MassengeschmackTv extends PluginForHost {
     public static final long trust_cookie_age = 300000l;
 
     /* 2016-12-31: Officially their (API) cookie is only valid for max 30 minutes! */
     // public static final long max_cookie_age = 100800l;
-    public FernsehkritikTv(final PluginWrapper wrapper) {
+    public MassengeschmackTv(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://massengeschmack.tv/register/");
         this.setConfigElements();
@@ -816,7 +816,7 @@ public class FernsehkritikTv extends PluginForHost {
         br.getHeaders().put("Accept-Language", "de-de,de;q=0.8");
         br.getHeaders().put("User-Agent", "JDownloader");
         br.getHeaders().put("Accept-Encoding", "gzip");
-        br.setAllowedResponseCodes(new int[] { FernsehkritikTv.API_RESPONSECODE_ERROR_CONTENT_OFFLINE, FernsehkritikTv.API_RESPONSECODE_ERROR_LOGIN_WRONG, FernsehkritikTv.API_RESPONSECODE_ERROR_RATE_LIMIT_REACHED });
+        br.setAllowedResponseCodes(new int[] { MassengeschmackTv.API_RESPONSECODE_ERROR_CONTENT_OFFLINE, MassengeschmackTv.API_RESPONSECODE_ERROR_LOGIN_WRONG, MassengeschmackTv.API_RESPONSECODE_ERROR_RATE_LIMIT_REACHED });
         return br;
     }
 
@@ -916,7 +916,7 @@ public class FernsehkritikTv extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public String getMassengeschmack_other_FormattedFilename(final DownloadLink downloadLink) throws ParseException {
-        final SubConfiguration cfg = SubConfiguration.getConfig("massengeschmach.tv");
+        final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
         String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME_MASSENGESCHMACK_OTHER, defaultCustomFilename_massengeschmack_other);
         if ((!formattedFilename.contains("*episodenumber*") && !formattedFilename.contains("*episodename*")) || !formattedFilename.contains("*ext*")) {
             formattedFilename = defaultCustomFilename_massengeschmack_other;
