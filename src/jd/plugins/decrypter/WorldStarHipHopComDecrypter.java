@@ -85,6 +85,20 @@ public class WorldStarHipHopComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(externID.trim())));
             return decryptedLinks;
         }
+        if (externID == null) {
+            externID = br.getRegex("<iframe[^<>]*?src=\"([^\"]+)\"").getMatch(0);
+            if (!externID.contains("worldstarhiphop")) {
+                logger.info("Link found: " + externID);
+                if (externID.contains("tidal.com")) {
+                    final DownloadLink dl = createOfflinelink(parameter);
+                    decryptedLinks.add(dl);
+                    dl.setFinalFileName("tidal.com is not supported");
+                    return decryptedLinks;
+                }
+                decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(externID.trim())));
+                return decryptedLinks;
+            }
+        }
         // Probably no external video, pass it over to the hoster plugin
         final DownloadLink dl = createDownloadlink(parameter.replace("worldstarhiphop.com/", "worldstarhiphopdecrypted.com/"));
         decryptedLinks.add(dl);
