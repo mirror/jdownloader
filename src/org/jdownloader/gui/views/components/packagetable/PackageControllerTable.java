@@ -57,9 +57,7 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public abstract class PackageControllerTable<ParentType extends AbstractPackageNode<ChildrenType, ParentType>, ChildrenType extends AbstractPackageChildrenNode<ParentType>> extends BasicJDTable<AbstractNode> {
-
     protected class SelectionInfoCache {
-
         private final SelectionInfo<ParentType, ChildrenType> selectionInfo;
         private final long                                    selectionVersion;
         private final long                                    dataVersion;
@@ -81,7 +79,6 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
             this.dataVersion = dataVersion;
             this.selectionInfo = selectionInfo;
         }
-
     }
 
     public static final KeyStroke                                 KEY_STROKE_ALT_END  = KeyStroke.getKeyStroke(KeyEvent.VK_END, InputEvent.ALT_MASK);
@@ -125,7 +122,6 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
     @Override
     public void setAutoResizeMode(int mode) {
         super.setAutoResizeMode(mode);
-
     }
 
     @Override
@@ -142,10 +138,8 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
 
                 @Override
                 public boolean accept(ExtColumn<AbstractNode> column, AbstractNode value, boolean selected, boolean focus, int row) {
-
                     return value instanceof AbstractPackageNode;
                 }
-
             });
         }
     }
@@ -155,20 +149,17 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         tableModel = pctm;
         this.setShowVerticalLines(false);
         this.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-
         sortNotifyColor = CFG_GUI.SORT_COLUMN_HIGHLIGHT_ENABLED.isEnabled() ? (LAFOptions.getInstance().getColorForTableSortedColumnView()) : null;
         filterNotifyColor = CFG_GUI.CFG.isFilterHighlightEnabled() ? (LAFOptions.getInstance().getColorForTableFilteredView()) : null;
         wrapAroundEnabled = CFG_GUI.CFG.isTableWrapAroundEnabled();
         initAppActions();
         selectionDelayedUpdate = new DelayedRunnable(500, 5000) {
-
             @Override
             public void delayedrun() {
                 updateMoveActions();
             }
         };
         this.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
-
             public void valueChanged(final ListSelectionEvent e) {
                 if (e == null || e.getValueIsAdjusting() || tableModel.isTableSelectionClearing()) {
                     return;
@@ -181,19 +172,15 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                 }
             }
         });
-
         final int horizontalLineWeight = LAFOptions.getInstance().getCfg().getLinkTableHorizontalRowLineWeight();
         if (horizontalLineWeight > 0) {
             this.setRowMargin(horizontalLineWeight);
             final Color color = LAFOptions.getInstance().getColorForTableRowGap();
             if (color != null) {
                 addRowHighlighter(new ExtOverlayRowHighlighter(null, null) {
-
                     private BasicStroke stroke;
-
                     {
                         stroke = new BasicStroke(horizontalLineWeight);
-
                     }
 
                     @Override
@@ -268,7 +255,6 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
     public SelectionInfo<ParentType, ChildrenType> getSelectionInfo(final boolean selectionOnly, final boolean useTableModelData) {
         if (selectionOnly) {
             return new EDTHelper<SelectionInfo<ParentType, ChildrenType>>() {
-
                 @Override
                 public SelectionInfo<ParentType, ChildrenType> edtRun() {
                     final long currentSelectionVersion = selectionVersion.get();
@@ -315,7 +301,6 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         } else {
             if (useTableModelData) {
                 return new EDTHelper<SelectionInfo<ParentType, ChildrenType>>() {
-
                     @Override
                     public SelectionInfo<ParentType, ChildrenType> edtRun() {
                         final long dataVersion = tableModel.getTableDataVersion();
@@ -328,7 +313,6 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                         all_TableData = lall_TableData;
                         return selectionInfo;
                     }
-
                 }.getReturnValue();
             } else {
                 return getModel().getController().getSelectionInfo();
@@ -387,7 +371,6 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         final boolean moveUpPossible = moveUpPossible(selectionInfo);
         final boolean moveDownPossible = moveDownPossible(selectionInfo);
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 moveTopAction.setEnabled(moveUpPossible);
@@ -421,25 +404,22 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
     }
 
     protected boolean updateMoveButtonEnabledStatus() {
-        if (getModel().isFilteredView()) {
-            return false;
-        }
         return true;
     }
 
     protected boolean moveUpPossible(SelectionInfo<ParentType, ChildrenType> selectionInfo) {
-        if (getModel().isFilteredView() || selectionInfo.isEmpty()) {
+        if (selectionInfo.isEmpty()) {
             return false;
         } else {
+            final PackageControllerTableModelData<ParentType, ChildrenType> tableData = tableModel.getTableData();
             if (selectionInfo.getPackageViews().size() > 1) {
                 int index = 0;
-                final PackageController<ParentType, ChildrenType> pc = getController();
                 boolean ret = false;
                 for (final PackageView<ParentType, ChildrenType> packageView : selectionInfo.getPackageViews()) {
                     if (packageView.getSelectedChildren().size() > 0 && packageView.isExpanded()) {
                         return false;
                     }
-                    final int pcIndex = pc.indexOf(packageView.getPackage());
+                    final int pcIndex = tableData.indexOf(packageView.getPackage());
                     if (pcIndex < 0) {
                         return false;
                     } else if (pcIndex != index++) {
@@ -451,16 +431,28 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                 final PackageView<ParentType, ChildrenType> packageView = selectionInfo.getPackageViews().get(0);
                 final List<ChildrenType> children = packageView.getSelectedChildren();
                 if (!packageView.isExpanded() || children.size() == 0) {
-                    return this.getController().indexOf(packageView.getPackage()) != 0;
+                    return tableData.indexOf(packageView.getPackage()) != 0;
                 } else {
-                    int index = 0;
-                    for (final ChildrenType child : children) {
-                        final int cIndex = packageView.getPackage().indexOf(child);
-                        if (cIndex < 0) {
-                            return false;
-                        } else if (cIndex != index++) {
-                            return true;
+                    final ParentType pkg = packageView.getPackage();
+                    final boolean readL = pkg.getModifyLock().readLock();
+                    try {
+                        final List<ChildrenType> children2;
+                        if (packageView instanceof SelectionOnlyPackageView) {
+                            children2 = ((SelectionOnlyPackageView) packageView).getVisibleChildren();
+                        } else {
+                            children2 = pkg.getChildren();
                         }
+                        int index = 0;
+                        for (final ChildrenType child : children) {
+                            final int cIndex = children2.indexOf(child);
+                            if (cIndex < 0) {
+                                return false;
+                            } else if (cIndex != index++) {
+                                return true;
+                            }
+                        }
+                    } finally {
+                        pkg.getModifyLock().readUnlock(readL);
                     }
                 }
             }
@@ -469,19 +461,19 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
     }
 
     protected boolean moveDownPossible(SelectionInfo<ParentType, ChildrenType> selectionInfo) {
-        if (getModel().isFilteredView() || selectionInfo.isEmpty()) {
+        if (selectionInfo.isEmpty()) {
             return false;
         } else {
+            final PackageControllerTableModelData<ParentType, ChildrenType> tableData = tableModel.getTableData();
             if (selectionInfo.getPackageViews().size() > 1) {
-                final PackageController<ParentType, ChildrenType> pc = getController();
                 boolean ret = false;
-                int index = pc.size() - 1;
+                int index = tableData.getModelDataPackages().size() - 1;
                 for (int i = selectionInfo.getPackageViews().size() - 1; i >= 0; i--) {
                     final PackageView<ParentType, ChildrenType> packageView = selectionInfo.getPackageViews().get(i);
                     if (packageView.getSelectedChildren().size() > 0 && packageView.isExpanded()) {
                         return false;
                     }
-                    final int pcIndex = pc.lastIndexOf(packageView.getPackage());
+                    final int pcIndex = tableData.lastIndexOf(packageView.getPackage());
                     if (pcIndex < 0) {
                         return false;
                     } else if (pcIndex != index--) {
@@ -493,15 +485,21 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                 final PackageView<ParentType, ChildrenType> packageView = selectionInfo.getPackageViews().get(0);
                 final List<ChildrenType> children = packageView.getSelectedChildren();
                 if (!packageView.isExpanded() || children.size() == 0) {
-                    return this.getController().lastIndexOf(packageView.getPackage()) != getController().size() - 1;
+                    return tableData.lastIndexOf(packageView.getPackage()) != tableData.getModelDataPackages().size() - 1;
                 } else {
                     final ParentType pkg = packageView.getPackage();
                     final boolean readL = pkg.getModifyLock().readLock();
                     try {
-                        int index = pkg.getChildren().size() - 1;
+                        final List<ChildrenType> children2;
+                        if (packageView instanceof SelectionOnlyPackageView) {
+                            children2 = ((SelectionOnlyPackageView) packageView).getVisibleChildren();
+                        } else {
+                            children2 = pkg.getChildren();
+                        }
+                        int index = children2.size() - 1;
                         for (int i = children.size() - 1; i >= 0; i--) {
                             final ChildrenType child = children.get(i);
-                            final int cIndex = pkg.getChildren().lastIndexOf(child);
+                            final int cIndex = children2.lastIndexOf(child);
                             if (cIndex < 0) {
                                 return false;
                             } else if (cIndex != index--) {
@@ -523,7 +521,6 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
              *
              */
             private static final long serialVersionUID = 1L;
-
             {
                 // setName(_GUI.T.BottomBar_BottomBar_totop());
                 this.setTooltipText(_GUI.T.BottomBar_BottomBar_totop_tooltip());
@@ -533,7 +530,6 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
             public void actionPerformed(ActionEvent e) {
                 final SelectionInfo<ParentType, ChildrenType> selectionInfo = getSelectionInfo(true, true);
                 getController().getQueue().add(new QueueAction<Void, RuntimeException>() {
-
                     @Override
                     protected Void run() throws RuntimeException {
                         final boolean moveUpPossible = moveUpPossible(selectionInfo);
@@ -556,17 +552,14 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                         }
                         return null;
                     }
-
                 });
             }
-
         };
         moveUpAction = new AppAction() {
             /**
              *
              */
             private static final long serialVersionUID = 1L;
-
             {
                 // setName(_GUI.T.BottomBar_BottomBar_moveup());
                 this.setTooltipText(_GUI.T.BottomBar_BottomBar_moveup_tooltip());
@@ -576,7 +569,6 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
             public void actionPerformed(ActionEvent e) {
                 final SelectionInfo<ParentType, ChildrenType> selectionInfo = getSelectionInfo(true, true);
                 getController().getQueue().add(new QueueAction<Void, RuntimeException>() {
-
                     @Override
                     protected Void run() throws RuntimeException {
                         final boolean moveUpPossible = moveUpPossible(selectionInfo);
@@ -636,7 +628,6 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
              *
              */
             private static final long serialVersionUID = 1L;
-
             {
                 // setName(_GUI.T.BottomBar_BottomBar_movedown());
                 this.setTooltipText(_GUI.T.BottomBar_BottomBar_movedown_tooltip());
@@ -646,7 +637,6 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
             public void actionPerformed(ActionEvent e) {
                 final SelectionInfo<ParentType, ChildrenType> selectionInfo = getSelectionInfo(true, true);
                 getController().getQueue().add(new QueueAction<Void, RuntimeException>() {
-
                     @Override
                     protected Void run() throws RuntimeException {
                         final boolean moveDownPossible = moveDownPossible(selectionInfo);
@@ -701,7 +691,6 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
              *
              */
             private static final long serialVersionUID = 1L;
-
             {
                 // setName(_GUI.T.BottomBar_BottomBar_tobottom());
                 this.setTooltipText(_GUI.T.BottomBar_BottomBar_tobottom_tooltip());
@@ -711,7 +700,6 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
             public void actionPerformed(ActionEvent e) {
                 final SelectionInfo<ParentType, ChildrenType> selectionInfo = getSelectionInfo(true, true);
                 getController().getQueue().add(new QueueAction<Void, RuntimeException>() {
-
                     @Override
                     protected Void run() throws RuntimeException {
                         if (moveDownPossible(selectionInfo)) {
@@ -753,9 +741,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                         return null;
                     }
                 });
-
             }
-
         };
         moveDownAction.setEnabled(false);
         moveBottomAction.setEnabled(false);
@@ -768,7 +754,6 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         if (!pressed) {
             return super.processKeyBinding(stroke, evt, condition, pressed);
         }
-
         if (stroke.equals(KEY_STROKE_KP_LEFT) || stroke.equals(KEY_STROKE_LEFT)) {
             AbstractNode element = this.getModel().getElementAt(this.getSelectedRow());
             if (element != null) {
@@ -803,7 +788,6 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
             this.moveDownAction.actionPerformed(null);
             return true;
         }
-
         if (stroke.equals(KEY_STROKE_ALT_HOME)) {
             moveTopAction.actionPerformed(null);
             return true;
@@ -812,7 +796,6 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
             moveBottomAction.actionPerformed(null);
             return true;
         }
-
         return super.processKeyBinding(stroke, evt, condition, pressed);
     }
 
@@ -877,7 +860,6 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         }
         if (filteredColumn >= 0 && tableModel.isTristateSorterEnabled()) {
             Rectangle first = this.getCellRect(0, filteredColumn, true);
-
             int w = getModel().getSortColumn().getWidth() - Math.max(0, visibleRect.x - first.x);
             if (w > 0) {
                 g2.setColor(sortNotifyColor);
@@ -886,5 +868,4 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         }
         g2.setComposite(comp);
     }
-
 }
