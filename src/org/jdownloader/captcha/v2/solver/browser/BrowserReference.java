@@ -7,6 +7,10 @@ import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import jd.controlling.TaskQueue;
+import jd.parser.Regex;
+import jd.plugins.Plugin;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
@@ -33,9 +37,6 @@ import org.jdownloader.captcha.v2.solver.service.BrowserSolverService;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.controlling.UniqueAlltimeID;
 
-import jd.controlling.TaskQueue;
-import jd.parser.Regex;
-
 public abstract class BrowserReference implements ExtendedHttpRequestHandler, HttpRequestHandler, ConnectionHook {
     private final AtomicReference<HttpHandlerInfo> handlerInfo = new AtomicReference<HttpHandlerInfo>(null);
     private final AbstractBrowserChallenge         challenge;
@@ -46,12 +47,8 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
     }
 
     private final AtomicReference<Process> process = new AtomicReference<Process>(null);
-    private BrowserWindow                  browserWindow;
-    private BrowserViewport                viewport;
     private final HashMap<String, URL>     resourceIds;
     private final HashMap<String, String>  types;
-    private long                           opened;
-    private long                           latestRequest;
     protected String                       base;
     {
         resourceIds = new HashMap<String, URL>();
@@ -158,7 +155,6 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
             // }
             // }
         }
-        opened = System.currentTimeMillis();
         if (browserCmd == null || browserCmd.length == 0) {
             CrossSystem.openURL(url);
         } else {
@@ -248,7 +244,6 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
         try {
             HTTPHeader originHeader = request.getRequestHeaders().get(HTTPConstants.HEADER_REQUEST_ORIGIN);
             // todo: origin check
-            latestRequest = System.currentTimeMillis();
             if ("/resource".equals(request.getRequestedPath())) {
                 String resourceID = new Regex(request.getRequestedURLParameters().get(0).value, "([^\\?]+)").getMatch(0);
                 URL resource = resourceIds.get(resourceID);
@@ -278,21 +273,24 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, "text/html; charset=utf-8"));
             if ("loaded".equals(pDo)) {
                 HTTPHeader ua = request.getRequestHeaders().get("User-Agent");
-                browserWindow = new BrowserWindow(ua == null ? null : ua.getValue(), (int) Double.parseDouble(request.getParameterbyKey("x")), (int) Double.parseDouble(request.getParameterbyKey("y")), (int) Double.parseDouble(request.getParameterbyKey("w")), (int) Double.parseDouble(request.getParameterbyKey("h")), (int) Double.parseDouble(request.getParameterbyKey("vw")), (int) Double.parseDouble(request.getParameterbyKey("vh")));
                 final BrowserCaptchaSolverConfig config = BrowserSolverService.getInstance().getConfig();
                 if (config.isAutoClickEnabled()) {
-                    Rectangle elementBounds = null;
                     try {
+                        final BrowserWindow browserWindow = new BrowserWindow(ua == null ? null : ua.getValue(), (int) Double.parseDouble(request.getParameterbyKey("x")), (int) Double.parseDouble(request.getParameterbyKey("y")), (int) Double.parseDouble(request.getParameterbyKey("w")), (int) Double.parseDouble(request.getParameterbyKey("h")), (int) Double.parseDouble(request.getParameterbyKey("vw")), (int) Double.parseDouble(request.getParameterbyKey("vh")));
                         if (CrossSystem.isUnix()) {
                             config.setAutoClickEnabled(false);
                             config._getStorageHandler().write();
                         }
-                        elementBounds = new Rectangle((int) Double.parseDouble(request.getParameterbyKey("eleft")), (int) Double.parseDouble(request.getParameterbyKey("etop")), (int) Double.parseDouble(request.getParameterbyKey("ew")), (int) Double.parseDouble(request.getParameterbyKey("eh")));
-                        this.viewport = challenge.getBrowserViewport(browserWindow, elementBounds);
+                        final Rectangle elementBounds = new Rectangle((int) Double.parseDouble(request.getParameterbyKey("eleft")), (int) Double.parseDouble(request.getParameterbyKey("etop")), (int) Double.parseDouble(request.getParameterbyKey("ew")), (int) Double.parseDouble(request.getParameterbyKey("eh")));
+                        final BrowserViewport viewport = challenge.getBrowserViewport(browserWindow, elementBounds);
                         if (viewport != null) {
                             viewport.onLoaded();
                         }
                     } catch (Throwable e) {
+                        final Plugin plugin = challenge.getPlugin();
+                        if (plugin != null && plugin.getLogger() != null) {
+                            plugin.getLogger().log(e);
+                        }
                     } finally {
                         config.setAutoClickEnabled(true);
                     }
@@ -324,7 +322,10 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
             }
             return true;
         } catch (Throwable e) {
-            e.printStackTrace();
+            final Plugin plugin = challenge.getPlugin();
+            if (plugin != null && plugin.getLogger() != null) {
+                plugin.getLogger().log(e);
+            }
             error(response, e);
             return true;
         }
@@ -358,6 +359,10 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
             }
             return challenge.onPostRequest(this, request, response);
         } catch (Throwable e) {
+            final Plugin plugin = challenge.getPlugin();
+            if (plugin != null && plugin.getLogger() != null) {
+                plugin.getLogger().log(e);
+            }
             error(response, e);
             return true;
         }
