@@ -8,6 +8,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
+import javax.swing.TransferHandler;
+
 import jd.controlling.ClipboardMonitoring;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
@@ -36,6 +38,7 @@ import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.SelectionInfo.PackageView;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
+import org.jdownloader.gui.views.components.packagetable.dragdrop.PackageControllerTableTransferHandler;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
@@ -163,7 +166,13 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
                 add(sb, pv, contentPermission);
             }
         }
-        ClipboardMonitoring.getINSTANCE().setCurrentContent(sb.toString());
+        final TransferHandler transferHandler = getTable().getTransferHandler();
+        if (transferHandler instanceof PackageControllerTableTransferHandler) {
+            ((PackageControllerTableTransferHandler) transferHandler).setTransferableStringContent(sb.toString());
+            transferHandler.getCopyAction().actionPerformed(new ActionEvent(getTable(), ActionEvent.ACTION_FIRST, "copy"));
+        } else {
+            ClipboardMonitoring.getINSTANCE().setCurrentContent(sb.toString());
+        }
     }
 
     private final String getUrlByType(final UrlDisplayType dt, final AbstractNode node) {

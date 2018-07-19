@@ -33,9 +33,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     }
 
     protected final AtomicLong                                contentChanged             = new AtomicLong(System.currentTimeMillis());
-
     protected final LogSource                                 logger                     = LogController.CL();
-
     protected final WeakHashMap<UniqueAlltimeID, PackageType> uniqueAlltimeIDPackageMap  = new WeakHashMap<UniqueAlltimeID, PackageType>();
     protected final WeakHashMap<UniqueAlltimeID, ChildType>   uniqueAlltimeIDChildrenMap = new WeakHashMap<UniqueAlltimeID, ChildType>();
 
@@ -97,16 +95,14 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     }
 
     protected final Queue QUEUE = new Queue(getClass().getName()) {
-
-                                    @Override
-                                    public void killQueue() {
-                                        org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(new Throwable("YOU CANNOT KILL ME!"));
-                                        /*
-                                         * this queue can't be killed
-                                         */
-                                    }
-
-                                };
+        @Override
+        public void killQueue() {
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(new Throwable("YOU CANNOT KILL ME!"));
+            /*
+             * this queue can't be killed
+             */
+        }
+    };
 
     /**
      * add a Package at given position position in this PackageController. in case the Package is already controlled by this
@@ -171,7 +167,6 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     public void sortPackageChildren(final PackageType pkg, final PackageControllerComparator<ChildType> comparator) {
         if (pkg != null && comparator != null) {
             QUEUE.add(new QueueAction<Void, RuntimeException>() {
-
                 @Override
                 protected Void run() throws RuntimeException {
                     final ArrayList<ChildType> children = getChildrenCopy(pkg);
@@ -201,7 +196,6 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                     _controllerPackageNodeStructureChanged(pkg, this.getQueuePrio());
                     return null;
                 }
-
             });
         }
     }
@@ -209,7 +203,6 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     protected void addmovePackageAt(final PackageType pkg, final int index, final boolean allowEmpty) {
         if (pkg != null) {
             QUEUE.add(new QueueAction<Void, RuntimeException>() {
-
                 @Override
                 protected Void run() throws RuntimeException {
                     if (allowEmpty == false && pkg.getChildren().size() == 0) {
@@ -217,7 +210,6 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                         return null;
                     }
                     boolean isNew = true;
-
                     /**
                      * iterate through all packages, remove the existing one and add at given position
                      */
@@ -251,7 +243,6 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                                 /*
                                  * current element is pkg and index is correct, nothing to do
                                  */
-
                                 return null;
                             } else if (currentIndex == index) {
                                 /*
@@ -364,10 +355,8 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
 
     /* remove the Package from this PackageController */
     public void removePackage(final PackageType pkg) {
-
         if (pkg != null) {
             QUEUE.add(new QueueAction<Void, RuntimeException>() {
-
                 @Override
                 protected Void run() throws RuntimeException {
                     boolean removed = false;
@@ -416,15 +405,12 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     }
 
     public void removeChildren(final List<ChildType> removechildren) {
-
         if (removechildren != null && removechildren.size() > 0) {
             QUEUE.add(new QueueAction<Void, RuntimeException>() {
-
                 @Override
                 protected Void run() throws RuntimeException {
                     internalRemoveChildren(removechildren);
                     _controllerStructureChanged(this.getQueuePrio());
-
                     return null;
                 }
             });
@@ -467,7 +453,6 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         if (childrenRemoved) {
             childrenChanged.set(version);
         }
-
     }
 
     /**
@@ -516,7 +501,6 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                             } finally {
                                 pkg.getModifyLock().readUnlock(childLock);
                             }
-
                         }
                     }
                 } finally {
@@ -554,7 +538,6 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
             @Override
             protected Void run() throws RuntimeException {
                 int positionMerge = 0;
-
                 switch (mergeposition) {
                 case BOTTOM:
                     positionMerge = dest.getChildren().size();
@@ -727,7 +710,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                         /* remove all */
                         /*
                          * TODO: speed optimization, we have to correct the index to match changes in children structure
-                         * 
+                         *
                          * TODO: optimize this loop. only process existing links in this package
                          */
                         for (final ChildType child : elementsToMove) {
@@ -809,10 +792,8 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
      * @param children
      */
     public void removeChildren(final PackageType pkg, final List<ChildType> children, final boolean doNotifyParentlessLinks) {
-
         if (pkg != null && children != null && children.size() > 0) {
             QUEUE.add(new QueueAction<Void, RuntimeException>() {
-
                 @Override
                 protected Void run() throws RuntimeException {
                     final ArrayList<ChildType> links = new ArrayList<ChildType>(children);
@@ -880,7 +861,6 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
 
     public void clear() {
         QUEUE.add(new QueueAction<Void, RuntimeException>() {
-
             @Override
             protected Void run() throws RuntimeException {
                 for (PackageType pkg : getPackagesCopy()) {
@@ -914,7 +894,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         });
     }
 
-    public void move(final java.util.List<ChildType> srcLinks, final PackageType dstPkg, final ChildType afterLink) {
+    public void moveAfter(final java.util.List<ChildType> srcLinks, final PackageType dstPkg, final ChildType after) {
         if (dstPkg == null || srcLinks == null || srcLinks.size() == 0) {
             return;
         }
@@ -922,14 +902,37 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
             @Override
             protected Void run() throws RuntimeException {
                 int destination = 0;
-                if (afterLink != null) {
-                    int destI = dstPkg.indexOf(afterLink);
+                if (after != null) {
+                    final int destI = dstPkg.indexOf(after);
                     destination = Math.max(destI, 0) + 1;
                 }
                 moveOrAddAt(dstPkg, srcLinks, destination);
                 return null;
             }
         });
+    }
+
+    public void moveBefore(final java.util.List<ChildType> srcLinks, final PackageType dstPkg, final ChildType before) {
+        if (dstPkg == null || srcLinks == null || srcLinks.size() == 0) {
+            return;
+        }
+        QUEUE.add(new QueueAction<Void, RuntimeException>() {
+            @Override
+            protected Void run() throws RuntimeException {
+                int destination = 0;
+                if (before != null) {
+                    final int destI = dstPkg.indexOf(before);
+                    destination = Math.max(destI - 1, 0);
+                }
+                moveOrAddAt(dstPkg, srcLinks, destination);
+                return null;
+            }
+        });
+    }
+
+    @Deprecated
+    public void move(final java.util.List<ChildType> srcLinks, final PackageType dstPkg, final ChildType afterLink) {
+        moveAfter(srcLinks, dstPkg, afterLink);
     }
 
     abstract protected void _controllerParentlessLinks(final List<ChildType> links, QueuePriority priority);
@@ -1002,7 +1005,6 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
             return lSelectionInfo;
         }
         return getQueue().addWait(new QueueAction<SelectionInfo<PackageType, ChildType>, RuntimeException>(Queue.QueuePriority.HIGH) {
-
             @Override
             protected SelectionInfo<PackageType, ChildType> run() throws RuntimeException {
                 final long version = getBackendChanged();
@@ -1015,7 +1017,6 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                 return lSelectionInfo;
             }
         });
-
     }
 
     public int lastIndexOf(PackageType pkg) {
@@ -1031,7 +1032,6 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         this.sorter = comparator;
         if (comparator != null) {
             QUEUE.add(new QueueAction<Void, RuntimeException>() {
-
                 @Override
                 protected Void run() throws RuntimeException {
                     final ArrayList<PackageType> lpackages = getPackagesCopy();
@@ -1042,7 +1042,6 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                     }
                     if (sortPackages) {
                         final PackageControllerComparator<ChildType> sorter = new PackageControllerComparator<ChildType>() {
-
                             @Override
                             public int compare(ChildType o1, ChildType o2) {
                                 return comparator.compare(o1, o2);
@@ -1057,7 +1056,6 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                             public boolean isAsc() {
                                 return comparator.isAsc();
                             }
-
                         };
                         try {
                             for (final PackageType pkg : lpackages) {

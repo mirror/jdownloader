@@ -11,20 +11,18 @@ import java.util.Set;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 
+import org.appwork.utils.ClipboardUtils;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 
 public class PackageControllerTableTransferable<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> implements Transferable {
-
     public static final DataFlavor                           FLAVOR = new DataFlavor(PackageControllerTableTransferable.class, PackageControllerTableTransferable.class.getName()) {
-
-                                                                        @Override
-                                                                        public boolean isFlavorSerializedObjectType() {
-                                                                            return false;
-                                                                        }
-                                                                    };
-
+        @Override
+        public boolean isFlavorSerializedObjectType() {
+            return false;
+        }
+    };
     protected final SelectionInfo<PackageType, ChildrenType> selectionInfo;
 
     public SelectionInfo<PackageType, ChildrenType> getSelectionInfo() {
@@ -32,24 +30,33 @@ public class PackageControllerTableTransferable<PackageType extends AbstractPack
     }
 
     protected DataFlavor[]                                            flavors;
-
     protected final PackageControllerTable<PackageType, ChildrenType> table;
+    protected String                                                  stringContent = null;
 
     public PackageControllerTable<PackageType, ChildrenType> getTable() {
         return table;
     }
 
-    public PackageControllerTableTransferable(SelectionInfo<PackageType, ChildrenType> selectionInfo, PackageControllerTable<PackageType, ChildrenType> table) {
+    public PackageControllerTableTransferable(SelectionInfo<PackageType, ChildrenType> selectionInfo, PackageControllerTable<PackageType, ChildrenType> table, String stringContent) {
         this.selectionInfo = selectionInfo;
         this.table = table;
         final List<DataFlavor> availableFlavors = new ArrayList<DataFlavor>();
         availableFlavors.add(FLAVOR);
+        if (stringContent != null) {
+            availableFlavors.add(ClipboardUtils.stringFlavor);
+            this.stringContent = stringContent;
+        }
         this.flavors = availableFlavors.toArray(new DataFlavor[] {});
+    }
+
+    public PackageControllerTableTransferable(SelectionInfo<PackageType, ChildrenType> selectionInfo, PackageControllerTable<PackageType, ChildrenType> table) {
+        this(selectionInfo, table, null);
     }
 
     protected PackageControllerTableTransferable(PackageControllerTableTransferable<PackageType, ChildrenType> transferable) {
         this.selectionInfo = transferable.getSelectionInfo();
         this.table = transferable.getTable();
+        this.stringContent = transferable.stringContent;
         this.flavors = transferable.getTransferDataFlavors();
     }
 
@@ -65,11 +72,13 @@ public class PackageControllerTableTransferable<PackageType extends AbstractPack
     public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException, IOException {
         if (!isDataFlavorSupported(flavor)) {
             throw new UnsupportedFlavorException(flavor);
-        }
-        if (flavor.equals(FLAVOR)) {
+        } else if (flavor.equals(FLAVOR)) {
             return getSelectionInfo();
+        } else if (flavor.equals(ClipboardUtils.stringFlavor)) {
+            return stringContent;
+        } else {
+            throw new UnsupportedFlavorException(flavor);
         }
-        throw new UnsupportedFlavorException(flavor);
     }
 
     protected Set<String> getURLs() {
@@ -86,5 +95,4 @@ public class PackageControllerTableTransferable<PackageType extends AbstractPack
         }
         return false;
     }
-
 }
