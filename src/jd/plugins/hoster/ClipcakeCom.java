@@ -17,8 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -31,16 +29,18 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.appwork.utils.StringUtils;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "clipcake.com" }, urls = { "https?://(?:www\\.)?clipcake\\.com/(?:videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)|https?://m\\.clipcake\\.com/videos/\\d+/[a-z0-9\\-]+/" })
 public class ClipcakeCom extends PluginForHost {
     public ClipcakeCom(PluginWrapper wrapper) {
         super(wrapper);
     }
+
     /* DEV NOTES */
     // Tags: Porn plugin
     // protocol: no https
     // other:
-
     /* Extension which will be used if no correct extension is found */
     private static final String  default_extension = ".mp4";
     /* Connection stuff */
@@ -89,6 +89,9 @@ public class ClipcakeCom extends PluginForHost {
         }
         /* Small workaround - do not include the slash at the end. */
         dllink = br.getRegex("var videoFile=\"(http[^<>\"]*?)/?\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("<source src=(?:'|\")([^<>'\"]*?)(?:'|\")").getMatch(0);
+        }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -104,13 +107,12 @@ public class ClipcakeCom extends PluginForHost {
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
-        link.setName(ext);
+        link.setFinalFileName(filename);
         if (isDownload) {
             return AvailableStatus.TRUE;
         }
         if (!StringUtils.isEmpty(dllink)) {
             dllink = Encoding.htmlDecode(dllink);
-            link.setFinalFileName(filename);
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
