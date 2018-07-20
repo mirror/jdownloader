@@ -58,8 +58,6 @@ public class PornHubCom extends PluginForDecrypt {
     final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
     private String                parameter      = null;
     private static final String   DOMAIN         = "pornhub.com";
-    private static final String   BEST_ONLY      = jd.plugins.hoster.PornHubCom.BEST_ONLY;
-    private static final String   FAST_LINKCHECK = jd.plugins.hoster.PornHubCom.FAST_LINKCHECK;
 
     @SuppressWarnings({ "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -165,8 +163,9 @@ public class PornHubCom extends PluginForDecrypt {
 
     private void decryptSingleVideo() throws Exception {
         final SubConfiguration cfg = SubConfiguration.getConfig(DOMAIN);
-        final boolean bestonly = cfg.getBooleanProperty(BEST_ONLY, false);
-        final boolean fastlinkcheck = cfg.getBooleanProperty(FAST_LINKCHECK, false);
+        final boolean bestonly = cfg.getBooleanProperty(jd.plugins.hoster.PornHubCom.BEST_ONLY, false);
+        final boolean bestselectiononly = cfg.getBooleanProperty(jd.plugins.hoster.PornHubCom.BEST_SELECTION_ONLY, false);
+        final boolean fastlinkcheck = cfg.getBooleanProperty(jd.plugins.hoster.PornHubCom.FAST_LINKCHECK, false);
         /* Convert embed links to normal links */
         if (parameter.matches(".+/embed_player\\.php\\?id=\\d+")) {
             if (br.containsHTML("No htmlCode read") || br.containsHTML("flash/novideo\\.flv")) {
@@ -215,7 +214,13 @@ public class PornHubCom extends PluginForDecrypt {
             if (StringUtils.isEmpty(finallink)) {
                 continue;
             }
-            if (cfg.getBooleanProperty(qualityInfo, true) || bestonly) {
+            final boolean grab;
+            if (bestonly) {
+                grab = !bestselectiononly || cfg.getBooleanProperty(qualityInfo, true);
+            } else {
+                grab = cfg.getBooleanProperty(qualityInfo, true);
+            }
+            if (grab) {
                 final String final_filename = fpName + "_" + qualityInfo + "p.mp4";
                 final DownloadLink dl = getDecryptDownloadlink();
                 dl.setProperty("directlink", finallink);

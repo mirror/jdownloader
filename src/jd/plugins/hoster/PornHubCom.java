@@ -87,9 +87,12 @@ public class PornHubCom extends PluginForHost {
             put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
             put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
             put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
+            put("1440", new String[] { "AVC", "6000", " 2560x1440", "AAC LC", "96" });
+            put("2160", new String[] { "AVC", "8000", "3840x2160", "AAC LC", "128" });
         }
     });
     public static final String                    BEST_ONLY                 = "BEST_ONLY";
+    public static final String                    BEST_SELECTION_ONLY       = "BEST_SELECTION_ONLY";
     public static final String                    FAST_LINKCHECK            = "FAST_LINKCHECK";
 
     @SuppressWarnings("deprecation")
@@ -802,6 +805,7 @@ public class PornHubCom extends PluginForHost {
     private void setConfigElements() {
         final ConfigEntry best = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), BEST_ONLY, JDL.L("plugins.hoster.PornHubCom.BestOnly", "Always only grab the best resolution available?")).setDefaultValue(false);
         getConfig().addEntry(best);
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), BEST_SELECTION_ONLY, JDL.L("plugins.hoster.PornHubCom.BestSelectionOnly", "Only grab selected resolution for best?")).setDefaultValue(false).setEnabledCondidtion(best, true));
         final Iterator<Entry<String, String[]>> it = formats.entrySet().iterator();
         while (it.hasNext()) {
             /*

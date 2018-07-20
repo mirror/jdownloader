@@ -35,6 +35,7 @@ import jd.parser.Regex;
 import jd.plugins.components.ThrowingRunnable;
 
 import org.appwork.utils.reflection.Clazz;
+import org.jdownloader.logging.LogController;
 import org.mozilla.javascript.ConsString;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
@@ -467,9 +468,9 @@ public class JavaScriptEngineFactory {
                 /*
                  * script may use Java primitive wrapper type objects (such as java.lang.Integer, java.lang.Boolean etc) explicitly. If we
                  * unwrap, then these script objects will become script primitive types. For example,
-                 * 
+                 *
                  * var x = new java.lang.Double(3.0); print(typeof x);
-                 * 
+                 *
                  * will print 'number'. We don't want that to happen.
                  */
                 Object obj = njb.unwrap();
@@ -1088,6 +1089,7 @@ public class JavaScriptEngineFactory {
             return org.appwork.storage.JSonStorage.restoreFromString(string, new org.appwork.storage.TypeRef<Object>() {
             });
         } catch (Throwable e) {
+            LogController.CL(true).log(e);
             // jd 09 workaround. use rhino
             try {
                 ScriptEngineManager mgr = getScriptEngineManager(null);
@@ -1115,6 +1117,7 @@ public class JavaScriptEngineFactory {
                 return defaultvalue;
             }
         } catch (final Throwable e) {
+            LogController.CL(true).log(e);
             return defaultvalue;
         }
     }
@@ -1203,7 +1206,7 @@ public class JavaScriptEngineFactory {
                 }
             }
         } catch (final Exception e) {
-            e.printStackTrace();
+            LogController.CL(true).log(e);
             return null;
         }
         return currentObject;

@@ -21,6 +21,7 @@ import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.SelectionInfo.PackageView;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
+import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
 
 public abstract class PackageControllerTableTransferHandler<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends TransferHandler {
     /**
@@ -199,19 +200,20 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
         if (selectionInfo != null && !selectionInfo.isEmpty()) {
             final AbstractNode afterElement;
             final AbstractNode beforeElement;
-            final boolean isFilteredView = table.getModel().isFilteredView();
+            final PackageControllerTableModel<PackageType, ChildrenType> model = table.getModel();
+            final boolean isFilteredView = model.isFilteredView();
             if (support.isDrop()) {
                 final JTable.DropLocation dl = (JTable.DropLocation) support.getDropLocation();
                 final int dropRow = dl.getRow();
-                afterElement = table.getModel().getObjectbyRow(dropRow);
+                afterElement = model.getObjectbyRow(dropRow);
                 if (dl.isInsertRow() && dropRow > 0) {
-                    beforeElement = table.getModel().getObjectbyRow(dropRow - 1);
+                    beforeElement = model.getObjectbyRow(dropRow - 1);
                 } else {
                     beforeElement = null;
                 }
             } else {
                 beforeElement = null;
-                final List<AbstractNode> firstSelected = table.getModel().getSelectedObjects(1);
+                final List<AbstractNode> firstSelected = model.getSelectedObjects(1);
                 if (firstSelected.size() > 0) {
                     afterElement = firstSelected.get(0);
                 } else {
