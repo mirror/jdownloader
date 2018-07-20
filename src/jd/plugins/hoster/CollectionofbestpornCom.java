@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -31,9 +30,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "collectionofbestporn.com" }, urls = { "http://(www\\.)?collectionofbestporn\\.com/video/[a-z0-9\\-]+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "collectionofbestporn.com" }, urls = { "https?://(www\\.)?collectionofbestporn\\.com/video/[a-z0-9\\-]+\\.html" })
 public class CollectionofbestpornCom extends PluginForHost {
-
     public CollectionofbestpornCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -42,12 +40,10 @@ public class CollectionofbestpornCom extends PluginForHost {
     // Tags:
     // protocol: no https
     // other:
-
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
 
     @Override
@@ -71,8 +67,8 @@ public class CollectionofbestpornCom extends PluginForHost {
         }
         final String[] possibleQualities = { "1080", "720", "540", "360", "240" };
         for (final String qual : possibleQualities) {
-            dllink = br.getRegex("url:[\t\n\r ]*?(?:\\'|\")(http://[^<>\"\\']*?)(?:\\'|\"),[\t\n\r ]*?title:[\t\n\r ]*?(?:\\'|\")" + qual + "(?:\\'|\")").getMatch(0);
-            dllink = br.getRegex("<source src=(\\'|\")(http://[^<>\"\\']*?)(\\'|\").*?res=(\\'|\")" + qual + "(\\'|\")").getMatch(1);
+            dllink = br.getRegex("url:[\t\n\r ]*?(?:\\'|\")(https?://[^<>\"\\']*?)(?:\\'|\"),[\t\n\r ]*?title:[\t\n\r ]*?(?:\\'|\")" + qual + "(?:\\'|\")").getMatch(0);
+            dllink = br.getRegex("<source src=(\\'|\")(https?://[^<>\"\\']*?)(\\'|\").*?res=(\\'|\")" + qual + "(\\'|\")").getMatch(1);
             if (dllink != null) {
                 break;
             }
@@ -80,14 +76,14 @@ public class CollectionofbestpornCom extends PluginForHost {
         if (dllink == null) {
             final String[] possibleQualities2 = { "HD", "SD" };
             for (final String qual : possibleQualities2) {
-                dllink = br.getRegex("file:[\t\n\r ]*?(?:\\'|\")(http://[^<>\"\\']*?)(?:\\'|\"),[\t\n\r ]+label:[\t\n\r ]*?(?:\\'|\")" + qual + "(?:\\'|\")").getMatch(0);
+                dllink = br.getRegex("file:[\t\n\r ]*?(?:\\'|\")(https?://[^<>\"\\']*?)(?:\\'|\"),[\t\n\r ]+label:[\t\n\r ]*?(?:\\'|\")" + qual + "(?:\\'|\")").getMatch(0);
                 if (dllink != null) {
                     break;
                 }
             }
         }
         if (dllink == null) {
-            dllink = br.getRegex("(http://[a-z0-9\\.\\-]+/dl/[^<>\"\\&]*?)(?:\\&|\\'|\")").getMatch(0);
+            dllink = br.getRegex("(https?://[a-z0-9\\.\\-]+/dl/[^<>\"\\&]*?)(?:\\&|\\'|\")").getMatch(0);
         }
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
