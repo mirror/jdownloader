@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -39,12 +38,11 @@ import jd.plugins.components.PluginJSonUtils;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "iwara.tv" }, urls = { "http://(?:[A-Za-z0-9]+\\.)?iwaradecrypted\\.tv/.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "iwara.tv" }, urls = { "https?://(?:[A-Za-z0-9]+\\.)?iwaradecrypted\\.tv/.+" })
 public class IwaraTv extends PluginForHost {
-
     public IwaraTv(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www.iwara.tv/user/register");
+        this.enablePremium("https://www.iwara.tv/user/register");
     }
 
     /* DEV NOTES */
@@ -52,22 +50,19 @@ public class IwaraTv extends PluginForHost {
     // Tags:
     // protocol: no https
     // other:
-
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private final String         html_privatevideo = ">This video is only available for users that|>Private video<";
     public static final String   html_loggedin     = "/user/logout";
     private static final String  type_image        = "https?://(?:www\\.)?iwara\\.tv/images/.+";
-
     private String               dllink            = null;
     private boolean              serverIssue       = false;
 
     @Override
     public String getAGBLink() {
-        return "http://www.iwara.tv/";
+        return "https://www.iwara.tv/";
     }
 
     @SuppressWarnings("deprecation")
@@ -109,6 +104,7 @@ public class IwaraTv extends PluginForHost {
             }
         }
         this.br.getPage(downloadLink.getDownloadURL());
+        br.followRedirect();
         final String uploadername = this.br.getRegex("class=\"username\">([^<>]+)<").getMatch(0);
         String filename = "";
         if (uploadername != null) {
@@ -130,7 +126,6 @@ public class IwaraTv extends PluginForHost {
             downloadLink.setName(filename + ".mp4");
             return AvailableStatus.TRUE;
         }
-
         boolean useApi = false;
         boolean isVideo = true;
         if (this.br.getURL().matches(type_image)) {
@@ -155,7 +150,6 @@ public class IwaraTv extends PluginForHost {
             logger.info("Failed to find downloadable content");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -248,13 +242,13 @@ public class IwaraTv extends PluginForHost {
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     br.setCookies(account.getHoster(), cookies);
-                    br.getPage("http://" + account.getHoster());
+                    br.getPage("https://" + account.getHoster());
                     if (br.containsHTML(html_loggedin)) {
                         return;
                     }
                     br = prepBR(new Browser());
                 }
-                br.getPage("http://www.iwara.tv/user/login?destination=front");
+                br.getPage("https://www.iwara.tv/user/login?destination=front");
                 Form loginform = br.getFormbyProperty("id", "user-login");
                 if (loginform == null) {
                     loginform = br.getForm(0);

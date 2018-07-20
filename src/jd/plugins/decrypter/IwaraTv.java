@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -31,9 +30,8 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "iwara.tv" }, urls = { "http://(?:[A-Za-z0-9]+\\.)?(?:trollvids\\.com|iwara\\.tv)/(?:videos|node)/[^/]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "iwara.tv" }, urls = { "https?://(?:[A-Za-z0-9]+\\.)?(?:trollvids\\.com|iwara\\.tv)/(?:videos|node)/[^/]+" })
 public class IwaraTv extends PluginForDecrypt {
-
     public IwaraTv(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -65,7 +63,7 @@ public class IwaraTv extends PluginForDecrypt {
             decryptedLinks.add(this.createDownloadlink(externID));
             return decryptedLinks;
         }
-        externID = this.br.getRegex("\"(?:http:)?//(?:www\\.)?youtube(?:\\-nocookie)?\\.com/embed/([^<>\"]*?)\"").getMatch(0);
+        externID = this.br.getRegex("\"(?:https?:)?//(?:www\\.)?youtube(?:\\-nocookie)?\\.com/embed/([^<>\"]*?)\"").getMatch(0);
         if (externID != null) {
             externID = "https://www.youtube.com/watch?v=" + externID;
             decryptedLinks.add(this.createDownloadlink(externID));
@@ -73,7 +71,7 @@ public class IwaraTv extends PluginForDecrypt {
         }
         final String source_html = this.br.getRegex("<div class=\"watch_left\">(.*?)<div class=\"rating_container\">").getMatch(0);
         if (source_html != null) {
-            externID = new Regex(source_html, "\"(http[^<>\"]*?)\"").getMatch(0);
+            externID = new Regex(source_html, "\"(https?[^<>\"]*?)\"").getMatch(0);
             if (externID != null) {
                 decryptedLinks.add(this.createDownloadlink(externID));
                 return decryptedLinks;
@@ -81,7 +79,6 @@ public class IwaraTv extends PluginForDecrypt {
         }
         final DownloadLink dl = createDownloadlink(this.br.getURL().replace("iwara.tv/", "iwaradecrypted.tv/"));
         decryptedLinks.add(dl);
-
         return decryptedLinks;
     }
 }
