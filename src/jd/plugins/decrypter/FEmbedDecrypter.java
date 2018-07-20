@@ -4,6 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.requests.PostRequest;
@@ -12,12 +18,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fembed.com" }, urls = { "https?://(www\\.)?fembed.com/(f|v)/([a-zA-Z0-9_-]+)(#javclName=[a-fA-F0-9]+)?" })
 public class FEmbedDecrypter extends PluginForDecrypt {
@@ -33,7 +33,7 @@ public class FEmbedDecrypter extends PluginForDecrypt {
         if (name != null) {
             name = new String(HexFormatter.hexToByteArray(name), "UTF-8");
         }
-        final PostRequest postRequest = new PostRequest("https://www.fembed.com/api/source/" + file_id);
+        final PostRequest postRequest = new PostRequest("https://www.fembed.com/api/sources/" + file_id);
         final Map<String, Object> response = JSonStorage.restoreFromString(br.getPage(postRequest), TypeRef.HASHMAP);
         if (!Boolean.TRUE.equals(response.get("success"))) {
             final DownloadLink link = createDownloadlink(parameter.getCryptedUrl().replaceAll("https?://", "decryptedforFEmbedHosterPlugin://"));
@@ -54,7 +54,7 @@ public class FEmbedDecrypter extends PluginForDecrypt {
             link.setProperty("label", label);
             link.setProperty("fembedid", file_id);
             link.setLinkID("fembed" + "." + file_id + "." + label);
-            if (StringUtils.isEmpty(name)) {
+            if (!StringUtils.isEmpty(name)) {
                 link.setFinalFileName(name + "-" + label + "." + type);
             } else {
                 link.setForcedFileName(file_id + "-" + label + "." + type);
