@@ -79,9 +79,9 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 public class BannerRotation implements Sponsor, AccountControllerListener {
     private final List<AvailableBanner> allBanners = new CopyOnWriteArrayList<AvailableBanner>();
     private final Queue                 queue      = new Queue("Banner") {
-                                                       public void killQueue() {
-                                                       };
-                                                   };
+        public void killQueue() {
+        };
+    };
 
     private class AvailableBanner implements DownloadControllerListener, LinkCollectorListener, DownloadWatchdogListener, AccountControllerListener {
         private volatile boolean    hasDownloadLinks        = false;
@@ -292,7 +292,7 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
         }
 
         @Override
-        public void onDownloadControllerUpdatedData(DownloadLink link, DownloadLinkProperty property) {
+        public void onDownloadControllerUpdatedData(final DownloadLink link, final DownloadLinkProperty property) {
             if (link != null && !AvailableStatus.FALSE.equals(link.getAvailableStatus()) && getDomainInfo() == link.getDomainInfo()) {
                 queue.add(new QueueAction<Void, RuntimeException>() {
                     @Override
@@ -336,7 +336,7 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
         }
 
         @Override
-        public void onLinkCollectorDataRefresh(LinkCollectorEvent event) {
+        public void onLinkCollectorDataRefresh(final LinkCollectorEvent event) {
             if (event != null && event.getParameter() instanceof CrawledLink) {
                 final CrawledLink link = (CrawledLink) event.getParameter();
                 if (link != null && !AvailableLinkState.OFFLINE.equals(link.getLinkState()) && getDomainInfo() == link.getDomainInfo()) {
@@ -374,7 +374,7 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
         private volatile long lastCrawledLinkDisabled = -1;
 
         @Override
-        public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink link) {
+        public void onLinkCollectorLinkAdded(final LinkCollectorEvent event, final CrawledLink link) {
             if (link != null && !AvailableLinkState.OFFLINE.equals(link.getLinkState()) && getDomainInfo() == link.getDomainInfo()) {
                 queue.add(new QueueAction<Void, RuntimeException>() {
                     @Override
@@ -394,7 +394,7 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
         }
 
         @Override
-        public void onLinkCollectorDupeAdded(LinkCollectorEvent event, CrawledLink link) {
+        public void onLinkCollectorDupeAdded(final LinkCollectorEvent event, final CrawledLink link) {
             if (link != null && !AvailableLinkState.OFFLINE.equals(link.getLinkState()) && getDomainInfo() == link.getDomainInfo()) {
                 queue.add(new QueueAction<Void, RuntimeException>() {
                     @Override
@@ -458,7 +458,7 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
         }
 
         @Override
-        public void onDownloadControllerStart(SingleDownloadController downloadController, DownloadLinkCandidate candidate) {
+        public void onDownloadControllerStart(final SingleDownloadController downloadController, final DownloadLinkCandidate candidate) {
             if (getDomainInfo() == candidate.getLink().getDomainInfo()) {
                 queue.add(new QueueAction<Void, RuntimeException>() {
                     @Override
@@ -502,7 +502,7 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
         }
 
         @Override
-        public void onAccountControllerEvent(AccountControllerEvent event) {
+        public void onAccountControllerEvent(final AccountControllerEvent event) {
             final Account acc = event.getAccount();
             if (acc != null && StringUtils.equalsIgnoreCase(getDomainInfo().getTld(), acc.getHoster())) {
                 switch (event.getType()) {
