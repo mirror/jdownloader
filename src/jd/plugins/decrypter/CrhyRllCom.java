@@ -25,7 +25,7 @@ import jd.utils.JDUtilities;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "crunchyroll.com" }, urls = { "https?://(?:www.)?crunchyroll.com(?:.br)?/(?!forumtopic)(?:comics_read(?:/(?:manga|comipo|artistalley))?\\?(?:volume_id|series_id)=[0-9]+&chapter_num=[0-9]+\\.[0-9]+|[\\w_\\-]+/[\\w\\_\\-]+\\-[0-9]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "crunchyroll.com" }, urls = { "https?://(?:www.)?crunchyroll.com(?:.br)?/(?!forum[^/]+)(?:comics_read(?:/(?:manga|comipo|artistalley))?\\?(?:volume_id|series_id)=[0-9]+&chapter_num=[0-9]+\\.[0-9]+|(?!user)[\\w_\\-]+/[\\w\\_\\-]+\\-[0-9]+)" })
 public class CrhyRllCom extends PluginForDecrypt {
     // Define the video quality codes used for RTMP
     public static enum DestinationQuality {
