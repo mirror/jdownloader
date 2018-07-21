@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -34,7 +33,6 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "myspass.de", "tvtotal.prosieben.de" }, urls = { "https?://(?:www\\.)?myspassdecrypted\\.de/.+\\d+/?$", "http://tvtotal\\.prosieben\\.de/videos/.*?/\\d+/" })
 public class MySpassDe extends PluginForHost {
-
     public MySpassDe(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
@@ -66,30 +64,25 @@ public class MySpassDe extends PluginForHost {
         if (br.containsHTML("<url_flv><\\!\\[CDATA\\[\\]\\]></url_flv>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-
         /* Build our filename */
         /* Links added via decrypter can have this set to FALSE as it is not needed for all filenames e.g. stock car crash challenge. */
         final boolean needs_series_filename = downloadLink.getBooleanProperty("needs_series_filename", true);
         final DecimalFormat df = new DecimalFormat("00");
         String filename = getXML("format") + " - ";
-        if (needs_series_filename) {
-            filename += "S" + df.format(Integer.parseInt(getXML("season"))) + "E" + df.format(Integer.parseInt(getXML("episode"))) + " - ";
+        if (needs_series_filename) { // Sometimes episode = 9/Best Of, need regex to get only the integer
+            filename += "S" + df.format(Integer.parseInt(getXML("season"))) + "E" + df.format(Integer.parseInt(new Regex(getXML("episode"), "(\\d)").getMatch(0))) + " - ";
         }
         filename += getXML("title");
-
         dllink = getXML("url_flv");
         filename = filename.trim();
         final String ext;
-
         if (dllink != null) {
             dllink = Encoding.htmlDecode(dllink);
             ext = getFileNameExtensionFromString(dllink, ".mp4");
         } else {
             ext = ".mp4";
         }
-
         filename = Encoding.htmlDecode(filename);
-
         if (dllink != null) {
             downloadLink.setFinalFileName(filename + ext);
             URLConnectionAdapter con = null;
@@ -109,24 +102,20 @@ public class MySpassDe extends PluginForHost {
         } else {
             downloadLink.setName(filename + ext);
         }
-
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-
         /* 2017-02-04: Without the Range Header we'll be limited to ~100 KB/s */
         downloadLink.setProperty("ServerComaptibleForByteRangeRequest", true);
         br.getHeaders().put("Range", "bytes=" + 0 + "-");
-
         /* Workaround for old downloadcore bug that can lead to incomplete files */
         br.getHeaders().put("Accept-Encoding", "identity");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
