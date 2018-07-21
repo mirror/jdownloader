@@ -11,17 +11,17 @@ import javax.swing.JComponent;
 import javax.swing.JTable;
 import javax.swing.TransferHandler;
 
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
-import jd.controlling.packagecontroller.PackageController;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.SelectionInfo.PackageView;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
+
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.controlling.packagecontroller.PackageController;
 
 public abstract class PackageControllerTableTransferHandler<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends TransferHandler {
     /**
@@ -125,72 +125,71 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
         if (selectionInfo != null && selectionInfo.getController() == getController()) {
             if (!support.isDrop() || !((JTable.DropLocation) support.getDropLocation()).isInsertRow()) {
                 // TODO
-            } else {
-                getController().getQueue().add(new QueueAction<Void, RuntimeException>(org.appwork.utils.event.queue.Queue.QueuePriority.HIGH) {
-                    @Override
-                    protected Void run() throws RuntimeException {
-                        boolean hasSelectedPackage = false;
-                        boolean hasSelectedLinks = false;
+            }
+            getController().getQueue().add(new QueueAction<Void, RuntimeException>(org.appwork.utils.event.queue.Queue.QueuePriority.HIGH) {
+                @Override
+                protected Void run() throws RuntimeException {
+                    boolean hasSelectedPackage = false;
+                    boolean hasSelectedLinks = false;
+                    for (final PackageView<?, ?> packageView : selectionInfo.getPackageViews()) {
+                        if (packageView.isPackageSelected()) {
+                            hasSelectedPackage = true;
+                            break;
+                        } else if (packageView.isExpanded()) {
+                            hasSelectedLinks = true;
+                            break;
+                        }
+                    }
+                    if (hasSelectedPackage) {
+                        final PackageType destinationPackage;
+                        if (beforeElement instanceof AbstractPackageNode) {
+                            destinationPackage = (PackageType) beforeElement;
+                        } else if (beforeElement instanceof AbstractPackageChildrenNode) {
+                            destinationPackage = ((ChildrenType) beforeElement).getParentNode();
+                        } else {
+                            destinationPackage = null;
+                        }
+                        final ArrayList<PackageType> packages = new ArrayList<PackageType>();
                         for (final PackageView<?, ?> packageView : selectionInfo.getPackageViews()) {
                             if (packageView.isPackageSelected()) {
-                                hasSelectedPackage = true;
-                                break;
-                            } else if (packageView.isExpanded()) {
-                                hasSelectedLinks = true;
-                                break;
+                                packages.add((PackageType) packageView.getPackage());
                             }
                         }
-                        if (hasSelectedPackage) {
-                            final PackageType destinationPackage;
-                            if (beforeElement instanceof AbstractPackageNode) {
-                                destinationPackage = (PackageType) beforeElement;
-                            } else if (beforeElement instanceof AbstractPackageChildrenNode) {
-                                destinationPackage = ((ChildrenType) beforeElement).getParentNode();
-                            } else {
-                                destinationPackage = null;
-                            }
-                            final ArrayList<PackageType> packages = new ArrayList<PackageType>();
-                            for (final PackageView<?, ?> packageView : selectionInfo.getPackageViews()) {
-                                if (packageView.isPackageSelected()) {
-                                    packages.add((PackageType) packageView.getPackage());
-                                }
-                            }
-                            getController().move(packages, destinationPackage);
-                        } else if (hasSelectedLinks) {
-                            /* move links */
-                            final PackageType destinationPackage;
-                            final ChildrenType afterChild;
-                            if (beforeElement != null) {
-                                if (beforeElement instanceof AbstractPackageChildrenNode) {
-                                    afterChild = (ChildrenType) beforeElement;
-                                    destinationPackage = afterChild.getParentNode();
-                                } else if (beforeElement instanceof AbstractPackageNode) {
-                                    afterChild = null;
-                                    destinationPackage = ((PackageType) beforeElement);
-                                } else {
-                                    afterChild = null;
-                                    destinationPackage = null;
-                                }
+                        getController().move(packages, destinationPackage);
+                    } else if (hasSelectedLinks) {
+                        /* move links */
+                        final PackageType destinationPackage;
+                        final ChildrenType afterChild;
+                        if (beforeElement != null) {
+                            if (beforeElement instanceof AbstractPackageChildrenNode) {
+                                afterChild = (ChildrenType) beforeElement;
+                                destinationPackage = afterChild.getParentNode();
+                            } else if (beforeElement instanceof AbstractPackageNode) {
+                                afterChild = null;
+                                destinationPackage = ((PackageType) beforeElement);
                             } else {
                                 afterChild = null;
                                 destinationPackage = null;
                             }
-                            if (destinationPackage != null) {
-                                final ArrayList<ChildrenType> links = new ArrayList<ChildrenType>();
-                                for (final PackageView<?, ?> packageView : selectionInfo.getPackageViews()) {
-                                    if (packageView.isExpanded()) {
-                                        links.addAll((List<ChildrenType>) packageView.getSelectedChildren());
-                                    }
-                                }
-                                getController().move(links, destinationPackage, afterChild);
-                            } else {
-                                org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(new WTFException("this should not happen!"));
-                            }
+                        } else {
+                            afterChild = null;
+                            destinationPackage = null;
                         }
-                        return null;
+                        if (destinationPackage != null) {
+                            final ArrayList<ChildrenType> links = new ArrayList<ChildrenType>();
+                            for (final PackageView<?, ?> packageView : selectionInfo.getPackageViews()) {
+                                if (packageView.isExpanded()) {
+                                    links.addAll((List<ChildrenType>) packageView.getSelectedChildren());
+                                }
+                            }
+                            getController().move(links, destinationPackage, afterChild);
+                        } else {
+                            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(new WTFException("this should not happen!"));
+                        }
                     }
-                });
-            }
+                    return null;
+                }
+            });
         }
         return null;
     }
