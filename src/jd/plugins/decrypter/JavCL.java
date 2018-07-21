@@ -2,6 +2,10 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.Base64;
+import org.appwork.utils.formatter.HexFormatter;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
@@ -10,10 +14,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.Base64;
-import org.appwork.utils.formatter.HexFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "javcl.com" }, urls = { "https?://(?:www\\.)?javcl\\.com/([^/]+)/" })
 public class JavCL extends PluginForDecrypt {
@@ -37,7 +37,7 @@ public class JavCL extends PluginForDecrypt {
             final String url = decodejav(data_link, data_id);
             final String name;
             if (data_links.length > 1) {
-                name = filename + "_a" + index;
+                name = filename + "_" + (char) ('a' + index);
             } else {
                 name = filename;
             }
