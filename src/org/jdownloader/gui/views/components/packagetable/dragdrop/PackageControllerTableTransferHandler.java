@@ -208,7 +208,8 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
                 if (dl.isInsertRow() && dropRow > 0) {
                     beforeElement = model.getObjectbyRow(dropRow - 1);
                 } else {
-                    beforeElement = null;
+                    // TODO: check on monday
+                    beforeElement = afterElement;
                 }
             } else {
                 beforeElement = null;
