@@ -53,12 +53,12 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filerio.in", "filerio.com", "filekeen.com" }, urls = { "http://(www\\.)?(filerio\\.in|filekeen\\.com|filerio\\.com)/[a-z0-9]{12}", "vSGzhkIKEfRUhbUNUSED_REGEXfdgrtjRET36fdfjhtwe85t7459zghwghior", "vSGzhkIKEfRUhbUNUSED_REGEXfdgdadadrtjRET36fdfjhtwe85t7459zghwghior1" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filerio.in", "filerio.com", "filekeen.com" }, urls = { "https?://(www\\.)?(filerio\\.in|filekeen\\.com|filerio\\.com)/[a-z0-9]{12}", "vSGzhkIKEfRUhbUNUSED_REGEXfdgrtjRET36fdfjhtwe85t7459zghwghior", "vSGzhkIKEfRUhbUNUSED_REGEXfdgdadadrtjRET36fdfjhtwe85t7459zghwghior1" })
 public class FileRioCom extends PluginForHost {
     private final static String SSL_CONNECTION      = "SSL_CONNECTION";
     private String              correctedBR         = "";
     private static final String PASSWORDTEXT        = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
-    private static final String COOKIE_HOST         = "http://filerio.in";
+    private static final String COOKIE_HOST         = "https://filerio.in";
     private static final String MAINTENANCE         = ">This server is in maintenance mode";
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
@@ -67,7 +67,7 @@ public class FileRioCom extends PluginForHost {
     // XfileSharingProBasic Version 2.5.4.6, modified fnf-texts
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://").replaceAll("(filerio|filekeen)\\.com/", "filerio.in/"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("(filerio|filekeen)\\.com/", "filerio.in/"));
     }
 
     @Override
@@ -313,14 +313,14 @@ public class FileRioCom extends PluginForHost {
             if (dllink == null) {
                 dllink = new Regex(correctedBR, "Download: <a href=\"(.*?)\"").getMatch(0);
                 if (dllink == null) {
-                    dllink = new Regex(correctedBR, "\"(http://(\\d+\\.\\d+\\.\\d+\\.\\d+|([a-z0-9]+\\.)filerio\\.in):\\d+/d/[a-z0-9]+/[^<>\"]*?)\"").getMatch(0);
+                    dllink = new Regex(correctedBR, "\"(https?://(\\d+\\.\\d+\\.\\d+\\.\\d+|([a-z0-9]+\\.)filerio\\.in):\\d+/d/[a-z0-9]+/[^<>\"]*?)\"").getMatch(0);
                     if (dllink == null) {
-                        dllink = new Regex(correctedBR, "<span style=\"width:915px; height:67px; font\\-family:\"Tahoma\"; font\\-size:12px; color:#356186; border:1px solid #bbb; padding:7px;\">[\t\n\r ]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
+                        dllink = new Regex(correctedBR, "<span style=\"width:915px; height:67px; font\\-family:\"Tahoma\"; font\\-size:12px; color:#356186; border:1px solid #bbb; padding:7px;\">[\t\n\r ]+<a href=\"(https[^<>\"]*?)\"").getMatch(0);
                         if (dllink == null) {
                             // Try to find crypted link
                             dllink = br.getRegex(">eval\\(unescape\\(\\'([^<>\"]*?)\\'\\)\\)").getMatch(0);
                             if (dllink != null) {
-                                dllink = new Regex(Encoding.htmlDecode(dllink), "location\\.href=\"(http://[^<>\"]*?)\"").getMatch(0);
+                                dllink = new Regex(Encoding.htmlDecode(dllink), "location\\.href=\"(http[^<>\"]*?)\"").getMatch(0);
                             }
                             if (dllink == null) {
                                 String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
@@ -477,7 +477,7 @@ public class FileRioCom extends PluginForHost {
             if (finallink == null) {
                 finallink = new Regex(decoded, "type=\"video/divx\"src=\"(.*?)\"").getMatch(0);
                 if (finallink == null) {
-                    finallink = new Regex(decoded, "\\.addVariable\\(\\'file\\',\\'(http://.*?)\\'\\)").getMatch(0);
+                    finallink = new Regex(decoded, "\\.addVariable\\(\\'file','(http.*?)'\\)").getMatch(0);
                 }
             }
         }
@@ -657,7 +657,7 @@ public class FileRioCom extends PluginForHost {
                 }
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
-                loginform.put("redirect", "http://filerio.in/");
+                loginform.put("redirect", "https://filerio.in/");
                 loginform.remove(null);
                 sendForm(loginform);
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
@@ -729,7 +729,7 @@ public class FileRioCom extends PluginForHost {
     }
 
     private static boolean checkSsl() {
-        return SubConfiguration.getConfig("filerio.in").getBooleanProperty(SSL_CONNECTION, false) || SubConfiguration.getConfig("filerio.com").getBooleanProperty(SSL_CONNECTION, false) || SubConfiguration.getConfig("filekeen.com").getBooleanProperty(SSL_CONNECTION, false);
+        return SubConfiguration.getConfig("filerio.in").getBooleanProperty(SSL_CONNECTION, false) || SubConfiguration.getConfig("filerio.com").getBooleanProperty(SSL_CONNECTION, false) || SubConfiguration.getConfig("filekeen.com").getBooleanProperty(SSL_CONNECTION, true);
     }
 
     private void setConfigElements() {
