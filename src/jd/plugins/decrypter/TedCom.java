@@ -6,9 +6,6 @@ import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 import java.util.Random;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -21,6 +18,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ted.com" }, urls = { "https?://(?:www\\.)?ted\\.com/(talks/(?:lang/[a-zA-Z\\-]+/)?[\\w_]+|[\\w_]+\\?language=\\w+|playlists/\\d+/[^/]+)" })
 public class TedCom extends PluginForDecrypt {
@@ -103,10 +103,10 @@ public class TedCom extends PluginForDecrypt {
         /* Load host plugin */
         JDUtilities.getPluginForHost("ted.com");
         cfg = SubConfiguration.getConfig("ted.com");
-        this.br.setFollowRedirects(true);
+        br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (this.br.getHttpConnection().getResponseCode() == 404) {
-            this.decryptedLinks.add(this.createOfflinelink(parameter));
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
         decryptAll();
@@ -124,6 +124,15 @@ public class TedCom extends PluginForDecrypt {
              * We could crawl from here straight away but this way we won't be able to find all qualities thus we prefer to decrypt one by
              * one via their original URLs.
              */
+            String[] links = br.getRegex("<a\\s+href=\"([^<>\"]+referrer=playlist[^<>\"]+)\"").getColumn(0);
+            logger.info("links: " + links.length);
+            for (final String link : links) {
+                logger.info("link: " + link);
+                decryptedLinks.add(createDownloadlink("https://www.ted.com" + link));
+            }
+            if (links.length > 0) {
+                return;
+            }
             json = this.br.getRegex("<script>q\\(\"permalink\\.init\",(\\{.*?)</script>").getMatch(0);
             entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
             entries = (LinkedHashMap<String, Object>) entries.get("__INITIAL_DATA__");
@@ -282,8 +291,8 @@ public class TedCom extends PluginForDecrypt {
             }
             /** Decrypt subtitles */
             if (subtitleText != null && tedID != null || entries.containsKey("languages")) {
-                final String[][] allSubtitleValues = { { "sq", "Albanian" }, { "ar", "Arabic" }, { "hy", "Armenian" }, { "az", "Azerbaijani" }, { "bn", "Bengali" }, { "bg", "Bulgarian" }, { "zh-cn", "Chinese, Simplified" }, { "zh-tw", "Chinese, Traditional" }, { "hr", "Croatian" }, { "cs", "Czech" }, { "da", "Danish" }, { "nl", "Dutch" }, { "en", "English" }, { "et", "Estonian" }, { "fi", "Finnish" }, { "fr", "French" }, { "ka", "Georgian" }, { "de", "German" }, { "el", "Greek" }, { "he", "Hebrew" }, { "hu", "Hungarian" }, { "id", "Indonesian" }, { "it", "Italian" }, { "ja", "Japanese" }, { "ko", "Korean" }, { "ku", "Kurdish" }, { "lt", "Lithuanian" }, { "mk", "Macedonian" }, { "ms", "Malay" }, { "nb", "Norwegian Bokmal" }, { "fa", "Persian" }, { "pl", "Polish" }, { "pt", "Portuguese" }, { "pt-br", "Portuguese, Brazilian" }, { "ro", "Romanian" }, { "ru", "Russian" }, { "sr", "Serbian" },
-                        { "sk", "Slovak" }, { "sl", "Slovenian" }, { "es", "Spanish" }, { "sv", "Swedish" }, { "th", "Thai" }, { "tr", "Turkish" }, { "uk", "Ukrainian" }, { "vi", "Vietnamese" } };
+                final String[][] allSubtitleValues = { { "sq", "Albanian" }, { "ar", "Arabic" }, { "hy", "Armenian" }, { "az", "Azerbaijani" }, { "bn", "Bengali" }, { "bg", "Bulgarian" }, { "zh-cn", "Chinese, Simplified" }, { "zh-tw", "Chinese, Traditional" }, { "hr", "Croatian" }, { "cs", "Czech" }, { "da", "Danish" }, { "nl", "Dutch" }, { "en", "English" }, { "et", "Estonian" }, { "fi", "Finnish" }, { "fr", "French" }, { "ka", "Georgian" }, { "de", "German" }, { "el", "Greek" }, { "he", "Hebrew" }, { "hu", "Hungarian" }, { "id", "Indonesian" }, { "it", "Italian" }, { "ja", "Japanese" }, { "ko", "Korean" }, { "ku", "Kurdish" }, { "lt", "Lithuanian" }, { "mk", "Macedonian" }, { "ms", "Malay" }, { "nb", "Norwegian Bokmal" }, { "fa", "Persian" }, { "pl", "Polish" }, { "pt", "Portuguese" }, { "pt-br", "Portuguese, Brazilian" }, { "ro", "Romanian" }, { "ru", "Russian" },
+                        { "sr", "Serbian" }, { "sk", "Slovak" }, { "sl", "Slovenian" }, { "es", "Spanish" }, { "sv", "Swedish" }, { "th", "Thai" }, { "tr", "Turkish" }, { "uk", "Ukrainian" }, { "vi", "Vietnamese" } };
                 final ArrayList<String[]> selectedSubtitles = new ArrayList<String[]>();
                 final LinkedHashMap<String, String> foundSubtitles = new LinkedHashMap();
                 if (subtitleText != null) {
