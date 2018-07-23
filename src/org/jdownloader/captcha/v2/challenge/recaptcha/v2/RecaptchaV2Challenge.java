@@ -9,6 +9,10 @@ import java.util.ArrayList;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Plugin;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
@@ -36,10 +40,6 @@ import org.jdownloader.captcha.v2.solver.browser.BrowserViewport;
 import org.jdownloader.captcha.v2.solver.browser.BrowserWindow;
 import org.jdownloader.captcha.v2.solver.service.BrowserSolverService;
 import org.jdownloader.gui.translate._GUI;
-
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.Plugin;
 
 public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
     public static final String             RAWTOKEN    = "rawtoken";
@@ -164,7 +164,11 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
             }
             break;
         }
-        return new Recaptcha2BrowserViewport(screenResource, rect, elementBounds);
+        if (rect != null) {
+            return new Recaptcha2BrowserViewport(screenResource, rect, elementBounds);
+        } else {
+            return null;
+        }
     }
 
     @Override
