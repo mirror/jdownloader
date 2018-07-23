@@ -112,6 +112,11 @@ public class TezFilesCom extends K2SApi {
         }
     }
 
+    @Override
+    public String[] siteSupportedNames() {
+        return new String[] { "tezfiles.com" };
+    }
+
     /* end of K2SApi stuff */
     private void setConfigElements() {
         final ConfigEntry cfgapi = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), getUseAPIPropertyID(), "Use API (recommended!)").setDefaultValue(isUseAPIDefaultEnabled());

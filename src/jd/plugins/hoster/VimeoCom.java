@@ -517,6 +517,9 @@ public class VimeoCom extends PluginForHost {
                     json = ibr.getRegex("t\\s*=\\s*(\\s*\\{\\s*\"cdn_url\".*?);if\\(\\!?t\\.request\\)").getMatch(0);
                     if (json == null) {
                         json = ibr.getRegex("^(\\s*\\{\\s*\"cdn_url\".+)").getMatch(0);
+                        if (json == null) {
+                            json = ibr.getRegex("(\\s*\\{\\s*\"cdn_url\".*?\\});").getMatch(0);
+                        }
                     }
                 }
             }

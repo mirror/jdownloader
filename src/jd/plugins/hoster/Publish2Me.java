@@ -62,6 +62,11 @@ public class Publish2Me extends K2SApi {
     }
 
     @Override
+    public String[] siteSupportedNames() {
+        return new String[] { "publish2.me" };
+    }
+
+    @Override
     public void correctDownloadLink(final DownloadLink link) {
         // link cleanup, but respect users protocol choosing.
         link.setUrlDownload(link.getDownloadURL().replaceFirst("^https?://", getProtocol()));

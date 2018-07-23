@@ -23,6 +23,7 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -38,13 +39,13 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
  *
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linkshrink.net" }, urls = { "https?://(?:www\\.)?linkshrink\\.net/([A-Za-z0-9]{5,6}|[A-Za-z0-9]{4}=(?:https?|ftp)://.+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linkshrink.net" }, urls = { "https?://(?:www\\.)?linkshrink\\.net/([A-Za-z0-9]{5,6}|[A-Za-z0-9]{4}=.+)" })
 public class LnkShnkNt extends antiDDoSForDecrypt {
     public LnkShnkNt(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String type_direct  = "https?://(www\\.)?linkshrink\\.net/[A-Za-z0-9]{4}=https?://.+";
+    private static final String type_direct  = "https?://(www\\.)?linkshrink\\.net/[A-Za-z0-9]{4}=.+";
     private static final String type_invalid = "https?://(www\\.)?linkshrink\\.net/(report|login)";
 
     @Override
@@ -62,7 +63,14 @@ public class LnkShnkNt extends antiDDoSForDecrypt {
         }
         br.setFollowRedirects(false);
         if (parameter.matches(type_direct)) {
-            final String finallink = new Regex(parameter, "linkshrink\\.net/[A-Za-z0-9]{4}=((?:https?|ftp)://.+)").getMatch(0).replace("{d}", "?d=").replace("%7Bd%7D", "?d=");
+            String finallink = new Regex(parameter, "linkshrink\\.net/[A-Za-z0-9]{4}=(.+)").getMatch(0).replace("{d}", "?d=").replace("%7Bd%7D", "?d=");
+            if (HTMLParser.getProtocol(finallink) == null) {
+                if (finallink.startsWith("//:")) {
+                    finallink = "http" + finallink;
+                } else {
+                    finallink = "http://" + finallink;
+                }
+            }
             decryptedLinks.add(this.createDownloadlink(finallink));
             return decryptedLinks;
         }

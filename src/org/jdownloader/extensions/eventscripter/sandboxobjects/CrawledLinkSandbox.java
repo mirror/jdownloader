@@ -276,6 +276,14 @@ public class CrawledLinkSandbox {
         }
     }
 
+    public LinkInfoSandbox getLinkInfo() {
+        if (link == null) {
+            return null;
+        } else {
+            return new LinkInfoSandbox(link.getLinkInfo());
+        }
+    }
+
     public String getHost() {
         if (link != null) {
             return link.getHost();
