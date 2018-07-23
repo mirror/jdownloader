@@ -648,6 +648,10 @@ public class UbiqfileCom extends antiDDoSForHost {
                         String code = getCaptchaCode("xfilesharingprobasic", captchaurl, downloadLink);
                         dlForm.put("code", code);
                         logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
+                    } else if (correctedBR.contains("class=\"g-recaptcha\"")) {
+                        logger.info("Detected captcha method \"reCaptchaV2\" for this host");
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                        dlForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                     } else if (new Regex(correctedBR, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {
                         logger.info("Detected captcha method \"reCaptchaV1\" for this host");
                         final Recaptcha rc = new Recaptcha(br, this);
@@ -1300,12 +1304,7 @@ public class UbiqfileCom extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (final PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account, true);
         final String space[] = new Regex(correctedBR, ">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
         if ((space != null && space.length != 0) && (space[0] != null && space[1] != null)) {
             /* free users it's provided by default */
@@ -1372,6 +1371,16 @@ public class UbiqfileCom extends antiDDoSForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "\r\nPlugin broken, please contact the JDownloader Support!");
                     }
                 }
+                if (loginform.containsHTML("\"g-recaptcha\"")) {
+                    final DownloadLink dummyLink = new DownloadLink(this, "Account Login", COOKIE_HOST, COOKIE_HOST, true);
+                    final DownloadLink odl = this.getDownloadLink();
+                    this.setDownloadLink(dummyLink);
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    if (odl != null) {
+                        this.setDownloadLink(odl);
+                    }
+                }
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 submitForm(loginform);
@@ -1394,7 +1403,9 @@ public class UbiqfileCom extends antiDDoSForHost {
                 }
                 account.saveCookies(br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
-                account.clearCookies("");
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
