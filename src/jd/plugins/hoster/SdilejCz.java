@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -41,9 +40,8 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sdilej.cz" }, urls = { "https?://(www\\.)?sdilej\\.cz/\\d+/.{1}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sdilej.cz" }, urls = { "https?://(www\\.)?sdilej\\.cz/\\d+/.{1}" })
 public class SdilejCz extends PluginForHost {
-
     /** Former czshare.com */
     private static AtomicInteger SIMULTANEOUS_PREMIUM = new AtomicInteger(-1);
     private static Object        LOCK                 = new Object();
@@ -107,33 +105,6 @@ public class SdilejCz extends PluginForHost {
         downloadLink.setFinalFileName(filename.trim());
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".").replace(" ", "")));
         return AvailableStatus.TRUE;
-    }
-
-    @SuppressWarnings("deprecation")
-    @Override
-    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
-        this.br.getPage("/upload/");
-        final String trafficleft = br.getRegex("kredit: <strong>([^<>\"]*?)<").getMatch(0);
-        if (trafficleft == null) {
-            final String lang = System.getProperty("user.language");
-            if ("de".equalsIgnoreCase(lang)) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-
-        }
-        ai.setTrafficLeft(trafficleft.replace(",", "."));
-        account.setValid(true);
-        ai.setStatus("Premium User");
-        return ai;
     }
 
     @Override
@@ -260,7 +231,7 @@ public class SdilejCz extends PluginForHost {
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
-                prepBR(this.br);
+                prepBR(br);
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
@@ -280,15 +251,14 @@ public class SdilejCz extends PluginForHost {
                         return;
                     }
                 }
-
                 br.setFollowRedirects(true);
-                this.br.getPage("http://sdilej.cz/index.php?pg=prihlasit");
+                br.getPage("http://sdilej.cz/prihlasit");
                 // final URLConnectionAdapter con = this.br.openPostConnection("/index.php",
                 // "trvale=on&Prihlasit=P%C5%99ihl%C3%A1sit&login-name=" + Encoding.urlEncode(account.getUser()) + "&login-password=" +
                 // Encoding.urlEncode(account.getPass()));
                 // con.disconnect();
-                br.postPage("/index.php", "trvale=on&Prihlasit=P%C5%99ihl%C3%A1sit&login-name=" + Encoding.urlEncode(account.getUser()) + "&login-password=" + Encoding.urlEncode(account.getPass()));
-                if (br.getCookie(MAINPAGE, "trvale") == null) {
+                br.postPage("/sql.php", "login=" + Encoding.urlEncode(account.getUser()) + "&heslo=" + Encoding.urlEncode(account.getPass()));
+                if (br.getCookie(MAINPAGE, "SDILEJ") == null) {
                     final String lang = System.getProperty("user.language");
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -312,6 +282,29 @@ public class SdilejCz extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account, true);
+        } catch (PluginException e) {
+            account.setValid(false);
+            throw e;
+        }
+        br.getPage("/upload/");
+        final String trafficleft = br.getRegex("kredit: <strong>([^<>\"]*?)<").getMatch(0);
+        if (trafficleft == null) {
+            account.setValid(true);
+            ai.setStatus("Registered User");
+            return ai;
+        }
+        ai.setTrafficLeft(trafficleft.replace(",", "."));
+        account.setValid(true);
+        ai.setStatus("Premium User");
+        return ai;
+    }
+
     private Browser prepBR(final Browser br) {
         br.setCustomCharset("utf-8");
         br.setLoadLimit(br.getLoadLimit() * 5);
@@ -329,5 +322,4 @@ public class SdilejCz extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
-
 }
