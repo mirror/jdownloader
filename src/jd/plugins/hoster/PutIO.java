@@ -29,7 +29,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.net.HTTPHeader;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "put.io" }, urls = { "https?://(?:[a-z0-9\\-]+\\.)?put\\.io/(?:(?:v2/)?files/\\d+/download|zipstream/\\d+.*)\\?oauth_token=[A-Z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "put.io" }, urls = { "https?://(?:[a-z0-9\\-]+\\.)?put\\.io/(?:(?:v2/)?files/\\d+/(mp4/download|download)|zipstream/\\d+.*|download/\\d+.*)\\?oauth_token=[A-Z0-9]+" })
 public class PutIO extends PluginForHost {
     private final String CLIENT_ID     = "181";
     private final String CLIENT_SECRET = "ga38bm4yv546pzauepok";
@@ -101,7 +101,7 @@ public class PutIO extends PluginForHost {
     }
 
     private String getID(String url) throws PluginException {
-        final String id = new Regex(url, "files/(\\d+)").getMatch(0);
+        final String id = new Regex(url, "(files|download)/(\\d+)").getMatch(1);
         if (id == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
