@@ -1,5 +1,6 @@
 package jd.plugins;
 
+import java.io.File;
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.regex.Pattern;
@@ -21,9 +22,7 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 
 public class LinkInfo {
-
     private final int  partNum;
-
     private final Icon icon;
 
     public Icon getIcon() {
@@ -47,6 +46,164 @@ public class LinkInfo {
     }
 
     private static final HashMap<String, WeakReference<LinkInfo>> CACHE = new HashMap<String, WeakReference<LinkInfo>>();
+
+    public static LinkInfo getLinkInfo(final File file) {
+        if (file == null || !file.isFile()) {
+            return null;
+        }
+        final String fileName = file.getName();
+        final String fileNameExtension = Files.getExtension(fileName);
+        int num = -1;
+        try {
+            String partID = new Regex(fileName, "\\.r(\\d+)$").getMatch(0);
+            if (partID == null) {
+                partID = new Regex(fileName, "\\.pa?r?t?\\.?(\\d+).*?\\.rar$").getMatch(0);
+            }
+            if (partID != null) {
+                num = Integer.parseInt(partID);
+            }
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+        final String mimeHint = null;
+        final String ID = fileNameExtension + "_" + num + "_" + mimeHint;
+        synchronized (CACHE) {
+            LinkInfo ret = null;
+            WeakReference<LinkInfo> linkInfo = CACHE.get(ID);
+            if (linkInfo == null || (ret = linkInfo.get()) == null) {
+                final ExtensionsFilterInterface hint = CompiledFiletypeFilter.getExtensionsFilterInterface(mimeHint);
+                final ExtensionsFilterInterface compiled = CompiledFiletypeFilter.getExtensionsFilterInterface(fileNameExtension);
+                final ExtensionsFilterInterface extension;
+                if (compiled == null || (hint != null && !hint.isSameExtensionGroup(compiled))) {
+                    extension = new ExtensionsFilterInterface() {
+                        final String  extension;
+                        final String  desc;
+                        final Pattern pattern;
+                        {
+                            if (fileNameExtension != null && fileNameExtension.matches("^[a-zA-Z0-9]{1,4}$")) {
+                                extension = fileNameExtension;
+                                desc = fileNameExtension;
+                                pattern = Pattern.compile(Pattern.quote(fileNameExtension), Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
+                            } else {
+                                extension = "";
+                                desc = _GUI.T.settings_linkgrabber_filter_others();
+                                pattern = null;
+                            }
+                        }
+
+                        @Override
+                        public ExtensionsFilterInterface getSource() {
+                            return hint;
+                        }
+
+                        @Override
+                        public Pattern compiledAllPattern() {
+                            if (hint != null) {
+                                return hint.compiledAllPattern();
+                            } else {
+                                return null;
+                            }
+                        }
+
+                        @Override
+                        public String getDesc() {
+                            if (hint != null) {
+                                return hint.getDesc();
+                            } else {
+                                return desc;
+                            }
+                        }
+
+                        @Override
+                        public String getIconID() {
+                            if (hint != null) {
+                                return hint.getIconID();
+                            } else {
+                                return null;
+                            }
+                        }
+
+                        @Override
+                        public Pattern getPattern() {
+                            if (hint != null) {
+                                return hint.compiledAllPattern();
+                            } else {
+                                return pattern;
+                            }
+                        }
+
+                        @Override
+                        public String name() {
+                            return extension;
+                        }
+
+                        @Override
+                        public boolean isSameExtensionGroup(ExtensionsFilterInterface extension) {
+                            if (hint != null) {
+                                return hint.isSameExtensionGroup(extension);
+                            } else {
+                                return extension != null && extension.getIconID() == null && StringUtils.equals(extension.name(), name());
+                            }
+                        }
+
+                        @Override
+                        public ExtensionsFilterInterface[] listSameGroup() {
+                            if (hint != null) {
+                                return hint.listSameGroup();
+                            } else {
+                                return new ExtensionsFilterInterface[] { this };
+                            }
+                        }
+                    };
+                } else {
+                    extension = new ExtensionsFilterInterface() {
+                        @Override
+                        public Pattern compiledAllPattern() {
+                            return compiled.compiledAllPattern();
+                        }
+
+                        @Override
+                        public String getDesc() {
+                            return compiled.getDesc();
+                        }
+
+                        @Override
+                        public String getIconID() {
+                            return compiled.getIconID();
+                        }
+
+                        @Override
+                        public Pattern getPattern() {
+                            return compiled.getPattern();
+                        }
+
+                        @Override
+                        public ExtensionsFilterInterface getSource() {
+                            return compiled;
+                        }
+
+                        @Override
+                        public String name() {
+                            return fileNameExtension;
+                        }
+
+                        @Override
+                        public boolean isSameExtensionGroup(ExtensionsFilterInterface extension) {
+                            return compiled.isSameExtensionGroup(extension);
+                        }
+
+                        @Override
+                        public ExtensionsFilterInterface[] listSameGroup() {
+                            return compiled.listSameGroup();
+                        }
+                    };
+                }
+                ret = new LinkInfo(num, extension, getIcon(fileName, extension));
+                CACHE.put(ID, new WeakReference<LinkInfo>(ret));
+            }
+            return ret;
+        }
+    }
 
     public static LinkInfo getLinkInfo(AbstractPackageChildrenNode abstractChildrenNode) {
         if (abstractChildrenNode != null) {
@@ -92,7 +249,6 @@ public class LinkInfo {
                     final ExtensionsFilterInterface extension;
                     if (compiled == null || (hint != null && !hint.isSameExtensionGroup(compiled))) {
                         extension = new ExtensionsFilterInterface() {
-
                             final String  extension;
                             final String  desc;
                             final Pattern pattern;
@@ -174,7 +330,6 @@ public class LinkInfo {
                         };
                     } else {
                         extension = new ExtensionsFilterInterface() {
-
                             @Override
                             public Pattern compiledAllPattern() {
                                 return compiled.compiledAllPattern();
@@ -214,7 +369,6 @@ public class LinkInfo {
                             public ExtensionsFilterInterface[] listSameGroup() {
                                 return compiled.listSameGroup();
                             }
-
                         };
                     }
                     ret = new LinkInfo(num, extension, getIcon(fileName, extension));
@@ -248,5 +402,4 @@ public class LinkInfo {
         }
         return newIcon;
     }
-
 }

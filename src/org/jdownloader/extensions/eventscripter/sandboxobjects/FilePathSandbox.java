@@ -3,6 +3,8 @@ package org.jdownloader.extensions.eventscripter.sandboxobjects;
 import java.io.File;
 import java.io.IOException;
 
+import jd.plugins.LinkInfo;
+
 import org.appwork.utils.Files;
 import org.appwork.utils.IO;
 import org.jdownloader.extensions.eventscripter.EnvironmentException;
@@ -102,6 +104,15 @@ public class FilePathSandbox {
         dest = new File(dest, file.getName());
         final boolean ret = !dest.exists() && file.renameTo(dest);
         return ret;
+    }
+
+    public LinkInfoSandbox getLinkInfo() {
+        final File file = getFile();
+        if (file == null) {
+            return null;
+        } else {
+            return new LinkInfoSandbox(LinkInfo.getLinkInfo(file));
+        }
     }
 
     public boolean copyTo(String destDirectory, String destName, boolean overwrite) throws EnvironmentException {

@@ -624,7 +624,13 @@ public abstract class K2SApi extends PluginForHost {
                         cookies.remove(cfclearance);
                     }
                 }
-                for (final String domain : siteSupportedNames()) {
+                String[] siteSupportedNames = siteSupportedNames();
+                if (siteSupportedNames() == null && request != null) {
+                    siteSupportedNames = new String[] { getHost() };
+                } else {
+                    siteSupportedNames = new String[0];
+                }
+                for (final String domain : siteSupportedNames) {
                     if (domain.equals(host)) {
                         continue;
                     }

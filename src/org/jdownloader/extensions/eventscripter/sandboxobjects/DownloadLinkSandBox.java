@@ -386,6 +386,14 @@ public class DownloadLinkSandBox {
         return downloadLink != null && downloadLink.isSkipped();
     }
 
+    public LinkInfoSandbox getLinkInfo() {
+        if (downloadLink == null) {
+            return null;
+        } else {
+            return new LinkInfoSandbox(downloadLink.getLinkInfo());
+        }
+    }
+
     public String getSkippedReason() {
         if (downloadLink != null) {
             final SkipReason skipped = downloadLink.getSkipReason();

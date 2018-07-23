@@ -46,20 +46,21 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uplod.ws" }, urls = { "https?://(?:www\\.)?(?:uploadshub\\.com|upload\\.so|uplod\\.ws|uplod\\.cc|uplod\\.org)/(?:embed\\-)?[a-z0-9]{12}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uplod.ws" }, urls = { "https?://(?:www\\.)?(?:uploadshub\\.com|upload\\.so|uplod\\.ws|uplod\\.cc|uplod\\.org|uplod\\.io)/(?:embed\\-)?[a-z0-9]{12}" })
 public class UplodWs extends antiDDoSForHost {
     /* Some HTML code to identify different (error) states */
     private static final String            HTML_PASSWORDPROTECTED          = "<br><b>Passwor(d|t):</b> <input";
     private static final String            HTML_MAINTENANCE_MODE           = ">This server is in maintenance mode";
     /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                     = "https://uplod.org";
+    private static final String            COOKIE_HOST                     = "https://uplod.io";
     private static final String            NICE_HOST                       = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty               = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                         = "(uploadshub\\.com|upload\\.so|uplod\\.ws|uplod\\.cc|uplod\\.org)";
+    private static final String            DOMAINS                         = "(uploadshub\\.com|upload\\.so|uplod\\.ws|uplod\\.cc|uplod\\.org|uplod\\.io)";
     /* Errormessages inside URLs */
     private static final String            URL_ERROR_PREMIUMONLY           = "/?op=login&redirect=";
     /* All kinds of XFS-plugin-configuration settings - be sure to configure this correctly when developing new XFS plugins! */
@@ -521,6 +522,10 @@ public class UplodWs extends antiDDoSForHost {
                     String code = getCaptchaCode("xfilesharingprobasic", captchaurl, downloadLink);
                     dlForm.put("code", code);
                     logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
+                } else if (correctedBR.contains("class=\"g-recaptcha\"")) {
+                    logger.info("Detected captcha method \"reCaptchaV2\" for this host");
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    dlForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 } else if (new Regex(correctedBR, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {
                     logger.info("Detected captcha method \"Re Captcha\" for this host");
                     final Recaptcha rc = new Recaptcha(br, this);
