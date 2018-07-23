@@ -24,6 +24,14 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -41,10 +49,6 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vidup.me" }, urls = { "https?://(?:www\\.|beta\\.)?vidup\\.(me|tv)/((vid)?embed-)?[a-z0-9]{12}" })
 public class VidUpMe extends antiDDoSForHost {
@@ -406,8 +410,8 @@ public class VidUpMe extends antiDDoSForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
-     * which allows the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree which
+     * allows the next singleton download to start, or at least try.
      *
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
@@ -445,14 +449,15 @@ public class VidUpMe extends antiDDoSForHost {
         }
     }
 
-    public String getDllink() {
+    public String getDllink() throws Exception {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
             // json within javascript var. note: within br not correctedbr
-            String js = new Regex(br, "var jwConfig_vars = (\\{.*?\\});").getMatch(0);
+            String js = new Regex(br, "(var jwConfig_vars = \\{.*?\\};)").getMatch(0);
             if (js != null) {
+                String decodeJwConfigVars = decodeSources(js);
                 try {
-                    final String[] sources = PluginJSonUtils.getJsonResultsFromArray(PluginJSonUtils.getJsonArray(js, "sources"));
+                    final String[] sources = PluginJSonUtils.getJsonResultsFromArray(PluginJSonUtils.getJsonArray(decodeJwConfigVars, "sources"));
                     if (sources != null) {
                         final HashMap<String, String> result = new HashMap<String, String>();
                         for (final String source : sources) {
@@ -512,6 +517,34 @@ public class VidUpMe extends antiDDoSForHost {
             }
         }
         return dllink;
+    }
+
+    private String decodeSources(final String jwConfigVars) throws Exception {
+        String result = null;
+        // get jwConfig
+        String thief = br.getRegex("var thief='([^']+)';").getMatch(0);
+        final Browser cbr = br.cloneBrowser();
+        getPage(cbr, "/jwv/" + thief);
+        String packer = cbr.getRegex("eval\\((.+?)\\)$").getMatch(0);
+        final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
+        final ScriptEngine engine = manager.getEngineByName("javascript");
+        String jwConfig = null;
+        try {
+            engine.eval("var result=" + packer);
+            jwConfig = engine.get("result").toString();
+        } catch (final Exception e) {
+            e.printStackTrace();
+        }
+        //
+        try {
+            engine.eval(jwConfigVars);
+            engine.eval(jwConfig);
+            engine.eval("var result=JSON.stringify(jwConfig(jwConfig_vars));");
+            result = engine.get("result").toString();
+        } catch (final Exception e) {
+            e.printStackTrace();
+        }
+        return result;
     }
 
     @Override
