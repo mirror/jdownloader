@@ -61,6 +61,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
+import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.jdownloader.auth.AuthenticationController;
 import org.jdownloader.auth.Login;
@@ -74,6 +75,12 @@ import org.seamless.util.io.IO;
  * Based on Work of Paul Mutton http://www.jibble.org/
  */
 public abstract class SimpleFTP {
+    private enum TYPE {
+        FILE,
+        DIR,
+        LINK;
+    }
+
     public static enum ENCODING {
         ASCII7BIT {
             @Override
@@ -232,6 +239,11 @@ public abstract class SimpleFTP {
     }
 
     private final HTTPProxy proxy;
+    private int             port = -1;
+
+    public int getPort() {
+        return port;
+    }
 
     public HTTPProxy getProxy() {
         return proxy;
@@ -344,6 +356,7 @@ public abstract class SimpleFTP {
         this.pass = pass;
         socket = createSocket(new InetSocketAddress(host, port));
         this.host = host;
+        this.port = port;
         socket.setSoTimeout(TIMEOUT);
         String response = readLines(new int[] { 220 }, "SimpleFTP received an unknown response when connecting to the FTP server: ");
         sendLine("USER " + user);
@@ -784,6 +797,22 @@ public abstract class SimpleFTP {
         download(filename, file, false);
     }
 
+    protected String getURL(final String path) {
+        final String auth;
+        if (!StringUtils.equals("anonymous", getUser()) || !StringUtils.equals("anonymous", getUser())) {
+            auth = getUser() + ":" + getPass() + "@";
+        } else {
+            auth = "";
+        }
+        if (StringUtils.isEmpty(path)) {
+            return "ftp://" + auth + host + ":" + port;
+        } else if (path.startsWith("/")) {
+            return "ftp://" + auth + host + ":" + port + path;
+        } else {
+            return "ftp://" + auth + host + ":" + port + "/" + path;
+        }
+    }
+
     public void shutDownSocket(Socket dataSocket) {
         try {
             dataSocket.shutdownOutput();
@@ -799,30 +828,71 @@ public abstract class SimpleFTP {
         }
     }
 
-    public static class SimpleFTPListEntry {
-        private final boolean isFile;
-
+    public class SimpleFTPListEntry {
         public final boolean isFile() {
-            return isFile;
+            return TYPE.FILE.equals(getType());
+        }
+
+        public final boolean isDir() {
+            return TYPE.DIR.equals(getType());
+        }
+
+        public final boolean isLink() {
+            return TYPE.LINK.equals(getType());
+        }
+
+        private final TYPE getType() {
+            return type;
         }
 
         public final String getName() {
             return name;
         }
 
+        public final String getDest() {
+            if (isLink()) {
+                return getCwd() + dest;
+            } else {
+                return null;
+            }
+        }
+
         public final long getSize() {
-            return size;
+            switch (getType()) {
+            case FILE:
+                return size;
+            case DIR:
+                return 0;
+            default:
+            case LINK:
+                return -1;
+            }
         }
 
         private final String name;
+        private final String dest;
         private final long   size;
+        private final TYPE   type;
         private final String cwd;
 
         private SimpleFTPListEntry(boolean isFile, String name, String cwd, long size) {
-            this.isFile = isFile;
+            this.type = isFile ? TYPE.FILE : TYPE.DIR;
             this.name = name;
             this.size = size;
             this.cwd = cwd;
+            this.dest = null;
+        }
+
+        private SimpleFTPListEntry(String name, String dest, String cwd) {
+            this.type = TYPE.LINK;
+            this.name = name;
+            this.dest = dest;
+            this.size = -1;
+            this.cwd = cwd;
+        }
+
+        public final URL getURL() throws IOException {
+            return URLHelper.fixPathTraversal(new URL(SimpleFTP.this.getURL(getFullPath())));
         }
 
         public final String getCwd() {
@@ -840,14 +910,31 @@ public abstract class SimpleFTP {
         @Override
         public String toString() {
             final StringBuilder sb = new StringBuilder();
-            if (isFile) {
+            switch (getType()) {
+            case FILE:
                 sb.append("File:");
-            } else {
-                sb.append("Directory:");
+                break;
+            case DIR:
+                sb.append("Dir:");
+                break;
+            case LINK:
+                sb.append("Link:");
+                break;
             }
             sb.append(getFullPath());
-            if (isFile) {
+            if (isLink()) {
+                sb.append(" -> ");
+                sb.append(getDest());
+            }
+            if (isFile()) {
                 sb.append("|Size:").append(getSize());
+            }
+            if (true) {
+                try {
+                    sb.append("|URL:" + getURL().toString());
+                } catch (final IOException e) {
+                    e.printStackTrace();
+                }
             }
             return sb.toString();
         }
@@ -866,14 +953,23 @@ public abstract class SimpleFTP {
                     final long size = isFile ? Long.parseLong(entry[2]) : -1;
                     ret.add(new SimpleFTPListEntry(isFile, name.replaceAll(" ", "%20"), cwd, size));
                 } else if (entry.length == 7) {
-                    final boolean isFile = entry[0].startsWith("-");
-                    String name = entry[6];
+                    final boolean isFolder = entry[0].startsWith("d");
+                    final String name = entry[6];
+                    final boolean isLink;
                     if (name.contains(" -> ")) {
                         // symlink
-                        name = new Regex(name, "->\\s*(.+)").getMatch(0);
+                        isLink = true;
+                    } else {
+                        isLink = entry[0].startsWith("l");
                     }
+                    final boolean isFile = !isFolder || entry[0].startsWith("-");
                     final long size = isFile ? Long.parseLong(entry[4]) : -1;
-                    ret.add(new SimpleFTPListEntry(isFile, name.replaceAll(" ", "%20"), cwd, size));
+                    if (isLink) {
+                        final String link[] = new Regex(name, "^(.*?)\\s*->\\s*(.+)$").getRow(0);
+                        ret.add(new SimpleFTPListEntry(link[0].replaceAll(" ", "%20"), link[1].replaceAll(" ", "%20"), cwd));
+                    } else {
+                        ret.add(new SimpleFTPListEntry(isFile, name.replaceAll(" ", "%20"), cwd, size));
+                    }
                 }
             }
             return ret.toArray(new SimpleFTPListEntry[0]);

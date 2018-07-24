@@ -154,7 +154,8 @@ public class Ftp extends PluginForDecrypt {
             // ftp.listFeatures();
             // ftp.sendClientID("JDownloader");
             // ftp.setUTF8(true);
-            if (ftp.cwd(filePath)) {
+            final DownloadLink direct = getDirectFile(ftp, nameString, auth, url, finalFilePath);
+            if (direct == null && ftp.ascii() && ftp.cwd(filePath)) {
                 SimpleFTPListEntry[] entries = ftp.listEntries();
                 if (entries != null) {
                     /*
@@ -181,7 +182,10 @@ public class Ftp extends PluginForDecrypt {
                         }
                     }
                     if (found != null) {
-                        if (found.isFile()) {
+                        final DownloadLink directLink = found.isLink() ? getDirectFile(ftp, SimpleFTP.BestEncodingGuessingURLDecode(found.getName()), auth, url, found.getURL().getPath()) : null;
+                        if (directLink != null) {
+                            ret.add(directLink);
+                        } else if (found.isFile()) {
                             final DownloadLink link = createDownloadlink("ftpviajd://" + auth + url.getHost() + (url.getPort() != -1 ? (":" + url.getPort()) : "") + found.getFullPath());
                             link.setAvailable(true);
                             if (found.getSize() >= 0) {
@@ -208,7 +212,10 @@ public class Ftp extends PluginForDecrypt {
                             packageName = nameString;
                         }
                         for (final SimpleFTPListEntry entry : entries) {
-                            if (entry.isFile()) {
+                            final DownloadLink directLink = found.isLink() ? getDirectFile(ftp, SimpleFTP.BestEncodingGuessingURLDecode(entry.getName()), auth, url, entry.getURL().getPath()) : null;
+                            if (directLink != null) {
+                                ret.add(directLink);
+                            } else if (entry.isFile()) {
                                 final DownloadLink link = createDownloadlink("ftpviajd://" + auth + url.getHost() + (url.getPort() != -1 ? (":" + url.getPort()) : "") + entry.getFullPath());
                                 link.setAvailable(true);
                                 if (entry.getSize() >= 0) {
@@ -220,19 +227,8 @@ public class Ftp extends PluginForDecrypt {
                         }
                     }
                 }
-            }
-            if (ret.size() == 0 && nameString != null) {
-                // sometimes dir listing/changing is not allowed but direct access is still possible
-                if (ftp.bin()) {
-                    final long size = ftp.getSize(finalFilePath);
-                    if (size >= 0) {
-                        final DownloadLink link = createDownloadlink("ftpviajd://" + auth + url.getHost() + (url.getPort() != -1 ? (":" + url.getPort()) : "") + finalFilePath);
-                        link.setAvailable(true);
-                        link.setVerifiedFileSize(size);
-                        link.setFinalFileName(SimpleFTP.BestEncodingGuessingURLDecode(nameString));
-                        ret.add(link);
-                    }
-                }
+            } else {
+                ret.add(direct);
             }
             if (ret.size() > 0 && packageName != null) {
                 final FilePackage fp = FilePackage.getInstance();
@@ -251,6 +247,20 @@ public class Ftp extends PluginForDecrypt {
             ftp.disconnect();
         }
         return ret;
+    }
+
+    private DownloadLink getDirectFile(SimpleFTP ftp, final String nameString, final String auth, final URL url, final String finalFilePath) throws IOException {
+        if (nameString != null && ftp.bin()) {
+            final long size = ftp.getSize(finalFilePath);
+            if (size >= 0) {
+                final DownloadLink link = createDownloadlink("ftpviajd://" + auth + url.getHost() + (url.getPort() != -1 ? (":" + url.getPort()) : "") + finalFilePath);
+                link.setAvailable(true);
+                link.setVerifiedFileSize(size);
+                link.setFinalFileName(SimpleFTP.BestEncodingGuessingURLDecode(nameString));
+                return link;
+            }
+        }
+        return null;
     }
 
     protected ProxySelectorInterface getProxySelector() {
