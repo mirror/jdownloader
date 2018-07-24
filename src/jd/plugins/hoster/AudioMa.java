@@ -13,13 +13,20 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.Random;
+
+import org.appwork.utils.encoding.Base64;
+import org.bouncycastle.crypto.digests.SHA1Digest;
+import org.bouncycastle.crypto.macs.HMac;
+import org.bouncycastle.crypto.params.KeyParameter;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -28,9 +35,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "audiomack.com" }, urls = { "http://(www\\.)?audiomack\\.com/(song/[a-z0-9\\-_]+/[a-z0-9\\-_]+|api/music/url/(?:album/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/\\d+|song/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+))" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "audiomack.com" }, urls = { "https?://(www\\.)?audiomack\\.com/(song/[a-z0-9\\-_]+/[a-z0-9\\-_]+|(?:embed\\d-)?large/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+|api/music/url/(?:album/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/\\d+|song/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+))" })
 public class AudioMa extends PluginForHost {
-
     public AudioMa(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -41,7 +47,8 @@ public class AudioMa extends PluginForHost {
     }
 
     private static final String  TYPE_API       = "http://(www\\.)?audiomack\\.com/api/music/url/(?:album/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/\\d+|song/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+)";
-    private static final boolean use_oembed_api = true;
+    private static final boolean use_oembed_api = false;
+    private static final boolean use_oauth_api  = true;
 
     @SuppressWarnings("deprecation")
     @Override
@@ -49,7 +56,38 @@ public class AudioMa extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         String filename;
-        if (use_oembed_api) {
+        if (use_oauth_api) {
+            br.getPage(link.getPluginPatternMatcher());
+            String ogurl = br.getRegex("\"og:url\" content=\"([^\"]+)\"").getMatch(0);
+            String[] match = new Regex(ogurl, ".+?/(?:embed/)?(song|album|playlist)/(.+?)/(.+)$").getRow(0);
+            if (match == null || match.length != 3) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            String musicType = match[0];
+            String artistId = match[1];
+            String musicSlug = match[2];
+            // src='/static/dist/desktop/252.3d3a7d50d9de7c1fefa0.js'
+            String jsurl = br.getRegex("src='([^']+?/252\\.[0-9a-f]+?\\.js)").getMatch(0);
+            final Browser cbr = br.cloneBrowser();
+            cbr.getPage(jsurl);
+            String apiUrl = cbr.getRegex("API_URL:\"([^\"]+)\"").getMatch(0);
+            String apiVersion = cbr.getRegex("API_VERSION:\"([^\"]+)\"").getMatch(0);
+            String apiConsumerKey = cbr.getRegex("API_CONSUMER_KEY:\"([^\"]+)\"").getMatch(0);
+            String apiConsumerSecret = cbr.getRegex("API_CONSUMER_SECRET:\"([^\"]+)\"").getMatch(0);
+            String method = "GET";
+            String requestUrl = String.format("%s/%s/music/%s/%s/%s", apiUrl, apiVersion, musicType, artistId, musicSlug);
+            String requestParam = String.format("oauth_consumer_key=%s&oauth_nonce=%s&oauth_signature_method=HMAC-SHA1&oauth_timestamp=%d&oauth_version=1.0", apiConsumerKey, generateNonce(32), (int) (System.currentTimeMillis() / 1000l));
+            String seed = String.format("%s&%s&%s", method, Encoding.urlEncode(requestUrl), Encoding.urlEncode(requestParam));
+            String oauthSignature = getOAuthSignature(seed, apiConsumerSecret + "&");
+            //
+            br.getPage(String.format("%s?%s&oauth_signature=%s", requestUrl, requestParam, oauthSignature));
+            final String artist = PluginJSonUtils.getJsonValue(br, "artist");
+            final String songname = PluginJSonUtils.getJsonValue(br, "title");
+            if (artist == null || songname == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            filename = artist + " - " + songname;
+        } else if (use_oembed_api) {
             br.getPage("http://www.audiomack.com/oembed?format=json&url=" + Encoding.urlEncode(link.getDownloadURL()));
             if (br.containsHTML(">Did not find any music with url")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -91,24 +129,35 @@ public class AudioMa extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        /* Access real link here in case we used the oembed API above */
-        if (use_oembed_api && !br.getURL().equals(downloadLink.getDownloadURL())) {
-            br.getPage(downloadLink.getDownloadURL());
-        }
-        /* Prefer downloadlink --> Higher quality version */
-        String dllink = br.getRegex("\"(http://(www\\.)?music\\.audiomack\\.com/tracks/[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) {
-            if (downloadLink.getDownloadURL().matches(TYPE_API)) {
-            } else {
-                final String apilink = br.getRegex("\"(http://(www\\.)?audiomack\\.com/api/[^<>\"]*?)\"").getMatch(0);
-                if (apilink == null) {
+        String dllink;
+        if (use_oauth_api) {
+            dllink = PluginJSonUtils.getJsonValue(br, "download_url");
+            if (dllink == null) {
+                dllink = PluginJSonUtils.getJsonValue(br, "streaming_url");
+                if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                br.getPage(apilink);
             }
-            dllink = PluginJSonUtils.getJsonValue(br, "url");
+        } else {
+            /* Access real link here in case we used the oembed API above */
+            if (use_oembed_api && !br.getURL().equals(downloadLink.getDownloadURL())) {
+                br.getPage(downloadLink.getDownloadURL());
+            }
+            /* Prefer downloadlink --> Higher quality version */
+            dllink = br.getRegex("\"(http://(www\\.)?music\\.audiomack\\.com/tracks/[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (downloadLink.getDownloadURL().matches(TYPE_API)) {
+                } else {
+                    final String apilink = br.getRegex("\"(http://(www\\.)?audiomack\\.com/api/[^<>\"]*?)\"").getMatch(0);
+                    if (apilink == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    br.getPage(apilink);
+                }
+                dllink = PluginJSonUtils.getJsonValue(br, "url");
+                if (dllink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
@@ -117,6 +166,27 @@ public class AudioMa extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String generateNonce(final int range) {
+        String alphaNum = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        StringBuilder sb = new StringBuilder();
+        Random rand = new Random();
+        for (int i = 0; i < range; i++) {
+            int pos = rand.nextInt(alphaNum.length());
+            sb.append(alphaNum.substring(pos, pos + 1));
+        }
+        return sb.toString();
+    }
+
+    private String getOAuthSignature(final String query, final String key) {
+        HMac hmac = new HMac(new SHA1Digest());
+        byte[] buf = new byte[hmac.getMacSize()];
+        hmac.init(new KeyParameter(key.getBytes()));
+        byte[] qbuf = query.getBytes();
+        hmac.update(qbuf, 0, qbuf.length);
+        hmac.doFinal(buf, 0);
+        return Encoding.urlEncode(Base64.encodeToString(buf, false));
     }
 
     @Override
@@ -131,5 +201,4 @@ public class AudioMa extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

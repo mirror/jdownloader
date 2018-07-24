@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -21,7 +20,6 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -30,9 +28,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "audiomack.com" }, urls = { "http://(www\\.)?audiomack\\.com/(?:embed\\d-)?(?:album|large)/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "audiomack.com" }, urls = { "http://(www\\.)?audiomack\\.com/(?:embed\\d-)?album/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+" })
 public class AudioMackComDecrypter extends PluginForDecrypt {
-
     public AudioMackComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -52,23 +49,6 @@ public class AudioMackComDecrypter extends PluginForDecrypt {
         if (fpName == null) {
             final Regex paraminfo = new Regex(parameter, "/([A-Za-z0-9\\-_]+)/([A-Za-z0-9\\-_]+)$");
             fpName = paraminfo.getMatch(0) + " - " + paraminfo.getMatch(1).replace("-", " ");
-        }
-        if (parameter.matches(".+/embed\\d-large/.+")) {
-            String link = br.getRegex("data-src=\"(.*?)\"").getMatch(0);
-            // fail over
-            if (link == null) {
-                link = br.getRegex("data-url=\"(.*?)\"").getMatch(0);
-                if (link != null) {
-                    link = Request.getLocation(link, br.getRequest());
-                }
-            }
-            if (link != null) {
-                decryptedLinks.add(createDownloadlink(link));
-                final FilePackage fp = FilePackage.getInstance();
-                fp.setName(Encoding.htmlDecode(fpName.trim()));
-                fp.addLinks(decryptedLinks);
-                return decryptedLinks;
-            }
         }
         final String plaintable = br.getRegex("<div id=\"playlist\" class=\"plwrapper\" for=\"audiomack\\-embed\">(.*?</div>[\t\n\r ]+</div>[\t\n\r ]+</div>(<\\!\\-\\-/\\.song\\-wrap\\-\\->)?)[\t\n\r ]+</div>[\t\n\r ]+</div>").getMatch(0);
         final String[] links = plaintable.split("<div class=\"song\"");
@@ -109,8 +89,6 @@ public class AudioMackComDecrypter extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName.trim()));
         fp.addLinks(decryptedLinks);
-
         return decryptedLinks;
     }
-
 }
