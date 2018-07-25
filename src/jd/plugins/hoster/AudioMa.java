@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.Random;
 
 import org.appwork.utils.encoding.Base64;
@@ -52,35 +51,16 @@ public class AudioMa extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         String filename;
         if (use_oauth_api) {
             br.getPage(link.getPluginPatternMatcher());
-            String ogurl = br.getRegex("\"og:url\" content=\"([^\"]+)\"").getMatch(0);
-            String[] match = new Regex(ogurl, ".+?/(?:embed/)?(song|album|playlist)/(.+?)/(.+)$").getRow(0);
-            if (match == null || match.length != 3) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.getPage(getOAuthQueryString(br));
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            String musicType = match[0];
-            String artistId = match[1];
-            String musicSlug = match[2];
-            // src='/static/dist/desktop/252.3d3a7d50d9de7c1fefa0.js'
-            String jsurl = br.getRegex("src='([^']+?/252\\.[0-9a-f]+?\\.js)").getMatch(0);
-            final Browser cbr = br.cloneBrowser();
-            cbr.getPage(jsurl);
-            String apiUrl = cbr.getRegex("API_URL:\"([^\"]+)\"").getMatch(0);
-            String apiVersion = cbr.getRegex("API_VERSION:\"([^\"]+)\"").getMatch(0);
-            String apiConsumerKey = cbr.getRegex("API_CONSUMER_KEY:\"([^\"]+)\"").getMatch(0);
-            String apiConsumerSecret = cbr.getRegex("API_CONSUMER_SECRET:\"([^\"]+)\"").getMatch(0);
-            String method = "GET";
-            String requestUrl = String.format("%s/%s/music/%s/%s/%s", apiUrl, apiVersion, musicType, artistId, musicSlug);
-            String requestParam = String.format("oauth_consumer_key=%s&oauth_nonce=%s&oauth_signature_method=HMAC-SHA1&oauth_timestamp=%d&oauth_version=1.0", apiConsumerKey, generateNonce(32), (int) (System.currentTimeMillis() / 1000l));
-            String seed = String.format("%s&%s&%s", method, Encoding.urlEncode(requestUrl), Encoding.urlEncode(requestParam));
-            String oauthSignature = getOAuthSignature(seed, apiConsumerSecret + "&");
-            //
-            br.getPage(String.format("%s?%s&oauth_signature=%s", requestUrl, requestParam, oauthSignature));
             final String artist = PluginJSonUtils.getJsonValue(br, "artist");
             final String songname = PluginJSonUtils.getJsonValue(br, "title");
             if (artist == null || songname == null) {
@@ -168,7 +148,38 @@ public class AudioMa extends PluginForHost {
         dl.startDownload();
     }
 
-    private String generateNonce(final int range) {
+    public static String getOAuthQueryString(final Browser br) throws Exception {
+        String ogurl = br.getRegex("\"og:url\" content=\"([^\"]+)\"").getMatch(0);
+        String[] match = new Regex(ogurl, ".+?/(?:embed/)?(song|album|playlist)/(.+?)/(.+)$").getRow(0);
+        if (match == null || match.length != 3) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String musicType = match[0];
+        final String artistId = match[1];
+        final String musicSlug = match[2];
+        // src='/static/dist/desktop/252.3d3a7d50d9de7c1fefa0.js'
+        String jsurl = br.getRegex("src='([^']+?/252\\.[0-9a-f]+?\\.js)").getMatch(0);
+        final Browser cbr = br.cloneBrowser();
+        cbr.getPage(jsurl);
+        String apiUrl = cbr.getRegex("API_URL:\"([^\"]+)\"").getMatch(0);
+        String apiVersion = cbr.getRegex("API_VERSION:\"([^\"]+)\"").getMatch(0);
+        String apiConsumerKey = cbr.getRegex("API_CONSUMER_KEY:\"([^\"]+)\"").getMatch(0);
+        String apiConsumerSecret = cbr.getRegex("API_CONSUMER_SECRET:\"([^\"]+)\"").getMatch(0);
+        String method = "GET";
+        String requestUrlFmt;
+        if ("playlist".equals(musicType)) {
+            requestUrlFmt = "%s/%s/%s/%s/%s";
+        } else {
+            requestUrlFmt = "%s/%s/music/%s/%s/%s";
+        }
+        String requestUrl = String.format(requestUrlFmt, apiUrl, apiVersion, musicType, artistId, musicSlug);
+        String requestParam = String.format("oauth_consumer_key=%s&oauth_nonce=%s&oauth_signature_method=HMAC-SHA1&oauth_timestamp=%d&oauth_version=1.0", apiConsumerKey, generateNonce(32), (int) (System.currentTimeMillis() / 1000l));
+        String seed = String.format("%s&%s&%s", method, Encoding.urlEncode(requestUrl), Encoding.urlEncode(requestParam));
+        String oauthSignature = getOAuthSignature(seed, apiConsumerSecret + "&");
+        return String.format("%s?%s&oauth_signature=%s", requestUrl, requestParam, oauthSignature);
+    }
+
+    private static String generateNonce(final int range) {
         String alphaNum = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
         StringBuilder sb = new StringBuilder();
         Random rand = new Random();
@@ -179,7 +190,7 @@ public class AudioMa extends PluginForHost {
         return sb.toString();
     }
 
-    private String getOAuthSignature(final String query, final String key) {
+    private static String getOAuthSignature(final String query, final String key) {
         HMac hmac = new HMac(new SHA1Digest());
         byte[] buf = new byte[hmac.getMacSize()];
         hmac.init(new KeyParameter(key.getBytes()));
