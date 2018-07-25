@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.Locale;
@@ -36,9 +35,8 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zbigz.com" }, urls = { "http://(www\\.)?zbigz\\.com/file/[a-z0-9]+/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zbigz.com" }, urls = { "http://(www\\.)?zbigz\\.com/file/[a-z0-9]+/\\d+" })
 public class ZbigzCom extends PluginForHost {
-
     public ZbigzCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://zbigz.com/page-premium-overview");
@@ -74,7 +72,6 @@ public class ZbigzCom extends PluginForHost {
             if (DLLINK == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-
             URLConnectionAdapter con = null;
             try {
                 con = br.openGetConnection(DLLINK);
@@ -90,7 +87,6 @@ public class ZbigzCom extends PluginForHost {
                 } catch (Throwable e) {
                 }
             }
-
             return AvailableStatus.TRUE;
         } else {
             downloadLink.getLinkStatus().setStatusText("Status can only be checked with account enabled");
@@ -126,10 +122,11 @@ public class ZbigzCom extends PluginForHost {
                     return;
                 }
                 br.setFollowRedirects(true);
+                br.getPage("https://zbigz.com/login");
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.postPage("https://zbigz.com/login.php", "e-mail=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                br.postPage("https://api.zbigz.com/v1/account/login", "e-mail=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (!br.containsHTML("loginIn \\(true,\\[true,")) {
-                    /* aybe login is valid but it's not a premium account */
+                    /* Maybe login is valid but it's not a premium account */
                     if (br.containsHTML("loginIn \\(true,")) {
                         logger.info("Free accounts are not supported!");
                         if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -222,5 +219,4 @@ public class ZbigzCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
