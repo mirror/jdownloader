@@ -70,7 +70,7 @@ public class MySpassDe extends PluginForHost {
         final DecimalFormat df = new DecimalFormat("00");
         String filename = getXML("format") + " - ";
         if (needs_series_filename) { // Sometimes episode = 9/Best Of, need regex to get only the integer
-            filename += "S" + df.format(Integer.parseInt(getXML("season"))) + "E" + df.format(Integer.parseInt(new Regex(getXML("episode"), "(\\d)").getMatch(0))) + " - ";
+            filename += "S" + df.format(Integer.parseInt(getXML("season"))) + "E" + getXML("episode") + " - ";
         }
         filename += getXML("title");
         dllink = getXML("url_flv");
