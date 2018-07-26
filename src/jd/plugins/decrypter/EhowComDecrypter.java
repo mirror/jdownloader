@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -25,18 +24,17 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ehow.com" }, urls = { "https?://(?:www\\.)?ehow\\.com/video_\\d+_.*?\\.html" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ehow.com" }, urls = { "https?://(?:www\\.)?ehow\\.com/video_\\d+_.*?\\.html" })
 public class EhowComDecrypter extends PluginForDecrypt {
-
     public EhowComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        final String parameter = param.toString().replace("http:", "https:");
         br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || !br.getRedirectLocation().contains("ehow.com/video")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
@@ -46,8 +44,6 @@ public class EhowComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         decryptedLinks.add(this.createDownloadlink(parameter.replace("ehow.com/", "ehowdecrypted.com/")));
-
         return decryptedLinks;
     }
-
 }
