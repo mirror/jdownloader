@@ -34,6 +34,9 @@ public class Recaptcha {
     public Recaptcha(final Browser br, Plugin plg) {
         this.br = br;
         this.plg = plg;
+        if (plg != null) {
+            plg.getLogger().severe("FIXME:still using old RecaptchaV1?!");
+        }
         track("challenge/");
     }
 

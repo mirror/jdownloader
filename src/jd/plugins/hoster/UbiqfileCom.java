@@ -131,7 +131,6 @@ public class UbiqfileCom extends antiDDoSForHost {
     private static AtomicInteger totalMaxSimultanFreeDownload       = new AtomicInteger(1);
     /* don't touch the following! */
     private static AtomicInteger maxFree                            = new AtomicInteger(1);
-    private static Object        LOCK                               = new Object();
 
     /**
      * DEV NOTES XfileSharingProBasic Version 2.7.6.4<br />
@@ -1348,14 +1347,33 @@ public class UbiqfileCom extends antiDDoSForHost {
     }
 
     private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 /* Load cookies */
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null && !force) {
+                if (cookies != null) {
+                    final String age = TimeFormatter.formatMilliSeconds((System.currentTimeMillis() - account.getCookiesTimeStamp("")), 0);
+                    logger.info("Trying cached cookies:Age:" + age);
                     br.setCookies(this.getHost(), cookies);
-                    return;
+                    getPage(COOKIE_HOST);
+                    if (force) {
+                        getPage("/?op=my_account");
+                    }
+                    if (br.getCookie(COOKIE_HOST, "login", Cookies.NOTDELETEDPATTERN) == null || br.getCookie(COOKIE_HOST, "xfss", Cookies.NOTDELETEDPATTERN) == null) {
+                        logger.info("Cached cookies failed:Age:" + age);
+                    } else {
+                        logger.info("Cached cookies successful:Age:" + age);
+                        if (force) {
+                            if (!new Regex(correctedBR, "(Premium(-| )Account expire|>Renew premium<)").matches()) {
+                                account.setType(AccountType.FREE);
+                            } else {
+                                account.setType(AccountType.PREMIUM);
+                            }
+                        }
+                        account.saveCookies(br.getCookies(this.getHost()), "");
+                        return;
+                    }
                 }
                 getPage(COOKIE_HOST + "/login.html");
                 if (br.getHttpConnection().getResponseCode() == 404) {
@@ -1384,7 +1402,7 @@ public class UbiqfileCom extends antiDDoSForHost {
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 submitForm(loginform);
-                if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
+                if (br.getCookie(COOKIE_HOST, "login", Cookies.NOTDELETEDPATTERN) == null || br.getCookie(COOKIE_HOST, "xfss", Cookies.NOTDELETEDPATTERN) == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
