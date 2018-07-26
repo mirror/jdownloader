@@ -104,7 +104,7 @@ public class FilesUploadOrg extends antiDDoSForHost {
             filesize = br.getRegex("Filesize:[\t\n\r ]+</td>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatch(0);
         } else {
             getPage(link.getDownloadURL());
-            handleErrors();
+            handleError(br);
             if (br.getURL().contains(WAIT_BETWEEN_DOWNLOADS_LIMIT) || br.containsHTML(">Please wait before download<")) {
                 link.setName(new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
                 link.getLinkStatus().setStatusText(WAIT_BETWEEN_DOWNLOADS_LIMIT_USERTEXT);
@@ -163,27 +163,35 @@ public class FilesUploadOrg extends antiDDoSForHost {
         doFree(downloadLink, "free_directlink", FREE_RESUME, FREE_MAXCHUNKS);
     }
 
+    private void handleError(Browser br) throws PluginException {
+        if (br.containsHTML("Error: Too many concurrent download requests")) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 3 * 60 * 1000l);
+        } else if (br.getURL().contains(SIMULTANDLSLIMIT)) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, SIMULTANDLSLIMITUSERTEXT, 1 * 60 * 1000l);
+        } else if (br.containsHTML(">Failed connecting to the database with the supplied connection details")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server database error", 3 * 60 * 1000l);
+        } else if (br.getURL().contains(WAIT_BETWEEN_DOWNLOADS_LIMIT) || br.containsHTML(">Please wait before download<")) {
+            final String wait_minutes = new Regex(br.getURL(), "wait\\s*(\\d+)\\s*minutes?").getMatch(0);
+            if (wait_minutes != null) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, WAIT_BETWEEN_DOWNLOADS_LIMIT_USERTEXT, Integer.parseInt(wait_minutes) * 60 * 1001l);
+            }
+            final String wait_seconds = new Regex(br.getURL(), "\"DateCountdown\"\\s*data-timer\\s*=\\s*\"(\\d+)\"").getMatch(0);
+            if (wait_seconds != null) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, WAIT_BETWEEN_DOWNLOADS_LIMIT_USERTEXT, Integer.parseInt(wait_minutes) * 1001l);
+            }
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, WAIT_BETWEEN_DOWNLOADS_LIMIT_USERTEXT, WAIT_BETWEEN_DOWNLOADS_LIMIT_MINUTES_DEFAULT * 60 * 1001l);
+        } else if (br.getURL().contains(SERVERERROR)) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, SERVERERRORUSERTEXT, 5 * 60 * 1000l);
+        }
+    }
+
     public void doFree(final DownloadLink downloadLink, final String directlinkproperty, final boolean resume, final int maxchunks) throws Exception, PluginException {
         boolean captcha = false;
         String continue_link = checkDirectLink(downloadLink, directlinkproperty);
         if (continue_link != null) {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, resume, maxchunks);
         } else {
-            if (br.getURL().contains(SIMULTANDLSLIMIT)) {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, SIMULTANDLSLIMITUSERTEXT, 1 * 60 * 1000l);
-            } else if (br.getURL().contains(WAIT_BETWEEN_DOWNLOADS_LIMIT) || br.containsHTML(">Please wait before download<")) {
-                final String wait_minutes = new Regex(br.getURL(), "wait\\s*(\\d+)\\s*minutes?").getMatch(0);
-                if (wait_minutes != null) {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, WAIT_BETWEEN_DOWNLOADS_LIMIT_USERTEXT, Integer.parseInt(wait_minutes) * 60 * 1001l);
-                }
-                final String wait_seconds = new Regex(br.getURL(), "\"DateCountdown\"\\s*data-timer\\s*=\\s*\"(\\d+)\"").getMatch(0);
-                if (wait_seconds != null) {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, WAIT_BETWEEN_DOWNLOADS_LIMIT_USERTEXT, Integer.parseInt(wait_minutes) * 1001l);
-                }
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, WAIT_BETWEEN_DOWNLOADS_LIMIT_USERTEXT, WAIT_BETWEEN_DOWNLOADS_LIMIT_MINUTES_DEFAULT * 60 * 1001l);
-            } else if (br.getURL().contains(SERVERERROR)) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, SERVERERRORUSERTEXT, 5 * 60 * 1000l);
-            }
+            handleError(br);
             /* Handle up to 3 pre-download pages before the (eventually existing) captcha */
             for (int i = 1; i <= 3; i++) {
                 if (isNewLinkType(downloadLink)) {
@@ -192,6 +200,7 @@ public class FilesUploadOrg extends antiDDoSForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     getPage(continue_link);
+                    handleError(br);
                     continue_link = br.getRegex("src=\"(https?://[A-Za-z0-9_\\-\\.]+filesupload\\.org(?::\\d+)?/[^\"]+md5=[a-f0-9]{32}[^\"]+)").getMatch(0);
                     continue_link = HTMLEntities.unhtmlentities(continue_link);
                     if (continue_link == null) {
@@ -200,10 +209,9 @@ public class FilesUploadOrg extends antiDDoSForHost {
                     dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, resume, maxchunks);
                     if (dl.getConnection().isContentDisposition()) {
                         break;
-                    }
-                    br.followConnection();
-                    if (br.getURL().contains(SERVERERROR)) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, SERVERERRORUSERTEXT, 5 * 60 * 1000l);
+                    } else {
+                        br.followConnection();
+                        handleError(br);
                     }
                 } else {
                     logger.info("Handling pre-download page #" + i);
@@ -227,10 +235,9 @@ public class FilesUploadOrg extends antiDDoSForHost {
                     dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, resume, maxchunks);
                     if (dl.getConnection().isContentDisposition()) {
                         break;
-                    }
-                    br.followConnection();
-                    if (br.getURL().contains(SERVERERROR)) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, SERVERERRORUSERTEXT, 5 * 60 * 1000l);
+                    } else {
+                        br.followConnection();
+                        handleError(br);
                     }
                 }
             }
@@ -240,7 +247,7 @@ public class FilesUploadOrg extends antiDDoSForHost {
         }
         if (!dl.getConnection().isContentDisposition()) {
             /* Do not follow connection, already done above */
-            handleErrors();
+            handleError(br);
             final String captchaAction = br.getRegex("<div class=\"captchaPageTable\">[\t\n\r ]+<form method=\"POST\" action=\"(https?://[^<>\"]*?)\"").getMatch(0);
             final String rcID = br.getRegex("recaptcha/api/noscript\\?k=([^<>\"]*?)\"").getMatch(0);
             if (captchaAction == null || rcID == null) {
@@ -257,38 +264,27 @@ public class FilesUploadOrg extends antiDDoSForHost {
                 dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, captchaAction, "submit=continue&submitted=1&d=1&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c, resume, maxchunks);
                 if (!dl.getConnection().isContentDisposition()) {
                     br.followConnection();
-                    if (br.getURL().contains("error.php?e=Error%3A+Could+not+open+file+for+reading")) {
-                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
-                    }
+                    handleError(br);
                     rc.reload();
                     continue;
                 }
                 break;
             }
         }
-        if (!dl.getConnection().isContentDisposition()) {
+        if (dl.getConnection().isContentDisposition()) {
+            dl.startDownload();
+        } else {
             br.followConnection();
             if (captcha && br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-            handleErrors();
+            handleError(br);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.startDownload();
     }
 
     private String getDllink() {
         return br.getRegex("\"(https?://([A-Za-z0-9\\-\\.]+)?" + domains + "/[^<>\"\\?]*?\\?download_token=[A-Za-z0-9]+)\"").getMatch(0);
-    }
-
-    private void handleErrors() throws PluginException {
-        if (br.containsHTML("Error: Too many concurrent download requests")) {
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 3 * 60 * 1000l);
-        } else if (br.getURL().contains(SIMULTANDLSLIMIT)) {
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, SIMULTANDLSLIMITUSERTEXT, 1 * 60 * 1000l);
-        } else if (br.containsHTML(">Failed connecting to the database with the supplied connection details")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server database error", 3 * 60 * 1000l);
-        }
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {

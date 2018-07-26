@@ -362,6 +362,14 @@ public class HitFileNet extends antiDDoSForHost {
             }
         }
         simulateBrowser();
+        if (br.containsHTML(">You have reached the limit of connections<")) {
+            final String timeout = br.getRegex("id\\s*=\\s*'timeout'\\s*>\\s*(\\d+)\\s*<").getMatch(0);
+            if (timeout != null) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(timeout) * 1000);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+            }
+        }
         // Ticket Time
         String ttt = parseImageUrl(br.getRegex(jd.plugins.decrypter.LnkCrptWs.IMAGEREGEX(null)).getMatch(0), true);
         int maxWait = 9999, realWait = 0;

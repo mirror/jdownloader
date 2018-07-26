@@ -21,8 +21,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -31,12 +29,15 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ShorteSt extends antiDDoSForDecrypt {
-
     // add new domains here.
     private static final String[] domains = { "sh.st", "viid.me", "wiid.me", "skiip.me", "clkme.me", "clkmein.com", "clkme.in", "destyy.com", "festyy.com", "corneey.com", "gestyy.com", "ceesty.com" };
 
@@ -82,15 +83,19 @@ public class ShorteSt extends antiDDoSForDecrypt {
         final String timer = PluginJSonUtils.getJsonValue(br, "seconds");
         final String cb = PluginJSonUtils.getJsonValue(br, "callbackUrl");
         final String sid = PluginJSonUtils.getJsonValue(br, "sessionId");
-        if (cb == null || sid == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
         int t = 5;
         if (timer != null) {
             t = Integer.parseInt(timer);
         }
         sleep(t * 1001, param);
+        if (cb == null || sid == null) {
+            final String destinationURL = br.getRegex("destinationUrl\\s*:\\s*'(https?://.*?)'").getMatch(0);
+            if (destinationURL != null) {
+                decryptedLinks.add(createDownloadlink(destinationURL.replaceAll(" ", "%20")));
+                return decryptedLinks;
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         final Browser br2 = br.cloneBrowser();
         br2.getHeaders().put("Accept", "application/json, text/javascript");
         br2.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
@@ -158,5 +163,4 @@ public class ShorteSt extends antiDDoSForDecrypt {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.ShorteSt_ShorteSt;
     }
-
 }
