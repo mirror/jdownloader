@@ -39,9 +39,11 @@ public class PerfectGirlsNet extends PornEmbedParser {
             return decryptedLinks;
         }
         String filename = br.getRegex("<title>([^<>\"]*?) ::: PERFECT GIRLS</title>").getMatch(0);
-        decryptedLinks.addAll(findEmbedUrls(filename));
-        if (!decryptedLinks.isEmpty()) {
-            return decryptedLinks;
+        if (!br.containsHTML("<source src=[^<>]+cdn.perfectgirls.net")) {
+            decryptedLinks.addAll(findEmbedUrls(filename));
+            if (!decryptedLinks.isEmpty()) {
+                return decryptedLinks;
+            }
         }
         final DownloadLink main = createDownloadlink(parameter.replace("perfectgirls.net/", "perfectgirlsdecrypted.net/"));
         if (br.containsHTML("src=\"http://(www\\.)?dachix\\.com/flashplayer/flvplayer\\.swf\"|\"http://(www\\.)?deviantclip\\.com/flashplayer/flvplayer\\.swf\"|thumbs/misc/not_available\\.gif")) {
