@@ -51,7 +51,7 @@ public class ShooshTimeCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (!br.containsHTML("shooshtime\\.com") || br.containsHTML("<h1></h1>") || !br.getURL().contains("/videos/")) {
+        if (!br.containsHTML("shooshtime\\.com") || br.containsHTML("<h1></h1>|>Video has been removed") || !br.getURL().contains("/videos/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>([^<>\"]*?) \\- Porn, Sex, Free Porno</title>").getMatch(0);
