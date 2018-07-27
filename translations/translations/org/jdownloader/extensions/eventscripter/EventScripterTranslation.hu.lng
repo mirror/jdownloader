@@ -23,6 +23,7 @@ ON_GENERIC_EXTRACTION=Bármely kicsomagolási esemény
 ON_JDOWNLOADER_STARTED=A JDownloader elindult
 ON_NEW_CRAWLER_JOB=Új linkgyűjtó feladat
 ON_NEW_FILE=Egy új fájl jött létre
+ON_NEW_LINK=Új link lett hozzáadva
 ON_OUTGOING_REMOTE_API_EVENT=A távoli alkalmazásprogramozási interfész eseményt elutasították
 ON_PACKAGE_FINISHED=Csomagolás kész
 ON_PACKAGIZER=Csomagoló indul
