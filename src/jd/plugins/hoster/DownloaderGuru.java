@@ -20,10 +20,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -45,9 +41,12 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.DownloadLinkDownloadable;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "downloader.guru" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" })
 public class DownloaderGuru extends PluginForHost {
-
     private static final String                            API_ENDPOINT         = "http://www.downloader.guru/";
     private static final String                            NICE_HOST            = "downloader.guru";
     private static final String                            NICE_HOSTproperty    = NICE_HOST.replaceAll("(\\.|\\-)", "");
@@ -137,12 +136,12 @@ public class DownloaderGuru extends PluginForHost {
             br.setFollowRedirects(true);
             /* request creation of downloadlink */
             /* Make sure that the file exists - unnecessary step in my opinion (psp) but admin wanted to have it implemented this way. */
-            this.postRawAPISafe(API_ENDPOINT + "Transfers.ashx?sendlinks=1", link.getDownloadURL());
+            this.postRawAPISafe(account, API_ENDPOINT + "Transfers.ashx?sendlinks=1", link.getDownloadURL());
             /* Returns json map "transfers" which contains array with usually only 1 object --> In this map we can find the "GeneratedLink" */
             dllink = PluginJSonUtils.getJsonValue(this.br, "GeneratedLink");
             if (dllink == null || !dllink.startsWith("http")) {
                 logger.warning("Final downloadlink is null");
-                handleErrorRetries("dllinknull", 10, 60 * 60 * 1000l);
+                handleErrorRetries(account, "dllinknull", 10, 60 * 60 * 1000l);
             }
         }
         boolean resume = account.getBooleanProperty("resume", defaultRESUME);
@@ -187,7 +186,6 @@ public class DownloaderGuru extends PluginForHost {
                 con.disconnect();
             }
             downloadable = new DownloadLinkDownloadable(link) {
-
                 @Override
                 public boolean isHashCheckEnabled() {
                     return false;
@@ -200,7 +198,7 @@ public class DownloaderGuru extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadable, br.createGetRequest(dllink), resume, maxChunks);
         } catch (PluginException e) {
             if (StringUtils.containsIgnoreCase(e.getMessage(), "RedirectLoop")) {
-                tempUnavailableHoster(10 * 60 * 1000l);
+                tempUnavailableHoster(account, 10 * 60 * 1000l);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
             throw e;
@@ -214,8 +212,8 @@ public class DownloaderGuru extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getContentType().contains("json")) {
             br.followConnection();
             updatestatuscode();
-            handleAPIErrors(this.br);
-            handleErrorRetries("unknowndlerror", 10, 5 * 60 * 1000l);
+            handleAPIErrors(account, this.br);
+            handleErrorRetries(account, "unknowndlerror", 10, 5 * 60 * 1000l);
         }
         link.setProperty(NICE_HOSTproperty + "directlink", dllink);
         this.dl.startDownload();
@@ -245,8 +243,8 @@ public class DownloaderGuru extends PluginForHost {
             }
         }
         /*
-         * When JD is started the first time and the user starts downloads right away, a full login might not yet have happened but it is needed to
-         * get the individual host limits.
+         * When JD is started the first time and the user starts downloads right away, a full login might not yet have happened but it is
+         * needed to get the individual host limits.
          */
         synchronized (CTRLLOCK) {
             if (hostMaxchunksMap.isEmpty() || hostMaxdlsMap.isEmpty()) {
@@ -255,7 +253,7 @@ public class DownloaderGuru extends PluginForHost {
             }
         }
         this.setConstants(account, link);
-        login(false);
+        login(account, false);
         handleDL(account, link);
     }
 
@@ -287,7 +285,10 @@ public class DownloaderGuru extends PluginForHost {
      * @param maxRetries
      *            : Max retries before out of date error is thrown
      */
-    private void handleErrorRetries(final String error, final int maxRetries, final long disableTime) throws PluginException {
+    private void handleErrorRetries(final Account account, final String error, final int maxRetries, final long disableTime) throws PluginException {
+        if (currDownloadLink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         int timesFailed = this.currDownloadLink.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
         this.currDownloadLink.getLinkStatus().setRetryCount(0);
         if (timesFailed <= maxRetries) {
@@ -298,7 +299,7 @@ public class DownloaderGuru extends PluginForHost {
         } else {
             this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
             logger.info(NICE_HOST + ": " + error + " -> Disabling current host");
-            tempUnavailableHoster(disableTime);
+            tempUnavailableHoster(account, disableTime);
         }
     }
 
@@ -315,7 +316,7 @@ public class DownloaderGuru extends PluginForHost {
         this.setConstants(account, null);
         prepBR(this.br);
         final AccountInfo ai = new AccountInfo();
-        login(false);
+        login(account, false);
         /* As long as we always perform a full login, this call is never needed as full login will return account type and expire date too. */
         // accessUserInfo();
         final ArrayList<String> supportedhostslist = new ArrayList();
@@ -336,9 +337,9 @@ public class DownloaderGuru extends PluginForHost {
             ai.setStatus("Registered (free) account");
             account.setConcurrentUsePossible(false);
             /*
-             * 2016-06-16: When logged in, top right corner says "No Traffic" while there is a list of "Free Trial Hosters". I've tested 4 of them but
-             * when sending the links to download, the error "You are out of Traffic!" will come up. I guess it's safe to say that Free Accounts have no
-             * traffic.
+             * 2016-06-16: When logged in, top right corner says "No Traffic" while there is a list of "Free Trial Hosters". I've tested 4
+             * of them but when sending the links to download, the error "You are out of Traffic!" will come up. I guess it's safe to say
+             * that Free Accounts have no traffic.
              */
             ai.setTrafficLeft(0);
         }
@@ -369,68 +370,72 @@ public class DownloaderGuru extends PluginForHost {
         return ai;
     }
 
-    private void login(final boolean force) throws Exception {
-        final Cookies cookies = this.currAcc.loadCookies("");
-        if (cookies != null && !force) {
-            this.br.setCookies(this.getHost(), cookies);
-            this.br.getPage(API_ENDPOINT + "/Download.aspx");
-            if (br.containsHTML("Logout\\.aspx")) {
-                /* Refresh cookie timestamp */
+    private void login(final Account account, final boolean force) throws Exception {
+        synchronized (account) {
+            final Cookies cookies = account.loadCookies("");
+            if (cookies != null && !force) {
                 this.br.setCookies(this.getHost(), cookies);
-                return;
-            }
-            /* Perform full login */
-            this.br = prepBR(new Browser());
-        }
-        try {
-            getAPISafe(API_ENDPOINT + "Login.aspx");
-            Form loginform = this.br.getFormbyAction("./Login.aspx");
-            if (loginform == null) {
-                loginform = this.br.getForm(0);
-            }
-            if (loginform == null) {
-                /* Should never happen */
-                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!");
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "\r\nPlugin broken, please contact the JDownloader Support!");
+                this.br.getPage(API_ENDPOINT + "/Download.aspx");
+                if (br.containsHTML("Logout\\.aspx")) {
+                    /* Refresh cookie timestamp */
+                    this.br.setCookies(this.getHost(), cookies);
+                    return;
                 }
+                /* Perform full login */
+                this.br = prepBR(new Browser());
             }
-            for (InputField inputField : loginform.getInputFields()) {
-                if (StringUtils.containsIgnoreCase(inputField.getKey(), "txt1")) {
-                    inputField.setValue(Encoding.urlEncode(this.currAcc.getUser()));
-                } else if (StringUtils.containsIgnoreCase(inputField.getKey(), "txt2")) {
-                    inputField.setValue(Encoding.urlEncode(this.currAcc.getPass()));
-                } else if (StringUtils.containsIgnoreCase(inputField.getKey(), "chkRememberME")) {
-                    inputField.setValue("on");
+            try {
+                getAPISafe(account, API_ENDPOINT + "Login.aspx");
+                Form loginform = this.br.getFormbyAction("./Login.aspx");
+                if (loginform == null) {
+                    loginform = this.br.getForm(0);
                 }
-            }
-            postAPIFormSafe(loginform);
-            if (this.br.getCookie(this.getHost(), "AuthCookie") == null) {
-                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (loginform == null) {
+                    /* Should never happen */
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!");
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "\r\nPlugin broken, please contact the JDownloader Support!");
+                    }
                 }
+                for (InputField inputField : loginform.getInputFields()) {
+                    if (StringUtils.containsIgnoreCase(inputField.getKey(), "txt1")) {
+                        inputField.setValue(Encoding.urlEncode(account.getUser()));
+                    } else if (StringUtils.containsIgnoreCase(inputField.getKey(), "txt2")) {
+                        inputField.setValue(Encoding.urlEncode(account.getPass()));
+                    } else if (StringUtils.containsIgnoreCase(inputField.getKey(), "chkRememberME")) {
+                        inputField.setValue("on");
+                    }
+                }
+                postAPIFormSafe(account, loginform);
+                if (this.br.getCookie(this.getHost(), "AuthCookie") == null) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
+            } catch (final PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
+                throw e;
             }
-            this.currAcc.saveCookies(this.br.getCookies(this.getHost()), "");
-        } catch (final PluginException e) {
-            this.currAcc.clearCookies("");
-            throw e;
         }
     }
 
-    private void tempUnavailableHoster(final long timeout) throws PluginException {
+    private void tempUnavailableHoster(final Account account, final long timeout) throws PluginException {
         if (this.currDownloadLink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
         } else if (this.currDownloadLink.getHost().equals(this.getHost())) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
         }
         synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(this.currAcc);
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap == null) {
                 unavailableMap = new HashMap<String, Long>();
-                hostUnavailableMap.put(this.currAcc, unavailableMap);
+                hostUnavailableMap.put(account, unavailableMap);
             }
             /* wait 30 mins to retry this host */
             unavailableMap.put(this.currDownloadLink.getHost(), (System.currentTimeMillis() + timeout));
@@ -438,25 +443,25 @@ public class DownloaderGuru extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_RETRY);
     }
 
-    private void getAPISafe(final String url) throws IOException, PluginException {
+    private void getAPISafe(final Account account, final String url) throws IOException, PluginException {
         this.br.getPage(url);
         if (br.getHttpConnection().getResponseCode() == 403) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYou've been blocked from the API!", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         updatestatuscode();
-        handleAPIErrors(this.br);
+        handleAPIErrors(account, this.br);
     }
 
-    private void postRawAPISafe(final String url, final String postData) throws IOException, PluginException {
+    private void postRawAPISafe(final Account account, final String url, final String postData) throws IOException, PluginException {
         this.br.postPageRaw(url, postData);
         updatestatuscode();
-        handleAPIErrors(this.br);
+        handleAPIErrors(account, this.br);
     }
 
-    private void postAPIFormSafe(final Form form) throws Exception {
+    private void postAPIFormSafe(final Account account, final Form form) throws Exception {
         this.br.submitForm(form);
         updatestatuscode();
-        handleAPIErrors(this.br);
+        handleAPIErrors(account, this.br);
     }
 
     /** Performs slight domain corrections. */
@@ -484,7 +489,7 @@ public class DownloaderGuru extends PluginForHost {
         }
     }
 
-    private void handleAPIErrors(final Browser br) throws PluginException {
+    private void handleAPIErrors(final Account account, final Browser br) throws PluginException {
         String statusMessage = null;
         try {
             switch (statuscode) {
@@ -493,15 +498,15 @@ public class DownloaderGuru extends PluginForHost {
                 break;
             case 1:
                 /* No traffic left (e.g. free account) */
-                this.currAcc.getAccountInfo().setTrafficLeft(0);
+                account.getAccountInfo().setTrafficLeft(0);
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             case 666:
                 // /* Unknown error */
                 statusMessage = "Unknown error";
                 logger.info("Unknown error");
-                handleErrorRetries(NICE_HOSTproperty + "timesfailed_unknown_api_error", 50, 5 * 60 * 1000l);
+                handleErrorRetries(account, NICE_HOSTproperty + "timesfailed_unknown_api_error", 50, 5 * 60 * 1000l);
             default:
-                handleErrorRetries(NICE_HOSTproperty + "timesfailed_unknown_api_error", 20, 5 * 60 * 1000l);
+                handleErrorRetries(account, NICE_HOSTproperty + "timesfailed_unknown_api_error", 20, 5 * 60 * 1000l);
             }
         } catch (final PluginException e) {
             logger.info(NICE_HOST + ": Exception: statusCode: " + statuscode + " statusMessage: " + statusMessage);

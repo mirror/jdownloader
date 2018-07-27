@@ -112,7 +112,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     // https://www.diggernaut.com/blog/how-to-scrape-pages-infinite-scroll-extracting-data-from-instagram/
     private static String getByUserIDQueryHash(Browser br) throws Exception {
         synchronized (QUERY_HASH) {
-            final String profilePageContainer = br.getRegex("(/static/bundles/base/ProfilePageContainer.js/[a-f0-9]+.js)").getMatch(0);
+            final String profilePageContainer = br.getRegex("(/static/bundles/(?:metro|base)/ProfilePageContainer.js/[a-f0-9]+.js)").getMatch(0);
             if (profilePageContainer != null) {
                 final String ret = QUERY_HASH.get(profilePageContainer);
                 if (ret != null) {

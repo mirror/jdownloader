@@ -109,6 +109,10 @@ public class PutIO extends PluginForHost {
         }
     }
 
+    private boolean isDownload(URLConnectionAdapter con) {
+        return con.isOK() && (con.isContentDisposition() || !StringUtils.containsIgnoreCase(con.getContentType(), "text"));
+    }
+
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         final String access_token = login(account);
@@ -118,7 +122,7 @@ public class PutIO extends PluginForHost {
         brc.getHeaders().put("Authorization", "token " + access_token);
         dl = jd.plugins.BrowserAdapter.openDownload(brc, link, url, true, 0);
         final int responseCode = dl.getConnection().getResponseCode();
-        if (responseCode == 200) {
+        if (isDownload(dl.getConnection())) {
             dl.startDownload();
         } else if (responseCode == 404) {
             try {
@@ -202,7 +206,7 @@ public class PutIO extends PluginForHost {
                 br.getPage(request);
                 final URLConnectionAdapter connection = br.getHttpConnection();
                 final int responseCode = connection.getResponseCode();
-                if (responseCode == 200) {
+                if (isDownload(connection)) {
                     link.setDownloadSize(connection.getCompleteContentLength());
                     link.setProperty("requires_account", account.getUser());
                     if (connection.isContentDisposition()) {
