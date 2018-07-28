@@ -316,7 +316,7 @@ public class ChoMikujPl extends PluginForDecrypt {
         final PluginForHost chomikujpl = JDUtilities.getPluginForHost("chomikuj.pl");
         final boolean decryptFolders = chomikujpl.getPluginConfig().getBooleanProperty(jd.plugins.hoster.ChoMikujPl.DECRYPTFOLDERS, false);
         if (decryptFolders) {
-            String serverPath = parameter.replace("https?://chomikuj.pl/", "");
+            String serverPath = parameter.replace("http://chomikuj.pl/", "").replace("https://chomikuj.pl/", "");
             serverPath = serverPath.replace("*", "%");
             serverPath = URLDecoder.decode(serverPath, "UTF-8");
             final Regex serverPathRe = new Regex(serverPath, "^(.+)(,\\d+)$");
