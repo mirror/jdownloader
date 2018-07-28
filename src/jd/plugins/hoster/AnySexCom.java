@@ -68,7 +68,7 @@ public class AnySexCom extends PluginForHost {
             final String ahv = ahv(formattedDate);
             dllink += "?time=" + formattedDate + "&ahv=" + ahv;
             dllink = Encoding.htmlDecode(dllink);
-            ext = getFileNameExtensionFromString(dllink, ".flv");
+            ext = getFileNameExtensionFromString(dllink, ".mp4");
         }
         downloadLink.setFinalFileName(filename + ext);
         return AvailableStatus.TRUE;
