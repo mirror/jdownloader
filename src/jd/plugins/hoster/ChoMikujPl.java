@@ -478,6 +478,9 @@ public class ChoMikujPl extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             }
         }
+        if (isVideo(downloadLink)) { // Non premium only gets preview with getDllink(downloadLink, br, false);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        }
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
