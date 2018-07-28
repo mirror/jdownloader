@@ -28,8 +28,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
 
-import org.appwork.utils.StringUtils;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "urlgalleries.net" }, urls = { "https?://(www\\.)?[a-z0-9_]+\\.urlgalleries\\.net/blog_gallery\\.php\\?id=\\d+" })
 public class RlGalleriesNt extends PluginForDecrypt {
     private static String agent = null;
@@ -51,7 +49,7 @@ public class RlGalleriesNt extends PluginForDecrypt {
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         br.getPage(parameter);
         br.followRedirect();
-        if (br.containsHTML("<title> - urlgalleries\\.net</title>|>ERROR - NO IMAGES AVAILABLE") || StringUtils.endsWithCaseInsensitive(br.getRedirectLocation(), "/not_found_adult.php")) {
+        if (br.containsHTML("<title> - urlgalleries\\.net</title>|>ERROR - NO IMAGES AVAILABLE") || br.getURL().contains("/not_found_adult.php")) {
             logger.info("Link offline: " + parameter);
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
