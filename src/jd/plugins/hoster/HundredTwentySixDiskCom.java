@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -30,9 +29,8 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "126disk.com" }, urls = { "http://(?:www\\.)?126(?:disk|xy)\\.com/(file|rf)view_\\d+\\.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "126disk.com" }, urls = { "http://(?:www\\.)?126(?:disk|xy|xiazai)\\.com/(file|rf)view_\\d+\\.html" })
 public class HundredTwentySixDiskCom extends PluginForHost {
-
     public HundredTwentySixDiskCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -54,11 +52,11 @@ public class HundredTwentySixDiskCom extends PluginForHost {
         if (br.getURL().endsWith("/error.php") || br.getHttpConnection().getResponseCode() == 403 || br.containsHTML(">你访问的文件不存在。现在将转入首页！|>\\s*你访问的文件包含违规内容…\\s*<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<h1><img src='[^<>\"]*?'>([^<>\"]*?)</h1>").getMatch(0);
+        String filename = br.getRegex("<h1[^<>]+>([^<>]*?)</h1>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("class=\"nowrap file-name( [a-z0-9\\-]+)?\">([^<>\"]*?)</h1>").getMatch(1);
         }
-        String filesize = br.getRegex("<b>文件大小 ：</b>([^<>\"]*?)</li>").getMatch(0);
+        String filesize = br.getRegex("大小：<[^<>]+>([^<>]*?)( ?\\([^<>])?<").getMatch(0);
         if (filesize == null) {
             filesize = br.getRegex("<table id=\"info_table\">[\t\n\r ]+<tr>[\t\n\r ]+<td width=\"160px;\">文件大小：([^<>\"]*?)</td>").getMatch(0);
         }
@@ -108,5 +106,4 @@ public class HundredTwentySixDiskCom extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }
