@@ -86,14 +86,16 @@ public class SproutVideoCom extends PluginForHost {
             // }
             // embed required, you can get it from omebed json/xml or iframe or 'meta content twitter'
             // prefer iframe as it can have ?type=hd parameter
-            String embed = br.getRegex("<iframe src=('|\"|)(.*?)\\1 ").getMatch(1);
-            if (StringUtils.isEmpty(embed)) {
-                embed = br.getRegex("<meta content=('|\"|)(.*?)\\1 name=\"twitter:player\"").getMatch(1);
+            if (!link.getDownloadURL().contains("embed")) {
+                String embed = br.getRegex("<iframe src=('|\"|)(.*?)\\1 ").getMatch(1);
+                if (StringUtils.isEmpty(embed)) {
+                    embed = br.getRegex("<meta content=('|\"|)(.*?)\\1 name=\"twitter:player\"").getMatch(1);
+                }
+                if (embed == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                br.getPage(embed);
             }
-            if (embed == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            br.getPage(embed);
         }
         // json
         String json = br.getRegex("var dat\\s*=\\s*'([a-zA-Z0-9-=_/+]+)'").getMatch(0);
