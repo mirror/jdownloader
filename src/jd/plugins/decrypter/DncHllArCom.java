@@ -2,8 +2,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -12,12 +10,13 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 /**
  * category not designed to do spanning page support!
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dancehallarena.com" }, urls = { "https?://(\\w*\\.)?dancehallarena\\.com/(?:[a-zA-Z0-9\\-/]+|category/(?:(?:dancehall|reggae)/(?:singles/|dancehall-albums/|instrumental-dancehall/)?|soca/|mixtapes/(?:dancehall-mixtapes/|reggae-mixtapes/|hiphoprb/)?|videos/(?:music-videos/|viral-videos/)?|efx/)(?:page/\\d+)?)" })
 public class DncHllArCom extends antiDDoSForDecrypt {
-
     public DncHllArCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -25,9 +24,11 @@ public class DncHllArCom extends antiDDoSForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        br.setFollowRedirects(true);
         getPage(parameter);
         // invalid url
-        if (br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<h2>No posts")) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         if (parameter.contains("/category/")) {
@@ -99,5 +100,4 @@ public class DncHllArCom extends antiDDoSForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
