@@ -44,6 +44,7 @@ public class LiveMeCom extends PluginForDecrypt {
         } else if (StringUtils.isNotEmpty(url)) {
             link = createDownloadlink(url);
         } else {
+            ret.add(createOfflinelink(parameter));
             return ret;
         }
         if (videosize != null) {
