@@ -35,7 +35,7 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
  *
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision: 20515 $", interfaceVersion = 3, names = { "dysk.onet.pl" }, urls = { "https?://(?:www\\.)?dysk\\.onet\\.pl/(?:multilink/[a-f0-9]{40}|link/[a-zA-Z0-9]{5})" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dysk.onet.pl" }, urls = { "https?://(?:www\\.)?dysk\\.onet\\.pl/(?:multilink/[a-f0-9]{40}|link/[a-zA-Z0-9]{5})" })
 public class DyskOnetPl extends PluginForDecrypt {
     public DyskOnetPl(PluginWrapper wrapper) {
         super(wrapper);
@@ -54,6 +54,7 @@ public class DyskOnetPl extends PluginForDecrypt {
         {
             Browser test = br.cloneBrowser();
             test.getHeaders().put("Accept", "*/*");
+            test.setFollowRedirects(true);
             test.getPage("//events.onet.pl/v2/me?_ac=events");
             // should set ea_uuid session cookie, but meh
         }
@@ -65,7 +66,7 @@ public class DyskOnetPl extends PluginForDecrypt {
         ajax.postPage("/api/manager/?linkinfo", "Link=" + fuid);
         LinkedHashMap<String, Object> response = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
         response = (LinkedHashMap<String, Object>) response.get("response");
-        if ((String) response.get("error") != null && "Public link not found.".equals(response.get("message"))) {
+        if ((String) response.get("error") != null) { // && "Public link not found.".equals(response.get("message"))) {
             decryptedLinks.add(createOfflinelink(parameter, fuid, null));
             return decryptedLinks;
         }
