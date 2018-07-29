@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -40,7 +39,6 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ishare.iask.sina.com.cn" }, urls = { "https?://(?:www\\.)?ishare\\.iask\\.sina\\.com\\.cn/f/\\d+\\.html" })
 public class IshareIaskSinaComCn extends PluginForHost {
-
     public IshareIaskSinaComCn(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://ishare.iask.sina.com.cn/");
@@ -67,7 +65,7 @@ public class IshareIaskSinaComCn extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("<title>共享资料</title>|<br>5秒钟后跳转到首页</div>|近期共享资料正在配合有关部门进行淫秽、色情、") || this.br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML("<title>共享资料</title>|<br>5秒钟后跳转到首页</div>|近期共享资料正在配合有关部门进行淫秽、色情、|无法查看！<") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>(.*?) - 免费高速下载 - 共享资料</title>").getMatch(0);
@@ -189,15 +187,12 @@ public class IshareIaskSinaComCn extends PluginForHost {
                 } else if (pcid == null || pcid.equals("") || servertime == null || servertime.equals("") || rsakv == null || rsakv.equals("") || nonce == null || nonce.equals("") || pubkey == null || pubkey.equals("")) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-
                 pcid = Encoding.urlEncode(pcid);
                 final String captchaurl = "https://login.sina.com.cn/cgi/pin.php?r=" + rsakv + "&s=0&p=" + Encoding.urlEncode(pcid);
                 final DownloadLink dummyLink = new DownloadLink(this, "Account", this.getHost(), "http://" + this.getHost(), true);
                 final String c = getCaptchaCode(captchaurl, dummyLink);
-
                 String postdata = "entry=openapi&gateway=1&from=&savestate=0&useticket=1&pagerefer=" + pagerefer + "&wsseretry=servertime_error&ct=1800&s=1&vsnf=1&vsnval=&door=fBubv&appkey=1t4elW&pcid=" + pcid + "&su=" + username_b64 + "&service=miniblog&servertime=" + servertime + "&nonce=" + Encoding.urlEncode(nonce) + "&pwencode=rsa2&rsakv=" + Encoding.urlEncode(rsakv) + "&sp=" + pubkey.toLowerCase() + "&sr=1920*1080&encoding=UTF-8&cdult=2&domain=weibo.com&prelt=370&returntype=TEXT";
                 this.br.postPage("https://login.sina.com.cn/sso/login.php?client=ssologin.js(v1.4.18)&_=" + System.currentTimeMillis() + "&openapilogin=qrcode", postdata);
-
                 this.br.postPage("https://api.weibo.com/oauth2/authorize", "");
                 br.postPage("", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (!isLoggedIn()) {
@@ -261,5 +256,4 @@ public class IshareIaskSinaComCn extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
