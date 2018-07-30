@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -45,7 +44,6 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pixabay.com" }, urls = { "https?://(www\\.)?pixabay\\.com/en/[a-z0-9\\-]+\\-\\d+/" })
 public class PixaBayCom extends PluginForHost {
-
     public PixaBayCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://pixabay.com/en/accounts/register/");
@@ -63,10 +61,8 @@ public class PixaBayCom extends PluginForHost {
     private static final boolean ACCOUNT_FREE_RESUME       = false;
     private static final int     ACCOUNT_FREE_MAXCHUNKS    = 1;
     private static final int     ACCOUNT_FREE_MAXDOWNLOADS = 20;
-
     /* TODO: Maybe add support for SVG format(s) */
     private final String[]       qualities                 = { "Original", "O", "XXL", "XL", "L", "M", "S" };
-
     private String               quality_max               = null;
     private String               quality_download_id       = null;
     /* don't touch the following! */
@@ -96,9 +92,10 @@ public class PixaBayCom extends PluginForHost {
         /* Find filesize based on whether user has an account or not. */
         String filesize = null;
         boolean done = false;
-        final String[] qualityInfo = this.br.getRegex("(<td><input type=\"radio\" name=\"download\".*?/td></tr>)").getColumn(0);
+        final String[] qualityInfo = br.getRegex("(<td><input type=\"radio\" name=\"download\".*?/td></tr>)").getColumn(0);
         for (final String possiblequality : qualities) {
             for (final String quality : qualityInfo) {
+                // logger.info("quality: " + quality);
                 final String quality_name = new Regex(quality, "(ORIGINAL|O|S|M|L|XXL|XL|SVG)</td>").getMatch(0);
                 if (quality_name == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -123,7 +120,21 @@ public class PixaBayCom extends PluginForHost {
                 break;
             }
         }
+        if (filesize == null || quality_download_id == null) {
+            String dllink = br.getRegex("(https://cdn[^<>\"\\s]+) 1.333x").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("(https://cdn[^<>\"\\s]+) 1x").getMatch(0);
+            }
+            if (dllink != null) {
+                link.setProperty("free_directlink", dllink);
+                filename = Encoding.htmlDecode(filename.trim());
+                filename = encodeUnicode(filename) + ".jpg";
+                link.setFinalFileName(filename);
+                return AvailableStatus.TRUE;
+            }
+        }
         if (filename == null || filesize == null || quality_download_id == null) {
+            logger.info("filename: " + filename + ", filesize: " + filesize + ", quality_download_id: " + quality_download_id);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (quality_max == null) {
@@ -154,16 +165,13 @@ public class PixaBayCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-
             final Recaptcha rc = new Recaptcha(br, this);
             /* Last updated: 2015-08-17 */
             rc.setId("6Ld8hL8SAAAAAKbydL06Ir20hG_u2SfRkBbfpTNf");
             rc.load();
             final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
             final String c = getCaptchaCode("recaptcha", cf, downloadLink);
-
             this.br.postPage(post_url, "topyenoh=&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&timestamp=" + timestamp + "&security_hash=" + security_hash + "&attachment=1");
-
             dllink = br.getRegex("window\\.location=\"(/[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -335,5 +343,4 @@ public class PixaBayCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
