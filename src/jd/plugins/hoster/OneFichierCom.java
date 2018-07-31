@@ -33,6 +33,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -229,7 +230,7 @@ public class OneFichierCom extends PluginForHost {
     private String regex_dllink_middle = "align:middle\">\\s+<a href=(\"|')(https?://[a-zA-Z0-9_\\-]+\\.(1fichier|desfichiers)\\.com/[a-zA-Z0-9]+.*?)\\1";
 
     public void doFree(final Account account, final DownloadLink downloadLink) throws Exception, PluginException {
-        checkDownloadable();
+        checkDownloadable(account);
         // to prevent wasteful requests.
         int i = 0;
         /* The following code will cover saved hotlinks */
@@ -589,7 +590,7 @@ public class OneFichierCom extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         setConstants(account, link);
         requestFileInformation(link);
-        checkDownloadable();
+        checkDownloadable(account);
         br = new Browser();
         if (AccountType.FREE.equals(account.getType()) && account.getBooleanProperty("freeAPIdisabled")) {
             /**
@@ -816,7 +817,7 @@ public class OneFichierCom extends PluginForHost {
      *
      * @throws Exception
      */
-    private void checkDownloadable() throws Exception {
+    private void checkDownloadable(Account account) throws Exception {
         if (this.currDownloadLink.getBooleanProperty("privatelink", false)) {
             logger.info("Link is PRIVATE --> Checking whether it really is PRIVATE or just password protected");
             br.getPage(this.getDownloadlinkNEW(this.currDownloadLink));
@@ -825,6 +826,12 @@ public class OneFichierCom extends PluginForHost {
                 this.pwProtected = true;
             } else if (br.containsHTML("Access to download")) {
                 logger.info("Download is possible");
+            } else if (br.containsHTML("Your account will be unlock")) {
+                if (account != null) {
+                    throw new AccountUnavailableException("Locked for security reasons", 60 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP blocked for security reasons");
+                }
             } else {
                 logger.info("Link is PRIVATE");
                 throw new PluginException(LinkStatus.ERROR_FATAL, "This link is private. You're not authorized to download it!");

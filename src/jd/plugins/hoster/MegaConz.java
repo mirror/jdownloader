@@ -77,7 +77,7 @@ import org.jdownloader.translate._JDT;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.co.nz" }, urls = { "(https?://(www\\.)?mega\\.(co\\.)?nz/.*?(#!?N?|\\$)|chrome://mega/content/secure\\.html#)(!|%21|\\?)[a-zA-Z0-9]+(!|%21)[a-zA-Z0-9_,\\-%]{16,}((=###n=|!)[a-zA-Z0-9]+)?|mega:/*#(?:!|%21)[a-zA-Z0-9]+(?:!|%21)[a-zA-Z0-9_,\\-%]{16,}" })
 public class MegaConz extends PluginForHost {
-    private final String USE_SSL        = "USE_SSL_V2";
+    private final String USE_SSL        = "USE_SSL_V3";
     private final String CHECK_RESERVED = "CHECK_RESERVED";
     private final String USE_TMP        = "USE_TMP_V2";
     private final String HIDE_APP       = "HIDE_APP_V2";
@@ -897,7 +897,7 @@ public class MegaConz extends PluginForHost {
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CHECK_RESERVED, JDL.L("plugins.hoster.megaconz.checkreserved", "Check reserved traffic?")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_SSL, JDL.L("plugins.hoster.megaconz.usessl", "Use SSL?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_SSL, JDL.L("plugins.hoster.megaconz.usessl", "Use SSL?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_TMP, JDL.L("plugins.hoster.megaconz.usetmp", "Use tmp decrypting file?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), HIDE_APP, JDL.L("plugins.hoster.megaconz.hideapp", "Use minimal set of http headers?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_GLOBAL_CDN, JDL.L("plugins.hoster.megaconz.globalcdn", "Use global CDN?")).setDefaultValue(true));
@@ -1192,7 +1192,7 @@ public class MegaConz extends PluginForHost {
     }
 
     private String useSSL() {
-        if (getPluginConfig().getBooleanProperty(USE_SSL, false)) {
+        if (getPluginConfig().getBooleanProperty(USE_SSL, true)) {
             if (isHideApplication()) {
                 return "2";// can also be 2, see meganz/webclient/blob/master/js/crypto.js
             } else {
