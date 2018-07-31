@@ -710,7 +710,12 @@ public class JDGui implements UpdaterListener, OwnerFinder {
             @Override
             public void run() {
                 try {
-                    internalInitLocationAndDimension(mainFrame, logger, JsonConfig.create(GraphicalUserInterfaceSettings.class).getLastFrameStatus(), tray == null || !tray.getSettings().isEnabled() || !tray.getSettings().isStartMinimizedEnabled(), true);
+                    new EDTRunner() {
+                        @Override
+                        protected void runInEDT() {
+                            internalInitLocationAndDimension(mainFrame, logger, JsonConfig.create(GraphicalUserInterfaceSettings.class).getLastFrameStatus(), tray == null || !tray.getSettings().isEnabled() || !tray.getSettings().isStartMinimizedEnabled(), true);
+                        }
+                    };
                 } finally {
                     initThread = null;
                 }
@@ -933,7 +938,16 @@ public class JDGui implements UpdaterListener, OwnerFinder {
         // try to find offscreen
         logger.info("Check if Screen Location are ok " + loc + " - " + dim);
         // ensure that the window is on screen
-        final Point finalLocation = loc == null ? null : AbstractLocator.correct(loc, dim);
+        if (loc != null) {
+            try {
+                loc = AbstractLocator.correct(loc, dim);
+            } catch (Throwable e) {
+                loc = null;
+                // java.lang.IllegalArgumentException: Window must not be zero
+                // Java10, maybe timing bug?
+                logger.log(e);
+            }
+        }
         Integer state = null;
         if (status.isSilentShutdown() && !status.isActive()) {
             // else frame would jump to the front
@@ -948,6 +962,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
         final Dimension finalDim = dim;
         final WindowExtendedState extendedState = WindowExtendedState.get(state);
         stateForNextVisible = stat;
+        final Point finalLocation = loc;
         new EDTRunner() {
             @Override
             protected void runInEDT() {
@@ -1711,16 +1726,21 @@ public class JDGui implements UpdaterListener, OwnerFinder {
     }
 
     public boolean badLaunchCheck() {
-        if (!getMainFrame().isVisible()) {
-            if (tray != null && tray.getSettings().isEnabled() && tray.getSettings().isStartMinimizedEnabled()) {
-                // ok
-            } else {
-                // this may happen. for example if the user set a password on jd, and does not enter the correct password on start!
-                ShutdownController.getInstance().requestShutdown(true);
-                return false;
+        return Boolean.TRUE.equals(new EDTHelper<Boolean>() {
+            @Override
+            public Boolean edtRun() {
+                if (!getMainFrame().isVisible()) {
+                    if (tray != null && tray.getSettings().isEnabled() && tray.getSettings().isStartMinimizedEnabled()) {
+                        // ok
+                    } else {
+                        // this may happen. for example if the user set a password on jd, and does not enter the correct password on start!
+                        ShutdownController.getInstance().requestShutdown(true);
+                        return false;
+                    }
+                }
+                return true;
             }
-        }
-        return true;
+        }.getReturnValue());
     }
 
     @Override
