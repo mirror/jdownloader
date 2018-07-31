@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -27,14 +26,12 @@ import jd.plugins.DownloadLink;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornsexwank.com" }, urls = { "https?://(?:www\\.)?pornsexwank\\.com/[A-Za-z0-9\\-_]+\\-\\d+\\.html" })
 public class PornsexwankCom extends PornEmbedParser {
-
     public PornsexwankCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* DEV NOTES */
     /* Porn_plugin */
-
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         this.br.setCookiesExclusive(true);
@@ -44,11 +41,15 @@ public class PornsexwankCom extends PornEmbedParser {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final String filename = getTitle(this.br);
+        final String filename = getTitle(br);
+        if (br.containsHTML("Z5L4S4T4J4G46454S2J5G4R5")) { // Video link that shows error
+            decryptedLinks.add(createOfflinelink(parameter));
+            return decryptedLinks;
+        }
         decryptedLinks.addAll(findEmbedUrls(filename));
         if (decryptedLinks.size() == 0) {
             /* No external URL found? Video must be hosted on their own servers! */
-            decryptedLinks.add(this.createDownloadlink(parameter.replaceAll("https?://", "pornsexwankdecrypted://")));
+            decryptedLinks.add(createDownloadlink(parameter.replaceAll("https?://", "pornsexwankdecrypted://")));
         }
         return decryptedLinks;
     }
@@ -60,5 +61,4 @@ public class PornsexwankCom extends PornEmbedParser {
         }
         return filename;
     }
-
 }
