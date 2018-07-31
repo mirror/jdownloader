@@ -76,6 +76,7 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.controller.PluginClassLoader;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin.FEATURE;
@@ -285,6 +286,16 @@ public abstract class PluginForDecrypt extends Plugin {
             return true;
         } else {
             return false;
+        }
+    }
+
+    protected void handleAccountException(Account account, Throwable throwable) throws Exception {
+        final PluginForHost plugin = account.getPlugin().getLazyP().newInstance(PluginClassLoader.getThreadPluginClassLoaderChild());
+        final LogInterface logger = getLogger();
+        if (logger instanceof LogSource) {
+            plugin.handleAccountException(account, (LogSource) logger, throwable);
+        } else {
+            plugin.handleAccountException(account, null, throwable);
         }
     }
 

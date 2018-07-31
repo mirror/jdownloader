@@ -101,7 +101,8 @@ public class CrhyRllCom extends PluginForDecrypt {
             if (account != null) {
                 try {
                     ((jd.plugins.hoster.CrunchyRollCom) plugin).login(account, this.br, false);
-                } catch (final Throwable e) {
+                } catch (final PluginException e) {
+                    handleAccountException(account, e);
                 }
             }
             // set utf-8

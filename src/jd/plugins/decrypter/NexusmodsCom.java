@@ -35,7 +35,6 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.logging2.LogSource;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nexusmods.com" }, urls = { "https?://(?:www\\.)?nexusmods\\.com/(?!contents)[^/]+/mods/\\d+/?" })
 public class NexusmodsCom extends PluginForDecrypt {
@@ -55,11 +54,7 @@ public class NexusmodsCom extends PluginForDecrypt {
             try {
                 ((jd.plugins.hoster.NexusmodsCom) plugin).login(account);
             } catch (PluginException e) {
-                if (getLogger() instanceof LogSource) {
-                    plugin.handleAccountException(account, (LogSource) getLogger(), e);
-                } else {
-                    plugin.handleAccountException(account, null, e);
-                }
+                handleAccountException(account, e);
             }
         }
         ((jd.plugins.hoster.NexusmodsCom) plugin).getPage(br, parameter);
