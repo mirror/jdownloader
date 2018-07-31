@@ -40,9 +40,6 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.plugins.controller.PluginClassLoader;
-import org.jdownloader.plugins.controller.host.HostPluginController;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "realitykings.com" }, urls = { "https?://(?:new\\.)?members\\.realitykings\\.com/video/(?:(?:full|watch)/\\d+(?:/[a-z0-9\\-_]+/?)?|pics/\\d+(?:/[a-z0-9\\-_]+/?)?)|https?://(?:new\\.)?members\\.realitykings\\.com/(?:videos/\\?models=\\d+|model/view/\\d+/[a-z0-9\\-_]+/?)|https?://(?:www\\.)?realitykings\\.com/tour/video/watch/\\d+/(?:[a-z0-9\\-_]+/?)?" })
 public class RealityKingsCom extends PluginForDecrypt {
@@ -245,12 +242,7 @@ public class RealityKingsCom extends PluginForDecrypt {
             ((jd.plugins.hoster.RealityKingsCom) hostPlugin).login(this.br, aa, force);
             return true;
         } catch (final PluginException e) {
-            final PluginForHost plugin = HostPluginController.getInstance().get(getHost()).newInstance(PluginClassLoader.getThreadPluginClassLoaderChild());
-            if (getLogger() instanceof LogSource) {
-                plugin.handleAccountException(aa, (LogSource) getLogger(), e);
-            } else {
-                plugin.handleAccountException(aa, null, e);
-            }
+            handleAccountException(aa, e);
         }
         return false;
     }

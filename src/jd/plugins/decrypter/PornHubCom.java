@@ -38,14 +38,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.controller.PluginClassLoader;
-import org.jdownloader.plugins.controller.host.HostPluginController;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub(premium)?\\.com/(?:.*\\?viewkey=[a-z0-9]+|embed/[a-z0-9]+|embed_player\\.php\\?id=\\d+|users/[^/]+/videos/public)" })
 public class PornHubCom extends PluginForDecrypt {
@@ -74,12 +70,7 @@ public class PornHubCom extends PluginForDecrypt {
                     premium = true;
                 }
             } catch (PluginException e) {
-                final PluginForHost plugin = HostPluginController.getInstance().get(getHost()).newInstance(PluginClassLoader.getThreadPluginClassLoaderChild());
-                if (getLogger() instanceof LogSource) {
-                    plugin.handleAccountException(account, (LogSource) getLogger(), e);
-                } else {
-                    plugin.handleAccountException(account, null, e);
-                }
+                handleAccountException(account, e);
             }
         }
         if (premium) {

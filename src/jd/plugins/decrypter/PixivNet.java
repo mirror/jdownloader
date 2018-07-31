@@ -35,9 +35,6 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.plugins.controller.PluginClassLoader;
-import org.jdownloader.plugins.controller.host.HostPluginController;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixiv.net" }, urls = { "https?://(?:www\\.)?pixiv\\.net/(?:member_illust\\.php\\?mode=[a-z]+\\&illust_id=\\d+|member(_illust)?\\.php\\?id=\\d+)" })
 public class PixivNet extends PluginForDecrypt {
@@ -61,12 +58,7 @@ public class PixivNet extends PluginForDecrypt {
                 jd.plugins.hoster.PixivNet.login(br, aa, false, false);
                 loggedIn = true;
             } catch (PluginException e) {
-                final PluginForHost plugin = HostPluginController.getInstance().get(getHost()).newInstance(PluginClassLoader.getThreadPluginClassLoaderChild());
-                if (getLogger() instanceof LogSource) {
-                    plugin.handleAccountException(aa, (LogSource) getLogger(), e);
-                } else {
-                    plugin.handleAccountException(aa, null, e);
-                }
+                handleAccountException(aa, e);
             }
         }
         final String lid = new Regex(parameter, "id=(\\d+)").getMatch(0);

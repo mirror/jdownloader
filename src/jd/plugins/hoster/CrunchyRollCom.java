@@ -28,10 +28,7 @@ import java.io.FileWriter;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Scanner;
 import java.util.regex.Pattern;
 import java.util.zip.InflaterInputStream;
@@ -43,9 +40,11 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -66,6 +65,7 @@ import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.components.hls.HlsContainer;
@@ -78,12 +78,10 @@ import org.xml.sax.SAXException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "crunchyroll.com" }, urls = { "https?://(?:\\w+.\\w+|www|api-manga)\\.crunchyroll\\.com/(xml/\\?req=RpcApiVideoPlayer_GetStandardConfig\\&media_id=[0-9]+.*|xml/\\?req=RpcApiSubtitle_GetXml\\&subtitle_script_id=[0-9]+.*|i/croll_manga/e/\\w+)" })
 public class CrunchyRollCom extends antiDDoSForHost {
-    static private Object                                    lock                 = new Object();
-    static private HashMap<Account, HashMap<String, String>> loginCookies         = new HashMap<Account, HashMap<String, String>>();
-    static private final String                              RCP_API_VIDEO_PLAYER = "RpcApiVideoPlayer_GetStandardConfig";
-    static private final String                              RCP_API_SUBTITLE     = "RpcApiSubtitle_GetXml";
-    static private final String                              CROLL_MANGA          = "croll_manga";
-    private String                                           rtmp_path_or_hls_url = null;
+    static private final String RCP_API_VIDEO_PLAYER = "RpcApiVideoPlayer_GetStandardConfig";
+    static private final String RCP_API_SUBTITLE     = "RpcApiSubtitle_GetXml";
+    static private final String CROLL_MANGA          = "croll_manga";
+    private String              rtmp_path_or_hls_url = null;
 
     @SuppressWarnings("deprecation")
     public CrunchyRollCom(final PluginWrapper wrapper) {
@@ -371,13 +369,8 @@ public class CrunchyRollCom extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            this.login(account, this.br, true);
-            // TODO Find the expiration date of the premium status
-        } catch (final PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
+        this.login(account, this.br, true);
+        // TODO Find the expiration date of the premium status
         // date + 4 days
         final String nextbillingdate = br.getRegex("Next Billing Date:</th>\\s*<td>([a-zA-Z]{3,4} \\d{1,2}, \\d{4})</td>").getMatch(0);
         long date = TimeFormatter.getMilliSeconds(nextbillingdate, "MMM dd, yyyy", Locale.ENGLISH);
@@ -463,38 +456,52 @@ public class CrunchyRollCom extends antiDDoSForHost {
      *            Should new cookies be retrieved (fresh login) even if cookies have previously been cached.
      */
     public void login(final Account account, Browser br, final boolean refresh) throws Exception {
-        synchronized (CrunchyRollCom.lock) {
+        synchronized (account) {
             if (br == null) {
                 br = this.br;
             }
             try {
                 this.setBrowserExclusive();
-                // Load cookies from the cache if allowed, and they exist
-                if (refresh == false && CrunchyRollCom.loginCookies.containsKey(account)) {
-                    final HashMap<String, String> cookies = CrunchyRollCom.loginCookies.get(account);
-                    if (cookies != null) {
-                        if (cookies.containsKey("c_userid")) {
-                            // Save cookies to the browser
-                            for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                                final String key = cookieEntry.getKey();
-                                final String value = cookieEntry.getValue();
-                                br.setCookie("crunchyroll.com", key, value);
-                            }
-                            return;
-                        }
+                final Cookies cookies = account.loadCookies("");
+                boolean freshLogin = true;
+                if (cookies != null) {
+                    br.setCookies(getHost(), cookies);
+                    getPage("https://www.crunchyroll.com");
+                    if (br.getCookie(this.getHost(), "c_userid", Cookies.NOTDELETEDPATTERN) == null || br.getCookie(this.getHost(), "c_userkey", Cookies.NOTDELETEDPATTERN) == null) {
+                        br.clearCookies(getHost());
+                    } else {
+                        freshLogin = false;
                     }
                 }
-                // Set the POST parameters to log in
-                final LinkedHashMap<String, String> post = new LinkedHashMap<String, String>();
-                post.put("formname", "RpcApiUser_Login");
-                post.put("next_url", Encoding.urlEncode("http://www.crunchyroll.com/acct/membership/"));
-                post.put("fail_url", Encoding.urlEncode("http://www.crunchyroll.com/login"));
-                post.put("name", Encoding.urlEncode(account.getUser()));
-                post.put("password", Encoding.urlEncode(account.getPass()));
-                post.put("submit", "submit");
-                // Load the login page (actually log in)
-                br.setFollowRedirects(true);
-                postPage("https://www.crunchyroll.com/?a=formhandler", post);
+                if (freshLogin) {
+                    getPage("https://www.crunchyroll.com/login");
+                    final Form login = br.getFormbyActionRegex("/login");
+                    if (login == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    login.put(Encoding.urlEncode("login_form[name]"), Encoding.urlEncode(account.getUser()));
+                    login.put(Encoding.urlEncode("login_form[password]"), Encoding.urlEncode(account.getPass()));
+                    if (br.containsHTML("id=\"g-recaptcha\"")) {
+                        final DownloadLink original = this.getDownloadLink();
+                        if (original == null) {
+                            this.setDownloadLink(new DownloadLink(this, "Account", getHost(), "http://" + getHost(), true));
+                        }
+                        try {
+                            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6LfpWucSAAAAAGp_ie37zj6x3WRP0UBe2KCZXoqG").getToken();
+                            if (recaptchaV2Response == null) {
+                                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                            }
+                            login.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                        } finally {
+                            if (original == null) {
+                                this.setDownloadLink(null);
+                            }
+                        }
+                    }
+                    // Load the login page (actually log in)
+                    br.setFollowRedirects(true);
+                    submitForm(login);
+                }
                 // redirect => via standard means, then another direct => via Meta/JavaScript only
                 String redirect = br.getRegex("<meta http-equiv=\"refresh\" content=\"\\d+;\\s*url=(.*?)\"").getMatch(0);
                 if (redirect == null) {
@@ -506,19 +513,16 @@ public class CrunchyRollCom extends antiDDoSForHost {
                 if (redirect != null) {
                     getPage(br, redirect);
                 }
-                if (br.getCookie(this.getHost(), "c_userid") == null && br.getCookie(this.getHost(), "c_userkey") == null) {
+                if (br.getCookie(this.getHost(), "c_userid", Cookies.NOTDELETEDPATTERN) == null || br.getCookie(this.getHost(), "c_userkey", Cookies.NOTDELETEDPATTERN) == null) {
                     // Set account to invalid and quit
-                    account.setValid(false);
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 // Save the cookies to the cache
-                CrunchyRollCom.loginCookies.put(account, fetchCookies("crunchyroll.com"));
+                account.saveCookies(br.getCookies(getHost()), "");
             } catch (final PluginException e) {
-                CrunchyRollCom.loginCookies.remove(account);
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
@@ -566,7 +570,8 @@ public class CrunchyRollCom extends antiDDoSForHost {
                 if (account != null) {
                     try {
                         this.login(account, this.br, false);
-                    } catch (final Exception e) {
+                    } catch (final PluginException e) {
+                        logger.log(e);
                     }
                 }
             }

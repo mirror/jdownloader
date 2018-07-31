@@ -46,9 +46,6 @@ import jd.utils.JDUtilities;
 import org.appwork.storage.JSonStorage;
 import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.plugins.controller.PluginClassLoader;
-import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "https?://(www\\.)?instagram\\.com/(?!explore/)(p/[A-Za-z0-9_-]+|[^/]+)" })
@@ -163,12 +160,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 jd.plugins.hoster.InstaGramCom.login(this.br, aa, false);
                 logged_in = true;
             } catch (final PluginException e) {
-                final PluginForHost plugin = HostPluginController.getInstance().get(getHost()).newInstance(PluginClassLoader.getThreadPluginClassLoaderChild());
-                if (getLogger() instanceof LogSource) {
-                    plugin.handleAccountException(aa, (LogSource) getLogger(), e);
-                } else {
-                    plugin.handleAccountException(aa, null, e);
-                }
+                handleAccountException(aa, e);
             }
         }
         if (isPrivate && !logged_in) {
