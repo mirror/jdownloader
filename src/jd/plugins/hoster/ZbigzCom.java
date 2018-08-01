@@ -17,6 +17,7 @@ package jd.plugins.hoster;
 
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
@@ -133,6 +134,9 @@ public class ZbigzCom extends PluginForHost {
                 br.postPageRaw("https://api.zbigz.com/v1/account/auth", "------WebKitFormBoundarynA30WitJ3DZ64EB9\r\nContent-Disposition: form-data; name=\"undefined\"\r\n\r\nundefined\r\n------WebKitFormBoundarynA30WitJ3DZ64EB9--\r\n");
                 final String auth_token_name = PluginJSonUtils.getJson(br, "auth_token_name");
                 final String auth_token_value = PluginJSonUtils.getJson(br, "auth_token_value");
+                if (StringUtils.isEmpty(auth_token_name) || StringUtils.isEmpty(auth_token_value)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 br.postPageRaw("/v1/account/login", "------WebKitFormBoundaryTKQE2BnA58YToBjt\r\nContent-Disposition: form-data; name=\"login\"\r\n\r\n" + Encoding.urlEncode(account.getUser()) + "\r\n------WebKitFormBoundaryTKQE2BnA58YToBjt\r\nContent-Disposition: form-data; name=\"email\"\r\n\r\n" + Encoding.urlEncode(account.getUser()) + "\r\n------WebKitFormBoundaryTKQE2BnA58YToBjt\r\nContent-Disposition: form-data; name=\"password\"\r\n\r\n" + Encoding.urlEncode(account.getPass()) + "\r\n------WebKitFormBoundaryTKQE2BnA58YToBjt\r\nContent-Disposition: form-data; name=\"csrf_name\"\r\n\r\"" + auth_token_name + "\r\n------WebKitFormBoundaryTKQE2BnA58YToBjt\r\nContent-Disposition: form-data; name=\"csrf_value\"\r\n\r\"" + auth_token_value + "\r\n------WebKitFormBoundaryTKQE2BnA58YToBjt--\r\n");
                 if (!br.containsHTML("loginIn \\(true,\\[true,")) {
                     /* Maybe login is valid but it's not a premium account */
