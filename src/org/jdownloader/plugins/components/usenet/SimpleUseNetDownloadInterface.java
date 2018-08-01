@@ -42,12 +42,9 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.NullInputStream;
 import org.appwork.utils.net.socketconnection.SocketConnection;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
-import org.appwork.utils.net.usenet.MessageBodyNotFoundException;
 import org.appwork.utils.net.usenet.SimpleUseNet;
 import org.appwork.utils.net.usenet.YEncInputStream;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
-import org.jdownloader.controlling.FileCreationManager;
-import org.jdownloader.controlling.FileCreationManager.DeleteOption;
 import org.jdownloader.plugins.DownloadPluginProgress;
 import org.jdownloader.plugins.HashCheckPluginProgress;
 import org.jdownloader.plugins.SkipReason;
@@ -333,7 +330,6 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
 
     @Override
     public boolean startDownload() throws Exception {
-        boolean deletePartFile = false;
         try {
             downloadable.setConnectionHandler(this.getManagedConnetionHandler());
             final DiskSpaceReservation reservation = downloadable.createDiskSpaceReservation();
@@ -359,10 +355,6 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
                 downloadable.addPluginProgress(downloadPluginProgress);
                 downloadable.setAvailable(AvailableStatus.TRUE);
                 download();
-            } catch (MessageBodyNotFoundException e) {
-                LogSource.exception(logger, e);
-                deletePartFile = true;
-                throw e;
             } finally {
                 try {
                     downloadable.free(reservation);
@@ -403,9 +395,6 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
         } finally {
             downloadable.unlockFiles(outputCompleteFile, outputFinalCompleteFile, outputPartFile);
             cleanupDownladInterface();
-            if (deletePartFile) {
-                FileCreationManager.getInstance().delete(outputPartFile, DeleteOption.NULL);
-            }
         }
     }
 

@@ -46,7 +46,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twitch.tv" }, urls = { "https?://((www\\.|[a-z]{2}\\.|secure\\.)?(twitchtv\\.com|twitch\\.tv)/(?!directory)(?:[^<>/\"]+/(?:(b|c|v)/\\d+|videos(\\?page=\\d+)?)|videos/\\d+)|(www\\.|secure\\.)?twitch\\.tv/archive/archive_popout\\?id=\\d+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twitch.tv" }, urls = { "https?://(www\\.|[a-z]{2}\\.|secure\\.)?(twitchtv\\.com|twitch\\.tv)/(?!directory)([^<>/\"]+/)?(?:(?:(b|c|v)/\\d+|videos(\\?page=\\d+)?)|videos?/\\d+|archive/archive_popout\\?id=\\d+)" })
 public class TwitchTvDecrypt extends PluginForDecrypt {
     public TwitchTvDecrypt(PluginWrapper wrapper) {
         super(wrapper);
@@ -79,7 +79,7 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
 
     private final String FASTLINKCHECK  = "FASTLINKCHECK";
     private final String videoSingleWeb = "https?://(?:(?:www\\.|[a-z]{2}\\.|secure\\.)?(?:twitchtv\\.com|twitch\\.tv)/[^<>/\"]+/((b|c)/\\d+)|(?:www\\.)?twitch\\.tv/archive/archive_popout\\?id=\\d+)";
-    private final String videoSingleHLS = "https?://(?:(?:www\\.|[a-z]{2}\\.|secure\\.)?(?:twitchtv\\.com|twitch\\.tv)/(?:[^<>/\"]+/v/\\d+|videos/\\d+))";
+    private final String videoSingleHLS = "https?://(?:(?:www\\.|[a-z]{2}\\.|secure\\.)?(?:twitchtv\\.com|twitch\\.tv)/(?:[^<>/\"]+/)?(?:v/\\d+|videos?/\\d+))";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();

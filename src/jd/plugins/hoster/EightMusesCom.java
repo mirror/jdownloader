@@ -15,6 +15,9 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -60,6 +63,7 @@ public class EightMusesCom extends antiDDoSForHost {
         }
         String filename = new Regex(downloadLink.getDownloadURL(), "8muses\\.com/picture/(?:\\d+\\-)?(.+)").getMatch(0);
         filename = filename.replace("/", "_");
+        final String ractive_public = n(br.getRegex("<script id=\"ractive-public\" type=\"text/plain\">\\s*(.*?)\\s*<").getMatch(0));
         final String imageDir = br.getRegex("imageDir\" value=\"(/data/.{2}/)\"").getMatch(0);
         final String imageName = br.getRegex("imageName\" value=\"([^<>\"]*?)\"").getMatch(0);
         final String imageHost = br.getRegex("imageHost\" value=\"([^<>\"]*?)\"").getMatch(0);
@@ -70,6 +74,12 @@ public class EightMusesCom extends antiDDoSForHost {
         } else if (imageName != null) {
             /* 2018-02-09 */
             dllink = "https://www.8muses.com/image/fl/" + imageName;
+        } else if (ractive_public != null) {
+            final String page = new Regex(ractive_public, "\"page\"\\s*:\\s*(\\d+)").getMatch(0);
+            final String image = new Regex(ractive_public, page + "a\"\\s*,\\s*\"public.*?\"\\s*:\\s*\"(.*?)\"").getMatch(0);
+            if (image != null) {
+                dllink = "https://www.8muses.com/image/fl/" + image + ".jpg";
+            }
         }
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -140,6 +150,27 @@ public class EightMusesCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String n(String t) {
+        if (t == null) {
+            return null;
+        }
+        if (!t.startsWith("!")) {
+            return t;
+        }
+        final Matcher m = Pattern.compile("([\\x21-\\x7e])").matcher(t.substring(1).replace("&gt;", ">").replace("&lt;", "<").replace("&amp;", "&"));
+        final StringBuffer sb = new StringBuffer(t.length());
+        while (m.find()) {
+            final String search = m.group(1);
+            if (search == null) {
+                break;
+            } else {
+                final String replacement = String.valueOf((char) (33 + (search.codePointAt(0) + 14) % 94));
+                m.appendReplacement(sb, replacement);
+            }
+        }
+        return sb.toString();
     }
 
     @Override

@@ -72,6 +72,10 @@ public class UseNet extends PluginForHost {
         };
     }
 
+    protected int getAutoRetryMessageNotFound() {
+        return 2;
+    }
+
     protected void verifyUseNetLogins(Account account) throws Exception, InvalidAuthException {
         final UsenetServer server = getUsenetServer(account);
         final URL url = new URL(null, "socket://" + server.getHost() + ":" + server.getPort(), ProxyController.SOCKETURLSTREAMHANDLER);
@@ -181,9 +185,11 @@ public class UseNet extends PluginForHost {
         return new ArrayList<UsenetServer>();
     }
 
-    private final AtomicReference<SimpleUseNet> client               = new AtomicReference<SimpleUseNet>(null);
-    private final String                        PRECHECK_DONE        = "PRECHECK_DONE";
-    private UsenetServer                        lastUsedUsenetServer = null;
+    private final AtomicReference<SimpleUseNet> client                  = new AtomicReference<SimpleUseNet>(null);
+    private final String                        PRECHECK_DONE           = "PRECHECK_DONE";
+    private final String                        LAST_MESSAGE_NOT_FOUND  = "LAST_MESSAGE_NOT_FOUND";
+    private final String                        MESSAGE_NOT_FOUND_COUNT = "MESSAGE_NOT_FOUND_COUNT";
+    private UsenetServer                        lastUsedUsenetServer    = null;
 
     protected UsenetServer getLastUsedUsenetServer() {
         return lastUsedUsenetServer;
@@ -303,8 +309,21 @@ public class UseNet extends PluginForHost {
                 dl.startDownload();
             } catch (MessageBodyNotFoundException e) {
                 logger.log(e);
-                setIncomplete(downloadLink, true);
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, null, e);
+                final String messageID = e.getMessageID();
+                final int count;
+                if (StringUtils.equals(messageID, downloadLink.getStringProperty(LAST_MESSAGE_NOT_FOUND, messageID))) {
+                    count = downloadLink.getIntegerProperty(MESSAGE_NOT_FOUND_COUNT, 0);
+                } else {
+                    count = 0;
+                }
+                if (count < getAutoRetryMessageNotFound()) {
+                    downloadLink.setProperty(MESSAGE_NOT_FOUND_COUNT, count + 1);
+                    downloadLink.setProperty(LAST_MESSAGE_NOT_FOUND, messageID);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Segment not found!", 1 * 60 * 1000l);
+                } else {
+                    setIncomplete(downloadLink, true);
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, null, e);
+                }
             }
         } catch (InvalidAuthException e) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, null, PluginException.VALUE_ID_PREMIUM_DISABLE, e);
@@ -420,6 +439,8 @@ public class UseNet extends PluginForHost {
     public void resetDownloadlink(final DownloadLink link) {
         if (link != null) {
             link.removeProperty(PRECHECK_DONE);
+            link.removeProperty(LAST_MESSAGE_NOT_FOUND);
+            link.removeProperty(MESSAGE_NOT_FOUND_COUNT);
             setIncomplete(link, false);
         }
     }
