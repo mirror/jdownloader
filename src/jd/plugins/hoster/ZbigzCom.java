@@ -17,6 +17,9 @@ package jd.plugins.hoster;
 
 import java.util.Locale;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Cookies;
@@ -31,9 +34,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zbigz.com" }, urls = { "http://(www\\.)?zbigz\\.com/file/[a-z0-9]+/\\d+" })
 public class ZbigzCom extends PluginForHost {
@@ -107,10 +108,9 @@ public class ZbigzCom extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by registered/premium users");
     }
 
-    private static final String MAINPAGE = "http://zbigz.com";
-    private static Object       LOCK     = new Object();
+    private static Object LOCK = new Object();
 
-    @SuppressWarnings({ "unchecked", "deprecation" })
+    @SuppressWarnings({ "deprecation" })
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
@@ -124,7 +124,16 @@ public class ZbigzCom extends PluginForHost {
                 br.setFollowRedirects(true);
                 br.getPage("https://zbigz.com/login");
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.postPage("https://api.zbigz.com/v1/account/login", "e-mail=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                br.getHeaders().put("Accept", "application/json, application/xml, text/plain, text/html, *.*");
+                br.postPage("https://api.zbigz.com/v1/account/info", "undefined=undefined");
+                br.getHeaders().put("Referer", "https://zbigz.com/login");
+                /* Important headers!! */
+                br.getHeaders().put("Origin", "https://zbigz.com");
+                br.getHeaders().put("Content-Type", "multipart/form-data; boundary=----WebKitFormBoundarynA30WitJ3DZ64EB9");
+                br.postPageRaw("https://api.zbigz.com/v1/account/auth", "------WebKitFormBoundarynA30WitJ3DZ64EB9\r\nContent-Disposition: form-data; name=\"undefined\"\r\n\r\nundefined\r\n------WebKitFormBoundarynA30WitJ3DZ64EB9--\r\n");
+                final String auth_token_name = PluginJSonUtils.getJson(br, "auth_token_name");
+                final String auth_token_value = PluginJSonUtils.getJson(br, "auth_token_value");
+                br.postPageRaw("/v1/account/login", "------WebKitFormBoundaryTKQE2BnA58YToBjt\r\nContent-Disposition: form-data; name=\"login\"\r\n\r\n" + Encoding.urlEncode(account.getUser()) + "\r\n------WebKitFormBoundaryTKQE2BnA58YToBjt\r\nContent-Disposition: form-data; name=\"email\"\r\n\r\n" + Encoding.urlEncode(account.getUser()) + "\r\n------WebKitFormBoundaryTKQE2BnA58YToBjt\r\nContent-Disposition: form-data; name=\"password\"\r\n\r\n" + Encoding.urlEncode(account.getPass()) + "\r\n------WebKitFormBoundaryTKQE2BnA58YToBjt\r\nContent-Disposition: form-data; name=\"csrf_name\"\r\n\r\"" + auth_token_name + "\r\n------WebKitFormBoundaryTKQE2BnA58YToBjt\r\nContent-Disposition: form-data; name=\"csrf_value\"\r\n\r\"" + auth_token_value + "\r\n------WebKitFormBoundaryTKQE2BnA58YToBjt--\r\n");
                 if (!br.containsHTML("loginIn \\(true,\\[true,")) {
                     /* Maybe login is valid but it's not a premium account */
                     if (br.containsHTML("loginIn \\(true,")) {
