@@ -8,6 +8,8 @@ import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.download.Downloadable;
+import jd.plugins.download.raf.HTTPDownloader.VALIDATION;
+import jd.plugins.download.raf.HTTPDownloader.VALIDATION_RESULT;
 
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.utils.Exceptions;
@@ -204,12 +206,13 @@ public class HTTPChunk extends Thread {
                     setError(ERROR.REDIRECT, null);
                     return null;
                 }
-                final boolean sameContent = dl.validateConnection(con);
+                final VALIDATION_RESULT validation_result = dl.validateConnection(con);
                 long[] contentRange = con.getRange();
-                if (sameContent) {
+                if (validation_result.isOk() || (validation_result.countOk() > 0 && validation_result.countFailed() == 1 && validation_result.hasFailed(VALIDATION.CONTENT_LENGTH))) {
                     if (con.getResponseCode() == 200 || con.getResponseCode() == 206) {
                         if (requestedRange != null) {
                             if (contentRange != null) {
+                                // content-range available
                                 if (contentRange[0] != chunkRange.getFrom()) {
                                     setError(ERROR.RANGE, new IOException("RangeError(From)"));
                                     return null;
@@ -225,12 +228,19 @@ public class HTTPChunk extends Thread {
                                     }
                                 }
                             } else {
+                                // content-range NOT available
                                 if (chunkRange.getFrom() > 0) {
-                                    setError(ERROR.RANGE, new IOException("RangeError(Missing)"));
-                                    return null;
+                                    if (con.getResponseCode() == 200 && validation_result.hasFailed(VALIDATION.CONTENT_LENGTH) && chunkRange.getLength() == con.getCompleteContentLength()) {
+                                        // found servers that respond with 200 code and correct content length but no content-range/206
+                                        logger.info("ResponseWarning(invalid content-range?!)");
+                                    } else {
+                                        setError(ERROR.RANGE, new IOException("RangeError(Missing)"));
+                                        return null;
+                                    }
                                 }
                             }
                         } else {
+                            // this part of code can only be reached for non first/initial connection
                             new IOException("FIXME");
                         }
                         returnConnection = true;
@@ -242,7 +252,7 @@ public class HTTPChunk extends Thread {
                     } else {
                         setError(ERROR.INVALID_RESPONSE, null);
                     }
-                    String contentType = con.getContentType();
+                    final String contentType = con.getContentType();
                     if (contentType != null && contentType.contains("text") || contentType.contains("html")) {
                         br.followConnection();
                     }

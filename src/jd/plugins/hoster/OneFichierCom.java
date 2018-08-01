@@ -25,7 +25,6 @@ import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
-import jd.http.URLConnectionAdapter;
 import jd.http.requests.GetRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -559,7 +558,7 @@ public class OneFichierCom extends PluginForHost {
                     br.postPage("https://1fichier.com/login.pl", "lt=on&valider=Send&mail=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
                     if (!checkSID(br)) {
                         if (br.containsHTML("following many identification errors") && br.containsHTML("Your account will be unlock")) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your account will be unlock within 1 hour", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                            throw new AccountUnavailableException("Your account will be unlock within 1 hour", 60 * 60 * 1000l);
                         }
                         logger.info("Username/Password also invalid via site login!");
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -830,40 +829,13 @@ public class OneFichierCom extends PluginForHost {
                 if (account != null) {
                     throw new AccountUnavailableException("Locked for security reasons", 60 * 60 * 1000l);
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP blocked for security reasons");
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP blocked for security reasons", 60 * 60 * 1000l);
                 }
             } else {
                 logger.info("Link is PRIVATE");
                 throw new PluginException(LinkStatus.ERROR_FATAL, "This link is private. You're not authorized to download it!");
             }
         }
-    }
-
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser br2 = br.cloneBrowser();
-                con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1 || !con.isOK()) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
-                }
-            } catch (final Exception e) {
-                logger.log(e);
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
-            } finally {
-                try {
-                    if (con != null) {
-                        con.disconnect();
-                    }
-                } catch (final Throwable e) {
-                }
-            }
-        }
-        return dllink;
     }
 
     /** This function is there to make sure that we're really logged in (handling without API). */

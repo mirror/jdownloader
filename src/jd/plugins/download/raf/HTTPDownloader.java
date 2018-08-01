@@ -21,7 +21,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -308,44 +310,116 @@ public class HTTPDownloader extends DownloadInterface implements FileBytesCacheF
         }
     }
 
-    public boolean validateConnection(URLConnectionAdapter validatingConnection) {
+    public class VALIDATION_RESULT {
+        private Set<VALIDATION> ok     = new HashSet<VALIDATION>();
+        private Set<VALIDATION> failed = new HashSet<VALIDATION>();
+
+        protected void setOk(VALIDATION test) {
+            if (test != null) {
+                failed.remove(test);
+                ok.add(test);
+            }
+        }
+
+        protected void setFailed(VALIDATION test) {
+            if (test != null) {
+                failed.add(test);
+                ok.remove(test);
+            }
+        }
+
+        public boolean hasOk(VALIDATION test) {
+            return test != null && ok.contains(test);
+        }
+
+        public boolean hasFailed(VALIDATION test) {
+            return test != null && failed.contains(test);
+        }
+
+        public int countOk() {
+            return ok.size();
+        }
+
+        public int countFailed() {
+            return failed.size();
+        }
+
+        public Set<VALIDATION> getOk() {
+            return new HashSet<VALIDATION>(ok);
+        }
+
+        public Set<VALIDATION> getFailed() {
+            return new HashSet<VALIDATION>(failed);
+        }
+
+        public boolean isOk() {
+            return failed.size() == 0;
+        }
+
+        public boolean isFailed() {
+            return failed.size() > 0;
+        }
+    }
+
+    public static enum VALIDATION {
+        CONTENT_DISPOSITION,
+        CONTENT_DISPOSITION_NAME,
+        CONTENT_TYPE,
+        CONTENT_LENGTH,
+        VERIFIED_SIZE,
+        CONNECTION_MISSING,
+    }
+
+    public VALIDATION_RESULT validateConnection(URLConnectionAdapter validatingConnection) {
+        final VALIDATION_RESULT result = new VALIDATION_RESULT();
         final URLConnectionAdapter initialConnection = connection;
         if (initialConnection == null) {
-            return false;
+            result.setFailed(VALIDATION.CONNECTION_MISSING);
+            return result;
         }
         // Server: Microsoft-IIS/8.5, removes ContentDisposition and changes Content-Type to text/html on range requests
         final boolean validationWorkaround = StringUtils.contains(validatingConnection.getHeaderField(HTTPConstants.HEADER_RESPONSE_SERVER), "IIS");
         if (!validationWorkaround) {
             if (initialConnection.isContentDisposition() && validatingConnection.isContentDisposition()) {
+                result.setOk(VALIDATION.CONTENT_DISPOSITION);
                 final String aFileName = Plugin.getFileNameFromDispositionHeader(initialConnection);
                 final String bFileName = Plugin.getFileNameFromDispositionHeader(validatingConnection);
                 if (!StringUtils.equals(aFileName, bFileName)) {
                     logger.severe("sameContent: FALSE|Filename:'" + aFileName + "'<->'" + bFileName + "'");
-                    return false;
+                    result.setFailed(VALIDATION.CONTENT_DISPOSITION_NAME);
+                } else {
+                    result.setOk(VALIDATION.CONTENT_DISPOSITION_NAME);
                 }
             }
             final String aContentType = initialConnection.getHeaderField(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE);
             final String bContentType = validatingConnection.getHeaderField(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE);
             if (!StringUtils.equals(aContentType, bContentType)) {
                 logger.severe("sameContent: FALSE|ContentType:'" + aContentType + "'<->'" + bContentType + "'");
-                return false;
+                result.setFailed(VALIDATION.CONTENT_TYPE);
+            } else {
+                result.setOk(VALIDATION.CONTENT_TYPE);
             }
             final long verifiedFileSize = getVerifiedFileSize();
             if (verifiedFileSize >= 0) {
                 final long connectionLength = getCompleteContentLength(validatingConnection, true);
                 if (connectionLength >= 0 && verifiedFileSize != connectionLength) {
                     logger.severe("sameContent: FALSE|verifiedFileSize:'" + verifiedFileSize + "'<->'" + connectionLength + "'");
-                    return false;
+                    result.setFailed(VALIDATION.VERIFIED_SIZE);
                 } else if (connectionLength < 0 && getCompleteContentLength(initialConnection, true) >= 0) {
                     logger.severe("sameContent: FALSE|missingContentLength");
-                    return false;
+                    result.setFailed(VALIDATION.CONTENT_LENGTH);
+                } else {
+                    result.setOk(VALIDATION.VERIFIED_SIZE);
+                    result.setOk(VALIDATION.CONTENT_LENGTH);
                 }
             }
-            logger.severe("sameContent: TRUE");
-            return true;
+            if (result.isOk()) {
+                logger.severe("sameContent: TRUE");
+            }
+            return result;
         } else {
             logger.severe("sameContent: TRUE(IIS Workaround)");
-            return true;
+            return result;
         }
     }
 

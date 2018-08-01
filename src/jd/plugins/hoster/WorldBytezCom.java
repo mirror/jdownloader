@@ -902,7 +902,9 @@ public class WorldBytezCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);// 07.02.17, Content-Range is broken. They
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);// Support claims that resume works in chrome
+                                                                                           // (forum)
+            // 07.02.17, Content-Range is broken. They
             // respond with 200 OK, correct content-length
             // but content-range is missing
             if (dl.getConnection().getContentType().contains("html")) {
