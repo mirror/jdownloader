@@ -16,17 +16,21 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -51,7 +55,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-import jd.utils.locale.JDL;
+import jd.plugins.components.VariantInfoMassengeschmackTv;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "massengeschmack.tv" }, urls = { "https?://(?:www\\.)?massengeschmack\\.tv/((?:play|clip)/|index_single\\.php\\?id=)[a-z0-9\\-]+|https?://(?:www\\.)?massengeschmack\\.tv/live/[a-z0-9\\-]+|https?://massengeschmack\\.tv/dl/.+" })
 public class MassengeschmackTv extends PluginForHost {
@@ -101,8 +105,7 @@ public class MassengeschmackTv extends PluginForHost {
     private static final String  HOST_MASSENGESCHMACK                      = "massengeschmack.tv";
     private static final String  PREFER_MP4                                = "PREFER_MP4";
     private static final String  CUSTOM_DATE                               = "CUSTOM_DATE_2";
-    private static final String  CUSTOM_FILENAME_FKTV                      = "CUSTOM_FILENAME_FKTV_2";
-    private static final String  CUSTOM_FILENAME_MASSENGESCHMACK_OTHER     = "CUSTOM_FILENAME_MASSENGESCHMACK_OTHER_5";
+    private static final String  CUSTOM_FILENAME                           = "CUSTOM_FILENAME";
     private static final String  CUSTOM_PACKAGENAME                        = "CUSTOM_PACKAGENAME";
     private static final String  FASTLINKCHECK                             = "FASTLINKCHECK";
     private static final String  EMPTY_FILENAME_INFORMATION                = "-";
@@ -160,6 +163,10 @@ public class MassengeschmackTv extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
+        /* TODO */
+        // final VariantInfoMassengeschmackTv chosenVariant = getActiveVariantByLink(link);
+        ArrayList<VariantInfoMassengeschmackTv> variants = new ArrayList<VariantInfoMassengeschmackTv>();
+        VariantInfoMassengeschmackTv singleVariant = null;
         final Browser br2 = this.br.cloneBrowser();
         try {
             if (link.getDownloadURL().matches(TYPE_MASSENGESCHMACK_GENERAL) && VIDEOS_ENABLE_API && loggedin) {
@@ -262,7 +269,7 @@ public class MassengeschmackTv extends PluginForHost {
                 }
                 link.setProperty("directepisodenumber", episodenumber);
                 link.setProperty("directtype", ext);
-                final_filename = getMassengeschmack_other_FormattedFilename(link);
+                final_filename = getMassengeschmack_other_FormattedFilename(link, null);
             } else if (link.getDownloadURL().matches(TYPE_MASSENGESCHMACK_GENERAL) || link.getDownloadURL().matches(TYPE_MASSENGESCHMACK_LIVE)) {
                 br.getPage(link.getDownloadURL());
                 if (br.containsHTML(HTML_MASSENGESCHMACK_OFFLINE) || this.br.getHttpConnection().getResponseCode() == 404) {
@@ -296,13 +303,19 @@ public class MassengeschmackTv extends PluginForHost {
                      * usually higher than stream quality).
                      */
                     final String[] downloadlink_info = this.br.getRegex("(massengeschmack\\.tv/dl/.*?</small></em></a></li>)").getColumn(0);
-                    if (downloadlink_info != null && downloadlink_info.length > 0 && (inValidate(dllink) || dllink.contains(".mp4"))) {
+                    if (!StringUtils.isEmpty(dllink)) {
+                        singleVariant = new VariantInfoMassengeschmackTv(dllink, "stream");
+                    } else if (downloadlink_info != null && downloadlink_info.length > 0 && inValidate(dllink)) {
                         /* Try to get official download url (usually there is none available for free users). */
                         String directurl_download = null;
                         for (final String dlinfo : downloadlink_info) {
+                            /* E.g. <strong>HD 720p</strong> <em><small>1280x720 (875 MiB)</small> */
+                            final Regex qualityRegex = new Regex(dlinfo, "<strong>([^<>]+)</strong> <em><small>(\\d+x\\d+)[^<>]*?</small>");
+                            final String variantQualityName = qualityRegex.getMatch(0);
+                            final String variantQualityResolution = qualityRegex.getMatch(1);
                             dllink_temp = new Regex(dlinfo, "(/dl/[^<>\"]*?\\.mp4[^<>\"/]*?)\"").getMatch(0);
                             filesize_string = new Regex(dlinfo, "\\((\\d+(?:,\\d+)? (?:MiB|GiB))\\)").getMatch(0);
-                            if (filesize_string != null) {
+                            if (!StringUtils.isEmpty(filesize_string)) {
                                 filesize_string = filesize_string.replace(",", ".");
                                 filesize_temp = SizeFormatter.getSize(filesize_string);
                             }
@@ -310,12 +323,25 @@ public class MassengeschmackTv extends PluginForHost {
                                 filesize_max = filesize_temp;
                                 directurl_download = dllink_temp;
                             }
-                        }
-                        if (!inValidate(directurl_download)) {
-                            filesize = filesize_max;
-                            dllink = directurl_download;
-                            if (!dllink.startsWith("http")) {
-                                dllink = "http://" + HOST_MASSENGESCHMACK + dllink;
+                            if (!inValidate(directurl_download)) {
+                                filesize = filesize_max;
+                                dllink = directurl_download;
+                                if (!dllink.startsWith("http")) {
+                                    dllink = "http://" + HOST_MASSENGESCHMACK + dllink;
+                                }
+                            }
+                            /* Only add as a variant if all required information is available! */
+                            if (!inValidate(directurl_download) && !StringUtils.isEmpty(variantQualityName)) {
+                                final VariantInfoMassengeschmackTv currentVariant;
+                                if (!StringUtils.isEmpty(filesize_string)) {
+                                    currentVariant = new VariantInfoMassengeschmackTv(dllink, variantQualityName, filesize);
+                                } else {
+                                    currentVariant = new VariantInfoMassengeschmackTv(dllink, variantQualityName);
+                                }
+                                if (!StringUtils.isEmpty(variantQualityResolution)) {
+                                    currentVariant.setResolution(variantQualityResolution);
+                                }
+                                variants.add(currentVariant);
                             }
                         }
                     }
@@ -329,6 +355,7 @@ public class MassengeschmackTv extends PluginForHost {
                         if (con.isOK() && !con.getContentType().contains("html")) {
                             filesize = con.getLongContentLength();
                             this.dllink = api_best_url;
+                            singleVariant = new VariantInfoMassengeschmackTv(this.dllink, "stream_best");
                         }
                         try {
                             con.disconnect();
@@ -393,7 +420,7 @@ public class MassengeschmackTv extends PluginForHost {
                         link.setProperty("directepisodenumber", episodenumber);
                     }
                     link.setProperty("directtype", ext);
-                    final_filename = getMassengeschmack_other_FormattedFilename(link);
+                    final_filename = getMassengeschmack_other_FormattedFilename(link, null);
                 }
             } else if (link.getDownloadURL().matches(TYPE_MASSENGESCHMACK_DIRECT)) {
                 /* Most times such links will be premium only but there are also free downloadable direct urls! */
@@ -407,20 +434,45 @@ public class MassengeschmackTv extends PluginForHost {
                 link.getLinkStatus().setStatusText("Unknown linkformat");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            link.setFinalFileName(final_filename);
-            if (filesize < 0 && filesize_string != null) {
-                filesize = SizeFormatter.getSize(filesize_string);
+            if (!inValidate(description) && inValidate(link.getComment())) {
+                description = Encoding.htmlDecode(description);
+                link.setComment(description);
             }
-            if (filesize < 0 && !inValidate(dllink) && !dllink.contains(".m3u8")) {
-                con = br2.openHeadConnection(dllink);
-                final long responsecode = con.getResponseCode();
-                if (con.isOK() && !con.getContentType().contains("html")) {
-                    filesize = con.getLongContentLength();
-                } else if (responsecode == API_RESPONSECODE_ERROR_LOGIN_WRONG || responsecode == 403) {
-                    this.is_premiumonly_content = true;
-                } else {
-                    /* 404 and/or html --> Probably offline */
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            boolean lookForFilesize = false;
+            if (singleVariant != null) {
+                variants.add(singleVariant);
+                lookForFilesize = true;
+            }
+            if (!variants.isEmpty()) {
+                if (variants.size() > 1) {
+                    sortVariants(variants);
+                }
+                link.setVariantSupport(true);
+                link.setVariants(variants);
+                /* Set best quality */
+                MassengeschmackTv.setVariant(link, variants.get(variants.size() - 1));
+            } else {
+                /* Old handling without variants */
+                link.setFinalFileName(final_filename);
+            }
+            if (lookForFilesize) {
+                if (filesize < 0 && filesize_string != null) {
+                    filesize = SizeFormatter.getSize(filesize_string);
+                }
+                if (filesize < 0 && !inValidate(dllink) && !dllink.contains(".m3u8")) {
+                    con = br2.openHeadConnection(dllink);
+                    final long responsecode = con.getResponseCode();
+                    if (con.isOK() && !con.getContentType().contains("html")) {
+                        filesize = con.getLongContentLength();
+                    } else if (responsecode == API_RESPONSECODE_ERROR_LOGIN_WRONG || responsecode == 403) {
+                        this.is_premiumonly_content = true;
+                    } else {
+                        /* 404 and/or html --> Probably offline */
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                }
+                if (filesize > 0) {
+                    link.setDownloadSize(filesize);
                 }
             }
         } finally {
@@ -429,14 +481,67 @@ public class MassengeschmackTv extends PluginForHost {
             } catch (Throwable e) {
             }
         }
-        if (filesize > 0) {
-            link.setDownloadSize(filesize);
-        }
-        if (!inValidate(description) && inValidate(link.getComment())) {
-            description = Encoding.htmlDecode(description);
-            link.setComment(description);
-        }
         return AvailableStatus.TRUE;
+    }
+
+    /* Variant stuff */
+    public static void setVariant(final DownloadLink link, final VariantInfoMassengeschmackTv v) {
+        final String filesize = v.getFilesize();
+        link.setVariant(v);
+        link.setLinkID(link.getPluginPatternMatcher() + "." + v._getUniqueId());
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
+        final String fileName = getMassengeschmack_other_FormattedFilename(link, v);
+        link.setFinalFileName(fileName);
+    }
+
+    @Override
+    public void setActiveVariantByLink(DownloadLink downloadLink, LinkVariant variant) {
+        if (variant != null && variant instanceof VariantInfoMassengeschmackTv) {
+            MassengeschmackTv.setVariant(downloadLink, (VariantInfoMassengeschmackTv) variant);
+        } else if (variant != null) {
+            super.setActiveVariantByLink(downloadLink, variant);
+        }
+    }
+
+    @Override
+    public List<? extends LinkVariant> getVariantsByLink(DownloadLink downloadLink) {
+        if (downloadLink.isGenericVariantSupport()) {
+            return super.getVariantsByLink(downloadLink);
+        }
+        return downloadLink.getVariants(VariantInfoMassengeschmackTv.class);
+    }
+
+    @Override
+    public LinkVariant getActiveVariantByLink(DownloadLink downloadLink) {
+        if (downloadLink.isGenericVariantSupport()) {
+            return super.getActiveVariantByLink(downloadLink);
+        }
+        return downloadLink.getVariant(VariantInfoMassengeschmackTv.class);
+    }
+
+    /**
+     * @param variantInfos
+     */
+    private void sortVariants(final List<VariantInfoMassengeschmackTv> variantInfos) {
+        if (variantInfos != null) {
+            for (final VariantInfoMassengeschmackTv v : variantInfos) {
+                v.setUrl(null);
+            }
+            if (variantInfos.size() > 1) {
+                Collections.sort(variantInfos, new Comparator<VariantInfoMassengeschmackTv>() {
+                    public int compare(long x, long y) {
+                        return (x < y) ? -1 : ((x == y) ? 0 : 1);
+                    }
+
+                    @Override
+                    public int compare(VariantInfoMassengeschmackTv o1, VariantInfoMassengeschmackTv o2) {
+                        return compare(o2.getFilesizeLong(), o1.getFilesizeLong());
+                    }
+                });
+            }
+        }
     }
 
     private String getFilenameLastChance(final String ext) {
@@ -837,50 +942,6 @@ public class MassengeschmackTv extends PluginForHost {
     public void resetPluginGlobals() {
     }
 
-    /** Returns filename for channel "Fernsehkritik-TV" */
-    @SuppressWarnings("deprecation")
-    public String getFKTVFormattedFilename(final DownloadLink downloadLink) throws ParseException {
-        final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
-        String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME_FKTV, defaultCustomFilename);
-        if (formattedFilename == null || formattedFilename.equals("")) {
-            formattedFilename = defaultCustomFilename;
-        }
-        if (!formattedFilename.contains("*episodenumber*") || !formattedFilename.contains("*ext*")) {
-            formattedFilename = defaultCustomFilename;
-        }
-        final String ext = downloadLink.getStringProperty("directtype", default_EXT);
-        final String date = downloadLink.getStringProperty("directdate", null);
-        final String episodenumber = downloadLink.getStringProperty("directepisodenumber", null);
-        String formattedDate = null;
-        if (date != null && formattedFilename.contains("*date*")) {
-            final String userDefinedDateFormat = cfg.getStringProperty(CUSTOM_DATE, defaultCustomDate);
-            SimpleDateFormat formatter = new SimpleDateFormat(inputDateformat, new Locale("de", "DE"));
-            final Date theDate = new Date(getTimestampFromDate(date));
-            if (userDefinedDateFormat != null) {
-                try {
-                    formatter = new SimpleDateFormat(userDefinedDateFormat);
-                    formattedDate = formatter.format(theDate);
-                } catch (Exception e) {
-                    // prevent user error killing plugin.
-                    formattedDate = default_empty_tag_separation_mark;
-                }
-            }
-            if (formattedDate != null) {
-                formattedFilename = formattedFilename.replace("*date*", formattedDate);
-            } else {
-                formattedFilename = formattedFilename.replace("*date*", "");
-            }
-        }
-        if (formattedFilename.contains("*episodenumber*") && episodenumber != null) {
-            formattedFilename = formattedFilename.replace("*episodenumber*", episodenumber);
-        }
-        if (formattedFilename.contains("*date*") && formattedDate != null) {
-            formattedFilename = formattedFilename.replace("*date*", formattedDate);
-        }
-        formattedFilename = formattedFilename.replace("*ext*", ext);
-        return encodeUnicode(formattedFilename);
-    }
-
     /* In case the channel (url_videoid_without_episodenumber) is different from what the website shows we have to manually fix this. */
     private String getVideoidWithoutEpisodenumber(String url_videoid) {
         if (url_videoid == null) {
@@ -915,37 +976,52 @@ public class MassengeschmackTv extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
-    public String getMassengeschmack_other_FormattedFilename(final DownloadLink downloadLink) throws ParseException {
-        final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
-        String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME_MASSENGESCHMACK_OTHER, defaultCustomFilename_massengeschmack_other);
+    public static String getMassengeschmack_other_FormattedFilename(final DownloadLink downloadLink, final VariantInfoMassengeschmackTv variant) {
+        final SubConfiguration cfg = SubConfiguration.getConfig(downloadLink.getHost());
+        String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME, defaultCustomFilename);
         if ((!formattedFilename.contains("*episodenumber*") && !formattedFilename.contains("*episodename*")) || !formattedFilename.contains("*ext*")) {
-            formattedFilename = defaultCustomFilename_massengeschmack_other;
+            formattedFilename = defaultCustomFilename;
         }
-        final String ext = downloadLink.getStringProperty("directtype", default_EXT);
         final String date = downloadLink.getStringProperty("directdate", null);
         final String channel = downloadLink.getStringProperty("directchannel", EMPTY_FILENAME_INFORMATION);
         final String episodename = downloadLink.getStringProperty("directepisodename", EMPTY_FILENAME_INFORMATION);
         final String episodenumber = downloadLink.getStringProperty("directepisodenumber", EMPTY_FILENAME_INFORMATION);
+        String qualityName;
+        String ext;
+        if (variant != null) {
+            qualityName = variant.getVariantNameWithoutFilesize();
+            if (qualityName == null) {
+                /* This should never happen */
+                qualityName = EMPTY_FILENAME_INFORMATION;
+            }
+            ext = getFileNameExtensionFromString(variant.getUrl(), default_EXT);
+        } else {
+            qualityName = EMPTY_FILENAME_INFORMATION;
+            ext = downloadLink.getStringProperty("directtype", default_EXT);
+        }
+        if (StringUtils.isEmpty(ext)) {
+            ext = default_EXT;
+        }
         String formattedDate = EMPTY_FILENAME_INFORMATION;
-        if (date != null && formattedFilename.contains("*date*")) {
-            final String userDefinedDateFormat = cfg.getStringProperty(CUSTOM_DATE, defaultCustomDate);
-            SimpleDateFormat formatter = new SimpleDateFormat(inputDateformat, new Locale("de", "DE"));
-            Date dateStr = new Date(getTimestampFromDate(date));
-            formattedDate = formatter.format(dateStr);
-            Date theDate = formatter.parse(formattedDate);
-            if (userDefinedDateFormat != null) {
-                try {
+        if (date != null) {
+            try {
+                final String userDefinedDateFormat = cfg.getStringProperty(CUSTOM_DATE, defaultCustomDate);
+                SimpleDateFormat formatter = new SimpleDateFormat(inputDateformat, new Locale("de", "DE"));
+                final Date dateStr = new Date(getTimestampFromDate(date));
+                formattedDate = formatter.format(dateStr);
+                final Date theDate = formatter.parse(formattedDate);
+                if (userDefinedDateFormat != null) {
                     formatter = new SimpleDateFormat(userDefinedDateFormat, new Locale("de", "DE"));
                     formattedDate = formatter.format(theDate);
-                } catch (Exception e) {
-                    // prevent user error killing plugin.
-                    formattedDate = default_empty_tag_separation_mark;
                 }
-            }
-            if (formattedDate != null) {
-                formattedFilename = formattedFilename.replace("*date*", formattedDate);
-            } else {
-                formattedFilename = formattedFilename.replace("*date*", EMPTY_FILENAME_INFORMATION);
+                if (formattedDate != null) {
+                    formattedFilename = formattedFilename.replace("*date*", formattedDate);
+                } else {
+                    formattedFilename = formattedFilename.replace("*date*", EMPTY_FILENAME_INFORMATION);
+                }
+            } catch (Exception e) {
+                // prevent user error killing plugin.
+                formattedDate = default_empty_tag_separation_mark;
             }
         }
         if (episodenumber.equals(EMPTY_FILENAME_INFORMATION)) {
@@ -953,20 +1029,21 @@ public class MassengeschmackTv extends PluginForHost {
         } else if (formattedFilename.contains("*episodenumber*")) {
             formattedFilename = formattedFilename.replace("*episodenumber*", episodenumber);
         }
-        if (formattedFilename.contains("*date*") && formattedDate != null) {
+        if (formattedDate != null) {
             formattedFilename = formattedFilename.replace("*date*", formattedDate);
         }
-        if (formattedFilename.contains("*channel*") && channel != null) {
+        formattedFilename = formattedFilename.replace("*quality*", qualityName);
+        if (channel != null) {
             formattedFilename = formattedFilename.replace("*channel*", channel);
         }
-        if (formattedFilename.contains("*episodename*") && channel != null) {
+        if (episodename != null) {
             formattedFilename = formattedFilename.replace("*episodename*", episodename);
         }
         formattedFilename = formattedFilename.replace("*ext*", ext);
-        return encodeUnicode(formattedFilename);
+        return formattedFilename;
     }
 
-    private long getTimestampFromDate(final String date) {
+    private static long getTimestampFromDate(final String date) {
         final long timestamp;
         if (date.matches("\\d{2}\\.\\d{2}\\.\\d{2} \\d{2}:\\d{2}:{2}")) {
             /* E.g. TYPE_MASSENGESCHMACK_LIVE */
@@ -1003,38 +1080,27 @@ public class MassengeschmackTv extends PluginForHost {
         return "JDownloader's Massengeschmack Plugin kann Videos von massengeschmack.tv herunterladen. Hier kann man eigene Dateinamen definieren und (als Massengeschmack Abonnent) die herunterzuladenden Videoformate wählen.";
     }
 
-    private final static String  defaultCustomFilename                       = "Fernsehkritik-TV Folge *episodenumber* vom *date**ext*";
-    private final static String  defaultCustomFilename_massengeschmack_other = "*date*_*channel*_Folge *episodenumber* - *episodename**ext*";
-    private final static String  defaultCustomPackagename                    = "Fernsehkritik.tv Folge *episodenumber* vom *date*";
-    private final static String  defaultCustomDate                           = "yyyy-MM-dd";
-    private static final String  default_empty_tag_separation_mark           = "-";
-    private static final String  inputDateformat                             = "dd. MMMMM yyyy";
-    private static final boolean defaultPREFER_MP4                           = false;
-    private static final boolean defaultFASTLINKCHECK                        = true;
+    private final static String  defaultCustomFilename             = "*date**quality*_*channel*_Folge *episodenumber* - *episodename**ext*";
+    private final static String  defaultCustomPackagename          = "Fernsehkritik.tv Folge *episodenumber* vom *date*";
+    private final static String  defaultCustomDate                 = "yyyy-MM-dd";
+    private static final String  default_empty_tag_separation_mark = "-";
+    private static final String  inputDateformat                   = "dd. MMMMM yyyy";
+    private static final boolean defaultPREFER_MP4                 = false;
+    private static final boolean defaultFASTLINKCHECK              = true;
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Allgemeine Einstellungen:"));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_MP4, JDL.L("plugins.hoster.fernsehkritik.preferMP4", "Für den kostenlosen fernsehkritik & massengeschmack.tv Download:\r\nBevorzuge .mp4 Download statt .webm?\r\nBedenke, dass mp4 eine minimal bessere Audio-Bitrate- aber dafür eine niedrigere Video-Bitrate hat!?")).setDefaultValue(defaultPREFER_MP4));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK, JDL.L("plugins.hoster.fernsehkritik.fastLinkcheck", "Aktiviere schnellen Linkcheck (Dateigröße erst bei Download sichtbar)?")).setDefaultValue(defaultFASTLINKCHECK));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_MP4, "Für den kostenlosen massengeschmack.tv Download:\r\nBevorzuge .mp4 Download statt .webm?\r\nBedenke, dass mp4 eine minimal bessere Audio-Bitrate- aber dafür eine niedrigere Video-Bitrate hat!?").setDefaultValue(defaultPREFER_MP4));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK, "Aktiviere schnellen Linkcheck (Dateigröße erst bei Download sichtbar)?").setDefaultValue(defaultFASTLINKCHECK));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Lege eigene Datei-/Paketnamen fest:"));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_DATE, JDL.L("plugins.hoster.fernsehkritiktv.customdate", "Definiere das Datumsformat:")).setDefaultValue(defaultCustomDate));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_DATE, "Definiere das Datumsformat:").setDefaultValue(defaultCustomDate));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Setze eigene Dateinamen:"));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Eigene Dateinamen für Fktv Episoden:!\r\nBeispiel: 'Fernsehkritik-TV Folge *episodenumber* vom *date**ext*'"));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME_FKTV, JDL.L("plugins.hoster.fernsehkritiktv.customfilename", "Definiere das Muster der eigenen Dateinamen:")).setDefaultValue(defaultCustomFilename));
-        final StringBuilder sb = new StringBuilder();
-        sb.append("Erklärung der verfügbaren Tags:\r\n");
-        sb.append("*episodenumber* = Nummer der Fktv Episode\r\n");
-        sb.append("*date* = Erscheinungsdatum der Fktv Episode - Erscheint im oben festgelegten Format\r\n");
-        sb.append("*ext* = Dateiendung - meistens '.flv'");
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sb.toString()));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Lege eigene Dateinamen für alle anderen Massengeschmack Links fest!\r\nBeispiel: '*channel* Episode *episodenumber* vom *date**ext*'"));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME_MASSENGESCHMACK_OTHER, JDL.L("plugins.hoster.fernsehkritiktv.customfilename_massengeschmack", "Definiere das Muster der eigenen Dateinamen:")).setDefaultValue(defaultCustomFilename_massengeschmack_other));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Lege eigene Dateinamen fest!\r\nBeispiel: '*channel* *quality* Episode *episodenumber* vom *date**ext*'"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME, "Definiere das Muster der eigenen Dateinamen:").setDefaultValue(defaultCustomFilename));
         final StringBuilder sb_other = new StringBuilder();
         sb_other.append("Erklärung der verfügbaren Tags:\r\n");
+        sb_other.append("*quality* = Qualität z.B. 'SD432p 768x432'\r\n");
         sb_other.append("*channel* = Name der Serie/Channel\r\n");
         sb_other.append("*episodename* = Name der Episode\r\n");
         sb_other.append("*episodenumber* = Nummer der Episode\r\n");
@@ -1043,7 +1109,7 @@ public class MassengeschmackTv extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sb_other.toString()));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Lege eigene Paketnamen fest!\r\nBeispiel: 'Fernsehkritik.tv Folge *episodenumber* vom *date*':"));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_PACKAGENAME, JDL.L("plugins.hoster.fernsehkritiktv.custompackagename", "Lege das Muster der eigenen Paketnamen fest:")).setDefaultValue(defaultCustomPackagename));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_PACKAGENAME, "Lege das Muster der eigenen Paketnamen fest:").setDefaultValue(defaultCustomPackagename));
         final StringBuilder sbpack = new StringBuilder();
         sbpack.append("Erklärung der verfügbaren Tags:\r\n");
         sbpack.append("*episodenumber* = Nummer der Episode\r\n");
