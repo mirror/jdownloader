@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
-import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -30,7 +29,6 @@ import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.Request;
-import jd.http.RequestHeader;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.PostRequest;
 import jd.nutils.Formatter;
@@ -50,8 +48,8 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
 
 import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -292,7 +290,7 @@ public abstract class K2SApi extends PluginForHost {
 
     public boolean checkLinks(final DownloadLink[] urls) {
         // required to get overrides to work
-        final Browser br = prepAPI(newBrowser());
+        final Browser br = prepAPI(new Browser());
         try {
             final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
             int index = 0;
@@ -374,7 +372,7 @@ public abstract class K2SApi extends PluginForHost {
         logger.info(getRevisionInfo());
         final AccountInfo ai = new AccountInfo();
         // required to get overrides to work
-        br = prepAPI(newBrowser());
+        br = prepAPI(br);
         postPageRaw(br, "/accountinfo", "{\"auth_token\":\"" + getAuthToken(account) + "\"}", account);
         final String available_traffic = PluginJSonUtils.getJsonValue(br, "available_traffic");
         final String account_expires = PluginJSonUtils.getJsonValue(br, "account_expires");
@@ -422,7 +420,7 @@ public abstract class K2SApi extends PluginForHost {
         String fuid = getFUID(downloadLink);
         String dllink = getDirectLinkAndReset(downloadLink, true);
         // required to get overrides to work
-        br = prepAPI(newBrowser());
+        br = prepAPI(br);
         // because opening the link to test it, uses up the availability, then reopening it again = too many requests too quickly issue.
         if (!inValidate(dllink)) {
             final Browser obr = br.cloneBrowser();
@@ -552,54 +550,6 @@ public abstract class K2SApi extends PluginForHost {
         return br;
     }
 
-    /**
-     * We have to reinvent the wheel. With the help of @Override openPostConnection created us openRequestConnection in postRaw format.
-     *
-     * @author raztoki
-     * @return
-     */
-    protected Browser newBrowser() {
-        Browser nbr = new Browser() {
-            /**
-             * overrides openPostConnection and turns it into openPostRawConnection
-             *
-             * @author raztoki
-             */
-            @Override
-            public URLConnectionAdapter openPostConnection(final String url, final String post) throws IOException {
-                return this.openRequestConnection(this.createPostRawRequest(url, post));
-            }
-
-            /**
-             * creates new Post Raw Request! merge components from JD2 Browser stripped of Appwork references.
-             *
-             * @author raztoki
-             * @param url
-             * @param post
-             * @return
-             * @throws MalformedURLException
-             */
-            public Request createPostRawRequest(final String url, final String post) throws IOException {
-                final PostRequest request = new PostRequest(this.getURL(url));
-                request.setPostDataString(post);
-                String requestContentType = null;
-                final RequestHeader lHeaders = this.getHeaders();
-                if (lHeaders != null) {
-                    final String browserContentType = lHeaders.remove("Content-Type");
-                    if (requestContentType == null) {
-                        requestContentType = browserContentType;
-                    }
-                }
-                if (requestContentType == null) {
-                    requestContentType = "application/json";
-                }
-                request.setContentType(requestContentType);
-                return request;
-            }
-        };
-        return nbr;
-    }
-
     public Browser newWebBrowser(boolean followRedirects) {
         final Browser nbr = new Browser() {
             @Override
@@ -656,7 +606,7 @@ public abstract class K2SApi extends PluginForHost {
      * @author raztoki
      * @throws Exception
      */
-    private void postPageRaw(final Browser ibr, final String url, final String arg, final Account account) throws Exception {
+    public void postPageRaw(final Browser ibr, final String url, final String arg, final Account account) throws Exception {
         URLConnectionAdapter con = null;
         synchronized (REQUESTLOCK) {
             try {
@@ -747,10 +697,13 @@ public abstract class K2SApi extends PluginForHost {
      * @throws PluginException
      */
     private void readConnection(final URLConnectionAdapter con, final Browser ibr) throws IOException, PluginException {
-        final InputStream is = getInputStream(con, ibr);
-        final byte[] responseBytes = IO.readStream(-1, is);
+        final byte[] responseBytes = Request.read(con, con.getRequest().getReadLimit());
         ibr.getRequest().setResponseBytes(responseBytes);
-        logger.fine("\r\n" + ibr.getRequest().getHtmlCode());
+        LogInterface log = ibr.getLogger();
+        if (log == null) {
+            log = logger;
+        }
+        log.fine("\r\n" + ibr.getRequest().getHtmlCode());
         if (ibr.getRequest().isKeepByteArray() || ibr.isKeepResponseContentBytes()) {
             ibr.getRequest().setKeepByteArray(true);
             ibr.getRequest().setResponseBytes(responseBytes);
@@ -767,7 +720,7 @@ public abstract class K2SApi extends PluginForHost {
         }
     }
 
-    private boolean sessionTokenInvalid(final Account account, final Browser ibr) {
+    private boolean sessionTokenInvalid(final Account account, final Browser ibr) throws PluginException {
         final String status = PluginJSonUtils.getJsonValue(ibr, "status");
         final String errorCode = PluginJSonUtils.getJsonValue(ibr, "errorCode");
         if ("error".equalsIgnoreCase(status) && ("10".equalsIgnoreCase(errorCode) || "11".equalsIgnoreCase(errorCode) || "75".equalsIgnoreCase(errorCode))) {
@@ -787,7 +740,7 @@ public abstract class K2SApi extends PluginForHost {
                 if (StringUtils.isEmpty(currentAuthToken)) {
                     logger.info("fetch new token");
                     // we don't want to pollute this.br
-                    final Browser auth = prepBrowser(newBrowser());
+                    final Browser auth = prepBrowser(new Browser());
                     postPageRaw(auth, "/login", "{\"username\":\"" + JSonUtils.escape(account.getUser()) + "\",\"password\":\"" + JSonUtils.escape(account.getPass()) + "\"}", account);
                     currentAuthToken = PluginJSonUtils.getJsonValue(auth, "auth_token");
                     if (StringUtils.isEmpty(currentAuthToken)) {
@@ -1227,7 +1180,10 @@ public abstract class K2SApi extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FATAL, msg);
     }
 
-    private void dumpAuthToken(Account account) {
+    private void dumpAuthToken(Account account) throws PluginException {
+        if (account == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         synchronized (account) {
             // only wipe token when authToken equals current storable
             try {
@@ -1651,7 +1607,7 @@ public abstract class K2SApi extends PluginForHost {
         sendForm(br, form);
     }
 
-    protected void sendRequest(final Browser ibr, final Request request) throws Exception {
+    public void sendRequest(final Browser ibr, final Request request) throws Exception {
         if (!prepBrSet) {
             prepBrowser(ibr);
         }
@@ -1675,7 +1631,7 @@ public abstract class K2SApi extends PluginForHost {
      * @author raztoki
      *
      */
-    protected void sendRequest(final Request request) throws Exception {
+    public void sendRequest(final Request request) throws Exception {
         sendRequest(br, request);
     }
 

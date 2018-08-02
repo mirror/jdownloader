@@ -17,11 +17,6 @@ package jd.plugins.hoster;
 
 import java.util.LinkedHashMap;
 
-import org.bouncycastle.crypto.digests.SHA1Digest;
-import org.bouncycastle.crypto.macs.HMac;
-import org.bouncycastle.crypto.params.KeyParameter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -34,6 +29,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDHexUtils;
+
+import org.bouncycastle.crypto.digests.SHA1Digest;
+import org.bouncycastle.crypto.macs.HMac;
+import org.bouncycastle.crypto.params.KeyParameter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "viki.com" }, urls = { "https?://(www\\.)?viki\\.(com|mx|jp)/videos/\\d+v" })
 public class VikiCom extends PluginForHost {
@@ -124,7 +124,7 @@ public class VikiCom extends PluginForHost {
             return AvailableStatus.TRUE;
         }
         String idpart = this.br.getMatch("oster=\"https?://[^/]+/videos/\\d+v/[^_]+_(\\d+)_");
-        if (idpart == null) {
+        if (true || idpart == null) {
             final Browser cbr = br.cloneBrowser();
             String apiUrl = (String) JavaScriptEngineFactory.walkJson(entries, "url/api");
             if (apiUrl == null) {
@@ -135,18 +135,29 @@ public class VikiCom extends PluginForHost {
             apiUrl += "&sig=" + getSignature(apiUrl.replaceFirst("https?://[^/]+", ""));
             cbr.getPage(apiUrl);
             LinkedHashMap<String, Object> jsonEntries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(cbr.toString());
-            final String url480 = (String) JavaScriptEngineFactory.walkJson(jsonEntries, "480p/http/url");
-            if (url480 == null) {
+            String url = null;
+            for (String quality : new String[] { "480p", "380p", "240p" }) {
+                url = (String) JavaScriptEngineFactory.walkJson(jsonEntries, quality + "/https/url");
+                if (url == null) {
+                    url = (String) JavaScriptEngineFactory.walkJson(jsonEntries, quality + "/http/url");
+                }
+                if (url != null) {
+                    break;
+                }
+            }
+            if (url == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                dllink = url;
             }
             // 480p_1709221204.mp4 pattern. 720p is OK.
-            idpart = new Regex(url480, "480p_(\\d+)").getMatch(0);
-            if (idpart == null) {
-                // 480p_e63c3e_1709221204.mp4 pattern. 720p is NG.
-                dllink = url480;
-            }
+            // idpart = new Regex(url, "480p_(\\d+)").getMatch(0);
+            // if (idpart == null) {
+            // // 480p_e63c3e_1709221204.mp4 pattern. 720p is NG.
+            // dllink = url480;
+            // }
         }
-        if (idpart != null) {
+        if (false && idpart != null) {
             /* Thx: https://github.com/dknlght/dkodi/blob/master/plugin.video.viki/plugin.video.viki-1.1.44.zip */
             /* 2017-09-27: Check this: https://forum.kodi.tv/showthread.php?tid=148429 */
             /* 2017-03-11 - also possible for: 360p, 480p */
@@ -173,8 +184,10 @@ public class VikiCom extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 con = br2.openHeadConnection(dllink);
-                if (!con.getContentType().contains("html")) {
-                    downloadLink.setDownloadSize(con.getLongContentLength());
+                if (con.isOK() && !con.getContentType().contains("html")) {
+                    if (con.getCompleteContentLength() > 0) {
+                        downloadLink.setDownloadSize(con.getCompleteContentLength());
+                    }
                     downloadLink.setProperty("directlink", dllink);
                 } else {
                     server_issues = true;
