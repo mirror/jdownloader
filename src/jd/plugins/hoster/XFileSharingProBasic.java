@@ -1471,6 +1471,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         account.saveCookies(br.getCookies(this.getHost()), "");
                     }
                     if (loggedInViaCookies && !force) {
+                        /* No additional check required e.g. for account type --> We know cookies are valid and we're logged in --> Done! */
                         return;
                     }
                 }
