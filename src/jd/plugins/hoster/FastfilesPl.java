@@ -219,7 +219,7 @@ public class FastfilesPl extends PluginForHost {
         }
     }
 
-    @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
+    @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         this.setConstants(account, null);
