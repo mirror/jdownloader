@@ -16,22 +16,24 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.download.HashInfo;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keep2share.cc" }, urls = { "https?://((www|new|spa)\\.)?(keep2share|k2s|k2share|keep2s|keep2)\\.cc/file/(info/)?[a-z0-9]+" })
 public class Keep2ShareCcDecrypter extends PluginForDecrypt {
@@ -41,102 +43,89 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final PluginForHost plugin = JDUtilities.getPluginForHost("keep2share.cc");
+        final PluginForHost plugin = JDUtilities.getNewPluginForHostInstance("keep2share.cc");
+        plugin.setBrowser(br);
+        plugin.setLogger(getLogger());
         if (plugin == null) {
-            throw new IllegalStateException("keep2share plugin not found!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br = ((jd.plugins.hoster.Keep2ShareCc) plugin).newWebBrowser(true);
         // set cross browser support
         ((jd.plugins.hoster.Keep2ShareCc) plugin).setBrowser(br);
-        // // corrections
-        // final String uid = ((jd.plugins.hoster.Keep2ShareCc) plugin).getFUID(param.toString());
-        // final String host = ((jd.plugins.hoster.Keep2ShareCc) plugin).MAINPAGE.replaceFirst("^https?://",
-        // ((jd.plugins.hoster.Keep2ShareCc) plugin).getProtocol());
-        // if (uid == null || host == null) {
-        // logger.warning("Decrypter broken for link: " + param.toString());
-        // return null;
-        // }
-        // final String parameter = host + "/file/" + uid;
-        // DO NOT AUTO CORRECT, links redirect to there default server
-        final String parameter = param.toString().replaceFirst("https?://(spa\\.)?", ((jd.plugins.hoster.Keep2ShareCc) plugin).getProtocol());
-        ((jd.plugins.hoster.Keep2ShareCc) plugin).getPage(parameter);
-        ((jd.plugins.hoster.Keep2ShareCc) plugin).followRedirectNew(br);
-        // empty folder
-        if (br.containsHTML("<span class=\"empty\">No results found\\.\\s*</span>")) {
-            return decryptedLinks;
-        }
-        // Check if we have a single link or a folder
-        if (br.containsHTML("class=\"summary\"")) {
-            // folder
-            final String fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-            final FilePackage fp;
-            if (fpName != null) {
-                fp = FilePackage.getInstance();
-                fp.setName(Encoding.htmlDecode(fpName.trim()));
-                fp.addLinks(decryptedLinks);
-            } else {
-                fp = null;
-            }
-            int pageIndex = 1;
-            while (!isAbort()) {
-                final String[] links = br.getRegex("target=\"_blank\" href=\"([^\"]+)?(/file/[a-z0-9]+)").getColumn(1);
-                if (links == null || links.length == 0) {
-                    if (decryptedLinks.isEmpty()) {
-                        logger.warning("Decrypter broken for link: " + parameter);
-                        return null;
-                    } else {
+        final String fuid = ((jd.plugins.hoster.Keep2ShareCc) plugin).getFUID(param.getCryptedUrl());
+        ((jd.plugins.hoster.Keep2ShareCc) plugin).postPageRaw(br, "/getfilesinfo", "{\"ids\":[\"" + fuid + "\"]}", null);
+        Map<String, Object> response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        boolean folderHandling = false;
+        if ("success".equals(response.get("status"))) {
+            final List<Map<String, Object>> files = (List<Map<String, Object>>) response.get("files");
+            if (files != null) {
+                for (Map<String, Object> file : files) {
+                    final Boolean isFolder = (Boolean) file.get("is_folder");
+                    final Boolean isAvailable = (Boolean) file.get("is_available");
+                    final String id = (String) file.get("id");
+                    final String name = (String) file.get("name");
+                    final String md5 = (String) file.get("md5");
+                    final String access = (String) file.get("access");
+                    final String size = file.get("size").toString();
+                    if (Boolean.FALSE.equals(isFolder)) {
+                        final DownloadLink link = createDownloadlink("https://k2s.cc/file/" + id);
+                        if (StringUtils.isNotEmpty(name)) {
+                            link.setName(name);
+                        }
+                        if (StringUtils.isNotEmpty(size)) {
+                            link.setVerifiedFileSize(Long.parseLong(size));
+                        }
+                        link.setHashInfo(HashInfo.parse(md5));
+                        link.setAvailable(Boolean.TRUE.equals(isAvailable));
+                        link.setProperty("access", access);
+                        decryptedLinks.add(link);
+                    } else if (StringUtils.equals(id, fuid)) {
+                        folderHandling = true;
                         break;
                     }
                 }
-                for (final String link : links) {
-                    final DownloadLink singlelink = createDownloadlink(link);
-                    final String name = br.getRegex("target=\"_blank\" href=\"([^\"]+)?" + link + ".*?\">(.*?)</a>").getMatch(1);
-                    final String size = br.getRegex("target=\"_blank\" href=\"([^\"]+)?" + link + ".*?\">.*?>\\[.*?([0-9\\.GKMB ]+?) \\]<").getMatch(1);
-                    if (name != null) {
-                        singlelink.setName(name);
-                        singlelink.setAvailableStatus(AvailableStatus.TRUE);
+            }
+        }
+        if (folderHandling) {
+            // ask for own id/credentials
+            br.postPage("https://api.k2s.cc/v1/auth/token", "{\"grant_type\":\"client_credentials\",\"client_id\":\"k2s_web_app\",\"client_secret\":\"pjc8pyZv7vhscexepFNzmu4P\"}");
+            int offset = 0;
+            int itemsCount = 0;
+            while (!isAbort()) {
+                br.getPage("https://api.k2s.cc/v1/files?limit=20&offset=" + offset + "&sort=-createdAt&folderId=" + fuid + "&withFolders=true");
+                response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final Number total = (Number) response.get("total");
+                final List<Map<String, Object>> items = (List<Map<String, Object>>) response.get("items");
+                if (items != null && items.size() > 0) {
+                    itemsCount += items.size();
+                    for (Map<String, Object> file : items) {
+                        final Boolean isFile = "file".equals(file.get("type"));
+                        final Boolean isAvailable = !(Boolean) file.get("isDeleted");
+                        final String id = (String) file.get("id");
+                        final String name = (String) file.get("name");
+                        final String access = (String) file.get("accessType");
+                        final String size = file.get("size").toString();
+                        if (Boolean.TRUE.equals(isFile)) {
+                            final DownloadLink link = createDownloadlink("https://k2s.cc/file/" + id);
+                            if (StringUtils.isNotEmpty(name)) {
+                                link.setName(name);
+                            }
+                            if (StringUtils.isNotEmpty(size)) {
+                                link.setVerifiedFileSize(Long.parseLong(size));
+                            }
+                            link.setAvailable(Boolean.TRUE.equals(isAvailable));
+                            link.setProperty("access", access);
+                            decryptedLinks.add(link);
+                        }
                     }
-                    if (size != null) {
-                        singlelink.setDownloadSize(SizeFormatter.getSize(size.trim()));
-                    }
-                    if (fp != null) {
-                        fp.add(singlelink);
-                    }
-                    decryptedLinks.add(singlelink);
-                    distribute(singlelink);
+                } else {
+                    break;
                 }
-                sleep(250, param);
-                ((jd.plugins.hoster.Keep2ShareCc) plugin).getPage("?UserFile_page=" + (pageIndex++));
+                if (itemsCount >= total.longValue()) {
+                    // break;
+                }
+                offset += 20;
             }
-        } else {
-            // single link
-            final DownloadLink singlink = createDownloadlink(br.getURL());
-            final String filename = ((jd.plugins.hoster.Keep2ShareCc) plugin).getFileName();
-            final String filesize = ((jd.plugins.hoster.Keep2ShareCc) plugin).getFileSize();
-            if (filename != null) {
-                singlink.setName(Encoding.htmlDecode(filename.trim()));
-            }
-            if (filesize != null) {
-                singlink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
-            }
-            if (filename == null) {
-                singlink.setAvailableStatus(AvailableStatus.FALSE);
-            } else if (filename.contains("...")) {
-                // has to be null (to trigger linkchecking within hoster plugin to remove ...), availablestatus.unchecked will re-enter
-                // decrypter
-                singlink.setAvailableStatus(null);
-            } else {
-                // prevent wasteful double linkchecks.
-                singlink.setAvailableStatus(AvailableStatus.TRUE);
-            }
-            if (br.containsHTML("Downloading blocked due to")) {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Downloading blocked: No JD bug, please contact the keep2share support", 10 * 60 * 1000l);
-            }
-            // you can set filename for offline links! handling should come here!
-            if (br.containsHTML("Sorry, an error occurred while processing your request|File not found or deleted|>Sorry, this file is blocked or deleted\\.</h5>|class=\"empty\"|>Displaying 1")) {
-                singlink.setAvailableStatus(AvailableStatus.FALSE);
-            }
-            decryptedLinks.add(singlink);
         }
         return decryptedLinks;
     }

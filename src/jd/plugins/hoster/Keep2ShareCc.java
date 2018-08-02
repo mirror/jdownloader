@@ -168,7 +168,7 @@ public class Keep2ShareCc extends K2SApi {
         }
     }
 
-    private static AtomicBoolean forceAPI = new AtomicBoolean(false);
+    private static AtomicBoolean forceAPI = new AtomicBoolean(true); // they soon will switch to new layout
 
     @Override
     protected boolean useAPI() {
