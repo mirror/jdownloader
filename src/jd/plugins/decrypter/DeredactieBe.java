@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deredactie.be", "sporza.be", "cobra.canvas.be" }, urls = { "https?://([a-z0-9]+\\.)?deredactie\\.be/(permalink/\\d\\.\\d+(\\?video=\\d\\.\\d+)?|cm/vrtnieuws([^/]+)?/(mediatheek|videozone).+)", "https?://(?:[a-z0-9]+\\.)?sporza\\.be/.*?/(?:mediatheek|videozone).+)", "https?://cobra\\.canvas\\.be/.*?/(?:mediatheek|videozone).+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deredactie.be", "sporza.be", "cobra.canvas.be" }, urls = { "https?://([a-z0-9]+\\.)?deredactie\\.be/(permalink/\\d\\.\\d+(\\?video=\\d\\.\\d+)?|cm/vrtnieuws([^/]+)?/(mediatheek|videozone).+)", "https?://(?:[a-z0-9]+\\.)?sporza\\.be/.*?/(?:mediatheek|videozone).+", "https?://cobra\\.canvas\\.be/.*?/(?:mediatheek|videozone).+" })
 public class DeredactieBe extends PluginForDecrypt {
     public DeredactieBe(PluginWrapper wrapper) {
         super(wrapper);

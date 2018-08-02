@@ -21,6 +21,8 @@ import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.requests.GetRequest;
+import jd.http.requests.PostRequest;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -88,11 +90,13 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
         }
         if (folderHandling) {
             // ask for own id/credentials
-            br.postPage("https://api.k2s.cc/v1/auth/token", "{\"grant_type\":\"client_credentials\",\"client_id\":\"k2s_web_app\",\"client_secret\":\"pjc8pyZv7vhscexepFNzmu4P\"}");
+            final PostRequest postRequest = br.createPostRequest("https://api.k2s.cc/v1/auth/token", "{\"grant_type\":\"client_credentials\",\"client_id\":\"k2s_web_app\",\"client_secret\":\"pjc8pyZv7vhscexepFNzmu4P\"}");
+            ((jd.plugins.hoster.Keep2ShareCc) plugin).sendRequest(postRequest);
             int offset = 0;
             int itemsCount = 0;
             while (!isAbort()) {
-                br.getPage("https://api.k2s.cc/v1/files?limit=20&offset=" + offset + "&sort=-createdAt&folderId=" + fuid + "&withFolders=true");
+                final GetRequest getRequest = br.createGetRequest("https://api.k2s.cc/v1/files?limit=20&offset=" + offset + "&sort=-createdAt&folderId=" + fuid + "&withFolders=true");
+                ((jd.plugins.hoster.Keep2ShareCc) plugin).sendRequest(getRequest);
                 response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                 final Number total = (Number) response.get("total");
                 final List<Map<String, Object>> items = (List<Map<String, Object>>) response.get("items");
@@ -122,7 +126,7 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
                     break;
                 }
                 if (itemsCount >= total.longValue()) {
-                    // break;
+                    break;
                 }
                 offset += 20;
             }
