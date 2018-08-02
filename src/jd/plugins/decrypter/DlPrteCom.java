@@ -18,9 +18,13 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Random;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.requests.FormData;
+import jd.http.requests.PostFormDataRequest;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
@@ -28,8 +32,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  *
@@ -82,32 +84,54 @@ public class DlPrteCom extends antiDDoSForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        // some weird form that does jack
-        final Form f = br.getFormbyProperty("class", "magic");
-        if (f == null) {
-            if (decryptedLinks.size() > 0) {
-                return decryptedLinks;
+        if (br.containsHTML("captcha\\.php")) {
+            /* 2018-08-02: New */
+            boolean failed = true;
+            for (int i = 0; i <= 2; i++) {
+                final String code = this.getCaptchaCode("https://www.dl-protect1.com/captcha.php?rand=%3C?php%20echo%20rand();%20?%3E", param);
+                final PostFormDataRequest authReq = br.createPostFormDataRequest(br.getURL());
+                authReq.addFormData(new FormData("submit", ""));
+                authReq.addFormData(new FormData("captchaCode", code));
+                super.sendRequest(authReq);
+                // final Form captchaForm = br.getFormbyKey("captchaCode");
+                // if (captchaForm == null) {
+                // return null;
+                // }
+                if (!br.containsHTML("captcha\\.php")) {
+                    failed = false;
+                    break;
+                }
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (failed) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
+        } else {
+            // some weird form that does jack
+            final Form f = br.getFormbyProperty("class", "magic");
+            if (f == null) {
+                if (decryptedLinks.size() > 0) {
+                    return decryptedLinks;
+                }
+                return null;
+            }
+            // insert some magic
+            final String magic = getSoup();
+            f.put(magic, "");
+            // ajax stuff
+            {
+                final Browser ajax = br.cloneBrowser();
+                ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+                postPage(ajax, "/php/Qaptcha.jquery.php", "action=qaptcha&qaptcha_key=" + magic);
+                // should say error false.
+            }
+            submitForm(f);
         }
-        // insert some magic
-        final String magic = getSoup();
-        f.put(magic, "");
-        // ajax stuff
-        {
-            final Browser ajax = br.cloneBrowser();
-            ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-            postPage(ajax, "/php/Qaptcha.jquery.php", "action=qaptcha&qaptcha_key=" + magic);
-            // should say error false.
-        }
-        submitForm(f);
         // link
         final String link = br.getRegex("<div class=\"lienet\"><a href=\"(.*?)\">").getMatch(0);
         if (link == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            return null;
         }
-        final DownloadLink dl = createDownloadlink(link);
-        decryptedLinks.add(dl);
+        decryptedLinks.add(createDownloadlink(link));
         return decryptedLinks;
     }
 
