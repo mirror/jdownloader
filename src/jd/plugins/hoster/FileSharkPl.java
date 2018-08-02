@@ -39,6 +39,7 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -82,9 +83,16 @@ public class FileSharkPl extends PluginForHost {
         this.currentAccount = currentAccount;
     }
 
-    private long checkForErrors() throws PluginException {
+    private long checkForErrors(final Account account) throws PluginException {
         if (br.containsHTML("Osiągnięto maksymalną liczbę sciąganych jednocześnie plików.")) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, getPhrase("MAX_DOWNLOAD"), 60 * 60 * 1000l);
+        }
+        if (br.containsHTML("Wykryliśmy, że Twoje konto jest wykorzystywane komercyjnie")) {
+            if (account != null) {
+                throw new AccountUnavailableException("Account is suspected to be used commecially", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         if (br.containsHTML("Plik nie został odnaleziony w bazie danych.")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -124,6 +132,8 @@ public class FileSharkPl extends PluginForHost {
             // 32 => 'You must wait for new download',
             // 33 => 'Daily limit has been reached',
             // 34 => 'Max number of active downloads has been reached'
+            // 35 => 'Attempt to use commercial IP wit non-commercial account',
+            // 36 => 'Account is suspected to be used commecially’,
             return PluginJSonUtils.getJsonValue(source, "errorMessage");
         }
         return "Unknown error";
@@ -258,7 +268,7 @@ public class FileSharkPl extends PluginForHost {
             fileName = br.getRegex("<h2[ \n\t\t\f]+class=\"name-file\">([^<>\"]*?)</h2>").getMatch(0);
             fileSize = br.getRegex("<p class=\"size-file\">Rozmiar: <strong>(.*?)</strong></p>").getMatch(0);
             if (fileName == null || fileSize == null) {
-                long waitTime = checkForErrors();
+                long waitTime = checkForErrors(getCurrentAccount());
                 if (waitTime != 0) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, getPhrase("WAITTIME"), waitTime);
                 }
@@ -317,6 +327,7 @@ public class FileSharkPl extends PluginForHost {
 
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
         String dllink = "";
+        final Account account = getCurrentAccount();
         boolean useAPI = getUseAPI();
         if (useAPI) {
             boolean waitTimeDetected = true;
@@ -368,7 +379,7 @@ public class FileSharkPl extends PluginForHost {
             if (redirect != null) {
                 br.getPage(redirect);
             }
-            long waitTime = checkForErrors();
+            long waitTime = checkForErrors(account);
             if (waitTime != 0) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, getPhrase("WAITTIME"), waitTime);
             }
@@ -390,7 +401,7 @@ public class FileSharkPl extends PluginForHost {
                 if (br.containsHTML("class=\"error\">Błędny kod")) {
                     continue;
                 }
-                waitTime = checkForErrors();
+                waitTime = checkForErrors(account);
                 if (waitTime != 0) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, getPhrase("WAITTIME"), waitTime);
                 }
@@ -630,6 +641,13 @@ public class FileSharkPl extends PluginForHost {
                         downloadLink.setProperty("generatedLinkFileSharkPl", dllink);
                         downloadLink.setProperty("generatedLinkFileSharkPlDate", dateValid);
                     } else {
+                        int errorCode = Integer.parseInt(PluginJSonUtils.getJsonValue(response, "errorCode"));
+                        switch (errorCode) {
+                        case 35:
+                            throw new AccountUnavailableException("Attempt to use commercial IP wit non-commercial account", 60 * 60 * 1000l);
+                        case 36:
+                            throw new AccountUnavailableException("Account is suspected to be used commecially", 60 * 60 * 1000l);
+                        }
                         useAPI = false;
                     }
                 }
@@ -645,7 +663,10 @@ public class FileSharkPl extends PluginForHost {
             }
             br.setFollowRedirects(false);
             br.getPage("https://fileshark.pl/pobierz/start/" + fileId);
-            long waitTime = checkForErrors();
+            final long waitTime = checkForErrors(account);
+            if (waitTime != 0) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, getPhrase("WAITTIME"), waitTime);
+            }
             dllink = br.getRedirectLocation();
         } else {
         }
@@ -653,6 +674,10 @@ public class FileSharkPl extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
+            final long waitTime = checkForErrors(account);
+            if (waitTime != 0) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, getPhrase("WAITTIME"), waitTime);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

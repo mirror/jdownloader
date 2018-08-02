@@ -17,6 +17,7 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.util.Locale;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -167,6 +168,13 @@ public class Keep2ShareCc extends K2SApi {
         }
     }
 
+    private static AtomicBoolean forceAPI = new AtomicBoolean(false);
+
+    @Override
+    protected boolean useAPI() {
+        return forceAPI.get() || super.useAPI();
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         // for multihosters which call this method directly.
@@ -178,7 +186,12 @@ public class Keep2ShareCc extends K2SApi {
         super.prepBrowserForWebsite(br);
         getPage(buildExternalDownloadURL(link, this));
         followRedirectNew(br);
-        if (isNewLayout2017()) {
+        if (isNewLayout2018()) {
+            // switch to new layout + new api
+            // waiting for detauls to new api
+            forceAPI.set(true);
+            return requestFileInformation(link);
+        } else if (isNewLayout2017()) {
             return requestFileInformationNew2017(link);
         } else {
             return requestFileInformationOld(link);
@@ -263,6 +276,10 @@ public class Keep2ShareCc extends K2SApi {
         return br.containsHTML("class=\"footer-nav\"|class=\"list-services\"");
     }
 
+    public boolean isNewLayout2018() {
+        return br.containsHTML("(/css/spa\\.|/js/spa\\.)");
+    }
+
     public String getFileNameNew2017() {
         String fileName = br.getRegex("<span class=\"name-file\">\\s*(.*?)\\s*(<em|</)").getMatch(0);
         if (fileName == null) {
@@ -328,7 +345,12 @@ public class Keep2ShareCc extends K2SApi {
             super.handleDownload(downloadLink, null);
         } else {
             requestFileInformation(downloadLink);
-            doFree(downloadLink, null);
+            if (useAPI()) {
+                // temp solution for forceAPI
+                super.handleDownload(downloadLink, null);
+            } else {
+                doFree(downloadLink, null);
+            }
         }
     }
 
@@ -734,6 +756,10 @@ public class Keep2ShareCc extends K2SApi {
             return;
         }
         requestFileInformation(link);
+        if (useAPI()) {
+            super.handleDownload(link, account);
+            return;
+        }
         // login based on current link url domain.
         login(account, false, "https://" + Browser.getHost(link.getPluginPatternMatcher()));
         if (account.getType() == AccountType.FREE) {
