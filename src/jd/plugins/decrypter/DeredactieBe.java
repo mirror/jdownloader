@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -26,9 +25,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deredactie.be", "sporza.be" }, urls = { "http://(www\\.)?deredactie\\.be/(permalink/\\d\\.\\d+(\\?video=\\d\\.\\d+)?|cm/vrtnieuws([^/]+)?/(mediatheek|videozone).+)", "http://(www\\.)?sporza\\.be/(permalink/\\d\\.\\d+|cm/(vrtnieuws|sporza)([^/]+)?/(mediatheek|videozone).+)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deredactie.be", "sporza.be", "cobra.canvas.be" }, urls = { "https?://([a-z0-9]+\\.)?deredactie\\.be/(permalink/\\d\\.\\d+(\\?video=\\d\\.\\d+)?|cm/vrtnieuws([^/]+)?/(mediatheek|videozone).+)", "https?://(?:[a-z0-9]+\\.)?sporza\\.be/.*?/(?:mediatheek|videozone).+)", "https?://cobra\\.canvas\\.be/.*?/(?:mediatheek|videozone).+" })
 public class DeredactieBe extends PluginForDecrypt {
-
     public DeredactieBe(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -39,13 +37,9 @@ public class DeredactieBe extends PluginForDecrypt {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        // Link offline
-        if (br.containsHTML("(>Pagina \\- niet gevonden<|>De pagina die u zoekt kan niet gevonden worden)")) {
-            try {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-            } catch (final Throwable t) {
-                logger.info("Offline Link: " + parameter);
-            }
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(>Pagina \\- niet gevonden<|>De pagina die u zoekt kan niet gevonden worden)")) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
         }
         HashMap<String, String> mediaValue = new HashMap<String, String>();
         for (String[] s : br.getRegex("data\\-video\\-([^=]+)=\"([^\"]+)\"").getMatches()) {
@@ -72,5 +66,4 @@ public class DeredactieBe extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

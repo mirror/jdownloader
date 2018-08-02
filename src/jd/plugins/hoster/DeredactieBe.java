@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.ByteArrayInputStream;
@@ -24,6 +23,13 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
+
+import org.jdownloader.downloader.hds.HDSDownloader;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -37,20 +43,12 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 
-import org.jdownloader.downloader.hds.HDSDownloader;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
 /*
  * vrt.be network
  * new content handling --> data-video-src
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deredactie.be", "sporza.be" }, urls = { "http://(www\\.)?deredactiedecrypted\\.be/(permalink/\\d\\.\\d+(\\?video=\\d\\.\\d+)?|cm/vrtnieuws([^/]+)?/(mediatheek|videozone).+)", "http://(www\\.)?sporzadecrypted\\.be/(permalink/\\d\\.\\d+|cm/(vrtnieuws|sporza)([^/]+)?/(mediatheek|videozone).+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deredactie.be", "sporza.be", "cobra.canvas.be" }, urls = { "https?://([a-z0-9]+\\.)?deredactiedecrypted\\.be/(permalink/\\d\\.\\d+(\\?video=\\d\\.\\d+)?|cm/vrtnieuws([^/]+)?/(mediatheek|videozone).+)", "https?://([a-z0-9]+\\.)?sporzadecrypted\\.be/.+", "https?://([a-z0-9]+\\.)?canvasdecrypted\\.be/.+" })
 public class DeredactieBe extends PluginForHost {
-
     public DeredactieBe(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -67,7 +65,8 @@ public class DeredactieBe extends PluginForHost {
         HTTP,
         RTMP,
         HDS,
-        HLS;
+        HLS,
+        DASH
     }
 
     private protocol ptcrl = null;
@@ -89,7 +88,6 @@ public class DeredactieBe extends PluginForHost {
         if (br.containsHTML("(>Pagina \\- niet gevonden<|>De pagina die u zoekt kan niet gevonden worden)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-
         HashMap<String, String> mediaValue = new HashMap<String, String>();
         for (String[] s : br.getRegex("data\\-video\\-([^=]+)=\"([^\"]+)\"").getMatches()) {
             mediaValue.put(s[0], s[1]);
@@ -98,7 +96,6 @@ public class DeredactieBe extends PluginForHost {
         if (mediaValue == null || mediaValue.size() == 0) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-
         finalurl = mediaValue.get("src");
         final String filename = mediaValue.get("title");
         if (finalurl == null || filename == null) {
@@ -114,6 +111,7 @@ public class DeredactieBe extends PluginForHost {
         }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()).replaceAll("\"", "").replace("/", "-") + ext);
         if (finalurl.contains("vod.stream.vrt.be") && finalurl.endsWith(".m3u8")) {
+            /* 2018-08-02: Same here:https://github.com/rg3/youtube-dl/blob/master/youtube_dl/extractor/vrt.py */
             // <div class="video"
             // data-video-id="2138237_1155250086"
             // data-video-type="video"
@@ -161,6 +159,9 @@ public class DeredactieBe extends PluginForHost {
         }
         if (finalurl.endsWith(".m3u8")) {
             ptcrl = protocol.HLS;
+        } else if (finalurl.equalsIgnoreCase("http://do.not/use/this/url")) {
+            /* 2018-08-02 */
+            ptcrl = protocol.DASH;
         } else {
             final Browser br2 = br.cloneBrowser();
             URLConnectionAdapter con = null;
@@ -208,8 +209,11 @@ public class DeredactieBe extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (ptcrl == protocol.DASH) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming type");
+        }
         if (protocol.HDS.equals(ptcrl)) {
             dl = new HDSDownloader(downloadLink, br, finalurl);
             dl.startDownload();
@@ -272,5 +276,4 @@ public class DeredactieBe extends PluginForHost {
             link.removeProperty(HDSDownloader.RESUME_FRAGMENT);
         }
     }
-
 }
