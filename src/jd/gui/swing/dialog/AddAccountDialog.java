@@ -338,27 +338,27 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
         };
         filter.getDocument().addDocumentListener(new DocumentListener() {
             private DelayedRunnable delayedRefresh = new DelayedRunnable(200, 1000) {
-                                                       String lastText = null;
+                String lastText = null;
 
-                                                       @Override
-                                                       public String getID() {
-                                                           return "AddAccountDialog";
-                                                       }
+                @Override
+                public String getID() {
+                    return "AddAccountDialog";
+                }
 
-                                                       @Override
-                                                       public void delayedrun() {
-                                                           new EDTRunner() {
-                                                               @Override
-                                                               protected void runInEDT() {
-                                                                   final String text = filter.getText();
-                                                                   if (!StringUtils.equals(lastText, text)) {
-                                                                       lastText = text;
-                                                                       hoster.refresh(text);
-                                                                   }
-                                                               }
-                                                           }.waitForEDT();
-                                                       }
-                                                   };
+                @Override
+                public void delayedrun() {
+                    new EDTRunner() {
+                        @Override
+                        protected void runInEDT() {
+                            final String text = filter.getText();
+                            if (!StringUtils.equals(lastText, text)) {
+                                lastText = text;
+                                hoster.refresh(text);
+                            }
+                        }
+                    }.waitForEDT();
+                }
+            };
 
             @Override
             public void removeUpdate(DocumentEvent e) {
@@ -382,6 +382,9 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
             public void actionPerformed(final ActionEvent e) {
                 try {
                     final PluginForHost plugin = hoster.getSelectedPlugin().newInstance(cl);
+                    if (plugin != null) {
+                        AccountController.openAfflink(plugin, null, "accountmanager/table");
+                    }
                 } catch (UpdateRequiredClassNotFoundException e1) {
                     e1.printStackTrace();
                 }

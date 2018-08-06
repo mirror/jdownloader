@@ -2,7 +2,6 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -675,19 +674,6 @@ public abstract class K2SApi extends PluginForHost {
         }
     }
 
-    protected InputStream getInputStream(final URLConnectionAdapter con, final Browser br) throws IOException {
-        final int responseCode = con.getResponseCode();
-        switch (responseCode) {
-        case 502:
-            // Bad Gateway
-            break;
-        default:
-            con.setAllowedResponseCodes(new int[] { responseCode });
-            break;
-        }
-        return con.getInputStream();
-    }
-
     /**
      * @author razotki
      * @author jiaz
@@ -697,6 +683,16 @@ public abstract class K2SApi extends PluginForHost {
      * @throws PluginException
      */
     private void readConnection(final URLConnectionAdapter con, final Browser ibr) throws IOException, PluginException {
+        final int responseCode = con.getResponseCode();
+        switch (responseCode) {
+        case 502:
+            // Bad Gateway
+            break;
+        default:
+            // allow all other response codes
+            con.setAllowedResponseCodes(new int[] { responseCode });
+            break;
+        }
         final byte[] responseBytes = Request.read(con, con.getRequest().getReadLimit());
         ibr.getRequest().setResponseBytes(responseBytes);
         LogInterface log = ibr.getLogger();
