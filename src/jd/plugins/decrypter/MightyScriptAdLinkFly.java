@@ -47,7 +47,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
-    private static final String[] domains = { "empireshort.com", "loadurl.com", "shortmony.me", "geistlink.com", "cutt.us.com", "arabdollar.com", "shortenow.com", "kingurl.net", "best3link.com", "solo-link.com", "best5link.com", "lkky.co", "win4cut.com", "coinlink.co", "adlink.guru", "short.es", "tmearn.com", "ibly.co", "brlink.in", "urle.co", "mitly.us", "cutwin.com", "zlshorte.net", "igram.im", "gram.im", "bit-url.com", "adbilty.me", "linclik.com", "oke.io", "vivads.net", "pnd.tl", "met.bz", "urlcloud.us",
+    private static final String[] domains = { "shortit.ca", "123short.com", "skip-url.me", "msms4.com", "empireshort.com", "loadurl.com", "shortmony.me", "geistlink.com", "cutt.us.com", "arabdollar.com", "shortenow.com", "kingurl.net", "best3link.com", "solo-link.com", "best5link.com", "lkky.co", "win4cut.com", "coinlink.co", "adlink.guru", "short.es", "tmearn.com", "ibly.co", "brlink.in", "urle.co", "mitly.us", "cutwin.com", "zlshorte.net", "igram.im", "gram.im", "bit-url.com", "adbilty.me", "linclik.com", "oke.io", "vivads.net", "pnd.tl", "met.bz", "urlcloud.us",
             /** <-- cut-urls.com domains --> */
             "cut-urls.com", "curs.io", "cuon.io",
             /** wicr.me domains */
@@ -62,7 +62,8 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
     public static String[] getAnnotationUrls() {
         // construct pattern
         final String host = getHostsPattern();
-        return new String[] { host + "/[a-zA-Z0-9]{4,}" };
+        /* [a-zA-Z0-9]{4,} will work for 99% but site shortit.ca is not compatible. */
+        return new String[] { host + "/[a-zA-Z0-9]{2,}" };
     }
 
     private static String getHostsPattern() {
