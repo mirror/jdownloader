@@ -741,6 +741,10 @@ public class MassengeschmackTv extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link, account);
+        /*
+         * This may not necessarily mean that it is only for premium. Sometimes a free account might be enough to download such content e.g.
+         * https://massengeschmack.tv/play/fktv148
+         */
         if (this.is_premiumonly_content) {
             /*
              * Different accounts have different shows - so a premium account must not necessarily have the rights to view/download

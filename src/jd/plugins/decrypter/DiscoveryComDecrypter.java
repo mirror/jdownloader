@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.io.IOException;
@@ -21,6 +20,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Random;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -35,11 +36,8 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDHexUtils;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "discovery.com", "tlc.com", "animalplanet.com" }, urls = { "http://www\\.discovery\\.com/tv\\-shows/[a-z0-9\\-]+/videos/[a-z0-9\\-]+/", "http://www\\.tlc\\.com/tv\\-shows/[a-z0-9\\-]+/videos/[a-z0-9\\-]+/", "http://www\\.animalplanet\\.com/tv\\-shows/[a-z0-9\\-]+/videos/[a-z0-9\\-]+/" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "discovery.com", "tlc.com", "animalplanet.com" }, urls = { "http://www\\.discovery\\.com/tv\\-shows/[a-z0-9\\-]+/videos/[a-z0-9\\-]+/", "http://www\\.tlc\\.com/tv\\-shows/[a-z0-9\\-]+/videos/[a-z0-9\\-]+/", "http://www\\.animalplanet\\.com/tv\\-shows/[a-z0-9\\-]+/videos/[a-z0-9\\-]+/" })
 public class DiscoveryComDecrypter extends PluginForDecrypt {
-
     public DiscoveryComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -49,7 +47,6 @@ public class DiscoveryComDecrypter extends PluginForDecrypt {
     private static final String playerKey                  = "AQ~~,AAAAAAABkyc~,PFOoGLfSWhZ81Y0yRvH9oSpaitgzc4BX";
     private static final String playerID                   = "3688727558001";
     private static final String video_player_brightcove_id = "103207";
-
     /* Example brightcove player/AMFRequest needed: http://www.discovery.com/tv-shows/deadliest-catch/videos/best-of-catch-season-11/ */
     /* Example http: http://www.discovery.com/tv-shows/naked-and-afraid/videos/louisiana/ */
     /* Broken flv urls of source: http://discidevflash-f.akamaihd.net//digmed/dp/2015-04/10/879577/145609.002.01.001.flv */
@@ -62,9 +59,7 @@ public class DiscoveryComDecrypter extends PluginForDecrypt {
      * Working http: http://discsmil.edgesuite.net/digmed/dp/2015-04/10/879577/145609.002.01.001-110k.mp4
      * http://discsmil.edgesuite.net/digmed/dp/2015-04/10/879577/145609.002.01.001-3500k.mp4
      */
-
     private static final String DOMAIN                     = "discovery.com";
-
     /* Settings stuff */
     private static final String FAST_LINKCHECK             = "FAST_LINKCHECK";
     private static final String GRAB_SUBTITLE              = "GRAB_SUBTITLE";
@@ -76,7 +71,6 @@ public class DiscoveryComDecrypter extends PluginForDecrypt {
     private static final String ALLOW_1500k                = "1500k";
     private static final String ALLOW_3500k                = "3500k";
     private static final String ALLOW_5000k                = "5000k";
-
     final String[]              qualities                  = { ALLOW_110k, ALLOW_200k, ALLOW_400k, ALLOW_600k, ALLOW_800k, ALLOW_1500k, ALLOW_3500k, ALLOW_5000k };
 
     /** TODO: Fix/implement subtitle support */
@@ -103,11 +97,16 @@ public class DiscoveryComDecrypter extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
-            final DownloadLink dl = this.createOfflinelink(parameter);
-            decryptedLinks.add(dl);
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        json = this.br.cloneBrowser().getPage(this.br.getURL() + "?flat=1");
+        final Browser jsonBR = br.cloneBrowser();
+        jsonBR.getPage(this.br.getURL() + "?flat=1");
+        if (jsonBR.getHttpConnection().getResponseCode() == 403 || jsonBR.containsHTML("This site is not available in your region")) {
+            decryptedLinks.add(this.createOfflinelink(parameter, "GEO_BLOCKED"));
+            return decryptedLinks;
+        }
+        json = jsonBR.toString();
         if (json == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -200,7 +199,6 @@ public class DiscoveryComDecrypter extends PluginForDecrypt {
                         if (cfg.getBooleanProperty(bitrate, false)) {
                             decryptedLinks.add(dl);
                         }
-
                         // final String filenameaudio = filenamepart_two + ".srt";
                         // /* Subtitle */
                         // dl.setUrlDownload(decryptedhost + System.currentTimeMillis() + new Random().nextInt(1000000000));
@@ -215,7 +213,6 @@ public class DiscoveryComDecrypter extends PluginForDecrypt {
                         // decryptedLinks.add(dl);
                         // }
                     }
-
                 }
             } else {
                 /* contentID NOT available --> Brightcove handling needed --> Nope we can easily avoid this :) */
@@ -304,7 +301,6 @@ public class DiscoveryComDecrypter extends PluginForDecrypt {
         data += "0040f9327000000000";
         return JDHexUtils.getByteArray(data);
     }
-
     // private String getHexLength(final String s, boolean amf3) {
     // String result = Integer.toHexString(s.length() | 1);
     // if (amf3) {
@@ -340,7 +336,6 @@ public class DiscoveryComDecrypter extends PluginForDecrypt {
     // }
     // return buf;
     // }
-
     /**
      * JD2 CODE: DO NOIT USE OVERRIDE FÒR COMPATIBILITY REASONS!!!!!
      */
@@ -352,5 +347,4 @@ public class DiscoveryComDecrypter extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

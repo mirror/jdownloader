@@ -17,6 +17,9 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -27,9 +30,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "short.am" }, urls = { "https?://(?:www\\.)?s(ho)?rt\\.am/[A-Za-z0-9]+" })
 public class ShortAm extends antiDDoSForDecrypt {
@@ -54,7 +54,12 @@ public class ShortAm extends antiDDoSForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+        String sitekey = br.getRegex("sitekey\\s*?:\\s*?\"([^<>\"]+)\"").getMatch(0);
+        if (sitekey == null) {
+            /* 2018-08-07: Fallback */
+            sitekey = "6LevHzcUAAAAAJgJHvtcVzlRxasZsJgZWJI5ZUvF";
+        }
+        final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, sitekey).getToken();
         continueform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
         submitForm(continueform);
         continueform = br.getForm(0);
