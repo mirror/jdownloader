@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -29,9 +28,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "files.fm" }, urls = { "https?://files\\.fm/down\\.php\\?i=[a-z0-9]+\\&n=[^/]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "files.fm" }, urls = { "https?://files\\.fm/(?:down\\.php\\?i=[a-z0-9]+(\\&n=[^/]+)?|f/[a-z0-9]+)" })
 public class FilesFm extends PluginForHost {
-
     public FilesFm(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -55,8 +53,21 @@ public class FilesFm extends PluginForHost {
     //
     // /* don't touch the following! */
     // private static AtomicInteger maxPrem = new AtomicInteger(1);
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setPluginPatternMatcher("https://files.fm/f/" + getLinkID(link));
+    }
 
-    private String               dllink            = null;
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = new Regex(link.getPluginPatternMatcher(), "(?:i=|/f/)([a-z0-9]+)").getMatch(0);
+        if (linkid != null) {
+            return linkid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String dllink = null;
 
     @SuppressWarnings("deprecation")
     @Override
@@ -69,14 +80,18 @@ public class FilesFm extends PluginForHost {
             /* Referer needed to download. Not always given as users can also add directlinks without going over the decrypter. */
             this.br.getPage(mainlink);
             // this.br.getHeaders().put("Referer", mainlink);
+        } else {
+            br.getPage(link.getDownloadURL());
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         }
         final String linkpart = new Regex(link.getDownloadURL(), "(\\?i=.+)").getMatch(0);
         final String filename_url = new Regex(linkpart, "\\&n=(.+)").getMatch(0);
         String filename_header = null;
         URLConnectionAdapter con = null;
         try {
-            /* 2016-03-10: They enforce https */
-            dllink = link.getDownloadURL().replace("http://", "https://");
+            dllink = "https://files.fm/down.php?i=" + getLinkID(link);
             con = br.openHeadConnection(dllink);
             if (con.getURL().toString().contains("/private")) {
                 // https://files.fm/thumb_show.php?i=wfslpuh&n=20140908_073035.jpg&refresh1
@@ -86,22 +101,24 @@ public class FilesFm extends PluginForHost {
             }
             if (!con.getContentType().contains("html")) {
                 filename_header = Encoding.htmlDecode(getFileNameFromHeader(con));
-                if (filename_header.length() > filename_url.length()) {
+                if (filename_url == null && filename_header != null) {
                     link.setFinalFileName(filename_header);
-                } else {
+                } else if (filename_url != null && filename_header.length() > filename_url.length()) {
+                    link.setFinalFileName(filename_header);
+                } else if (filename_url != null) {
                     link.setFinalFileName(filename_url);
                 }
                 link.setDownloadSize(con.getLongContentLength());
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            return AvailableStatus.TRUE;
         } finally {
             try {
                 con.disconnect();
             } catch (final Throwable e) {
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -138,5 +155,4 @@ public class FilesFm extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
