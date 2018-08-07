@@ -26,6 +26,7 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -107,6 +108,13 @@ public class ImageHosterDecrypter extends antiDDoSForDecrypt {
                     return decryptedLinks;
                 } else {
                     return null;
+                }
+            }
+            if (br.containsHTML("Continue to your image")) {
+                DownloadLink dl = handleImageBam(br, parameter, true);
+                if (dl != null) {
+                    decryptedLinks.add(dl);
+                    return decryptedLinks;
                 }
             }
             DownloadLink dl = handleImageBam(br, null, false);
@@ -284,7 +292,7 @@ public class ImageHosterDecrypter extends antiDDoSForDecrypt {
             }
         }
         if (finallink == null) {
-            return null;
+            throw new DecrypterException("Decrypter broken for link: " + url);
         }
         finallink = Encoding.htmlDecode(finallink);
         DownloadLink dl = createDownloadlink("directhttp://" + finallink);
