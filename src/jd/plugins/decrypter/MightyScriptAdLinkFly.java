@@ -41,18 +41,56 @@ import jd.plugins.components.SiteType.SiteTemplate;
  *
  * @author raztoki
  * @tags: similar to OuoIo
+ * @examples: Without captcha: met.bz<br />
+ *            With reCaptchaV2 (like most): geistlink.com
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "coinlink.co", "zlshorte.net", "igram.im", "bit-url.com", "adbilty.me", "linclik.com", "oke.io", "vivads.net", "cut-urls.com", "pnd.tl", "met.bz", "urlcloud.us" }, urls = { "https?://(?:www\\.)?(?:coinlink\\.co|adlink\\.guru|short\\.es|tmearn\\.com|ibly\\.co|adshort\\.(?:co|me|im)|brlink\\.in|urle\\.co|mitly\\.us|cutwin\\.com)/[A-Za-z0-9]+$", "https?://(?:www\\.)?zlshorte\\.net/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?i?gram\\.im/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?bit\\-url\\.com/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?adbilty\\.me/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?linclik\\.com/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?oke\\.io/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?vivads\\.net/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?(?:cuon\\.io|curs\\.io|cut\\-urls\\.com)/[A-Za-z0-9]{4,}",
-        "https?://(?:www\\.)?pnd\\.tl/[A-Za-z0-9]{4,}", "https?://met\\.bz/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?urlcloud\\.us/[A-Za-z0-9]{4,}" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
+    private static final String[] domains = { "empireshort.com", "loadurl.com", "shortmony.me", "geistlink.com", "cutt.us.com", "arabdollar.com", "shortenow.com", "kingurl.net", "best3link.com", "solo-link.com", "best5link.com", "lkky.co", "win4cut.com", "coinlink.co", "adlink.guru", "short.es", "tmearn.com", "ibly.co", "brlink.in", "urle.co", "mitly.us", "cutwin.com", "zlshorte.net", "igram.im", "gram.im", "bit-url.com", "adbilty.me", "linclik.com", "oke.io", "vivads.net", "pnd.tl", "met.bz", "urlcloud.us",
+            /** <-- cut-urls.com domains --> */
+            "cut-urls.com", "curs.io", "cuon.io",
+            /** wicr.me domains */
+            "wicr.me", "wi.cr",
+            /** adshort.co domains */
+            "adshort.co", "adsrt.com", "adshort.me", "adshort.im" };
+
+    /**
+     * returns the annotation pattern array
+     *
+     */
+    public static String[] getAnnotationUrls() {
+        // construct pattern
+        final String host = getHostsPattern();
+        return new String[] { host + "/[a-zA-Z0-9]{4,}" };
+    }
+
+    private static String getHostsPattern() {
+        final StringBuilder pattern = new StringBuilder();
+        for (final String name : domains) {
+            pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
+        }
+        final String hosts = "https?://(?:www\\.)?" + "(?:" + pattern.toString() + ")";
+        return hosts;
+    }
+
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "coinlink.co", "adlink.guru", "short.es", "tmearn.com", "ibly.co", "adshort.co", "adshort.me", "adshort.im", "brlink.in", "urle.co", "mitly.us", "cutwin.com", "zlshorte.net", "igram.im", "bit-url.com", "adbilty.me", "linclik.com", "oke.io", "vivads.net", "cut-urls.com", "pnd.tl", "met.bz", "urlcloud.us" };
+        return domains;
+    }
+
+    /**
+     * Returns the annotations names array
+     *
+     * @return
+     */
+    public static String[] getAnnotationNames() {
+        return new String[] { "cut-urls.com" };
     }
 
     public enum CaptchaType {
         reCaptchaV2,
+        reCaptchaV2_invisible,
         solvemedia,
         WTF
     };
@@ -77,7 +115,10 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
         getPage(parameter);
         final String redirect = br.getRedirectLocation();
         if (redirect != null && !redirect.contains(source_host + "/")) {
-            /* 2018-07-18: Direct redirect without captcha or any Form e.g. vivads.net */
+            /*
+             * 2018-07-18: Direct redirect without captcha or any Form e.g. vivads.net OR redirect to other domain of same service e.g.
+             * wi.cr --> wicr.me
+             */
             decryptedLinks.add(this.createDownloadlink(redirect));
             return decryptedLinks;
         }
@@ -121,8 +162,9 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
             }
             decryptedLinks.add(createDownloadlink(finallink));
         } else {
-            /* 2018-07-18: Not all sites require a captcha to be solved - e.g. no captcha: met.bz */
-            if (evalulateCaptcha()) {
+            /* 2018-07-18: Not all sites require a captcha to be solved */
+            final CaptchaType captchaType = getCaptchaType();
+            if (evalulateCaptcha(captchaType)) {
                 /* Captcha required */
                 boolean requiresCaptchaWhichCanFail = false;
                 boolean captchaFailed = false;
@@ -131,17 +173,23 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                     if (form == null) {
                         return null;
                     }
-                    final CaptchaType captchaType = getCaptchaType();
-                    if (captchaType == CaptchaType.reCaptchaV2) {
+                    /* Captcha type will usually stay the same even on bad solve attempts! */
+                    // captchaType = getCaptchaType();
+                    if (captchaType == CaptchaType.reCaptchaV2 || captchaType == CaptchaType.reCaptchaV2_invisible) {
                         requiresCaptchaWhichCanFail = false;
                         final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br) {
                             @Override
                             public String getSiteKey() {
-                                final String key = getAppVarsResult("reCAPTCHA_site_key");
+                                final String key;
+                                if (captchaType == CaptchaType.reCaptchaV2) {
+                                    key = getAppVarsResult("reCAPTCHA_site_key");
+                                } else {
+                                    key = getAppVarsResult("invisible_reCAPTCHA_site_key");
+                                }
                                 if (!StringUtils.isEmpty(key)) {
                                     return key;
                                 }
-                                /* Use general function */
+                                /* Use/TRY general function */
                                 return super.getSiteKey(br.toString());
                             }
                         }.getToken();
@@ -230,13 +278,35 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
         return br.getForm(0);
     }
 
-    private boolean evalulateCaptcha() {
+    /**
+     * true = captcha required, false = no captcha required <br />
+     *
+     * @param captchatype:
+     *            Type of the captcha found in js/html - required in some rare cases.
+     */
+    private boolean evalulateCaptcha(final CaptchaType captchatype) {
         // if ("yes" !== app_vars.enable_captcha) return !0;
-        final String hasCaptcha = getAppVarsResult("enable_captcha");
-        if ("yes".equals(hasCaptcha)) {
-            return true;
+        boolean hasCaptcha;
+        String captchaIndicatorValue = getAppVarsResult("enable_captcha");
+        if (captchaIndicatorValue != null) {
+            /* Most website will contain this boolean-like value telling us whether we need to solve a captcha or not. */
+            if ("yes".equals(captchaIndicatorValue)) {
+                hasCaptcha = true;
+            } else {
+                hasCaptcha = false;
+            }
+        } else {
+            /*
+             * In some cases, we have to check for the type of the captcha to find out whether there is a captcha or not (unsafe method,
+             * only needed in rare cases, see example websites in header of this class!)
+             */
+            if (captchatype != null) {
+                hasCaptcha = true;
+            } else {
+                hasCaptcha = false;
+            }
         }
-        return false;
+        return hasCaptcha;
     }
 
     private CaptchaType getCaptchaType() {
@@ -245,12 +315,15 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
             /* No captcha or plugin broken */
             return null;
         }
-        if (captchaTypeStr.equalsIgnoreCase("recaptcha") || captchaTypeStr.equalsIgnoreCase("invisible-recaptcha")) {
+        if (captchaTypeStr.equalsIgnoreCase("recaptcha")) {
             /*
              * 2018-07-18: For 'recaptcha', key is in "reCAPTCHA_site_key"; for 'invisible-recaptcha', key is in
-             * "invisible_reCAPTCHA_site_key" --> But we always use "reCAPTCHA_site_key"! (tested with urle.co)
+             * "invisible_reCAPTCHA_site_key" --> We can usually use "reCAPTCHA_site_key" as well (tested with urle.co) ... but it is better
+             * to use the correct one instead - especially because sometimes only that one is available (e.g. kingurl.net).
              */
             return CaptchaType.reCaptchaV2;
+        } else if (captchaTypeStr.equalsIgnoreCase("invisible-recaptcha")) {
+            return CaptchaType.reCaptchaV2_invisible;
         } else if (captchaTypeStr.equalsIgnoreCase("solvemedia")) {
             return CaptchaType.solvemedia;
         } else {

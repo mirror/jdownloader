@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.text.SimpleDateFormat;
@@ -33,11 +32,9 @@ import jd.plugins.decrypter.BrightcoveDecrypter.BrightcoveEdgeContainer.Protocol
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "handelsblatt.com" }, urls = { "http://(www\\.)?handelsblatt\\.com/[^<>\"]*?\\.html" })
 public class HandelsblattCom extends PluginForHost {
-
     public HandelsblattCom(PluginWrapper wrapper) {
         super(wrapper);
     }
-
     /* DEV NOTES */
     // Tags:
     // protocol: no https
@@ -47,7 +44,6 @@ public class HandelsblattCom extends PluginForHost {
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
 
     @Override
@@ -86,7 +82,6 @@ public class HandelsblattCom extends PluginForHost {
             publisherID = "110743091001";
         }
         final String videoID = br.getRegex("name=\"@videoPlayer\" value=\"(\\d+)\"").getMatch(0);
-
         String filename;
         final long filesize;
         final String date_formatted;

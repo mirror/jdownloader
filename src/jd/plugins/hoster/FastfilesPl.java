@@ -230,6 +230,7 @@ public class FastfilesPl extends PluginForHost {
         final String accounttype = PluginJSonUtils.getJsonValue(br, "typ");
         final String validuntil = PluginJSonUtils.getJsonValue(br, "expires");
         final String trafficleft = PluginJSonUtils.getJsonValue(br, "traffic");
+        final String traffic_max = PluginJSonUtils.getJsonValue(br, "traffic_max");
         long timestamp_validuntil = 0;
         if (validuntil != null) {
             timestamp_validuntil = TimeFormatter.getMilliSeconds(validuntil, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
@@ -242,7 +243,12 @@ public class FastfilesPl extends PluginForHost {
             account.setType(AccountType.FREE);
             ai.setStatus("Registered (free) account");
         }
-        ai.setTrafficLeft(trafficleft);
+        if (!StringUtils.isEmpty(trafficleft) && trafficleft.matches("\\d+")) {
+            ai.setTrafficLeft(trafficleft);
+        }
+        if (!StringUtils.isEmpty(traffic_max) && traffic_max.matches("\\d+")) {
+            ai.setTrafficMax(traffic_max);
+        }
         this.getAPISafe(API_BASE + "?request=hostlist&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
         final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         final ArrayList<String> supportedhostslist = (ArrayList<String>) entries.get("supported_hosts");
