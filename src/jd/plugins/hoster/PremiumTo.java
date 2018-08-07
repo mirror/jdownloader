@@ -183,10 +183,14 @@ public class PremiumTo extends UseNet {
             super.handleMultiHost(link, account);
             return;
         } else {
-            login(account, false);
+            final boolean freshLogin = login(account, false);
             String url = link.getDownloadURL();
-            // allow resume and up to 10 chunks
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, url, true, -10);
+            if (dl.getConnection().getResponseCode() == 403 && !freshLogin) {
+                dl.getConnection().disconnect();
+                login(account, true);
+                dl = new jd.plugins.BrowserAdapter().openDownload(br, link, url, true, -10);
+            }
             if (dl.getConnection().getResponseCode() == 403) {
                 /*
                  * This e.g. happens if the user deletes a file via the premium.to site and then tries to download the previously added link
@@ -201,7 +205,7 @@ public class PremiumTo extends UseNet {
     }
 
     @SuppressWarnings("unchecked")
-    private void login(Account account, boolean force) throws Exception {
+    private boolean login(Account account, boolean force) throws Exception {
         final boolean redirect = br.isFollowingRedirects();
         synchronized (LOCK) {
             try {
@@ -221,7 +225,7 @@ public class PremiumTo extends UseNet {
                             final String value = cookieEntry.getValue();
                             br.setCookie(this.getHost(), key, value);
                         }
-                        return;
+                        return false;
                     }
                 }
                 final Map<String, Object> login = new HashMap<String, Object>();
@@ -251,8 +255,11 @@ public class PremiumTo extends UseNet {
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", cookies);
+                return true;
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.setProperty("cookies", Property.NULL);
+                }
                 throw e;
             } finally {
                 br.setFollowRedirects(redirect);

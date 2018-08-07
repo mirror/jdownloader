@@ -274,6 +274,9 @@ public class ZeveraCom extends PluginForHost {
             // method
             list.addAll(cache);
         }
+        if (list.remove("ulozto.net")) {
+            list.add("ulozto.to");
+        }
         ai.setMultiHostSupport(this, new ArrayList<String>(list));
         return ai;
     }
