@@ -47,7 +47,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to", "pornfile.cz" }, urls = { "https?://(?:www\\.)?(?:uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)/(?!soubory/)[\\!a-zA-Z0-9]+/[^\\?\\s]+", "https?://(?:www\\.)?pornfile\\.(?:cz|ulozto\\.net)/[\\!a-zA-Z0-9]+/[^\\?\\s]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to", "pornfile.cz" }, urls = { "https?://(?:www\\.)?(?:uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)/(?!soubory/)[\\!a-zA-Z0-9]+/[^\\?\\s]+", "https?://(?:www\\.)?(?:pornfile\\.cz|pornfile\\.ulozto\\.net)/[\\!a-zA-Z0-9]+/[^\\?\\s]+" })
 public class UlozTo extends PluginForHost {
     private boolean              passwordProtected            = false;
     private static final String  REPEAT_CAPTCHA               = "REPEAT_CAPTCHA";
@@ -73,6 +73,15 @@ public class UlozTo extends PluginForHost {
     public void correctDownloadLink(final DownloadLink link) {
         // ulozto.net = the english version of the site
         link.setUrlDownload(link.getDownloadURL().replaceAll("(ulozto\\.sk|ulozto\\.cz|ulozto\\.net)", "uloz.to").replaceFirst("^http://", "https://"));
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        if ("uloz.to".equals(getHost())) {
+            return new String[] { "uloz.to", "ulozto.sk", "ulozto.cz", "ulozto.net" };
+        } else {
+            return new String[] { "pornfile.cz", "pornfile.ulozto.net" };
+        }
     }
 
     @Override

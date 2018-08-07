@@ -1360,10 +1360,9 @@ public class UbiqfileCom extends antiDDoSForHost {
                     if (force) {
                         getPage("/?op=my_account");
                     }
-                    if (br.getCookie(COOKIE_HOST, "login", Cookies.NOTDELETEDPATTERN) == null || br.getCookie(COOKIE_HOST, "xfss", Cookies.NOTDELETEDPATTERN) == null) {
+                    if (br.getCookie(COOKIE_HOST, "login", Cookies.NOTDELETEDPATTERN) == null || br.getCookie(COOKIE_HOST, "xfss", Cookies.NOTDELETEDPATTERN) == null || StringUtils.containsIgnoreCase(br.getURL(), "/login")) {
                         logger.info("Cached cookies failed:Age:" + age);
                     } else {
-                        logger.info("Cached cookies successful:Age:" + age);
                         if (force) {
                             if (!new Regex(correctedBR, "(Premium(-| )Account expire|>Renew premium<)").matches()) {
                                 account.setType(AccountType.FREE);
@@ -1371,6 +1370,7 @@ public class UbiqfileCom extends antiDDoSForHost {
                                 account.setType(AccountType.PREMIUM);
                             }
                         }
+                        logger.info("Cached cookies successful:Age:" + age + ":Type:" + account.getType());
                         account.saveCookies(br.getCookies(this.getHost()), "");
                         return;
                     }

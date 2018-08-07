@@ -593,7 +593,7 @@ public class SuprafilesOrg extends antiDDoSForHost {
                      * might as well be a workaround by the XFS developers to avoid expiring reCaptchaV2 challenges.
                      */
                     logger.info("Detected captcha method \"RecaptchaV2\" for this host");
-                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6LehaD0UAAAAAGcmcox4g7ot09dyYcZQn5rfrk9l").getToken();
                     if (new Regex(correctedBR, Pattern.compile("\\$\\.post\\(\\s*?\"/ddl\"", Pattern.CASE_INSENSITIVE)).matches()) {
                         /* 2017-12-07: New */
                         /* Do not put the result in this Form as the check is handled below already */
@@ -1427,7 +1427,7 @@ public class SuprafilesOrg extends antiDDoSForHost {
                         if (dlinkbefore == null) {
                             this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "http://" + account.getHoster(), true));
                         }
-                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6LehaD0UAAAAAGcmcox4g7ot09dyYcZQn5rfrk9l").getToken();
                         if (dlinkbefore != null) {
                             this.setDownloadLink(dlinkbefore);
                         }
