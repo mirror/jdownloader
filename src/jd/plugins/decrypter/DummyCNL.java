@@ -44,7 +44,7 @@ import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dummycnl.jdownloader.org" }, urls = { "http://dummycnl\\.jdownloader\\.org/[a-f0-9A-F]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dummycnl.jdownloader.org" }, urls = { "https?://dummycnl\\.jdownloader\\.org/[a-f0-9A-F]+" })
 public class DummyCNL extends PluginForDecrypt {
     public DummyCNL(final PluginWrapper wrapper) {
         super(wrapper);

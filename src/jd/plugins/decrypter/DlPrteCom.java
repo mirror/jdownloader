@@ -16,9 +16,9 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Random;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -32,6 +32,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  *
@@ -49,6 +52,80 @@ public class DlPrteCom extends antiDDoSForDecrypt {
         super(wrapper);
     }
 
+    private String decode(final String input) {
+        final LinkedHashMap<String, String> replace = new LinkedHashMap<String, String>();
+        replace.put("060", ":");
+        replace.put("061", ".");
+        replace.put("062", "?");
+        replace.put("063", "#");
+        replace.put("064", "-");
+        replace.put("065", "/");
+        replace.put("0f", "0");
+        replace.put("0l", "1");
+        replace.put("0r", "2");
+        replace.put("0k", "3");
+        replace.put("0z", "4");
+        replace.put("0x", "5");
+        replace.put("0h", "6");
+        replace.put("0o", "7");
+        replace.put("0m", "8");
+        replace.put("0n", "9");
+        replace.put("34", "a");
+        replace.put("35", "b");
+        replace.put("36", "c");
+        replace.put("37", "d");
+        replace.put("38", "e");
+        replace.put("39", "f");
+        replace.put("40", "g");
+        replace.put("41", "h");
+        replace.put("42", "i");
+        replace.put("43", "j");
+        replace.put("44", "k");
+        replace.put("45", "l");
+        replace.put("46", "m");
+        replace.put("47", "n");
+        replace.put("48", "o");
+        replace.put("49", "p");
+        replace.put("50", "q");
+        replace.put("51", "r");
+        replace.put("52", "s");
+        replace.put("53", "t");
+        replace.put("54", "u");
+        replace.put("55", "v");
+        replace.put("56", "w");
+        replace.put("57", "x");
+        replace.put("58", "y");
+        replace.put("59", "z");
+        int index = 0;
+        final StringBuilder ret = new StringBuilder();
+        StringBuilder search = new StringBuilder();
+        while (index < input.length()) {
+            search.append(input.charAt(index++));
+            final String write = replace.get(search.toString());
+            if (write != null) {
+                ret.append(write);
+                search.delete(0, search.length());
+            } else if (search.length() == 4) {
+                if (search.charAt(0) == '0' && search.charAt(1) == '0') {
+                    final String upper = replace.get(search.substring(2));
+                    if (upper != null) {
+                        ret.append(upper.toUpperCase(Locale.ENGLISH));
+                        search.delete(0, search.length());
+                    }
+                }
+                if (search.length() > 0) {
+                    logger.info("Decoded:" + ret.toString() + "|Unknown:" + search);
+                    return null;
+                }
+            }
+        }
+        if (input.endsWith("0f")) {
+            return ret.substring(0, ret.length() - 1);
+        } else {
+            return ret.toString();
+        }
+    }
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
@@ -56,6 +133,13 @@ public class DlPrteCom extends antiDDoSForDecrypt {
         if (go != null) {
             final DownloadLink dl = createDownloadlink(go);
             decryptedLinks.add(dl);
+        }
+        final String encoded = new Regex(parameter, "/([^/]+)$").getMatch(0);
+        final String decoded = decode(encoded);
+        if (StringUtils.isNotEmpty(decoded) && StringUtils.startsWithCaseInsensitive(decoded, "http")) {
+            final DownloadLink dl = createDownloadlink(decoded);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
         }
         br.setFollowRedirects(true);
         getPage(parameter);
