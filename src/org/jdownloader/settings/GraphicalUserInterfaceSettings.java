@@ -1199,7 +1199,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     @DescriptionForConfigEntry("If enabled ctrl+A first of all selects all children in all current packages, and in a second step all packages")
     @AboutConfig
-    @DefaultBooleanValue(true)
+    @DefaultBooleanValue(false)
     boolean isTwoStepCtrlASelectionEnabled();
 
     void setTwoStepCtrlASelectionEnabled(boolean b);

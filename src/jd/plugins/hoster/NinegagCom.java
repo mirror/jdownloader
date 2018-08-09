@@ -13,10 +13,10 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -31,9 +31,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "9gag.com" }, urls = { "https?://(?:www\\.)?9gag\\.com/gag/\\d+" })
-public class NinegagCom extends PluginForHost {
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "9gag.com" }, urls = { "https?://(?:www\\.)?9gag\\.com/gag/[a-zA-Z0-9]+" })
+public class NinegagCom extends PluginForHost {
     public NinegagCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -42,12 +44,10 @@ public class NinegagCom extends PluginForHost {
     // Tags:
     // protocol: no https
     // other:
-
     /* Connection stuff */
     private static final boolean free_resume       = false;
     private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
     private boolean              server_issues     = false;
 
@@ -67,23 +67,32 @@ public class NinegagCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("?post_removed=1")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String url_filename = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
+        final String id = new Regex(link.getDownloadURL(), "([a-zA-Z0-9]+)$").getMatch(0);
         String filename = PluginJSonUtils.getJsonValue(this.br, "title");
         if (filename == null) {
-            filename = url_filename;
+            filename = id;
         }
-        dllink = br.getRegex("rel=\"image_src\" href=\"(http[^<>\"]*?)\"").getMatch(0);
+        final String image_src = br.getRegex("rel=\"image_src\" href=\"(https?[^<>\"]*?)\"").getMatch(0);
+        final String images = br.getRegex("\"post\"\\s*:\\s*\\{\\s*\"id\"\\s*:\"" + id + "\".*?\"images\"\\s*:\\s*(\\{.*?\\}\\s*\\})\\s*,").getMatch(0);
+        boolean video = false;
+        if (images != null) {
+            final Map<String, Object> map = JSonStorage.restoreFromString(images, TypeRef.HASHMAP);
+            final Map<String, Object> image460sv = (Map<String, Object>) map.get("image460sv");
+            if (image460sv != null) {
+                video = true;
+                dllink = (String) image460sv.get("url");
+            }
+        }
         if (dllink == null) {
-            dllink = br.getRegex("(?:file|url):[\t\n\r ]*?(?:\"|\\')(http[^<>\"]*?)(?:\"|\\')").getMatch(0);
+            dllink = image_src;
         }
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        final String ext = getFileNameExtensionFromString(dllink, ".jpg");
+        final String ext = getFileNameExtensionFromString(dllink, video ? ".mp4" : ".jpg");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
@@ -94,7 +103,7 @@ public class NinegagCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openHeadConnection(dllink);
-            if (!con.getContentType().contains("html")) {
+            if (!con.getContentType().contains("html") && con.getResponseCode() == 200) {
                 link.setDownloadSize(con.getLongContentLength());
                 link.setProperty("directlink", dllink);
             } else {
@@ -119,15 +128,15 @@ public class NinegagCom extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
+            try {
+                br.followConnection();
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            }
-            br.followConnection();
-            try {
-                dl.getConnection().disconnect();
-            } catch (final Throwable e) {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

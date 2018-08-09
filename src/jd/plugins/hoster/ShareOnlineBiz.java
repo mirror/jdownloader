@@ -1038,7 +1038,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
         } else if (getPluginConfig().getBooleanProperty(UNLIMIT_CHUNKS, false)) {
             return 0;
         } else {
-            return 2;
+            return -2;
         }
     }
 
