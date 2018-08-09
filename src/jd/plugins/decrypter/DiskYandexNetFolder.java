@@ -294,15 +294,15 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         final ArrayList<String> dupeList = new ArrayList<String>();
         final String domain = "disk.yandex.ru";
         getPage(this.addedLink);
-        String sk = jd.plugins.hoster.DiskYandexNet.getSK(this.br);
         if (isOffline(this.br)) {
             decryptedLinks.add(this.createOfflinelink(this.addedLink));
             return;
         }
-        // if (StringUtils.isEmpty(sk)) {
-        // logger.warning("Failed to get SK value");
-        // throw new DecrypterException();
-        // }
+        String sk = jd.plugins.hoster.DiskYandexNet.getSK(this.br);
+        if (StringUtils.isEmpty(sk)) {
+            logger.warning("Failed to get SK value");
+            throw new DecrypterException();
+        }
         String fpName = null;
         final String hashShort = new Regex(this.addedLink, "/a/(.+)").getMatch(0);
         final String public_key = PluginJSonUtils.getJsonValue(br, "public_key");
@@ -313,6 +313,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             return;
         }
         if (StringUtils.isEmpty(sk)) {
+            /** TODO: Maybe keep SK throughout sessions to save that one request ... */
             logger.info("Getting new SK value ...");
             br.getPage("https://" + domain + "/auth/status?urlOrigin=" + Encoding.urlEncode(this.addedLink) + "&source=album_web_signin");
             sk = jd.plugins.hoster.DiskYandexNet.getSK(br);
