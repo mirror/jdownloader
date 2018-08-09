@@ -299,10 +299,6 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             return;
         }
         String sk = jd.plugins.hoster.DiskYandexNet.getSK(this.br);
-        if (StringUtils.isEmpty(sk)) {
-            logger.warning("Failed to get SK value");
-            throw new DecrypterException();
-        }
         String fpName = null;
         final String hashShort = new Regex(this.addedLink, "/a/(.+)").getMatch(0);
         final String public_key = PluginJSonUtils.getJsonValue(br, "public_key");
@@ -322,6 +318,10 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             // "&source=album_web_signin");
             // sk = jd.plugins.hoster.DiskYandexNet.getSK(br);
             // }
+            if (StringUtils.isEmpty(sk)) {
+                logger.warning("Failed to get SK value");
+                throw new DecrypterException();
+            }
         }
         prepBrAlbum(this.br);
         final int maxItemsPerPage = 40;
