@@ -13,10 +13,13 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -27,12 +30,10 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "opendrive.com" }, urls = { "https?://(www\\.)?opendrive\\.com/folders\\?[A-Za-z0-9]+|https?://od\\.lk/(?:fl|s)/[A-Za-z0-9]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "opendrive.com" }, urls = { "https?://(?:www\\.)?opendrive\\.com/folders\\?[A-Za-z0-9]+|https?://od\\.lk/(?:fl|s)/[A-Za-z0-9]+(?:\\?folderpath=[a-zA-Z0-9_/\\+\\=\\-%]+)?" })
 public class OpenDriveComDecrypter extends PluginForDecrypt {
-
     public OpenDriveComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -40,50 +41,76 @@ public class OpenDriveComDecrypter extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("http://", "https://");
-        final String folderid = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
+        final String folderid = new Regex(parameter, "([A-Za-z0-9\\-_]+)(\\?folderpath=.+)?$").getMatch(0);
         this.br.setFollowRedirects(true);
-        br.getPage(parameter);
-        if (br.getURL().contains("?e=") || this.br.getHttpConnection().getResponseCode() == 404) {
+        br.getPage(String.format("https://od.lk/fl/%s", folderid));
+        if (br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404) {
             final DownloadLink offline = this.createOfflinelink(parameter);
             offline.setFinalFileName("folder_offline_" + folderid);
             decryptedLinks.add(offline);
             return decryptedLinks;
-        } else if (this.br.containsHTML("class=\"lightbox warning-lightbox private-folder-warning\"")) {
+        }
+        final String csrftoken = br.getRegex("data\\-csrftoken=\"([^<>\"]+)\"").getMatch(0);
+        jd.plugins.hoster.OpenDriveCom.prepBRAjax(this.br);
+        br.getHeaders().put("Origin", "https://od.lk");
+        br.getHeaders().put("X-Ajax-CSRF-Token", csrftoken);
+        br.postPage("https://od.lk/ajax", "action=files.load-folder-content&folder_id=" + folderid + "&with_breadcrumbs=1&last_request_time=0&public=1&offset=0&order_by=name&order_type=asc");
+        final String error = PluginJSonUtils.getJson(br, "error");
+        if (br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404 || error != null) {
             final DownloadLink offline = this.createOfflinelink(parameter);
-            offline.setFinalFileName("folder_is_private_" + folderid);
+            offline.setFinalFileName("folder_offline_" + folderid);
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
-        String fpName = br.getRegex("class=\"selected root\\-folder\" href=\"/folders\\?[A-Za-z0-9]+\" title=\"([^<>\"]*?)\"").getMatch(0);
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final ArrayList<Object> folders = (ArrayList<Object>) entries.get("Folders");
+        final ArrayList<Object> files = (ArrayList<Object>) entries.get("Files");
+        String fpName = (String) entries.get("Name");
+        // final String name_of_previous_folder = (String) JavaScriptEngineFactory.walkJson(entries, "Breadcrumbs/{0}/Name");
         if (fpName == null) {
             fpName = folderid;
         }
-        // div class="grid-file one-item draggable "
-        final String[] info = br.getRegex("<div class=\"grid\\-item item file\\-item(.*?class=\"file\\-size\">[^<>\"]*?<)").getColumn(0);
-        if (info == null || info.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+        String path = new Regex(parameter, "folderpath=(.+)").getMatch(0);
+        if (path != null) {
+            path = Encoding.Base64Decode(path);
+            path += "/" + fpName;
+        } else {
+            path = fpName;
         }
-        for (final String singleinfo : info) {
-            final String fid = new Regex(singleinfo, "id=\"file\\-([A-Za-z0-9\\-_]+)\"").getMatch(0);
-            final String filename = new Regex(singleinfo, "data\\-filename=\"([^<>\"]*?)\"").getMatch(0);
-            final String filesize = new Regex(singleinfo, "class=\"file\\-size\">([^<>\"]*?)<").getMatch(0);
-            if (fid == null || filename == null || filesize == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            final DownloadLink fina = createDownloadlink("https://www.opendrive.com/files?" + fid);
-            fina.setName(Encoding.htmlDecode(filename));
-            fina.setDownloadSize(SizeFormatter.getSize(filesize));
-            fina.setAvailable(true);
-            decryptedLinks.add(fina);
-        }
-
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(fpName.trim()));
-        fp.addLinks(decryptedLinks);
-
+        fp.setName(fpName);
+        for (final Object fileo : files) {
+            entries = (LinkedHashMap<String, Object>) fileo;
+            /* Do not use this as linkid as id inside our url is the one we prefer (also unique). */
+            // final String fileid = (String)entries.get("FileId");
+            final String url = (String) entries.get("Link");
+            final String directurl = (String) entries.get("DownloadLink");
+            final String filename = (String) entries.get("Name");
+            final long filesize = JavaScriptEngineFactory.toLong(entries.get("Size"), -1);
+            if (StringUtils.isEmpty(url) || StringUtils.isEmpty(filename) || filesize == -1) {
+                continue;
+            }
+            final DownloadLink dl = this.createDownloadlink(url);
+            dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, path);
+            dl.setName(filename);
+            dl.setDownloadSize(filesize);
+            if (!StringUtils.isEmpty(directurl)) {
+                dl.setProperty("directurl", directurl);
+            }
+            dl.setAvailable(true);
+            dl._setFilePackage(fp);
+            decryptedLinks.add(dl);
+        }
+        for (final Object foldero : folders) {
+            entries = (LinkedHashMap<String, Object>) foldero;
+            String url = (String) entries.get("Link");
+            if (StringUtils.isEmpty(url)) {
+                continue;
+            }
+            url += "?folderpath=" + Encoding.Base64Encode(path);
+            final DownloadLink dl = this.createDownloadlink(url);
+            decryptedLinks.add(dl);
+        }
         return decryptedLinks;
     }
-
 }

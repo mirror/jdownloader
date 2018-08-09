@@ -16,28 +16,30 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.Property;
-import jd.http.Cookie;
+import jd.http.Browser;
 import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "opendrive.com" }, urls = { "https?://(www\\.)?([a-z0-9]+\\.)?opendrive\\.com/files\\?[A-Za-z0-9\\-_]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "opendrive.com" }, urls = { "https?://(?:www\\.)?(?:[a-z0-9]+\\.)?(?:opendrive\\.com/files\\?[A-Za-z0-9\\-_]+|od\\.lk/(?:d|f)/[A-Za-z0-9\\-_]+)" })
 public class OpenDriveCom extends PluginForHost {
     public OpenDriveCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -49,39 +51,67 @@ public class OpenDriveCom extends PluginForHost {
         return "https://www.opendrive.com/terms";
     }
 
-    @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
-        /* Avoid https because of old 0.9.581 Stable & this host does not force https (maybe only for login) */
-        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
+        final String linkid = getLinkID(link);
+        link.setPluginPatternMatcher(String.format("https://od.lk/f/%s", linkid));
     }
 
-    private static final boolean use_api = false;
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = new Regex(link.getPluginPatternMatcher(), "([A-Za-z0-9\\-_]+)$").getMatch(0);
+        if (linkid != null) {
+            return linkid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
 
-    @SuppressWarnings("deprecation")
+    public static Browser prepBRAjax(final Browser br) {
+        br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.setAllowedResponseCodes(new int[] { 400 });
+        return br;
+    }
+
+    private enum MODE {
+        API,
+        WEBSITE_AJAX,
+        WEBSITE_HTML
+    };
+
+    private static final MODE access_mode = MODE.WEBSITE_AJAX;
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        String filename, filesize;
-        if (use_api) {
+        final String linkid = getLinkID(link);
+        String filename, filesize, md5hash = null;
+        if (access_mode == MODE.API) {
             logger.info("Using API");
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            prepBRAjax(this.br);
             /* Call which is used inside folders to embed information of single filelinks */
-            br.getPage("http://www.opendrive.com/ajax/file-info/" + new Regex(link.getDownloadURL(), "([A-Za-z0-9\\-_]+)$").getMatch(0));
+            br.getPage("http://www.opendrive.com/ajax/file-info/" + linkid);
             br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
             if (!br.containsHTML("\"FileId\"")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             filename = getJson("Name");
             filesize = getJson("SizeOriginal");
-            if (filename == null || filesize == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if (access_mode == MODE.WEBSITE_AJAX) {
+            prepBRAjax(this.br);
+            br.getPage("https://web.opendrive.com/api/file/info.json/" + linkid);
+            if (br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            link.setDownloadSize(Long.parseLong(filesize));
+            filename = PluginJSonUtils.getJson(br, "Name");
+            filesize = PluginJSonUtils.getJson(br, "Size");
+            md5hash = PluginJSonUtils.getJson(br, "FileHash");
         } else {
+            /* access_mode == MODE.WEBSITE_HTML */
             logger.info("NOT using API");
-            br.getPage(link.getDownloadURL());
-            if (br.containsHTML(">File not found<|>or access limited<|List file info failed|File was not found")) {
+            br.getPage(link.getPluginPatternMatcher());
+            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">File not found<|>or access limited<|List file info failed|File was not found")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final Regex fInfo = br.getRegex("<h1 class=\"filename\">([^<>\"]*?)  \\((\\d+(\\.\\d+)? [A-Za-z]+)\\)</h1>");
@@ -102,34 +132,48 @@ public class OpenDriveCom extends PluginForHost {
                     filesize = br.getRegex("class=\"file_info size fl\"><b>Size:</b><span>([^<>\"]*?)</span></div>").getMatch(0);
                 }
             }
-            if (filename == null || filesize == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (StringUtils.isEmpty(filename)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (!StringUtils.isEmpty(filesize)) {
+            if (filesize.matches("\\d+")) {
+                link.setDownloadSize(Long.parseLong(filesize));
+            } else {
+                link.setDownloadSize(SizeFormatter.getSize(filesize));
             }
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         link.setName(Encoding.htmlDecode(filename.trim()));
+        if (!StringUtils.isEmpty(md5hash)) {
+            link.setMD5Hash(md5hash);
+        }
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         if (br.containsHTML("File is private and cannot be downloaded\">Download</a>")) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "File is private and cannot be downloaded");
+            throw new AccountRequiredException("File is private and cannot be downloaded");
         }
-        String dllink;
-        if (use_api) {
-            dllink = getJson("DirectLink");
-        } else {
-            dllink = br.getRegex("\"(https?://(www\\.)?([a-z0-9]+\\.)?opendrive\\.com/api/v\\d+/download/file\\.json/[^<>\"]+)\"").getMatch(0);
-            if (dllink == null) {
-                dllink = br.getRegex("<a class=\"[^\"]*download\" href=\"(http[^<>\"]*?|/download/[^\"]+)\"").getMatch(0);
+        String dllink = checkDirectLink(downloadLink, "directurl");
+        if (StringUtils.isEmpty(dllink)) {
+            if (access_mode == MODE.API) {
+                dllink = getJson("DirectLink");
+            } else if (access_mode == MODE.WEBSITE_AJAX) {
+                dllink = PluginJSonUtils.getJson(br, "DownloadLink");
+            } else {
+                /* access_mode == MODE.WEBSITE_HTML */
+                dllink = br.getRegex("\"(https?://[^/]+/api/v\\d+/download/file\\.json/[^<>\"]+)\"").getMatch(0);
                 if (dllink == null) {
-                    dllink = br.getRegex("\"(https?://(www\\.)?([a-z0-9]+\\.)?opendrive\\.com/files/[A-Za-z0-9\\-_]+/[^<>\"]*?)\"").getMatch(0);
+                    dllink = br.getRegex("<a class=\"[^\"]*download\" href=\"(http[^<>\"]*?|/download/[^\"]+)\"").getMatch(0);
+                    if (dllink == null) {
+                        dllink = br.getRegex("\"(https?://(www\\.)?([a-z0-9]+\\.)?(?:opendrive\\.com|od\\.lk)/files/[A-Za-z0-9\\-_]+/[^<>\"]*?)\"").getMatch(0);
+                    }
                 }
             }
         }
-        if (dllink == null) {
+        if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
@@ -137,36 +181,24 @@ public class OpenDriveCom extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if ("limit_exceeded.jpg".equals(getFileNameFromHeader(dl.getConnection()))) {
+        if ("limit_exceeded.jpg".equalsIgnoreCase(getFileNameFromHeader(dl.getConnection()))) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Limit exeeded");
         }
+        downloadLink.setProperty("directurl", dl.getConnection().getURL().toString());
         dl.startDownload();
     }
 
-    private static final String MAINPAGE = "http://opendrive.com";
+    private static final String MAINPAGE = "https://opendrive.com";
     private static Object       LOCK     = new Object();
 
-    @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
-                // Load cookies
                 br.setCookiesExclusive(true);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            this.br.setCookie(MAINPAGE, key, value);
-                        }
-                        return;
-                    }
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null && !force) {
+                    br.setCookies(this.getHost(), cookies);
+                    return;
                 }
                 this.br.setFollowRedirects(true);
                 this.br.getPage("https://www.opendrive.com/login");
@@ -197,16 +229,9 @@ public class OpenDriveCom extends PluginForHost {
                     }
                     Thread.sleep(3 * 1000);
                 }
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(MAINPAGE);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.saveCookies(this.br.getCookies(MAINPAGE), "");
             } catch (final PluginException e) {
+                account.clearCookies("");
                 account.setProperty("cookies", Property.NULL);
                 throw e;
             }
@@ -241,7 +266,7 @@ public class OpenDriveCom extends PluginForHost {
         requestFileInformation(link);
         login(account, false);
         br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         final String dllink = br.getRegex("<a class=\"download\" href=\"(https://[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
@@ -254,6 +279,34 @@ public class OpenDriveCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    /**
+     * Check if a stored directlink exists under property 'property' and if so, check if it is still valid (leads to a downloadable content
+     * [NOT html]).
+     */
+    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
+        String dllink = downloadLink.getStringProperty(property);
+        if (dllink != null) {
+            URLConnectionAdapter con = null;
+            try {
+                final Browser br2 = br.cloneBrowser();
+                con = br2.openHeadConnection(dllink);
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                    downloadLink.setProperty(property, Property.NULL);
+                    dllink = null;
+                }
+            } catch (final Exception e) {
+                downloadLink.setProperty(property, Property.NULL);
+                dllink = null;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+        }
+        return dllink;
     }
 
     private String getJson(final String parameter) {
@@ -280,6 +333,11 @@ public class OpenDriveCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
+    }
+
+    @Override
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        return false;
     }
 
     @Override
