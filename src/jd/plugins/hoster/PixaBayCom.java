@@ -20,6 +20,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -38,9 +41,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pixabay.com" }, urls = { "https?://(www\\.)?pixabay\\.com/en/[a-z0-9\\-]+\\-\\d+/" })
 public class PixaBayCom extends PluginForHost {
@@ -82,55 +82,58 @@ public class PixaBayCom extends PluginForHost {
             this.login(aa, false);
         }
         br.getPage(link.getDownloadURL());
-        if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.getURL().contains("?")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("?")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>Free photo: ([^<>]*?)</title>").getMatch(0);
+        String filename = br.getRegex("<title>(?:Free photo: )?([^<>]*?)(?:· Free vector graphic on Pixabay)?</title>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>([^<>]*?)</title>").getMatch(0);
         }
         /* Find filesize based on whether user has an account or not. */
         String filesize = null;
-        boolean done = false;
-        final String[] qualityInfo = br.getRegex("(<td><input type=\"radio\" name=\"download\".*?/td></tr>)").getColumn(0);
-        for (final String possiblequality : qualities) {
-            for (final String quality : qualityInfo) {
-                // logger.info("quality: " + quality);
-                final String quality_name = new Regex(quality, "(ORIGINAL|O|S|M|L|XXL|XL|SVG)</td>").getMatch(0);
-                if (quality_name == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (aa != null) {
+            boolean done = false;
+            final String[] qualityInfo = br.getRegex("(<td><input type=\"radio\" name=\"download\".*?/td></tr>)").getColumn(0);
+            for (final String possiblequality : qualities) {
+                for (final String quality : qualityInfo) {
+                    // logger.info("quality: " + quality);
+                    final String quality_name = new Regex(quality, "(ORIGINAL|O|S|M|L|XXL|XL|SVG)</td>").getMatch(0);
+                    if (quality_name == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    final boolean accountQualityPossible = aa != null && (quality_name.equalsIgnoreCase("XXL") || quality_name.equalsIgnoreCase("XL") || quality_name.equalsIgnoreCase("O") || quality_name.equalsIgnoreCase("Original"));
+                    final boolean isNoAccountQuality = !quality_name.equalsIgnoreCase("XXL") && !quality_name.equalsIgnoreCase("XL") && !quality_name.equalsIgnoreCase("O") && !quality_name.equalsIgnoreCase("Original");
+                    if (quality_name.equals(possiblequality) && (accountQualityPossible || isNoAccountQuality)) {
+                        done = true;
+                        filesize = new Regex(quality, "class=\"hide-xs hide-md\">([^<>\"]*?)<").getMatch(0);
+                        if (filesize == null) {
+                            filesize = new Regex(quality, ">(\\d+(?:\\.\\d+)? (?:kB|mB|gB))<").getMatch(0);
+                        }
+                        quality_max = new Regex(quality, ">(\\d+)\\s*(?:×|x)\\s*\\d+<").getMatch(0);
+                        quality_download_id = new Regex(quality, "([^<>\"/]*?\\.jpg)").getMatch(0);
+                        if (quality_download_id == null) {
+                            quality_download_id = new Regex(quality, "name=\"download\" value=\"([^<>\"]*?)\"").getMatch(0);
+                        }
+                        break;
+                    }
                 }
-                final boolean accountQualityPossible = aa != null && (quality_name.equalsIgnoreCase("XXL") || quality_name.equalsIgnoreCase("XL") || quality_name.equalsIgnoreCase("O") || quality_name.equalsIgnoreCase("Original"));
-                final boolean isNoAccountQuality = !quality_name.equalsIgnoreCase("XXL") && !quality_name.equalsIgnoreCase("XL") && !quality_name.equalsIgnoreCase("O") && !quality_name.equalsIgnoreCase("Original");
-                if (quality_name.equals(possiblequality) && (accountQualityPossible || isNoAccountQuality)) {
-                    done = true;
-                    filesize = new Regex(quality, "class=\"hide-xs hide-md\">([^<>\"]*?)<").getMatch(0);
-                    if (filesize == null) {
-                        filesize = new Regex(quality, ">(\\d+(?:\\.\\d+)? (?:kB|mB|gB))<").getMatch(0);
-                    }
-                    quality_max = new Regex(quality, ">(\\d+)\\s*(?:×|x)\\s*\\d+<").getMatch(0);
-                    quality_download_id = new Regex(quality, "([^<>\"/]*?\\.jpg)").getMatch(0);
-                    if (quality_download_id == null) {
-                        quality_download_id = new Regex(quality, "name=\"download\" value=\"([^<>\"]*?)\"").getMatch(0);
-                    }
+                if (done) {
                     break;
                 }
             }
-            if (done) {
-                break;
-            }
         }
-        if (filesize == null || quality_download_id == null) {
+        if (filesize == null || quality_download_id == null) { // No account
             String dllink = br.getRegex("(https://cdn[^<>\"\\s]+) 1.333x").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("(https://cdn[^<>\"\\s]+) 1x").getMatch(0);
             }
             if (dllink != null) {
+                String ext = new Regex(dllink, "(\\.[a-z]+)$").getMatch(0);
                 link.setProperty("free_directlink", dllink);
                 filename = Encoding.htmlDecode(filename.trim());
-                filename = encodeUnicode(filename) + ".jpg";
+                filename = encodeUnicode(filename) + ext;
                 link.setFinalFileName(filename);
-                return AvailableStatus.TRUE;
+                return AvailableStatus.TRUE; // <=== No account
             }
         }
         if (filename == null || filesize == null || quality_download_id == null) {
@@ -320,7 +323,9 @@ public class PixaBayCom extends PluginForHost {
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             } else if (this.br.containsHTML("\"fdiv_recaptcha\"|google\\.com/recaptcha/help")) {
-                /* If a user downloads too much, he might get asked to enter captchas in premium mode --> Wait to get around this problem. */
+                /*
+                 * If a user downloads too much, he might get asked to enter captchas in premium mode --> Wait to get around this problem.
+                 */
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Captcha needed - wait some time until you can download again", 10 * 60 * 1000l);
             }
             br.followConnection();
