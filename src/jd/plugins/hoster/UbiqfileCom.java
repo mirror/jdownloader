@@ -100,7 +100,7 @@ public class UbiqfileCom extends antiDDoSForHost {
      * the Form.
      */
     private final boolean        SUPPORTS_AVAILABLECHECK_ALT_FAST   = true;
-    private final boolean        SUPPORTS_AVAILABLECHECK_ABUSE      = true;
+    private final boolean        SUPPORTS_AVAILABLECHECK_ABUSE      = false;
     /*
      * Scan in html code for filesize? Disable this if a website either does not contain any filesize information in its html or it only
      * contains misleading information such as fake texts.
@@ -242,14 +242,19 @@ public class UbiqfileCom extends antiDDoSForHost {
         }
         scanInfo(fileInfo);
         /* Filename abbreviated over x chars long --> Use getFnameViaAbuseLink as a workaround to find the full-length filename! */
-        if (!inValidate(fileInfo[0]) && fileInfo[0].trim().endsWith("&#133;") && SUPPORTS_AVAILABLECHECK_ABUSE) {
-            logger.warning("filename length is larrrge");
-            fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
-        } else if (inValidate(fileInfo[0]) && SUPPORTS_AVAILABLECHECK_ABUSE) {
-            /* We failed to find the filename via html --> Try getFnameViaAbuseLink */
-            logger.info("Failed to find filename, trying getFnameViaAbuseLink");
-            fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
-        }
+        if (!inValidate(fileInfo[0]) && fileInfo[0].trim().endsWith("&#133;")) {
+            final String meta = br.getRegex("<meta name=\"?description\"?\\s*content=\"Download File\\s*(.*?)\">").getMatch(0);
+            if (meta != null) {
+                fileInfo[0] = meta.replace(" ", ".");
+            }
+        } else if (!inValidate(fileInfo[0]) && fileInfo[0].trim().endsWith("&#133;") && SUPPORTS_AVAILABLECHECK_ABUSE) {
+                logger.warning("filename length is larrrge");
+                fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
+            } else if (inValidate(fileInfo[0]) && SUPPORTS_AVAILABLECHECK_ABUSE) {
+                /* We failed to find the filename via html --> Try getFnameViaAbuseLink */
+                logger.info("Failed to find filename, trying getFnameViaAbuseLink");
+                fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
+            }
         if (inValidate(fileInfo[0]) && IMAGEHOSTER) {
             /*
              * Imagehosts often do not show any filenames, at least not on the first page plus they often have their abuse-url disabled. Add
@@ -332,6 +337,9 @@ public class UbiqfileCom extends antiDDoSForHost {
         }
         if (inValidate(fileInfo[0])) {
             fileInfo[0] = new Regex(correctedBR, "class=\"paneld\">([^<>]*?)\\[[^<>]*?(K|M|G)?B\\]<").getMatch(0);
+            if (SUPPORTS_HTML_FILESIZE_CHECK) {
+                fileInfo[1] = new Regex(correctedBR, "class=\"paneld\">[^<>]*?\\[([^<>]*?(K|M|G)?B)\\]<").getMatch(0);
+            }
         }
         if (SUPPORTS_HTML_FILESIZE_CHECK) {
             if (inValidate(fileInfo[1])) {

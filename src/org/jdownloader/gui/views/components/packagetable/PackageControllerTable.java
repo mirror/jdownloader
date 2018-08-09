@@ -388,10 +388,17 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         } else {
             final ArrayList<AbstractNode> toSelect = new ArrayList<AbstractNode>();
             final SelectionInfo<ParentType, ChildrenType> selection = getSelectionInfo(true, true);
+            final PackageControllerTableModelData<ParentType, ChildrenType> tableData = tableModel.getTableData();
             for (final PackageView<ParentType, ChildrenType> packageView : selection.getPackageViews()) {
-                toSelect.add(packageView.getPackage());
+                List<AbstractNode> visibleChildren = null;
                 if (packageView.isExpanded()) {
-                    toSelect.addAll(((SelectionOnlyPackageView) packageView).getVisibleChildren());
+                    visibleChildren = ((SelectionOnlyPackageView) packageView).getVisibleChildren();
+                }
+                if (!tableData.isHideSingleChildPackages() || (visibleChildren != null && (visibleChildren.size() > 1 || (visibleChildren.size() == 1 && !tableData.isHiddenPackageSingleChildIndex(tableData.getRowforObject(packageView.getPackage(), tableModel.getController())))))) {
+                    toSelect.add(packageView.getPackage());
+                }
+                if (visibleChildren != null) {
+                    toSelect.addAll(visibleChildren);
                 }
             }
             final boolean selectall = selection.getRawSelection().size() == toSelect.size();

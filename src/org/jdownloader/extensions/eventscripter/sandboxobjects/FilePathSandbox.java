@@ -111,7 +111,12 @@ public class FilePathSandbox {
         if (file == null) {
             return null;
         } else {
-            return new LinkInfoSandbox(LinkInfo.getLinkInfo(file));
+            final LinkInfo info = LinkInfo.getLinkInfo(file);
+            if (info != null) {
+                return new LinkInfoSandbox(info);
+            } else {
+                return null;
+            }
         }
     }
 

@@ -17,9 +17,7 @@ import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
 
 public abstract class AbstractBrowserSolver extends ChallengeSolver<String> {
-
     protected final BrowserCaptchaSolverConfig config;
-
     private volatile BrowserDialogHandler      handler;
 
     public AbstractBrowserSolver(int i) {
@@ -53,7 +51,6 @@ public abstract class AbstractBrowserSolver extends ChallengeSolver<String> {
                 break;
             case DISABLE_DIALOG_SOLVER:
                 job.getEventSender().addListener(new ChallengeSolverJobListener() {
-
                     @Override
                     public void onSolverTimedOut(ChallengeSolver<?> parameter) {
                     }
@@ -97,7 +94,6 @@ public abstract class AbstractBrowserSolver extends ChallengeSolver<String> {
                 // we do not need another queue
                 handler = new BrowserDialogHandler(captchaChallenge);
                 job.getEventSender().addListener(jacListener = new ChallengeSolverJobListener() {
-
                     @Override
                     public void onSolverTimedOut(ChallengeSolver<?> parameter) {
                     }
@@ -108,19 +104,20 @@ public abstract class AbstractBrowserSolver extends ChallengeSolver<String> {
 
                     @Override
                     public void onSolverJobReceivedNewResponse(AbstractResponse<?> response) {
-                        ResponseList<String> resp = job.getResponse();
-                        handler.setSuggest(resp.getValue());
-                        job.getLogger().info("Received Suggestion: " + resp);
-
+                        final ResponseList<String> resp = job.getResponse();
+                        final BrowserDialogHandler hndlr = handler;
+                        if (hndlr != null && resp != null) {
+                            hndlr.setSuggest(resp.getValue());
+                            job.getLogger().info("Received Suggestion: " + resp);
+                        }
                     }
 
                     @Override
                     public void onSolverDone(ChallengeSolver<?> solver) {
-
                     }
                 });
                 try {
-                    ResponseList<String> resp = job.getResponse();
+                    final ResponseList<String> resp = job.getResponse();
                     if (resp != null) {
                         handler.setSuggest(resp.getValue());
                     }

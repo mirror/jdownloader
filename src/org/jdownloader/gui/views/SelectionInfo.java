@@ -28,9 +28,7 @@ import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.controlling.UniqueAlltimeID;
 
 public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> {
-
     public static class PluginView<ChildrenType> extends ArrayList<ChildrenType> {
-
         private final PluginForHost plugin;
 
         public PluginView(PluginForHost pkg) {
@@ -44,11 +42,9 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
         public PluginForHost getPlugin() {
             return plugin;
         }
-
     };
 
     public static interface PackageView<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> {
-
         public List<ChildrenType> getChildren();
 
         public PackageType getPackage();
@@ -119,7 +115,6 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     protected void aggregate(Queue queue) {
         if (queue != null) {
             queue.addWait(new QueueAction<Void, RuntimeException>(QueuePriority.HIGH) {
-
                 @Override
                 protected Void run() throws RuntimeException {
                     aggregate();
@@ -182,7 +177,6 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
             }
         }
         final Comparator<IndexedContainer<? extends AbstractNode>> uniqueCmp = new Comparator<IndexedContainer<? extends AbstractNode>>() {
-
             public int compare(long x, long y) {
                 return (x < y) ? -1 : ((x == y) ? 0 : 1);
             }
@@ -192,7 +186,6 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
                 return compare(o1.getObject().getUniqueID().getID(), o2.getObject().getUniqueID().getID());
             }
         };
-
         final Comparator<IndexedContainer<?>> indexCmp = new Comparator<IndexedContainer<?>>() {
             public int compare(long x, long y) {
                 return (x < y) ? -1 : ((x == y) ? 0 : 1);
@@ -202,7 +195,6 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
             public int compare(IndexedContainer<?> o1, IndexedContainer<?> o2) {
                 return compare(o1.getIndex(), o2.getIndex());
             }
-
         };
         /**
          * sort packages by uuid
@@ -236,12 +228,10 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
         }
         children.clear();
         children = null;
-
         /**
          * sort selectedChildren into correct order
          */
         Collections.sort(selectedChildren, indexCmp);
-
         /**
          * sort children by package uuid
          */
@@ -254,13 +244,11 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
             public int compare(IndexedContainer<ChildrenType> o1, IndexedContainer<ChildrenType> o2) {
                 return compare(o1.getObject().getParentNode().getUniqueID().getID(), o2.getObject().getParentNode().getUniqueID().getID());
             }
-
         });
         lastPackage = null;
         int index = 0;
         final ArrayList<IndexedContainer<PackageView<PackageType, ChildrenType>>> fillPackages = new ArrayList<IndexedContainer<PackageView<PackageType, ChildrenType>>>();
         final ArrayList<ChildrenType> fillChildren = new ArrayList<ChildrenType>();
-
         int packageIndex = 0;
         for (final IndexedContainer<ChildrenType> child : selectedChildren) {
             if (lastPackage == null) {
@@ -275,7 +263,6 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
                 final boolean isExpanded = lastPackage.isExpanded();
                 final PackageType pkg = lastPackage;
                 PackageView<PackageType, ChildrenType> packageView = new PackageView<PackageType, ChildrenType>() {
-
                     @Override
                     public boolean isPackageSelected() {
                         return isPackageSelected;
@@ -317,7 +304,6 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
             final boolean isExpanded = lastPackage.isExpanded();
             final PackageType pkg = lastPackage;
             PackageView<PackageType, ChildrenType> packageView = new PackageView<PackageType, ChildrenType>() {
-
                 @Override
                 public boolean isPackageSelected() {
                     return isPackageSelected;
@@ -359,7 +345,6 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
                     pkgO.getModifyLock().readUnlock(readL);
                 }
                 PackageView<PackageType, ChildrenType> packageView = new PackageView<PackageType, ChildrenType>() {
-
                     @Override
                     public boolean isPackageSelected() {
                         return true;
@@ -388,12 +373,10 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
                 fillPackages.add(new IndexedContainer<PackageView<PackageType, ChildrenType>>(packageView, pkg.getIndex()));
             }
         }
-
         /**
          * sort PackageViews into correct order
          */
         Collections.sort(fillPackages, indexCmp);
-
         /**
          * fill PackageViews in correct order into this SelectionInfo
          */
@@ -415,7 +398,6 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
             PackageView<PackageType, ChildrenType> packageView;
             if (fillPackageView.getSelectedChildren().size() == 0) {
                 packageView = new PackageView<PackageType, ChildrenType>() {
-
                     @Override
                     public boolean isPackageSelected() {
                         return selected;
@@ -443,7 +425,6 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
                 };
             } else {
                 packageView = new PackageView<PackageType, ChildrenType>() {
-
                     @Override
                     public boolean isPackageSelected() {
                         return selected;
@@ -717,5 +698,4 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     public PackageView<PackageType, ChildrenType> getPackageView(PackageType entry) {
         return getPackageViewsMap().get(entry);
     }
-
 }
