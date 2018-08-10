@@ -42,11 +42,9 @@ public class PornsexwankCom extends PornEmbedParser {
             return decryptedLinks;
         }
         final String filename = getTitle(br);
-        if (br.containsHTML("Z5L4S4T4J4G46454S2J5G4R5")) { // Video link that shows error
-            decryptedLinks.add(createOfflinelink(parameter));
-            return decryptedLinks;
+        if (!br.containsHTML("pornsexwank.com/embed/")) {
+            decryptedLinks.addAll(findEmbedUrls(filename));
         }
-        decryptedLinks.addAll(findEmbedUrls(filename));
         if (decryptedLinks.size() == 0) {
             /* No external URL found? Video must be hosted on their own servers! */
             decryptedLinks.add(createDownloadlink(parameter.replaceAll("https?://", "pornsexwankdecrypted://")));

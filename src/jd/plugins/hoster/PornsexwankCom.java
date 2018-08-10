@@ -29,7 +29,6 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornsexwank.com" }, urls = { "pornsexwankdecrypted://.+" })
 public class PornsexwankCom extends PluginForHost {
-
     public PornsexwankCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -107,7 +106,11 @@ public class PornsexwankCom extends PluginForHost {
                     link.setDownloadSize(con.getLongContentLength());
                     link.setProperty("directlink", dllink);
                 } else {
-                    server_issues = true;
+                    if (con.getResponseCode() == 404) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    } else {
+                        server_issues = true;
+                    }
                 }
             } finally {
                 try {
