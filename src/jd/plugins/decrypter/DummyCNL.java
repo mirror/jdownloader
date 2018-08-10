@@ -78,29 +78,32 @@ public class DummyCNL extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        String hex = new Regex(parameter, "http://dummycnl\\.jdownloader\\.org/([a-f0-9A-F]+)").getMatch(0);
-        HashMap<String, String> params = JSonStorage.restoreFromString(new String(HexFormatter.hexToByteArray(hex), "UTF-8"), new TypeRef<HashMap<String, String>>() {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String parameter = param.toString();
+        final String hex = new Regex(parameter, "https?://dummycnl\\.jdownloader\\.org/([a-f0-9A-F]+)").getMatch(0);
+        final HashMap<String, String> params = JSonStorage.restoreFromString(new String(HexFormatter.hexToByteArray(hex), "UTF-8"), new TypeRef<HashMap<String, String>>() {
         }, null);
-        String crypted = params.get("crypted");
+        final String crypted = params.get("crypted");
         if (crypted == null || crypted.trim().length() == 0) {
             return decryptedLinks;
         }
-        String decrypted = decrypt(crypted, params.get("jk"), params.get("k"));
+        final String decrypted = decrypt(crypted, params.get("jk"), params.get("k"));
         if (decrypted != null) {
             // we want to format all protocols not just common ones.. otherwise this will be a pain in the ass to maintain.
             decrypted.replaceAll(" ((?:[a-z]+)://)", "\r\n$1");
         }
-        String source = params.get("source");
-        String packageName = params.get("package");
-        FilePackage fp = null;
+        final String source = params.get("source");
+        final String packageName = params.get("package");
+        final FilePackage fp;
+        ;
         if (packageName != null) {
             fp = FilePackage.getInstance();
             fp.setProperty("ALLOW_MERGE", true);
             fp.setName(packageName);
+        } else {
+            fp = null;
         }
-        for (String s : Regex.getLines(decrypted)) {
+        for (final String s : Regex.getLines(decrypted)) {
             final DownloadLink dl = createDownloadlink(s);
             // respect the source url as container url assuming another plugin hasn't set this field.
             if (source != null && dl.getContainerUrl() == null) {
@@ -120,7 +123,7 @@ public class DummyCNL extends PluginForDecrypt {
     }
 
     /* decrypt given crypted string with js encrypted aes key */
-    public static String decrypt(String crypted, final String jk, String k) throws Exception {
+    private String decrypt(String crypted, final String jk, String k) throws Exception {
         byte[] key = null;
         if (jk != null) {
             try {
@@ -168,7 +171,7 @@ public class DummyCNL extends PluginForDecrypt {
         }
     }
 
-    public static String decrypt(byte[] b, byte[] key) {
+    private String decrypt(byte[] b, byte[] key) {
         try {
             final IvParameterSpec ivSpec = new IvParameterSpec(key);
             final SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
@@ -179,16 +182,6 @@ public class DummyCNL extends PluginForDecrypt {
             LoggerFactory.I().getDefaultLogger().log(e);
         }
         return null;
-    }
-
-    /* NOTE: no override to keep compatible to old stable */
-    public int getMaxConcurrentProcessingInstances() {
-        return 10;
-    }
-
-    /* NO OVERRIDE!! */
-    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
-        return false;
     }
 
     @Override
