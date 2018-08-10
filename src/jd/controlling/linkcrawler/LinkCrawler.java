@@ -3531,7 +3531,7 @@ public class LinkCrawler {
         final boolean isSupportedProtocol = HTMLParser.isSupportedProtocol(cUrl);
         if (isSupportedProtocol) {
             final String host = Browser.getHost(cUrl, true);
-            if (!StringUtils.containsIgnoreCase(host, "decrypted") && !StringUtils.containsIgnoreCase(host, "dummycnl.jdownloader.org") && !StringUtils.containsIgnoreCase(host, "yt.not.allowed")) {
+            if (!StringUtils.containsIgnoreCase(host, "decrypted") && !StringUtils.containsIgnoreCase(host, "dummydirect.jdownloader.org") && !StringUtils.containsIgnoreCase(host, "dummycnl.jdownloader.org") && !StringUtils.containsIgnoreCase(host, "yt.not.allowed")) {
                 if (cUrl.startsWith("http://") || cUrl.startsWith("https://") || cUrl.startsWith("ftp://") || cUrl.startsWith("file:/")) {
                     return cUrl;
                 } else if (cUrl.startsWith("directhttp://")) {
