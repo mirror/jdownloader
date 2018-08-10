@@ -710,12 +710,13 @@ public class JDGui implements UpdaterListener, OwnerFinder {
             @Override
             public void run() {
                 try {
-                    new EDTRunner() {
+                    new EDTHelper<Void>() {
                         @Override
-                        protected void runInEDT() {
+                        public Void edtRun() {
                             internalInitLocationAndDimension(mainFrame, logger, JsonConfig.create(GraphicalUserInterfaceSettings.class).getLastFrameStatus(), tray == null || !tray.getSettings().isEnabled() || !tray.getSettings().isStartMinimizedEnabled(), true);
+                            return null;
                         }
-                    };
+                    }.waitForEDT();
                 } finally {
                     initThread = null;
                 }

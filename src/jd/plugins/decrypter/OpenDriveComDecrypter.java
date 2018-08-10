@@ -18,9 +18,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -29,8 +26,13 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "opendrive.com" }, urls = { "https?://(?:www\\.)?opendrive\\.com/folders\\?[A-Za-z0-9]+|https?://od\\.lk/(?:fl|s)/[A-Za-z0-9]+(?:\\?folderpath=[a-zA-Z0-9_/\\+\\=\\-%]+)?" })
 public class OpenDriveComDecrypter extends PluginForDecrypt {
@@ -43,7 +45,7 @@ public class OpenDriveComDecrypter extends PluginForDecrypt {
         final String parameter = param.toString().replace("http://", "https://");
         final String folderid = new Regex(parameter, "([A-Za-z0-9\\-_]+)(\\?folderpath=.+)?$").getMatch(0);
         this.br.setFollowRedirects(true);
-        br.getPage(String.format("https://od.lk/fl/%s", folderid));
+        br.getPage("https://od.lk/fl/" + folderid);
         if (br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404) {
             final DownloadLink offline = this.createOfflinelink(parameter);
             offline.setFinalFileName("folder_offline_" + folderid);
@@ -51,6 +53,9 @@ public class OpenDriveComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         final String csrftoken = br.getRegex("data\\-csrftoken=\"([^<>\"]+)\"").getMatch(0);
+        if (csrftoken == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         jd.plugins.hoster.OpenDriveCom.prepBRAjax(this.br);
         br.getHeaders().put("Origin", "https://od.lk");
         br.getHeaders().put("X-Ajax-CSRF-Token", csrftoken);

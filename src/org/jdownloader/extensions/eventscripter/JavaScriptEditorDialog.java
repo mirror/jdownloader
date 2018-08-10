@@ -13,6 +13,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JToolBar;
 
 import jd.gui.swing.jdgui.views.settings.components.Checkbox;
+import jsyntaxpane.syntaxkits.JavaSyntaxKit;
 import net.sourceforge.htmlunit.corejs.javascript.Context;
 import net.sourceforge.htmlunit.corejs.javascript.Script;
 import net.sourceforge.htmlunit.corejs.javascript.ScriptableObject;
@@ -93,6 +94,8 @@ public class JavaScriptEditorDialog extends AbstractDialog<Object> {
             settingsPanel.addPair(T.T.synchronous(), null, checkBox);
         }
         final JEditorPane defaults = new JEditorPane();
+        final JavaSyntaxKit javaSyntaxKit = new JavaSyntaxKit();
+        defaults.setEditorKit(javaSyntaxKit);
         // defaults.setFocusable(false);
         p.add(apiScrollbar = new JScrollPane(defaults) {
             @Override
@@ -109,6 +112,7 @@ public class JavaScriptEditorDialog extends AbstractDialog<Object> {
         defaults.setFont(font);// setContentType changes Font
         defaults.setText(ScriptEnvironment.getAPIDescription(entry.getEventTrigger().getAPIClasses()) + "\r\n" + entry.getEventTrigger().getAPIDescription());
         editor = new JEditorPane();
+        editor.setEditorKit(javaSyntaxKit);
         p.add(scrollpane = new JScrollPane(editor) {
             @Override
             public Dimension getPreferredSize() {
