@@ -52,7 +52,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "disk.yandex.net", "video.yandex.ru", "yadi.sk" }, urls = { "http://yandexdecrypted\\.net/\\d+", "http://video\\.yandex\\.ru/(iframe/[A-Za-z0-9]+/[A-Za-z0-9]+\\.\\d+|users/[A-Za-z0-9]+/view/\\d+)", "https://yadi\\.sk/a/[A-Za-z0-9]+/[a-f0-9]{24}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "disk.yandex.net", "video.yandex.ru", "yadi.sk" }, urls = { "http://yandexdecrypted\\.net/\\d+", "http://video\\.yandex\\.ru/(iframe/[A-Za-z0-9]+/[A-Za-z0-9]+\\.\\d+|users/[A-Za-z0-9]+/view/\\d+)", "https://yadi\\.sk/a/[A-Za-z0-9\\-_]+/[a-f0-9]{24}" })
 public class DiskYandexNet extends PluginForHost {
     public DiskYandexNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -95,8 +95,10 @@ public class DiskYandexNet extends PluginForHost {
     private static final String   TYPE_VIDEO                         = "https?://video\\.yandex\\.ru/(iframe/[A-Za-z0-9]+/[A-Za-z0-9]+\\.\\d+|users/[A-Za-z0-9]+/view/\\d+)";
     private static final String   TYPE_VIDEO_USER                    = "https?://video\\.yandex\\.ru/users/[A-Za-z0-9]+/view/\\d+";
     private static final String   TYPE_DISK                          = "https?://yandexdecrypted\\.net/\\d+";
-    private static final String   TYPE_ALBUM                         = "https://yadi\\.sk/a/[A-Za-z0-9]+/[a-f0-9]{24}";
+    private static final String   TYPE_ALBUM                         = "https://yadi\\.sk/a/.+";
     private static final String   ACCOUNTONLYTEXT                    = "class=\"nb-panel__warning aside\\-public__warning\\-speed\"|>File download limit exceeded";
+    /* Properties */
+    public static final String    PROPERTY_HASH                      = "hash_main";
     private Account               currAcc                            = null;
     private String                currHash                           = null;
     private String                currPath                           = null;
@@ -189,6 +191,13 @@ public class DiskYandexNet extends PluginForHost {
             if (jd.plugins.decrypter.DiskYandexNetFolder.isOffline(this.br)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            if (StringUtils.isEmpty(this.getHash(link))) {
+                /* For urls which have not been added via crawler, this value is not set but we might need it later. */
+                final String hash_long = jd.plugins.hoster.DiskYandexNet.getHashLongFromHTML(this.br);
+                if (!StringUtils.isEmpty(hash_long)) {
+                    setHash(link, hash_long);
+                }
+            }
             /* Find json object for current link ... */
             final ArrayList<Object> modelObjects = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(jd.plugins.decrypter.DiskYandexNetFolder.regExJSON(this.br));
             LinkedHashMap<String, Object> entries = jd.plugins.decrypter.DiskYandexNetFolder.findModel(modelObjects, "resources");
@@ -197,7 +206,7 @@ public class DiskYandexNet extends PluginForHost {
             }
             final ArrayList<Object> mediaObjects = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "data/resources");
             boolean foundObject = false;
-            final String item_id = new Regex(link.getPluginPatternMatcher(), "([a-f0-9]+)$").getMatch(0);
+            final String item_id = this.albumGetID(link);
             for (final Object mediao : mediaObjects) {
                 entries = (LinkedHashMap<String, Object>) mediao;
                 final String item_id_current = (String) entries.get("item_id");
@@ -206,14 +215,13 @@ public class DiskYandexNet extends PluginForHost {
                     break;
                 }
             }
-            /** TODO: Fix this! */
-            // if (!foundObject) {
-            // /* Hmm maybe offline ... */
-            // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            // }
-            // /* Parse- and set info */
-            // return parseInformationAPIAvailablecheckAlbum(this, link, entries);
-            return AvailableStatus.TRUE;
+            if (foundObject) {
+                /* Great - we found our object and can display filename information. */
+                return parseInformationAPIAvailablecheckAlbum(this, link, entries);
+            } else {
+                /* We failed to find the details but a download should be possible nontheless! */
+                return AvailableStatus.TRUE;
+            }
         } else {
             if (this.currHash == null || this.currPath == null) {
                 /* Errorhandling for old urls */
@@ -530,18 +538,43 @@ public class DiskYandexNet extends PluginForHost {
     }
 
     /** Download single album objects (photo/video) */
-    private void handleDownloadAlbum(final DownloadLink downloadLink) throws Exception {
-        final String dllink = downloadLink.getStringProperty("directurl");
+    private void handleDownloadAlbum(final DownloadLink link) throws Exception {
+        String dllink = checkDirectLink(link, "directurl");
+        if (StringUtils.isEmpty(dllink)) {
+            final String id0 = albumGetID0(link);
+            final String clientID = albumGetIdClient();
+            /* Rare case - probably the user tries to download a video. */
+            String sk = jd.plugins.hoster.DiskYandexNet.getSK(this.br);
+            if (StringUtils.isEmpty(sk)) {
+                /** TODO: Maybe keep SK throughout sessions to save that one request ... */
+                logger.info("Getting new SK value ...");
+                sk = jd.plugins.hoster.DiskYandexNet.getNewSK(this.br, "disk.yandex.ru", br.getURL());
+            }
+            if (StringUtils.isEmpty(sk) || id0 == null) {
+                logger.warning("Failed to get SK value");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.postPage("https://disk.yandex.ru/album-models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=" + Encoding.urlEncode(id0) + "&idClient=" + clientID + "&version=" + jd.plugins.hoster.DiskYandexNet.VERSION_YANDEX_PHOTO_ALBUMS + "&sk=" + sk);
+            dllink = PluginJSonUtils.getJson(br, "file");
+            if (!StringUtils.isEmpty(dllink) && dllink.startsWith("//")) {
+                dllink = "http:" + dllink;
+            } else if (!dllink.startsWith("http")) {
+                /* This should never happen! */
+                logger.info("WTF bad downloadlink");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* More than 1 chunk is not necessary */
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
-            handleServerErrors(downloadLink);
+            handleServerErrors(link);
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        link.setProperty("directurl", dl.getConnection().getURL().toString());
         dl.startDownload();
     }
 
@@ -570,8 +603,12 @@ public class DiskYandexNet extends PluginForHost {
         return String.format("undefined", System.currentTimeMillis());
     }
 
+    public static void setHash(final DownloadLink dl, final String hash_long) {
+        dl.setProperty(PROPERTY_HASH, hash_long);
+    }
+
     private String getHash(final DownloadLink dl) {
-        final String hash = dl.getStringProperty("hash_main", null);
+        final String hash = dl.getStringProperty(PROPERTY_HASH, null);
         return hash;
     }
 
@@ -647,7 +684,7 @@ public class DiskYandexNet extends PluginForHost {
                     loginform.put("login", Encoding.urlEncode(account.getUser()));
                     loginform.put("passwd", Encoding.urlEncode(account.getPass()));
                     if (br.containsHTML("\\&quot;captchaRequired\\&quot;:true")) {
-                        /** TODO: Fix captcha support */
+                        /** TODO: 2018-08-10: Fix captcha support */
                         /* 2018-04-18: Only required after 10 bad login attempts or bad IP */
                         requiresCaptcha = true;
                         final String csrf_token = loginform.hasInputFieldByName("csrf_token") ? loginform.getInputField("csrf_token").getValue() : null;
@@ -773,7 +810,6 @@ public class DiskYandexNet extends PluginForHost {
                         br.getHeaders().put("Content-Type", "text/plain");
                         postPageRaw("https://disk.yandex.com/public-api-desktop/save", Encoding.urlEncode(String.format("{\"hash\":\"%s\",\"name\":\"%s\",\"lang\":\"en\",\"source\":\"public_web_copy\",\"sk\":\"%s\",\"uid\":\"%s\"}", this.currHash, link.getName(), this.ACCOUNT_SK, userID)));
                         internal_file_path = PluginJSonUtils.getJson(br, "path");
-                        /* TODO: Maybe add/find a way to verify if the file really has been moved to the account. */
                         if (br.containsHTML("\"code\":85")) {
                             logger.info("MoveFileIntoAccount: failed to move file to account: No free space available");
                             throw new PluginException(LinkStatus.ERROR_FATAL, "No free space available, failed to move file to account");
@@ -1046,7 +1082,7 @@ public class DiskYandexNet extends PluginForHost {
         return ACCOUNT_FREE_MAXDOWNLOADS;
     }
 
-    private String getID0ForPostFree(final boolean isPartOfAFolder) {
+    private String diskGetID0(final boolean isPartOfAFolder) {
         final String hash = this.currHash.replace("/", "_").replace("+", "-");
         final String path = this.currPath;
         final String postValue;
@@ -1058,7 +1094,36 @@ public class DiskYandexNet extends PluginForHost {
         return postValue;
     }
 
+    private String albumGetID0(final DownloadLink dl) {
+        final String hash_long = getHash(dl);
+        final String id = albumGetID(dl);
+        if (StringUtils.isEmpty(hash_long)) {
+            /* This should never happen */
+            return null;
+        }
+        return String.format("/album/%s:%s", hash_long, id);
+    }
+
+    private String albumGetID(final DownloadLink dl) {
+        return new Regex(dl.getPluginPatternMatcher(), "/([a-f0-9]+)$").getMatch(0);
+    }
+
+    /** e.g. 'client365485934985' */
+    public static String albumGetIdClient() {
+        return "undefined" + System.currentTimeMillis();
+    }
+
+    public static String getHashLongFromHTML(final Browser br) {
+        return PluginJSonUtils.getJsonValue(br, "public_key");
+    }
+
     public static String getSK(final Browser br) {
+        return PluginJSonUtils.getJsonValue(br, "sk");
+    }
+
+    /** Gets new 'SK' value via '/auth/status' request. */
+    public static String getNewSK(final Browser br, final String domain, final String sourceURL) throws IOException {
+        br.getPage("https://" + domain + "/auth/status?urlOrigin=" + Encoding.urlEncode(sourceURL) + "&source=album_web_signin");
         return PluginJSonUtils.getJsonValue(br, "sk");
     }
 
