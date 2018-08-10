@@ -17,6 +17,7 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -35,6 +36,32 @@ import org.appwork.utils.formatter.HexFormatter;
 public class DummyDirect extends PluginForDecrypt {
     public DummyDirect(final PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public static DownloadLink createDummyDirect(String url, final String postData, String name, long size, boolean verifiedSize, String referer, String cookies, boolean recheck) throws Exception {
+        final Map<String, Object> infos = new HashMap<String, Object>();
+        infos.put("url", url);
+        infos.put("postData", postData);
+        if (size >= 0) {
+            infos.put("size", size);
+            if (verifiedSize) {
+                infos.put("verifiedSize", Boolean.TRUE);
+            }
+        }
+        if (StringUtils.isNotEmpty(name)) {
+            infos.put("name", name);
+        }
+        if (StringUtils.isNotEmpty(referer)) {
+            infos.put("referer", referer);
+        }
+        if (StringUtils.isNotEmpty(cookies)) {
+            infos.put("cookies", cookies);
+        }
+        if (recheck) {
+            infos.put("recheck", Boolean.TRUE);
+        }
+        final String json = JSonStorage.toString(infos);
+        return new DownloadLink(null, null, "dummydirect.jdownloader.org", "http://dummydirect.jdownloader.org/" + HexFormatter.byteArrayToHex(json.getBytes("UTF-8")), true);
     }
 
     @Override
