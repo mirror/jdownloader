@@ -13,8 +13,6 @@ import javax.swing.JComponent;
 import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
 
-import jsyntaxpane.syntaxkits.JavaScriptSyntaxKit;
-
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -38,7 +36,6 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 
 public class EventScripterTableModel extends ExtTableModel<ScriptEntry> implements GenericConfigEventListener<Object> {
-
     private EventScripterExtension extension;
 
     public EventScripterTableModel(EventScripterExtension extension) {
@@ -50,20 +47,15 @@ public class EventScripterTableModel extends ExtTableModel<ScriptEntry> implemen
 
     public void update() {
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 // make sure that this class is loaded. it contains the logic to restore old settings.
-
                 ArrayList<ScriptEntry> scripts = CFG_EVENT_CALLER.CFG.getScripts();
                 if (scripts == null || scripts.size() == 0) {
                     scripts = getDefaultScriptList();
-
                 }
                 _fireTableStructureChanged(scripts, true);
-
             };
-
         };
     }
 
@@ -80,13 +72,10 @@ public class EventScripterTableModel extends ExtTableModel<ScriptEntry> implemen
 
     @Override
     protected void initColumns() {
-
         this.addColumn(new ExtCheckColumn<ScriptEntry>(_GUI.T.lit_enabled()) {
-
             private static final long serialVersionUID = 1515656228974789237L;
 
             public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
-
                 final ExtTableHeaderRenderer ret = new ExtTableHeaderRenderer(this, jTableHeader) {
                     private final Icon        ok               = NewTheme.I().getIcon(IconKey.ICON_OK, 14);
                     private static final long serialVersionUID = 3224931991570756349L;
@@ -99,9 +88,7 @@ public class EventScripterTableModel extends ExtTableModel<ScriptEntry> implemen
                         setText(null);
                         return this;
                     }
-
                 };
-
                 return ret;
             }
 
@@ -131,9 +118,7 @@ public class EventScripterTableModel extends ExtTableModel<ScriptEntry> implemen
                 extension.save(getTableData());
             }
         });
-
         this.addColumn(new ExtTextColumn<ScriptEntry>(_GUI.T.lit_name()) {
-
             @Override
             public String getStringValue(ScriptEntry value) {
                 return value.getName();
@@ -167,7 +152,6 @@ public class EventScripterTableModel extends ExtTableModel<ScriptEntry> implemen
                 extension.save(getTableData());
             }
         });
-
         this.addColumn(new ExtComponentColumn<ScriptEntry>(T.T.edit_script()) {
             private JButton            editorBtn;
             private JButton            rendererBtn;
@@ -175,22 +159,15 @@ public class EventScripterTableModel extends ExtTableModel<ScriptEntry> implemen
             protected MigPanel         editor;
             protected RendererMigPanel renderer;
             private RenderLabel        label;
-
             {
                 editorBtn = new JButton("");
-
                 editorBtn.addActionListener(new ActionListener() {
-
                     @Override
                     public void actionPerformed(ActionEvent e) {
                         if (editing != null) {
-
                             ProgressDialog p = new ProgressDialog(new ProgressGetter() {
-
                                 @Override
                                 public void run() throws Exception {
-                                    JavaScriptSyntaxKit.initKit();
-
                                 }
 
                                 @Override
@@ -208,11 +185,9 @@ public class EventScripterTableModel extends ExtTableModel<ScriptEntry> implemen
                                     return null;
                                 }
                             }, 0, T.T.loading_editor_title(), "", null);
-
                             UIOManager.I().show(null, p);
                             JavaScriptEditorDialog d = new JavaScriptEditorDialog(extension, editing);
                             UIOManager.I().show(null, d);
-
                             if (d.getCloseReason() == CloseReason.OK) {
                                 String script = d.getScript();
                                 if (script != null) {
@@ -221,18 +196,15 @@ public class EventScripterTableModel extends ExtTableModel<ScriptEntry> implemen
                                     extension.save(getTableData());
                                 }
                             }
-
                         }
                     }
                 });
                 label = new RenderLabel();
                 rendererBtn = new JButton("");
                 this.editor = new MigPanel("ins 1", "[grow,fill]", "[18!]") {
-
                     @Override
                     public void requestFocus() {
                     }
-
                 };
                 editor.add(editorBtn);
                 this.renderer = new RendererMigPanel("ins 1", "[grow,fill]", "[18!]");
@@ -292,7 +264,6 @@ public class EventScripterTableModel extends ExtTableModel<ScriptEntry> implemen
 
             @Override
             public void configureRendererComponent(ScriptEntry value, boolean isSelected, boolean hasFocus, int row, int column) {
-
                 rendererBtn.setIcon(new AbstractIcon(IconKey.ICON_WAIT, 16));
                 rendererBtn.setText(_GUI.T.lit_edit());
                 // }
@@ -303,7 +274,6 @@ public class EventScripterTableModel extends ExtTableModel<ScriptEntry> implemen
                 editing = value;
                 editorBtn.setIcon(new AbstractIcon(IconKey.ICON_WAIT, 16));
                 editorBtn.setText(_GUI.T.lit_edit());
-
             }
 
             @Override
@@ -313,7 +283,6 @@ public class EventScripterTableModel extends ExtTableModel<ScriptEntry> implemen
             @Override
             public void resetRenderer() {
             }
-
         });
     }
 
@@ -325,5 +294,4 @@ public class EventScripterTableModel extends ExtTableModel<ScriptEntry> implemen
     public void onConfigValueModified(KeyHandler<Object> keyHandler, Object newValue) {
         update();
     }
-
 }
