@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -27,25 +26,22 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "eroxia.com" }, urls = { "http://(www\\.)?eroxia.com/([A-Za-z0-9_\\-]+/\\d+/.*?|video/[a-z0-9\\-]+\\d+)\\.html" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "eroxia.com" }, urls = { "https?://(www\\.)?eroxia.com/([A-Za-z0-9_\\-]+/\\d+/.*?|video/[a-z0-9\\-]+\\d+)\\.html" })
 public class EroxiaCom extends PluginForDecrypt {
-
     public EroxiaCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* Using playerConfig script */
     /* Tags: playerConfig.php */
-
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
-        String parameter = param.toString();
+        String parameter = param.toString().replace("http:", "https:");
         boolean dh = false;
         br.getPage(parameter);
         String filename = br.getRegex("<title>Sex Video \\- ([^<>\"]*?) \\- Amateur Homemade Porn Eroxia</title>").getMatch(0);
         String tempID = br.getRedirectLocation();
-
         /* homesexdaily */
         if (tempID == null) {
             tempID = br.getRegex("(http://(www\\.)?homesexdaily\\.com/video/[^<>\"/]*?\\.html)").getMatch(0);
@@ -83,7 +79,6 @@ public class EroxiaCom extends PluginForDecrypt {
             }
             tempID = server + file;
             filename = filename + ".flv";
-
         }
         if (br.containsHTML("\"http://video\\.megarotic\\.com/")) {
             logger.info("Link offline: " + parameter);
@@ -115,5 +110,4 @@ public class EroxiaCom extends PluginForDecrypt {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.UnknownPornScript4;
     }
-
 }
