@@ -13,10 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -31,11 +32,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anime-ultime.net" }, urls = { "http://(www\\.)?anime\\-ultime\\.net/info\\-0\\-1/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anime-ultime.net" }, urls = { "http://(www\\.)?anime\\-ultime\\.net/info\\-0\\-1/\\d+" })
 public class AnimeUltimeNet extends PluginForHost {
-
     public AnimeUltimeNet(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -55,7 +53,7 @@ public class AnimeUltimeNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String fid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
-        String filename = br.getRegex("<h1>([^<>\"]*?)vostfr streaming</h1>").getMatch(0);
+        String filename = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
         if (filename == null) {
             filename = fid;
         }
@@ -158,5 +156,4 @@ public class AnimeUltimeNet extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }
