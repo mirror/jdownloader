@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -30,10 +33,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sexu.com" }, urls = { "http://(?:www\\.)?sexu\\.com/\\d+/" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sexu.com" }, urls = { "https?://(?:www\\.)?sexu\\.com/\\d+/" })
 public class SexuCom extends PluginForHost {
     public SexuCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -75,10 +75,12 @@ public class SexuCom extends PluginForHost {
         }
         final String[] qualities = { "1080p", "720p", "480p", "360p", "320p", "240p" };
         // String js = this.br.getRegex("\\.setup\\((\\{.*?\\})\\);").getMatch(0);
-        String js = br.getRegex("\"clip\":(\\{.*?\\}\\}\\})").getMatch(0);
+        String js = br.getRegex("\"clip\":(\\{.*?\\}\\})").getMatch(0);
         if (js == null) {
-            js = br.cloneBrowser().getPage("http://sexu.com/v.php?v_id=" + downloadLink.getLinkID() + "&bitrate=720p&_=" + System.currentTimeMillis());
+            // js = br.cloneBrowser().getPage("http://sexu.com/v.php?v_id=" + downloadLink.getLinkID() + "&bitrate=720p&_=" +
+            // System.currentTimeMillis());
             // js = js.replace("'", "\"");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final HashMap<String, Object> entries = (HashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(js);
         final ArrayList<Object> sources = (ArrayList) entries.get("sources");
@@ -97,9 +99,9 @@ public class SexuCom extends PluginForHost {
                 break;
             }
         }
-        String filename = br.getRegex("<title>([^<>\"]*?)\\- Sexu\\.Com</title>").getMatch(0);
-        if (filename == null) {
-            logger.info("filename: " + filename + ", DLLINK: " + dllink);
+        String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+        if (filename == null || dllink == null) {
+            logger.info("filename: " + filename + ", dllink: " + dllink);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = Encoding.htmlDecode(filename);
