@@ -22,6 +22,7 @@ import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -44,6 +45,10 @@ public class ImgChiliCom extends PluginForDecrypt {
             br.setFollowRedirects(true);
             br.getPage(parameter);
             br.setFollowRedirects(false);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                decryptedLinks.add(createOfflinelink(parameter));
+                return decryptedLinks;
+            }
             final DownloadLink offline = this.createOfflinelink(parameter);
             offline.setFinalFileName(new Regex(parameter, "([a-z0-9]+)$").getMatch(0));
             if (br.containsHTML("The album does not exist")) {
@@ -59,8 +64,7 @@ public class ImgChiliCom extends PluginForDecrypt {
             final String sn = br.getRegex("<img src=\"https?://t(\\d+)\\.imgchili\\.net/\\d+/[A-Za-z0-9\\-_\\.\\(\\)%\\-]+\\.jpg\"").getMatch(0);
             final String[] pics = br.getRegex("<a href=\"show(.*?)\"").getColumn(0);
             if (pics == null || pics.length == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                throw new DecrypterException("Decrypter broken for link: " + parameter);
             }
             for (String singleLink : pics) {
                 singleLink = "directhttp://http://i" + sn + ".imgchili.net" + singleLink;
