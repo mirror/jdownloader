@@ -13,26 +13,25 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.Random;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "anime.thehylia.com" }, urls = { "http://(www\\.)?anime\\.thehylia\\.com/(downloads/series/|soundtracks/album/)[a-z0-9\\-_]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "anime.thehylia.com" }, urls = { "https?://(www\\.)?anime\\.thehylia\\.com/(downloads/series/|download_file/|soundtracks/album/)[a-z0-9\\-_]+" })
 public class AnimeTheHyliaCom extends PluginForDecrypt {
-
     public AnimeTheHyliaCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -53,6 +52,15 @@ public class AnimeTheHyliaCom extends PluginForDecrypt {
         }
         String fpName = null;
         String[][] links;
+        if (parameter.contains("download_file")) {
+            final DownloadLink dl = createDownloadlink("http://anime.thehyliadecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(10000));
+            dl.setContentUrl(parameter);
+            dl.setLinkID(new Regex(parameter, "download_file/(\\d+)").getMatch(0));
+            dl.setProperty("referer", br.getRedirectLocation());
+            dl.setProperty("directlink", parameter);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
         if (parameter.matches(type_series)) {
             fpName = br.getRegex("<\\!\\-\\-Series name: <b>([^<>\"]*?)</b><br>\\-\\->").getMatch(0);
             if (fpName == null) {
@@ -64,7 +72,6 @@ public class AnimeTheHyliaCom extends PluginForDecrypt {
                 return null;
             }
             fpName = Encoding.htmlDecode(fpName);
-
             for (final String singleLinkInfo[] : links) {
                 final String filename = fpName + Encoding.htmlDecode(singleLinkInfo[1]).replace(":", " - ") + ".avi";
                 final String directlink = singleLinkInfo[0];
@@ -87,7 +94,6 @@ public class AnimeTheHyliaCom extends PluginForDecrypt {
                 return null;
             }
             fpName = Encoding.htmlDecode(fpName);
-
             for (final String singleLinkInfo[] : links) {
                 final String filename = fpName + " - " + Encoding.htmlDecode(singleLinkInfo[1]) + ".mp3";
                 final String directlink = singleLinkInfo[0];
@@ -103,7 +109,6 @@ public class AnimeTheHyliaCom extends PluginForDecrypt {
                 decryptedLinks.add(dl);
             }
         }
-
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(fpName);
         fp.addLinks(decryptedLinks);
@@ -114,5 +119,4 @@ public class AnimeTheHyliaCom extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

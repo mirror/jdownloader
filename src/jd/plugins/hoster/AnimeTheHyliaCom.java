@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -38,7 +37,6 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "anime.thehylia.com" }, urls = { "https?://anime\\.thehyliadecrypted\\.com/\\d+" })
 public class AnimeTheHyliaCom extends PluginForHost {
-
     public AnimeTheHyliaCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://anime.thehylia.com/forums/register.php");
@@ -48,8 +46,7 @@ public class AnimeTheHyliaCom extends PluginForHost {
     private static final boolean FREE_RESUME       = true;
     private static final int     FREE_MAXCHUNKS    = 0;
     private static final int     FREE_MAXDOWNLOADS = 20;
-
-    private String               DLLINK            = null;
+    private String               dllink            = null;
 
     @Override
     public String getAGBLink() {
@@ -87,7 +84,7 @@ public class AnimeTheHyliaCom extends PluginForHost {
             return AvailableStatus.TRUE;
         }
         if (decryptedlink.contains("/soundtracks/")) {
-            DLLINK = br.getRegex("\"(http://[^<>\"]*?\\.mp3)\">Download").getMatch(0);
+            dllink = br.getRegex("\"(http://[^<>\"]*?\\.mp3)\">Download").getMatch(0);
         } else {
             if (br.getURL().contains("anime.thehylia.com/downloads/series/")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -95,24 +92,28 @@ public class AnimeTheHyliaCom extends PluginForHost {
             if (br.containsHTML(">No such episode")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            DLLINK = br.getRedirectLocation();
+            dllink = br.getRedirectLocation();
         }
-        if (DLLINK == null) {
+        if (dllink == null) {
             if (br.containsHTML("issues|network capacity|problems")) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Server reports errors with this file");
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br.openHeadConnection(DLLINK);
+            con = br.openHeadConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
+                if (downloadLink.getFinalFileName() == null) {
+                    String name = Encoding.htmlDecode(getFileNameFromHeader(con).trim());
+                    downloadLink.setFinalFileName(name);
+                }
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -132,7 +133,7 @@ public class AnimeTheHyliaCom extends PluginForHost {
             /* This should NEVER happen via account! */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server overloaded", 10 * 60 * 1000l);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, FREE_RESUME, FREE_MAXCHUNKS);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, FREE_RESUME, FREE_MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
