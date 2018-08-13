@@ -1381,12 +1381,7 @@ public class MyqloudOrg extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (final PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account, true);
         final String space[] = new Regex(correctedBR, ">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
         if ((space != null && space.length != 0) && (space[0] != null && space[1] != null)) {
             /* free users it's provided by default */
@@ -1514,14 +1509,16 @@ public class MyqloudOrg extends antiDDoSForHost {
                 if (!br.getURL().contains("/?op=my_account")) {
                     getPage("/?op=my_account");
                 }
-                if (!new Regex(correctedBR, "(Premium(-| )Account expire|>Renew premium<)").matches()) {
+                if (!new Regex(correctedBR, "(Premium(-| )Account expire|>Renew premium<|>Premium expires:<)").matches()) {
                     account.setType(AccountType.FREE);
                 } else {
                     account.setType(AccountType.PREMIUM);
                 }
                 account.saveCookies(br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
-                account.clearCookies("");
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
