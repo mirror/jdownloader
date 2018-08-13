@@ -38,12 +38,13 @@ public class KndGrlsCom extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final String parameter = param.toString();
+        ArrayList<DownloadLink> crawledLinks = new ArrayList<DownloadLink>();
+        final String parameter = param.toString().replace("http:", "https:");
         final String page = br.getPage(parameter);
         if (parameter.contains("com/gallery")) { // it's a gallery
             if (br.containsHTML(">Sorry, gallery not found")) {
-                logger.info("Link offline: " + parameter);
-                return new ArrayList<DownloadLink>();
+                crawledLinks.add(createOfflinelink(parameter));
+                return crawledLinks;
             }
             return decryptGalleryLinks(br);
         } else if (parameter.contains("com/girls")) { // it's a girl's gallery
@@ -99,7 +100,7 @@ public class KndGrlsCom extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> decryptGalleryLinks(Browser br) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String[] links = br.getRegex("\"https?://gals\\.kindgirls\\.com/([^<>\"]*?)\"").getColumn(0);
+        final String[] links = br.getRegex("\"https?://gals\\.kindgirls\\.com/([^<>\"]*?)\"[^<>]*?target=\"_blank\"").getColumn(0);
         if (links == null || links.length == 0) {
             return null;
         }
@@ -112,7 +113,10 @@ public class KndGrlsCom extends PluginForDecrypt {
             }
             decryptedLinks.add(dlLink);
         }
-        final String girlsname = br.getRegex("<h3>Photo.*<a href=\\'/girls/[a-zA-Z0-9 _\\-/]+\\'>([a-zA-Z0-9 _\\-]+)</a>.*</h3>").getMatch(0);
+        String girlsname = br.getRegex("<h3>.*?<a href='/girls/[a-zA-Z0-9 _\\-/]+'>([a-zA-Z0-9 _\\-]+)</a>.*?</h3>").getMatch(0);
+        if (girlsname == null) {
+            girlsname = br.getRegex("<div id='up_izq'><h3>([a-zA-Z0-9 _\\-]+)</h3>").getMatch(0);
+        }
         if (girlsname != null) {
             FilePackage fp = FilePackage.getInstance();
             fp.setName("Kindgirls - " + girlsname.trim());
