@@ -26,11 +26,11 @@ import jd.plugins.PluginException;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "primemusic.ru", "freshmusic.club" }, urls = { "", "https?://(www\\.)?(primemusic\\.ru|prime\\-music\\.net|primemusic\\.cc|primemusic\\.me|freshmusic\\.club)/Media\\-page\\-\\d+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "primemusic.ru", "freshmusic.club", "newhit.me" }, urls = { "", "", "https?://(www\\.)?(primemusic\\.ru|prime\\-music\\.net|primemusic\\.cc|primemusic\\.me|freshmusic\\.club|newhit\\.me)/Media\\-page\\-\\d+\\.html" })
 public class PrimeMusicRu extends antiDDoSForHost {
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "primemusic.ru", "prime-music.net", "primemusic.cc", "primemusic.me", "freshmusic.club" };
+        return new String[] { "primemusic.ru", "prime-music.net", "primemusic.cc", "primemusic.me", "freshmusic.club", "newhit.me" };
     }
 
     public PrimeMusicRu(PluginWrapper wrapper) {
@@ -44,7 +44,7 @@ public class PrimeMusicRu extends antiDDoSForHost {
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("(primemusic\\.ru|prime\\-music\\.net|primemusic\\.cc|primemusic\\.me)/", "freshmusic.club/"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("(primemusic\\.ru|prime\\-music\\.net|primemusic\\.cc|primemusic\\.me|newhit\\.me)/", "newhit.me/"));
     }
 
     @SuppressWarnings("deprecation")
@@ -56,9 +56,9 @@ public class PrimeMusicRu extends antiDDoSForHost {
         if (br.containsHTML("<h1 class=\"radio_title\">Композиция не найдена</h1>|>Композиция удалена") || br.getURL().contains("/index.php")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String finalfilename = br.getRegex("<h2>Скачать ([^<>\"]*?)\\.mp3</h2>").getMatch(0);
+        String finalfilename = br.getRegex("<h2[^<>]*>Слушать\\s*([^<>\"]*?)\\s*(\\.mp3|онлайн)</h2>").getMatch(0);
         if (finalfilename == null) {
-            finalfilename = br.getRegex("<div class=\"caption\">[\t\n\r ]+<h1>([^<>\"]*?) скачать песню</h1>").getMatch(0);
+            finalfilename = br.getRegex("<div class=\"caption\">[\t\n\r ]+<h\\d+[^<>]*>([^<>\"]*?)\\s*(скачать песню)?</h\\d+>").getMatch(0);
         }
         String filesize = br.getRegex("<b>Размер:?</b>:?([^<>\"]*?)</span>").getMatch(0);
         if (finalfilename == null || filesize == null) {
@@ -81,7 +81,7 @@ public class PrimeMusicRu extends antiDDoSForHost {
             if (finallink == null) {
                 finallink = br.getRegex("class=\"download_link\" href=\"(https?://[^<>\"]*?)\"").getMatch(0);
                 if (finallink == null) {
-                    finallink = br.getRegex("\"(https?://[a-z0-9]+\\.(primemusic\\.ru|prime\\-music\\.net|primemusic\\.cc|primemusic\\.me|freshmusic\\.club)/dl\\d+/[^<>\"]*?)\"").getMatch(0);
+                    finallink = br.getRegex("\"(https?://[a-z0-9]+\\.(primemusic\\.ru|prime\\-music\\.net|primemusic\\.cc|primemusic\\.me|freshmusic\\.club|newhit\\.me)/dl\\d+/[^<>\"]*?)\"").getMatch(0);
                     if (finallink == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
