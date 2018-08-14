@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -26,9 +25,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornhost.com" }, urls = { "http://(www\\.)?pornhost\\.com/([0-9]+|embed/\\d+)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornhost.com" }, urls = { "https?://(www\\.)?pornhost\\.com/([0-9]+|embed/\\d+)" })
 public class PrnHstComFldr extends PluginForDecrypt {
-
     public PrnHstComFldr(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -48,11 +46,16 @@ public class PrnHstComFldr extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(finallink.replace("pornhost.com/", "pornhostdecrypted.com/")));
         } else {
             String[] links = br.getRegex("class=\"thumb\">.*?<img src=.*?.*?<a href=\"(.*?)\">").getColumn(0);
-            if (links.length == 0) links = br.getRegex("\"(http://(www\\.)?pornhost\\.com/[0-9]+/[0-9]+\\.html)\"").getColumn(0);
-            if (links.length == 0) return null;
+            if (links.length == 0) {
+                links = br.getRegex("\"(http://(www\\.)?pornhost\\.com/[0-9]+/[0-9]+\\.html)\"").getColumn(0);
+            }
+            if (links.length == 0) {
+                return null;
+            }
             String fpName = br.getRegex("<title>pornhost\\.com - free file hosting with a twist - gallery(.*?)</title>").getMatch(0);
-            if (fpName == null) fpName = br.getRegex("id=\"url\" value=\"http://(www\\.)?pornhost\\.com/(.*?)/\"").getMatch(1);
-
+            if (fpName == null) {
+                fpName = br.getRegex("id=\"url\" value=\"http://(www\\.)?pornhost\\.com/(.*?)/\"").getMatch(1);
+            }
             for (String dl : links) {
                 decryptedLinks.add(createDownloadlink(dl.replace("pornhost.com/", "pornhostdecrypted.com/")));
             }
@@ -65,7 +68,6 @@ public class PrnHstComFldr extends PluginForDecrypt {
                 fp.addLinks(decryptedLinks);
             }
         }
-
         return decryptedLinks;
     }
 
@@ -73,5 +75,4 @@ public class PrnHstComFldr extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
