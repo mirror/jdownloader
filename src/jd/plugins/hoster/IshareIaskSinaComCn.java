@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -27,6 +29,7 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -34,8 +37,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ishare.iask.sina.com.cn" }, urls = { "https?://(?:www\\.)?ishare\\.iask\\.sina\\.com\\.cn/f/\\d+\\.html" })
 public class IshareIaskSinaComCn extends PluginForHost {
@@ -82,7 +83,7 @@ public class IshareIaskSinaComCn extends PluginForHost {
             filename = br.getRegex("<input type=\"hidden\" name=\"title\" value=\"(.*?)\">").getMatch(0);
         }
         if (filename == null) {
-            filename = br.getRegex("class=\"detail\\-box\">[\t\n\r ]*?<h2 title=\"([^<>\"]+)\">").getMatch(0);
+            filename = br.getRegex("<h2 title=\"([^<>\"]+)\">").getMatch(0);
         }
         String filesize = br.getRegex("class=\"f10\">0分<br>(.*?)</span></td>").getMatch(0);
         if (filename == null) {
@@ -104,6 +105,9 @@ public class IshareIaskSinaComCn extends PluginForHost {
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
+            if (br.containsHTML("<a class=\"btn-download btn-m-not\"><i class=\"icon-iShare\"></i>下载</a>")) {
+                throw new AccountRequiredException();
+            }
             br.setFollowRedirects(false);
             this.br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
             this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
