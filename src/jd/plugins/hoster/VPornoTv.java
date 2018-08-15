@@ -20,6 +20,7 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -28,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vporno.tv" }, urls = { "http://(www\\.)?vporno\\.tv/\\d+/.{1}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vporno.tv" }, urls = { "https?://(www\\.)?vporno\\.tv/\\d+/.{1}" })
 public class VPornoTv extends PluginForHost {
     /* DEV NOTES */
     /* Porn_plugin */
@@ -79,6 +80,7 @@ public class VPornoTv extends PluginForHost {
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        dllink = Encoding.htmlDecode(dllink);
         filename = filename.trim();
         downloadLink.setFinalFileName(filename + ".mp4");
         Browser br2 = br.cloneBrowser();
