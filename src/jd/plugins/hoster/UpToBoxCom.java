@@ -587,6 +587,9 @@ public class UpToBoxCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
             }
         }
+        if (correctedBR.contains("We suspected fraudulent activity from your connection to our service")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Uptobox suspects fraudulent activity. Contact their support!");
+        }
         if (correctedBR.contains("You're using all download slots for IP")) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
         }

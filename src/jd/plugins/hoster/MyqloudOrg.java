@@ -850,7 +850,7 @@ public class MyqloudOrg extends antiDDoSForHost {
             try {
                 final Browser br2 = br.cloneBrowser();
                 con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                if (con.getResponseCode() != 200 || con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
                 }
@@ -930,10 +930,20 @@ public class MyqloudOrg extends antiDDoSForHost {
 
     /** Function to find the final downloadlink. */
     @SuppressWarnings({ "unused", "unchecked", "rawtypes" })
-    private String getDllink() {
+    private String getDllink() throws Exception {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "(\"|')(" + String.format(dllinkRegexFile, DOMAINS) + ")\\1").getMatch(1);
+            for (final String quality : new String[] { "o", "h", "n" }) {
+                final String download[] = br.getRegex("download_video\\('(.*?)','" + quality + "','(.*?)'\\)").getRow(0);
+                if (download != null) {
+                    // download original file, return null so the form handling takes over
+                    getPage("/dl?op=download_orig_pre&id=" + download[0] + "&mode=" + quality + "&hash=" + download[1]);
+                    return null;
+                }
+            }
+            if (dllink == null) {
+                dllink = new Regex(correctedBR, "(\"|')(" + String.format(dllinkRegexFile, DOMAINS) + ")\\1").getMatch(1);
+            }
             /* Use wider and wider RegEx */
             if (dllink == null) {
                 dllink = new Regex(correctedBR, "(" + String.format(dllinkRegexFile, DOMAINS) + ")(\"|')").getMatch(0);
@@ -1540,7 +1550,10 @@ public class MyqloudOrg extends antiDDoSForHost {
                 getPage(downloadLink.getPluginPatternMatcher());
                 dllink = getDllink();
                 if (dllink == null) {
-                    final Form dlform = br.getFormbyProperty("name", "F1");
+                    Form dlform = br.getFormbyProperty("name", "F1");
+                    if (dlform == null) {
+                        dlform = br.getFormByInputFieldKeyValue("op", "download_orig");
+                    }
                     if (dlform != null && new Regex(correctedBR, HTML_PASSWORDPROTECTED).matches()) {
                         handlePassword(dlform, downloadLink);
                     }
