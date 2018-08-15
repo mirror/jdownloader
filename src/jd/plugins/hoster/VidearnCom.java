@@ -26,7 +26,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornxs.com" }, urls = { "http://(?:www\\.)?pornxsdecrypted\\.com/.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornxs.com" }, urls = { "http://(?:www\\.)?pornxsdecrypted\\.com/.+|https?://pornxs\\.com/\\d+" })
 public class VidearnCom extends antiDDoSForHost {
     public VidearnCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -91,6 +91,9 @@ public class VidearnCom extends antiDDoSForHost {
         String finallink = br.getRegex("config\\-final\\-url=\"(http[^<>\"]*?)\"").getMatch(0);
         if (finallink == null) {
             finallink = br.getRegex("file\\s*:\\s*('|\")(http.*?)\\1").getMatch(1);
+            if (finallink == null) {
+                finallink = Encoding.htmlDecode(br.getRegex("<source src=\"(.*?)\"").getMatch(0));
+            }
             if (finallink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
