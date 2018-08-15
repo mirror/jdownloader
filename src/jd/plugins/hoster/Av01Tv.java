@@ -27,7 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision:$", interfaceVersion = 3, names = { "AV01.tv" }, urls = { "https?://(?:www\\.)?av01\\.tv/.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "AV01.tv" }, urls = { "https?://(?:www\\.)?av01\\.tv/.+" })
 public class Av01Tv extends PluginForHost {
     public Av01Tv(PluginWrapper wrapper) {
         super(wrapper);
@@ -50,9 +50,12 @@ public class Av01Tv extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String title = br.getRegex("<title>([^<>\"]*?) &#8211; ").getMatch(0);
+        String title = br.getRegex("<title>([^<>\"]*?) - ").getMatch(0);
         if (title == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            title = br.getRegex("<title>([^<>\"]*?) &#8211; ").getMatch(0);
+            if (title == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         title = Encoding.htmlDecode(title.trim());
         String filename = title;
@@ -63,7 +66,7 @@ public class Av01Tv extends PluginForHost {
         link.setFinalFileName(filename);
         // see trigger_video_hls.js
         // getCode(){ return "xxx"};
-        String getCode = br.getRegex("getCode\\(\\)\\{ return \"([^\"]+)\"\\};").getMatch(0);
+        String getCode = br.getRegex("getCode\\(\\)\\{\\s*return (\"|')(.+?)\\1;").getMatch(1);
         if (getCode == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
