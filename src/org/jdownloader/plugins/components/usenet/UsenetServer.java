@@ -1,6 +1,5 @@
 package org.jdownloader.plugins.components.usenet;
 
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -8,7 +7,6 @@ import org.appwork.storage.Storable;
 import org.appwork.utils.StringUtils;
 
 public class UsenetServer implements Storable {
-
     private String host = null;
 
     public String getHost() {
@@ -16,7 +14,11 @@ public class UsenetServer implements Storable {
     }
 
     public int getPort() {
-        return port;
+        if (port > 0) {
+            return port;
+        } else {
+            return isSSL() ? 563 : 119;
+        }
     }
 
     public boolean isSSL() {
@@ -79,10 +81,13 @@ public class UsenetServer implements Storable {
         this(host, port, false);
     }
 
+    public boolean validate() {
+        return getPort() > 0 && StringUtils.isNotEmpty(getHost());
+    }
+
     public UsenetServer(final String host, final int port, final boolean ssl) {
         this.host = host;
         this.port = port;
         this.ssl = ssl;
     }
-
 }

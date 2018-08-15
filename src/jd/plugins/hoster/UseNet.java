@@ -196,15 +196,17 @@ public class UseNet extends PluginForHost {
     }
 
     protected UsenetServer getUsenetServer(Account account) throws Exception {
-        final UsenetAccountConfigInterface config = getAccountJsonConfig(account);
-        UsenetServer server = new UsenetServer(config.getHost(), config.getPort(), config.isSSLEnabled());
-        if (server == null || !getAvailableUsenetServer().contains(server)) {
-            server = getAvailableUsenetServer().get(0);
-            config.setHost(server.getHost());
-            config.setPort(server.getPort());
-            config.setSSLEnabled(server.isSSL());
+        synchronized (account) {
+            final UsenetAccountConfigInterface config = getAccountJsonConfig(account);
+            UsenetServer server = new UsenetServer(config.getHost(), config.getPort(), config.isSSLEnabled());
+            if (server == null || !server.validate() || !getAvailableUsenetServer().contains(server)) {
+                server = getAvailableUsenetServer().get(0);
+                config.setHost(server.getHost());
+                config.setPort(server.getPort());
+                config.setSSLEnabled(server.isSSL());
+            }
+            return server;
         }
-        return server;
     }
 
     @Override
