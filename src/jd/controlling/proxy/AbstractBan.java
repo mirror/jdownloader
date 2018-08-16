@@ -50,7 +50,7 @@ public abstract class AbstractBan implements ConnectionBan {
                 return uri.getDefaultPort();
             }
         } else {
-            return uri.getDefaultPort();
+            return ret;
         }
     }
 

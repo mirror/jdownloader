@@ -32,7 +32,7 @@ public class EndPointConnectExceptionBan extends AbstractBan {
 
     @Override
     public String toString() {
-        return _JDT.T.ConnectExceptionInPluginBan(getProtocol() + "://" + getHost().concat(":").concat(Integer.toString(getPort())));
+        return _JDT.T.ConnectExceptionInPluginBan(getProtocol() + "://" + getURL().getHost().concat(":").concat(Integer.toString(getPort())));
     }
 
     protected int getPort() {
