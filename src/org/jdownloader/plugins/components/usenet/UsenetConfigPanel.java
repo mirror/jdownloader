@@ -23,7 +23,7 @@ import org.jdownloader.plugins.config.PluginConfigPanelEventSenderListener;
 
 public class UsenetConfigPanel extends PluginConfigPanelNG {
     @Override
-    protected boolean useCustomUI(KeyHandler h) {
+    protected boolean useCustomUI(KeyHandler<?> h) {
         return true;
     }
 
