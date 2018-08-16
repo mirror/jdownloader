@@ -33,7 +33,7 @@ import jd.plugins.PluginException;
 import org.appwork.utils.net.URLHelper;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "8muses.com" }, urls = { "https?://(?:www\\.)?8muses\\.com/picture/.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "8muses.com" }, urls = { "https?://(?:www\\.)?8muses\\.com/([^/]*)?/picture/.+" })
 public class EightMusesCom extends antiDDoSForHost {
     public EightMusesCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -61,7 +61,7 @@ public class EightMusesCom extends antiDDoSForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<b>Notice</b>:")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = new Regex(downloadLink.getDownloadURL(), "8muses\\.com/picture/(?:\\d+\\-)?(.+)").getMatch(0);
+        String filename = new Regex(downloadLink.getDownloadURL(), "8muses\\.com/(?:[^/]*)?/picture/(?:\\d+\\-)?(.+)").getMatch(0);
         filename = filename.replace("/", "_");
         final String ractive_public = n(br.getRegex("<script id=\"ractive-public\" type=\"text/plain\">\\s*(.*?)\\s*<").getMatch(0));
         final String imageDir = br.getRegex("imageDir\" value=\"(/data/.{2}/)\"").getMatch(0);
@@ -75,8 +75,7 @@ public class EightMusesCom extends antiDDoSForHost {
             /* 2018-02-09 */
             dllink = "https://www.8muses.com/image/fl/" + imageName;
         } else if (ractive_public != null) {
-            final String page = new Regex(ractive_public, "\"page\"\\s*:\\s*(\\d+)").getMatch(0);
-            final String image = new Regex(ractive_public, page + "a\"\\s*,\\s*\"public.*?\"\\s*:\\s*\"(.*?)\"").getMatch(0);
+            final String image = new Regex(ractive_public, "\"picture\"\\s*:\\s*\\{.*?\"public.*?\"\\s*:\\s*\"(.*?)\"").getMatch(0);
             if (image != null) {
                 dllink = "https://www.8muses.com/image/fl/" + image + ".jpg";
             }
