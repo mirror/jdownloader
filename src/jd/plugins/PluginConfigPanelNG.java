@@ -792,7 +792,7 @@ public abstract class PluginConfigPanelNG extends AbstractConfigPanel implements
         }
     }
 
-    protected boolean useCustomUI(KeyHandler h) {
+    protected boolean useCustomUI(KeyHandler<?> h) {
         return h.getAnnotation(CustomUI.class) != null;
     }
 
