@@ -215,13 +215,10 @@ public class PluralsightCom extends PluginForHost {
         if (StringUtils.isEmpty(clip)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String query = "query viewClip { viewClip(input: { author: \"" + author + "\", clipIndex: " + clip + ", courseName: \"" + course + "\", includeCaptions: false, locale: \"en\", mediaType: \"mp4\", moduleName: \"" + urlParams.get("name") + "\", quality: \"1280x720\" }) { urls { url cdn rank source }, status } }";
         final Map<String, Object> params = new HashMap<>();
-        params.put("query", query);
+        params.put("query", "query viewClip { viewClip(input: { author: \"" + author + "\", clipIndex: " + clip + ", courseName: \"" + course + "\", includeCaptions: false, locale: \"en\", mediaType: \"mp4\", moduleName: \"" + urlParams.get("name") + "\", quality: \"1280x720\" }) { urls { url cdn rank source }, status } }");
         params.put("variables", "{}");
-        final PostRequest request = new PostRequest("https://app.pluralsight.com/player/api/graphql");
-        final String paramsPost = JSonStorage.toString(params);
-        request.setPostDataString(paramsPost);
+        final PostRequest request = br.createPostRequest("https://app.pluralsight.com/player/api/graphql", JSonStorage.toString(params));
         request.setContentType("application/json;charset=UTF-8");
         request.getHeaders().put("Origin", "https://app.pluralsight.com");
         final Map<String, Object> response = JSonStorage.restoreFromString(getRequest(br, this, request).getHtmlCode(), TypeRef.HASHMAP);
