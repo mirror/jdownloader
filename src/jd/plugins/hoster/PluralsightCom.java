@@ -261,6 +261,7 @@ public class PluralsightCom extends PluginForHost {
     private String streamURL = null;
 
     private AvailableStatus fetchFileInformation(DownloadLink link, final Account account) throws Exception {
+        streamURL = null;
         final UrlQuery urlParams = UrlQuery.parse(link.getPluginPatternMatcher());
         AvailableStatus result = null;// firstCheck(link, urlParams);
         if (result == AvailableStatus.TRUE) {
