@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.net.URLHelper;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -30,10 +33,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.appwork.utils.net.URLHelper;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "8muses.com" }, urls = { "https?://(?:www\\.)?8muses\\.com/([^/]*)?/picture/.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "8muses.com" }, urls = { "https?://(?:www\\.)?8muses\\.com/([^/]*)?/picture/.+/.+/.+/\\d*" })
 public class EightMusesCom extends antiDDoSForHost {
     public EightMusesCom(PluginWrapper wrapper) {
         super(wrapper);
