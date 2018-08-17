@@ -382,7 +382,7 @@ public class HitFileNet extends antiDDoSForHost {
                 maxWait = realWait;
             }
         }
-        int tt = jd.plugins.hoster.TurboBitNet.getPreDownloadWaittime(this.br, 220);
+        int tt = jd.plugins.hoster.TurboBitNet.getPreDownloadWaittime(this.br, 40);
         if (ttt != null) {
             tt = Integer.parseInt(ttt);
             tt = tt < realWait ? tt : realWait;
