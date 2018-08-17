@@ -36,7 +36,7 @@ public class PluralsightComDecrypter extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> ret = new ArrayList<>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         String course = new Regex(parameter.getCryptedUrl(), "(\\?|&)course=(.*?)(&|$)").getMatch(0);
         if (StringUtils.isEmpty(course)) {
             course = new Regex(parameter.getCryptedUrl(), "/courses/([^/]+)").getMatch(0);
