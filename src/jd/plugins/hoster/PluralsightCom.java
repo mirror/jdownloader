@@ -215,7 +215,7 @@ public class PluralsightCom extends PluginForHost {
         if (StringUtils.isEmpty(clip)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final Map<String, Object> params = new HashMap<>();
+        final Map<String, Object> params = new HashMap<String, Object>();
         params.put("query", "query viewClip { viewClip(input: { author: \"" + author + "\", clipIndex: " + clip + ", courseName: \"" + course + "\", includeCaptions: false, locale: \"en\", mediaType: \"mp4\", moduleName: \"" + urlParams.get("name") + "\", quality: \"1280x720\" }) { urls { url cdn rank source }, status } }");
         params.put("variables", "{}");
         final PostRequest request = br.createPostRequest("https://app.pluralsight.com/player/api/graphql", JSonStorage.toString(params));
@@ -332,7 +332,7 @@ public class PluralsightCom extends PluginForHost {
         } else if (modules.size() == 0) {
             return null;
         }
-        final ArrayList<DownloadLink> ret = new ArrayList<>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         int moduleIndex = 0;
         for (final Map<String, Object> module : modules) {
             moduleIndex++;
