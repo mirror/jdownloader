@@ -80,11 +80,11 @@ public class AccountController implements AccountControllerListener, AccountProp
     private final HashMap<String, List<Account>>                                 MULTIHOSTER_ACCOUNTS;
     private static AccountController                                             INSTANCE         = new AccountController();
     private final Eventsender<AccountControllerListener, AccountControllerEvent> broadcaster      = new Eventsender<AccountControllerListener, AccountControllerEvent>() {
-                                                                                                      @Override
-                                                                                                      protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
-                                                                                                          listener.onAccountControllerEvent(event);
-                                                                                                      }
-                                                                                                  };
+        @Override
+        protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
+            listener.onAccountControllerEvent(event);
+        }
+    };
 
     public Eventsender<AccountControllerListener, AccountControllerEvent> getEventSender() {
         return broadcaster;
@@ -818,7 +818,9 @@ public class AccountController implements AccountControllerListener, AccountProp
                 // requestFileInformation must use the account from DownloadLinkCandidate of SingleDownloadController
                 final SingleDownloadController controller = (SingleDownloadController) currentThread;
                 final Account acc = controller.getAccount();
-                if (acc != null && StringUtils.equals(acc.getHosterByPlugin(), host)) {
+                if (acc == null) {
+                    return null;
+                } else if (StringUtils.equals(acc.getHosterByPlugin(), host)) {
                     ret = new ArrayList<Account>();
                     ret.add(acc);
                     return ret;
