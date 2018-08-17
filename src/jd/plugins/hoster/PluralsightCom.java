@@ -335,7 +335,7 @@ public class PluralsightCom extends PluginForHost {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         int moduleIndex = 0;
         for (final Map<String, Object> module : modules) {
-            moduleIndex++;
+            final int moduleID = moduleIndex++;
             final List<Map<String, Object>> clips = (List<Map<String, Object>>) module.get("clips");
             if (clips != null) {
                 for (final Map<String, Object> clip : clips) {
@@ -354,7 +354,7 @@ public class PluralsightCom extends PluginForHost {
                     final String moduleTitle = (String) clip.get("moduleTitle");
                     final Object ordering = clip.get("ordering");
                     link.setProperty("ordering", ordering);
-                    link.setProperty("module", moduleIndex);
+                    link.setProperty("module", moduleID);
                     if (StringUtils.isNotEmpty(title) && StringUtils.isNotEmpty(moduleTitle) && ordering != null) {
                         String fullName = String.format("%02d", moduleIndex) + "-" + String.format("%02d", Long.parseLong(ordering.toString()) + 1) + " - " + moduleTitle + " -- " + title;
                         fullName = PluralsightCom.correctFileName(fullName);

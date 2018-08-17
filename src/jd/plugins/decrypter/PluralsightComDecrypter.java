@@ -68,7 +68,12 @@ public class PluralsightComDecrypter extends PluginForDecrypt {
                 // TODO: add subtitles here, for each video add additional DownloadLink that represents subtitle, eg
                 // link.setProperty("type", "srt");
                 final FilePackage fp = FilePackage.getInstance();
-                fp.setName(course);
+                final String title = (String) map.get("title");
+                if (!StringUtils.isEmpty(title)) {
+                    fp.setName(PluralsightCom.correctFileName(title));
+                } else {
+                    fp.setName(course);
+                }
                 fp.addLinks(clips);
                 ret.addAll(clips);
             }
