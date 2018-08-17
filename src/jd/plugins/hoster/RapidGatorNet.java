@@ -70,7 +70,6 @@ public class RapidGatorNet extends antiDDoSForHost {
     }
 
     private static final String            MAINPAGE                        = "https://rapidgator.net/";
-    private static Object                  LOCK                            = new Object();
     private static final String            PREMIUMONLYTEXT                 = "This file can be downloaded by premium only</div>";
     private static final String            PREMIUMONLYUSERTEXT             = JDL.L("plugins.hoster.rapidgatornet.only4premium", "Only downloadable for premium users!");
     private final String                   EXPERIMENTALHANDLING            = "EXPERIMENTALHANDLING";
@@ -492,7 +491,7 @@ public class RapidGatorNet extends antiDDoSForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         account.setProperty("PROPERTY_TEMP_DISABLED_TIMEOUT", Property.NULL);
         final AccountInfo ai = new AccountInfo();
-        synchronized (RapidGatorNet.LOCK) {
+        synchronized (account) {
             if (this.getPluginConfig().getBooleanProperty(DISABLE_API_PREMIUM, false)) {
                 return fetchAccountInfo_web(account, ai);
             } else {
@@ -503,7 +502,7 @@ public class RapidGatorNet extends antiDDoSForHost {
 
     @SuppressWarnings("deprecation")
     public AccountInfo fetchAccountInfo_api(final Account account, final AccountInfo ai) throws Exception {
-        synchronized (RapidGatorNet.LOCK) {
+        synchronized (account) {
             try {
                 final String sid = login_api(account);
                 if (sid != null) {
@@ -558,10 +557,9 @@ public class RapidGatorNet extends antiDDoSForHost {
                 account.setValid(false);
                 return ai;
             } catch (final PluginException e) {
-                if (e.getLinkStatus() != 256) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.setType(null);
                     account.setProperty("session_id", Property.NULL);
-                    account.setValid(false);
                 }
                 throw e;
             }
@@ -570,12 +568,7 @@ public class RapidGatorNet extends antiDDoSForHost {
 
     @SuppressWarnings("deprecation")
     public AccountInfo fetchAccountInfo_web(final Account account, final AccountInfo ai) throws Exception {
-        try {
-            login_web(account, true);
-        } catch (final PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login_web(account, true);
         if (Account.AccountType.FREE.equals(account.getType())) {
             // free accounts still have captcha.
             account.setMaxSimultanDownloads(1);
@@ -625,7 +618,7 @@ public class RapidGatorNet extends antiDDoSForHost {
     }
 
     private Cookies login_web(final Account account, final boolean force) throws Exception {
-        synchronized (RapidGatorNet.LOCK) {
+        synchronized (account) {
             final boolean ifr = br.isFollowingRedirects();
             try {
                 // Load cookies
@@ -698,8 +691,10 @@ public class RapidGatorNet extends antiDDoSForHost {
                 account.saveCookies(br.getCookies(getHost()), "");
                 return cookies;
             } catch (final PluginException e) {
-                account.setType(null);
-                account.setProperty("cookies", Property.NULL);
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.setType(null);
+                    account.setProperty("cookies", Property.NULL);
+                }
                 throw e;
             } finally {
                 br.setFollowRedirects(ifr);
@@ -717,7 +712,7 @@ public class RapidGatorNet extends antiDDoSForHost {
 
     private String login_api(final Account account) throws Exception {
         URLConnectionAdapter con = null;
-        synchronized (RapidGatorNet.LOCK) {
+        synchronized (account) {
             try {
                 avoidBlock(br);
                 con = openAntiDDoSRequestConnection(br, br.createGetRequest(apiURL + "user/login?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass())));
@@ -812,7 +807,7 @@ public class RapidGatorNet extends antiDDoSForHost {
             }
         }
         if (con.getResponseCode() != 200) {
-            synchronized (RapidGatorNet.LOCK) {
+            synchronized (account) {
                 final String lang = System.getProperty("user.language");
                 final String errorMessage = RapidGatorNet.readErrorStream(con);
                 logger.info("ErrorMessage: " + errorMessage);
@@ -868,7 +863,7 @@ public class RapidGatorNet extends antiDDoSForHost {
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
-                } else if (errorMessage.contains("Session not exist")) {
+                } else if (StringUtils.containsIgnoreCase(errorMessage, "Session not exist") || StringUtils.containsIgnoreCase(errorMessage, "This download session is not for you") || StringUtils.containsIgnoreCase(errorMessage, "Session not found")) {
                     if (sessionReset) {
                         logger.info("SessionReset:" + sessionReset);
                         account.setProperty("session_id", Property.NULL);
@@ -913,7 +908,7 @@ public class RapidGatorNet extends antiDDoSForHost {
     public void handlePremium_api(final DownloadLink link, final Account account) throws Exception {
         String session_id = null;
         boolean isPremium = false;
-        synchronized (RapidGatorNet.LOCK) {
+        synchronized (account) {
             session_id = account.getStringProperty("session_id", null);
             if (session_id == null) {
                 session_id = login_api(account);
@@ -989,9 +984,9 @@ public class RapidGatorNet extends antiDDoSForHost {
             /*
              * This can happen if links go offline in the moment when the user is trying to download them - I (psp) was not able to
              * reproduce this so this is just a bad workaround! Correct server response would be:
-             * 
+             *
              * {"response":null,"response_status":404,"response_details":"Error: File not found"}
-             * 
+             *
              * TODO: Maybe move this info handleErrors_api
              */
             if (br.containsHTML("\"response_details\":null")) {
@@ -1032,7 +1027,7 @@ public class RapidGatorNet extends antiDDoSForHost {
             } else if (br.getCookie(RapidGatorNet.MAINPAGE, "user__") == null && i + 1 == repeat) {
                 // failure
                 logger.warning("handlePremium Failed! Please report to JDownloader Development Team.");
-                synchronized (RapidGatorNet.LOCK) {
+                synchronized (account) {
                     if (cookies == null) {
                         account.setProperty("cookies", Property.NULL);
                     }
