@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -33,7 +32,6 @@ import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "romhustler.net" }, urls = { "http://(www\\.)?romhustler\\.net/rom/[^<>\"/]+/[^<>\"/]+(/[^<>\"/]+)?" })
 public class RomHustlerNet extends PluginForDecrypt {
-
     public RomHustlerNet(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -44,7 +42,7 @@ public class RomHustlerNet extends PluginForDecrypt {
         final PluginForHost rhPlugin = JDUtilities.getPluginForHost(this.getHost());
         ((jd.plugins.hoster.RomHustlerNet) rhPlugin).prepBrowser(this.br);
         br.getPage(parameter);
-        if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">404 \\- Page got lost")) {
+        if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">404 \\- Page got lost|>\\s*This is a ESA protected rom")) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
@@ -82,5 +80,4 @@ public class RomHustlerNet extends PluginForDecrypt {
         }
         return decryptedLinks;
     }
-
 }
