@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -28,9 +27,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "doperoms.com" }, urls = { "http://(www\\.)?doperoms\\.com/files/[^<>\"]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "doperoms.com" }, urls = { "https?://(www\\.)?doperoms\\.com/files/[^<>\"]+" })
 public class DopeRomsCom extends antiDDoSForHost {
-
     public DopeRomsCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -104,5 +102,4 @@ public class DopeRomsCom extends antiDDoSForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
