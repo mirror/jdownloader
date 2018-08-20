@@ -39,14 +39,14 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
  *
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linkshrink.net" }, urls = { "https?://(?:www\\.)?linkshrink\\.net/([A-Za-z0-9]{5,6}|[A-Za-z0-9]{4}=.+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linkshrink.net" }, urls = { "https?://(?:www\\.)?(?:linkshrink|lnkshrnk)\\.net/([A-Za-z0-9]{5,6}|[A-Za-z0-9]{4}=.+)" })
 public class LnkShnkNt extends antiDDoSForDecrypt {
     public LnkShnkNt(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String type_direct  = "https?://(www\\.)?linkshrink\\.net/[A-Za-z0-9]{4}=.+";
-    private static final String type_invalid = "https?://(www\\.)?linkshrink\\.net/(report|login)";
+    private static final String type_direct  = "https?://(www\\.)?(?:linkshrink|lnkshrnk)\\.net/[A-Za-z0-9]{4}=.+";
+    private static final String type_invalid = "https?://(www\\.)?(?:linkshrink|lnkshrnk)\\.net/(report|login)";
 
     @Override
     protected boolean useRUA() {
@@ -63,7 +63,7 @@ public class LnkShnkNt extends antiDDoSForDecrypt {
         }
         br.setFollowRedirects(false);
         if (parameter.matches(type_direct)) {
-            String finallink = new Regex(parameter, "linkshrink\\.net/[A-Za-z0-9]{4}=(.+)").getMatch(0).replace("{d}", "?d=").replace("%7Bd%7D", "?d=");
+            String finallink = new Regex(parameter, "(?:linkshrink|lnkshrnk)\\.net/[A-Za-z0-9]{4}=(.+)").getMatch(0).replace("{d}", "?d=").replace("%7Bd%7D", "?d=");
             if (HTMLParser.getProtocol(finallink) == null) {
                 if (finallink.startsWith("//:")) {
                     finallink = "http" + finallink;
@@ -75,9 +75,9 @@ public class LnkShnkNt extends antiDDoSForDecrypt {
             return decryptedLinks;
         }
         br.setCookie(getHost(), "s32", "1");
-        String link;
+        String link = null;
         getPage(parameter);
-        while (true) {
+        while (!isAbort()) {
             if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 404 || (br.getRedirectLocation() != null && br.getRedirectLocation().matches(type_invalid)) || br.containsHTML(">Link does not exist")) {
                 decryptedLinks.add(createOfflinelink(parameter));
                 return decryptedLinks;
@@ -86,7 +86,7 @@ public class LnkShnkNt extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
             link = br.getRedirectLocation();
-            if (link != null && link.contains("linkshrink.net/")) {
+            if (link != null && (link.contains("linkshrink.net/") || link.contains("lnkshrnk.net/"))) {
                 getPage(link);
                 link = null;
             }
@@ -119,7 +119,7 @@ public class LnkShnkNt extends antiDDoSForDecrypt {
                 String continu = br.getRegex("href=(\"|')([^\r\n]+)\\1 (?:onClick)?[^>]*>Continue").getMatch(1);
                 if ("#".equals(continu)) {
                     // new method 20170122
-                    continu = br.getRegex("<script>\\s*g\\.href\\s*=\\s*\"(https?://linkshrink.net/[a-zA-Z0-9]+)\";</script>").getMatch(0);
+                    continu = br.getRegex("<script>\\s*g\\.href\\s*=\\s*\"(https?://(?:linkshrink|lnkshrnk).net/[a-zA-Z0-9]+)\";</script>").getMatch(0);
                     if (continu == null) {
                         // new method 20170127
                         continu = br.getRegex("\\.href\\s*=\\s*\\w+\\(\"([a-zA-Z0-9_/+=\\-%]+)\"\\)</script>").getMatch(0);
@@ -141,14 +141,17 @@ public class LnkShnkNt extends antiDDoSForDecrypt {
                 }
                 final String ref = br.getURL();
                 getPage(continu);
-                if (StringUtils.contains(br.getRedirectLocation(), "linkshrink.net/")) {
+                link = br.getRedirectLocation();
+                if (StringUtils.contains(link, "linkshrink.net/") || StringUtils.contains(link, "lnkshrnk.net/")) {
                     // referer bug, or not so bug, since we are not following redirects browser treats it as standard request.
                     br.getHeaders().put("Referer", ref);
                     getPage(br.getRedirectLocation());
                     continue;
                 }
             }
-            break;
+            if (link != null) {
+                break;
+            }
         }
         if (link != null) {
             decryptedLinks.add(createDownloadlink(link));
