@@ -30,7 +30,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "iwara.tv" }, urls = { "https?://(?:[A-Za-z0-9]+\\.)?(?:trollvids\\.com|iwara\\.tv)/(?:videos|node)/[^/]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "iwara.tv" }, urls = { "https?://(?:[A-Za-z0-9]+\\.)?(?:trollvids\\.com|iwara\\.tv)/(?:videos|node)/[A-Za-z0-9]+" })
 public class IwaraTv extends PluginForDecrypt {
     public IwaraTv(PluginWrapper wrapper) {
         super(wrapper);
@@ -39,45 +39,45 @@ public class IwaraTv extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        this.br.setFollowRedirects(true);
+        br.setFollowRedirects(true);
         final PluginForHost hostPlugin = JDUtilities.getPluginForHost("iwara.tv");
         final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
         if (aa != null) {
             try {
-                ((jd.plugins.hoster.IwaraTv) hostPlugin).login(this.br, aa, false);
+                ((jd.plugins.hoster.IwaraTv) hostPlugin).login(br, aa, false);
             } catch (final Throwable e) {
             }
         }
         br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("class=\"cb_error\"")) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"cb_error\"|\"Processing video|>Sort by:")) {
+            decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String filename = this.br.getRegex("<h1 class=\"title\">([^<>\"]+)</h1>").getMatch(0);
+        String filename = br.getRegex("<h1 class=\"title\">([^<>\"]+)</h1>").getMatch(0);
         if (filename == null) {
-            filename = new Regex(this.br.getURL(), "/videos/(.+)").getMatch(0);
+            filename = new Regex(br.getURL(), "/videos/(.+)").getMatch(0);
         }
         filename = Encoding.htmlDecode(filename).trim();
-        String externID = this.br.getRegex("\"(https?://docs\\.google\\.com/file/d/[^<>\"]*?)\"").getMatch(0);
+        String externID = br.getRegex("\"(https?://docs\\.google\\.com/file/d/[^<>\"]*?)\"").getMatch(0);
         if (externID != null) {
-            decryptedLinks.add(this.createDownloadlink(externID));
+            decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
-        externID = this.br.getRegex("\"(?:https?:)?//(?:www\\.)?youtube(?:\\-nocookie)?\\.com/embed/([^<>\"]*?)\"").getMatch(0);
+        externID = br.getRegex("\"(?:https?:)?//(?:www\\.)?youtube(?:\\-nocookie)?\\.com/embed/([^<>\"]*?)\"").getMatch(0);
         if (externID != null) {
             externID = "https://www.youtube.com/watch?v=" + externID;
-            decryptedLinks.add(this.createDownloadlink(externID));
+            decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
-        final String source_html = this.br.getRegex("<div class=\"watch_left\">(.*?)<div class=\"rating_container\">").getMatch(0);
+        final String source_html = br.getRegex("<div class=\"watch_left\">(.*?)<div class=\"rating_container\">").getMatch(0);
         if (source_html != null) {
             externID = new Regex(source_html, "\"(https?[^<>\"]*?)\"").getMatch(0);
             if (externID != null) {
-                decryptedLinks.add(this.createDownloadlink(externID));
+                decryptedLinks.add(createDownloadlink(externID));
                 return decryptedLinks;
             }
         }
-        final DownloadLink dl = createDownloadlink(this.br.getURL().replace("iwara.tv/", "iwaradecrypted.tv/"));
+        final DownloadLink dl = createDownloadlink(br.getURL().replace("iwara.tv/", "iwaradecrypted.tv/"));
         decryptedLinks.add(dl);
         return decryptedLinks;
     }
