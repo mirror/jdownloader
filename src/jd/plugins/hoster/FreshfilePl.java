@@ -33,6 +33,7 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -306,10 +307,18 @@ public class FreshfilePl extends PluginForHost {
                     sleep(leftToWait, downloadLink);
                     retry = true;
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Downloads not possible!");
+                    if (account != null) {
+                        throw new AccountUnavailableException("Downloads not possible!", 60 * 60 * 1000l);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Downloads not possible!");
+                    }
                 }
             } else if (errors.contains("trafficEmpty")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No traffic left");
+                if (account != null) {
+                    throw new AccountUnavailableException("No traffic left", 60 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No traffic left");
+                }
             } else if (errors.contains("notFound")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "File not found!");
             } else {
@@ -392,15 +401,19 @@ public class FreshfilePl extends PluginForHost {
         String dailyTraffic = getJson("trafficDay", accountResponse);
         String trafficRemainded = getJson("trafficRem", accountResponse);
         if (userPremium == 0) {
-            ai.setTrafficMax(SizeFormatter.getSize("5 GB"));
-            ai.setTrafficLeft(SizeFormatter.getSize(trafficRemainded));
+            if (dailyTraffic != null && dailyTraffic.matches("^\\d+")) {
+                ai.setTrafficMax(SizeFormatter.getSize(dailyTraffic));
+            } else {
+                ai.setTrafficMax(SizeFormatter.getSize("5 GB"));
+            }
+            ai.setTrafficLeft(SizeFormatter.getSize(trafficRemainded, true, true));
             ai.setStatus("Registered (free) user");
         } else {
             if (dailyTraffic.equals("no_limit")) {
                 ai.setStatus("Premium user");
             } else {
                 ai.setStatus("Premium user with limit");
-                ai.setTrafficLeft(SizeFormatter.getSize(trafficRemainded));
+                ai.setTrafficLeft(SizeFormatter.getSize(trafficRemainded, true, true));
                 ai.setTrafficMax(SizeFormatter.getSize(dailyTraffic));
             }
         }
@@ -436,9 +449,9 @@ public class FreshfilePl extends PluginForHost {
     }
 
     private String getJson(final String parameter, final String source) {
-        String result = new Regex(source, "\"" + parameter + "\":(\\d+)").getMatch(0);
+        String result = new Regex(source, "\"" + parameter + "\"\\s*:\\s*(-?\\d+)").getMatch(0);
         if (result == null) {
-            result = new Regex(source, "\"" + parameter + "\":[{]?\"(.+?)\"[}]?").getMatch(0);
+            result = new Regex(source, "\"" + parameter + "\"\\s*:\\s*[{]?\"(.+?)\"[}]?").getMatch(0);
         }
         return result;
     }
