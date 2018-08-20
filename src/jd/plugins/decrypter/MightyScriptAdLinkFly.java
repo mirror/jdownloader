@@ -19,10 +19,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -37,6 +33,10 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 /**
  *
  * @author raztoki
@@ -48,12 +48,12 @@ import jd.plugins.components.SiteType.SiteTemplate;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
     private static final String[] domains = { "shortit.ca", "123short.com", "skip-url.me", "msms4.com", "empireshort.com", "loadurl.com", "shortmony.me", "geistlink.com", "cutt.us.com", "arabdollar.com", "shortenow.com", "kingurl.net", "best3link.com", "solo-link.com", "best5link.com", "lkky.co", "win4cut.com", "coinlink.co", "adlink.guru", "short.es", "tmearn.com", "ibly.co", "brlink.in", "urle.co", "mitly.us", "cutwin.com", "zlshorte.net", "igram.im", "gram.im", "bit-url.com", "adbilty.me", "linclik.com", "oke.io", "vivads.net", "pnd.tl", "met.bz", "urlcloud.us",
-            /** <-- cut-urls.com domains --> */
-            "cut-urls.com", "curs.io", "cuon.io",
-            /** wicr.me domains */
-            "wicr.me", "wi.cr",
-            /** adshort.co domains */
-            "adshort.co", "adsrt.com", "adshort.me", "adshort.im" };
+                                          /** <-- cut-urls.com domains --> */
+                                          "cut-urls.com", "curs.io", "cuon.io",
+                                          /** wicr.me domains */
+                                          "wicr.me", "wi.cr",
+                                          /** adshort.co domains */
+                                          "adshort.co", "adsrt.com", "adshort.me", "adshort.im" };
 
     /**
      * returns the annotation pattern array
@@ -177,7 +177,7 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                     /* Captcha type will usually stay the same even on bad solve attempts! */
                     // captchaType = getCaptchaType();
                     if (captchaType == CaptchaType.reCaptchaV2 || captchaType == CaptchaType.reCaptchaV2_invisible) {
-                        requiresCaptchaWhichCanFail = false;
+                        requiresCaptchaWhichCanFail = true;
                         final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br) {
                             @Override
                             public String getSiteKey() {
@@ -282,8 +282,8 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
     /**
      * true = captcha required, false = no captcha required <br />
      *
-     * @param captchatype:
-     *            Type of the captcha found in js/html - required in some rare cases.
+     * @param captchatype
+     *            : Type of the captcha found in js/html - required in some rare cases.
      */
     private boolean evalulateCaptcha(final CaptchaType captchatype) {
         // if ("yes" !== app_vars.enable_captcha) return !0;
