@@ -6,6 +6,9 @@ import java.util.Map;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -67,13 +70,6 @@ public class PluralsightComDecrypter extends PluginForDecrypt {
             final Map<String, Object> map = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             final ArrayList<DownloadLink> clips = PluralsightCom.getClips(this, br, map);
             if (clips != null) {
-                if (!PluginJsonConfig.get(PluralsightComConfig.class).isFastLinkCheckEnabled()) {
-                    for (final DownloadLink clip : clips) {
-                        clip.setAvailableStatus(AvailableStatus.UNCHECKED);
-                    }
-                }
-                // TODO: add subtitles here, for each video add additional DownloadLink that represents subtitle, eg
-                // link.setProperty("type", "srt");
                 final FilePackage fp = FilePackage.getInstance();
                 final String title = (String) map.get("title");
                 if (!StringUtils.isEmpty(title)) {
@@ -83,6 +79,33 @@ public class PluralsightComDecrypter extends PluginForDecrypt {
                 }
                 fp.addLinks(clips);
                 ret.addAll(clips);
+                if (!PluginJsonConfig.get(PluralsightComConfig.class).isFastLinkCheckEnabled()) {
+                    final Browser brc = br.cloneBrowser();
+                    for (final DownloadLink clip : clips) {
+                        if (clip.getKnownDownloadSize() < 0) {
+                            final String streamURL = PluralsightCom.getStreamURL(br, this, clip);
+                            if (streamURL != null) {
+                                final Request checkStream = PluralsightCom.getRequest(brc, this, brc.createHeadRequest(streamURL));
+                                final URLConnectionAdapter con = checkStream.getHttpConnection();
+                                try {
+                                    if (con.getResponseCode() == 200 && !StringUtils.containsIgnoreCase(con.getContentType(), "text") && con.getCompleteContentLength() > 0) {
+                                        clip.setVerifiedFileSize(con.getCompleteContentLength());
+                                        clip.setAvailable(true);
+                                        distribute(clip);
+                                    } else {
+                                        clip.setAvailableStatus(AvailableStatus.UNCHECKED);
+                                    }
+                                } finally {
+                                    con.disconnect();
+                                }
+                            } else {
+                                clip.setAvailableStatus(AvailableStatus.UNCHECKED);
+                            }
+                        }
+                    }
+                }
+                // TODO: add subtitles here, for each video add additional DownloadLink that represents subtitle, eg
+                // link.setProperty("type", "srt");
             }
         }
         return ret;

@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -237,18 +239,23 @@ public class PluralsightCom extends PluginForHost {
     private static Object WAITLOCK = new Object();
 
     public static Request getRequest(Browser br, Plugin plugin, Request request) throws InterruptedException, IOException {
-        return getRequest(br, plugin, request, 30 * 1000);
+        return getRequest(br, plugin, request, 45 * 1000);
     }
 
+    private static AtomicBoolean thresholdInitialized = new AtomicBoolean(false);
+
     public static Request getRequest(Browser br, Plugin plugin, Request request, long waitMax) throws InterruptedException, IOException {
-        br.getPage(request);
-        int loop = 0;
+        if (thresholdInitialized.compareAndSet(false, true)) {
+            final Random random = new Random();
+            final int min = random.nextInt((1000 - 500) + 1) + 500;
+            Browser.setRequestIntervalLimitGlobal(plugin.getHost(), random.nextInt((4000 - min) + 1) + min);
+        }
         synchronized (WAITLOCK) {
+            br.getPage(request);
             while (waitMax > 0) {
-                if (request.getHttpConnection().getResponseCode() == 429) {
-                    final int wait = 1000 * (++loop);
-                    WAITLOCK.wait(wait);
-                    waitMax -= wait;
+                if (request.getHttpConnection().getResponseCode() == 429 || (StringUtils.containsIgnoreCase(request.getHttpConnection().getContentType(), "json") && new Regex(request.getHtmlCode(), "\"status\"\\s*:\\s*429").matches())) {
+                    Thread.currentThread().sleep(15000);
+                    waitMax -= 15000;
                     br.getPage(request);
                 } else {
                     break;
@@ -305,10 +312,14 @@ public class PluralsightCom extends PluginForHost {
         if (link.getKnownDownloadSize() == -1 && !StringUtils.isEmpty(streamURL)) {
             final Request checkStream = getRequest(br, this, br.createHeadRequest(streamURL));
             final URLConnectionAdapter con = checkStream.getHttpConnection();
-            if (con.getResponseCode() == 200 && !StringUtils.containsIgnoreCase(con.getContentType(), "text") && con.getCompleteContentLength() > 0) {
-                link.setVerifiedFileSize(con.getCompleteContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            try {
+                if (con.getResponseCode() == 200 && !StringUtils.containsIgnoreCase(con.getContentType(), "text") && con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            } finally {
+                con.disconnect();
             }
         }
         if (StringUtils.isEmpty(streamURL)) {
