@@ -478,7 +478,11 @@ public class RapidGatorNet extends antiDDoSForHost {
              * Do NOT throw a captcha Exception here as it is not the users' fault that we cannot download - he simply took too much time to
              * enter the captcha!
              */
-            throw new PluginException(LinkStatus.ERROR_RETRY, "Captcha session expired");
+            if (true) {
+                logger.warning("Captcha session expired?!:" + TimeFormatter.formatMilliSeconds(passedTime, 0));
+            } else {
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Captcha session expired");
+            }
         }
     }
 

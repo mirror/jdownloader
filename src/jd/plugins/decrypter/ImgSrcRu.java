@@ -204,7 +204,7 @@ public class ImgSrcRu extends PluginForDecrypt {
         if (br.getURL().contains("/" + id)) {
             String currentID = br.getRegex("<img [^>]*class=(\"|'|)(?:cur|big)\\1 src=(?:'|\")?https?://[^/]*(?:imgsrc\\.ru|icdn\\.ru)/[a-z]/" + Pattern.quote(username) + "/\\d+/(\\d+)").getMatch(1);
             if (currentID == null) {
-                currentID = br.getRegex("/abuse\\.php\\?id=(\\d+)").getMatch(0);
+                currentID = br.getRegex("/voter\\.php\\?w=(?:up|down)_(\\d+)").getMatch(0);
             }
             if (currentID != null) {
                 currentID = "/" + username + "/" + currentID + ".html";
