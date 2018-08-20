@@ -82,7 +82,7 @@ public class PluralsightComDecrypter extends PluginForDecrypt {
                 if (!PluginJsonConfig.get(PluralsightComConfig.class).isFastLinkCheckEnabled()) {
                     final Browser brc = br.cloneBrowser();
                     for (final DownloadLink clip : clips) {
-                        if (clip.getKnownDownloadSize() < 0) {
+                        if (clip.getKnownDownloadSize() < 0 && !isAbort()) {
                             final String streamURL = PluralsightCom.getStreamURL(br, this, clip);
                             if (streamURL != null) {
                                 final Request checkStream = PluralsightCom.getRequest(brc, this, brc.createHeadRequest(streamURL));

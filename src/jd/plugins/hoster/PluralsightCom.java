@@ -269,12 +269,8 @@ public class PluralsightCom extends PluginForHost {
 
     private AvailableStatus fetchFileInformation(DownloadLink link, final Account account) throws Exception {
         streamURL = null;
-        final UrlQuery urlParams = UrlQuery.parse(link.getPluginPatternMatcher());
-        AvailableStatus result = null;// firstCheck(link, urlParams);
-        if (result == AvailableStatus.TRUE) {
-            return result;
-        }
         if (!link.getBooleanProperty("isNameSet", false)) {
+            final UrlQuery urlParams = UrlQuery.parse(link.getPluginPatternMatcher());
             final String course = urlParams.get("course");
             if (course == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -308,26 +304,22 @@ public class PluralsightCom extends PluginForHost {
                 link.setProperty("isNameSet", true);
             }
         }
-        streamURL = getStreamURL(br, this, link);
-        if (link.getKnownDownloadSize() == -1 && !StringUtils.isEmpty(streamURL)) {
-            final Request checkStream = getRequest(br, this, br.createHeadRequest(streamURL));
-            final URLConnectionAdapter con = checkStream.getHttpConnection();
-            try {
-                if (con.getResponseCode() == 200 && !StringUtils.containsIgnoreCase(con.getContentType(), "text") && con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            } finally {
-                con.disconnect();
-            }
-        }
-        if (StringUtils.isEmpty(streamURL)) {
-            if (Thread.currentThread() instanceof SingleDownloadController) {
-                if (account == null || !AccountType.PREMIUM.equals(account.getType())) {
-                    throw new AccountRequiredException();
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (Thread.currentThread() instanceof SingleDownloadController) {
+            return AvailableStatus.UNCHECKABLE;
+        } else if (link.getKnownDownloadSize() == -1) {
+            streamURL = getStreamURL(br, this, link);
+            if (!StringUtils.isEmpty(streamURL)) {
+                final Request checkStream = getRequest(br, this, br.createHeadRequest(streamURL));
+                final URLConnectionAdapter con = checkStream.getHttpConnection();
+                try {
+                    if (con.getResponseCode() == 200 && !StringUtils.containsIgnoreCase(con.getContentType(), "text") && con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                        return AvailableStatus.TRUE;
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                } finally {
+                    con.disconnect();
                 }
             }
             return AvailableStatus.UNCHECKABLE;
@@ -402,18 +394,25 @@ public class PluralsightCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
-        downloadStream(link, streamURL);
+        downloadStream(link, null, streamURL);
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        downloadStream(link, streamURL);
+        downloadStream(link, account, streamURL);
     }
 
-    private void downloadStream(final DownloadLink link, final String streamURL) throws Exception {
+    private void downloadStream(final DownloadLink link, final Account account, String streamURL) throws Exception {
         if (StringUtils.isEmpty(streamURL)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            streamURL = getStreamURL(br, this, link);
+            if (StringUtils.isEmpty(streamURL)) {
+                if (account == null || !AccountType.PREMIUM.equals(account.getType())) {
+                    throw new AccountRequiredException();
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
         }
         dl = BrowserAdapter.openDownload(br, link, streamURL, true, 0);
         if (StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "text")) {
