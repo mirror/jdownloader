@@ -1018,7 +1018,7 @@ public class ToofileCom extends antiDDoSForHost {
             ttt = new Regex(correctedBR, "id=\"countdown_str\" style=\"[^<>\"]+\">Wait <span id=\"[A-Za-z0-9]+\">(\\d+)</span>").getMatch(0);
         }
         if (ttt == null) {
-            ttt = new Regex(correctedBR, "id=\"countdown_str\">Wait <span id=\"[A-Za-z0-9]+\">(\\d+)</span>").getMatch(0);
+            ttt = new Regex(correctedBR, "id=\"countdown_str\">(?:Wait )?<span id=\"[A-Za-z0-9]+\">(\\d+)</span>").getMatch(0);
         }
         if (ttt == null) {
             ttt = new Regex(correctedBR, "class=\"seconds\"[^>]*?>\\s*?(\\d+)\\s*?</span>").getMatch(0);
