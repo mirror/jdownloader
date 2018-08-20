@@ -201,7 +201,7 @@ public class PluralsightCom extends PluginForHost {
         return fetchFileInformation(link, account);
     }
 
-    public String getStreamURL(DownloadLink link) throws PluginException, IOException, InterruptedException {
+    public static String getStreamURL(Browser br, Plugin plugin, DownloadLink link) throws PluginException, IOException, InterruptedException {
         final UrlQuery urlParams = UrlQuery.parse(link.getPluginPatternMatcher());
         final String author = urlParams.get("author");
         if (StringUtils.isEmpty(author)) {
@@ -221,7 +221,7 @@ public class PluralsightCom extends PluginForHost {
         final PostRequest request = br.createPostRequest("https://app.pluralsight.com/player/api/graphql", JSonStorage.toString(params));
         request.setContentType("application/json;charset=UTF-8");
         request.getHeaders().put("Origin", "https://app.pluralsight.com");
-        final Map<String, Object> response = JSonStorage.restoreFromString(getRequest(br, this, request).getHtmlCode(), TypeRef.HASHMAP);
+        final Map<String, Object> response = JSonStorage.restoreFromString(getRequest(br, plugin, request).getHtmlCode(), TypeRef.HASHMAP);
         final List<Map<String, Object>> urls = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(response, "data/viewClip/urls");
         if (urls != null) {
             for (final Map<String, Object> url : urls) {
@@ -301,7 +301,7 @@ public class PluralsightCom extends PluginForHost {
                 link.setProperty("isNameSet", true);
             }
         }
-        streamURL = getStreamURL(link);
+        streamURL = getStreamURL(br, this, link);
         if (link.getKnownDownloadSize() == -1 && !StringUtils.isEmpty(streamURL)) {
             final Request checkStream = getRequest(br, this, br.createHeadRequest(streamURL));
             final URLConnectionAdapter con = checkStream.getHttpConnection();

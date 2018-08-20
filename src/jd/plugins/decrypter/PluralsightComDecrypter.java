@@ -10,6 +10,7 @@ import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -22,6 +23,7 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.config.PluralsightComConfig;
 import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision: $", interfaceVersion = 1, names = { "pluralsight.com" }, urls = { "https?://(app|www)?\\.pluralsight\\.com(\\/library)?\\/courses\\/[^/]+" })
 public class PluralsightComDecrypter extends PluginForDecrypt {
@@ -65,6 +67,11 @@ public class PluralsightComDecrypter extends PluginForDecrypt {
             final Map<String, Object> map = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             final ArrayList<DownloadLink> clips = PluralsightCom.getClips(this, br, map);
             if (clips != null) {
+                if (!PluginJsonConfig.get(PluralsightComConfig.class).isFastLinkCheckEnabled()) {
+                    for (final DownloadLink clip : clips) {
+                        clip.setAvailableStatus(AvailableStatus.UNCHECKED);
+                    }
+                }
                 // TODO: add subtitles here, for each video add additional DownloadLink that represents subtitle, eg
                 // link.setProperty("type", "srt");
                 final FilePackage fp = FilePackage.getInstance();
