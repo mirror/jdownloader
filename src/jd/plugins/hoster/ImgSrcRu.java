@@ -22,9 +22,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.mozilla.javascript.ConsString;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -40,9 +37,12 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.mozilla.javascript.ConsString;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgsrc.ru" }, urls = { "https?://decryptedimgsrc\\.ru/[^/]+/\\d+\\.html(\\?pwd=[a-z0-9]{32})?" })
 public class ImgSrcRu extends PluginForHost {
-
     // DEV NOTES
     // drop requests on too much traffic, I suspect at the firewall on connection.
     private String                         ddlink    = null;
@@ -146,12 +146,23 @@ public class ImgSrcRu extends PluginForHost {
     private void getDllink() {
         try {
             boolean done = false;
-            String js = br.getRegex(".+<script(?: type=(\"|')text/javascript\\1)?>.*?\\s*(var [a-z]=[^<]+.*?)</script>.+").getMatch(1);
+            String js = br.getRegex(".+<script(?: type=(\"|')text/javascript\\1)?>.*?\\s*((?:var|let) [a-z]=[^<]+.*?)</script>.+").getMatch(1);
             Object result = null;
             String t = null;
             if (js != null) {
-                final String[] var = new Regex(js, "((?:var\\s*)?(\\w+)\\s*=\\s*document\\.getElementById\\('?([\\w_]+)'?\\)\\.(\\w+),)").getRow(0);
-                String varres = br.getRegex("<[^>]+'" + Pattern.quote(var[2]) + "'[^>]*>").getMatch(-1);
+                String[] var = new Regex(js, "((?:(?:var|let)\\s*)?(\\w+)\\s*=\\s*document\\.getElementById\\('?([\\w_]+)'?\\)\\.(\\w+)?,)").getRow(0);
+                String replaced = null;
+                if (var == null) {
+                    final String var_e[] = new Regex(js, "(?:var|let)\\s*(\\w+)\\s*=\\s*'(.*?)'\\s*,").getRow(0);
+                    if (var_e != null) {
+                        replaced = var_e[0];
+                        js = js.replaceFirst("getElementById\\(" + Pattern.quote(var_e[0]) + "\\)", "getElementById(" + var_e[1] + ").src");
+                        js = js.replaceFirst("d=", "var q=");
+                        js = js.replaceFirst("q=d.src,", "");
+                    }
+                    var = new Regex(js, "((?:(?:var|let)\\s*)?(\\w+)\\s*=\\s*document\\.getElementById\\('?([\\w_]+)'?\\)\\.(\\w+)?,)").getRow(0);
+                }
+                String varres = br.getRegex("<[^>]+'" + Pattern.quote(var[2]) + "'[^>]*>").getMatch(-1);// find image tag with correct id
                 if (varres == null) {
                     // within js as var
                     t = new Regex(js, var[2] + "='?(.*?)'?[,;]").getMatch(0);
@@ -159,10 +170,15 @@ public class ImgSrcRu extends PluginForHost {
                         varres = br.getRegex("<[^>]+'" + Pattern.quote(t) + "'[^>]*>").getMatch(-1);
                     }
                 }
-                final String varsrc = new Regex(varres, var[3] + "=('|\")(.*?)\\1").getMatch(1);
-                js = js.replace(var[0], "");
+                final String varsrc = new Regex(varres, var[3] + "=('|\")(.*?)\\1").getMatch(1);// parse src from image tag
+                js = js.replace(var[0], "");// set by engine.put(key,value)
                 // they are now referencing o+elementid(e) for original, and big is just elementid(e)
-                final String[] qual = { /* original */ "o'\\s*\\+\\s*" + var[2], "pic_o", "ori", /* big */ "pic_b", "bip", var[2] };
+                final String[] qual;
+                if (replaced != null) {
+                    qual = new String[] { /* original */"o'\\s*\\+\\s*" + var[2], "o'\\s*\\+\\s*" + replaced, "pic_o", "ori", /* big */"pic_b", "bip", replaced, var[2] };
+                } else {
+                    qual = new String[] { /* original */"o'\\s*\\+\\s*" + var[2], "pic_o", "ori", /* big */"pic_b", "bip", var[2] };
+                }
                 for (final String q : qual) {
                     if (new Regex(js, "document.getElementById\\('?" + q + ".*?\\)").matches()) {
                         if (!done) {
@@ -170,8 +186,16 @@ public class ImgSrcRu extends PluginForHost {
                             done = true;
                             // replace non needed
                             js = js.replaceAll("document.getElementById\\(.*?\\)[^\r\n]+", "");
+                            js = js.replaceAll("\\w+\\.src\\s*=\\s*[^\r\n]+", "");
                             break;
                         }
+                    }
+                }
+                if (!done) {
+                    final String newJS = js.replaceFirst("\\w+\\.src\\s*=", "var result=");
+                    if (!StringUtils.equals(js, newJS)) {
+                        js = newJS;
+                        done = true;
                     }
                 }
                 if (!done) {
