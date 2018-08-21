@@ -260,13 +260,19 @@ public class PluginConfigAdapter {
                     storable.setValue(entry.getPropertyInstance().getBooleanProperty(entry.getPropertyName()));
                     break;
                 case INT:
-                    storable.setValue(entry.getPropertyInstance().getIntegerProperty(entry.getPropertyName()));
+                    storable.setValue(entry.getPropertyInstance().getIntegerProperty(entry.getPropertyName(), -1));
                     break;
                 case LONG:
                     storable.setValue(entry.getPropertyInstance().getLongProperty(entry.getPropertyName(), -1l));
                     break;
                 case STRING:
                     storable.setValue(entry.getPropertyInstance().getStringProperty(entry.getPropertyName()));
+                    break;
+                case OBJECT_LIST:
+                    final Object objectListValue = entry.getPropertyInstance().getProperty(entry.getPropertyName());
+                    if (objectListValue != null) {
+                        storable.setValue(new Object[] { objectListValue });
+                    }
                     break;
                 default:
                     storable.setValue(entry.getPropertyInstance().getProperty(entry.getPropertyName()));
