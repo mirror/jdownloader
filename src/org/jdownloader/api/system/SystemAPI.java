@@ -12,15 +12,15 @@ import org.jdownloader.myjdownloader.client.bindings.SystemInformationStorable;
 @ApiNamespace(org.jdownloader.myjdownloader.client.bindings.interfaces.SystemInterface.NAMESPACE)
 public interface SystemAPI extends RemoteAPIInterface {
     @APIParameterNames({ "force" })
-    public void shutdownOS(boolean force);
+    public void shutdownOS(boolean force) throws InterruptedException;;
 
-    public void standbyOS();
+    public void standbyOS() throws InterruptedException;;
 
-    public void hibernateOS();
+    public void hibernateOS() throws InterruptedException;
 
-    public void restartJD();
+    public void restartJD() throws InterruptedException;;
 
-    public void exitJD();
+    public void exitJD() throws InterruptedException;;
 
     @AllowNonStorableObjects
     public SystemInformationStorable getSystemInfos();

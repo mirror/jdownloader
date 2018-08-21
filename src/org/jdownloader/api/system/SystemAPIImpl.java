@@ -6,9 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.linkcollector.LinkCollector;
-
+import org.appwork.exceptions.WTFException;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
@@ -27,6 +25,9 @@ import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.SmartRlyExitRequest;
 import org.jdownloader.updatev2.SmartRlyRestartRequest;
 
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.linkcollector.LinkCollector;
+
 public class SystemAPIImpl implements SystemAPI {
     private final long startupTimeStamp = System.currentTimeMillis();
 
@@ -35,7 +36,7 @@ public class SystemAPIImpl implements SystemAPI {
     }
 
     @Override
-    public void shutdownOS(final boolean force) {
+    public void shutdownOS(final boolean force) throws InterruptedException {
         stopJD();
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
             @Override
@@ -45,47 +46,46 @@ public class SystemAPIImpl implements SystemAPI {
 
             @Override
             public void onShutdown(ShutdownRequest shutdownRequest) {
-                CrossSystem.shutdownSystem(force);
+                try {
+                    CrossSystem.shutdownSystem(force);
+                } catch (InterruptedException e) {
+                    throw new WTFException(e);
+                }
             }
         });
         RestartController.getInstance().exitAsynch(new ForcedShutdown());
     }
 
     @Override
-    public void standbyOS() {
+    public void standbyOS() throws InterruptedException {
         stopJD();
         CrossSystem.standbySystem();
     }
 
     @Override
-    public void hibernateOS() {
+    public void hibernateOS() throws InterruptedException {
         stopJD();
         CrossSystem.hibernateSystem();
     }
 
-    private void stopJD() {
+    private void stopJD() throws InterruptedException {
         DownloadWatchDog.getInstance().stopDownloads();
         LinkCollector.getInstance().abort();
         int maxWait = 5 * 1000;
         while (DownloadWatchDog.getInstance().isIdle() == false && maxWait >= 0) {
-            try {
-                maxWait -= 500;
-                Thread.sleep(500);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-                break;
-            }
+            maxWait -= 500;
+            Thread.sleep(500);
         }
     }
 
     @Override
-    public void restartJD() {
+    public void restartJD() throws InterruptedException {
         stopJD();
         RestartController.getInstance().asyncRestart(new SmartRlyRestartRequest());
     }
 
     @Override
-    public void exitJD() {
+    public void exitJD() throws InterruptedException {
         stopJD();
         RestartController.getInstance().exitAsynch(new SmartRlyExitRequest());
     }
