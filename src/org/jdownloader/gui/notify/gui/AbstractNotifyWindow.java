@@ -65,7 +65,6 @@ import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel> extends ExtJWindow implements ActionListener, AWTEventListener, GenericConfigEventListener<Boolean> {
-
     private static final int BOTTOM_MARGIN = 5;
     private static final int TOP_MARGIN    = 20;
     private MigPanel         content;
@@ -79,7 +78,6 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
     }
 
     private int                   timeout = 15000;
-
     private Point                 startLocation;
     private int                   round   = 10;
     private Balloner              controller;
@@ -100,25 +98,21 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
     public AbstractNotifyWindow(AbstractBubbleSupport bubbleSupport, String caption, T comp) {
         super();
         this.bubbleSupport = bubbleSupport;
+        if (Application.getJavaVersion() >= Application.JAVA17) {
+            this.setType(java.awt.Window.Type.POPUP);
+        }
         bounds = new Rectangle();
         content = new MigPanel("ins 2 5 10 5,wrap 1", "[grow,fill]", "[][grow,fill]") {
-
             @Override
             public void paintComponent(Graphics g) {
                 Graphics2D g2d = (Graphics2D) g.create();
-
                 int width = getWidth();
                 int height = getHeight();
-
                 // Create a soft clipped image for the background
                 BufferedImage img = getSoftClipWorkaroundImage(g2d, width, height);
-
                 g2d.drawImage(img, 0, 0, null);
-
                 g2d.dispose();
-
             }
-
         };
         comp.setWindow(this);
         setContentPane(content);
@@ -134,12 +128,9 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
         } catch (Throwable e) {
             e.printStackTrace();
         }
-
         setWindowOpacity(this, 0f);
-
         fader = new Fader(this);
         setTimeout(CFG_BUBBLE.DEFAULT_TIMEOUT.getValue());
-
         if (bubbleSupport != null) {
             List<Element> elements = bubbleSupport.getElements();
             if (elements != null) {
@@ -148,7 +139,6 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
                 }
             }
         }
-
     }
 
     public AbstractBubbleSupport getBubbleSupport() {
@@ -162,7 +152,6 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
     @Override
     public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 updateLayout();
@@ -171,11 +160,9 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
     }
 
     protected void updateLayout() {
-
         getContentComponent().updateLayout();
         pack();
         BubbleNotify.getInstance().relayout();
-
     }
 
     public void dispose() {
@@ -210,7 +197,6 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
     // System.out.println(e);
     // }
     //
-
     public boolean isClosed() {
         return closed;
     }
@@ -291,40 +277,28 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
         try {
             if (e instanceof MouseEvent) {
                 MouseEvent m = (MouseEvent) e;
-
                 if (!mouseOver && m.getID() == MouseEvent.MOUSE_ENTERED) {
                     if (isMouseOver(m.getLocationOnScreen(), this)) {
                         mouseOver = true;
-
                         onMouseEntered(m);
                         return;
                     }
-
                 } else if (mouseOver && m.getID() == MouseEvent.MOUSE_EXITED) {
-
                     if (!isMouseOver(m.getLocationOnScreen(), this)) {
-
                         mouseOver = false;
-
                         onMouseExited(m);
                         return;
                     }
-
                 } else if (m.getID() == MouseEvent.MOUSE_CLICKED) {
-
                     if (isMouseOver(m.getLocationOnScreen(), contentComponent)) {
-
                         onMouseClicked(m);
                         return;
                     }
                 }
-
             }
         } catch (Throwable e1) {
             org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e1);
-
         }
-
     }
 
     protected void onMouseClicked(MouseEvent m) {
@@ -338,9 +312,7 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
             bounds.y = los.y;
             // System.out.println(bounds + " - " + getBounds() + " - " + loc + " " + bounds.contains(loc) + " - " +
             // getBounds().contains(loc));
-
             if (loc.x >= bounds.x && loc.x <= bounds.x + bounds.width) {
-
                 if (loc.y >= bounds.y && loc.y <= bounds.y + bounds.height) {
                     //
                     return true;
@@ -355,13 +327,10 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
 
     // @Override
     // public void mouseEntered(MouseEvent e) {
-
     // }
-
     // @Override
     // public void mouseExited(MouseEvent e) {
     //
-
     // }
     protected void onMouseExited(MouseEvent m) {
         System.out.println("Exit");
@@ -381,7 +350,6 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
     }
 
     public void setVisible(boolean b) {
-
         if (b == isVisible()) {
             //
             return;
@@ -422,7 +390,6 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
     }
 
     protected int getFadeSpeed() {
-
         return CFG_BUBBLE.FADE_ANIMATION_DURATION.getValue();
     }
 
@@ -445,7 +412,6 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
 
     public void setHeaderText(final String txt) {
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 headerLbl.setText(txt);
@@ -466,15 +432,12 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
                 setToolTipText(_GUI.T.Notify_createHeader_settings_tt());
                 setRolloverEffectEnabled(true);
                 addActionListener(new ActionListener() {
-
                     public void actionPerformed(ActionEvent e) {
                         onSettings(e);
                         onRollOut();
                     }
-
                 });
             }
-
             /**
              *
              */
@@ -482,7 +445,6 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
 
             protected void onRollOut() {
                 setContentAreaFilled(false);
-
                 setIcon(IconIO.getTransparentIcon(NewTheme.I().getImage(IconKey.ICON_WRENCH, 10), 0.5f));
                 // setIcon(new AbstractIcon(IconKey.ICON_brightmix/w2", 18));
             }
@@ -493,7 +455,6 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
             protected void onRollOver() {
                 setIcon(new AbstractIcon(IconKey.ICON_WRENCH, 10));
             }
-
         };
         ret.add(settings, "width 10!,height 10!");
         ExtButton closeButton = new ExtButton() {
@@ -501,15 +462,12 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
                 setToolTipText(_GUI.T.Notify_createHeader_close_tt());
                 setRolloverEffectEnabled(true);
                 addActionListener(new ActionListener() {
-
                     public void actionPerformed(ActionEvent e) {
                         onClose();
                         onRollOut();
                     }
-
                 });
             }
-
             /**
              *
              */
@@ -518,7 +476,6 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
             protected void onRollOut() {
                 setContentAreaFilled(false);
                 setIcon(IconIO.getTransparentIcon(NewTheme.I().getImage("close", 10), 0.5f));
-
             }
 
             /**
@@ -527,7 +484,6 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
             protected void onRollOver() {
                 setIcon(new AbstractIcon(IconKey.ICON_CLOSE, 10));
             }
-
         };
         ret.add(closeButton, "width 10!,height 10!");
         SwingUtils.setOpaque(ret, false);
@@ -537,20 +493,15 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
     }
 
     protected void onSettings(ActionEvent action) {
-
         final AbstractBubbleSupport support = getBubbleSupport();
-
         if (support != null) {
             ExtRealCheckBoxMenuItem item;
             ExtPopupMenu popup = new ExtPopupMenu();
             List<Element> elements = support.getElements();
             if (elements != null) {
-
                 for (final Element e : elements) {
-
                     popup.add(item = new ExtRealCheckBoxMenuItem(new AppAction() {
                         {
-
                             setName(e.getLabel());
                             setIconKey(e.getIcon());
                             setSelected(e.getKeyhandler().isEnabled());
@@ -563,7 +514,6 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
                     }));
                     item.setHideOnClick(false);
                 }
-
             }
             popup.add(new JSeparator());
             popup.add(new AppAction() {
@@ -583,7 +533,6 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
                     } catch (DialogCanceledException e1) {
                         e1.printStackTrace();
                     }
-
                 }
             });
             popup.add(new JSeparator());
@@ -605,12 +554,10 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
             popup.show(source, 0, -popup.getPreferredSize().height);
             return;
         }
-
         JDGui.getInstance().setFrameState(FrameState.TO_FRONT_FOCUSED);
         JsonConfig.create(GraphicalUserInterfaceSettings.class).setConfigViewVisible(true);
         JDGui.getInstance().setContent(ConfigurationView.getInstance(), true);
         ConfigurationView.getInstance().setSelectedSubPanel(BubbleNotifyConfigPanel.class);
-
     }
 
     public void hideBubble(int timeout) {
@@ -625,7 +572,6 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
             timer = null;
         }
         fader.fadeOut(getFadeSpeed());
-
         if (endLocation != null) {
             fader.moveTo(endLocation.x, endLocation.y, getFadeSpeed());
         }
@@ -633,7 +579,6 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
             controller.remove(this);
         }
         Timer disposeTimer = new Timer(2000, new ActionListener() {
-
             @Override
             public void actionPerformed(ActionEvent e) {
                 /* make sure we dispose the dialog */
@@ -642,7 +587,6 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
         });
         disposeTimer.setRepeats(false);
         disposeTimer.start();
-
     }
 
     public void setHighlightColor(Color highlightColor) {
@@ -657,7 +601,6 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
         // clear the full image
         g2.setComposite(AlphaComposite.Clear);
         g2.fillRect(0, 0, width, height);
-
         g2.setComposite(AlphaComposite.Src);
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g2.setColor(Color.WHITE);
@@ -673,16 +616,11 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
             p = new GradientPaint(0, 0, highlightColor, 0, TOP_MARGIN, highlightColor.brighter());
             g2.setPaint(p);
         }
-
         g2.fillRoundRect(0, 0, width, height, round, round);
-
         p = new GradientPaint(0, 0, LAFOptions.getInstance().getColorForPanelBackground(), 0, TOP_MARGIN, LAFOptions.getInstance().getColorForPanelBackground().brighter());
         g2.setPaint(p);
-
         g2.fillRect(0, TOP_MARGIN, width, height - TOP_MARGIN - BOTTOM_MARGIN);
-
         g2.setColor(LAFOptions.getInstance().getColorForPanelBorders());
-
         g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, round, round);
         g2.dispose();
         return img;
@@ -701,7 +639,6 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
     }
 
     public void setEndLocation(Point p) {
-
         endLocation = p;
     }
 
@@ -710,7 +647,6 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
             setLocation(point);
             startLocation = point;
         }
-
     }
 
     public Point getStartLocation() {
@@ -727,5 +663,4 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
 
     public void setHighlightColor(Object object) {
     }
-
 }

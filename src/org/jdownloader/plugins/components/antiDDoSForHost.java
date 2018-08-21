@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
+import java.net.URLDecoder;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -856,8 +857,14 @@ public abstract class antiDDoSForHost extends PluginForHost {
             // xinfo in the iframe is the same as header info...
             final String xinfo = ibr.getHttpConnection().getHeaderField("X-Iinfo");
             // so far in logs ive only seen this trigger after one does NOT answer a function z..
-            String azas = "<iframe[^<]*\\s+src=\"(/_Incapsula_Resource\\?(?:[^\"]+&|)xinfo=" + (!inValidate(xinfo) ? Pattern.quote(xinfo) : "") + "[^\"]*)\"";
-            final String iframe = ibr.getRegex(azas).getMatch(0);
+            final String azas = "<iframe[^<]*\\s+src=\"(/_Incapsula_Resource\\?(?:[^\"]+&|)xinfo=[^\"]*)\"";
+            String iframe = ibr.getRegex(azas).getMatch(0);
+            if (iframe != null && StringUtils.isNotEmpty(xinfo)) {
+                final String validateXinfo = new Regex(iframe, "xinfo=(.*?)($|&)").getMatch(0);
+                if (!StringUtils.equals(xinfo, validateXinfo) && !StringUtils.equals(xinfo, URLDecoder.decode(validateXinfo, "UTF-8"))) {
+                    iframe = null;
+                }
+            }
             if (iframe != null) {
                 final Browser ifr = ibr.cloneBrowser();
                 // will need referrer,, but what other custom headers??
