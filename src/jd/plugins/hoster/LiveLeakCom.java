@@ -56,7 +56,7 @@ public class LiveLeakCom extends PluginForHost {
         final String linkid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9_]+)$").getMatch(0);
         downloadLink.setLinkID(linkid);
         br.getPage("https://www." + getHost() + "/ll_embed?f=" + linkid);
-        if (br.containsHTML("File not found or deleted\\!")) {
+        if (br.containsHTML("File not found or deleted(<|\\!)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("shareTitle\\s*?:\\s*?\\'([^<>\"\\']+)\\'").getMatch(0);
