@@ -188,10 +188,10 @@ public class MicloudfilesCom extends antiDDoSForHost {
         Browser altbr = null;
         correctDownloadLink(link);
         getPage(link.getDownloadURL());
-        setFUID(link);
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        setFUID(link);
         altbr = this.br.cloneBrowser();
         if (new Regex(correctedBR, HTML_MAINTENANCE_MODE).matches()) {
             /* In maintenance mode this sometimes is a way to find filenames! */
