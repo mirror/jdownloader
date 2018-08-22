@@ -42,7 +42,7 @@ public class RomHustlerNet extends PluginForDecrypt {
         final PluginForHost rhPlugin = JDUtilities.getPluginForHost(this.getHost());
         ((jd.plugins.hoster.RomHustlerNet) rhPlugin).prepBrowser(this.br);
         br.getPage(parameter);
-        if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">404 \\- Page got lost|>\\s*This is a ESA protected rom")) {
+        if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">404 \\- Page got lost|>\\s*This is a ESA protected rom|>Administrators only")) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
