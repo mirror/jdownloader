@@ -13,22 +13,18 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.gui.swing.jdgui.views.settings;
 
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
-import javax.swing.JPanel;
 import javax.swing.JPasswordField;
-import javax.swing.JRadioButton;
 import javax.swing.JSeparator;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
@@ -45,7 +41,6 @@ import jd.config.GuiConfigListener;
 import jd.gui.swing.components.JDLabelContainer;
 import jd.gui.swing.components.JDTextArea;
 import jd.gui.swing.components.JDTextField;
-import net.miginfocom.swing.MigLayout;
 
 import org.jdownloader.logging.LogController;
 
@@ -54,14 +49,11 @@ import org.jdownloader.logging.LogController;
  * Automatisiert einfügen.
  */
 public class GUIConfigEntry implements GuiConfigListener, ActionListener, ChangeListener, DocumentListener {
-
     private final ConfigEntry configEntry;
-
     /**
      * Die input Komponente
      */
     private JComponent        input;
-
     private JComponent        decoration;
 
     /**
@@ -72,36 +64,29 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
     public GUIConfigEntry(ConfigEntry configEntry) {
         this.configEntry = configEntry;
         configEntry.setGuiListener(this);
-
         if (configEntry.getLabel() != null && configEntry.getLabel().trim().length() > 0) {
             String text = configEntry.getLabel().trim();
             if (!text.startsWith("<html>")) {
                 // html jabels do a better line wrapping
                 text = "<html>" + text.replaceAll("\r\n", "<br>") + "</html>";
-
             }
             decoration = new JLabel(text);
-
         }
-
         switch (configEntry.getType()) {
         case ConfigContainer.TYPE_PASSWORDFIELD:
             input = new JPasswordField();
             ((JPasswordField) input).setHorizontalAlignment(JPasswordField.RIGHT);
-
             Document doc = ((JPasswordField) input).getDocument();
             doc.addDocumentListener(this);
             break;
         case ConfigContainer.TYPE_TEXTFIELD:
             input = new JDTextField();
-
             ((JDTextField) input).setHorizontalAlignment(JDTextField.RIGHT);
             doc = ((JDTextField) input).getDocument();
             doc.addDocumentListener(this);
             break;
         case ConfigContainer.TYPE_TEXTAREA:
             input = new JDTextArea();
-
             ((JDTextArea) input).setLineWrap(true);
             ((JDTextArea) input).setWrapStyleWord(true);
             doc = ((JDTextArea) input).getDocument();
@@ -123,7 +108,6 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
             ((JButton) input).addActionListener(this);
             ((JButton) input).addActionListener(configEntry.getActionListener());
             break;
-        case ConfigContainer.TYPE_COMBOBOX:
         case ConfigContainer.TYPE_COMBOBOX_INDEX:
             input = new JComboBox(configEntry.getList());
             if (configEntry.getList().length > 0) {
@@ -132,7 +116,6 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
                     ((JComboBox) input).setMaximumRowCount(10);
                 }
             }
-
             Object v = configEntry.getPropertyInstance().getProperty(configEntry.getPropertyName());
             if (v instanceof String) {
                 for (int i = 0; i < configEntry.getList().length; i++) {
@@ -142,37 +125,11 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
                     }
                 }
             } else {
-
                 for (int i = 0; i < configEntry.getList().length; i++) {
                     if (configEntry.getList()[i].equals(v)) {
                         ((JComboBox) input).setSelectedIndex(i);
                         break;
                     }
-                }
-            }
-            break;
-        case ConfigContainer.TYPE_RADIOFIELD:
-            input = new JPanel(new MigLayout("ins 0", "", ""));
-            JRadioButton radio;
-
-            ButtonGroup group = new ButtonGroup();
-
-            for (Object obj : configEntry.getList()) {
-                radio = new JRadioButton(obj.toString());
-
-                radio.setActionCommand(obj.toString());
-                input.add(radio);
-
-                radio.addActionListener(this);
-                group.add(radio);
-
-                Object p = configEntry.getPropertyInstance().getProperty(configEntry.getPropertyName());
-                if (p == null) {
-                    p = "";
-                }
-
-                if (obj.toString().equals(p.toString())) {
-                    radio.setSelected(true);
                 }
             }
             break;
@@ -185,14 +142,11 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
             decoration = configEntry.getComponent();
             break;
         }
-
         if (input != null) {
-
             boolean state = configEntry.isConditionalEnabled(null, null);
             enableComponent(input, configEntry.isEnabled() && state);
             enableComponent(decoration, configEntry.isEnabled() && state);
         }
-
     }
 
     public JComponent getInput() {
@@ -225,20 +179,8 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
             return ((JTextComponent) input).getText();
         case ConfigContainer.TYPE_CHECKBOX:
             return ((JCheckBox) input).isSelected();
-        case ConfigContainer.TYPE_COMBOBOX:
-            return ((JComboBox) input).getSelectedItem();
         case ConfigContainer.TYPE_COMBOBOX_INDEX:
             return ((JComboBox) input).getSelectedIndex();
-        case ConfigContainer.TYPE_RADIOFIELD:
-            JRadioButton radio;
-            Component[] inputs = input.getComponents();
-            for (Component element : inputs) {
-                radio = (JRadioButton) element;
-                if (radio.getSelectedObjects() != null && radio.getSelectedObjects()[0] != null) {
-                    return radio.getSelectedObjects()[0];
-                }
-            }
-            return null;
         case ConfigContainer.TYPE_SPINNER:
             return ((JSpinner) input).getValue();
         case ConfigContainer.TYPE_BUTTON:
@@ -247,7 +189,6 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
         case ConfigContainer.TYPE_COMPONENT:
             return null;
         }
-
         return null;
     }
 
@@ -321,9 +262,6 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
                 ((JCheckBox) input).setSelected(false);
             }
             break;
-        case ConfigContainer.TYPE_COMBOBOX:
-            ((JComboBox) input).setSelectedItem(text);
-            break;
         case ConfigContainer.TYPE_COMBOBOX_INDEX:
             if (text instanceof Integer) {
                 ((JComboBox) input).setSelectedIndex((Integer) text);
@@ -331,7 +269,6 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
                 ((JComboBox) input).setSelectedItem(text);
             }
             break;
-
         case ConfigContainer.TYPE_SPINNER:
             int value = text instanceof Integer ? (Integer) text : Integer.parseInt(text.toString());
             try {
@@ -340,17 +277,6 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
                 ((JSpinner) input).setModel(new SpinnerNumberModel(value, configEntry.getStart(), configEntry.getEnd(), configEntry.getStep()));
             } catch (Exception e) {
                 LogController.CL().log(e);
-            }
-            break;
-        case ConfigContainer.TYPE_RADIOFIELD:
-            Component[] inputs = input.getComponents();
-            for (int i = 0; i < configEntry.getList().length; i++) {
-                JRadioButton radio = (JRadioButton) inputs[i];
-                if (radio.getActionCommand().equals(text)) {
-                    radio.setSelected(true);
-                } else {
-                    radio.setSelected(false);
-                }
             }
             break;
         case ConfigContainer.TYPE_BUTTON:
@@ -369,7 +295,6 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
     public void reload() {
         load();
         if (input != null) {
-
             boolean state = configEntry.isConditionalEnabled(null, null);
             enableComponent(input, configEntry.isEnabled() && state);
             enableComponent(decoration, configEntry.isEnabled() && state);
@@ -402,5 +327,4 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
             configEntry.getListController().setList(getText() + "");
         }
     }
-
 }
