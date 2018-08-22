@@ -267,7 +267,7 @@ public class UsersCloudCom extends PluginForHost {
                 if (fileInfo[0] == null) {
                     // fileInfo[0] = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
                     // fileInfo[0] = new Regex(correctedBR, "<h2[^<>]*>(<b>)?(.*?)(</b>)?</h2>").getMatch(1);
-                    fileInfo[0] = new Regex(correctedBR, "<i class=\"fa fa-file-o\"></i>(.*?)\\s*<br>").getMatch(0);
+                    fileInfo[0] = new Regex(correctedBR, "<i class=\"[^\"]*fa-file[^\"]*\">\\s*</i>\\s*(.*?)\\s*<").getMatch(0);
                     /* traits from download1 page below */
                     if (fileInfo[0] == null || fileInfo[0].contains("...") /* they can truncate the previous result. */) {
                         fileInfo[0] = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"']+)").getMatch(1);
