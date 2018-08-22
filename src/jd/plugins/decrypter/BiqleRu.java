@@ -47,7 +47,7 @@ public class BiqleRu extends PluginForDecrypt {
             br.getPage(param.getCryptedUrl());
             br.followRedirect();
             final String title = br.getRegex("<title>\\s*(.*?)\\s*(— BIQLE Video)?</title>").getMatch(0);
-            final String daxab = br.getRegex("((?:https?:)?//daxab\\.com/player/[a-zA-Z0-9_\\-]+-[a-zA-Z0-9_\\-]+-[a-zA-Z0-9_\\-]+)\"").getMatch(0);
+            final String daxab = br.getRegex("((?:https?:)?//daxab\\.com/player/[a-zA-Z0-9_\\-]+)\"").getMatch(0);
             if (daxab != null) {
                 final Browser brc = br.cloneBrowser();
                 sleep(1000, param);
