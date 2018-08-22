@@ -61,6 +61,7 @@ public class BibeltvDe extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         dllink = null;
+        filesize = 0; // Initialize, needed for adding more than 1 links at once
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final String url_filename = new Regex(link.getDownloadURL(), "/mediathek/videos/([a-z0-9\\-]+)").getMatch(0).replace("-", " ");
