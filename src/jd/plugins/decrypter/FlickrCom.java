@@ -27,6 +27,7 @@ import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -100,7 +101,7 @@ public class FlickrCom extends PluginForDecrypt {
             if (!this.loggedin) {
                 logger.info("Login failed or no accounts active/existing -> Continuing without account");
             }
-            if (parameter.matches(TYPE_FAVORITES)) {
+            if (parameter.matches(TYPE_FAVORITES) || loggedin) {
                 site_handleSite();
             } else {
                 api_handleAPI();
@@ -292,7 +293,6 @@ public class FlickrCom extends PluginForDecrypt {
                 fina.setAvailable(true);
                 fina._setFilePackage(fp);
                 distribute(fina);
-                fp.addLinks(decryptedLinks);
                 decryptedLinks.add(fina);
             }
         }
@@ -302,7 +302,7 @@ public class FlickrCom extends PluginForDecrypt {
         return jd.plugins.hoster.FlickrCom.getFormattedFilename(dl);
     }
 
-    private void apiGetSetsOfUser() throws IOException, DecrypterException {
+    private void apiGetSetsOfUser() throws IOException, DecrypterException, InterruptedException {
         final String nsid = get_NSID(null);
         if (nsid == null) {
             throw new DecrypterException("Decrypter broken for link: " + parameter);
@@ -332,7 +332,7 @@ public class FlickrCom extends PluginForDecrypt {
         }
     }
 
-    private String get_NSID(String username) throws IOException, DecrypterException {
+    private String get_NSID(String username) throws IOException, DecrypterException, InterruptedException {
         String nsid;
         if (username == null) {
             username = this.username;
@@ -347,8 +347,12 @@ public class FlickrCom extends PluginForDecrypt {
         return nsid;
     }
 
-    /** (API) Function to find the nsid of a user. */
-    private String apiLookupUser(String username) throws IOException, DecrypterException {
+    /**
+     * (API) Function to find the nsid of a user.
+     *
+     * @throws InterruptedException
+     */
+    private String apiLookupUser(String username) throws IOException, DecrypterException, InterruptedException {
         if (username == null) {
             username = this.username;
         }
@@ -357,8 +361,28 @@ public class FlickrCom extends PluginForDecrypt {
         return PluginJSonUtils.getJsonValue(br, "id");
     }
 
-    private void api_getPage(final String url) throws IOException, DecrypterException {
-        br.getPage(url);
+    private static Object LOCK = new Object();
+
+    private void api_getPage(final String url) throws IOException, DecrypterException, InterruptedException {
+        synchronized (LOCK) {
+            final URLConnectionAdapter con = br.openGetConnection(url);
+            try {
+                switch (con.getResponseCode()) {
+                case 500:
+                case 504:
+                    con.setAllowedResponseCodes(new int[] { con.getResponseCode() });
+                    br.followConnection();
+                    sleep(1000, getCurrentLink().getCryptedLink());
+                    br.getPage(url);
+                    break;
+                default:
+                    br.followConnection();
+                    break;
+                }
+            } finally {
+                con.disconnect();
+            }
+        }
         updatestatuscode();
         this.handleAPIErrors(this.br);
     }

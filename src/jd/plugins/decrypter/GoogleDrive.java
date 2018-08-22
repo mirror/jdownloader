@@ -126,6 +126,7 @@ public class GoogleDrive extends PluginForDecrypt {
                     br.getPage(parameter);
                 }
             } catch (final Throwable e) {
+                logger.log(e);
                 final URLConnectionAdapter con = br.getHttpConnection();
                 if (con == null || con.getResponseCode() != 200 && con.getResponseCode() != 500) {
                     if (e instanceof Exception) {
@@ -272,7 +273,7 @@ public class GoogleDrive extends PluginForDecrypt {
                     }
                     logger.info("added:" + addedlinks);
                 }
-            } while (key != null && addedlinks >= 50);
+            } while (key != null && addedlinks >= 50 && !isAbort());
             if (fpName != null) {
                 FilePackage fp = FilePackage.getInstance();
                 fp.setName(Encoding.htmlDecode(fpName.trim()));

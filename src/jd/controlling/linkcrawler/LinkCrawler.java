@@ -111,6 +111,13 @@ public class LinkCrawler {
         CONTINUE
     }
 
+    protected static enum DUPLICATE {
+        CONTAINER,
+        CRAWLER,
+        FINAL,
+        DEEP
+    }
+
     private final static String                            DIRECT_HTTP                 = "directhttp";
     private final static String                            HTTP_LINKS                  = "http links";
     private java.util.List<CrawledLink>                    crawledLinks                = new ArrayList<CrawledLink>();
@@ -1094,7 +1101,12 @@ public class LinkCrawler {
         }
         source.setCustomCrawledLinkModifier(null);
         source.setBrokenCrawlerHandler(null);
-        if (source == null || source.getURL() == null || isCrawledLinkDuplicated(duplicateFinderDeep, source) || this.isCrawledLinkFiltered(source)) {
+        if (source == null || source.getURL() == null) {
+            return;
+        } else if (isCrawledLinkDuplicated(duplicateFinderDeep, source)) {
+            onCrawledLinkDuplicate(source, DUPLICATE.DEEP);
+            return;
+        } else if (this.isCrawledLinkFiltered(source)) {
             return;
         }
         final LinkCrawlerRule matchingRule = source.getMatchingRule();
@@ -2998,7 +3010,12 @@ public class LinkCrawler {
         final CrawledLinkModifier parentLinkModifier = cryptedLink.getCustomCrawledLinkModifier();
         cryptedLink.setCustomCrawledLinkModifier(null);
         cryptedLink.setBrokenCrawlerHandler(null);
-        if (oplg == null || cryptedLink.getURL() == null || isCrawledLinkDuplicated(duplicateFinderContainer, cryptedLink) || this.isCrawledLinkFiltered(cryptedLink)) {
+        if (oplg == null || cryptedLink.getURL() == null) {
+            return;
+        } else if (isCrawledLinkDuplicated(duplicateFinderContainer, cryptedLink)) {
+            onCrawledLinkDuplicate(cryptedLink, DUPLICATE.CONTAINER);
+            return;
+        } else if (this.isCrawledLinkFiltered(cryptedLink)) {
             return;
         }
         if (checkStartNotify(generation)) {
@@ -3142,7 +3159,12 @@ public class LinkCrawler {
         cryptedLink.setCustomCrawledLinkModifier(null);
         final BrokenCrawlerHandler brokenCrawler = cryptedLink.getBrokenCrawlerHandler();
         cryptedLink.setBrokenCrawlerHandler(null);
-        if (lazyC == null || cryptedLink.getCryptedLink() == null || isDuplicatedCrawling(lazyC, cryptedLink) || this.isCrawledLinkFiltered(cryptedLink)) {
+        if (lazyC == null || cryptedLink.getCryptedLink() == null) {
+            return;
+        } else if (isDuplicatedCrawling(lazyC, cryptedLink)) {
+            onCrawledLinkDuplicate(cryptedLink, DUPLICATE.CRAWLER);
+            return;
+        } else if (this.isCrawledLinkFiltered(cryptedLink)) {
             return;
         }
         if (checkStartNotify(generation)) {
@@ -3583,6 +3605,7 @@ public class LinkCrawler {
                     if (existing != null) {
                         final PluginForHost hPlugin = link.gethPlugin();
                         if (hPlugin == null || hPlugin.onLinkCrawlerDupeFilterEnabled(existing, link)) {
+                            onCrawledLinkDuplicate(link, DUPLICATE.FINAL);
                             return;
                         }
                     }
@@ -3609,6 +3632,9 @@ public class LinkCrawler {
             return true;
         }
         return false;
+    }
+
+    protected void onCrawledLinkDuplicate(CrawledLink link, DUPLICATE duplicate) {
     }
 
     public int getCrawledLinksFoundCounter() {
