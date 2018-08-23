@@ -17,6 +17,7 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
@@ -186,7 +187,8 @@ public class GoogleDrive extends PluginForDecrypt {
                 /* 2017-05-10: New - but this is still a bad solution! */
                 final String[] keys = new Regex(key_json, "\"([A-Za-z0-9\\-_]{10,})\"").getColumn(0);
                 key = keys[0];
-                logger.info("KeyNew:" + key);
+                logger.info("Keys:" + Arrays.toString(keys));
+                logger.info("Key:" + key);
             } else {
                 /* Old fallback */
                 key = br.getRegex("\"([A-Za-z0-9\\-_]+)\",{1,}1000,1,\"https?://client\\-channel\\.google\\.com/client\\-channel/client").getMatch(0);
@@ -202,17 +204,20 @@ public class GoogleDrive extends PluginForDecrypt {
             do {
                 addedlinks = 0;
                 if (decryptedLinks.size() >= 50 || firstRequest) {
+                    final Browser brc = br.cloneBrowser();
+                    brc.addAllowedResponseCodes(400);
                     try {
+                        sleep(500, param);
                         if (firstRequest) {
                             /* 2017-05-10: Updated these requests / URLs! */
                             /* Required to get the first "nextPageToken". */
-                            br.getPage("https://clients6.google.com/drive/v2beta/files?openDrive=true&reason=102&syncType=0&errorRecovery=false&q=trashed%20%3D%20false%20and%20'"
+                            brc.getPage("https://clients6.google.com/drive/v2beta/files?openDrive=true&reason=102&syncType=0&errorRecovery=false&q=trashed%20%3D%20false%20and%20'"
                                     + fid
                                     + "'%20in%20parents&fields=kind%2CnextPageToken%2Citems(kind%2Ctitle%2CmimeType%2CcreatedDate%2CmodifiedDate%2CmodifiedByMeDate%2ClastViewedByMeDate%2CfileSize%2ClastModifyingUser(kind%2C%20displayName%2C%20picture%2C%20permissionId%2C%20emailAddress)%2ChasThumbnail%2CthumbnailVersion%2CiconLink%2Cid%2Cshared%2CsharedWithMeDate%2CuserPermission(role)%2CexplicitlyTrashed%2CquotaBytesUsed%2Cshareable%2Ccopyable%2CfileExtension%2CsharingUser(kind%2CdisplayName%2Cpicture%2CpermissionId%2CemailAddress)%2Cspaces%2Ceditable%2Cversion%2CteamDriveId%2ChasAugmentedPermissions%2CtrashingUser(kind%2CdisplayName%2Cpicture%2CpermissionId%2CemailAddress)%2CtrashedDate%2Cparents(id)%2Clabels(starred%2Chidden%2Ctrashed%2Crestricted%2Cviewed)%2Cowners(permissionId%2CdisplayName%2Cpicture%2Ckind)%2Ccapabilities(canCopy%2CcanDownload%2CcanEdit%2CcanAddChildren%2CcanDelete%2CcanRemoveChildren%2CcanShare%2CcanTrash%2CcanRename%2CcanReadTeamDrive%2CcanMoveTeamDriveItem))%2CincompleteSearch&appDataFilter=NO_APP_DATA&spaces=DRIVE&maxResults=50&orderBy=folder%2Ctitle%20asc&key="
                                     + key);
                             firstRequest = false;
                         } else {
-                            br.getPage("https://clients6.google.com/drive/v2beta/files?openDrive=true&reason=102&syncType=0&errorRecovery=false&q=trashed%20%3D%20false%20and%20'"
+                            brc.getPage("https://clients6.google.com/drive/v2beta/files?openDrive=true&reason=102&syncType=0&errorRecovery=false&q=trashed%20%3D%20false%20and%20'"
                                     + fid
                                     + "'%20in%20parents&fields=kind%2CnextPageToken%2Citems(kind%2Ctitle%2CmimeType%2CcreatedDate%2CmodifiedDate%2CmodifiedByMeDate%2ClastViewedByMeDate%2CfileSize%2ClastModifyingUser(kind%2C%20displayName%2C%20picture%2C%20permissionId%2C%20emailAddress)%2ChasThumbnail%2CthumbnailVersion%2CiconLink%2Cid%2Cshared%2CsharedWithMeDate%2CuserPermission(role)%2CexplicitlyTrashed%2CquotaBytesUsed%2Cshareable%2Ccopyable%2CfileExtension%2CsharingUser(kind%2CdisplayName%2Cpicture%2CpermissionId%2CemailAddress)%2Cspaces%2Ceditable%2Cversion%2CteamDriveId%2ChasAugmentedPermissions%2CtrashingUser(kind%2CdisplayName%2Cpicture%2CpermissionId%2CemailAddress)%2CtrashedDate%2Cparents(id)%2Clabels(starred%2Chidden%2Ctrashed%2Crestricted%2Cviewed)%2Cowners(permissionId%2CdisplayName%2Cpicture%2Ckind)%2Ccapabilities(canCopy%2CcanDownload%2CcanEdit%2CcanAddChildren%2CcanDelete%2CcanRemoveChildren%2CcanShare%2CcanTrash%2CcanRename%2CcanReadTeamDrive%2CcanMoveTeamDriveItem))%2CincompleteSearch&appDataFilter=NO_APP_DATA&spaces=DRIVE&maxResults=50&orderBy=folder%2Ctitle%20asc&key="
                                     + key + "&pageToken=" + nextPageToken);
@@ -221,7 +226,7 @@ public class GoogleDrive extends PluginForDecrypt {
                         logger.log(e);
                         break;
                     }
-                    LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                    LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(brc.toString());
                     final ArrayList<Object> items = (ArrayList<Object>) entries.get("items");
                     if (items == null) {
                         logger.info("break1");
@@ -280,44 +285,6 @@ public class GoogleDrive extends PluginForDecrypt {
                 fp.addLinks(decryptedLinks);
             }
             return decryptedLinks;
-        }
-        if (decryptedLinks.size() == 0) {
-            /* Other handling removed 26.06.14 in Revision 24087 */
-            final String content = br.getRegex("\\{folderModel: \\[(.*?\\])[\t\n\r ]+\\]").getMatch(0);
-            /* Even if there are no FILES, we will get an array - empty! */
-            final String all_items = br.getRegex("viewerItems: \\[(.*?)\\][\t\n\r ]+,\\};").getMatch(0);
-            if (all_items == null || content == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            final String[] all_items_list = all_items.split("\\][\r\t\n ]+,\\[");
-            final String[] filelinks = new Regex(content, "\"(https?://(?:docs|drive)\\.google\\.com/file/d/[^<>\"]*?)\"\\]").getColumn(0);
-            if (filelinks != null && all_items_list != null && all_items_list.length == filelinks.length) {
-                int counter = 0;
-                for (final String item : all_items_list) {
-                    String filename = new Regex(item, "\"([^<>\"]*?)\"").getMatch(0);
-                    String final_link = filelinks[counter];
-                    if (filename != null) {
-                        filename = Encoding.unicodeDecode(filename);
-                        final_link = Encoding.unicodeDecode(final_link);
-                        final DownloadLink fina = createDownloadlink(final_link);
-                        fina.setName(filename);
-                        fina.setAvailable(true);
-                        decryptedLinks.add(fina);
-                    }
-                    counter++;
-                }
-            }
-            final String[] folderlinks = new Regex(content, "(" + FOLDER_CURRENT + ")").getColumn(0);
-            if (folderlinks != null && folderlinks.length != 0) {
-                for (String folderlink : folderlinks) {
-                    folderlink = Encoding.unicodeDecode(folderlink);
-                    // return folder links back into the plugin again.
-                    if (!folderlink.contains("id=" + fid + "&")) {
-                        decryptedLinks.add(createDownloadlink(folderlink));
-                    }
-                }
-            }
         }
         if (decryptedLinks.size() == 0) {
             logger.info("Found nothing to download: " + parameter);
