@@ -34,7 +34,7 @@ import jd.plugins.FilePackage;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pic5you.ru", "image2you.ru", "picsee.net", "pichost.me", "imagecurl.com", "otofotki.pl", "twitpic.com", "pic4you.ru", "postimage.org", "turboimagehost.com", "imagebam.com", "freeimagehosting.net", "pixhost.org" }, urls = { "http://pic5you\\.ru/\\d+/\\d+/", "http://(?:www\\.)?image2you\\.ru/\\d+/\\d+/", "http://(www\\.)?picsee\\.net/\\d{4}-\\d{2}-\\d{2}/.*?\\.html", "http://(www\\.)?pichost\\.me/\\d+", "http://(?:www\\.)?imagecurl\\.com/viewer\\.php\\?file=[\\w-]+\\.[a-z]{2,4}", "http://img\\d+\\.otofotki\\.pl/[A-Za-z0-9\\-_]+\\.jpg\\.html", "https?://(www\\.)?twitpic\\.com/show/[a-z]+/[a-z0-9]+", "http://(?:www\\.)?pic4you\\.ru/\\d+/\\d+/", "https?://((?:www\\.)?postim(age|g)\\.org/image/[a-z0-9]+|s\\d{1,2}\\.postimg\\.org/[a-z0-9]+/[^/]*\\.(?-i)[a-z]{3,4})",
-        "https?://(?:www\\.)?turboimagehost\\.com/p/\\d+/.*?\\.html", "http://[\\w\\.]*imagebam\\.com/(image|gallery)/[a-z0-9]+", "http://[\\w\\.]*?freeimagehosting\\.net/image\\.php\\?.*?\\..{3,4}", "https?://(www\\.)?pixhost\\.(?:org|to)/show/\\d+/.+" })
+        "https?://(?:www\\.)?turboimagehost\\.com/p/\\d+/.*?\\.html", "https?://[\\w\\.]*imagebam\\.com/(image|gallery)/[a-z0-9]+", "http://[\\w\\.]*?freeimagehosting\\.net/image\\.php\\?.*?\\..{3,4}", "https?://(www\\.)?pixhost\\.(?:org|to)/show/\\d+/.+" })
 public class ImageHosterDecrypter extends antiDDoSForDecrypt {
     public ImageHosterDecrypter(final PluginWrapper wrapper) {
         super(wrapper);
@@ -93,7 +93,7 @@ public class ImageHosterDecrypter extends antiDDoSForDecrypt {
                         }
                     }
                 } else {
-                    final String links[] = br.getRegex("'(http://[\\w\\.]*imagebam\\.com/image/[a-z0-9]+)'").getColumn(0);
+                    final String links[] = br.getRegex("'(https?://[\\w\\.]*imagebam\\.com/image/[a-z0-9]+)'").getColumn(0);
                     for (final String link : links) {
                         if (dupes.add(link)) {
                             final DownloadLink dl = handleImageBam(br, Encoding.htmlDecode(link), true);
@@ -110,14 +110,12 @@ public class ImageHosterDecrypter extends antiDDoSForDecrypt {
                     return null;
                 }
             }
+            final DownloadLink dl;
             if (br.containsHTML("Continue to your image")) {
-                DownloadLink dl = handleImageBam(br, parameter, true);
-                if (dl != null) {
-                    decryptedLinks.add(dl);
-                    return decryptedLinks;
-                }
+                dl = handleImageBam(br, parameter, true);
+            } else {
+                dl = handleImageBam(br, null, false);
             }
-            DownloadLink dl = handleImageBam(br, null, false);
             if (dl != null) {
                 decryptedLinks.add(dl);
                 return decryptedLinks;
@@ -277,9 +275,14 @@ public class ImageHosterDecrypter extends antiDDoSForDecrypt {
     }
 
     private DownloadLink handleImageBam(Browser br, String url, boolean refresh) throws Exception {
-        Browser brc = br;
+        final Browser brc;
         if (refresh == true) {
             brc = br.cloneBrowser();
+            brc.getPage(url);
+        } else {
+            brc = br;
+        }
+        if (brc.containsHTML("Continue to your image")) {
             brc.getPage(url);
         }
         // note: long filenames wont have extensions! server header doesn't specify the file extension either!
