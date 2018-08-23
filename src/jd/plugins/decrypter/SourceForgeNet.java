@@ -54,7 +54,7 @@ public class SourceForgeNet extends PluginForDecrypt {
         }
         if (br.containsHTML("File may contain malware|Your download will start shortly")) {
             final DownloadLink dl = (createDownloadlink(parameter.replace("sourceforge.net/", "sourceforgedecrypted.net/")));
-            dl.setFinalFileName(new Regex(parameter, "/([^/]+)/?$").getMatch(0));
+            dl.setFinalFileName(new Regex(parameter.replace("/download", "/"), "/([^/]+)/?$").getMatch(0));
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
