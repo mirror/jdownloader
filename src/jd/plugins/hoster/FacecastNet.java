@@ -13,12 +13,14 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
@@ -30,12 +32,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "facecast.net" }, urls = { "https?://(?:www\\.)?facecast\\.net/v/[A-Za-z0-9]+" })
 public class FacecastNet extends PluginForHost {
-
     public FacecastNet(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -46,7 +44,9 @@ public class FacecastNet extends PluginForHost {
     }
 
     /* Use this server as default until they change something or we find an easy way to find a working server. */
-    private static final String server_default = "http://edge-de-2.facecast.net";
+    // private static final String server_default = "http://edge-de-2.facecast.net";
+    // TODO: Run this js to find fastest server: <script src="/v/player.min.js?c53b37b"></script>
+    private static final String server_default = "http://edge-2.facecast.net";
     private long                date_start     = 0;
 
     @SuppressWarnings("deprecation")
@@ -120,5 +120,4 @@ public class FacecastNet extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }
