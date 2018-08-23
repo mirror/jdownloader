@@ -48,9 +48,19 @@ public class SourceForgeNet extends PluginForDecrypt {
         br.setLoadLimit(br.getLoadLimit() * 5);
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (!this.br.getURL().contains("sourceforge.net/")) {
+        if (br.containsHTML(">This folder has no files")) {
+            decryptedLinks.add(createOfflinelink(parameter));
+            return decryptedLinks;
+        }
+        if (br.containsHTML("File may contain malware|Your download will start shortly")) {
+            final DownloadLink dl = (createDownloadlink(parameter.replace("sourceforge.net/", "sourceforgedecrypted.net/")));
+            dl.setFinalFileName(new Regex(parameter, "/([^/]+)/?$").getMatch(0));
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        if (!br.getURL().contains("sourceforge.net/")) {
             /* Redirect to external website (extremely rare case) */
-            final DownloadLink dl = this.createDownloadlink(this.br.getURL());
+            final DownloadLink dl = createDownloadlink(br.getURL());
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
@@ -79,7 +89,7 @@ public class SourceForgeNet extends PluginForDecrypt {
         // br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
         // br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getPage(list_url);
-        final String json = this.br.getRegex("net\\.sf\\.files\\s*?=\\s*?(\\{.*?\\}\\});").getMatch(0);
+        final String json = br.getRegex("net\\.sf\\.files\\s*?=\\s*?(\\{.*?\\}\\});").getMatch(0);
         final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
         final Set<Entry<String, Object>> entryset = entries.entrySet();
         for (Entry<String, Object> entry : entryset) {
