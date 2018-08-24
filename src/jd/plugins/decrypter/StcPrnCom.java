@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -28,7 +27,6 @@ import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "stocporn.com" }, urls = { "http?://stocporn.com/[a-zA-Z0-9\\\\-]+.html/" })
 public class StcPrnCom extends PluginForDecrypt {
-
     @SuppressWarnings("deprecation")
     public StcPrnCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -44,13 +42,12 @@ public class StcPrnCom extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final String source = br.getRegex(">Download(.*?)<center><a").getMatch(0);
+        final String source = br.getRegex(">Download(.*?)(<center><a|<div id=\"related-posts\">)").getMatch(0);
         if (source == null) {
             // unsupported isn't defect (say images)
             return decryptedLinks;
         }
         final String[] links = new Regex(source, "<a href=\\\"(https?://[^\\\"]+)").getColumn(0);
-
         if (links != null) {
             for (final String link : links) {
                 final DownloadLink downloadLink = createDownloadlink(link);
