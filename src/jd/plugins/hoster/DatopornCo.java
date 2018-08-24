@@ -27,6 +27,17 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -47,15 +58,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "datoporn.co" }, urls = { "https?://(?:www\\.)?(dato\\.porn|datoporn\\.co)/(?:embed\\-)?[a-z0-9]{12}" })
 public class DatopornCo extends antiDDoSForHost {
@@ -136,7 +138,7 @@ public class DatopornCo extends antiDDoSForHost {
      * - maintain the primary domain base url (protocol://subdomain.domain.tld.cctld), everything else will be based off that! do not fubar
      * with standard browser behaviours.
      ****************************
-     * mods: doFree[2 mods]<br />
+     * mods: doFree[2 mods], filename, m3u8 (getDllink, doFree)<br />
      * limit-info:<br />
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
      * ALL) it is usually impossible to get any filename/filesize/status information!<br />
@@ -300,7 +302,7 @@ public class DatopornCo extends antiDDoSForHost {
             if (inValidate(fileInfo[0])) {
                 fileInfo[0] = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
                 if (inValidate(fileInfo[0])) {
-                    fileInfo[0] = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
+                    fileInfo[0] = new Regex(correctedBR, "<h2>(?:Download File)?(.*?)</h2>").getMatch(0);
                     /* traits from download1 page below */
                     if (inValidate(fileInfo[0])) {
                         fileInfo[0] = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"']+)").getMatch(1);
@@ -324,7 +326,7 @@ public class DatopornCo extends antiDDoSForHost {
         }
         if (inValidate(fileInfo[0])) {
             /* 2017-04-11: Typically for XVideoSharing sites */
-            fileInfo[0] = new Regex(correctedBR, Pattern.compile("<title>Watch ([^<>\"]+)</title>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+            fileInfo[0] = new Regex(correctedBR, Pattern.compile("<title>(?:Watch  free porn video  )?([^<>\"]+)</title>", Pattern.CASE_INSENSITIVE)).getMatch(0);
         }
         if (SUPPORTS_HTML_FILESIZE_CHECK) {
             if (inValidate(fileInfo[1])) {
@@ -711,6 +713,22 @@ public class DatopornCo extends antiDDoSForHost {
                 /* remove download slot */
                 controlFree(-1);
             }
+        } else if (dllink.contains(".m3u8")) { // From KernelVideoSharingCom, no filesize check - copied to UnknownPornScript5
+            /* hls download */
+            /* Access hls master. */
+            getPage(dllink);
+            if (br.getHttpConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            }
+            final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(br));
+            if (hlsbest == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            checkFFmpeg(downloadLink, "Download a HLS Stream");
+            dl = new HLSDownloader(downloadLink, br, hlsbest.getDownloadurl());
+            dl.startDownload();
         } else {
             dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumable, maxchunks);
             if (dl.getConnection().getContentType().contains("html")) {
@@ -828,6 +846,10 @@ public class DatopornCo extends antiDDoSForHost {
     @SuppressWarnings({ "unused", "unchecked", "rawtypes" })
     private String getDllink() {
         String dllink = br.getRedirectLocation();
+        if (dllink == null) { // 20180824 m3u8
+            dllink = new Regex(correctedBR, "player.updateSrc\\(\\{src: \"([^<>\"]+)\"").getMatch(0);
+            logger.info("dllink: " + dllink);
+        }
         if (dllink == null) {
             dllink = new Regex(correctedBR, "(\"|')(" + dllinkRegexFile + ")\\1").getMatch(1);
             if (dllink == null) {
