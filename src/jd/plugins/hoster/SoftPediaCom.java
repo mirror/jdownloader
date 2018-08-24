@@ -173,7 +173,7 @@ public class SoftPediaCom extends PluginForHost {
                 if (filename == null) {
                     filename = br.getRegex(">yahooBuzzArticleHeadline = \"(.*?)\";").getMatch(0);
                     if (filename == null) {
-                        filename = br.getRegex("<title>([^<>\"]*?)Free Download</title>").getMatch(0);
+                        filename = br.getRegex("property=\"og:title\" content=\"(?:Download )?([^<>\"]*?)( Download)?\"").getMatch(0);
                         if (filename == null) {
                             filename = br.getRegex("title=\"Click here to download ([^<>\"]*?)\"").getMatch(0);
                         }
@@ -182,16 +182,13 @@ public class SoftPediaCom extends PluginForHost {
             }
         }
         if (filename == null) {
-            filename = br.getRegex("<title>([^<>\"]*?) Free Download \\- Softpedia</title>").getMatch(0);
-        }
-        if (filename == null) {
-            filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?) Download\"").getMatch(0);
+            filename = br.getRegex("<title>(?:(?:Free )?Download )?([^<>\"]*?)( Free Download( - Softpedia)?)?</title>").getMatch(0);
         }
         // For fre trail programms
         if (filename == null) {
             filename = br.getRegex("<title>Download ([^<>\"]*?)\\- Softpedia</title>").getMatch(0);
         }
-        String filesize = br.getRegex("([0-9\\.]+ (MB|KB))").getMatch(0);
+        String filesize = br.getRegex("([0-9\\.]+ (GB|MB|KB))").getMatch(0);
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
