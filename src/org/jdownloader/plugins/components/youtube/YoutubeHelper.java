@@ -921,6 +921,7 @@ public class YoutubeHelper {
         }
         if (all == null || descrambler == null || des == null) {
             cache = new HashMap<String, String>();
+            //
             String html5PlayerSource = ensurePlayerSource();
             descrambler = new Regex(html5PlayerSource, "\"signature\"\\s*,\\s*([\\$\\w]+)\\([\\$\\w\\.]+\\)\\)\\);").getMatch(0);
             final String func = Pattern.quote(descrambler) + "=function\\(([^)]+)\\)\\{(.+?return.*?)\\}";
