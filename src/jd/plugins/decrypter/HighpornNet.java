@@ -16,11 +16,16 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Locale;
+
+import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -33,7 +38,6 @@ import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "highporn.net", "tanix.net", "japanhub.net", "thatav.net" }, urls = { "https?://(?:www\\.)?highporn\\.net/video/\\d+(?:/[a-z0-9\\-]+)?", "https?://(?:www\\.)?tanix\\.net/video/\\d+(?:/[a-z0-9\\-]+)?", "https?://(?:www\\.)?japanhub\\.net/video/\\d+(?:/[a-z0-9\\-]+)?", "https?://(?:www\\.)?thatav\\.net/video/\\d+(?:/[a-z0-9\\-]+)?" })
 public class HighpornNet extends PluginForDecrypt {
-
     public HighpornNet(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -70,6 +74,19 @@ public class HighpornNet extends PluginForDecrypt {
             dl.setProperty("decryptername", filename);
             dl.setProperty("mainlink", parameter);
             dl.setContentUrl(parameter);
+            PostRequest postRequest = new PostRequest("http://play.openhub.tv/playurl?random=" + (new Date().getTime() / 1000));
+            postRequest.setContentType("application/x-www-form-urlencoded");
+            postRequest.addVariable("v", videoID);
+            postRequest.addVariable("source_play", "highporn");
+            String file = br.getPage(postRequest);
+            final URLConnectionAdapter con = br.cloneBrowser().openHeadConnection(file);
+            try {
+                if (con.getResponseCode() == 200 && con.getLongContentLength() > 0 && !StringUtils.contains(con.getContentType(), "html")) {
+                    dl.setVerifiedFileSize(con.getCompleteContentLength());
+                }
+            } finally {
+                con.disconnect();
+            }
             dl.setAvailable(true);
             decryptedLinks.add(dl);
         }
