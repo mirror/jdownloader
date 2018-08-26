@@ -18,6 +18,11 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.util.Locale;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -35,11 +40,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 /**
  *
@@ -288,6 +288,9 @@ public class Publish2Me extends K2SApi {
                     if (br.containsHTML(freeAccConLimit)) {
                         // could be shared network or a download hasn't timed out yet or user downloading in another program?
                         throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Connection limit reached", 10 * 60 * 60 * 1001);
+                    }
+                    if (br.containsHTML("Download count files exceed!<")) {
+                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Download count files exceed!", 10 * 60 * 60 * 1001);
                     }
                     dllink = getDllink();
                     if (dllink == null) {
