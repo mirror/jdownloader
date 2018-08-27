@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -22,6 +21,8 @@ import java.util.Date;
 import java.util.Locale;
 
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -38,11 +39,9 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deraktionaer.tv" }, urls = { "https?://(?:www\\.)?(?:daf\\.fm|deraktionaer\\.tv)/video/[^<>\"/]+\\.html|http://www\\d+\\.anleger\\-fernsehen\\.de/[a-z0-9\\-_]+\\.html\\?id=\\d+" })
 public class DeraktionaerTv extends PluginForHost {
-
     public DeraktionaerTv(PluginWrapper wrapper) {
         super(wrapper);
     }
-
     /* DEV NOTES */
     // Tags:
     // protocol: no https
@@ -52,7 +51,6 @@ public class DeraktionaerTv extends PluginForHost {
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
 
     @Override
@@ -74,7 +72,7 @@ public class DeraktionaerTv extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         dllink = null;
-        this.setBrowserExclusive();
+        setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML(">Das Video wurde nicht gefunden") || br.getHttpConnection().getResponseCode() == 404) {
@@ -82,18 +80,21 @@ public class DeraktionaerTv extends PluginForHost {
         }
         String filename = br.getRegex("<h1 class=\"FN\">([^<>]*?)</h1>").getMatch(0);
         if (filename == null) {
-            filename = new Regex(this.br.getURL(), "daf\\.fm/video/(.+)\\.html").getMatch(0);
+            filename = new Regex(br.getURL(), "daf\\.fm/video/(.+)\\.html").getMatch(0);
         }
-        final String date = this.br.getRegex("<p style=\"margin:5px 0;\">([^<>\"]*?)</p>").getMatch(0);
+        final String date = br.getRegex("<p style=\"margin:5px 0;\">([^<>\"]*?)</p>").getMatch(0);
         final String iframe = br.getRegex("\"(https?://www\\d+\\.anleger\\-fernsehen\\.de/flv/vod_iframe\\.html\\?id=\\d+)\"").getMatch(0);
         if (date == null || filename == null || iframe == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String date_formatted = formatDate(date);
-        this.br.getPage(iframe);
+        br.getPage(iframe);
         dllink = br.getRegex("\"(https?://vcast\\.daf\\.tmt\\.de/video/[^<>\"]*?)\"").getMatch(0);
-        if (filename == null || dllink == null) {
-            if (this.br.containsHTML("Dieses Video ist nicht mehr")) {
+        if (dllink == null) {
+            dllink = br.getRegex("file: '(https?://[^<>']*?m3u8)'").getMatch(0);
+        }
+        if (dllink == null) {
+            if (br.containsHTML("Dieses Video ist nicht mehr")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -102,12 +103,18 @@ public class DeraktionaerTv extends PluginForHost {
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
+        String ext = getFileNameExtensionFromString(dllink, ".mp4");
+        if (ext.equals(".m3u8")) {
+            ext = ".mp4";
+        }
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
         filename = date_formatted + "_deraktionaer_" + filename;
         downloadLink.setFinalFileName(filename);
+        if (dllink.contains("m3u8")) {
+            return AvailableStatus.TRUE;
+        }
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
@@ -135,6 +142,23 @@ public class DeraktionaerTv extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (dllink.contains(".m3u8")) { // From KernelVideoSharingCom, no filesize check
+            /* hls download */
+            /* Access hls master. */
+            br.getPage(dllink);
+            if (br.getHttpConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            }
+            final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(br));
+            if (hlsbest == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            checkFFmpeg(downloadLink, "Download a HLS Stream");
+            dl = new HLSDownloader(downloadLink, br, hlsbest.getDownloadurl());
+            dl.startDownload();
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
