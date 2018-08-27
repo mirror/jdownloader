@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -28,9 +27,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "opensubtitles.org" }, urls = { "http://(www\\.)?opensubtitles\\.org/[a-z]{2}/subtitles/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "opensubtitles.org" }, urls = { "https?://(www\\.)?opensubtitles\\.org/[a-z]{2}/subtitles/\\d+" })
 public class OpenSubtitlesOrg extends PluginForHost {
-
     public OpenSubtitlesOrg(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -86,5 +84,4 @@ public class OpenSubtitlesOrg extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
