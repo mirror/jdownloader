@@ -20,6 +20,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "geragera.com.br" }, urls = { "" })
 public class GeraGeraComBr extends PluginForHost {
@@ -140,8 +141,14 @@ public class GeraGeraComBr extends PluginForHost {
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         showMessage(link, "Generating download link...");
         br.postPage("https://geragera.com.br/gerar-link", "link=" + Encoding.urlEncode(link.getDownloadURL()) + "&historico=1");
-        String dllink = br.getRegex("\"download\":\"(.*?)\"\\}").getMatch(0);
-        dllink = dllink.replace("\\", "").replace("\"", "");
+        String error = PluginJSonUtils.getJsonValue(br, "erro");
+        if (error != null && error.equals("2")) {
+            // throw new PluginException(LinkStatus.ERROR_PREMIUM, "You are not premium"); // This will disable the account
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "You are not premium");
+        }
+        // String dllink = br.getRegex("\"download\":\"(.*?)\"\\}").getMatch(0);
+        // dllink = dllink.replace("\\", "").replace("\"", "");
+        String dllink = PluginJSonUtils.getJsonValue(br, "link");
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
