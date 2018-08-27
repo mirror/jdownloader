@@ -81,7 +81,7 @@ public class ExtremeTubeCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<h1 class=\"title\\-video\\-box float\\-left\" title=\"(.*?)\"").getMatch(0);
-        final String json = br.getRegex("var flashvars\\s*=\\s*(\\{.*?\\})\\s*;").getMatch(0);
+        final String json = br.getRegex("(?:var\\s*|window\\.)flashvars\\s*=\\s*(\\{.*?\\})\\s*;").getMatch(0);
         if (json == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

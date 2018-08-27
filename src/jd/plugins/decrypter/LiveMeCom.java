@@ -16,7 +16,7 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "liveme.com" }, urls = { "https?://(?:www\\.)?liveme\\.com/(?:media/play/\\?videoid=\\d+|media/liveshort/dist/\\?videoid=\\d+&.*?|live\\.html\\?videoid=\\d+.*?)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "liveme.com" }, urls = { "https?://(?:www\\.)?liveme\\.com/(?:media/play/\\?videoid=\\d+|media/liveshort/dist/\\?videoid=\\d+&.*?|live\\.html\\?videoid=\\d+.*?|.*?/\\d+/index.html)" })
 public class LiveMeCom extends PluginForDecrypt {
     public LiveMeCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -79,7 +79,10 @@ public class LiveMeCom extends PluginForDecrypt {
     }
 
     private String getVideoID(String parameter) {
-        final String result = new Regex(parameter, "[&?]videoid=(\\d+)").getMatch(0);
+        String result = new Regex(parameter, "[&?]videoid=(\\d+)").getMatch(0);
+        if (result == null) {
+            result = new Regex(parameter, "/(\\d+)/index\\.html").getMatch(0);
+        }
         return result;
     }
 }

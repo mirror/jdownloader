@@ -202,13 +202,16 @@ public class NCryptIn extends antiDDoSForDecrypt {
                             allForm.put(passwordInputFieldName, Encoding.urlEncode(password));
                         }
                         final File captchaFile = this.getLocalCaptchaFile(".png");
-                        ClickedPoint cp = null;
+                        final ClickedPoint cp;
                         try {
                             // test
                             final Request r = br.cloneBrowser().createGetRequest("/classes/captcha/circlecaptcha.php");
                             r.getHeaders().put("Accept", "image/webp,image/*,*/*;q=0.8");
                             Browser.download(captchaFile, br.cloneBrowser().openRequestConnection(r));
                             cp = getCaptchaClickedPoint(getHost(), captchaFile, param, null, "Click on the open circle");
+                            if (cp == null) {
+                                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                            }
                         } finally {
                             captchaFile.delete();
                         }

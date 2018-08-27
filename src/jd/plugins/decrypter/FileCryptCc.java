@@ -176,6 +176,9 @@ public class FileCryptCc extends PluginForDecrypt {
                 final File file = this.getLocalCaptchaFile();
                 getCaptchaBrowser(br).getDownload(file, captcha);
                 final ClickedPoint cp = getCaptchaClickedPoint(getHost(), file, param, null, "Click on the open circle");
+                if (cp == null) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
                 captchaForm.put("button.x", String.valueOf(cp.getX()));
                 captchaForm.put("button.y", String.valueOf(cp.getY()));
                 captchaForm.remove("button");
@@ -344,6 +347,9 @@ public class FileCryptCc extends PluginForDecrypt {
                         final File file = this.getLocalCaptchaFile();
                         getCaptchaBrowser(br).getDownload(file, captcha);
                         final ClickedPoint cp = getCaptchaClickedPoint(getHost(), file, param, null, "Click on the open circle");
+                        if (cp == null) {
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        }
                         final Form form = new Form();
                         form.setMethod(MethodType.POST);
                         form.setAction(br2.getURL());
