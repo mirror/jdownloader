@@ -86,6 +86,9 @@ public class ProtectDdlIslandRu extends PluginForDecrypt {
                     final File captchaFile = this.getLocalCaptchaFile();
                     Browser.download(captchaFile, br.cloneBrowser().openGetConnection("/img.php?get_captcha=true"));
                     final ClickedPoint cp = getCaptchaClickedPoint(getHost(), captchaFile, param, getHost() + " | " + String.valueOf(i + 1) + "/3", null);
+                    if (cp == null) {
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
                     br.postPage(br.getURL(), "position%5B%5D.x=" + String.valueOf(cp.getX()) + "&position%5B%5D.y=" + String.valueOf(cp.getY()));
                     if (br.containsHTML("img\\.php\\?get_captcha=true")) {
                         continue;

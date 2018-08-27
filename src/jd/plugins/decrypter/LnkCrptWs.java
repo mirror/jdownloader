@@ -555,6 +555,9 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
                                     BufferedImage image = CaptXSolver.toBufferedImage(new ByteArrayInputStream(bytes));
                                     ImageIO.write(image, "png", file);
                                     final ClickedPoint cp = getCaptchaClickedPoint(getHost(), file, param, "LinkCrypt.ws | " + String.valueOf(max_attempts - attempts), capDescription);
+                                    if (cp == null) {
+                                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                                    }
                                     captcha.put("x", cp.getX() + "");
                                     captcha.put("y", cp.getY() + "");
                                 } else {

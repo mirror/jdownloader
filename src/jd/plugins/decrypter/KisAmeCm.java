@@ -35,7 +35,6 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -467,6 +466,9 @@ public class KisAmeCm extends antiDDoSForDecrypt implements RefreshSessionLink {
                         final BufferedImage[] images = new BufferedImage[captchaImages.length];
                         final File stitchedImageOutput = getStitchedImage(captchaImages, images);
                         final ClickedPoint c = getCaptchaClickedPoint(getHost(), stitchedImageOutput, param, null, phraseSingle);
+                        if (c == null) {
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        }
                         final Integer click = getClickedImageLocation(c, images);
                         ruh.put("answerCap", String.valueOf(click));
                         submitForm(br, ruh);

@@ -33,7 +33,7 @@ import jd.plugins.PluginException;
 import org.appwork.utils.net.URLHelper;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "8muses.com" }, urls = { "https?://(?:www\\.)?8muses\\.com/(comics/)?picture/[^/]+/[^/]+/[^/]+/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "8muses.com" }, urls = { "https?://(?:www\\.)?8muses\\.com/(comics/)?picture/([^/]+/){1,}\\d+" })
 public class EightMusesCom extends antiDDoSForHost {
     public EightMusesCom(PluginWrapper wrapper) {
         super(wrapper);

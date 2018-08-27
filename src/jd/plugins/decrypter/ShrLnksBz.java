@@ -39,6 +39,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
@@ -57,6 +58,7 @@ import org.mozilla.javascript.ScriptableObject;
 public class ShrLnksBz extends antiDDoSForDecrypt {
     private final String NO_DLC = "1";
     private final String NO_CNL = "1";
+    private FilePackage  fp     = null;
 
     public ShrLnksBz(final PluginWrapper wrapper) {
         super(wrapper);
@@ -134,6 +136,13 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
         /* Captcha handling */
         handleCaptcha(param, parameter);
         final int count = getCount();
+        final String pkgName = br.getRegex("<title>Share.*?\\.biz \\- (.*?)</title>").getMatch(0);
+        if (pkgName != null && !"unnamed Folder".equals(pkgName) && pkgName.length() > 0) {
+            if (pkgName != null) {
+                fp = FilePackage.getInstance();
+                fp.setName(pkgName);
+            }
+        }
         /* use cnl2 button if available */
         decryptedLinks.addAll(handleClickNLoad(dupe, parameter));
         if (decryptedLinks.size() == count) {
@@ -229,6 +238,9 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
                 for (final DownloadLink dl : loadContainer(br, "/get/dlc/" + dlclink)) {
                     if (dupe.add(dl.getPluginPatternMatcher())) {
                         decryptedLinks.add(dl);
+                        if (fp != null) {
+                            fp.add(dl);
+                        }
                         distribute(dl);
                     }
                 }
@@ -262,15 +274,11 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
                 }
                 final String jk = new StringBuffer(Encoding.Base64Decode(encVars[1])).reverse().toString();
                 final String crypted = new StringBuffer(Encoding.Base64Decode(encVars[2])).reverse().toString();
-                HashMap<String, String> infos = new HashMap<String, String>();
+                final HashMap<String, String> infos = new HashMap<String, String>();
                 infos.put("crypted", crypted);
                 infos.put("jk", jk);
                 infos.put("source", parameter.toString());
-                String pkgName = br.getRegex("<title>Share.*?\\.biz \\- (.*?)</title>").getMatch(0);
-                if (pkgName != null && !"unnamed Folder".equals(pkgName) && pkgName.length() > 0) {
-                    infos.put("package", pkgName);
-                }
-                String json = JSonStorage.toString(infos);
+                final String json = JSonStorage.toString(infos);
                 final LinkCrawler lc = LinkCrawler.newInstance();
                 lc.crawl("http://dummycnl.jdownloader.org/" + HexFormatter.byteArrayToHex(json.getBytes("UTF-8")));
                 lc.waitForCrawling();
@@ -280,6 +288,9 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
                     final DownloadLink dl = cl.getDownloadLink();
                     if (dupe.add(dl.getPluginPatternMatcher())) {
                         decryptedLinks.add(dl);
+                        if (fp != null) {
+                            fp.add(dl);
+                        }
                         distribute(dl);
                     }
                 }
@@ -319,9 +330,11 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
                 Captchamap = Captchamap.replaceAll("(\\&amp;|legend=1)", "");
                 final File file = this.getLocalCaptchaFile();
                 final Browser temp = getCaptchaBrowser(br);
-                temp.getDownload(file, Captchamap + "&legend=1");
                 temp.getDownload(file, Captchamap);
                 final ClickedPoint cp = getCaptchaClickedPoint(getHost(), file, param, null, JDL.L("plugins.decrypt.shrlnksbz.desc", "Read the combination in the background and click the corresponding combination in the overview!"));
+                if (cp == null) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
                 final String nexturl = getNextUrl(cp.getX(), cp.getY());
                 if (nexturl == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -379,6 +392,9 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
                     }
                     if (dupe.add(result)) {
                         final DownloadLink dl = createDownloadlink(result);
+                        if (fp != null) {
+                            fp.add(dl);
+                        }
                         distribute(dl);
                         decryptedLinks.add(dl);
                     }

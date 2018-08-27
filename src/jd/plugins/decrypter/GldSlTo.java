@@ -111,6 +111,9 @@ public class GldSlTo extends antiDDoSForDecrypt {
                         click_on = "Click in the dashed circle!";
                     }
                     final ClickedPoint cp = getCaptchaClickedPoint(getHost(), file, param, "Goldesel.to\r\nDecrypting: " + fpName + "\r\nClick-Captcha | Mirror " + counter + " / " + maxc + " : " + decryptID, click_on);
+                    if (cp == null) {
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
                     postPage("http://goldesel.to/res/links", "data=" + Encoding.urlEncode(decryptID) + "&xC=" + cp.getX() + "&yC=" + cp.getY());
                     if (br.containsHTML(HTML_LIMIT_REACHED)) {
                         logger.info("We have to wait because the user entered too many wrong captchas...");

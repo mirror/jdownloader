@@ -304,6 +304,9 @@ public class Rlnks extends antiDDoSForDecrypt {
                             final File captchaFile = this.getLocalCaptchaFile();
                             Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaLink));
                             final ClickedPoint cp = getCaptchaClickedPoint(getHost(), captchaFile, param, getHost() + " | " + String.valueOf(i + 1) + "/5", null);
+                            if (cp == null) {
+                                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                            }
                             allForm.put("button.x", String.valueOf(cp.getX()));
                             allForm.put("button.y", String.valueOf(cp.getY()));
                         }

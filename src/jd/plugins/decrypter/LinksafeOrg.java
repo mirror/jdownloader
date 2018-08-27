@@ -61,6 +61,9 @@ public class LinksafeOrg extends PluginForDecrypt {
                 final File file = this.getLocalCaptchaFile();
                 getCaptchaBrowser(br).getDownload(file, "/captcha/circlecaptcha");
                 final ClickedPoint cp = getCaptchaClickedPoint(getHost(), file, param, null, "Click the open circle");
+                if (cp == null) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
                 captchaForm.put("button.x", cp.getX() + "");
                 captchaForm.put("button.y", cp.getY() + "");
             } else if (captchaType.equalsIgnoreCase("recaptcha")) {

@@ -39,7 +39,7 @@ public class OpenSubtitlesOrg extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload("http://www.opensubtitles.org/en/subtitles/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
+        link.setUrlDownload("https://www.opensubtitles.org/en/subtitles/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
     }
 
     @Override
@@ -48,7 +48,7 @@ public class OpenSubtitlesOrg extends PluginForHost {
         br.setFollowRedirects(true);
         br.setCookie("http://opensubtitles.org/", "weblang", "en");
         br.getPage(link.getDownloadURL());
-        if (br.getURL().equals("http://www.opensubtitles.org/en") || br.containsHTML(">These subtitles were <b>disabled</b>")) {
+        if (br.getURL().equals("http://www.opensubtitles.org/en") || br.getURL().equals("https://www.opensubtitles.org/en") || br.containsHTML(">These subtitles were <b>disabled</b>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = br.getRegex("/en/download/sub/\\d+\"><span itemprop=\"name\">([^<>\"]*?)</span>").getMatch(0);
@@ -64,7 +64,7 @@ public class OpenSubtitlesOrg extends PluginForHost {
         requestFileInformation(downloadLink);
         // Resume and chunks disabled, not needed for such small files & can't
         // test
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, "http://dl.opensubtitles.org/en/download/sub/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0), false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, "https://dl.opensubtitles.org/en/download/sub/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0), false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
