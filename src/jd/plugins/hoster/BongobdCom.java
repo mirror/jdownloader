@@ -13,8 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
+
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -28,17 +31,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bongobd.com" }, urls = { "https?://(?:www\\.)?bongobd\\.com/(?:en|bn)/watch\\?v=[A-Za-z0-9]+" })
 public class BongobdCom extends PluginForHost {
-
     public BongobdCom(PluginWrapper wrapper) {
         super(wrapper);
     }
-
     /* DEV NOTES */
     // Tags:
     // protocol: no https
@@ -50,9 +47,7 @@ public class BongobdCom extends PluginForHost {
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private static final boolean prefer_hls        = true;
-
     private String               dllink            = null;
     private boolean              server_issues     = false;
 
@@ -69,6 +64,10 @@ public class BongobdCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
+        if (br.getURL().contains("/login")) {
+            link.setName("Account is required, not supported");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (this.br.containsHTML("var videoId\\s*?=\\s*?\"\";")) {
@@ -80,7 +79,6 @@ public class BongobdCom extends PluginForHost {
         if (filename == null) {
             filename = url_filename;
         }
-
         String partner_id = this.br.getRegex("/p/(\\d+)").getMatch(0);
         if (partner_id == null) {
             partner_id = "1868701";
@@ -94,7 +92,6 @@ public class BongobdCom extends PluginForHost {
             sp = partner_id;
         }
         final String entry_id = this.br.getRegex("var\\s*?videoId\\s*?=\\s*?\"([^<>\"\\']+)\";").getMatch(0);
-
         if (entry_id == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -143,7 +140,6 @@ public class BongobdCom extends PluginForHost {
                 }
             }
         }
-
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
