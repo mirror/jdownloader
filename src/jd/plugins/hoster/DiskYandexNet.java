@@ -103,10 +103,9 @@ public class DiskYandexNet extends PluginForHost {
     private String                currHash                           = null;
     private String                currPath                           = null;
     /*
-     * 2018-08-09: API(s) seem to work fine again - in case of failure, please disable use_api_file_free_availablecheck ONLY!! This should
-     * work fine when enabled: use_api_file_free_download
+     * https://tech.yandex.com/disk/api/reference/public-docpage/ 2018-08-09: API(s) seem to work fine again - in case of failure, please
+     * disable use_api_file_free_availablecheck ONLY!! This should work fine when enabled: use_api_file_free_download
      */
-    /* 2017-02-08: Disabled API usage due to issues/ especially the download API request seems not to work anymore. */
     private static final boolean  use_api_file_free_availablecheck   = true;
     private static final boolean  use_api_file_free_download         = true;
 
@@ -228,7 +227,16 @@ public class DiskYandexNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (use_api_file_free_availablecheck) {
-                getPage("https://cloud-api.yandex.net/v1/disk/public/resources?public_key=" + Encoding.urlEncode(this.currHash) + "&path=" + Encoding.urlEncode(this.currPath));
+                /* 2018-08-27: Temp. fix for encoding issues */
+                String path_urlencoded = Encoding.urlEncode(this.currPath);
+                if (path_urlencoded.contains("+")) {
+                    path_urlencoded = path_urlencoded.replace("+", "%20");
+                }
+                String hash_urlencoded = this.currHash;
+                if (hash_urlencoded.contains(" ") || hash_urlencoded.contains("+")) {
+                    hash_urlencoded = hash_urlencoded.replaceAll("( |\\+)", "%2B");
+                }
+                getPage("https://cloud-api.yandex.net/v1/disk/public/resources?public_key=" + hash_urlencoded + "&path=" + path_urlencoded);
                 if (apiAvailablecheckIsOffline(br)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
