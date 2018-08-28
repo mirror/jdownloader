@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -21,37 +20,29 @@ import java.util.List;
 import java.util.Map;
 
 import jd.PluginWrapper;
-import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wikifeet.com" }, urls = { "https?://(?:www\\.)?wikifeet\\.com/[a-zA-Z0-9\\-\\_]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wikifeet.com" }, urls = { "https?://(?:\\w+\\.)?wikifeetx?\\.com/[a-zA-Z0-9\\-\\_]+" })
 public class WikifeetCom extends PluginForDecrypt {
-
     public WikifeetCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public static final String type_pic      = "https?://(?:www\\.)?pics\\.wikifeet\\.com";
-    public static final String type_wikifeet = "https?://(?:www\\.)?wikifeet\\.com/[a-zA-Z0-9\\-\\_]+";
+    public static final String type_pic      = "https?://(?:\\w+\\.)?pics\\.wikifeetx?\\.com";
+    public static final String type_wikifeet = "https?://(?:\\w+\\.)?wikifeetx?\\.com/[a-zA-Z0-9\\-\\_]+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        final PluginForHost plg = JDUtilities.getPluginForHost(this.getHost());
-        final String fid = new Regex(parameter, "^.+/(\\d+)/?").getMatch(0);
-        final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
         this.br.getPage(parameter);
         if (isOffline(this.br)) {
             decryptedLinks.add(this.createOfflinelink(parameter));
@@ -65,12 +56,10 @@ public class WikifeetCom extends PluginForDecrypt {
         title = Encoding.htmlDecode(title).trim();
         if (parameter.matches(type_wikifeet)) {
             final String gData = this.br.getRegex("messanger\\[\\'gdata\\'\\] = ([\\s\\S]*?);").getMatch(0);
-
             List<Object> data = (List<Object>) JavaScriptEngineFactory.jsonToJavaObject(gData);
             if (data.size() < 1 || cfName == null) {
                 return null;
             }
-
             for (final Object entry : data) {
                 Map<String, Object> entryMap = (Map<String, Object>) entry;
                 String pid = (String) entryMap.get("pid");
@@ -82,11 +71,9 @@ public class WikifeetCom extends PluginForDecrypt {
                 decryptedLinks.add(dl);
             }
         }
-
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(title.trim()));
         fp.addLinks(decryptedLinks);
-
         return decryptedLinks;
     }
 
