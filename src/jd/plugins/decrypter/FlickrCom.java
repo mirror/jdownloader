@@ -169,11 +169,12 @@ public class FlickrCom extends PluginForDecrypt {
         String apilink = null;
         String path_alias = null;
         String urlAppend = "";
+        String setID = null;
         if (parameter.matches(TYPE_SET_SINGLE)) {
-            final String setid = new Regex(parameter, "(\\d+)/?$").getMatch(0);
-            urlAppend = "/in/album-" + setid;
+            setID = new Regex(parameter, "(\\d+)/?$").getMatch(0);
+            urlAppend = "/in/album-" + setID;
             /* This request is only needed to get the title and owner of the photoset, */
-            api_getPage("https://api.flickr.com/services/rest?format=" + api_format + "&csrf=" + this.csrf + "&api_key=" + api_apikey + "&method=flickr.photosets.getInfo&photoset_id=" + Encoding.urlEncode(setid));
+            api_getPage("https://api.flickr.com/services/rest?format=" + api_format + "&csrf=" + this.csrf + "&api_key=" + api_apikey + "&method=flickr.photosets.getInfo&photoset_id=" + Encoding.urlEncode(setID));
             forcedOwner = PluginJSonUtils.getJsonValue(br, "owner");
             if (forcedOwner == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -182,9 +183,9 @@ public class FlickrCom extends PluginForDecrypt {
             }
             fpName = br.getRegex("\"title\":\\{\"_content\":\"([^<>\"]*?)\"\\}").getMatch(0);
             if (fpName == null || fpName.equals("")) {
-                fpName = "flickr.com set " + setid + " of user " + this.username;
+                fpName = "flickr.com set " + setID + " of user " + this.username;
             }
-            apilink = "https://api.flickr.com/services/rest?format=" + api_format + "&csrf=" + this.csrf + "&api_key=" + api_apikey + "&extras=media&per_page=" + api_max_entries_per_page + "&page=GETJDPAGE&photoset_id=" + Encoding.urlEncode(setid) + "&method=flickr.photosets.getPhotos" + "&hermes=1&hermesClient=1&nojsoncallback=1";
+            apilink = "https://api.flickr.com/services/rest?format=" + api_format + "&csrf=" + this.csrf + "&api_key=" + api_apikey + "&extras=media&per_page=" + api_max_entries_per_page + "&page=GETJDPAGE&photoset_id=" + Encoding.urlEncode(setID) + "&method=flickr.photosets.getPhotos" + "&hermes=1&hermesClient=1&nojsoncallback=1";
             api_getPage(apilink.replace("GETJDPAGE", "1"));
         } else if (parameter.matches(TYPE_SETS_OF_USER_ALL) && !parameter.matches(TYPE_SET_SINGLE)) {
             apiGetSetsOfUser();
@@ -279,6 +280,9 @@ public class FlickrCom extends PluginForDecrypt {
                 final String decryptedfilename = username + "_" + photo_id + (title != null ? "_" + title : jd.plugins.hoster.FlickrCom.getCustomStringForEmptyTags()) + extension;
                 fina.setProperty("decryptedfilename", decryptedfilename);
                 fina.setProperty("photo_id", photo_id);
+                if (setID != null) {
+                    fina.setProperty("set_id", setID);
+                }
                 fina.setProperty("media", media);
                 fina.setProperty("owner", owner);
                 fina.setProperty("username", username);
@@ -289,7 +293,7 @@ public class FlickrCom extends PluginForDecrypt {
                     fina.setProperty("title", title);
                 }
                 fina.setProperty("ext", extension);
-                fina.setProperty("LINKDUPEID", "flickrcom_" + username + "_" + photo_id);
+                fina.setLinkID("flickrcom_" + username + "_" + photo_id + (setID != null ? setID : ""));
                 fina.setProperty("custom_filenames_allowed", true);
                 final String formattedFilename = getFormattedFilename(fina);
                 fina.setName(formattedFilename);
