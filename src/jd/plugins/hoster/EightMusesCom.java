@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.net.URLHelper;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -29,9 +32,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.net.URLHelper;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "8muses.com" }, urls = { "https?://(?:www\\.)?8muses\\.com/(comics/)?picture/([^/]+/){1,}\\d+" })
 public class EightMusesCom extends antiDDoSForHost {
@@ -79,6 +79,9 @@ public class EightMusesCom extends antiDDoSForHost {
             if (image != null) {
                 dllink = "https://www.8muses.com/image/fl/" + image + ".jpg";
             }
+        }
+        if (ractive_public.contains("\"pictures\":[]")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
