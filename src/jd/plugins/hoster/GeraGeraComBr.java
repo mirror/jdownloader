@@ -148,7 +148,7 @@ public class GeraGeraComBr extends PluginForHost {
         }
         // String dllink = br.getRegex("\"download\":\"(.*?)\"\\}").getMatch(0);
         // dllink = dllink.replace("\\", "").replace("\"", "");
-        String dllink = PluginJSonUtils.getJsonValue(br, "link");
+        String dllink = PluginJSonUtils.getJsonValue(br, "download");
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
