@@ -18,6 +18,8 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -27,8 +29,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class GogoanimeCom extends antiDDoSForDecrypt {
@@ -63,7 +63,7 @@ public class GogoanimeCom extends antiDDoSForDecrypt {
         super(wrapper);
     }
 
-    private final String invalidLinks = ".+" + Pattern.quote(this.getHost()) + "/(category|thumbs|sitemap|img|xmlrpc|fav|images|ads|gga\\-contact).*?";
+    private final String invalidLinks = ".+" + Pattern.quote(this.getHost()) + "/(category|thumbs|biography|sitemap|img|xmlrpc|fav|images|ads|gga\\-contact).*?";
     private final String embed        = ".+/(embed(\\.php)?\\?.*?vid(eo)?=.+|embed/[a-f0-9]+|gogo/\\?.*?file=.+)";
 
     @Override
