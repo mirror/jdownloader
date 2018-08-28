@@ -44,7 +44,7 @@ public class GetComics extends PluginForDecrypt {
         Request request = br.createGetRequest(parameter);
         request.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         String page = br.getPage(request).toString();
-        final String title = br.getRegex("<title>(.+?) (&ndash|-)").getMatch(0);
+        final String title = br.getRegex("<title>(.+?) &ndash; GetComics").getMatch(0);
         //
         int sectionStart = page.indexOf("<section class=\"post-contents\">");
         int sectionEnd = page.indexOf("<strong>Screenshots", sectionStart);
