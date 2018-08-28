@@ -13,13 +13,10 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -31,9 +28,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class GogoanimeCom extends antiDDoSForDecrypt {
-
     /**
      * Returns the annotations names array
      *
@@ -52,7 +50,7 @@ public class GogoanimeCom extends antiDDoSForDecrypt {
         String[] a = new String[getAnnotationNames().length];
         int i = 0;
         for (final String domain : getAnnotationNames()) {
-            a[i] = "http://(?:\\w+\\.)?" + Pattern.quote(domain) + "/(?:embed(\\.php)?\\?.*?vid(?:eo)?=.+|gogo/\\?.*?file=.+|(?!flowplayer)(?:[a-z\\-]+\\-(drama|movie|episode)/)?[a-z0-9\\-_]+(?:/\\d+)?)";
+            a[i] = "http://(?:\\w+\\.)?" + Pattern.quote(domain) + "/(?:embed/[a-f0-9]+|embed(\\.php)?\\?.*?vid(?:eo)?=.+|gogo/\\?.*?file=.+|(?!flowplayer)(?:[a-z\\-]+\\-(drama|movie|episode)/)?[a-z0-9\\-_]+(?:/\\d+)?)";
             i++;
         }
         return a;
@@ -61,13 +59,12 @@ public class GogoanimeCom extends antiDDoSForDecrypt {
     // NOTE:
     // play44.net = gogoanime.com url (doesn't seem to have mirror in its own domain happening)
     // videobug.net = gogoanime.com url (doesn't seem to have mirror in its own domain happening)
-
     public GogoanimeCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     private final String invalidLinks = ".+" + Pattern.quote(this.getHost()) + "/(category|thumbs|sitemap|img|xmlrpc|fav|images|ads|gga\\-contact).*?";
-    private final String embed        = ".+/(embed(\\.php)?\\?.*?vid(eo)?=.+|gogo/\\?.*?file=.+)";
+    private final String embed        = ".+/(embed(\\.php)?\\?.*?vid(eo)?=.+|embed/[a-f0-9]+|gogo/\\?.*?file=.+)";
 
     @Override
     protected boolean useRUA() {
@@ -95,7 +92,6 @@ public class GogoanimeCom extends antiDDoSForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-
         if (parameter.matches(embed)) {
             // majority, if not all are located on play44.net (or ip address). There for there is no need for many hoster plugins, best to
             // use single hoster plugin so connection settings are aok.
@@ -126,7 +122,6 @@ public class GogoanimeCom extends antiDDoSForDecrypt {
             if (fpName == null || fpName.length() == 0) {
                 fpName = br.getRegex("<title>(?:Watch\\s*)?([^<>\"]*?)( \\w+ Sub.*?|\\s*\\|\\s* Watch anime online, English anime online)?</title>").getMatch(0);
             }
-
             final String[] links = br.getRegex("<iframe.*?src=(\"|\\')(http[^<>\"]+)\\1").getColumn(1);
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -167,5 +162,4 @@ public class GogoanimeCom extends antiDDoSForDecrypt {
         }
         return super.siteTesterDisabled();
     }
-
 }
