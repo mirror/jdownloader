@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -36,12 +35,11 @@ import jd.plugins.FilePackage;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twomovies.us" }, urls = { "https?://(?:www\\.)?twomovies\\.(?:us|net|tv)/(?:watch_movie/[a-zA-z0-9_]+|watch_episode/[a-zA-Z0-9_]+/\\d+/\\d+|full_movie/\\d+/\\d+/\\d+/(?:episode/\\d+/\\d+/|movie/))" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twomovies.us" }, urls = { "https?://(?:www\\.)?(?:twomovies\\.(?:us|net|tv)|two-movies\\.name)/(?:watch_movie/[a-zA-z0-9_]+|watch_episode/[a-zA-Z0-9_]+/\\d+/\\d+|full_movie/\\d+/\\d+/\\d+/(?:episode/\\d+/\\d+/|movie/))" })
 public class ToMvzUs extends antiDDoSForDecrypt {
-
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "twomovies.us", "twomovies.net", "twomovies.tv" };
+        return new String[] { "twomovies.us", "twomovies.net", "twomovies.tv", "two-movies.name" };
     }
 
     public ToMvzUs(PluginWrapper wrapper) {
@@ -54,14 +52,14 @@ public class ToMvzUs extends antiDDoSForDecrypt {
         return 1;
     }
 
-    final String host = "https?://(?:www\\.)?twomovies\\.(?:us|net|tv)/";
+    final String host = "https?://(?:www\\.)?(?:twomovies\\.(?:us|net|tv)|two-movies\\.name)/";
     final String fm   = host + "full_movie/\\d+/\\d+/\\d+/(?:episode/\\d+/\\d+/|movie/)";
     final String wt   = host + "(?:watch_episode/[a-zA-Z0-9_]+/\\d+/\\d+|watch_movie/[a-zA-z0-9_]+)";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         // lets force https, and correct host so that we don't have issues with cookies
-        final String parameter = param.toString().replace("http://", "https://").replaceFirst("twomovies\\.(?:us|net)/", "twomovies.tv/");
+        final String parameter = param.toString().replace("http://", "https://").replaceFirst("twomovies\\.(?:us|net|tv)/", "two-movies.name/");
         br.setFollowRedirects(true);
         // cookie needed for seeing links!
         final String cookie_host = Browser.getHost(parameter);
@@ -120,6 +118,11 @@ public class ToMvzUs extends antiDDoSForDecrypt {
             }
             decryptedLinks.add(createDownloadlink(finallink));
         } else {
+            String externID = br.getRegex("go=(http[^<>\"]+)\"").getMatch(0);
+            if (externID != null) {
+                decryptedLinks.add(createDownloadlink(externID));
+                return;
+            }
             final String[] iframes = br.getRegex("<iframe .*?</iframe>").getColumn(-1);
             if (iframes != null) {
                 for (final String iframe : iframes) {
@@ -167,5 +170,4 @@ public class ToMvzUs extends antiDDoSForDecrypt {
     public boolean hasAutoCaptcha() {
         return false;
     }
-
 }
