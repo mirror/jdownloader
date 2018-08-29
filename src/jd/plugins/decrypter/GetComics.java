@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 35010 $", interfaceVersion = 3, names = { "getcomics.info" }, urls = { "https://getcomics\\.info/[A-Za-z0-9_\\-]+/[A-Za-z0-9_\\-]+" })
+@DecrypterPlugin(revision = "$Revision: 39683 $", interfaceVersion = 3, names = { "getcomics.info" }, urls = { "https://getcomics\\.info/[A-Za-z0-9_\\-]+/[A-Za-z0-9_\\-]+" })
 public class GetComics extends PluginForDecrypt {
     public GetComics(PluginWrapper wrapper) {
         super(wrapper);
