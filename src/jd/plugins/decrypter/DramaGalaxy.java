@@ -18,8 +18,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.Regex;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Request;
@@ -29,6 +27,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.Regex;
 
 @DecrypterPlugin(revision = "$Revision: 35010 $", interfaceVersion = 3, names = { "dramagalaxy.tv" }, urls = { "https?://www.dramagalaxy.tv/[A-Za-z0-9_\\-/?=]+" })
 public class DramaGalaxy extends PluginForDecrypt {
@@ -41,17 +41,15 @@ public class DramaGalaxy extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         final String parameterBase = parameter.replaceFirst("\\?page\\=\\d+", "");
-        // Load page
-        br.setFollowRedirects(true);
-        Request request = br.createGetRequest(parameter);
-        request.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        String page = br.getPage(request);
-        String title = br.getRegex("<title>(.*?)[^|]+</title>").getMatch(0);
-        if (title != null) {
-            title = title.toString().replace("|", "").trim();
-        }
-        String matchedURL = "";
         if (new Regex(parameterBase, "/(biography|category|thumbs|sitemap|img|xmlrpc|fav|images|ads|gga)/").count() == 0) {
+            br.setFollowRedirects(true);
+            Request request = br.createGetRequest(parameter);
+            request.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            String page = br.getPage(request);
+            String title = br.getRegex("<title>(.*?)[^|]+</title>").getMatch(0);
+            if (title != null) {
+                title = title.toString().replace("|", "").trim();
+            }
             // Handle tabs in case the video is split into multiple parts (JD default behavior would grab only the currently visible tab).
             int beginContent = page.indexOf("<div id=\"content\">");
             int beginFooter = page.indexOf("<div id=\"footer\">", beginContent);
@@ -59,7 +57,7 @@ public class DramaGalaxy extends PluginForDecrypt {
             String[][] regExMatches = new Regex(contentBlock, ">[\r\n ]*<li>[\r\n ]*<a href=\"(.+?)\"[\\ >]").getMatches();
             if (regExMatches.length > 0) {
                 for (String[] regExMatch : regExMatches) {
-                    matchedURL = Encoding.htmlDecode(regExMatch[0]);
+                    final String matchedURL = Encoding.htmlDecode(regExMatch[0]);
                     decryptedLinks.add(createDownloadlink(matchedURL));
                 }
             }
@@ -67,7 +65,7 @@ public class DramaGalaxy extends PluginForDecrypt {
             regExMatches = br.getRegex("><iframe src=\"(.+?)\"[\\ >]").getMatches();
             if (regExMatches.length > 0) {
                 for (String[] regExMatch : regExMatches) {
-                    matchedURL = Encoding.htmlDecode(regExMatch[0]);
+                    final String matchedURL = Encoding.htmlDecode(regExMatch[0]);
                     decryptedLinks.add(createDownloadlink(matchedURL));
                 }
             }
@@ -81,14 +79,14 @@ public class DramaGalaxy extends PluginForDecrypt {
             if (regExMatches.length > 0) {
                 // On index pages, grab everything resembling listed episodes
                 for (String[] regExMatch : regExMatches) {
-                    matchedURL = Encoding.htmlDecode(regExMatch[0]);
+                    final String matchedURL = Encoding.htmlDecode(regExMatch[0]);
                     // We only want episodes for this show, none of the other crud.
                     decryptedLinks.add(createDownloadlink(matchedURL));
                 }
                 // Handle possible pagination of the episode list
                 regExMatches = br.getRegex("href=\"" + Pattern.quote(parameterBase) + "(.*?)\" onclick=\"window\\.location\\.href").getMatches();
                 for (String[] regExMatch : regExMatches) {
-                    matchedURL = Encoding.htmlDecode(regExMatch[0]);
+                    final String matchedURL = Encoding.htmlDecode(regExMatch[0]);
                     // We only want episodes for this show, none of the other crud.
                     decryptedLinks.add(createDownloadlink(matchedURL));
                 }
@@ -98,9 +96,6 @@ public class DramaGalaxy extends PluginForDecrypt {
                 filePackage.setName(title);
                 filePackage.setComment(title);
                 filePackage.addLinks(decryptedLinks);
-            }
-            for (DownloadLink decryptedLink : decryptedLinks) {
-                getLogger().info("DownloadLink: " + decryptedLink.getContentUrlOrPatternMatcher());
             }
         }
         //
