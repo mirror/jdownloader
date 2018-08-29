@@ -31,7 +31,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 35010 $", interfaceVersion = 3, names = { "kickassanime.io" }, urls = { "https://www\\d*.kickassanime.io/(?:anime)/[A-Za-z0-9\\-]+\\-\\d+/episode\\-[0-9\\-/]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kickassanime.io" }, urls = { "https://www\\d*.kickassanime.io/(?:anime)/[A-Za-z0-9\\-]+\\-\\d+/episode\\-[0-9\\-/]+" })
 public class KickAssAnime extends PluginForDecrypt {
     public KickAssAnime(PluginWrapper wrapper) {
         super(wrapper);
