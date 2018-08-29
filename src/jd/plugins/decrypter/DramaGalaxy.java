@@ -18,6 +18,8 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.Regex;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Request;
@@ -27,8 +29,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.utils.Regex;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dramagalaxy.tv" }, urls = { "https?://www.dramagalaxy.tv/[A-Za-z0-9_\\-/?=]+" })
 public class DramaGalaxy extends PluginForDecrypt {
@@ -93,7 +93,7 @@ public class DramaGalaxy extends PluginForDecrypt {
             }
             if (!title.isEmpty()) {
                 final FilePackage filePackage = FilePackage.getInstance();
-                filePackage.setName(title);
+                filePackage.setName(Encoding.htmlDecode(title));
                 filePackage.setComment(title);
                 filePackage.addLinks(decryptedLinks);
             }
