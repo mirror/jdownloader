@@ -7,7 +7,6 @@ import java.util.List;
 import org.appwork.utils.logging2.LogSource;
 
 public interface UpdateHandler {
-
     void startIntervalChecker();
 
     void runUpdateCheck(boolean manually);
@@ -19,10 +18,9 @@ public interface UpdateHandler {
     String getAppID();
 
     // List<File> getFileList(File awfFile) throws InterruptedException, IOException;
-
     Window getGuiFrame();
 
-    public String[] getOptionalsList() throws IOException;
+    public String[] getOptionalsList() throws IOException, InterruptedException;
 
     void installPendingUpdates(InstallLog log);
 
@@ -57,5 +55,4 @@ public interface UpdateHandler {
     void requestFullExtensionUpdate(String... parameters);
 
     void setGuiAlwaysOnTop(boolean enabled);
-
 }
