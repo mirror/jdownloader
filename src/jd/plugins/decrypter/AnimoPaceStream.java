@@ -28,7 +28,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.Regex;
 
-@DecrypterPlugin(revision = "$Revision: 35010 $", interfaceVersion = 3, names = { "animo-pace-stream.io" }, urls = { "https?://animo-pace-stream\\.io/[^\\.]+\\.php.*" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "animo-pace-stream.io" }, urls = { "https?://animo-pace-stream\\.io/[^\\.]+\\.php.*" })
 public class AnimoPaceStream extends PluginForDecrypt {
     public AnimoPaceStream(PluginWrapper wrapper) {
         super(wrapper);
