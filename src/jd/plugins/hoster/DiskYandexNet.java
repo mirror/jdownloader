@@ -229,10 +229,6 @@ public class DiskYandexNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (use_api_file_free_availablecheck) {
-                // String path_urlencoded = Encoding.urlEncode(this.currPath);
-                // if (path_urlencoded.contains("+")) {
-                // path_urlencoded = path_urlencoded.replace("+", "%20");
-                // }
                 final String hash_urlencoded = jd.plugins.decrypter.DiskYandexNetFolder.urlEncodeHashLong(this.currHash);
                 final String path_urlencoded = jd.plugins.decrypter.DiskYandexNetFolder.urlEncodePath(this.currPath);
                 getPage("https://cloud-api.yandex.net/v1/disk/public/resources?public_key=" + hash_urlencoded + "&path=" + path_urlencoded);
