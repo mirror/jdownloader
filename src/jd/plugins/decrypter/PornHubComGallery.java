@@ -20,13 +20,17 @@ import java.util.HashSet;
 import java.util.Set;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornhub.com" }, urls = { "https?://(www\\.|[a-z]{2}\\.)?pornhub\\.com/album/\\d+" })
@@ -42,6 +46,31 @@ public class PornHubComGallery extends PluginForDecrypt {
         parameter = parameter.replaceAll("^http://(www\\.)?([a-z]{2}\\.)?", "https://www.");
         br.setFollowRedirects(true);
         jd.plugins.hoster.PornHubCom.getPage(br, parameter);
+        boolean privateImage = false;
+        if (br.containsHTML(jd.plugins.hoster.PornHubCom.html_privateimage)) {
+            privateImage = true;
+            Boolean premium = false;
+            final Account account = AccountController.getInstance().getValidAccount(this);
+            if (account != null) {
+                try {
+                    jd.plugins.hoster.PornHubCom.login(this, br, account, false);
+                    if (AccountType.PREMIUM.equals(account.getType())) {
+                        premium = true;
+                    }
+                } catch (PluginException e) {
+                    handleAccountException(account, e);
+                }
+            }
+            if (premium) {
+                parameter = parameter.replace("pornhub.com", "pornhubpremium.com");
+            } else {
+                parameter = parameter.replace("pornhubpremium.com", "pornhub.com");
+            }
+            jd.plugins.hoster.PornHubCom.getPage(br, parameter);
+            if (br.containsHTML(jd.plugins.hoster.PornHubCom.html_privateimage)) {
+                return decryptedLinks;
+            }
+        }
         if (br.getHttpConnection().getResponseCode() == 404) {
             try {
                 decryptedLinks.add(this.createOfflinelink(parameter));
@@ -66,6 +95,9 @@ public class PornHubComGallery extends PluginForDecrypt {
             }
             for (final String singleID : links) {
                 final DownloadLink dl = createDownloadlink("https://www.pornhub.com/photo/" + singleID);
+                if (privateImage) {
+                    dl.setProperty("private", Boolean.TRUE);
+                }
                 dl.setName(singleID + ".jpg");
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);

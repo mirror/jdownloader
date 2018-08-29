@@ -27,6 +27,7 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.config.PluralsightComConfig;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision: $", interfaceVersion = 1, names = { "pluralsight.com" }, urls = { "https?://(app|www)?\\.pluralsight\\.com(\\/library)?\\/courses\\/[^/]+" })
 public class PluralsightComDecrypter extends PluginForDecrypt {
@@ -58,9 +59,8 @@ public class PluralsightComDecrypter extends PluginForDecrypt {
                 account = null;
             }
         }
-        PluralsightCom.getRequest(br, this, br.createGetRequest(parameter.getCryptedUrl()));
+        PluralsightCom.getClips(br, this, course);
         if (br.getHttpConnection().getResponseCode() == 200 || !br.containsHTML("You have reached the end of the internet")) {
-            PluralsightCom.getRequest(br, this, br.createGetRequest("https://app.pluralsight.com/learner/content/courses/" + course));
             if (br.containsHTML("Not Found")) {
                 return ret;
             }
@@ -68,7 +68,7 @@ public class PluralsightComDecrypter extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Course or Data not found");
             }
             final Map<String, Object> map = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            final ArrayList<DownloadLink> clips = PluralsightCom.getClips(this, br, map);
+            final ArrayList<DownloadLink> clips = PluralsightCom.getClips(this, br, (Map<String, Object>) JavaScriptEngineFactory.walkJson(map, "data/rpc/bootstrapPlayer"));
             if (clips != null) {
                 final FilePackage fp = FilePackage.getInstance();
                 final String title = (String) map.get("title");
@@ -83,7 +83,7 @@ public class PluralsightComDecrypter extends PluginForDecrypt {
                     final Browser brc = br.cloneBrowser();
                     for (final DownloadLink clip : clips) {
                         if (clip.getKnownDownloadSize() < 0 && !isAbort()) {
-                            final String streamURL = PluralsightCom.getStreamURL(br, this, clip);
+                            final String streamURL = PluralsightCom.getStreamURL(br, this, clip, null);
                             if (streamURL != null) {
                                 final Request checkStream = PluralsightCom.getRequest(brc, this, brc.createHeadRequest(streamURL));
                                 final URLConnectionAdapter con = checkStream.getHttpConnection();
