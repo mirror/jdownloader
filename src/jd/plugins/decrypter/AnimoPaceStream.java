@@ -17,8 +17,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.Regex;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Request;
@@ -28,7 +26,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 35010 $", interfaceVersion = 3, names = { "animo-pace-stream.io" }, urls = { "https://animo-pace-stream\\.io/[^\\.]+\\.php.*" })
+import org.appwork.utils.Regex;
+
+@DecrypterPlugin(revision = "$Revision: 35010 $", interfaceVersion = 3, names = { "animo-pace-stream.io" }, urls = { "https?://animo-pace-stream\\.io/[^\\.]+\\.php.*" })
 public class AnimoPaceStream extends PluginForDecrypt {
     public AnimoPaceStream(PluginWrapper wrapper) {
         super(wrapper);
@@ -71,7 +71,7 @@ public class AnimoPaceStream extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(videoURL));
         }
         // In rare cases we have an embedded player with a dropdown list to switch between different hosters.
-        String[][] selectOptionMatches = br.getRegex("<option value=\"https://animo-pace-stream\\.io/[a-zA-Z0-9]+/[a-zA-Z0-9]+\\.php\\?[^>]+").getMatches();
+        String[][] selectOptionMatches = br.getRegex("<option value=\"https?://animo-pace-stream\\.io/[a-zA-Z0-9]+/[a-zA-Z0-9]+\\.php\\?[^>]+").getMatches();
         for (String[] selectOptionMatch : selectOptionMatches) {
             String selectOptionURL = Encoding.htmlDecode(selectOptionMatch[0].replace("[^\"]+\"", "").trim());
             String optionTarget = new Regex(selectOptionURL, "value=\"(.+?)\"").getMatch(0);
@@ -84,10 +84,6 @@ public class AnimoPaceStream extends PluginForDecrypt {
                 optionTarget = Encoding.htmlDecode(optionTarget);
                 decryptedLinks.add(createDownloadlink(optionTarget));
             }
-        }
-        //
-        for (DownloadLink decryptedLink : decryptedLinks) {
-            getLogger().info(decryptedLink.getContentUrlOrPatternMatcher());
         }
         return decryptedLinks;
     }

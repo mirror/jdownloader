@@ -16,6 +16,8 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -48,23 +50,32 @@ public class PornHubComGallery extends PluginForDecrypt {
             }
             return decryptedLinks;
         }
-        String fpName = br.getRegex("class=\"photoAlbumTitleV2\">([^<>\"]*?)<").getMatch(0);
+        String fpName = br.getRegex("class=\"photoAlbumTitleV2\">\\s*([^<>\"]*?)\\s*<").getMatch(0);
         if (fpName == null) {
-            fpName = br.getRegex("title>([^<>\"]*?)</title>").getMatch(0);
+            fpName = br.getRegex("title>\\s*([^<>\"]*?)\\s*</title>").getMatch(0);
         }
         if (fpName == null) {
             fpName = "pornhub.com album " + new Regex(parameter, "(\\d+)$").getMatch(0);
         }
-        final String[] links = br.getRegex("\"/photo/(\\d+)\"").getColumn(0);
-        if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        for (final String singleID : links) {
-            final DownloadLink dl = createDownloadlink("https://www.pornhub.com/photo/" + singleID);
-            dl.setName(singleID + ".jpg");
-            dl.setAvailable(true);
-            decryptedLinks.add(dl);
+        final Set<String> pages = new HashSet<String>();
+        while (true) {
+            final String[] links = br.getRegex("\"/photo/(\\d+)\"").getColumn(0);
+            if (links == null || links.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            for (final String singleID : links) {
+                final DownloadLink dl = createDownloadlink("https://www.pornhub.com/photo/" + singleID);
+                dl.setName(singleID + ".jpg");
+                dl.setAvailable(true);
+                decryptedLinks.add(dl);
+            }
+            final String nextPage = br.getRegex("\"page_next\"\\s*>\\s*<a\\s*href\\s*=\\s*\"(.*?)\"").getMatch(0);
+            if (nextPage == null || !pages.add(nextPage)) {
+                break;
+            } else {
+                jd.plugins.hoster.PornHubCom.getPage(br, nextPage);
+            }
         }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();

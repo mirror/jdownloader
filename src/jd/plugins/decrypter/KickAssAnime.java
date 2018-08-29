@@ -17,9 +17,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -31,7 +28,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kickassanime.io" }, urls = { "https://www\\d*.kickassanime.io/(?:anime)/[A-Za-z0-9\\-]+\\-\\d+/episode\\-[0-9\\-/]+" })
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kickassanime.io" }, urls = { "https?://www\\d*.kickassanime.io/(?:anime)/[A-Za-z0-9\\-]+\\-\\d+/episode\\-[0-9\\-/]+" })
 public class KickAssAnime extends PluginForDecrypt {
     public KickAssAnime(PluginWrapper wrapper) {
         super(wrapper);
@@ -43,7 +43,7 @@ public class KickAssAnime extends PluginForDecrypt {
         final String parameter = param.toString().replace("http:", "https:").replaceAll("[/]+$", "");
         br.setFollowRedirects(true);
         final String page = br.getPage(parameter);
-        String showTitle = br.getRegex("<a href=\"https://www\\d*.kickassanime.io/(?:anime)/[A-Za-z0-9\\-]+\\-\\d+\" title=\"(.+?)\">").getMatch(0);
+        String showTitle = br.getRegex("<a href=\"https?://www\\d*.kickassanime.io/(?:anime)/[A-Za-z0-9\\-]+\\-\\d+\" title=\"(.+?)\">").getMatch(0);
         String episodeTitle = br.getRegex(">([^>]+)</h1>").getMatch(0);
         String[][] iframeURLMatches = br.getRegex("https://animo-pace-stream.io/[a-zA-Z0-9]+/player.php[^\"]+").getMatches();
         // Get the IFrame details, which might contain our target URLs
@@ -84,7 +84,7 @@ public class KickAssAnime extends PluginForDecrypt {
             }
         }
         // In some cases we have player HTML with a dropdown list to switch between different hoster implementations.
-        String[][] selectOptionMatches = br.getRegex("<option value=\"https://animo-pace-stream\\.io/axplayer/player\\.php\\?[^>]+").getMatches();
+        String[][] selectOptionMatches = br.getRegex("<option value=\"https?://animo-pace-stream\\.io/axplayer/player\\.php\\?[^>]+").getMatches();
         if (selectOptionMatches.length > 0) {
             for (String[] selectOptionMatch : selectOptionMatches) {
                 String selectOptionURL = Encoding.htmlDecode(new Regex(selectOptionMatch[0], "\"(.+?)$").getMatch(0)).trim();
@@ -92,7 +92,7 @@ public class KickAssAnime extends PluginForDecrypt {
             }
         }
         // In some we have DDL links that will redirect to the target.
-        String[][] directDownloadMatches = br.getRegex("https://animo-pace-stream\\.io/redirector\\.php\\?[^\"]+").getMatches();
+        String[][] directDownloadMatches = br.getRegex("https?://animo-pace-stream\\.io/redirector\\.php\\?[^\"]+").getMatches();
         if (directDownloadMatches.length > 0) {
             for (String[] directDownloadMatch : directDownloadMatches) {
                 String directDownloadURL = Encoding.htmlDecode(directDownloadMatch[0].trim());
@@ -134,10 +134,6 @@ public class KickAssAnime extends PluginForDecrypt {
             final FilePackage filePackage = FilePackage.getInstance();
             filePackage.setName(showTitle);
             filePackage.addLinks(decryptedLinks);
-        }
-        //
-        for (DownloadLink decryptedLink : decryptedLinks) {
-            getLogger().info(decryptedLink.getContentUrlOrPatternMatcher());
         }
         return decryptedLinks;
     }
