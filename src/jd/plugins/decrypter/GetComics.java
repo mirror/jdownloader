@@ -62,7 +62,7 @@ public class GetComics extends PluginForDecrypt {
         }
         if (title != null) {
             final FilePackage filePackage = FilePackage.getInstance();
-            filePackage.setName(title);
+            filePackage.setName(Encoding.htmlDecode(title));
             filePackage.addLinks(decryptedLinks);
         }
         //
