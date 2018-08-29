@@ -25,7 +25,6 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
-import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Browser;
@@ -40,14 +39,14 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "disk.yandex.net", "docviewer.yandex.com" }, urls = { "https?://(?:www\\.)?(((((mail|disk)\\.)?yandex\\.(?:net|com|com\\.tr|ru|ua)|yadi\\.sk)/(disk/)?public/(\\?hash=.+|#.+))|(?:yadi\\.sk|yadisk\\.cc)/(?:d|i)/[A-Za-z0-9\\-_]+(/[^/]+){0,}|yadi\\.sk/mail/\\?hash=.+)|https?://yadi\\.sk/a/[A-Za-z0-9\\-_]+", "https?://docviewer\\.yandex\\.(?:net|com|com\\.tr|ru|ua)/\\?url=ya\\-disk\\-public%3A%2F%2F.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "disk.yandex.net", "docviewer.yandex.com" }, urls = { "https?://(?:www\\.)?(((((mail|disk)\\.)?yandex\\.(?:net|com|com\\.tr|ru|ua)|yadi\\.sk)/(disk/)?public/?(\\?hash=.+|#.+))|(?:yadi\\.sk|yadisk\\.cc)/(?:d|i)/[A-Za-z0-9\\-_]+(/[^/]+){0,}|yadi\\.sk/mail/\\?hash=.+)|https?://yadi\\.sk/a/[A-Za-z0-9\\-_]+", "https?://docviewer\\.yandex\\.(?:net|com|com\\.tr|ru|ua)/\\?url=ya\\-disk\\-public%3A%2F%2F.+" })
 public class DiskYandexNetFolder extends PluginForDecrypt {
     public DiskYandexNetFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     private static final String type_docviewer     = "https?://docviewer\\.yandex\\.[^/]+/\\?url=ya\\-disk\\-public%3A%2F%2F([^/\"\\&]+).*?";
-    private final String        type_primaryURLs   = "https?://(?:www\\.)?(((mail|disk)\\.)?yandex\\.(net|com|com\\.tr|ru|ua)|yadi\\.sk)/(disk/)?public/(\\?hash=.+|#.+)";
+    private final String        type_primaryURLs   = ".+?public/?(\\?hash=.+|#.+)";
     private final String        type_shortURLs_d   = "https?://(?:www\\.)?(yadi\\.sk|yadisk\\.cc)/d/[A-Za-z0-9\\-_]+((/[^/]+){0,})";
     private final String        type_shortURLs_i   = "https?://(?:www\\.)?(yadi\\.sk|yadisk\\.cc)/i/[A-Za-z0-9\\-_]+";
     private final String        type_yadi_sk_mail  = "https?://(www\\.)?yadi\\.sk/mail/\\?hash=.+";
@@ -76,7 +75,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         }
         jd.plugins.hoster.DiskYandexNet.prepbrAPI(this.br);
         this.addedLink = param.toString();
-        String hash_decoded = null;
+        String hash_long_decoded = null;
         String fname_url = null;
         String fpName = null;
         String hash_long = null;
@@ -85,7 +84,6 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             path_main = URLDecoder.decode(path_main, "UTF-8");
         }
         boolean is_part_of_a_folder = false;
-        boolean parameter_correct = false;
         final DownloadLink main = createDownloadlink("http://yandexdecrypted.net/" + System.currentTimeMillis() + new Random().nextInt(10000000));
         if (path_main == null) {
             path_main = "/";
@@ -128,21 +126,21 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                     return null;
                 }
                 this.addedLink = "https://disk.yandex.com/public/?hash=" + Encoding.urlEncode(hash_long);
-                parameter_correct = true;
             } else {
                 this.addedLink = this.addedLink.replace("#", "?hash=");
                 hash_long = regexHashFromURL(this.addedLink);
             }
-            hash_decoded = Encoding.htmlDecode(hash_long);
-            if (hash_decoded.contains(":/")) {
-                final Regex hashregex = new Regex(hash_decoded, "(.*?):(/.+)");
+            hash_long_decoded = Encoding.urlDecode(hash_long, false);
+            if (hash_long_decoded.contains(":/")) {
+                /* Hash with path --> Separate that */
+                final Regex hashregex = new Regex(hash_long_decoded, "(.*?):(/.+)");
                 hash_long = hashregex.getMatch(0);
+                /* Set correct value */
+                hash_long_decoded = hash_long;
                 path_main = hashregex.getMatch(1);
                 is_part_of_a_folder = true;
             }
-            if (!parameter_correct) {
-                this.addedLink = "https://disk.yandex.com/public/?hash=" + hash_long;
-            }
+            this.addedLink = "https://disk.yandex.com/public/?hash=" + urlEncodePath(hash_long_decoded);
             this.br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
             this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             main.setProperty("mainlink", this.addedLink);
@@ -151,7 +149,6 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             short offset = 0;
             final short entries_per_request = 200;
             long numberof_entries = 0;
-            long filesize_total = 0;
             final FilePackage fp = FilePackage.getInstance();
             do {
                 if (this.isAbort()) {
@@ -159,7 +156,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                     return decryptedLinks;
                 }
                 final String encodedMainPath = Encoding.urlEncode(path_main).replace("+", "%20");
-                getPage("https://cloud-api.yandex.net/v1/disk/public/resources?limit=" + entries_per_request + "&offset=" + offset + "&public_key=" + Encoding.urlEncode(hash_long) + "&path=" + encodedMainPath);
+                getPage("https://cloud-api.yandex.net/v1/disk/public/resources?limit=" + entries_per_request + "&offset=" + offset + "&public_key=" + urlEncodeHashLong(hash_long_decoded) + "&path=" + encodedMainPath);
                 if (PluginJSonUtils.getJsonValue(br, "error") != null) {
                     decryptedLinks.add(this.createOfflinelink(hash_long));
                     return decryptedLinks;
@@ -202,7 +199,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                     fp.setName(fpName);
                 }
                 jd.plugins.hoster.DiskYandexNet.setHash(main, hash_long);
-                hash_long = Encoding.htmlDecode(hash_long);
+                // hash_long = Encoding.htmlDecode(hash_long);
                 for (final Object list_object : resource_data_list) {
                     entries = (LinkedHashMap<String, Object>) list_object;
                     final String type = (String) entries.get("type");
@@ -228,19 +225,24 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                         }
                         final DownloadLink dl = createDownloadlink("http://yandexdecrypted.net/" + System.currentTimeMillis() + new Random().nextInt(10000000));
                         decryptSingleFile(dl, entries);
-                        final String url_content;
+                        String url_content;
                         if (url_preview != null) {
                             /*
                              * Given preview URLs are bullshit as trhey only e.g. link to a thumbnail of a .pdf file - but we know how to
                              * build good "open in browser" content URLs ...
                              */
-                            url_content = "https://docviewer.yandex.com/?url=ya-disk-public%3A%2F%2F" + Encoding.urlEncode(hash) + "%3A" + Encoding.urlEncode(path);
+                            url_content = "https://docviewer.yandex.com/?url=ya-disk-public%3A%2F%2F" + Encoding.urlEncode(hash);
                         } else {
                             /*
                              * We do not have any URL - set main URL.
                              */
                             url_content = "https://disk.yandex.com/public/?hash=" + Encoding.urlEncode(hash);
                         }
+                        /*
+                         * We want the user to have an URL which he can open via browser and it does not only open up the root of the folder
+                         * but the exact file he wants to have!
+                         */
+                        url_content += "%3A" + urlEncodePath(path);
                         jd.plugins.hoster.DiskYandexNet.setHash(dl, hash_long);
                         dl.setProperty("mainlink", url_content);
                         if (md5 != null) {
@@ -257,7 +259,6 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                         dl._setFilePackage(fp);
                         decryptedLinks.add(dl);
                         distribute(dl);
-                        filesize_total += dl.getDownloadSize();
                     }
                     offset++;
                 }
@@ -271,22 +272,35 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 logger.info("Probably empty folder");
                 return decryptedLinks;
             }
-            /* Only add main .zip link if the user added the ROOT link, otherwise we get the ROOT as .zip anyways which makes no sense. */
-            final boolean is_root_folder = path_main.equals("/");
-            if (is_root_folder && SubConfiguration.getConfig("disk.yandex.net").getBooleanProperty(DOWNLOAD_ZIP, false)) {
-                /* User wants a .zip file of the complete (sub) folder --> Do that */
-                main.setFinalFileName(fpName + ".zip");
-                main.setProperty("plain_filename", fpName + ".zip");
-                main.setProperty("path", path_main);
-                main.setProperty("is_zipped_folder", true);
-                main.setContentUrl(this.addedLink);
-                main.setLinkID(hash_long + path_main);
-                main.setDownloadSize(filesize_total);
-                main.setAvailable(true);
-                decryptedLinks.add(main);
-            }
         }
         return decryptedLinks;
+    }
+
+    /** urlEncode 'path' value for yandex API requests */
+    public static String urlEncodePath(String str) {
+        if (!Encoding.isUrlCoded(str)) {
+            str = Encoding.urlEncode(str);
+        }
+        str = str.replace("+", "%20");
+        if (str.contains("=")) {
+            str = str.replace("=", "%3D");
+        }
+        // if (str.contains(" ")) {
+        // str = str.replace(" ", "%2B");
+        // }
+        if (str.contains("/")) {
+            str = str.replace("/", "%2F");
+        }
+        return str;
+    }
+
+    /** urlEncode 'hash' value for yandex API requests */
+    public static String urlEncodeHashLong(String str) {
+        if (!Encoding.isUrlCoded(str)) {
+            str = Encoding.urlEncode(str);
+        }
+        str = str.replace("+", "%2B");
+        return str;
     }
 
     /** For e.g. https://yadi.sk/a/blabla */
