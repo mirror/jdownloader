@@ -31,6 +31,7 @@ import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -66,7 +67,7 @@ public class PornHubCom extends PluginForDecrypt {
         if (account != null) {
             try {
                 jd.plugins.hoster.PornHubCom.login(this, br, account, false);
-                if (account.getType().toString().equals("PREMIUM")) {
+                if (AccountType.PREMIUM.equals(account.getType())) {
                     premium = true;
                 }
             } catch (PluginException e) {

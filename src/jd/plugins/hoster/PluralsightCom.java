@@ -203,8 +203,35 @@ public class PluralsightCom extends PluginForHost {
         return fetchFileInformation(link, account);
     }
 
-    public static String getStreamURL(Browser br, Plugin plugin, DownloadLink link) throws PluginException, IOException, InterruptedException {
-        final UrlQuery urlParams = UrlQuery.parse(link.getPluginPatternMatcher());
+    public static enum QUALITY {
+        HIGH_WIDESCREEN(1280, 720),
+        HIGH(1024, 768),
+        MEDIUM(848, 640),
+        LOW(640, 480);
+        private final int x;
+        private final int y;
+
+        private QUALITY(final int x, final int y) {
+            this.x = x;
+            this.y = y;
+        }
+
+        public int getX() {
+            return x;
+        }
+
+        public int getY() {
+            return y;
+        }
+
+        @Override
+        public String toString() {
+            return getX() + "x" + getY();
+        }
+    }
+
+    public static String getStreamURL(Browser br, Plugin plugin, DownloadLink link, QUALITY quality) throws PluginException, IOException, InterruptedException {
+        UrlQuery urlParams = UrlQuery.parse(link.getPluginPatternMatcher());
         final String author = urlParams.get("author");
         if (StringUtils.isEmpty(author)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -217,8 +244,11 @@ public class PluralsightCom extends PluginForHost {
         if (StringUtils.isEmpty(clip)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        if (quality == null) {
+            quality = link.getBooleanProperty("supportsWideScreenVideoFormats", false) ? QUALITY.HIGH_WIDESCREEN : QUALITY.HIGH;
+        }
         final Map<String, Object> params = new HashMap<String, Object>();
-        params.put("query", "query viewClip { viewClip(input: { author: \"" + author + "\", clipIndex: " + clip + ", courseName: \"" + course + "\", includeCaptions: false, locale: \"en\", mediaType: \"mp4\", moduleName: \"" + urlParams.get("name") + "\", quality: \"1280x720\" }) { urls { url cdn rank source }, status } }");
+        params.put("query", "query viewClip { viewClip(input: { author: \"" + author + "\", clipIndex: " + clip + ", courseName: \"" + course + "\", includeCaptions: false, locale: \"en\", mediaType: \"mp4\", moduleName: \"" + urlParams.get("name") + "\" , quality: \"" + quality + "\"}) { urls { url cdn rank source }, status } }");
         params.put("variables", "{}");
         final PostRequest request = br.createPostRequest("https://app.pluralsight.com/player/api/graphql", JSonStorage.toString(params));
         request.setContentType("application/json;charset=UTF-8");
@@ -267,20 +297,30 @@ public class PluralsightCom extends PluginForHost {
 
     private String streamURL = null;
 
+    public static Request getClips(Browser br, Plugin plugin, String course) throws Exception {
+        final Map<String, Object> params = new HashMap<String, Object>();
+        params.put("query", "query  BootstrapPlayer  {  rpc  {   bootstrapPlayer  {  profile  {   firstName   lastName   email   username   userHandle   authed   isAuthed   plan  }  course(courseId:  \"" + course + "\")  {   name   title   courseHasCaptions   translationLanguages  {   code   name   }   supportsWideScreenVideoFormats   timestamp   modules  {   name   title   duration   formattedDuration   author   authorized   clips  {    authorized   clipId    duration   formattedDuration   id   index   moduleIndex   moduleTitle   name   title   watched   }   }  }   }  }}");
+        params.put("variables", "{}");
+        final PostRequest request = br.createPostRequest("https://app.pluralsight.com/player/api/graphql", JSonStorage.toString(params));
+        request.setContentType("application/json;charset=UTF-8");
+        request.getHeaders().put("Origin", "https://app.pluralsight.com");
+        return getRequest(br, plugin, request);
+    }
+
     private AvailableStatus fetchFileInformation(DownloadLink link, final Account account) throws Exception {
         streamURL = null;
-        if (!link.getBooleanProperty("isNameSet", false)) {
+        if (!link.getBooleanProperty("isNameSet", false) || UrlQuery.parse(link.getPluginPatternMatcher()).get("author") == null || link.getProperty("supportsWideScreenVideoFormats") == null) {
             final UrlQuery urlParams = UrlQuery.parse(link.getPluginPatternMatcher());
             final String course = urlParams.get("course");
             if (course == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            PluralsightCom.getRequest(br, this, br.createGetRequest("https://app.pluralsight.com/learner/content/courses/" + course));
+            final Request request = getClips(br, this, course);
             if (br.containsHTML("Not Found")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final Map<String, Object> map = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            final ArrayList<DownloadLink> clips = PluralsightCom.getClips(this, br, map);
+            final Map<String, Object> map = JSonStorage.restoreFromString(request.getHtmlCode().toString(), TypeRef.HASHMAP);
+            final ArrayList<DownloadLink> clips = PluralsightCom.getClips(this, br, (Map<String, Object>) JavaScriptEngineFactory.walkJson(map, "data/rpc/bootstrapPlayer"));
             DownloadLink foundClip = null;
             if (clips != null) {
                 final String clipID = urlParams.get("clip");
@@ -301,13 +341,15 @@ public class PluralsightCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
                 link.setFinalFileName(foundClip.getName());
+                link.setPluginPatternMatcher(foundClip.getPluginPatternMatcher());
+                link.setProperty("supportsWideScreenVideoFormats", foundClip.getBooleanProperty("supportsWideScreenVideoFormats", false));
                 link.setProperty("isNameSet", true);
             }
         }
         if (Thread.currentThread() instanceof SingleDownloadController) {
             return AvailableStatus.UNCHECKABLE;
         } else if (link.getKnownDownloadSize() == -1) {
-            streamURL = getStreamURL(br, this, link);
+            streamURL = getStreamURL(br, this, link, null);
             if (!StringUtils.isEmpty(streamURL)) {
                 final Request checkStream = getRequest(br, this, br.createHeadRequest(streamURL));
                 final URLConnectionAdapter con = checkStream.getHttpConnection();
@@ -329,7 +371,9 @@ public class PluralsightCom extends PluginForHost {
     }
 
     public static ArrayList<DownloadLink> getClips(Plugin plugin, Browser br, Map<String, Object> map) throws Exception {
-        final List<Map<String, Object>> modules = (List<Map<String, Object>>) map.get("modules");
+        final Map<String, Object> course = (Map<String, Object>) map.get("course");
+        final boolean supportsWideScreenVideoFormats = Boolean.TRUE.equals(course.get("supportsWideScreenVideoFormats"));
+        final List<Map<String, Object>> modules = (List<Map<String, Object>>) course.get("modules");
         if (modules == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else if (modules.size() == 0) {
@@ -342,21 +386,26 @@ public class PluralsightCom extends PluginForHost {
             final List<Map<String, Object>> clips = (List<Map<String, Object>>) module.get("clips");
             if (clips != null) {
                 for (final Map<String, Object> clip : clips) {
-                    final String playerUrl = (String) clip.get("playerUrl");
+                    String playerUrl = (String) clip.get("playerUrl");
                     if (StringUtils.isEmpty(playerUrl)) {
-                        continue;
+                        final String id[] = new Regex((String) clip.get("id"), "(.*?):(.*?):(\\d+):(.+)").getRow(0);
+                        playerUrl = "https://app.pluralsight.com/player?name=" + id[1] + "&mode=live&clip=" + id[2] + "&course=" + id[0] + "&author=" + id[3];
                     }
                     final String url = br.getURL(playerUrl).toString();
                     final DownloadLink link = new DownloadLink(null, null, plugin.getHost(), url, true);
-                    final String duration = (String) clip.get("duration");
+                    final String duration = clip.get("duration").toString();
                     link.setProperty("duration", duration);
                     final String clipId = (String) clip.get("clipId");
                     link.setProperty("clipID", clipId);
                     link.setLinkID(plugin.getHost() + "://" + clipId);
                     final String title = (String) clip.get("title");
                     final String moduleTitle = (String) clip.get("moduleTitle");
-                    final Object ordering = clip.get("ordering");
+                    Object ordering = clip.get("ordering");
+                    if (ordering == null) {
+                        ordering = clip.get("index");
+                    }
                     link.setProperty("ordering", ordering);
+                    link.setProperty("supportsWideScreenVideoFormats", supportsWideScreenVideoFormats);
                     link.setProperty("module", moduleID);
                     if (StringUtils.isNotEmpty(title) && StringUtils.isNotEmpty(moduleTitle) && ordering != null) {
                         String fullName = String.format("%02d", moduleIndex) + "-" + String.format("%02d", Long.parseLong(ordering.toString()) + 1) + " - " + moduleTitle + " -- " + title;
@@ -405,7 +454,7 @@ public class PluralsightCom extends PluginForHost {
 
     private void downloadStream(final DownloadLink link, final Account account, String streamURL) throws Exception {
         if (StringUtils.isEmpty(streamURL)) {
-            streamURL = getStreamURL(br, this, link);
+            streamURL = getStreamURL(br, this, link, null);
             if (StringUtils.isEmpty(streamURL)) {
                 if (account == null || !AccountType.PREMIUM.equals(account.getType())) {
                     throw new AccountRequiredException();

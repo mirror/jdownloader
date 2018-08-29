@@ -286,6 +286,8 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
                         if (viewport != null) {
                             viewport.onLoaded();
                         }
+                    } catch (NumberFormatException e) {
+                        // undefined
                     } catch (Throwable e) {
                         final Plugin plugin = challenge.getPlugin();
                         if (plugin != null && plugin.getLogger() != null) {
