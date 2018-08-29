@@ -20,17 +20,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.mozilla.javascript.ConsString;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.ScriptableObject;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -49,6 +38,17 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.mozilla.javascript.ConsString;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
+import org.mozilla.javascript.ScriptableObject;
 
 /**
  *
@@ -703,8 +703,8 @@ public abstract class antiDDoSForHost extends PluginForHost {
                                 ibr.submitForm(cloudflare);
                             }
                             /*
-                             * ok we have issue here like below.. when request post redirect isn't the same as what came in! ie post > gets > need to resubmit original
-                             * request.
+                             * ok we have issue here like below.. when request post redirect isn't the same as what came in! ie post > gets
+                             * > need to resubmit original request.
                              */
                             if (originalRequest instanceof PostRequest) {
                                 try {
@@ -754,8 +754,8 @@ public abstract class antiDDoSForHost extends PluginForHost {
                     }
                 }
                 /*
-                 * cleanup stupid cloudflare email protections, done centrally as it messes with every site! And run this is because, filenames can
-                 * contain @ char and this will mask them and break plugins.
+                 * cleanup stupid cloudflare email protections, done centrally as it messes with every site! And run this is because,
+                 * filenames can contain @ char and this will mask them and break plugins.
                  */
                 // note: must be LAST!
                 cleanupCloudFlareEmailProtection(ibr, null);
@@ -887,46 +887,9 @@ public abstract class antiDDoSForHost extends PluginForHost {
                             a_captchaRequirement = false;
                             return;
                         }
-                    }
-                    // recaptcha v1
-                    else if (ifr.containsHTML("captcha-form")) {
-                        final Form captcha = ifr.getFormbyProperty("id", "captcha-form");
-                        if (captcha == null) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                        String apiKey = captcha.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
-                        if (apiKey == null) {
-                            apiKey = "6Lebls0SAAAAAHo72LxPsLvFba0g1VzknU83sJLg";
-                        }
-                        final DownloadLink dllink = new DownloadLink(null, (this.getDownloadLink() != null ? this.getDownloadLink().getName() + " :: " : "") + "antiDDoS Provider 'Incapsula' requires Captcha", this.getHost(), "http://" + this.getHost(), true);
-                        final Recaptcha rc = new Recaptcha(ibr, this);
-                        rc.setId(apiKey);
-                        rc.load();
-                        final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                        final String response = getCaptchaCode("recaptcha", cf, dllink);
-                        if (inValidate(response)) {
-                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                        }
-                        // they have no script value and our form parser adds the input field when it shouldn't
-                        while (captcha.hasInputFieldByName("recaptcha_response_field")) {
-                            captcha.remove("recaptcha_response_field");
-                        }
-                        captcha.put("recaptcha_challenge_field", rc.getChallenge());
-                        captcha.put("recaptcha_response_field", Encoding.urlEncode(response));
-                        ifr.submitForm(captcha);
-                        if (ifr.getFormbyProperty("id", "captcha-form") != null) {
-                            logger.warning("Wrong captcha");
-                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                        } else if (ifr.containsHTML(">window\\.parent\\.location\\.reload\\(true\\);<")) {
-                            // they show z again after captcha...
-                            getPage(ibr.getURL());
-                            // above request saves, as it re-enters this method!
-                            a_captchaRequirement = false;
-                            return;
-                        } else {
-                            // shouldn't happen???
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
+                    } else if (ifr.containsHTML("captcha-form")) {
+                        // I doubt that old recaptchav1 is still in use
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
@@ -1029,7 +992,8 @@ public abstract class antiDDoSForHost extends PluginForHost {
     }
 
     /**
-     * one known method, Javascript. this is within text/html and request code 200? don't believe they set cookie, think they just track by IP.
+     * one known method, Javascript. this is within text/html and request code 200? don't believe they set cookie, think they just track by
+     * IP.
      *
      *
      * @author coalado
