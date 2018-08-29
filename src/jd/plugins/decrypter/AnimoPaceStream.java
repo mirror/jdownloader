@@ -46,7 +46,7 @@ public class AnimoPaceStream extends PluginForDecrypt {
         if (page.contains("document.write(Base64.decode")) {
             String[][] regExMatches = new Regex(page, "document\\.write\\(Base64\\.decode\\(\"(.+?)\\\"").getMatches();
             String decodedData = Encoding.Base64Decode(regExMatches[0][0]);
-            String decodedDataSrc = new Regex(decodedData, "src=\\\"(.+?)[ \\\"\"]+").getMatch(0);
+            String decodedDataSrc = new Regex(decodedData, "src=\"?(.+?)[ \"]+").getMatch(0);
             if (decodedDataSrc != null && !decodedDataSrc.contains("window.location.href")) {
                 decryptedLinks.add(createDownloadlink(decodedDataSrc));
             }
