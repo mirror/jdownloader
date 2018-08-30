@@ -16,16 +16,13 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -51,6 +48,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "disk.yandex.net", "video.yandex.ru", "yadi.sk" }, urls = { "http://yandexdecrypted\\.net/\\d+", "http://video\\.yandex\\.ru/(iframe/[A-Za-z0-9]+/[A-Za-z0-9]+\\.\\d+|users/[A-Za-z0-9]+/view/\\d+)", "https://yadi\\.sk/a/[A-Za-z0-9\\-_]+/[a-f0-9]{24}" })
 public class DiskYandexNet extends PluginForHost {
@@ -98,8 +99,6 @@ public class DiskYandexNet extends PluginForHost {
     /* Properties */
     public static final String    PROPERTY_HASH                      = "hash_main";
     private Account               currAcc                            = null;
-    private String                currHash                           = null;
-    private String                currPath                           = null;
     /*
      * https://tech.yandex.com/disk/api/reference/public-docpage/ 2018-08-09: API(s) seem to work fine again - in case of failure, please
      * disable use_api_file_free_availablecheck ONLY!! This should work fine when enabled: use_api_file_free_download
@@ -108,10 +107,10 @@ public class DiskYandexNet extends PluginForHost {
     private static final boolean  use_api_file_free_download         = true;
 
     /* Make sure we always use our main domain */
-    private String getMainLink(final DownloadLink dl) throws PluginException {
+    private String getMainLink(final DownloadLink dl) throws Exception {
         String mainlink = dl.getStringProperty("mainlink", null);
-        if (mainlink == null && this.currHash != null) {
-            mainlink = String.format("https://yadi.sk/public/?hash=%s", Encoding.urlEncode(this.currHash));
+        if (mainlink == null && getRawHash(dl) != null) {
+            mainlink = String.format("https://yadi.sk/public/?hash=%s", URLEncoder.encode(getRawHash(dl), "UTF-8"));
         }
         if (mainlink == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -134,8 +133,6 @@ public class DiskYandexNet extends PluginForHost {
 
     private void setConstants(final DownloadLink dl, final Account acc) {
         currAcc = acc;
-        currHash = this.getHash(dl);
-        currPath = this.getPath(dl);
     }
 
     /** Returns currently used domain */
@@ -192,11 +189,11 @@ public class DiskYandexNet extends PluginForHost {
             if (jd.plugins.decrypter.DiskYandexNetFolder.isOffline(this.br)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (StringUtils.isEmpty(this.getHash(link))) {
+            if (StringUtils.isEmpty(getRawHash(link))) {
                 /* For urls which have not been added via crawler, this value is not set but we might need it later. */
                 final String hash_long = jd.plugins.hoster.DiskYandexNet.getHashLongFromHTML(this.br);
                 if (!StringUtils.isEmpty(hash_long)) {
-                    setHash(link, hash_long);
+                    setRawHash(link, hash_long);
                 }
             }
             /* Find json object for current link ... */
@@ -224,14 +221,12 @@ public class DiskYandexNet extends PluginForHost {
                 return AvailableStatus.TRUE;
             }
         } else {
-            if (this.currHash == null || this.currPath == null) {
+            if (getRawHash(link) == null || this.getPath(link) == null) {
                 /* Errorhandling for old urls */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (use_api_file_free_availablecheck) {
-                final String hash_urlencoded = jd.plugins.decrypter.DiskYandexNetFolder.urlEncodeHashLong(this.currHash);
-                final String path_urlencoded = jd.plugins.decrypter.DiskYandexNetFolder.urlEncodePath(this.currPath);
-                getPage("https://cloud-api.yandex.net/v1/disk/public/resources?public_key=" + hash_urlencoded + "&path=" + path_urlencoded);
+                getPage("https://cloud-api.yandex.net/v1/disk/public/resources?public_key=" + URLEncoder.encode(getRawHash(link), "UTF-8") + "&path=" + URLEncoder.encode(this.getPath(link), "UTF-8"));
                 if (apiAvailablecheckIsOffline(br)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -419,7 +414,7 @@ public class DiskYandexNet extends PluginForHost {
                      * https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=public_key&path=/
                      */
                     /* Free API download. */
-                    getPage("https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=" + Encoding.urlEncode(this.currHash) + "&path=" + Encoding.urlEncode(this.currPath));
+                    getPage("https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=" + URLEncoder.encode(getRawHash(downloadLink), "UTF-8") + "&path=" + Encoding.urlEncode(this.getPath(downloadLink)));
                     if (this.br.containsHTML("DiskNotFoundError")) {
                         /* Inside key 'error' */
                         /*
@@ -448,7 +443,7 @@ public class DiskYandexNet extends PluginForHost {
                         // getPage("https://yadi.sk/tns.html");
                         br.getHeaders().put("Accept", "*/*");
                         br.getHeaders().put("Content-Type", "text/plain");
-                        postPageRaw("/public-api-desktop/download-url", String.format("{\"hash\":\"%s\",\"sk\":\"%s\"}", this.currHash, sk));
+                        postPageRaw("/public-api-desktop/download-url", String.format("{\"hash\":\"%s\",\"sk\":\"%s\"}", getRawHash(downloadLink), sk));
                         /** TODO: Find out why we have the wrong SK here and remove this workaround! */
                         if (br.containsHTML("\"id\":\"WRONG_SK\"")) {
                             logger.warning("WRONG_SK --> This should not happen");
@@ -469,6 +464,7 @@ public class DiskYandexNet extends PluginForHost {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
                         /* Don't do htmldecode because the link will be invalid then */
+                        /* sure json will return url with htmlentities? */
                         dllink = HTMLEntities.unhtmlentities(dllink);
                     }
                 }
@@ -590,11 +586,11 @@ public class DiskYandexNet extends PluginForHost {
         return String.format("undefined", System.currentTimeMillis());
     }
 
-    public static void setHash(final DownloadLink dl, final String hash_long) {
+    public static void setRawHash(final DownloadLink dl, final String hash_long) {
         dl.setProperty(PROPERTY_HASH, hash_long);
     }
 
-    private String getHash(final DownloadLink dl) {
+    private String getRawHash(final DownloadLink dl) {
         final String hash = dl.getStringProperty(PROPERTY_HASH, null);
         return hash;
     }
@@ -752,7 +748,7 @@ public class DiskYandexNet extends PluginForHost {
             String dllink = checkDirectLink(link, "directlink_account");
             if (dllink == null) {
                 final String userID = getUserID(account);
-                final String hash = getHash(link);
+                final String hash = getRawHash(link);
                 final String id0 = diskGetID0(link);
                 /* This should never happen */
                 if (ACCOUNT_SK == null || userID == null) {
@@ -768,7 +764,7 @@ public class DiskYandexNet extends PluginForHost {
                 if (!moveIntoAccHandlingActive && !downloadableViaAccountOnly) {
                     logger.info("MoveToAccount handling is inactive -> Starting free account download handling");
                     getPage(getMainLink(link));
-                    br.postPage("https://" + getCurrentDomain() + "/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fpublic%2F" + hash + "&idClient=" + CLIENT_ID + "&version=" + VERSION_YANDEX_FILES + "&sk=" + this.ACCOUNT_SK);
+                    br.postPage("https://" + getCurrentDomain() + "/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fpublic%2F" + URLEncoder.encode(hash, "UTF-8") + "&idClient=" + CLIENT_ID + "&version=" + VERSION_YANDEX_FILES + "&sk=" + this.ACCOUNT_SK);
                     dllink = siteGetDllink(link);
                 }
                 if (moveIntoAccHandlingActive || downloadableViaAccountOnly || dllink == null) {
@@ -785,7 +781,7 @@ public class DiskYandexNet extends PluginForHost {
                          * be part of our <internal_file_path> but best is to use the original filename!
                          */
                         br.getHeaders().put("Content-Type", "text/plain");
-                        postPageRaw("https://" + getCurrentDomain() + "/public/api/save", jd.plugins.decrypter.DiskYandexNetFolder.urlEncodePath(String.format("{\"hash\":\"%s\",\"name\":\"%s\",\"lang\":\"en\",\"source\":\"public_web_copy\",\"sk\":\"%s\",\"uid\":\"%s\"}", id0, link.getName(), this.ACCOUNT_SK, userID)));
+                        postPageRaw("https://" + getCurrentDomain() + "/public/api/save", URLEncoder.encode(String.format("{\"hash\":\"%s\",\"name\":\"%s\",\"lang\":\"en\",\"source\":\"public_web_copy\",\"sk\":\"%s\",\"uid\":\"%s\"}", id0, link.getName(), this.ACCOUNT_SK, userID), "UTF-8"));
                         internal_file_path = PluginJSonUtils.getJson(br, "path");
                         if (br.containsHTML("\"code\":85")) {
                             logger.info("MoveFileIntoAccount: failed to move file to account: No free space available");
@@ -804,7 +800,7 @@ public class DiskYandexNet extends PluginForHost {
                             try {
                                 for (int i = 1; i < 5; i++) {
                                     br.getHeaders().put("Content-Type", "text/plain");
-                                    postPageRaw("https://" + getCurrentDomain() + "/public/api/get-operation-status", jd.plugins.decrypter.DiskYandexNetFolder.urlEncodePath(String.format("{\"oid\":\"%s\",\"sk\":\"%s\",\"uid\":\"%s\"}", oid, this.ACCOUNT_SK, userID)));
+                                    postPageRaw("https://" + getCurrentDomain() + "/public/api/get-operation-status", URLEncoder.encode(String.format("{\"oid\":\"%s\",\"sk\":\"%s\",\"uid\":\"%s\"}", oid, this.ACCOUNT_SK, userID), "UTF-8"));
                                     final String copyState = PluginJSonUtils.getJson(br, "state");
                                     logger.info("Copy state: " + copyState);
                                     if (copyState.equalsIgnoreCase("COMPLETED")) {
@@ -1060,8 +1056,8 @@ public class DiskYandexNet extends PluginForHost {
     // return postValue;
     // }
     private String diskGetID0(final DownloadLink dl) {
-        final String hash = this.currHash;
-        final String path = this.currPath;
+        final String hash = getRawHash(dl);
+        final String path = this.getPath(dl);
         final String id0;
         if (isPartOfAFolder(dl)) {
             id0 = hash + ":" + path;
@@ -1072,7 +1068,7 @@ public class DiskYandexNet extends PluginForHost {
     }
 
     private String albumGetID0(final DownloadLink dl) {
-        final String hash_long = getHash(dl);
+        final String hash_long = getRawHash(dl);
         final String id = albumGetID(dl);
         if (StringUtils.isEmpty(hash_long)) {
             /* This should never happen */
