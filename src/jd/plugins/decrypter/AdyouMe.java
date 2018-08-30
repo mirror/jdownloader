@@ -17,61 +17,53 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.parser.html.Form;
-import jd.parser.html.InputField;
+import jd.http.Browser;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "getsurl.com" }, urls = { "https?://(?:www\\.)?(?:gslink\\.co|gsul\\.me|gsur\\.in|gurl\\.ly|gsurl\\.in|gsurl\\.me|g5u\\.pw)/[A-Za-z0-9]+" })
-public class GetsurlCom extends PluginForDecrypt {
-    public GetsurlCom(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "adyou.me" }, urls = { "https?://(?:\\w+\\.)?adyou\\.me/[a-zA-Z0-9]{4,}$" })
+public class AdyouMe extends PluginForDecrypt {
+    public AdyouMe(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final String redirect = br.getRegex("http\\-equiv=\"refresh\" content=\"\\d+;URL=\\'(/capatcha/\\?i=[A-Za-z0-9]+)\\'\"").getMatch(0);
-        if (redirect != null) {
-            br.getPage(redirect);
-        }
-        final Form continueForm = br.getForm(0);
-        if (br.containsHTML("data\\-sitekey")) {
-            final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
-            continueForm.put("g-recaptcha-response", recaptchaV2Response);
-        }
-        if (continueForm.hasInputFieldByName("btn")) {
-            final InputField ifield = continueForm.getInputField("btn");
-            if (ifield.getValue() == null) {
-                continueForm.remove("btn");
+        String finallink = br.getRegex("message:\\s*\"Content from: (.*?) disallows").getMatch(0);
+        if (finallink == null) {
+            finallink = br.getRegex("//top\\.location\\.href\\s*=\\s*\"(.*?)\";").getMatch(0);
+            if (finallink == null) {
+                // we can get via ajax also
+                final String data = br.getRegex("data:\\s*(\\{.*?\\}),[\r\n]").getMatch(0);
+                final String[] args = new Regex(data, "_args:\\s*\\{'([a-f0-9]{32})'\\s*:\\s*(\\d+)\\s*\\}").getRow(0);
+                if (data != null) {
+                    br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+                    final String postarg = "_args[" + args[0] + "]=" + args[1] + "&benid=0";
+                    Browser ajax = br.cloneBrowser();
+                    ajax.postPage(br.getURL() + "/skip_timer", postarg);
+                    sleep(6000l, param);
+                    ajax = br.cloneBrowser();
+                    ajax.postPage(br.getURL() + "/skip_timer", postarg);
+                    finallink = PluginJSonUtils.getJsonValue(ajax, "url");
+                }
             }
         }
-        if (!continueForm.hasInputFieldByName("btn")) {
-            continueForm.put("btn", "senden");
-        }
-        br.submitForm(continueForm);
-        // br.postPage(br.getURL(), "sub=Continue");
-        String finallink = this.br.getRegex("(https?://[^<>\"]+/o\\?i=\\d+)").getMatch(0);
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        br.setFollowRedirects(false);
-        br.getPage(finallink);
-        finallink = br.getRedirectLocation();
-        if (finallink == null) {
             return null;
         }
         decryptedLinks.add(createDownloadlink(finallink));

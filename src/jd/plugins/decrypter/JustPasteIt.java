@@ -13,11 +13,12 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.Set;
+
+import org.jdownloader.controlling.PasswordUtils;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -27,16 +28,13 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-import org.jdownloader.controlling.PasswordUtils;
-
 /**
  *
  * @version raz_Template-pastebin-201503051556
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "justpaste.it" }, urls = { "https?://(?:www\\.)?(justpaste\\.it/[A-Za-z0-9\\-_]+|jpst\\.it/[A-Za-z0-9]+)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "justpaste.it" }, urls = { "https?://(?:www\\.)?(?:justpaste\\.it/[A-Za-z0-9\\-_]+|jpst\\.it/[A-Za-z0-9]+)" })
 public class JustPasteIt extends PluginForDecrypt {
-
     public JustPasteIt(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -49,7 +47,7 @@ public class JustPasteIt extends PluginForDecrypt {
         br.getPage(parameter);
         /* Error handling */
         if (br.containsHTML("Page Not Found") || br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 404) {
-            logger.info("Link offline: " + parameter);
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         final String plaintxt = br.getRegex("<div[^>]+id=\"articleContent\"[^>]*>(.*?)</div>").getMatch(0);
@@ -80,5 +78,4 @@ public class JustPasteIt extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

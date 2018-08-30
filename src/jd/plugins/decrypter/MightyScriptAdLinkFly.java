@@ -49,11 +49,13 @@ import jd.plugins.components.SiteType.SiteTemplate;
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
-    private static final String[]     domains           = { "cash4url.com", "cashat.net", "shortit.ca", "123short.com", "skip-url.me", "msms4.com", "empireshort.com", "loadurl.com", "shortmony.me", "geistlink.com", "cutt.us.com", "arabdollar.com", "shortenow.com", "kingurl.net", "best3link.com", "solo-link.com", "best5link.com", "lkky.co", "win4cut.com", "coinlink.co", "adlink.guru", "short.es", "tmearn.com", "ibly.co", "brlink.in", "urle.co", "mitly.us", "cutwin.com", "zlshorte.net", "igram.im", "gram.im", "bit-url.com", "adbilty.me", "linclik.com", "oke.io", "vivads.net", "pnd.tl", "met.bz", "urlcloud.us",
+    private static final String[]     domains           = { "itiurl.co", "shortli.net", "cutearn.ca", "icutit.ca", "cut-one.com", "cll.press", "link-zero.com", "linktor.io", "cash4url.com", "cashat.net", "shortit.ca", "123short.com", "skip-url.me", "msms4.com", "empireshort.com", "loadurl.com", "shortmony.me", "geistlink.com", "cutt.us.com", "arabdollar.com", "shortenow.com", "kingurl.net", "best3link.com", "solo-link.com", "best5link.com", "lkky.co", "win4cut.com", "coinlink.co", "adlink.guru", "short.es", "tmearn.com", "ibly.co", "brlink.in", "urle.co", "mitly.us", "zlshorte.net", "igram.im", "gram.im", "bit-url.com", "adbilty.me", "linclik.com", "oke.io", "vivads.net", "pnd.tl", "met.bz", "urlcloud.us",
             /** cut-urls.com domains */
             "cut-urls.com", "curs.io", "cuon.io",
             /** wicr.me domains */
             "wicr.me", "wi.cr",
+            /** cutwin.com domains */
+            "cutwin.com", "cutwin.us",
             /** adshort.co domains */
             "adshort.co", "adsrt.com", "adshort.me", "adshort.im" };
     /** List of services for which waittime is NOT skippable. */
@@ -140,6 +142,15 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
         if (form == null) {
             return null;
         }
+        // form.remove("_Token%5Bunlocked%5D");
+        // form.put("_Token%5Bunlocked%5D", "adcopy_challenge%7Cadcopy_response%7Ccoinhive-captcha-token%7Cg-recaptcha-response");
+        // final InputField ifield = form.getInputField("_Token%5Bfields%5D");
+        // if (ifield != null) {
+        // final String value = ifield.getValue();
+        // final String valueNew = value.replace("%253Aref", "%3Aref");
+        // form.remove("_Token%5Bfields%5D");
+        // form.put("_Token%5Bfields%5D", valueNew);
+        // }
         if (form.hasInputFieldByName("captcha")) {
             /* original captcha/ VERY OLD way! [2018-07-18: Very rare or non existent anymore!] */
             final String code = getCaptchaCode("cp.php", param);
@@ -181,7 +192,7 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                     /* Captcha type will usually stay the same even on bad solve attempts! */
                     // captchaType = getCaptchaType();
                     if (captchaType == CaptchaType.reCaptchaV2 || captchaType == CaptchaType.reCaptchaV2_invisible) {
-                        requiresCaptchaWhichCanFail = true;
+                        requiresCaptchaWhichCanFail = false;
                         final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br) {
                             @Override
                             public String getSiteKey() {
