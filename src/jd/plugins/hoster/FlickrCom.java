@@ -80,7 +80,14 @@ public class FlickrCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload("https://www.flickr.com/" + new Regex(link.getDownloadURL(), "\\.com/(.+)").getMatch(0));
+        try {
+            link.setUrlDownload("https://www.flickr.com/" + new Regex(getPhotoURL(link), "\\.com/(.+)").getMatch(0));
+        } catch (PluginException e) {
+            if (logger != null) {
+                logger.log(e);
+                return;
+            }
+        }
         if (link.getContainerUrl() == null) {
             link.setContainerUrl(link.getContentUrl());
         }
@@ -94,6 +101,15 @@ public class FlickrCom extends PluginForHost {
             Browser.setRequestIntervalLimitGlobal(this.getHost(), 3000, 20, 1900);
         } catch (final Throwable t) {
             Browser.setRequestIntervalLimitGlobal(this.getHost(), 1800);
+        }
+    }
+
+    private String getPhotoURL(DownloadLink link) throws PluginException {
+        final String ret = new Regex(link.getPluginPatternMatcher(), "(https?://(www\\.)?(flickrdecrypted|flickr)\\.com/photos/[^<>\"/]+/\\d+)").getMatch(0);
+        if (ret == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            return ret;
         }
     }
 
@@ -123,8 +139,9 @@ public class FlickrCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         correctDownloadLink(downloadLink);
-        id = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
-        user = new Regex(downloadLink.getDownloadURL(), "flickr\\.com/photos/([^<>\"/]+)/").getMatch(0);
+        final String photoURL = getPhotoURL(downloadLink);
+        id = new Regex(photoURL, "(\\d+)$").getMatch(0);
+        user = new Regex(photoURL, "flickr\\.com/photos/([^<>\"/]+)/").getMatch(0);
         /* Needed for custom filenames! */
         if (downloadLink.getStringProperty("username", null) == null) {
             downloadLink.setProperty("username", user);
@@ -137,7 +154,7 @@ public class FlickrCom extends PluginForHost {
             logger.info("No account available, continuing without account...");
         }
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        br.getPage(photoURL);
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("div class=\"Four04Case\">") || br.containsHTML(">This member is no longer active on Flickr") || br.containsHTML("class=\"Problem\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -158,7 +175,7 @@ public class FlickrCom extends PluginForHost {
              * remove the cookies here - that's just a workaround!
              */
             br.clearCookies(MAINPAGE);
-            br.getPage(downloadLink.getDownloadURL() + "/in/photostream");
+            br.getPage(photoURL + "/in/photostream");
             final String secret = br.getRegex("\"secret\":\"([^<>\"]*)\"").getMatch(0);
             final Browser apibr = br.cloneBrowser();
             // we need to load it before calling!!
@@ -183,7 +200,7 @@ public class FlickrCom extends PluginForHost {
             /* Needed for custom filenames! */
             downloadLink.setProperty("ext", videoExt);
         } else {
-            br.getPage(downloadLink.getDownloadURL() + "/in/photostream");
+            br.getPage(photoURL + "/in/photostream");
             dllink = getFinalLink();
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -240,6 +257,9 @@ public class FlickrCom extends PluginForHost {
                 }
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+        }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getURL().toString().contains("/photo_unavailable.gif")) {
@@ -418,8 +438,9 @@ public class FlickrCom extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
-    private String getFilename(final DownloadLink dl) {
-        final String photo_id = new Regex(dl.getDownloadURL(), "(\\d+)$").getMatch(0);
+    private String getFilename(final DownloadLink dl) throws PluginException {
+        final String photoURL = getPhotoURL(dl);
+        final String photo_id = new Regex(photoURL, "(\\d+)$").getMatch(0);
         String filename = dl.getStringProperty("decryptedfilename", null);
         if (filename == null) {
             filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\"").getMatch(0);
