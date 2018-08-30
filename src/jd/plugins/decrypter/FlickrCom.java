@@ -168,11 +168,9 @@ public class FlickrCom extends PluginForDecrypt {
         String forcedOwner = null;
         String apilink = null;
         String path_alias = null;
-        String urlAppend = "";
         String setID = null;
         if (parameter.matches(TYPE_SET_SINGLE)) {
             setID = new Regex(parameter, "(\\d+)/?$").getMatch(0);
-            urlAppend = "/in/album-" + setID;
             /* This request is only needed to get the title and owner of the photoset, */
             api_getPage("https://api.flickr.com/services/rest?format=" + api_format + "&csrf=" + this.csrf + "&api_key=" + api_apikey + "&method=flickr.photosets.getInfo&photoset_id=" + Encoding.urlEncode(setID));
             forcedOwner = PluginJSonUtils.getJsonValue(br, "owner");
@@ -255,7 +253,7 @@ public class FlickrCom extends PluginForDecrypt {
                 }
                 title = encodeUnicode(title);
                 String description = new Regex(jsonentry, "\"description\":\\{\"_content\":\"(.+)\"\\}").getMatch(0);
-                final DownloadLink fina = createDownloadlink("http://www.flickrdecrypted.com/photos/" + owner + "/" + photo_id + urlAppend);
+                final DownloadLink fina = createDownloadlink("http://www.flickrdecrypted.com/photos/" + owner + "/" + photo_id);
                 if (description != null) {
                     try {
                         description = Encoding.htmlDecode(description);
@@ -263,7 +261,7 @@ public class FlickrCom extends PluginForDecrypt {
                     } catch (Throwable e) {
                     }
                 }
-                final String contenturl = "https://www.flickr.com/photos/" + owner + "/" + photo_id + urlAppend;
+                final String contenturl = "https://www.flickr.com/photos/" + owner + "/" + photo_id + (setID != null ? ("/in/album-" + setID) : "");
                 fina.setContentUrl(contenturl);
                 if (title.equals("")) {
                     title = null;
