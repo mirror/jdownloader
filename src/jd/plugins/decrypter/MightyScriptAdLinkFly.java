@@ -17,7 +17,13 @@ package jd.plugins.decrypter;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.regex.Pattern;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -33,10 +39,6 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 /**
  *
  * @author raztoki
@@ -47,13 +49,15 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
-    private static final String[] domains = { "shortit.ca", "123short.com", "skip-url.me", "msms4.com", "empireshort.com", "loadurl.com", "shortmony.me", "geistlink.com", "cutt.us.com", "arabdollar.com", "shortenow.com", "kingurl.net", "best3link.com", "solo-link.com", "best5link.com", "lkky.co", "win4cut.com", "coinlink.co", "adlink.guru", "short.es", "tmearn.com", "ibly.co", "brlink.in", "urle.co", "mitly.us", "cutwin.com", "zlshorte.net", "igram.im", "gram.im", "bit-url.com", "adbilty.me", "linclik.com", "oke.io", "vivads.net", "pnd.tl", "met.bz", "urlcloud.us",
-                                          /** <-- cut-urls.com domains --> */
-                                          "cut-urls.com", "curs.io", "cuon.io",
-                                          /** wicr.me domains */
-                                          "wicr.me", "wi.cr",
-                                          /** adshort.co domains */
-                                          "adshort.co", "adsrt.com", "adshort.me", "adshort.im" };
+    private static final String[]     domains           = { "cash4url.com", "cashat.net", "shortit.ca", "123short.com", "skip-url.me", "msms4.com", "empireshort.com", "loadurl.com", "shortmony.me", "geistlink.com", "cutt.us.com", "arabdollar.com", "shortenow.com", "kingurl.net", "best3link.com", "solo-link.com", "best5link.com", "lkky.co", "win4cut.com", "coinlink.co", "adlink.guru", "short.es", "tmearn.com", "ibly.co", "brlink.in", "urle.co", "mitly.us", "cutwin.com", "zlshorte.net", "igram.im", "gram.im", "bit-url.com", "adbilty.me", "linclik.com", "oke.io", "vivads.net", "pnd.tl", "met.bz", "urlcloud.us",
+            /** cut-urls.com domains */
+            "cut-urls.com", "curs.io", "cuon.io",
+            /** wicr.me domains */
+            "wicr.me", "wi.cr",
+            /** adshort.co domains */
+            "adshort.co", "adsrt.com", "adshort.me", "adshort.im" };
+    /** List of services for which waittime is NOT skippable. */
+    private static final List<String> waittime_enforced = Arrays.asList(new String[] { "adbilty.me", "tmearn.com" });
 
     /**
      * returns the annotation pattern array
@@ -230,12 +234,8 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
             }
-            boolean skipWait = true;
-            if (source_host.equalsIgnoreCase("adbilty.me") || source_host.equalsIgnoreCase("tmearn.com")) {
-                /* 2018-07-18: Special case - we have to wait! */
-                /** TODO: Fix waittime-detection for tmearn.com */
-                skipWait = false;
-            }
+            final boolean skipWait = waittimeIsSkippable(source_host);
+            /** TODO: Fix waittime-detection for tmearn.com */
             /* 2018-07-18: It is important to keep this exact as some websites have "ad-forms" e.g. urlcloud.us */
             Form f2 = br.getFormbyKey("_Token[fields]");
             if (f2 == null) {
@@ -273,6 +273,18 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
             decryptedLinks.add(createDownloadlink(finallink));
         }
         return decryptedLinks;
+    }
+
+    private boolean waittimeIsSkippable(final String source_host) {
+        if (StringUtils.isEmpty(source_host)) {
+            return false;
+        }
+        if (waittime_enforced.contains(source_host)) {
+            /* Waittime is enforced for this host */
+            return false;
+        }
+        /* Waittime is skippable for all other hosts */
+        return true;
     }
 
     private Form getCaptchaForm() {
