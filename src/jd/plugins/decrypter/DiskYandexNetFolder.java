@@ -17,13 +17,10 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Random;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -37,8 +34,13 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "disk.yandex.net", "docviewer.yandex.com" }, urls = { "https?://(?:www\\.)?(((((mail|disk)\\.)?yandex\\.(?:net|com|com\\.tr|ru|ua)|yadi\\.sk)/(disk/)?public/?(\\?hash=.+|#.+))|(?:yadi\\.sk|yadisk\\.cc)/(?:d|i)/[A-Za-z0-9\\-_]+(/[^/]+){0,}|yadi\\.sk/mail/\\?hash=.+)|https?://yadi\\.sk/a/[A-Za-z0-9\\-_]+", "https?://docviewer\\.yandex\\.(?:net|com|com\\.tr|ru|ua)/\\?url=ya\\-disk\\-public%3A%2F%2F.+" })
 public class DiskYandexNetFolder extends PluginForDecrypt {
@@ -56,7 +58,6 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
     private static final String OFFLINE_TEXT       = "class=\"not\\-found\\-public__caption\"|_file\\-blocked\"|A complaint was received regarding this file|>File blocked<";
     private static final String JSON_TYPE_DIR      = "dir";
     ArrayList<DownloadLink>     decryptedLinks     = new ArrayList<DownloadLink>();
-    private String              addedLink          = null;
 
     /** Using API: https://tech.yandex.ru/disk/api/reference/public-docpage/ */
     @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
@@ -75,12 +76,10 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             current = current.getSourceLink();
         }
         jd.plugins.hoster.DiskYandexNet.prepbrAPI(this.br);
-        this.addedLink = param.toString();
-        String hash_long_decoded = null;
         String fname_url = null;
         String fpName = null;
-        String hash_long = null;
-        String path_main = new Regex(this.addedLink, type_shortURLs_d).getMatch(1);
+        final String parameter = param.toString();
+        String path_main = new Regex(parameter, type_shortURLs_d).getMatch(1);
         if (path_main != null) {
             path_main = URLDecoder.decode(path_main, "UTF-8");
         }
@@ -89,64 +88,71 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         if (path_main == null) {
             path_main = "/";
         }
-        if (this.addedLink.matches(type_yadi_sk_album)) {
+        if (parameter.matches(type_yadi_sk_album)) {
             /* Crawl albums */
-            crawlPhotoAlbum();
+            crawlPhotoAlbum(parameter);
         } else {
-            /* Crawl everything else */
-            if (this.addedLink.matches(type_docviewer)) {
+            final String hash_long_decoded; /* Crawl everything else */
+            if (parameter.matches(type_docviewer)) {
                 /* TODO: Change that --> FILE-URLs --> Should work fine then with the fixed decrypter! */
                 /* Documents in web view mode --> File-URLs! */
                 /* First lets fix broken URLs by removing unneeded parameters ... */
-                final String remove = new Regex(this.addedLink, "(\\&[a-z0-9]+=.+)").getMatch(0);
+                String parm = parameter;
+                final String remove = new Regex(parm, "(\\&[a-z0-9]+=.+)").getMatch(0);
                 if (remove != null) {
-                    this.addedLink = this.addedLink.replace(remove, "");
+                    parm = parm.replace(remove, "");
                 }
-                hash_long = new Regex(this.addedLink, type_docviewer).getMatch(0);
-                hash_long = new Regex(this.addedLink, "url=ya\\-disk\\-public%3A%2F%2F(.+)").getMatch(0);
-                String hash_temp_decoded = Encoding.htmlDecode(hash_long);
-                fname_url = new Regex(this.addedLink, "\\&name=([^/\\&]+)").getMatch(0);
+                String hash = new Regex(parm, type_docviewer).getMatch(0);
+                if (StringUtils.isEmpty(hash)) {
+                    hash = new Regex(parm, "url=ya\\-disk\\-public%3A%2F%2F(.+)").getMatch(0);
+                }
+                if (StringUtils.isEmpty(hash)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                hash_long_decoded = URLDecoder.decode(hash, "UTF-8");
+                fname_url = new Regex(parm, "\\&name=([^/\\&]+)").getMatch(0);
                 if (fname_url == null) {
-                    fname_url = new Regex(hash_temp_decoded, ":/([^/]+)$").getMatch(0);
+                    fname_url = new Regex(hash_long_decoded, ":/([^/]+)$").getMatch(0);
                 }
                 fname_url = Encoding.htmlDecode(fname_url);
-            } else if (this.addedLink.matches(type_yadi_sk_mail)) {
-                hash_long = regexHashFromURL(this.addedLink);
-                this.addedLink = "https://disk.yandex.com/public/?hash=" + hash_long;
-            } else if (this.addedLink.matches(type_shortURLs_d) || this.addedLink.matches(type_shortURLs_i)) {
-                getPage(this.addedLink);
+            } else if (parameter.matches(type_yadi_sk_mail)) {
+                hash_long_decoded = URLDecoder.decode(regexHashFromURL(parameter), "UTF-8");
+            } else if (parameter.matches(type_shortURLs_d) || parameter.matches(type_shortURLs_i)) {
+                getPage(parameter);
                 if (isOffline(this.br)) {
-                    final DownloadLink offline = this.createOfflinelink(this.addedLink);
-                    main.setFinalFileName(new Regex(this.addedLink, "([A-Za-z0-9\\-_]+)$").getMatch(0));
+                    final DownloadLink offline = this.createOfflinelink(parameter);
+                    main.setFinalFileName(new Regex(parameter, "([A-Za-z0-9\\-_]+)$").getMatch(0));
                     decryptedLinks.add(offline);
                     return decryptedLinks;
                 }
-                hash_long = PluginJSonUtils.getJsonValue(br, "hash");
-                if (hash_long == null) {
-                    logger.warning("Decrypter broken for link: " + this.addedLink);
-                    return null;
+                hash_long_decoded = PluginJSonUtils.getJsonValue(br, "hash");
+                if (hash_long_decoded == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                this.addedLink = "https://disk.yandex.com/public/?hash=" + Encoding.urlEncode(hash_long);
             } else {
-                this.addedLink = this.addedLink.replace("#", "?hash=");
-                hash_long = regexHashFromURL(this.addedLink);
+                hash_long_decoded = URLDecoder.decode(regexHashFromURL(parameter.replace("#", "?hash=")), "UTF-8");
             }
-            hash_long_decoded = Encoding.urlDecode(hash_long, false);
+            final String rawHash;
             if (hash_long_decoded.contains(":/")) {
                 /* Hash with path --> Separate that */
                 final Regex hashregex = new Regex(hash_long_decoded, "(.*?):(/.+)");
-                hash_long = hashregex.getMatch(0);
-                /* Set correct value */
-                hash_long_decoded = hash_long;
-                path_main = hashregex.getMatch(1);
-                is_part_of_a_folder = true;
+                if (StringUtils.isEmpty(hashregex.getMatch(0))) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
+                    /* Set correct value */
+                    rawHash = hashregex.getMatch(0);
+                    path_main = hashregex.getMatch(1);
+                    is_part_of_a_folder = true;
+                }
+            } else {
+                rawHash = hash_long_decoded;
             }
-            this.addedLink = "https://disk.yandex.com/public/?hash=" + urlEncodePath(hash_long_decoded);
+            final String addedLink = "https://disk.yandex.com/public/?hash=" + URLEncoder.encode(rawHash, "UTF-8");
             this.br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
             this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            main.setProperty("mainlink", this.addedLink);
-            main.setProperty("LINKDUPEID", "copydiskyandexcom" + hash_long);
-            main.setName(hash_long);
+            main.setProperty("mainlink", addedLink);
+            main.setLinkID("copydiskyandexcom" + rawHash);
+            main.setName(hash_long_decoded);
             short offset = 0;
             final short entries_per_request = 200;
             long numberof_entries = 0;
@@ -157,9 +163,9 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                     return decryptedLinks;
                 }
                 final String encodedMainPath = Encoding.urlEncode(path_main).replace("+", "%20");
-                getPage("https://cloud-api.yandex.net/v1/disk/public/resources?limit=" + entries_per_request + "&offset=" + offset + "&public_key=" + urlEncodeHashLong(hash_long_decoded) + "&path=" + encodedMainPath);
+                getPage("https://cloud-api.yandex.net/v1/disk/public/resources?limit=" + entries_per_request + "&offset=" + offset + "&public_key=" + URLEncoder.encode(rawHash, "UTF-8") + "&path=" + encodedMainPath);
                 if (PluginJSonUtils.getJsonValue(br, "error") != null) {
-                    decryptedLinks.add(this.createOfflinelink(hash_long));
+                    decryptedLinks.add(this.createOfflinelink(addedLink));
                     return decryptedLinks;
                 }
                 LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
@@ -168,7 +174,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                     /* We only have a single file --> Add to downloadliste / host plugin */
                     final DownloadLink dl = createDownloadlink("http://yandexdecrypted.net/" + System.currentTimeMillis() + new Random().nextInt(10000000));
                     if (jd.plugins.hoster.DiskYandexNet.apiAvailablecheckIsOffline(this.br)) {
-                        decryptedLinks.add(this.createOfflinelink(hash_long));
+                        decryptedLinks.add(this.createOfflinelink(addedLink));
                         return decryptedLinks;
                     }
                     decryptSingleFile(dl, entries);
@@ -177,8 +183,8 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                         /* 2017-04-07: Overwrite previously set path value with correct value. */
                         dl.setProperty("path", path_main);
                     }
-                    dl.setProperty("mainlink", this.addedLink);
-                    dl.setLinkID(hash_long + path_main);
+                    dl.setProperty("mainlink", addedLink);
+                    dl.setLinkID(rawHash + path_main);
                     /* Required by hoster plugin to get filepath (filename) */
                     dl.setProperty("plain_filename", PluginJSonUtils.getJsonValue(br, "name"));
                     if (StringUtils.isNotEmpty(subFolderBase)) {
@@ -195,11 +201,11 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                     fpName = (String) entries.get("name");
                     if (inValidate(fpName)) {
                         /* Maybe our folder has no name. */
-                        fpName = hash_long;
+                        fpName = hash_long_decoded;
                     }
                     fp.setName(fpName);
                 }
-                jd.plugins.hoster.DiskYandexNet.setHash(main, hash_long);
+                jd.plugins.hoster.DiskYandexNet.setRawHash(main, rawHash);
                 // hash_long = Encoding.htmlDecode(hash_long);
                 for (final Object list_object : resource_data_list) {
                     entries = (LinkedHashMap<String, Object>) list_object;
@@ -243,8 +249,8 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                          * We want the user to have an URL which he can open via browser and it does not only open up the root of the folder
                          * but the exact file he wants to have!
                          */
-                        url_content += "%3A" + urlEncodePath(path);
-                        jd.plugins.hoster.DiskYandexNet.setHash(dl, hash_long);
+                        url_content += "%3A" + URLEncoder.encode(path, "UTF-8");
+                        jd.plugins.hoster.DiskYandexNet.setRawHash(dl, rawHash);
                         dl.setProperty("mainlink", url_content);
                         if (md5 != null) {
                             /* md5 hash is usually given */
@@ -277,65 +283,30 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    /** urlEncode 'path' value for yandex API requests */
-    public static String urlEncodePath(String str) {
-        // if (!Encoding.isUrlCoded(str)) {
-        // str = Encoding.urlEncode(str);
-        // }
-        // str = str.replace("+", "%20");
-        // if (str.contains("=")) {
-        // str = str.replace("=", "%3D");
-        // }
-        // // if (str.contains(" ")) {
-        // // str = str.replace(" ", "%2B");
-        // // }
-        // if (str.contains("/")) {
-        // str = str.replace("/", "%2F");
-        // }
-        try {
-            str = URLEncode.encodeRFC2396(str);
-        } catch (final Throwable e) {
-        }
-        return str;
-    }
-
-    /** urlEncode 'hash' value for yandex API requests */
-    public static String urlEncodeHashLong(String str) {
-        if (!Encoding.isUrlCoded(str)) {
-            str = Encoding.urlEncode(str);
-        }
-        str = str.replace("+", "%2B");
-        // try {
-        // str = URLEncode.encodeRFC2396(str);
-        // } catch (final Throwable e) {
-        // }
-        return str;
-    }
-
     /** For e.g. https://yadi.sk/a/blabla */
-    private void crawlPhotoAlbum() throws Exception {
+    private void crawlPhotoAlbum(String addedLink) throws Exception {
         final ArrayList<String> dupeList = new ArrayList<String>();
         final String domain = "disk.yandex.com";
-        getPage(this.addedLink);
+        getPage(addedLink);
         if (isOffline(this.br)) {
-            decryptedLinks.add(this.createOfflinelink(this.addedLink));
+            decryptedLinks.add(this.createOfflinelink(addedLink));
             return;
         }
         String sk = jd.plugins.hoster.DiskYandexNet.getSK(this.br);
         String fpName = null;
         final String clientID = jd.plugins.hoster.DiskYandexNet.albumGetIdClient();
-        final String hash_short = new Regex(this.addedLink, "/a/(.+)").getMatch(0);
-        final String hash_long = jd.plugins.hoster.DiskYandexNet.getHashLongFromHTML(this.br);
+        final String hash_short = new Regex(addedLink, "/a/(.+)").getMatch(0);
+        final String rawHash = jd.plugins.hoster.DiskYandexNet.getHashLongFromHTML(this.br);
         final String json_of_first_page = regExJSON(this.br);
-        if (StringUtils.isEmpty(hash_long)) {
+        if (StringUtils.isEmpty(rawHash)) {
             /* Value is required! */
-            decryptedLinks.add(this.createOfflinelink(this.addedLink));
+            decryptedLinks.add(this.createOfflinelink(addedLink));
             return;
         }
         if (StringUtils.isEmpty(sk)) {
             /** TODO: Maybe keep SK throughout sessions to save that one request ... */
             logger.info("Getting new SK value ...");
-            sk = jd.plugins.hoster.DiskYandexNet.getNewSK(this.br, domain, this.addedLink);
+            sk = jd.plugins.hoster.DiskYandexNet.getNewSK(this.br, domain, addedLink);
             if (StringUtils.isEmpty(sk)) {
                 logger.warning("Failed to get SK value");
                 throw new DecrypterException();
@@ -362,7 +333,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 }
                 fp.setName(fpName);
             } else {
-                br.postPage("https://" + domain + "/album-models/?_m=resources", "_model.0=resources&idContext.0=%2Falbum%2F" + Encoding.urlEncode(hash_long) + "&order.0=1&sort.0=order_index&offset.0=" + offset + "&amount.0=" + maxItemsPerPage + "&idItemLast.0=" + Encoding.urlEncode(idItemLast) + "&idClient=" + clientID + "&version=" + jd.plugins.hoster.DiskYandexNet.VERSION_YANDEX_PHOTO_ALBUMS + "&sk=" + sk);
+                br.postPage("https://" + domain + "/album-models/?_m=resources", "_model.0=resources&idContext.0=%2Falbum%2F" + Encoding.urlEncode(rawHash) + "&order.0=1&sort.0=order_index&offset.0=" + offset + "&amount.0=" + maxItemsPerPage + "&idItemLast.0=" + Encoding.urlEncode(idItemLast) + "&idClient=" + clientID + "&version=" + jd.plugins.hoster.DiskYandexNet.VERSION_YANDEX_PHOTO_ALBUMS + "&sk=" + sk);
                 entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
                 modelObjects = (ArrayList<Object>) entries.get("models");
             }
@@ -389,7 +360,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 final DownloadLink dl = this.createDownloadlink(url);
                 dl.setLinkID(hash_short + "/" + item_id);
                 jd.plugins.hoster.DiskYandexNet.parseInformationAPIAvailablecheckAlbum(this, dl, entries);
-                jd.plugins.hoster.DiskYandexNet.setHash(dl, hash_long);
+                jd.plugins.hoster.DiskYandexNet.setRawHash(dl, rawHash);
                 dl._setFilePackage(fp);
                 this.decryptedLinks.add(dl);
                 distribute(dl);
@@ -441,8 +412,13 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         return br.containsHTML(OFFLINE_TEXT) || br.getHttpConnection().getResponseCode() == 404;
     }
 
-    private String regexHashFromURL(final String url) {
-        return new Regex(url, "hash=([^&#]+)").getMatch(0);
+    private String regexHashFromURL(final String url) throws PluginException {
+        final String ret = new Regex(url, "hash=([^&#]+)").getMatch(0);
+        if (StringUtils.isEmpty(ret)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            return ret;
+        }
     }
 
     private void decryptSingleFile(final DownloadLink dl, final LinkedHashMap<String, Object> entries) throws Exception {
