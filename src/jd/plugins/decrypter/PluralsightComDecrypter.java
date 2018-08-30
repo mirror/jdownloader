@@ -71,11 +71,12 @@ public class PluralsightComDecrypter extends PluginForDecrypt {
             final ArrayList<DownloadLink> clips = PluralsightCom.getClips(this, br, (Map<String, Object>) JavaScriptEngineFactory.walkJson(map, "data/rpc/bootstrapPlayer"));
             if (clips != null) {
                 final FilePackage fp = FilePackage.getInstance();
-                final String title = (String) map.get("title");
+                final Map<String, Object> courseMap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(map, "data/rpc/bootstrapPlayer/course");
+                final String title = (String) courseMap.get("title");
                 if (!StringUtils.isEmpty(title)) {
                     fp.setName(PluralsightCom.correctFileName(title));
                 } else {
-                    fp.setName(course);
+                    fp.setName(PluralsightCom.correctFileName(course));
                 }
                 fp.addLinks(clips);
                 ret.addAll(clips);
