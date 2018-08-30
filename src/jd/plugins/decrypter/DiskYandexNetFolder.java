@@ -22,6 +22,7 @@ import java.util.LinkedHashMap;
 import java.util.Random;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -278,18 +279,22 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
 
     /** urlEncode 'path' value for yandex API requests */
     public static String urlEncodePath(String str) {
-        if (!Encoding.isUrlCoded(str)) {
-            str = Encoding.urlEncode(str);
-        }
-        str = str.replace("+", "%20");
-        if (str.contains("=")) {
-            str = str.replace("=", "%3D");
-        }
-        // if (str.contains(" ")) {
-        // str = str.replace(" ", "%2B");
+        // if (!Encoding.isUrlCoded(str)) {
+        // str = Encoding.urlEncode(str);
         // }
-        if (str.contains("/")) {
-            str = str.replace("/", "%2F");
+        // str = str.replace("+", "%20");
+        // if (str.contains("=")) {
+        // str = str.replace("=", "%3D");
+        // }
+        // // if (str.contains(" ")) {
+        // // str = str.replace(" ", "%2B");
+        // // }
+        // if (str.contains("/")) {
+        // str = str.replace("/", "%2F");
+        // }
+        try {
+            str = URLEncode.encodeRFC2396(str);
+        } catch (final Throwable e) {
         }
         return str;
     }
@@ -300,6 +305,10 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             str = Encoding.urlEncode(str);
         }
         str = str.replace("+", "%2B");
+        // try {
+        // str = URLEncode.encodeRFC2396(str);
+        // } catch (final Throwable e) {
+        // }
         return str;
     }
 
