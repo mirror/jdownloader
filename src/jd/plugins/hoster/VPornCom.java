@@ -39,6 +39,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.StringUtils;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vporn.com" }, urls = { "https?://(www\\.)?vporn\\.com/(embed|(?!favorite|submitted|(all)?subscriptions|user)[a-z0-9\\-_]+/[a-z0-9\\-_]+)/\\d+" })
 public class VPornCom extends PluginForHost {
     @SuppressWarnings("deprecation")
@@ -64,6 +66,19 @@ public class VPornCom extends PluginForHost {
 
     private static final String INVALIDLINKS = "http://(www\\.)?vporn\\.com/(user|favorite|submitted|thumb)/.+";
     private static final String NOCHUNKS     = "NOCHUNKS";
+
+    private String getVideoID(DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), "(\\d+)/?$").getMatch(0);
+    }
+
+    @Override
+    public String getMirrorID(DownloadLink link) {
+        if (link != null && StringUtils.equals(getHost(), link.getHost())) {
+            return getHost() + "://" + getVideoID(link);
+        } else {
+            return super.getMirrorID(link);
+        }
+    }
 
     @SuppressWarnings("deprecation")
     @Override
