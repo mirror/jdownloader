@@ -22,6 +22,9 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Random;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -38,9 +41,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "disk.yandex.net", "docviewer.yandex.com" }, urls = { "https?://(?:www\\.)?(((((mail|disk)\\.)?yandex\\.(?:net|com|com\\.tr|ru|ua)|yadi\\.sk)/(disk/)?public/?(\\?hash=.+|#.+))|(?:yadi\\.sk|yadisk\\.cc)/(?:d|i)/[A-Za-z0-9\\-_]+(/[^/]+){0,}|yadi\\.sk/mail/\\?hash=.+)|https?://yadi\\.sk/a/[A-Za-z0-9\\-_]+", "https?://docviewer\\.yandex\\.(?:net|com|com\\.tr|ru|ua)/\\?url=ya\\-disk\\-public%3A%2F%2F.+" })
 public class DiskYandexNetFolder extends PluginForDecrypt {
@@ -220,30 +220,34 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                     String name = (String) entries.get("name");
                     if (type.equals(JSON_TYPE_DIR)) {
                         /* Subfolders go back into our decrypter! */
-                        final String folderlink = "https://disk.yandex.com/public/?hash=" + Encoding.urlEncode(hash) + "%3A" + Encoding.urlEncode(path);
+                        final String folderlink = "https://disk.yandex.com/public/?hash=" + URLEncoder.encode(hash, "UTF-8") + "%3A" + URLEncoder.encode(path, "UTF-8");
                         final DownloadLink dl = createDownloadlink(folderlink);
                         if (StringUtils.isNotEmpty(path) && !StringUtils.equals(path, "/")) {
                             dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, path);
                         }
                         decryptedLinks.add(dl);
                     } else {
-                        if (name == null || hash == null) {
+                        final String media_type = (String) entries.get("media_type");
+                        if (StringUtils.isEmpty(name) || StringUtils.isEmpty(hash)) {
                             return null;
                         }
                         final DownloadLink dl = createDownloadlink("http://yandexdecrypted.net/" + System.currentTimeMillis() + new Random().nextInt(10000000));
                         decryptSingleFile(dl, entries);
                         String url_content;
-                        if (url_preview != null) {
+                        /**
+                         * TODO: remove the check for url_preview as it has nothing todo with whether a web-view is available or not.
+                         * Double-check web-view-content-URLs especially for .txt files!!
+                         */
+                        if (url_preview != null && "document".equalsIgnoreCase(media_type)) {
                             /*
-                             * Given preview URLs are bullshit as trhey only e.g. link to a thumbnail of a .pdf file - but we know how to
-                             * build good "open in browser" content URLs ...
+                             * Set contentURL which links to a comfortable web-view of documents whenever it makes sense.
                              */
-                            url_content = "https://docviewer.yandex.com/?url=ya-disk-public%3A%2F%2F" + Encoding.urlEncode(hash);
+                            url_content = "https://docviewer.yandex.com/?url=ya-disk-public%3A%2F%2F" + URLEncoder.encode(hash, "UTF-8");
                         } else {
                             /*
                              * We do not have any URL - set main URL.
                              */
-                            url_content = "https://disk.yandex.com/public/?hash=" + Encoding.urlEncode(hash);
+                            url_content = "https://disk.yandex.com/public/?hash=" + URLEncoder.encode(hash, "UTF-8");
                         }
                         /*
                          * We want the user to have an URL which he can open via browser and it does not only open up the root of the folder
