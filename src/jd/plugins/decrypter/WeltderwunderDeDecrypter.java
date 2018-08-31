@@ -16,78 +16,44 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 
 import jd.PluginWrapper;
-import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "weltderwunder.de" }, urls = { "https?://(?:www\\.|video\\.)?weltderwunder\\.de/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "weltderwunder.de" }, urls = { "https?://(?:www\\.)?weltderwunder\\.de/videos/[a-z0-9_]+" })
 public class WeltderwunderDeDecrypter extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     public WeltderwunderDeDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String DOMAIN = "weltderwunder.de";
-
     @SuppressWarnings({ "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        /* Load sister-host plugin */
-        JDUtilities.getPluginForHost(DOMAIN);
-        final PluginForDecrypt tele5hostPlugin = JDUtilities.getPluginForDecrypt("tele5.de");
+        final String parameter = param.getCryptedUrl();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        final String nicehost = new Regex(parameter, "https?://(?:www\\.|video\\.)?([^/]+)").getMatch(0);
-        final String decryptedhost = "http://" + nicehost + "decrypted";
-        final SubConfiguration cfg = SubConfiguration.getConfig(DOMAIN);
-        final LinkedHashMap<String, String[]> formats = jd.plugins.hoster.WeltderwunderDe.formats;
-        br.setFollowRedirects(true);
         br.getPage(parameter);
-        String fpName = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        if (br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("kaltura_player_")) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String[] videosinfo = br.getRegex("kWidget\\.(?:thumb)?Embed\\(\\{(.*?)</script>").getColumn(0);
-        if (videosinfo == null || videosinfo.length == 0) {
-            videosinfo = br.getRegex("<script src=\"(https?://api\\.medianac\\.com/p/[^<>\"]+uiconf_id/[^<>\"]+entry_id[^<>\"]+)\"></script>").getColumn(0);
-        }
-        HashMap<String, DownloadLink> foundLinks_all = new HashMap<String, DownloadLink>();
-        /* parse flash url */
-        ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
-        for (final String videosource : videosinfo) {
-            HashMap<String, DownloadLink> foundLinks = ((jd.plugins.decrypter.TeleFiveDeDecrypter) tele5hostPlugin).getURLsFromMedianac(this.br, decryptedhost, videosource, formats);
-            foundLinks_all.putAll(foundLinks);
-            /* Only decrypt the first entry */
-            break;
-        }
-        final Iterator<Entry<String, DownloadLink>> it = foundLinks_all.entrySet().iterator();
+        final PluginForHost plugin = JDUtilities.getPluginForHost(this.getHost());
+        final LinkedHashMap<String, DownloadLink> all_qualities = jd.plugins.decrypter.GenericKalturaVideoPlatformCrawler.crawlEverything(plugin, this.br);
+        final Iterator<Entry<String, DownloadLink>> it = all_qualities.entrySet().iterator();
         while (it.hasNext()) {
             final Entry<String, DownloadLink> next = it.next();
-            final String qualityInfo = next.getKey();
             final DownloadLink dl = next.getValue();
-            if (cfg.getBooleanProperty(qualityInfo, true)) {
-                newRet.add(dl);
-            }
+            decryptedLinks.add(dl);
         }
-        if (fpName != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(fpName);
-            fp.addLinks(newRet);
-        }
-        decryptedLinks.addAll(newRet);
         return decryptedLinks;
     }
 

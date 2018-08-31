@@ -324,6 +324,14 @@ public class NovaFileCom extends antiDDoSForHost {
                         /* User existing Browser object as we get a cookie which is required later. */
                         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                         this.submitForm(br, specialCaptchaForm);
+                        if (br.containsHTML("ERROR: Wrong captcha")) {
+                            /*
+                             * 2018-08-31: Although this should not happen it seems like this happens for some users so we have to handle
+                             * it.
+                             */
+                            logger.info("Wrong captcha on reCaptchaV2 (rare case)");
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        }
                         if (!br.toString().equalsIgnoreCase("OK")) {
                             logger.warning("Fatal reCaptchaV2 special handling failure");
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -23,6 +22,9 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -44,12 +46,8 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movpod.in" }, urls = { "https?://(www\\.)?movpod\\.(in|net)/[a-z0-9]{12}" })
 public class MovPodIn extends PluginForHost {
-
     private String               correctedBR                  = "";
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String         COOKIE_HOST                  = "http://movpod.in";
@@ -73,10 +71,9 @@ public class MovPodIn extends PluginForHost {
     // protocol: no https
     // captchatype: null
     // other: sister sites, daclips.in && gorillavid.in
-
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://").replace("movpod.net/", "movpod.in/"));
+        link.setUrlDownload(link.getDownloadURL().replace("http://", "https://").replace("movpod.net/", "movpod.in/"));
     }
 
     @Override
@@ -199,7 +196,6 @@ public class MovPodIn extends PluginForHost {
 
     @SuppressWarnings("unused")
     public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        br.setFollowRedirects(false);
         String passCode = null;
         // First, bring up saved final links
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
@@ -213,7 +209,6 @@ public class MovPodIn extends PluginForHost {
             brv.getPage(COOKIE_HOST + "/vidembed-" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
             dllink = brv.getRedirectLocation();
         }
-
         // Third, continue like normal.
         if (dllink == null) {
             getPage(downloadLink.getDownloadURL());
@@ -228,7 +223,6 @@ public class MovPodIn extends PluginForHost {
             }
             dllink = getDllink(br);
         }
-
         if (dllink == null) {
             Form dlForm = br.getFormbyProperty("name", "F1");
             if (dlForm == null) {
@@ -310,7 +304,6 @@ public class MovPodIn extends PluginForHost {
                     skipWaittime = true;
                 } else if (br.containsHTML("//api\\.solvemedia\\.com/papi")) {
                     logger.info("Detected captcha method \"solvemedia\" for this host");
-
                     final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                     final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
                     final String code = getCaptchaCode("solvemedia", cf, downloadLink);
@@ -319,18 +312,14 @@ public class MovPodIn extends PluginForHost {
                     dlForm.put("adcopy_response", "manual_challenge");
                 }
                 /* Captcha END */
-
                 if (password) {
                     passCode = handlePassword(passCode, dlForm, downloadLink);
                 }
-
                 if (!skipWaittime) {
                     waitTime(timeBefore, downloadLink);
                 }
-
                 sendForm(dlForm);
                 logger.info("Submitted DLForm");
-
                 dllink = getDllink(br);
                 if (dllink == null && (!br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"") || i == repeat)) {
                     checkErrors(downloadLink, true, passCode);
@@ -425,9 +414,12 @@ public class MovPodIn extends PluginForHost {
         String dllink = brg.getRedirectLocation();
         if (dllink == null) {
             dllink = new Regex(brg, "file:([ ]+)?\"(http://[^<>\"]*?)\"").getMatch(1);
-            if (dllink == null) {
-                dllink = new Regex(brg, "(https?://\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}(:\\d{1,5})?/(\\d+/)?[a-z0-9]{15,}/[^<>\"]*?)\"").getMatch(0);
-            }
+        }
+        if (dllink == null) {
+            dllink = new Regex(brg, "(https?://\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}(:\\d{1,5})?/(\\d+/)?[a-z0-9]{15,}/[^<>\"]*?)\"").getMatch(0);
+        }
+        if (dllink == null) {
+            dllink = new Regex(brg, "src: '(https?://[^<>']*?.mp4)'").getMatch(0);
         }
         return dllink;
     }
@@ -661,5 +653,4 @@ public class MovPodIn extends PluginForHost {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.SibSoft_XFileShare;
     }
-
 }

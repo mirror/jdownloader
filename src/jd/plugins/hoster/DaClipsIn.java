@@ -23,6 +23,10 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -42,10 +46,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "daclips.in" }, urls = { "https?://(?:www\\.)?daclips\\.(?:in|com)/[a-z0-9]{12}" })
 public class DaClipsIn extends antiDDoSForHost {
@@ -152,30 +152,31 @@ public class DaClipsIn extends antiDDoSForHost {
             sendForm(download1);
             // checkErrors(downloadLink, false, passCode);
         }
-        String dllink = getDllink(br);
-        if (dllink != null) {
-            final Browser br2 = br.cloneBrowser();
-            br2.setFollowRedirects(true);
-            URLConnectionAdapter con = null;
-            try {
-                con = br2.openHeadConnection(dllink);
-                if (!con.getContentType().contains("html")) {
-                    if (con.getLongContentLength() < 1000) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
-                    link.setDownloadSize(con.getLongContentLength());
-                    link.setProperty("freelink", dllink);
-                } else {
-                    logger.info("dllink error");
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
-        }
+        /** 2018-08-31: Removed filesizecheck as they often have offline URLs which then results in a very long availablecheck! */
+        // String dllink = getDllink(br);
+        // if (dllink != null) {
+        // final Browser br2 = br.cloneBrowser();
+        // br2.setFollowRedirects(true);
+        // URLConnectionAdapter con = null;
+        // try {
+        // con = br2.openHeadConnection(dllink);
+        // if (!con.getContentType().contains("html")) {
+        // if (con.getLongContentLength() < 1000) {
+        // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // }
+        // link.setDownloadSize(con.getLongContentLength());
+        // link.setProperty("freelink", dllink);
+        // } else {
+        // logger.info("dllink error");
+        // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // }
+        // } finally {
+        // try {
+        // con.disconnect();
+        // } catch (final Throwable e) {
+        // }
+        // }
+        // }
         return AvailableStatus.TRUE;
     }
 

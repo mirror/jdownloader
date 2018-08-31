@@ -37,6 +37,13 @@ import javax.script.ScriptEngineManager;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -67,14 +74,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gorillavid.in" }, urls = { "https?://(www\\.)?gorillavid\\.in/((vid)?embed-)?[a-z0-9]{12}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gorillavid.in" }, urls = { "https?://(?:www\\.)?gorillavid\\.in/(?:(?:vid)?embed-)?[a-z0-9]{12}" })
 @SuppressWarnings("deprecation")
 public class GorillaVidIn extends PluginForHost {
     // Site Setters
@@ -85,12 +85,12 @@ public class GorillaVidIn extends PluginForHost {
     private final String         PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String         MAINTENANCE                  = ">This server is in maintenance mode";
     private final String         dllinkRegex                  = "https?://\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}(:\\d{1,5})?/(\\d+/)?([a-z0-9]+/)[^/<>\r\n\t]+";
-    private final boolean        supportsHTTPS                = false;
-    private final boolean        enforcesHTTPS                = false;
+    private final boolean        supportsHTTPS                = true;
+    private final boolean        enforcesHTTPS                = true;
     private final boolean        useRUA                       = true;
     private final boolean        useAltLinkCheck              = false;
     private final boolean        useVidEmbed                  = false;
-    private final boolean        useAltEmbed                  = true;
+    private final boolean        useAltEmbed                  = false;
     private final boolean        useAltExpire                 = true;
     private final long           useLoginIndividual           = 6 * 3480000l;
     private final boolean        waitTimeSkipableReCaptcha    = true;
@@ -194,6 +194,9 @@ public class GorillaVidIn extends PluginForHost {
         }
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         prepBr.setCookie(COOKIE_HOST, "lang", "english");
+        prepBr.getHeaders().put("DNT", "1");
+        prepBr.getHeaders().put("Upgrade-Insecure-Requests", "1");
+        /*----------------------------*/
         prepBr.setReadTimeout(3 * 60 * 1000);
         prepBr.setConnectTimeout(3 * 60 * 1000);
         // required for native cloudflare support, without the need to repeat requests.
@@ -255,7 +258,7 @@ public class GorillaVidIn extends PluginForHost {
                 sendForm(download1);
                 scanInfo(downloadLink, fileInfo);
             }
-            if (inValidate(fileInfo[0]) && inValidate(fileInfo[1])) {
+            if (inValidate(fileInfo[0]) && inValidate(fileInfo[1]) && useAltLinkCheck) {
                 logger.warning("Possible plugin error, trying fail over!");
                 altAvailStat(downloadLink, fileInfo);
             }
@@ -295,15 +298,26 @@ public class GorillaVidIn extends PluginForHost {
                             fileInfo[0] = cbr.getRegex("Filename:? ?(<[^>]+> ?)+?([^<>\"']+)").getMatch(1);
                             // next two are details from sharing box
                             if (inValidate(fileInfo[0])) {
-                                fileInfo[0] = cbr.getRegex("<textarea[^\r\n]+>([^\r\n]+) - [\\d\\.]+ (KB|MB|GB)</a></textarea>").getMatch(0);
+                                fileInfo[0] = cbr.getRegex("<textarea[^\r\n]+>([^\r\n]+) - [\\d\\.]+ (KB|MB|GB|MBMb)</a></textarea>").getMatch(0);
                                 if (inValidate(fileInfo[0])) {
-                                    fileInfo[0] = cbr.getRegex("<textarea[^\r\n]+>[^\r\n]+\\]([^\r\n]+) - [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
+                                    fileInfo[0] = cbr.getRegex("<textarea[^\r\n]+>[^\r\n]+\\]([^\r\n]+) - [\\d\\.]+ (KB|MB|GB|MBMb)\\[/URL\\]").getMatch(0);
                                 }
                             }
                         }
                     }
                 }
             }
+        }
+        final Regex specialTxtAreaRegex = cbr.getRegex(this.fuid + "\\]([^<>\"\\']+) \\- (\\d+\\.\\d+ [A-Za-z0-9]+)\\[/URL\\]</textarea>");
+        if (inValidate(fileInfo[0])) {
+            /* 2018-08-31: SharingBox new RegEx */
+            fileInfo[0] = specialTxtAreaRegex.getMatch(0);
+        }
+        /* 2018-08-31: New */
+        fileInfo[1] = specialTxtAreaRegex.getMatch(1);
+        if (fileInfo[1] != null) {
+            /* WTF - website bug */
+            fileInfo[1] = fileInfo[1].replace("MBMb", "MB");
         }
         /* Filesize is never available in html - disable filesize RegExes to prevent wrong filesizes */
         // if (inValidate(fileInfo[1])) {
@@ -352,7 +366,6 @@ public class GorillaVidIn extends PluginForHost {
         return fileInfo;
     }
 
-    @SuppressWarnings("unused")
     private void doFree(final DownloadLink downloadLink, final Account account) throws Exception, PluginException {
         if (account != null) {
             logger.info(account.getUser() + " @ " + acctype + " -> Free Download");

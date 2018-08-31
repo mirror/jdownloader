@@ -9,11 +9,14 @@ import org.jdownloader.plugins.components.config.MediathekProperties;
 import jd.plugins.DownloadLink;
 
 public class MediathekHelper {
-    /* TODO: Ensure mp3 (audioonly) compatibility, put less info in filename if not required e.g. leave out protocol if we only have one */
+    /** TODO: Ensure mp3 (audioonly) compatibility, put less info in filename if not required e.g. leave out protocol if we only have one */
     public static String getMediathekFilename(final DownloadLink dl, final MediathekProperties data, final boolean multipleProtocolsAvailable, final boolean sameResolutionWithDifferentBitratePossible) {
         final String title = data.getTitle();
         final String show = data.getShow();
-        final String channel = data.getChannel();
+        String channel = data.getChannel();
+        if (channel == null) {
+            channel = dl.getHost().replace(".", "_");
+        }
         String protocol = data.getProtocol();
         if (protocol != null) {
             /* necessary for video player to find correct subtitle */

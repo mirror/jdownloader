@@ -27,6 +27,7 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
@@ -44,34 +45,38 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.parser.html.HTMLParser;
+import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
-import jd.plugins.AccountUnavailableException;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xubster.com" }, urls = { "https?://(?:www\\.)?xubster\\.com/(?:embed\\-)?[a-z0-9]{12}" })
-public class XubsterCom extends antiDDoSForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linestorage.org" }, urls = { "https?://(?:www\\.)?linestorage\\.org/(?:embed\\-)?[a-z0-9]{12}" })
+public class LinestorageOrg extends antiDDoSForHost {
     /* Some HTML code to identify different (error) states */
     private static final String  HTML_PASSWORDPROTECTED             = "<br><b>Passwor(d|t):</b> <input";
     private static final String  HTML_MAINTENANCE_MODE              = ">This server is in maintenance mode";
     /* Here comes our XFS-configuration */
-    private final boolean        SUPPORTS_HTTPS                     = true;
+    private final boolean        SUPPORTS_HTTPS                     = false;
     /* primary website url, take note of redirects */
-    private final String         COOKIE_HOST                        = "http://xubster.com".replaceFirst("https?://", SUPPORTS_HTTPS ? "https://" : "http://");
+    private final String         COOKIE_HOST                        = "http://linestorage.org".replaceFirst("https?://", SUPPORTS_HTTPS ? "https://" : "http://");
     private final String         NICE_HOSTproperty                  = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private final static String  DOMAINS                            = "(?:xubster\\.com)";
-    private final static String  dllinkRegexFile                    = "https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|(?:[\\w\\-\\.]+\\.)?" + DOMAINS + ")(?::\\d{1,4})?/(?:files|d|cgi\\-bin/dl\\.cgi)/(?:\\d+/)?[a-z0-9]+/[^<>\"/]*?";
-    private final static String  dllinkRegexImage                   = "https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|(?:[\\w\\-\\.]+\\.)?" + DOMAINS + ")(?:/img/\\d+/[^<>\"'\\[\\]]+|/img/[a-z0-9]+/[^<>\"'\\[\\]]+|/img/[^<>\"'\\[\\]]+|/i/\\d+/[^<>\"'\\[\\]]+|/i/\\d+/[^<>\"'\\[\\]]+(?!_t\\.[A-Za-z]{3,4}))";
+    private final static String  DOMAINS                            = "(?:linestorage\\.org)";
+    private final static String  dllinkRegexFile                    = "https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|(?:[\\w\\-\\.]+\\.)?%s)(?::\\d{1,4})?/(?:files|d|cgi\\-bin/dl\\.cgi)/(?:\\d+/)?[a-z0-9]+/[^<>\"/]*?";
+    private final static String  dllinkRegexFile_2                  = "https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|(?:[\\w\\-\\.]+\\.)?%s)(?::\\d{1,4})?/[a-z0-9]{50,}/[^<>\"/]*?";
+    private final static String  dllinkRegexImage                   = "https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|(?:[\\w\\-\\.]+\\.)?%s)(?:/img/\\d+/[^<>\"'\\[\\]]+|/img/[a-z0-9]+/[^<>\"'\\[\\]]+|/img/[^<>\"'\\[\\]]+|/i/\\d+/[^<>\"'\\[\\]]+|/i/\\d+/[^<>\"'\\[\\]]+(?!_t\\.[A-Za-z]{3,4}))";
     /* Errormessages inside URLs */
     private static final String  URL_ERROR_PREMIUMONLY              = "/?op=login&redirect=";
     /* All kinds of XFS-plugin-configuration settings - be sure to configure this correctly when developing new XFS plugins! */
@@ -124,24 +129,24 @@ public class XubsterCom extends antiDDoSForHost {
     private String               fuid                               = null;
     private String               passCode                           = null;
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger totalMaxSimultanFreeDownload       = new AtomicInteger(1);
+    private static AtomicInteger totalMaxSimultanFreeDownload       = new AtomicInteger(20);
     /* don't touch the following! */
     private static AtomicInteger maxFree                            = new AtomicInteger(1);
     private static Object        LOCK                               = new Object();
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 2.7.5.1<br />
+     * DEV NOTES XfileSharingProBasic Version 2.7.7.3<br />
      ****************************
      * NOTES from raztoki <br/>
      * - no need to set setfollowredirect true. <br />
      * - maintain the primary domain base url (protocol://subdomain.domain.tld.cctld), everything else will be based off that! do not fubar
      * with standard browser behaviours.
      ****************************
-     * mods:<br />
-     * limit-info: 2017-09-27: Premium untested, set FREE account limits<br />
+     * mods: Search code for String "Special"<br />
+     * limit-info: 2018-08-31: premium untested, set FREE account limits<br />
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
      * ALL) it is usually impossible to get any filename/filesize/status information!<br />
-     * captchatype: reCaptchaV2<br />
+     * captchatype: null<br />
      * other:<br />
      */
     @Override
@@ -172,7 +177,7 @@ public class XubsterCom extends antiDDoSForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public XubsterCom(PluginWrapper wrapper) {
+    public LinestorageOrg(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
@@ -210,9 +215,6 @@ public class XubsterCom extends antiDDoSForHost {
             link.getLinkStatus().setStatusText(USERTEXT_PREMIUMONLY_LINKCHECK);
             if (SUPPORTS_AVAILABLECHECK_ABUSE) {
                 fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
-                if (altbr.containsHTML(">No such file<")) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
             }
             if (SUPPORTS_AVAILABLECHECK_ALT) {
                 fileInfo[1] = getFilesizeViaAvailablecheckAlt(altbr, link);
@@ -331,8 +333,11 @@ public class XubsterCom extends antiDDoSForHost {
             if (inValidate(fileInfo[1])) {
                 fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
                 if (inValidate(fileInfo[1])) {
+                    fileInfo[1] = getHighestVideoQualityFilesize();
+                }
+                if (inValidate(fileInfo[1])) {
                     fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"'/]+)\\)(.*?)</font>").getMatch(0);
-                    // next two are details from sharing box
+                    /* next two are details from sharing box */
                     if (inValidate(fileInfo[1])) {
                         fileInfo[1] = new Regex(correctedBR, sharebox0).getMatch(1);
                         if (inValidate(fileInfo[1])) {
@@ -360,27 +365,33 @@ public class XubsterCom extends antiDDoSForHost {
     /**
      * Get filename via abuse-URL.<br />
      * E.g. needed if officially only logged in users can see filenameor filename is missing for whatever reason.<br />
-     * Especially often needed for <b><u>IMAGEHOSTER</u> ' s</b>.<br />
+     * Often needed for <b><u>IMAGEHOSTER</u> ' s</b>.<br />
      * Important: Only call this if <b><u>SUPPORTS_AVAILABLECHECK_ABUSE</u></b> is <b>true</b>!<br />
      *
      * @throws Exception
      */
     private String getFnameViaAbuseLink(final Browser br, final DownloadLink dl) throws Exception {
         getPage(br, COOKIE_HOST + "/?op=report_file&id=" + fuid, false);
+        if (br.containsHTML(">No such file<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         return br.getRegex("<b>Filename\\s*:?\\s*</b></td><td>([^<>\"]*?)</td>").getMatch(0);
     }
 
     /**
      * Get filename via mass-linkchecker/alternative availablecheck.<br />
      * E.g. needed if officially only logged in users can see filesize or filesize is missing for whatever reason.<br />
-     * Especially often needed for <b><u>IMAGEHOSTER</u> ' s</b>.<br />
+     * Often needed for <b><u>IMAGEHOSTER</u> ' s</b>.<br />
      * Important: Only call this if <b><u>SUPPORTS_AVAILABLECHECK_ALT</u></b> is <b>true</b>!<br />
      */
     private String getFilesizeViaAvailablecheckAlt(final Browser br, final DownloadLink dl) {
         String filesize = null;
         try {
+            /**
+             * TODO: 2018-08-01: Old XFS versions used 'checkfiles' instead of 'check_files'! Keep that in mind in case of problems!
+             */
             if (SUPPORTS_AVAILABLECHECK_ALT_FAST) {
-                postPage(br, COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(dl.getPluginPatternMatcher()), false);
+                postPage(br, COOKIE_HOST + "/?op=check_files", "op=check_files&process=Check+URLs&list=" + Encoding.urlEncode(dl.getPluginPatternMatcher()), false);
             } else {
                 /* Try to get the Form IF NEEDED as it can contain tokens which are missing otherwise. */
                 br.getPage("/?op=check_files");
@@ -432,11 +443,11 @@ public class XubsterCom extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, null, true, -2, PROPERTY_DLLINK_FREE);
+        doFree(downloadLink, false, 1, PROPERTY_DLLINK_FREE);
     }
 
     @SuppressWarnings({ "unused" })
-    private void doFree(final DownloadLink downloadLink, final Account account, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         passCode = downloadLink.getStringProperty(PROPERTY_PASS);
         /* 1, bring up saved final links */
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
@@ -501,7 +512,7 @@ public class XubsterCom extends antiDDoSForHost {
         }
         /* 6, do we have an imagehost? */
         if (dllink == null && IMAGEHOSTER) {
-            checkErrors(downloadLink, account, false);
+            checkErrors(downloadLink, false);
             Form imghost_next_form = null;
             do {
                 imghost_next_form = br.getFormbyKey("next");
@@ -509,7 +520,7 @@ public class XubsterCom extends antiDDoSForHost {
                     imghost_next_form.remove("method_premium");
                     /* end of backward compatibility */
                     submitForm(imghost_next_form);
-                    checkErrors(downloadLink, account, false);
+                    checkErrors(downloadLink, false);
                     dllink = getDllink();
                     /* For imagehosts, filenames are often not given until we can actually see/download the image! */
                     final String image_filename = new Regex(correctedBR, "class=\"pic\" alt=\"([^<>\"]*?)\"").getMatch(0);
@@ -534,15 +545,29 @@ public class XubsterCom extends antiDDoSForHost {
                 }
                 /* end of backward compatibility */
                 submitForm(download1);
-                checkErrors(downloadLink, account, false);
+                checkErrors(downloadLink, false);
                 dllink = getDllink();
             }
         }
         if (dllink == null) {
-            Form dlForm = br.getFormbyProperty("name", "F1");
+            final String highestVideoQualityHTML = getHighestQualityHTML();
+            if (highestVideoQualityHTML != null) {
+                final Regex videoinfo = new Regex(highestVideoQualityHTML, "download_video\\(\\'([a-z0-9]+)\\',\\'([^<>\"\\']*?)\\',\\'([^<>\"\\']*?)\\'");
+                // final String vid = videoinfo.getMatch(0);
+                /* Usually this will be 'o' standing for "original quality" */
+                final String q = videoinfo.getMatch(1);
+                final String hash = videoinfo.getMatch(2);
+                if (q == null || hash == null) {
+                    handlePluginBroken(downloadLink, "video_highest_quality_download_failure", 3);
+                }
+                getPage("/dl?op=download_orig_pre&id=" + this.fuid + "&mode=" + q + "&hash=" + hash);
+            }
+        }
+        if (dllink == null) {
+            Form dlForm = findFormF1();
             if (dlForm == null) {
                 /* Last chance - maybe our errorhandling kicks in here. */
-                checkErrors(downloadLink, account, false);
+                checkErrors(downloadLink, false);
                 /* Okay we finally have no idea what happened ... */
                 handlePluginBroken(downloadLink, "dlform_f1_null", 3);
             }
@@ -565,10 +590,43 @@ public class XubsterCom extends antiDDoSForHost {
                 }
                 /* Captcha START */
                 if (correctedBR.contains("class=\"g-recaptcha\"")) {
-                    waitTime(downloadLink, timeBefore);
-                    logger.info("Detected captcha method \"reCaptchaV2\" for this host");
+                    /*
+                     * 2017-12-07: New - solve- and check reCaptchaV2 here via ajax call, then wait- and submit the main downloadform. This
+                     * might as well be a workaround by the XFS developers to avoid expiring reCaptchaV2 challenges.
+                     */
+                    logger.info("Detected captcha method \"RecaptchaV2\" for this host");
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                    dlForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    if (new Regex(correctedBR, Pattern.compile("\\$\\.post\\(\\s*?\"/ddl\"", Pattern.CASE_INSENSITIVE)).matches()) {
+                        /* 2017-12-07: New */
+                        /* Do not put the result in this Form as the check is handled below already */
+                        dlForm.put("g-recaptcha-response", "");
+                        final Form ajaxCaptchaForm = new Form();
+                        ajaxCaptchaForm.setMethod(MethodType.POST);
+                        ajaxCaptchaForm.setAction("/ddl");
+                        final InputField if_Rand = dlForm.getInputFieldByName("rand");
+                        final String file_id = PluginJSonUtils.getJson(br, "file_id");
+                        if (if_Rand != null) {
+                            /* This is usually given */
+                            ajaxCaptchaForm.put("rand", if_Rand.getValue());
+                        }
+                        if (!StringUtils.isEmpty(file_id)) {
+                            /* This is usually given */
+                            ajaxCaptchaForm.put("file_id", file_id);
+                        }
+                        ajaxCaptchaForm.put("op", "captcha1");
+                        ajaxCaptchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                        /* User existing Browser object as we get a cookie which is required later. */
+                        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                        this.submitForm(br, ajaxCaptchaForm);
+                        if (!br.toString().equalsIgnoreCase("OK")) {
+                            logger.warning("Fatal reCaptchaV2 ajax handling failure");
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        br.getHeaders().remove("X-Requested-With");
+                    } else {
+                        /* Old */
+                        dlForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    }
                 } else {
                     if (correctedBR.contains(";background:#ccc;text-align")) {
                         logger.info("Detected captcha method \"plaintext captchas\" for this host");
@@ -653,19 +711,19 @@ public class XubsterCom extends antiDDoSForHost {
                         skipWaittime = false;
                     }
                     /* Captcha END */
-                    if (!skipWaittime) {
-                        waitTime(downloadLink, timeBefore);
-                    }
+                }
+                if (!skipWaittime) {
+                    waitTime(downloadLink, timeBefore);
                 }
                 submitForm(dlForm);
                 logger.info("Submitted DLForm");
-                checkErrors(downloadLink, account, true);
+                checkErrors(downloadLink, true);
                 dllink = getDllink();
                 if (dllink == null && (!br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"") || i == repeat)) {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else if (dllink == null && br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"")) {
-                    dlForm = br.getFormbyProperty("name", "F1");
+                    dlForm = findFormF1();
                     invalidateLastChallengeResponse();
                     continue;
                 } else {
@@ -727,6 +785,55 @@ public class XubsterCom extends antiDDoSForHost {
         }
     }
 
+    private Form findFormF1() {
+        Form dlForm = null;
+        /* First try to find Form for video hosts with multiple qualities. */
+        final Form[] forms = br.getForms();
+        for (final Form aForm : forms) {
+            final InputField op_field = aForm.getInputFieldByName("op");
+            /* E.g. name="op" value="download_orig" */
+            if (aForm.containsHTML("btn_download") && op_field != null && op_field.getValue().contains("download_")) {
+                dlForm = aForm;
+                break;
+            }
+        }
+        /* Nothing found? Fallback to standard download handling! */
+        if (dlForm == null) {
+            dlForm = br.getFormbyProperty("name", "F1");
+        }
+        return dlForm;
+    }
+
+    /**
+     * Checks if there are multiple video qualities available, finds html containing information of the highest video quality and sets
+     * filesize if available
+     */
+    private String getHighestQualityHTML() {
+        final String[] videoQualities = new Regex(correctedBR, "<tr>\\s*?<td>\\s*?<input[^>]*?onclick=\"download_video.*?</tr>").getColumn(-1);
+        long widthMax = 0;
+        long widthTmp = 0;
+        String targetHTML = null;
+        for (final String videoQualityHTML : videoQualities) {
+            final String filesizeTmpStr = new Regex(videoQualityHTML, "<td>(\\d+)x\\d+, \\d+[^<>\"]+</td>").getMatch(0);
+            if (filesizeTmpStr != null) {
+                widthTmp = SizeFormatter.getSize(filesizeTmpStr);
+                if (widthTmp > widthMax) {
+                    widthMax = widthTmp;
+                    targetHTML = videoQualityHTML;
+                }
+            } else {
+                /* This should not happen */
+                break;
+            }
+        }
+        return targetHTML;
+    }
+
+    private String getHighestVideoQualityFilesize() {
+        final String highestVideoQualityHTML = getHighestQualityHTML();
+        return new Regex(highestVideoQualityHTML, "<td>\\d+x\\d+, (\\d+[^<>\"]+)</td>").getMatch(0);
+    }
+
     /**
      * Check if a stored directlink exists under property 'property' and if so, check if it is still valid (leads to a downloadable content
      * [NOT html]).
@@ -760,12 +867,12 @@ public class XubsterCom extends antiDDoSForHost {
         return maxFree.get();
     }
 
-    /* do not add @Override here to keep 0.* compatibility */
+    @Override
     public boolean hasAutoCaptcha() {
         return true;
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    @Override
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
         if (acc == null) {
             /* no account, yes we can expect captcha */
@@ -775,6 +882,7 @@ public class XubsterCom extends antiDDoSForHost {
             /* Free accounts can have captchas */
             return true;
         }
+        /* Premium accounts do not have captchas */
         return false;
     }
 
@@ -821,7 +929,23 @@ public class XubsterCom extends antiDDoSForHost {
     private String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "(\"|')(" + dllinkRegexFile + ")\\1").getMatch(1);
+            dllink = new Regex(correctedBR, "(\"|')(" + String.format(dllinkRegexFile, DOMAINS) + ")\\1").getMatch(1);
+            /* Use wider and wider RegEx */
+            if (dllink == null) {
+                dllink = new Regex(correctedBR, "(" + String.format(dllinkRegexFile, DOMAINS) + ")(\"|')").getMatch(0);
+            }
+            if (dllink == null) {
+                /* Finally try without hardcoded domains */
+                dllink = new Regex(correctedBR, "(" + String.format(dllinkRegexFile, "[A-Za-z0-9\\-\\.]+") + ")(\"|')").getMatch(0);
+            }
+            if (dllink == null) {
+                /* Try short version */
+                dllink = new Regex(correctedBR, "(\"|')(" + String.format(dllinkRegexFile_2, DOMAINS) + ")\\1").getMatch(1);
+            }
+            if (dllink == null) {
+                /* Try short version without hardcoded domains and wide */
+                dllink = new Regex(correctedBR, "(" + String.format(dllinkRegexFile_2, DOMAINS) + ")").getMatch(0);
+            }
             if (dllink == null) {
                 final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
                 if (cryptedScripts != null && cryptedScripts.length != 0) {
@@ -879,7 +1003,11 @@ public class XubsterCom extends antiDDoSForHost {
         }
         if (dllink == null && IMAGEHOSTER) {
             /* Used for image-hosts */
-            final String[] possibleDllinks = new Regex(this.correctedBR, dllinkRegexImage).getColumn(0);
+            String[] possibleDllinks = new Regex(this.correctedBR, String.format(dllinkRegexImage, DOMAINS)).getColumn(0);
+            if (possibleDllinks == null || possibleDllinks.length == 0) {
+                /* Try without predefined domains */
+                possibleDllinks = new Regex(this.correctedBR, String.format(dllinkRegexImage, "[A-Za-z0-9\\-\\.]+")).getColumn(0);
+            }
             for (final String possibleDllink : possibleDllinks) {
                 /* Do NOT download thumbnails! */
                 if (possibleDllink != null && !possibleDllink.matches(".+_t\\.[A-Za-z]{3,4}$")) {
@@ -1005,7 +1133,7 @@ public class XubsterCom extends antiDDoSForHost {
      * This fixes filenames from all xfs modules: file hoster, audio/video streaming (including transcoded video), or blocked link checking
      * which is based on fuid.
      *
-     * @version 0.3
+     * @version 0.4
      * @author raztoki
      */
     private void fixFilename(final DownloadLink downloadLink) {
@@ -1021,7 +1149,7 @@ public class XubsterCom extends antiDDoSForHost {
             orgExt = orgNameExt.substring(orgNameExt.lastIndexOf("."));
         }
         if (!inValidate(orgExt)) {
-            orgName = new Regex(orgNameExt, "(.+)" + orgExt).getMatch(0);
+            orgName = new Regex(orgNameExt, "(.+)" + Pattern.quote(orgExt)).getMatch(0);
         } else {
             orgName = orgNameExt;
         }
@@ -1029,7 +1157,7 @@ public class XubsterCom extends antiDDoSForHost {
         String servNameExt = dl.getConnection() != null && getFileNameFromHeader(dl.getConnection()) != null ? Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())) : null;
         if (!inValidate(servNameExt) && servNameExt.contains(".")) {
             servExt = servNameExt.substring(servNameExt.lastIndexOf("."));
-            servName = new Regex(servNameExt, "(.+)" + servExt).getMatch(0);
+            servName = new Regex(servNameExt, "(.+)" + Pattern.quote(servExt)).getMatch(0);
         } else {
             servName = servNameExt;
         }
@@ -1056,7 +1184,7 @@ public class XubsterCom extends antiDDoSForHost {
     private void setFUID(final DownloadLink dl) throws PluginException {
         fuid = getFUIDFromURL(dl);
         /*
-         * Rare case: Hoster has special URLs (e.g. migrated from other script e.g. YetiShare to XFS) --> Correct (internal) fuid is only
+         * Rare case: Hoster has exotic URLs (e.g. migrated from other script e.g. YetiShare to XFS) --> Correct (internal) fuid is only
          * available via html
          */
         if (fuid == null) {
@@ -1102,7 +1230,7 @@ public class XubsterCom extends antiDDoSForHost {
      * Checks for (-& handles) all kinds of errors e.g. wrong captcha, wrong downloadpassword, waittimes and server error-responsecodes such
      * as 403, 404 and 503.
      */
-    private void checkErrors(final DownloadLink theLink, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
+    private void checkErrors(final DownloadLink theLink, final boolean checkAll) throws NumberFormatException, PluginException {
         if (checkAll) {
             if (new Regex(correctedBR, HTML_PASSWORDPROTECTED).matches() && correctedBR.contains("Wrong password")) {
                 /* handle password has failed in the past, additional try catching / resetting values */
@@ -1121,9 +1249,6 @@ public class XubsterCom extends antiDDoSForHost {
         }
         /** Wait time reconnect handling */
         if (new Regex(correctedBR, "(You have reached the download(\\-| )limit|You have to wait)").matches()) {
-            if (account != null) {
-                throw new AccountUnavailableException("You have reached the download-limit", 60 * 60 * 1000l);
-            }
             /* adjust this regex to catch the wait time string for COOKIE_HOST */
             String wait = new Regex(correctedBR, "((You have reached the download(\\-| )limit|You have to wait)[^<>]+)").getMatch(0);
             String tmphrs = new Regex(wait, "\\s+(\\d+)\\s+hours?").getMatch(0);
@@ -1169,19 +1294,18 @@ public class XubsterCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Error happened when generating Download Link'", 10 * 60 * 1000l);
         }
         /** Error handling for only-premium links */
-        if (new Regex(correctedBR, "( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download (?:larger|bigger) files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit|>This file is available for Premium Users only)").matches()) {
+        if (new Regex(correctedBR, "( can download files up to |>Upgrade your account to download (?:larger|bigger) files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit|>This file is available for Premium Users only)").matches()) {
             String filesizelimit = new Regex(correctedBR, "You can download files up to(.*?)only").getMatch(0);
             if (filesizelimit != null) {
                 filesizelimit = filesizelimit.trim();
-                logger.info("As free user you can download files up to " + filesizelimit + " only");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                throw new AccountRequiredException("As free user you can download files up to " + filesizelimit + " only");
             } else {
                 logger.info("Only downloadable via premium");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                throw new AccountRequiredException();
             }
         } else if (br.getURL().contains(URL_ERROR_PREMIUMONLY)) {
             logger.info("Only downloadable via premium");
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            throw new AccountRequiredException();
         } else if (correctedBR.contains(">Expired download session")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Expired download session'", 10 * 60 * 1000l);
         }
@@ -1211,14 +1335,16 @@ public class XubsterCom extends antiDDoSForHost {
      * download.
      */
     private void checkServerErrors() throws NumberFormatException, PluginException {
-        if (new Regex(correctedBR, Pattern.compile("No file", Pattern.CASE_INSENSITIVE)).matches()) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: 'no file'", 2 * 60 * 60 * 1000l);
+        // dead file
+        if (new Regex(correctedBR.trim(), "^No file$").matches()) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (new Regex(correctedBR, Pattern.compile("Wrong IP", Pattern.CASE_INSENSITIVE)).matches()) {
+        if (new Regex(correctedBR.trim(), "^Wrong IP$").matches()) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: 'Wrong IP'", 2 * 60 * 60 * 1000l);
         }
-        if (new Regex(correctedBR, "(File Not Found|<h1>404 Not Found</h1>)").matches()) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404#2", 30 * 60 * 1000l);
+        // most likely result of generated link that has expired -raztoki
+        if (new Regex(correctedBR.trim(), "(^File Not Found$|<h1>404 Not Found</h1>)").matches()) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error (404)", 30 * 60 * 1000l);
         }
     }
 
@@ -1257,7 +1383,7 @@ public class XubsterCom extends antiDDoSForHost {
             account.setValid(false);
             throw e;
         }
-        final String space[] = new Regex(correctedBR, "Used space[^<>]*</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
+        final String space[] = new Regex(correctedBR, ">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
         if ((space != null && space.length != 0) && (space[0] != null && space[1] != null)) {
             /* free users it's provided by default */
             ai.setUsedSpace(space[0] + " " + space[1]);
@@ -1266,18 +1392,15 @@ public class XubsterCom extends antiDDoSForHost {
             ai.setUsedSpace(space[0] + "Mb");
         }
         account.setValid(true);
-        final String availabletraffic = new Regex(correctedBR, "Traffic available[^<>]*</TD><TD><b>([^<>\"']+)</b>").getMatch(0);
+        /* Traffic can also be negative! */
+        final String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"']+)</b>").getMatch(0);
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
             availabletraffic.trim();
             /* need to set 0 traffic left, as getSize returns positive result, even when negative value supplied. */
-            final long max = SizeFormatter.getSize("30 GB");
             if (!availabletraffic.startsWith("-")) {
-                final long left = SizeFormatter.getSize(availabletraffic);
-                ai.setTrafficLeft(left);
-                ai.setTrafficMax(Math.max(left, max));
+                ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
             } else {
                 ai.setTrafficLeft(0);
-                ai.setTrafficMax(max);
             }
         } else {
             ai.setUnlimitedTraffic();
@@ -1291,16 +1414,36 @@ public class XubsterCom extends antiDDoSForHost {
         if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
             /* Expired premium or no expire date given --> It is usually a Free Account */
             account.setType(AccountType.FREE);
-            account.setMaxSimultanDownloads(1);
+            account.setMaxSimultanDownloads(-1);
             account.setConcurrentUsePossible(false);
         } else {
             /* Expire date is in the future --> It is a premium account */
             ai.setValidUntil(expire_milliseconds);
             account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(1);
+            account.setMaxSimultanDownloads(-1);
             account.setConcurrentUsePossible(true);
         }
         return ai;
+    }
+
+    private Form findLoginform(final Browser br) {
+        Form loginform = br.getFormbyProperty("name", "FL");
+        if (loginform == null) {
+            /* More complicated way to find loginform ... */
+            final Form[] allForms = this.br.getForms();
+            for (final Form aForm : allForms) {
+                final InputField inputFieldOP = aForm.getInputFieldByName("op");
+                if (inputFieldOP != null && "login".equalsIgnoreCase(inputFieldOP.getValue())) {
+                    loginform = aForm;
+                    break;
+                }
+            }
+        }
+        return loginform;
+    }
+
+    private boolean isLoggedinHTML() {
+        return br.containsHTML("op=logout");
     }
 
     private void login(final Account account, final boolean force) throws Exception {
@@ -1309,31 +1452,60 @@ public class XubsterCom extends antiDDoSForHost {
                 /* Load cookies */
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null && !force) {
+                boolean loggedInViaCookies = false;
+                if (cookies != null) {
                     br.setCookies(this.getHost(), cookies);
-                    return;
-                }
-                getPage(COOKIE_HOST + "/login.html");
-                final Form loginform = br.getFormbyProperty("name", "FL");
-                if (loginform == null) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!");
-                    } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!");
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "\r\nPlugin broken, please contact the JDownloader Support!");
+                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l) {
+                        /* We trust these cookies as they're not that old --> Do not check them */
+                        return;
+                    }
+                    getPage(COOKIE_HOST + "/");
+                    loggedInViaCookies = isLoggedinHTML();
+                    if (loggedInViaCookies) {
+                        /* Save new cookie-timestamp */
+                        account.saveCookies(br.getCookies(this.getHost()), "");
+                    }
+                    if (loggedInViaCookies && !force) {
+                        /* No additional check required e.g. for account type --> We know cookies are valid and we're logged in --> Done! */
+                        return;
                     }
                 }
-                loginform.put("login", Encoding.urlEncode(account.getUser()));
-                loginform.put("password", Encoding.urlEncode(account.getPass()));
-                submitForm(loginform);
-                if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłędny użytkownik/hasło lub kod Captcha wymagany do zalogowania!\r\nUpewnij się, że prawidłowo wprowadziłes hasło i nazwę użytkownika. Dodatkowo:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź hasło i nazwę użytkownika ręcznie bez użycia opcji Kopiuj i Wklej.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (!loggedInViaCookies) {
+                    getPage(COOKIE_HOST + "/login.html");
+                    if (br.getHttpConnection().getResponseCode() == 404) {
+                        /* Required for some XFS setups. */
+                        getPage(COOKIE_HOST + "/login");
+                    }
+                    Form loginform = findLoginform(this.br);
+                    if (loginform == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    loginform.put("login", Encoding.urlEncode(account.getUser()));
+                    loginform.put("password", Encoding.urlEncode(account.getPass()));
+                    if (br.containsHTML("class=\"g\\-recaptcha\"")) {
+                        final DownloadLink dlinkbefore = this.getDownloadLink();
+                        if (dlinkbefore == null) {
+                            this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "http://" + account.getHoster(), true));
+                        }
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                        if (dlinkbefore != null) {
+                            this.setDownloadLink(dlinkbefore);
+                        }
+                        loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    }
+                    submitForm(loginform);
+                    /* Missing login cookies or we still have the loginform --> Login failed */
+                    final boolean loginCookieOkay = br.getCookie(COOKIE_HOST, "login") != null || br.getCookie(COOKIE_HOST, "xfss") != null;
+                    final boolean loginFormOkay = findLoginform(this.br) == null;
+                    final boolean loginURLOkay = br.getURL().contains("op=") && !br.getURL().contains("op=login");
+                    if (!loginCookieOkay && !loginFormOkay && !loginURLOkay) {
+                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłędny użytkownik/hasło lub kod Captcha wymagany do zalogowania!\r\nUpewnij się, że prawidłowo wprowadziłes hasło i nazwę użytkownika. Dodatkowo:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź hasło i nazwę użytkownika ręcznie bez użycia opcji Kopiuj i Wklej.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
                     }
                 }
                 if (!br.getURL().contains("/?op=my_account")) {
@@ -1361,7 +1533,7 @@ public class XubsterCom extends antiDDoSForHost {
         if (account.getType() == AccountType.FREE) {
             /* Perform linkcheck after logging in */
             requestFileInformation(downloadLink);
-            doFree(downloadLink, account, true, -2, PROPERTY_DLLINK_ACCOUNT_FREE);
+            doFree(downloadLink, false, 1, PROPERTY_DLLINK_ACCOUNT_FREE);
         } else {
             String dllink = checkDirectLink(downloadLink, PROPERTY_DLLINK_ACCOUNT_PREMIUM);
             if (dllink == null) {
@@ -1372,12 +1544,12 @@ public class XubsterCom extends antiDDoSForHost {
                     if (dlform != null && new Regex(correctedBR, HTML_PASSWORDPROTECTED).matches()) {
                         handlePassword(dlform, downloadLink);
                     }
-                    checkErrors(downloadLink, account, true);
+                    checkErrors(downloadLink, true);
                     if (dlform == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     submitForm(dlform);
-                    checkErrors(downloadLink, account, true);
+                    checkErrors(downloadLink, true);
                     dllink = getDllink();
                 }
             }
@@ -1386,7 +1558,7 @@ public class XubsterCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, -2);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, false, 1);
             if (dl.getConnection().getContentType().contains("html")) {
                 checkResponseCodeErrors(dl.getConnection());
                 logger.warning("The final dllink seems not to be a file!");
@@ -1409,17 +1581,31 @@ public class XubsterCom extends antiDDoSForHost {
         final String redirect;
         if (!ibr.isFollowingRedirects() && (redirect = ibr.getRedirectLocation()) != null) {
             if (!IMAGEHOSTER) {
-                if (!new Regex(redirect, dllinkRegexFile).matches()) {
+                if (!isDllinkFile(redirect)) {
                     super.getPage(ibr, redirect);
                     return;
                 }
             } else {
-                if (!new Regex(redirect, dllinkRegexImage).matches()) {
+                if (!isDllinkImage(redirect)) {
                     super.getPage(ibr, redirect);
                     return;
                 }
             }
         }
+    }
+
+    private boolean isDllinkFile(final String url) {
+        if (url == null) {
+            return false;
+        }
+        return new Regex(url, Pattern.compile(String.format(dllinkRegexFile, "[A-Za-z0-9\\-\\.]+"), Pattern.CASE_INSENSITIVE)).matches();
+    }
+
+    private boolean isDllinkImage(final String url) {
+        if (url == null) {
+            return false;
+        }
+        return new Regex(url, Pattern.compile(String.format(dllinkRegexFile, "[A-Za-z0-9\\-\\.]+"), Pattern.CASE_INSENSITIVE)).matches();
     }
 
     @Override
