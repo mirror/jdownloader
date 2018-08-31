@@ -39,7 +39,7 @@ import jd.utils.JDUtilities;
 
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgsrc.ru" }, urls = { "http://(www\\.)?imgsrc\\.(ru|su|ro)/(main/passchk\\.php\\?(ad|id)=\\d+(&pwd=[a-z0-9]{32})?|main/(preword|pic_tape|warn|pic)\\.php\\?ad=\\d+(&pwd=[a-z0-9]{32})?|[^/]+/a?\\d+\\.html)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgsrc.ru" }, urls = { "https?://(www\\.)?imgsrc\\.(ru|su|ro)/(main/passchk\\.php\\?(ad|id)=\\d+(&pwd=[a-z0-9]{32})?|main/(preword|pic_tape|warn|pic)\\.php\\?ad=\\d+(&pwd=[a-z0-9]{32})?|[^/]+/a?\\d+\\.html)" })
 public class ImgSrcRu extends PluginForDecrypt {
     // dev notes
     // &pwd= is a md5 hash id once you've provided password for that album.
@@ -92,7 +92,7 @@ public class ImgSrcRu extends PluginForDecrypt {
         this.startTime = System.currentTimeMillis();
         this.decryptedLinks = new ArrayList<DownloadLink>();
         this.reason = null;
-        parameter = param.toString().replaceAll("https?://(www\\.)?imgsrc\\.(ru|ro|su)/", "http://imgsrc.ru/");
+        parameter = param.toString().replaceAll("https?://(www\\.)?imgsrc\\.(ru|ro|su)/", "https://imgsrc.ru/");
         final List<String> passwords = getPreSetPasswords();
         if (param.getDecrypterPassword() != null && !passwords.contains(param.getDecrypterPassword())) {
             passwords.add(param.getDecrypterPassword());
@@ -154,7 +154,7 @@ public class ImgSrcRu extends PluginForDecrypt {
             } else {
                 id = uid;
             }
-            parameter = "http://imgsrc.ru/" + username + "/" + id + ".html";
+            parameter = "https://imgsrc.ru/" + username + "/" + id + ".html";
             param.setCryptedUrl(parameter);
             if (!br.getURL().matches(Pattern.quote(parameter) + ".*?")) {
                 if (!getPage(parameter, param)) {
@@ -230,7 +230,7 @@ public class ImgSrcRu extends PluginForDecrypt {
             final String currentLink = br.getURL();
             for (String dl : imgs) {
                 String upid = new Regex(dl, "/(\\d+)\\.html").getMatch(0);
-                final DownloadLink img = createDownloadlink("http://decryptedimgsrc.ru" + dl);
+                final DownloadLink img = createDownloadlink("https://decryptedimgsrc.ru" + dl);
                 img.setProperty("Referer", currentLink);
                 img.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPEG);
                 img.setFinalFileName(upid);
@@ -299,7 +299,7 @@ public class ImgSrcRu extends PluginForDecrypt {
                 }
                 // needs to be before password
                 if (br.containsHTML("Continue to album(?: >>)?")) {
-                    String newLink = br.getRegex("\\((\"|')right\\1,function\\(\\) \\{window\\.location=('|\")(http://imgsrc\\.ru/[^<>\"'/]+/[a-z0-9]+\\.html((\\?pwd=)?(\\?pwd=[a-z0-9]{32})?)?)\\2").getMatch(2);
+                    String newLink = br.getRegex("\\((\"|')right\\1,function\\(\\) \\{window\\.location=('|\")(https?://imgsrc\\.ru/[^<>\"'/]+/[a-z0-9]+\\.html((\\?pwd=)?(\\?pwd=[a-z0-9]{32})?)?)\\2").getMatch(2);
                     if (newLink == null) {
                         /* This is also possible: "/blablabla/[0-9]+.html?pwd=&" */
                         newLink = br.getRegex("href=(/[^<>\"]+\\?pwd=[^<>\"/]*?)><br><br>Continue to album >></a>").getMatch(0);
@@ -345,7 +345,7 @@ public class ImgSrcRu extends PluginForDecrypt {
                     this.getPluginConfig().setProperty("lastusedpassword", password);
                     pwd = br.getRegex("\\?pwd=([a-z0-9]{32})").getMatch(0);
                 }
-                if (br.getURL().equals("http://imgsrc.ru/")) {
+                if (br.getURL().equals("http://imgsrc.ru/") || br.getURL().equals("https://imgsrc.ru/")) {
                     reason = Reason.OFFLINE;
                     return false;
                 }

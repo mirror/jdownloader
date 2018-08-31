@@ -65,7 +65,7 @@ public class ImgSrcRu extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://imgsrc.ru/main/dudes.php";
+        return "https://imgsrc.ru/main/dudes.php";
     }
 
     public boolean hasAutoCaptcha() {
@@ -279,7 +279,7 @@ public class ImgSrcRu extends PluginForHost {
             }
         }
         if (ddlink == null) {
-            ddlink = br.getRegex("name=bb onclick='select\\(\\);' type=text style='\\{width:\\d+;\\}' value='\\[URL=[^<>\"]+\\]\\[IMG\\](http://[^<>\"]*?)\\[/IMG\\]").getMatch(0);
+            ddlink = br.getRegex("name=bb onclick='select\\(\\);' type=text style='\\{width:\\d+;\\}' value='\\[URL=[^<>\"]+\\]\\[IMG\\](https?://[^<>\"]*?)\\[/IMG\\]").getMatch(0);
         }
     }
 
@@ -320,7 +320,7 @@ public class ImgSrcRu extends PluginForHost {
         }
         // needs to be before password
         if (br.containsHTML(">Album foreword:.+Continue to album >></a>")) {
-            final String newLink = br.getRegex(">shortcut\\.add\\(\"Right\",function\\(\\) \\{window\\.location=\\'(http://imgsrc\\.ru/[^<>\"\\'/]+/[a-z0-9]+\\.html(\\?pwd=([a-z0-9]{32})?)?)\\'").getMatch(0);
+            final String newLink = br.getRegex(">shortcut\\.add\\(\"Right\",function\\(\\) \\{window\\.location=\\'(https?://imgsrc\\.ru/[^<>\"\\'/]+/[a-z0-9]+\\.html(\\?pwd=([a-z0-9]{32})?)?)\\'").getMatch(0);
             if (newLink == null) {
                 logger.warning("Couldn't process Album forward");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
