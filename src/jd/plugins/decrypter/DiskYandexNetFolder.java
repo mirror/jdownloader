@@ -17,13 +17,9 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.net.URLDecoder;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Random;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -41,6 +37,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "disk.yandex.net", "docviewer.yandex.com" }, urls = { "https?://(?:www\\.)?(((((mail|disk)\\.)?yandex\\.(?:net|com|com\\.tr|ru|ua)|yadi\\.sk)/(disk/)?public/?(\\?hash=.+|#.+))|(?:yadi\\.sk|yadisk\\.cc)/(?:d|i)/[A-Za-z0-9\\-_]+(/[^/]+){0,}|yadi\\.sk/mail/\\?hash=.+)|https?://yadi\\.sk/a/[A-Za-z0-9\\-_]+", "https?://docviewer\\.yandex\\.(?:net|com|com\\.tr|ru|ua)/\\?url=ya\\-disk\\-public%3A%2F%2F.+" })
 public class DiskYandexNetFolder extends PluginForDecrypt {
@@ -147,7 +147,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             } else {
                 rawHash = hash_long_decoded;
             }
-            final String addedLink = "https://disk.yandex.com/public/?hash=" + URLEncoder.encode(rawHash, "UTF-8");
+            final String addedLink = "https://disk.yandex.com/public/?hash=" + URLEncode.encodeURIComponent(rawHash);
             this.br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
             this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             main.setProperty("mainlink", addedLink);
@@ -162,8 +162,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                     logger.info("Decryption aborted by user");
                     return decryptedLinks;
                 }
-                final String encodedMainPath = Encoding.urlEncode(path_main).replace("+", "%20");
-                getPage("https://cloud-api.yandex.net/v1/disk/public/resources?limit=" + entries_per_request + "&offset=" + offset + "&public_key=" + URLEncoder.encode(rawHash, "UTF-8") + "&path=" + encodedMainPath);
+                getPage("https://cloud-api.yandex.net/v1/disk/public/resources?limit=" + entries_per_request + "&offset=" + offset + "&public_key=" + URLEncode.encodeURIComponent(rawHash) + "&path=" + URLEncode.encodeURIComponent(path_main));
                 if (PluginJSonUtils.getJsonValue(br, "error") != null) {
                     decryptedLinks.add(this.createOfflinelink(addedLink));
                     return decryptedLinks;
@@ -220,7 +219,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                     String name = (String) entries.get("name");
                     if (type.equals(JSON_TYPE_DIR)) {
                         /* Subfolders go back into our decrypter! */
-                        final String folderlink = "https://disk.yandex.com/public/?hash=" + URLEncoder.encode(hash, "UTF-8") + "%3A" + URLEncoder.encode(path, "UTF-8");
+                        final String folderlink = "https://disk.yandex.com/public/?hash=" + URLEncode.encodeURIComponent(hash) + "%3A" + URLEncode.encodeURIComponent(path);
                         final DownloadLink dl = createDownloadlink(folderlink);
                         if (StringUtils.isNotEmpty(path) && !StringUtils.equals(path, "/")) {
                             dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, path);
@@ -242,18 +241,18 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                             /*
                              * Set contentURL which links to a comfortable web-view of documents whenever it makes sense.
                              */
-                            url_content = "https://docviewer.yandex.com/?url=ya-disk-public%3A%2F%2F" + URLEncoder.encode(hash, "UTF-8");
+                            url_content = "https://docviewer.yandex.com/?url=ya-disk-public%3A%2F%2F" + URLEncode.encodeURIComponent(hash);
                         } else {
                             /*
                              * We do not have any URL - set main URL.
                              */
-                            url_content = "https://disk.yandex.com/public/?hash=" + URLEncoder.encode(hash, "UTF-8");
+                            url_content = "https://disk.yandex.com/public/?hash=" + URLEncode.encodeURIComponent(hash);
                         }
                         /*
                          * We want the user to have an URL which he can open via browser and it does not only open up the root of the folder
                          * but the exact file he wants to have!
                          */
-                        url_content += "%3A" + URLEncoder.encode(path, "UTF-8");
+                        url_content += "%3A" + URLEncode.encodeURIComponent(path);
                         jd.plugins.hoster.DiskYandexNet.setRawHash(dl, rawHash);
                         dl.setProperty("mainlink", url_content);
                         if (md5 != null) {
@@ -337,7 +336,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 }
                 fp.setName(fpName);
             } else {
-                br.postPage("https://" + domain + "/album-models/?_m=resources", "_model.0=resources&idContext.0=%2Falbum%2F" + Encoding.urlEncode(rawHash) + "&order.0=1&sort.0=order_index&offset.0=" + offset + "&amount.0=" + maxItemsPerPage + "&idItemLast.0=" + Encoding.urlEncode(idItemLast) + "&idClient=" + clientID + "&version=" + jd.plugins.hoster.DiskYandexNet.VERSION_YANDEX_PHOTO_ALBUMS + "&sk=" + sk);
+                br.postPage("https://" + domain + "/album-models/?_m=resources", "_model.0=resources&idContext.0=%2Falbum%2F" + URLEncode.encodeURIComponent(rawHash) + "&order.0=1&sort.0=order_index&offset.0=" + offset + "&amount.0=" + maxItemsPerPage + "&idItemLast.0=" + URLEncode.encodeURIComponent(idItemLast) + "&idClient=" + clientID + "&version=" + jd.plugins.hoster.DiskYandexNet.VERSION_YANDEX_PHOTO_ALBUMS + "&sk=" + sk);
                 entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
                 modelObjects = (ArrayList<Object>) entries.get("models");
             }
@@ -360,7 +359,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                     logger.info("Stopping to avoid an endless loop because of duplicates / wrong 'idItemLast.0' value");
                     return;
                 }
-                final String url = String.format("https://yadi.sk/a/%s/%s", hash_short, item_id);
+                final String url = String.format("https://yadi.sk/a/%s/%s", URLEncode.encodeURIComponent(hash_short), URLEncode.encodeURIComponent(item_id));
                 final DownloadLink dl = this.createDownloadlink(url);
                 dl.setLinkID(hash_short + "/" + item_id);
                 jd.plugins.hoster.DiskYandexNet.parseInformationAPIAvailablecheckAlbum(this, dl, entries);
