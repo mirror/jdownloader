@@ -24,10 +24,6 @@ import java.util.List;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -52,6 +48,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "disk.yandex.net", "video.yandex.ru", "yadi.sk" }, urls = { "http://yandexdecrypted\\.net/\\d+", "http://video\\.yandex\\.ru/(iframe/[A-Za-z0-9]+/[A-Za-z0-9]+\\.\\d+|users/[A-Za-z0-9]+/view/\\d+)", "https://yadi\\.sk/a/[A-Za-z0-9\\-_]+/[a-f0-9]{24}" })
 public class DiskYandexNet extends PluginForHost {
@@ -110,7 +111,7 @@ public class DiskYandexNet extends PluginForHost {
     private String getMainLink(final DownloadLink dl) throws Exception {
         String mainlink = dl.getStringProperty("mainlink", null);
         if (mainlink == null && getRawHash(dl) != null) {
-            mainlink = String.format("https://yadi.sk/public/?hash=%s", URLEncoder.encode(getRawHash(dl), "UTF-8"));
+            mainlink = String.format("https://yadi.sk/public/?hash=%s", URLEncode.encodeURIComponent(getRawHash(dl)));
         }
         if (mainlink == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -226,7 +227,7 @@ public class DiskYandexNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (use_api_file_free_availablecheck) {
-                getPage("https://cloud-api.yandex.net/v1/disk/public/resources?public_key=" + URLEncoder.encode(getRawHash(link), "UTF-8") + "&path=" + URLEncoder.encode(this.getPath(link), "UTF-8"));
+                getPage("https://cloud-api.yandex.net/v1/disk/public/resources?public_key=" + URLEncode.encodeURIComponent(getRawHash(link)) + "&path=" + URLEncode.encodeURIComponent(this.getPath(link)));
                 if (apiAvailablecheckIsOffline(br)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -290,7 +291,6 @@ public class DiskYandexNet extends PluginForHost {
         final String sha256 = (String) entries.get("sha256");
         if (error != null || StringUtils.isEmpty(filename) || StringUtils.isEmpty(path) || StringUtils.isEmpty(hash) || filesize == -1) {
             /* Whatever - our link is probably offline! */
-            dl.setAvailable(false);
             return AvailableStatus.FALSE;
         }
         filename = plugin.encodeUnicode(filename);
@@ -304,7 +304,6 @@ public class DiskYandexNet extends PluginForHost {
         dl.setProperty("hash_main", hash);
         dl.setFinalFileName(filename);
         dl.setDownloadSize(filesize);
-        dl.setAvailable(true);
         return AvailableStatus.TRUE;
     }
 
@@ -317,13 +316,11 @@ public class DiskYandexNet extends PluginForHost {
         String filename = (String) entries.get("name");
         if (error != null || StringUtils.isEmpty(filename) || filesize == -1) {
             /* Whatever - our link is probably offline! */
-            dl.setAvailable(false);
             return AvailableStatus.FALSE;
         }
         filename = plugin.encodeUnicode(filename);
         dl.setFinalFileName(filename);
         dl.setDownloadSize(filesize);
-        dl.setAvailable(true);
         String dllink = null, dllinkAlt = null;
         for (final Object versiono : versions) {
             entriesMeta = (LinkedHashMap<String, Object>) versiono;
@@ -414,7 +411,7 @@ public class DiskYandexNet extends PluginForHost {
                      * https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=public_key&path=/
                      */
                     /* Free API download. */
-                    getPage("https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=" + URLEncoder.encode(getRawHash(downloadLink), "UTF-8") + "&path=" + Encoding.urlEncode(this.getPath(downloadLink)));
+                    getPage("https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=" + URLEncode.encodeURIComponent(getRawHash(downloadLink)) + "&path=" + URLEncode.encodeURIComponent(this.getPath(downloadLink)));
                     if (this.br.containsHTML("DiskNotFoundError")) {
                         /* Inside key 'error' */
                         /*
@@ -764,7 +761,7 @@ public class DiskYandexNet extends PluginForHost {
                 if (!moveIntoAccHandlingActive && !downloadableViaAccountOnly) {
                     logger.info("MoveToAccount handling is inactive -> Starting free account download handling");
                     getPage(getMainLink(link));
-                    br.postPage("https://" + getCurrentDomain() + "/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fpublic%2F" + URLEncoder.encode(hash, "UTF-8") + "&idClient=" + CLIENT_ID + "&version=" + VERSION_YANDEX_FILES + "&sk=" + this.ACCOUNT_SK);
+                    br.postPage("https://" + getCurrentDomain() + "/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fpublic%2F" + URLEncode.encodeURIComponent(hash) + "&idClient=" + CLIENT_ID + "&version=" + VERSION_YANDEX_FILES + "&sk=" + this.ACCOUNT_SK);
                     dllink = siteGetDllink(link);
                 }
                 if (moveIntoAccHandlingActive || downloadableViaAccountOnly || dllink == null) {
