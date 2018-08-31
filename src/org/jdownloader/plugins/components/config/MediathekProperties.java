@@ -96,6 +96,7 @@ public interface MediathekProperties extends DownloadLinkDatabindingInterface {
     @Key("BANDWIDTH")
     long getBandwidth();
 
+    /** Use this to set bandwidth or bitrate here. This is to differentiate between same resolution but different bitrate files. */
     @Key("BANDWIDTH")
     void setBandwidth(long bandwidth);
 }
