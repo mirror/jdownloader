@@ -158,6 +158,7 @@ public class ImgSrcRu extends PluginForHost {
                         replaced = var_e[0];
                         js = js.replaceFirst("getElementById\\(" + Pattern.quote(var_e[0]) + "\\)", "getElementById(" + var_e[1] + ").src");
                         js = js.replaceFirst("d=", "var q=");
+                        js = js.replaceAll("String\\.fromCodePoint", "String.fromCharCode");// different method names Javascript<->Java
                         js = js.replaceFirst("q=d.src,", "");
                     }
                     var = new Regex(js, "((?:(?:var|let)\\s*)?(\\w+)\\s*=\\s*document\\.getElementById\\('?([\\w_]+)'?\\)\\.(\\w+)?,)").getRow(0);
@@ -233,6 +234,8 @@ public class ImgSrcRu extends PluginForHost {
                 }
                 if (result != null && result instanceof ConsString) {
                     ddlink = result.toString();
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
         } catch (Exception e) {
