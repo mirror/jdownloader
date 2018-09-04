@@ -25,11 +25,13 @@ import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
+import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "box.com" }, urls = { "https?://(?:\\w+\\.)*box\\.(?:net|com)/s(?:hared)?/(?:[a-z0-9]{32}|[a-z0-9]{20})(?:/folder/\\d+)?" })
@@ -78,21 +80,25 @@ public class BoxCom extends antiDDoSForDecrypt {
                     return decryptedLinks;
                 }
                 // single link should still have fuid
-                final String fuid = br.getRegex("typedID\":\"f_(\\d+)\"").getMatch(0);
-                final String filename = br.getRegex("\"name\":\"([^<>\"]*?)\"").getMatch(0);
+                final String fuid = br.getRegex("typedID\"\\s*:\\s*\"f_(\\d+)\"").getMatch(0);
+                final String filename = br.getRegex("\"name\"\\s*:\\s*\"([^<>\"]*?)\"").getMatch(0);
+                final String itemSize = br.getRegex("\"itemSize\"\\s*:\\s*(\\d+)").getMatch(0);
                 if (fuid == null) {
                     if (br.containsHTML("/login\\?redirect_url=" + Pattern.quote(br._getURL().getPath()))) {
                         // login required
                         decryptedLinks.add(createOfflinelink(cryptedlink, filename, "Login Required, unsupported feature"));
                         return decryptedLinks;
                     }
-                    throw new DecrypterException("Decrypter broken for link: " + cryptedlink);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 final String url = br.getURL() + "/file/" + fuid;
                 final DownloadLink dl = createDownloadlink(url);
                 // otherwise will enter decrypter again..
                 dl.setAvailable(true);
                 dl.setName(Encoding.htmlOnlyDecode(filename));
+                if (itemSize != null) {
+                    dl.setDownloadSize(SizeFormatter.getSize(itemSize));
+                }
                 dl.setLinkID("box.com://file/" + fuid);
                 decryptedLinks.add(dl);
                 return decryptedLinks;
@@ -160,21 +166,25 @@ public class BoxCom extends antiDDoSForDecrypt {
     }
 
     private boolean hasNextPage() throws Exception {
-        final int pageCount = Integer.parseInt(br.getRegex("\"pageCount\":(\\d+),").getMatch(0));
-        final int pageNumber = Integer.parseInt(br.getRegex("\"pageNumber\":(\\d+),").getMatch(0));
-        if (pageCount > pageNumber) {
-            final int nextPage = pageNumber + 1;
-            br.getPage(cryptedlink + "?page=" + nextPage);
-            return true;
-        }
-        final String r = "<a href=\"([^\"]+pageNumber=\\d+)\"[^>]+aria-label=\"Next Page\"[^>]+";
-        final String result = br.getRegex(r).getMatch(-1);
-        final boolean nextPage = result != null ? !new Regex(result, "btn page-forward is-disabled").matches() : false;
-        if (nextPage) {
-            final String url = new Regex(result, r).getMatch(0);
-            if (url != null) {
-                br.getPage(Encoding.htmlOnlyDecode(url));
+        final String pageCountString = br.getRegex("\"pageCount\":(\\d+),").getMatch(0);
+        final String pageNumerString = br.getRegex("\"pageNumber\":(\\d+),").getMatch(0);
+        if (pageCountString != null && pageNumerString != null) {
+            final int pageCount = Integer.parseInt(pageCountString);
+            final int pageNumber = Integer.parseInt(pageNumerString);
+            if (pageCount > pageNumber) {
+                final int nextPage = pageNumber + 1;
+                br.getPage(cryptedlink + "?page=" + nextPage);
                 return true;
+            }
+            final String r = "<a href=\"([^\"]+pageNumber=\\d+)\"[^>]+aria-label=\"Next Page\"[^>]+";
+            final String result = br.getRegex(r).getMatch(-1);
+            final boolean nextPage = result != null ? !new Regex(result, "btn page-forward is-disabled").matches() : false;
+            if (nextPage) {
+                final String url = new Regex(result, r).getMatch(0);
+                if (url != null) {
+                    br.getPage(Encoding.htmlOnlyDecode(url));
+                    return true;
+                }
             }
         }
         return false;

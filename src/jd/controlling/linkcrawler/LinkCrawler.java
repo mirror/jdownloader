@@ -106,8 +106,8 @@ import org.jdownloader.translate._JDT;
 public class LinkCrawler {
     private static enum DISTRIBUTE {
         STOP,
+        BLACKLISTED,
         NEXT,
-        SKIP,
         CONTINUE
     }
 
@@ -1309,8 +1309,22 @@ public class LinkCrawler {
                                             dpi.setName(finalPackageName);
                                             possibleCryptedLink.setDesiredPackageInfo(dpi);
                                         }
+                                        final CrawledLink deepLink;
                                         if (possibleCryptedLinks.size() == 1) {
-                                            final CrawledLink link = possibleCryptedLinks.get(0);
+                                            deepLink = possibleCryptedLinks.get(0);
+                                        } else if (source.isCrawlDeep() || (matchingRule != null && LinkCrawlerRule.RULE.DEEPDECRYPT.equals(matchingRule.getRule()))) {
+                                            CrawledLink deep = null;
+                                            for (final CrawledLink possibleCryptedLink : possibleCryptedLinks) {
+                                                if (StringUtils.equalsIgnoreCase(possibleCryptedLink.getURL(), source.getURL())) {
+                                                    deep = possibleCryptedLink;
+                                                    break;
+                                                }
+                                            }
+                                            deepLink = deep;
+                                        } else {
+                                            deepLink = null;
+                                        }
+                                        if (deepLink != null) {
                                             final String finalBaseUrl = new Regex(brURL, "(https?://.*?)(\\?|$)").getMatch(0);
                                             final String crawlContent;
                                             if (matchingRule != null && matchingRule._getDeepPattern() != null) {
@@ -1374,7 +1388,7 @@ public class LinkCrawler {
                                                 }
                                             }
                                             /* first check if the url itself can be handled */
-                                            link.setUnknownHandler(new UnknownCrawledLinkHandler() {
+                                            deepLink.setUnknownHandler(new UnknownCrawledLinkHandler() {
                                                 @Override
                                                 public void unhandledCrawledLink(CrawledLink link, LinkCrawler lc) {
                                                     /* unhandled url, lets parse the content on it */
@@ -1446,7 +1460,7 @@ public class LinkCrawler {
         try {
             if (canHandle(pluginForHost, url, link)) {
                 if (isBlacklisted(pluginForHost)) {
-                    return DISTRIBUTE.NEXT;
+                    return DISTRIBUTE.BLACKLISTED;
                 }
                 if (insideCrawlerPlugin()) {
                     if (!generation.isValid()) {
@@ -1519,7 +1533,7 @@ public class LinkCrawler {
         try {
             if (canHandle(pDecrypt, url, link)) {
                 if (isBlacklisted(pDecrypt)) {
-                    return DISTRIBUTE.NEXT;
+                    return DISTRIBUTE.BLACKLISTED;
                 }
                 if (!breakPluginForDecryptLoop(pDecrypt, link)) {
                     final java.util.List<CrawledLink> allPossibleCryptedLinks = getCryptedLinks(pDecrypt, link, link.getCustomCrawledLinkModifier());
@@ -1854,10 +1868,15 @@ public class LinkCrawler {
                             switch (ret) {
                             case STOP:
                                 return;
-                            case SKIP:
-                            case NEXT:
-                                continue mainloop;
                             case CONTINUE:
+                                break;
+                            case BLACKLISTED:
+                                continue mainloop;
+                            case NEXT:
+                                handleUnhandledCryptedLink(possibleCryptedLink);
+                                continue mainloop;
+                            default:
+                                LogController.CL().log(new IllegalStateException(ret.name()));
                                 break;
                             }
                         }
@@ -1890,14 +1909,17 @@ public class LinkCrawler {
                                     switch (ret) {
                                     case STOP:
                                         return;
+                                    case CONTINUE:
+                                        break;
+                                    case BLACKLISTED:
+                                        continue mainloop;
                                     case NEXT:
                                         if (it.previousIndex() > lazyCrawlerPlugins.size() / 50) {
                                             resetSortedLazyCrawlerPlugins(lazyCrawlerPlugins);
                                         }
                                         continue mainloop;
-                                    case SKIP:
-                                        break loop;
-                                    case CONTINUE:
+                                    default:
+                                        LogController.CL().log(new IllegalStateException(ret.name()));
                                         break;
                                     }
                                 }
@@ -1912,14 +1934,17 @@ public class LinkCrawler {
                                     switch (ret) {
                                     case STOP:
                                         return;
+                                    case CONTINUE:
+                                        break;
+                                    case BLACKLISTED:
+                                        continue mainloop;
                                     case NEXT:
                                         if (it.previousIndex() > sortedLazyHostPlugins.size() / 50) {
                                             resetSortedLazyHostPlugins(sortedLazyHostPlugins);
                                         }
                                         continue mainloop;
-                                    case SKIP:
-                                        break loop;
-                                    case CONTINUE:
+                                    default:
+                                        LogController.CL().log(new IllegalStateException(ret.name()));
                                         break;
                                     }
                                 }
@@ -1933,10 +1958,13 @@ public class LinkCrawler {
                                 switch (ret) {
                                 case STOP:
                                     return;
-                                case SKIP:
+                                case CONTINUE:
+                                    break;
+                                case BLACKLISTED:
                                 case NEXT:
                                     continue mainloop;
-                                case CONTINUE:
+                                default:
+                                    LogController.CL().log(new IllegalStateException(ret.name()));
                                     break;
                                 }
                             }
@@ -1953,10 +1981,13 @@ public class LinkCrawler {
                                         switch (ret) {
                                         case STOP:
                                             return;
-                                        case SKIP:
+                                        case CONTINUE:
+                                            break;
+                                        case BLACKLISTED:
                                         case NEXT:
                                             continue mainloop;
-                                        case CONTINUE:
+                                        default:
+                                            LogController.CL().log(new IllegalStateException(ret.name()));
                                             break;
                                         }
                                     } else {
@@ -1993,10 +2024,13 @@ public class LinkCrawler {
                                         switch (ret) {
                                         case STOP:
                                             return;
-                                        case SKIP:
+                                        case CONTINUE:
+                                            break;
+                                        case BLACKLISTED:
                                         case NEXT:
                                             continue mainloop;
-                                        case CONTINUE:
+                                        default:
+                                            LogController.CL().log(new IllegalStateException(ret.name()));
                                             break;
                                         }
                                     } else {
@@ -2021,25 +2055,32 @@ public class LinkCrawler {
                                                 switch (ret) {
                                                 case STOP:
                                                     return;
-                                                case SKIP:
+                                                case CONTINUE:
+                                                    break;
+                                                case BLACKLISTED:
                                                     continue mainloop;
                                                 case NEXT:
                                                     loopPreventionEmbedded.put(possibleCryptedLink, this);
+                                                    handleUnhandledCryptedLink(possibleCryptedLink);
                                                     continue mainloop;
                                                 default:
+                                                    LogController.CL().log(new IllegalStateException(ret.name()));
                                                     break;
                                                 }
                                             }
                                         }
                                         if (DirectHTTPPermission.ALWAYS.equals(directHTTPPermission)) {
-                                            final DISTRIBUTE ret2 = distributePluginForHost(httpPlugin, generation, url, createCopyOf(possibleCryptedLink));
-                                            switch (ret2) {
+                                            final DISTRIBUTE ret = distributePluginForHost(httpPlugin, generation, url, createCopyOf(possibleCryptedLink));
+                                            switch (ret) {
                                             case STOP:
                                                 return;
-                                            case SKIP:
-                                            case NEXT:
-                                                continue mainloop;
                                             case CONTINUE:
+                                                break;
+                                            case NEXT:
+                                            case BLACKLISTED:
+                                                continue mainloop;
+                                            default:
+                                                LogController.CL().log(new IllegalStateException(ret.name()));
                                                 break;
                                             }
                                         } else {
@@ -2077,12 +2118,16 @@ public class LinkCrawler {
                                         switch (ret) {
                                         case STOP:
                                             return;
-                                        case SKIP:
+                                        case CONTINUE:
+                                            break;
+                                        case BLACKLISTED:
                                             continue mainloop;
                                         case NEXT:
                                             loopPreventionEmbedded.put(possibleCryptedLink, this);
+                                            handleUnhandledCryptedLink(possibleCryptedLink);
                                             continue mainloop;
                                         default:
+                                            LogController.CL().log(new IllegalStateException(ret.name()));
                                             break;
                                         }
                                     }
