@@ -62,6 +62,11 @@ public class FileBoomMe extends K2SApi {
     }
 
     @Override
+    protected boolean useAPI() {
+        return true;
+    }
+
+    @Override
     protected boolean enforcesHTTPS() {
         return true;
     }

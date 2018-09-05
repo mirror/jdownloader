@@ -36,6 +36,7 @@ import jd.parser.html.HTMLParser;
 import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -222,11 +223,11 @@ public class LaFileCom extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, false, 1, "freelink");
+        doFree(downloadLink, null, false, 1, "freelink");
     }
 
     @SuppressWarnings("unused")
-    public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    public void doFree(final DownloadLink downloadLink, Account account, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         br.setFollowRedirects(false);
         passCode = downloadLink.getStringProperty("pass");
         // First, bring up saved final links
@@ -243,7 +244,7 @@ public class LaFileCom extends antiDDoSForHost {
         }
         // Fourth, continue like normal.
         if (dllink == null) {
-            checkErrors(downloadLink, false);
+            checkErrors(downloadLink, account, false);
             final Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
                 download1.remove("method_premium");
@@ -260,7 +261,7 @@ public class LaFileCom extends antiDDoSForHost {
                 }
                 // end of backward compatibility
                 submitForm(download1);
-                checkErrors(downloadLink, false);
+                checkErrors(downloadLink, account, false);
                 dllink = getDllink();
             }
         }
@@ -365,7 +366,7 @@ public class LaFileCom extends antiDDoSForHost {
                 }
                 submitForm(dlForm);
                 logger.info("Submitted DLForm");
-                checkErrors(downloadLink, true);
+                checkErrors(downloadLink, account, true);
                 dllink = getDllink();
                 if (dllink == null && (!br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"") || i == repeat)) {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
@@ -626,7 +627,7 @@ public class LaFileCom extends antiDDoSForHost {
         return passCode;
     }
 
-    public void checkErrors(final DownloadLink theLink, final boolean checkAll) throws NumberFormatException, PluginException {
+    public void checkErrors(final DownloadLink theLink, Account account, final boolean checkAll) throws NumberFormatException, PluginException {
         if (checkAll) {
             if (new Regex(correctedBR, PASSWORDTEXT).matches() && correctedBR.contains("Wrong password")) {
                 // handle password has failed in the past, additional try
@@ -642,6 +643,13 @@ public class LaFileCom extends antiDDoSForHost {
             }
             if (correctedBR.contains("\">Skipped countdown<")) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Fatal countdown error (countdown skipped)");
+            }
+        }
+        if (new Regex(correctedBR, "You have reached download limit").matches()) {
+            if (account != null) {
+                throw new AccountUnavailableException(60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
             }
         }
         /** Wait time reconnect handling */
@@ -660,7 +668,11 @@ public class LaFileCom extends antiDDoSForHost {
             String tmpdays = new Regex(WAIT, "\\s+(\\d+)\\s+days?").getMatch(0);
             if (tmphrs == null && tmpmin == null && tmpsec == null && tmpdays == null) {
                 logger.info("Waittime regexes seem to be broken");
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
+                if (account != null) {
+                    throw new AccountUnavailableException(60 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
+                }
             } else {
                 int minutes = 0, seconds = 0, hours = 0, days = 0;
                 if (tmphrs != null) {
@@ -675,9 +687,12 @@ public class LaFileCom extends antiDDoSForHost {
                 if (tmpdays != null) {
                     days = Integer.parseInt(tmpdays);
                 }
-                int waittime = ((days * 24 * 3600) + (3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
+                final int waittime = ((days * 24 * 3600) + (3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
                 logger.info("Detected waittime #2, waiting " + waittime + "milliseconds");
                 /** Not enough wait time to reconnect->Wait and try again */
+                if (account != null) {
+                    throw new AccountUnavailableException(waittime);
+                }
                 if (waittime < 180000) {
                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.xfilesharingprobasic.allwait", ALLWAIT_SHORT), waittime);
                 }
@@ -858,7 +873,7 @@ public class LaFileCom extends antiDDoSForHost {
         login(account, false);
         if (account.getBooleanProperty("nopremium")) {
             requestFileInformation(downloadLink);
-            doFree(downloadLink, false, 1, "freelink2");
+            doFree(downloadLink, account, false, 1, "freelink2");
         } else {
             String dllink = checkDirectLink(downloadLink, "premlink");
             if (dllink == null) {
@@ -870,12 +885,12 @@ public class LaFileCom extends antiDDoSForHost {
                     if (dlform != null && new Regex(correctedBR, PASSWORDTEXT).matches()) {
                         passCode = handlePassword(dlform, downloadLink);
                     }
-                    checkErrors(downloadLink, true);
+                    checkErrors(downloadLink, account, true);
                     if (dlform == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     submitForm(dlform);
-                    checkErrors(downloadLink, true);
+                    checkErrors(downloadLink, account, true);
                     dllink = getDllink();
                 }
             }

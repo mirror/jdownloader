@@ -18,8 +18,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -29,10 +27,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "lovelyanime.com" }, urls = { "https?://(?:www\\.)?lovelyanime\\.com/[a-zA-Z0-9_/\\+\\=\\-%]+" })
-public class LovelyAnime extends PluginForDecrypt {
-    final String invalidLinks = ".+/(wp-content|wp-includes|wp-json|xmlrpc|anime-rss|comments|feed|forum|faq)/?.*?";
+import org.appwork.utils.StringUtils;
 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "lovelyanime.com" }, urls = { "https?://(?:www\\.)?lovelyanime\\.com/(?!wp-content|wp-includes|wp-json|xmlrpc|anime-rss|comments|feed|forum|faq)[a-zA-Z0-9_/\\+\\=\\-%]+" })
+public class LovelyAnime extends PluginForDecrypt {
     public LovelyAnime(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -40,15 +38,11 @@ public class LovelyAnime extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        String fpName = new String();
+        String fpName = null;
         String page = br.getPage(parameter);
-        if (parameter.matches(invalidLinks)) {
-            logger.info("Link invalid: " + parameter);
-            return decryptedLinks;
-        }
         if (page.contains("List of episodes for this anime")) {
             // Handle list paging
-            fpName = br.getRegex("<title>([^<>\\\"]*?) - Anime Detail - Lovely Anime</title>").getMatch(0);
+            fpName = br.getRegex("<title>\\s*([^<>\\\"]*?)\\s*-\\s*Anime Detail\\s*-\\s*Lovely Anime\\s*</title>").getMatch(0);
             final String[][] pageLinks = br.getRegex("https?://www.lovelyanime.com/[a-zA-Z0-9_+=\\-]+/episode-list/[0-9]+/?").getMatches();
             for (String[] pageLink : pageLinks) {
                 String foundLink = Encoding.htmlDecode(pageLink[0]);
@@ -82,7 +76,7 @@ public class LovelyAnime extends PluginForDecrypt {
                 }
             }
         }
-        if (fpName != null && !decryptedLinks.isEmpty()) {
+        if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
