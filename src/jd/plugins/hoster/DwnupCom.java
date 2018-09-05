@@ -63,15 +63,9 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class XFileSharingProBasic extends antiDDoSForHost {
-    // DELETE THIS, after making plugin!
-    @Override
-    public Boolean siteTesterDisabled() {
-        return Boolean.TRUE;
-    }
-
+public class DwnupCom extends antiDDoSForHost {
     /* 1st domain = current domain! */
-    public static String[] domains = new String[] { "ForDevsToPlayWith.com" };
+    public static String[] domains = new String[] { "dwnup.com" };
 
     public static String[] getAnnotationNames() {
         return new String[] { domains[0] };
@@ -146,7 +140,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * Scan in html code for filesize? Disable this if a website either does not contain any filesize information in its html or it only
      * contains misleading information such as fake texts.
      */
-    private final boolean        SUPPORTS_HTML_FILESIZE_CHECK       = true;
+    private final boolean        SUPPORTS_HTML_FILESIZE_CHECK       = false;
     /* Pre-Download waittime stuff */
     private final boolean        WAITFORCED                         = false;
     private final int            WAITSECONDSMIN                     = 3;
@@ -183,10 +177,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * with standard browser behaviours.
      ****************************
      * mods: Search code for String "Special"<br />
-     * limit-info:<br />
+     * limit-info: no limits at all<br />
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
      * ALL) it is usually impossible to get any filename/filesize/status information!<br />
-     * captchatype: null 4dignum solvemedia reCaptchaV1 reCaptchaV2<br />
+     * captchatype: null<br />
      * other:<br />
      */
     @Override
@@ -217,9 +211,9 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public XFileSharingProBasic(PluginWrapper wrapper) {
+    public DwnupCom(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium(COOKIE_HOST + "/premium.html");
+        this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     @SuppressWarnings({ "unused" })

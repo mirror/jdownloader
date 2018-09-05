@@ -34,6 +34,9 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -61,10 +64,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub\\.com/photo/\\d+|https://pornhubdecrypted\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub(?:premium)?\\.com/(?:photo|gif)/\\d+|https://pornhubdecrypted\\d+" })
 public class PornHubCom extends PluginForHost {
     /* Connection stuff */
     // private static final boolean FREE_RESUME = true;
@@ -75,9 +75,10 @@ public class PornHubCom extends PluginForHost {
     private static final int                      ACCOUNT_FREE_MAXDOWNLOADS = 5;
     public static final long                      trust_cookie_age          = 5 * 60 * 1000l;
     public static final boolean                   use_download_workarounds  = true;
-    private static final String                   type_photo                = "https?://(www\\.|[a-z]{2}\\.)?pornhub\\.com/photo/\\d+";
+    private static final String                   type_photo                = ".+/photo/\\d+";
+    private static final String                   type_gif_webm             = ".+/gif/\\d+";
     public static final String                    html_privatevideo         = "id=\"iconLocked\"";
-    public static final String                    html_privateimage         = "profile/private-lock.png";
+    public static final String                    html_privateimage         = "profile/private-lock\\.png";
     public static final String                    html_premium_only         = "<h2>Upgrade to Pornhub Premium to enjoy this video\\.</h2>";
     private String                                dlUrl                     = null;
     /* Note: Video bitrates and resolutions are not exact, they can vary. */
@@ -111,7 +112,7 @@ public class PornHubCom extends PluginForHost {
 
     public static String correctAddedURL(final String input) {
         String output = input.replaceAll("http://", "https://");
-        output = output.replaceAll("^https?://(www\\.)?([a-z]{2}\\.)?", "https://www.");
+        output = output.replaceAll("^https?://(www\\.|[a-z]{2}\\.)?pornhub(premium)?\\.com/", "https://www.pornhub.com/");
         output = output.replaceAll("/embed/", "/view_video.php?viewkey=");
         return output;
     }
@@ -155,9 +156,8 @@ public class PornHubCom extends PluginForHost {
         /* User-chosen quality, set in decrypter */
         final String quality = downloadLink.getStringProperty("quality", null);
         Map<String, String> fresh_directurls = null;
-        final String viewkey;
+        final String viewkey = getViewkeyFromURL(downloadLink.getPluginPatternMatcher());
         if (downloadLink.getDownloadURL().matches(type_photo)) {
-            viewkey = getViewkeyFromURL(downloadLink.getPluginPatternMatcher());
             /* Offline links should also have nice filenames */
             downloadLink.setName(viewkey + ".jpg");
             br.setFollowRedirects(true);
@@ -192,8 +192,28 @@ public class PornHubCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             downloadLink.setFinalFileName(viewkey + dlUrl.substring(dlUrl.lastIndexOf(".")));
+        } else if (downloadLink.getDownloadURL().matches(type_gif_webm)) {
+            /* Offline links should also have nice filenames */
+            downloadLink.setName(viewkey + ".webm");
+            br.setFollowRedirects(true);
+            getPage(br, downloadLink.getDownloadURL());
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            String filename;
+            String title = br.getRegex("class=\"gifTitle\">\\s*?<h1>([^<>\"]+)</h1>").getMatch(0);
+            if (title == null) {
+                filename = viewkey;
+            } else {
+                filename = viewkey + "_" + title;
+            }
+            filename += ".webm";
+            dlUrl = br.getRegex("data\\-webm=\"(https[^\"]+\\.webm)\"").getMatch(0);
+            if (dlUrl == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            downloadLink.setFinalFileName(filename);
         } else {
-            viewkey = getViewkeyFromURL(source_url);
             /* Offline links should also have nice filenames */
             downloadLink.setName(viewkey + ".mp4");
             String filename = downloadLink.getStringProperty("decryptedfilename", null);
@@ -786,9 +806,11 @@ public class PornHubCom extends PluginForHost {
     }
 
     public static String getViewkeyFromURL(final String url) {
-        String ret = new Regex(url, "viewkey=([a-z0-9]+)").getMatch(0);
-        if (ret == null) {
-            ret = new Regex(url, "/photo/([A-Za-z0-9\\-_]+)").getMatch(0);
+        final String ret;
+        if (url.matches(type_photo) || url.matches(type_gif_webm)) {
+            ret = new Regex(url, "([A-Za-z0-9\\-_]+)$").getMatch(0);
+        } else {
+            ret = new Regex(url, "viewkey=([a-z0-9]+)").getMatch(0);
         }
         return ret;
     }

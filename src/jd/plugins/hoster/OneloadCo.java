@@ -62,58 +62,18 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class XFileSharingProBasic extends antiDDoSForHost {
-    // DELETE THIS, after making plugin!
-    @Override
-    public Boolean siteTesterDisabled() {
-        return Boolean.TRUE;
-    }
-
-    /* 1st domain = current domain! */
-    public static String[] domains = new String[] { "ForDevsToPlayWith.com" };
-
-    public static String[] getAnnotationNames() {
-        return new String[] { domains[0] };
-    }
-
-    /**
-     * returns the annotation pattern array
-     *
-     */
-    public static String[] getAnnotationUrls() {
-        // construct pattern
-        final String host = getHostsPattern();
-        return new String[] { host + "/(?:embed\\-)?[a-z0-9]{12}" };
-    }
-
-    /** Returns '(?:domain1|domain2)' */
-    private static String getHostsPatternPart() {
-        final StringBuilder pattern = new StringBuilder();
-        for (final String name : domains) {
-            pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
-        }
-        return pattern.toString();
-    }
-
-    private static String getHostsPattern() {
-        final String hosts = "https?://(?:www\\.)?" + "(?:" + getHostsPatternPart() + ")";
-        return hosts;
-    }
-
-    @Override
-    public String[] siteSupportedNames() {
-        return domains;
-    }
-
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "oneload.co" }, urls = { "https?://(?:www\\.)?oneload\\.co/(?:embed\\-)?[a-z0-9]{12}" })
+public class OneloadCo extends antiDDoSForHost {
     /* Some HTML code to identify different (error) states */
     private static final String  HTML_PASSWORDPROTECTED             = "<br><b>Passwor(d|t):</b> <input";
     private static final String  HTML_MAINTENANCE_MODE              = ">This server is in maintenance mode";
     /* Here comes our XFS-configuration */
     private final boolean        SUPPORTS_HTTPS                     = false;
     /* primary website url, take note of redirects */
-    private final String         COOKIE_HOST                        = ("http://" + domains[0]).replaceFirst("https?://", SUPPORTS_HTTPS ? "https://" : "http://");
+    private final String         COOKIE_HOST                        = "http://oneload.co".replaceFirst("https?://", SUPPORTS_HTTPS ? "https://" : "http://");
     private final String         NICE_HOSTproperty                  = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
+    /* domain names used within download links */
+    private final static String  DOMAINS                            = "(?:oneload\\.co)";
     private final static String  dllinkRegexFile                    = "https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|(?:[\\w\\-\\.]+\\.)?%s)(?::\\d{1,4})?/(?:files|d|cgi\\-bin/dl\\.cgi)/(?:\\d+/)?[a-z0-9]+/[^<>\"/]*?";
     private final static String  dllinkRegexFile_2                  = "https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|(?:[\\w\\-\\.]+\\.)?%s)(?::\\d{1,4})?/[a-z0-9]{50,}/[^<>\"/]*?";
     private final static String  dllinkRegexImage                   = "https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|(?:[\\w\\-\\.]+\\.)?%s)(?:/img/\\d+/[^<>\"'\\[\\]]+|/img/[a-z0-9]+/[^<>\"'\\[\\]]+|/img/[^<>\"'\\[\\]]+|/i/\\d+/[^<>\"'\\[\\]]+|/i/\\d+/[^<>\"'\\[\\]]+(?!_t\\.[A-Za-z]{3,4}))";
@@ -169,13 +129,13 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     private String               fuid                               = null;
     private String               passCode                           = null;
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger totalMaxSimultanFreeDownload       = new AtomicInteger(20);
+    private static AtomicInteger totalMaxSimultanFreeDownload       = new AtomicInteger(1);
     /* don't touch the following! */
     private static AtomicInteger maxFree                            = new AtomicInteger(1);
     private static Object        LOCK                               = new Object();
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 2.7.7.5<br />
+     * DEV NOTES XfileSharingProBasic Version 2.7.7.4<br />
      ****************************
      * NOTES from raztoki <br/>
      * - no need to set setfollowredirect true. <br />
@@ -183,10 +143,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * with standard browser behaviours.
      ****************************
      * mods: Search code for String "Special"<br />
-     * limit-info:<br />
+     * limit-info: premium untested, set FREE account limits<br />
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
      * ALL) it is usually impossible to get any filename/filesize/status information!<br />
-     * captchatype: null 4dignum solvemedia reCaptchaV1 reCaptchaV2<br />
+     * captchatype: null<br />
      * other:<br />
      */
     @Override
@@ -217,9 +177,9 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public XFileSharingProBasic(PluginWrapper wrapper) {
+    public OneloadCo(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium(COOKIE_HOST + "/premium.html");
+        this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     @SuppressWarnings({ "unused" })
@@ -312,12 +272,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         if (!inValidate(fileInfo[2])) {
             link.setMD5Hash(fileInfo[2].trim());
         }
-        /*
-         * Decode HtmlEntity encoding in filename
-         */
-        if (Encoding.isHtmlEntityCoded(fileInfo[0])) {
-            fileInfo[0] = Encoding.htmlDecode(fileInfo[0]);
-        }
         /* Remove some html tags - usually not necessary! */
         fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "").trim();
         if (VIDEOHOSTER || VIDEOHOSTER_2 || VIDEOHOSTER_ENFORCE_VIDEO_FILENAME) {
@@ -345,7 +299,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         final String sharebox1 = "copy\\(this\\);.+\\](.+) - ([\\d\\.]+ (?:B|KB|MB|GB))\\[/URL\\]";
         /* standard traits from base page */
         if (inValidate(fileInfo[0])) {
-            fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + getHostsPatternPart() + "/" + fuid + "/(.*?)</font>").getMatch(1);
+            fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + DOMAINS + "/" + fuid + "/(.*?)</font>").getMatch(1);
             if (inValidate(fileInfo[0])) {
                 fileInfo[0] = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
                 if (inValidate(fileInfo[0])) {
@@ -360,7 +314,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                                 fileInfo[0] = new Regex(correctedBR, sharebox1).getMatch(0);
                                 if (inValidate(fileInfo[0])) {
                                     /* Link of the box without filesize */
-                                    fileInfo[0] = new Regex(correctedBR, "onFocus=\"copy\\(this\\);\">http://(www\\.)?" + getHostsPatternPart() + "/" + fuid + "/([^<>\"]*?)</textarea").getMatch(1);
+                                    fileInfo[0] = new Regex(correctedBR, "onFocus=\"copy\\(this\\);\">http://(www\\.)?" + DOMAINS + "/" + fuid + "/([^<>\"]*?)</textarea").getMatch(1);
                                 }
                             }
                         }
@@ -374,6 +328,13 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         if (inValidate(fileInfo[0])) {
             /* 2017-04-11: Typically for XVideoSharing sites */
             fileInfo[0] = new Regex(correctedBR, Pattern.compile("<title>Watch ([^<>\"]+)</title>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        }
+        /*
+         * Decode HtmlEntity encoding inside filename but not "&#133;" at the end as this indicates a 'too large' filename which we will
+         * have to crawl from another place; search code for '&#133;'.
+         */
+        if (Encoding.isHtmlEntityCoded(fileInfo[0]) && !fileInfo[0].endsWith("&#133;")) {
+            fileInfo[0] = Encoding.htmlDecode(fileInfo[0]);
         }
         if (SUPPORTS_HTML_FILESIZE_CHECK) {
             if (inValidate(fileInfo[1])) {
@@ -489,7 +450,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 0, PROPERTY_DLLINK_FREE);
+        doFree(downloadLink, true, 1, PROPERTY_DLLINK_FREE);
     }
 
     @SuppressWarnings({ "unused" })
@@ -975,10 +936,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     private String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "(\"|')(" + String.format(dllinkRegexFile, getHostsPatternPart()) + ")\\1").getMatch(1);
+            dllink = new Regex(correctedBR, "(\"|')(" + String.format(dllinkRegexFile, DOMAINS) + ")\\1").getMatch(1);
             /* Use wider and wider RegEx */
             if (dllink == null) {
-                dllink = new Regex(correctedBR, "(" + String.format(dllinkRegexFile, getHostsPatternPart()) + ")(\"|')").getMatch(0);
+                dllink = new Regex(correctedBR, "(" + String.format(dllinkRegexFile, DOMAINS) + ")(\"|')").getMatch(0);
             }
             if (dllink == null) {
                 /* Finally try without hardcoded domains */
@@ -986,11 +947,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             }
             if (dllink == null) {
                 /* Try short version */
-                dllink = new Regex(correctedBR, "(\"|')(" + String.format(dllinkRegexFile_2, getHostsPatternPart()) + ")\\1").getMatch(1);
+                dllink = new Regex(correctedBR, "(\"|')(" + String.format(dllinkRegexFile_2, DOMAINS) + ")\\1").getMatch(1);
             }
             if (dllink == null) {
                 /* Try short version without hardcoded domains and wide */
-                dllink = new Regex(correctedBR, "(" + String.format(dllinkRegexFile_2, getHostsPatternPart()) + ")").getMatch(0);
+                dllink = new Regex(correctedBR, "(" + String.format(dllinkRegexFile_2, DOMAINS) + ")").getMatch(0);
             }
             if (dllink == null) {
                 final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
@@ -1049,7 +1010,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
         if (dllink == null && IMAGEHOSTER) {
             /* Used for image-hosts */
-            String[] possibleDllinks = new Regex(this.correctedBR, String.format(dllinkRegexImage, getHostsPatternPart())).getColumn(0);
+            String[] possibleDllinks = new Regex(this.correctedBR, String.format(dllinkRegexImage, DOMAINS)).getColumn(0);
             if (possibleDllinks == null || possibleDllinks.length == 0) {
                 /* Try without predefined domains */
                 possibleDllinks = new Regex(this.correctedBR, String.format(dllinkRegexImage, "[A-Za-z0-9\\-\\.]+")).getColumn(0);
@@ -1579,7 +1540,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         if (account.getType() == AccountType.FREE) {
             /* Perform linkcheck after logging in */
             requestFileInformation(downloadLink);
-            doFree(downloadLink, true, 0, PROPERTY_DLLINK_ACCOUNT_FREE);
+            doFree(downloadLink, true, 1, PROPERTY_DLLINK_ACCOUNT_FREE);
         } else {
             String dllink = checkDirectLink(downloadLink, PROPERTY_DLLINK_ACCOUNT_PREMIUM);
             if (dllink == null) {
@@ -1604,7 +1565,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 0);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 1);
             if (dl.getConnection().getContentType().contains("html")) {
                 checkResponseCodeErrors(dl.getConnection());
                 logger.warning("The final dllink seems not to be a file!");

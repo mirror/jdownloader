@@ -63,15 +63,9 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class XFileSharingProBasic extends antiDDoSForHost {
-    // DELETE THIS, after making plugin!
-    @Override
-    public Boolean siteTesterDisabled() {
-        return Boolean.TRUE;
-    }
-
+public class Up07Me extends antiDDoSForHost {
     /* 1st domain = current domain! */
-    public static String[] domains = new String[] { "ForDevsToPlayWith.com" };
+    public static String[] domains = new String[] { "up07.me" };
 
     public static String[] getAnnotationNames() {
         return new String[] { domains[0] };
@@ -169,13 +163,13 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     private String               fuid                               = null;
     private String               passCode                           = null;
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger totalMaxSimultanFreeDownload       = new AtomicInteger(20);
+    private static AtomicInteger totalMaxSimultanFreeDownload       = new AtomicInteger(1);
     /* don't touch the following! */
     private static AtomicInteger maxFree                            = new AtomicInteger(1);
     private static Object        LOCK                               = new Object();
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 2.7.7.5<br />
+     * DEV NOTES XfileSharingProBasic Version 2.7.7.4<br />
      ****************************
      * NOTES from raztoki <br/>
      * - no need to set setfollowredirect true. <br />
@@ -183,10 +177,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * with standard browser behaviours.
      ****************************
      * mods: Search code for String "Special"<br />
-     * limit-info:<br />
+     * limit-info: premium untested, set FREE account limits<br />
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
      * ALL) it is usually impossible to get any filename/filesize/status information!<br />
-     * captchatype: null 4dignum solvemedia reCaptchaV1 reCaptchaV2<br />
+     * captchatype: null<br />
      * other:<br />
      */
     @Override
@@ -217,9 +211,9 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public XFileSharingProBasic(PluginWrapper wrapper) {
+    public Up07Me(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium(COOKIE_HOST + "/premium.html");
+        this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     @SuppressWarnings({ "unused" })
@@ -312,12 +306,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         if (!inValidate(fileInfo[2])) {
             link.setMD5Hash(fileInfo[2].trim());
         }
-        /*
-         * Decode HtmlEntity encoding in filename
-         */
-        if (Encoding.isHtmlEntityCoded(fileInfo[0])) {
-            fileInfo[0] = Encoding.htmlDecode(fileInfo[0]);
-        }
         /* Remove some html tags - usually not necessary! */
         fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "").trim();
         if (VIDEOHOSTER || VIDEOHOSTER_2 || VIDEOHOSTER_ENFORCE_VIDEO_FILENAME) {
@@ -374,6 +362,13 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         if (inValidate(fileInfo[0])) {
             /* 2017-04-11: Typically for XVideoSharing sites */
             fileInfo[0] = new Regex(correctedBR, Pattern.compile("<title>Watch ([^<>\"]+)</title>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        }
+        /*
+         * Decode HtmlEntity encoding inside filename but not "&#133;" at the end as this indicates a 'too large' filename which we will
+         * have to crawl from another place; search code for '&#133;'.
+         */
+        if (Encoding.isHtmlEntityCoded(fileInfo[0]) && !fileInfo[0].endsWith("&#133;")) {
+            fileInfo[0] = Encoding.htmlDecode(fileInfo[0]);
         }
         if (SUPPORTS_HTML_FILESIZE_CHECK) {
             if (inValidate(fileInfo[1])) {
@@ -489,7 +484,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 0, PROPERTY_DLLINK_FREE);
+        doFree(downloadLink, true, 1, PROPERTY_DLLINK_FREE);
     }
 
     @SuppressWarnings({ "unused" })
@@ -1460,13 +1455,13 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
             /* Expired premium or no expire date given --> It is usually a Free Account */
             account.setType(AccountType.FREE);
-            account.setMaxSimultanDownloads(-1);
+            account.setMaxSimultanDownloads(1);
             account.setConcurrentUsePossible(false);
         } else {
             /* Expire date is in the future --> It is a premium account */
             ai.setValidUntil(expire_milliseconds);
             account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(-1);
+            account.setMaxSimultanDownloads(1);
             account.setConcurrentUsePossible(true);
         }
         return ai;
@@ -1579,7 +1574,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         if (account.getType() == AccountType.FREE) {
             /* Perform linkcheck after logging in */
             requestFileInformation(downloadLink);
-            doFree(downloadLink, true, 0, PROPERTY_DLLINK_ACCOUNT_FREE);
+            doFree(downloadLink, true, 1, PROPERTY_DLLINK_ACCOUNT_FREE);
         } else {
             String dllink = checkDirectLink(downloadLink, PROPERTY_DLLINK_ACCOUNT_PREMIUM);
             if (dllink == null) {
@@ -1604,7 +1599,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 0);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 1);
             if (dl.getConnection().getContentType().contains("html")) {
                 checkResponseCodeErrors(dl.getConnection());
                 logger.warning("The final dllink seems not to be a file!");
