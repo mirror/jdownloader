@@ -193,8 +193,12 @@ public abstract class Plugin implements ActionListener {
     }
 
     public static String getFileNameFromDispositionHeader(final URLConnectionAdapter urlConnection) {
-        final String contentDisposition = urlConnection.getHeaderField(HTTPConstants.HEADER_RESPONSE_CONTENT_DISPOSITION);
-        return HTTPConnectionUtils.getFileNameFromDispositionHeader(contentDisposition);
+        final DispositionHeader dispositionHeader = parseDispositionHeader(urlConnection);
+        if (dispositionHeader != null) {
+            return dispositionHeader.getFilename();
+        } else {
+            return null;
+        }
     }
 
     public static DispositionHeader parseDispositionHeader(final URLConnectionAdapter urlConnection) {
