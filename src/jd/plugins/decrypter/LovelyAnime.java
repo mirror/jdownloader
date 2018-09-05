@@ -39,8 +39,8 @@ public class LovelyAnime extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         String fpName = null;
-        String page = br.getPage(parameter);
-        if (page.contains("List of episodes for this anime")) {
+        br.getPage(parameter);
+        if (br.containsHTML("List of episodes for this anime")) {
             // Handle list paging
             fpName = br.getRegex("<title>\\s*([^<>\\\"]*?)\\s*-\\s*Anime Detail\\s*-\\s*Lovely Anime\\s*</title>").getMatch(0);
             final String[][] pageLinks = br.getRegex("https?://www.lovelyanime.com/[a-zA-Z0-9_+=\\-]+/episode-list/[0-9]+/?").getMatches();
@@ -54,21 +54,23 @@ public class LovelyAnime extends PluginForDecrypt {
                 String foundLink = Encoding.htmlDecode(episodeLink[0]);
                 decryptedLinks.add(createDownloadlink(foundLink));
             }
-        } else if (page.contains("<b>Version</b>")) {
+        } else if (br.containsHTML("<b>Version</b>")) {
             // Handle episode page
-            fpName = br.getRegex("<title>([^<>\\\"]*?) - Version [0-9]+ | /title>").getMatch(0);
+            fpName = br.getRegex("<title>\\s*([^<>\\\"]*?)\\s*-\\s*Version\\s*[0-9]+\\s*|\\s*/title>").getMatch(0);
             if (fpName != null) {
-                fpName = fpName.replaceAll(" - Episode [0-9]+", "").trim();
+                fpName = fpName.replaceAll("\\s*-\\s*Episode\\s*[0-9]+", "").trim();
             }
-            String parameterBase = parameter.replaceAll("[/0-9]+$", "");
-            // Handle version paging
-            final String[][] versionLinks = br.getRegex(Pattern.quote(parameterBase) + "/[0-9]+/[/0-9]+").getMatches();
-            for (String[] versionLink : versionLinks) {
-                String foundLink = Encoding.htmlDecode(versionLink[0]);
-                decryptedLinks.add(createDownloadlink(foundLink));
+            if (!br.getURL().matches(".+/\\d+/\\d+/?$")) {
+                final String parameterBase = parameter.replaceAll("[/0-9]+$", "");
+                // Handle version paging
+                final String[][] versionLinks = br.getRegex(Pattern.quote(parameterBase) + "/[0-9]+/[/0-9]+").getMatches();
+                for (String[] versionLink : versionLinks) {
+                    String foundLink = Encoding.htmlDecode(versionLink[0]);
+                    decryptedLinks.add(createDownloadlink(foundLink));
+                }
             }
             // Handle IFrame URLs
-            final String[][] iframeLinks = br.getRegex("<iframe[^>]+src=\"([^<>\\\"]*?)\"").getMatches();
+            final String[][] iframeLinks = br.getRegex("<iframe[^>]+title=[^>]+src=\"([^<>\\\"]*?)\"").getMatches();
             for (String[] iframeLink : iframeLinks) {
                 String foundLink = Encoding.htmlDecode(iframeLink[0]);
                 if (!StringUtils.containsIgnoreCase(foundLink, "facebook.com/plugins/like.php")) {
