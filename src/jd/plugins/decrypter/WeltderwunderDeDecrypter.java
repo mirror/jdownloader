@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "weltderwunder.de" }, urls = { "https?://(?:www\\.)?weltderwunder\\.de/videos/[a-z0-9_]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "weltderwunder.de" }, urls = { "https?://(?:www\\.)?weltderwunder\\.de/videos/(?!(aktuelle|neue|live)$)[a-z0-9_]+" })
 public class WeltderwunderDeDecrypter extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     public WeltderwunderDeDecrypter(PluginWrapper wrapper) {
