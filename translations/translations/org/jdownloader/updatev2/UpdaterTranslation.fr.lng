@@ -71,4 +71,4 @@ update_dialog_title_updates_available=Mise(s) à jour disponible(s)
 update_dialog_yes=Oui (recommandé)
 update_done_close_in_TIME=Installation réalisée avec succès. Sort dans %s1
 update_in_next_session=Annuler, et ne plus redemander jusqu'au prochain redemarrage
-updatedplugins=Les plugins on été mis à jour.\nVous utilisez maintenant la dernière version de JDownloader.
+updatedplugins=Les plugins ont été mis à jour.\nVous utilisez maintenant la dernière version de JDownloader.
