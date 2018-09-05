@@ -26,6 +26,12 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -54,12 +60,6 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 //Links are coming from a decrypter
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://vkontaktedecrypted\\.ru/(picturelink/(?:\\-)?\\d+_\\d+(\\?tag=[\\d\\-]+)?|audiolink/(?:\\-)?\\d+_\\d+|videolink/[\\d\\-]+)|https?://(?:new\\.)?vk\\.com/doc[\\d\\-]+_[\\d\\-]+(\\?hash=[a-z0-9]+)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me|vkuservideo\\.net|vkuseraudio\\.net)/[^<>\"]+\\.(?:mp[34]|(?:rar|zip).+|[rz][0-9]{2}.+)" })
@@ -97,6 +97,7 @@ public class VKontakteRuHoster extends PluginForHost {
     private static final String VKVIDEO_USEIDASPACKAGENAME                      = "VKVIDEO_USEIDASPACKAGENAME";
     private static final String VKAUDIOS_USEIDASPACKAGENAME                     = "VKAUDIOS_USEIDASPACKAGENAME";
     private static final String VKDOCS_USEIDASPACKAGENAME                       = "VKDOCS_USEIDASPACKAGENAME";
+    private static final String VKDOCS_ADD_UNIQUE_ID                            = "VKDOCS_ADD_UNIQUE_ID";
     private static final String VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME = "VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME";
     private static final String VKPHOTO_CORRECT_FINAL_LINKS                     = "VKPHOTO_CORRECT_FINAL_LINKS";
     public static final String  VKWALL_USE_API                                  = "VKWALL_USE_API";
@@ -105,7 +106,7 @@ public class VKontakteRuHoster extends PluginForHost {
     /* html patterns */
     public static final String  HTML_VIDEO_NO_ACCESS                            = "NO_ACCESS";
     public static final String  HTML_VIDEO_REMOVED_FROM_PUBLIC_ACCESS           = "This video has been removed from public access";
-    private final boolean       docs_add_unique_id                              = true;
+    private boolean             docs_add_unique_id                              = true;
     public static Object        LOCK                                            = new Object();
     private String              finalUrl                                        = null;
     private String              ownerID                                         = null;
@@ -230,7 +231,7 @@ public class VKontakteRuHoster extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             /* Sometimes filenames on site are cut - finallink usually contains the full filenames */
-            final String betterFilename = new Regex(finalUrl, "docs/[a-z0-9]+/([^<>\"]*?)\\?extra=.+").getMatch(0);
+            final String betterFilename = new Regex(finalUrl, "docs/[a-z0-9]+.*?([^<>\"/]+)\\?extra=.+").getMatch(0);
             if (betterFilename != null) {
                 filename = Encoding.htmlDecode(betterFilename).trim();
             } else {
@@ -297,7 +298,7 @@ public class VKontakteRuHoster extends PluginForHost {
                         /*
                          * No way to easily get the needed info directly --> Load the complete audio album and find a fresh directlink for
                          * our ID.
-                         * 
+                         *
                          * E.g. get-play-link: https://vk.com/audio?id=<ownerID>&audio_id=<contentID>
                          */
                         /*
@@ -1298,6 +1299,7 @@ public class VKontakteRuHoster extends PluginForHost {
         this.ownerID = getOwnerID(dl);
         this.contentID = getContentID(dl);
         this.mainlink = dl.getStringProperty("mainlink", null);
+        this.docs_add_unique_id = this.getPluginConfig().getBooleanProperty(VKDOCS_ADD_UNIQUE_ID, default_VKDOCS_ADD_UNIQUE_ID);
     }
 
     /** Returns ArrayList of audio Objects for Playlists/Albums after '/al_audio.php' request. */
@@ -1382,6 +1384,7 @@ public class VKontakteRuHoster extends PluginForHost {
     private static final boolean default_VKVIDEO_USEIDASPACKAGENAME                      = false;
     private static final boolean default_VKAUDIO_USEIDASPACKAGENAME                      = false;
     private static final boolean default_VKDOCS_USEIDASPACKAGENAME                       = false;
+    private static final boolean default_VKDOCS_ADD_UNIQUE_ID                            = false;
     private static final boolean default_VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME = false;
     private static final boolean default_VKPHOTO_CORRECT_FINAL_LINKS                     = false;
     public static final boolean  default_VKWALL_USE_API                                  = true;
@@ -1435,7 +1438,8 @@ public class VKontakteRuHoster extends PluginForHost {
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Settings for 'vk.com/audios' links:"));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKAUDIOS_USEIDASPACKAGENAME, JDL.L("plugins.hoster.vkontakteruhoster.audiosUseIdAsPackagename", "Use audio-Owner-ID as packagename ('audiosXXXX' or 'audios-XXXX')?")).setDefaultValue(default_VKAUDIO_USEIDASPACKAGENAME));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Settings for 'vk.com/docs' links:"));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKDOCS_USEIDASPACKAGENAME, JDL.L("plugins.hoster.vkontakteruhoster.docsUseIdAsPackagename", "Use doc-Owner-ID as packagename ('docsXXXX' or 'docs-XXXX')?")).setDefaultValue(default_VKDOCS_USEIDASPACKAGENAME));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKDOCS_USEIDASPACKAGENAME, "Use doc-Owner-ID as packagename ('docsXXXX' or 'docs-XXXX')?").setDefaultValue(default_VKDOCS_USEIDASPACKAGENAME));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKDOCS_ADD_UNIQUE_ID, "Add doc-Owner-ID and doc-Content-ID as a unique identifier to the beginning of filenames?").setDefaultValue(default_VKDOCS_ADD_UNIQUE_ID));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Settings for 'vk.com/photo' links:"));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME, JDL.L("plugins.hoster.vkontakteruhoster.photosTempServerFilenameAsFinalFilename", "Use (temporary) server filename as final filename instead of E.g.) 'oid_id.jpg'?")).setDefaultValue(default_VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME));
