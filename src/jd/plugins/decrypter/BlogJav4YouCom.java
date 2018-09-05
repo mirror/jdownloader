@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -27,9 +26,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "blog.jav4you.com" }, urls = { "http://(www\\.)?blog\\.jav4you\\.com/\\d{4}/\\d{2}/[a-z0-9\\-]+/" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "blog.jav4you.com" }, urls = { "http://(www\\.)?blog\\.jav4you\\.com/\\d{4}/\\d{2}/[a-z0-9\\-]+/" })
 public class BlogJav4YouCom extends PluginForDecrypt {
-
     public BlogJav4YouCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -40,11 +38,11 @@ public class BlogJav4YouCom extends PluginForDecrypt {
         br.setFollowRedirects(false);
         br.getPage(parameter);
         // Offline link
-        if (br.containsHTML("<h2 class=\"center\">Not Found</h2>")) {
-            logger.info("Link offline: " + parameter);
+        if (br.containsHTML("<h2 class=\"center\">Not Found</h2>|<br />\\s+</p>\\s+<p></p>\\s+<h3>Related Posts:</h3>")) {
+            decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final String fpName = br.getRegex("<title>([^<>\"]*?) \\| JAV4You \\- Huge Japanese AV Place</title>").getMatch(0);
+        final String fpName = br.getRegex("<title>([^<>\"]*?) (?:-|\\|) JAV4You \\- Huge Japanese AV Place</title>").getMatch(0);
         final String[] links = br.getRegex("<br><a href=\"(http[^<>\"]*?)\"").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
@@ -54,7 +52,7 @@ public class BlogJav4YouCom extends PluginForDecrypt {
             if (singleLink.matches("http://(www\\.)?blog\\.jav4you\\.com/\\d{4}/\\d{2}/[a-z0-9\\-]+/")) {
                 continue;
             }
-            if (singleLink.matches("http://(www\\.)?l\\.jav4you\\.com/[A-Za-z0-9]+")) {
+            if (singleLink.matches("http://(www\\.)?(l|r)\\.jav4you\\.com/[A-Za-z0-9]+")) {
                 br.getPage(singleLink);
                 final String finallink = br.getRedirectLocation();
                 if (finallink == null) {
@@ -78,5 +76,4 @@ public class BlogJav4YouCom extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
