@@ -18,6 +18,9 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -29,9 +32,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "camshowdownload.com" }, urls = { "https?://(?:www\\.)?camshowdownload\\.com/([^/]+/video/.+|dl/.+)" })
 public class CamshowdownloadCom extends antiDDoSForDecrypt {
@@ -81,6 +81,10 @@ public class CamshowdownloadCom extends antiDDoSForDecrypt {
         }
         for (final String singleLink : urlsToDecrypt) {
             getPage(singleLink);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
+            }
             final Form captchaForm = this.br.getFormbyKey("loc");
             if (captchaForm != null) {
                 final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
