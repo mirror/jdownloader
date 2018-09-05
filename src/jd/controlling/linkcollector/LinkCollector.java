@@ -2723,7 +2723,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                             final LinkCrawlerRule matchingRule = link.getMatchingRule();
                                             if (matchingRule == null && looksLikeDownloadableContent(urlConnection)) {
                                                 final URL url = urlConnection.getURL();
-                                                if (StringUtils.endsWithCaseInsensitive(url.getPath(), ".php") && url.getQuery() != null) {
+                                                if (url.getPath() != null && url.getPath().matches(".*\\.(php|aspx)$") && url.getQuery() != null) {
                                                     // hoster.domain/script.php?somevalue=somekey.....->Download
                                                     if (!hasDirectHTTPRule(lc, urlConnection)) {
                                                         final String domain = Browser.getHost(url, false);

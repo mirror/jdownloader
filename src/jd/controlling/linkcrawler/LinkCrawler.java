@@ -2,6 +2,7 @@ package jd.controlling.linkcrawler;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
@@ -76,6 +77,7 @@ import org.appwork.utils.logging2.ClosableLogInterface;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.LoginDialog;
 import org.appwork.utils.swing.dialog.LoginDialogInterface;
@@ -1061,9 +1063,16 @@ public class LinkCrawler {
         if (contentLength > 0) {
             link.setVerifiedFileSize(contentLength);
         }
-        final String headerFileName = Plugin.getFileNameFromDispositionHeader(con);
-        if (StringUtils.isNotEmpty(headerFileName)) {
-            link.setFinalFileName(headerFileName);
+        final DispositionHeader dispositionHeader = Plugin.parseDispositionHeader(con);
+        if (dispositionHeader != null && StringUtils.isNotEmpty(dispositionHeader.getFilename())) {
+            link.setFinalFileName(dispositionHeader.getFilename());
+            if (dispositionHeader.getEncoding() == null) {
+                try {
+                    link.setFinalFileName(URLDecoder.decode(dispositionHeader.getFilename(), "UTF-8"));
+                } catch (final IllegalArgumentException ignore) {
+                } catch (final UnsupportedEncodingException ignore) {
+                }
+            }
         } else {
             final String urlFileName = Plugin.getFileNameFromURL(request.getURL());
             if (StringUtils.isNotEmpty(urlFileName)) {

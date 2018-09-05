@@ -23,10 +23,6 @@ import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -44,7 +40,11 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub(?:premium)?\\.com/(?:.*\\?viewkey=[a-z0-9]+|embed/[a-z0-9]+|embed_player\\.php\\?id=\\d+|users/[^/]+/videos/public|pornstar/[^/]+(?:/gifs)?|model/[^/]+(?:/gifs)?|playlist/\\d+)" })
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub(?:premium)?\\.com/(?:.*\\?viewkey=[a-z0-9]+|embed/[a-z0-9]+|embed_player\\.php\\?id=\\d+|users/[^/]+/videos/public|pornstar/[^/]+(?:/gifs(/public|/video|/from_videos)?)?|users/[^/]+(?:/gifs(/public|/video|/from_videos)?)?|model/[^/]+(?:/gifs(/public|/video|/from_videos)?)?|playlist/\\d+)" })
 public class PornHubCom extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     public PornHubCom(PluginWrapper wrapper) {
@@ -99,11 +99,11 @@ public class PornHubCom extends PluginForDecrypt {
                 throw new DecrypterException("Decrypter broken, captcha handling is required now!");
             }
         }
-        if (parameter.contains("/playlist/")) {
+        if (parameter.matches("(?i).*/playlist/.*")) {
             decryptAllVideosOfAPlaylist();
-        } else if (parameter.contains("/gifs")) {
+        } else if (parameter.matches("(?i).*/gifs.*")) {
             decryptAllGifsOfAUser();
-        } else if (parameter.matches(".+/(users|pornstar|model)/.+")) {
+        } else if (parameter.matches("(?i).*/(users|pornstar|model)/.*")) {
             decryptAllVideosOfAUser();
         } else {
             decryptSingleVideo();
@@ -120,10 +120,10 @@ public class PornHubCom extends PluginForDecrypt {
             return;
         }
         /* Access overview page */
-        if (parameter.contains("/pornstar/")) {
-            br.getPage(parameter + "/videos/upload");
-        } else if (parameter.contains("/model/")) {
-            br.getPage(parameter + "/videos");
+        if (parameter.matches("(?i).*/pornstar/.*")) {
+            jd.plugins.hoster.PornHubCom.getPage(br, parameter + "/videos/upload");
+        } else if (parameter.matches("(?i).*/model/.*")) {
+            jd.plugins.hoster.PornHubCom.getPage(br, parameter + "/videos");
         }
         // final String username = new Regex(parameter, "users/([^/]+)/").getMatch(0);
         int page = 1;
@@ -148,7 +148,7 @@ public class PornHubCom extends PluginForDecrypt {
                     br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     htmlSource = false;
                 }
-                br.getPage(nextpage_url);
+                jd.plugins.hoster.PornHubCom.getPage(br, nextpage_url);
                 if (br.getHttpConnection().getResponseCode() == 404) {
                     break;
                 }
@@ -186,13 +186,56 @@ public class PornHubCom extends PluginForDecrypt {
         } while (links_found_in_this_page >= max_entries_per_page);
     }
 
+    private String getUser(Browser br) {
+        final String ret = new Regex(br.getURL(), "/(?:users|model|pornstar)/([^/]+)").getMatch(0);
+        return ret;
+    }
+
     private void decryptAllGifsOfAUser() throws Exception {
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return;
         }
-        /* Access overview page */
-        br.getPage(parameter + "/public");
+        FilePackage fp = null;
+        if (StringUtils.endsWithCaseInsensitive(parameter, "/gifs/public")) {
+            jd.plugins.hoster.PornHubCom.getPage(br, parameter);
+            // user->pornstar redirect
+            if (!br.getURL().matches("(?i).+/gifs/public")) {
+                jd.plugins.hoster.PornHubCom.getPage(br, br.getURL() + "/gifs/public");
+            }
+            final String user = getUser(br);
+            if (user != null) {
+                fp = FilePackage.getInstance();
+                fp.setName(user + "'s GIFs");
+            }
+        } else if (StringUtils.endsWithCaseInsensitive(parameter, "/gifs/video")) {
+            jd.plugins.hoster.PornHubCom.getPage(br, parameter);
+            // user->pornstar redirect
+            if (!br.getURL().matches("(?i).+/gifs/video")) {
+                jd.plugins.hoster.PornHubCom.getPage(br, br.getURL() + "/gifs/video");
+            }
+            final String user = getUser(br);
+            if (user != null) {
+                fp = FilePackage.getInstance();
+                fp.setName("GIFs From " + user + "'s Videos");
+            }
+        } else if (StringUtils.endsWithCaseInsensitive(parameter, "/gifs/from_videos")) {
+            jd.plugins.hoster.PornHubCom.getPage(br, parameter);
+            // user->pornstar redirect
+            if (!br.getURL().matches("(?i).+/gifs/from_videos") || !br.getURL().matches("(?i).+/gifs/video")) {
+                jd.plugins.hoster.PornHubCom.getPage(br, br.getURL() + "/gifs/video");
+            }
+            final String user = getUser(br);
+            if (user != null) {
+                fp = FilePackage.getInstance();
+                fp.setName("GIFs From " + user + "'s Videos");
+            }
+        } else {
+            jd.plugins.hoster.PornHubCom.getPage(br, parameter);
+            decryptedLinks.add(createDownloadlink(br.getURL() + "/public"));
+            decryptedLinks.add(createDownloadlink(br.getURL() + "/video"));
+            return;
+        }
         br.getHeaders().put("Accept", "*/*");
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         int page = 1;
@@ -205,11 +248,8 @@ public class PornHubCom extends PluginForDecrypt {
                 return;
             }
             if (page > 1) {
-                // jd.plugins.hoster.PornHubCom.getPage(br, "/users/" + username + "/videos/public/ajax?o=mr&page=" + page);
-                // br.postPage(parameter + "/ajax?o=mr&page=" + page, "");
-                /* e.g. different handling for '/model/' URLs */
                 final String nextpage_url = base_url + "/ajax?page=" + page;
-                br.getPage(nextpage_url);
+                jd.plugins.hoster.PornHubCom.getPage(br, br.createPostRequest(nextpage_url, ""));
                 if (br.getHttpConnection().getResponseCode() == 404) {
                     break;
                 }
@@ -217,22 +257,31 @@ public class PornHubCom extends PluginForDecrypt {
                 /* Set this on first loop */
                 base_url = br.getURL();
             }
-            final String[] viewkeys = new Regex(br.toString(), "/gif/(\\d+)").getColumn(0);
-            if (viewkeys == null || viewkeys.length == 0) {
+            final String[] items = new Regex(br.toString(), "(<li\\s*id\\s*=\\s*\"gif\\d+\"\\s*>.*?</li>)").getColumn(0);
+            if (items == null || items.length == 0) {
                 break;
             }
-            for (final String viewkey : viewkeys) {
-                if (dupes.add(viewkey)) {
-                    final DownloadLink dl = createDownloadlink("https://www." + this.getHost() + "/gif/" + viewkey);
-                    dl.setName(viewkey + ".webm");
+            for (final String item : items) {
+                final String viewKey = new Regex(item, "/gif/(\\d+)").getMatch(0);
+                if (viewKey != null && dupes.add(viewKey)) {
+                    final String name = new Regex(item, "class\\s*=\\s*\"title\"\\s*>\\s*(.*?)\\s*<").getMatch(0);
+                    final DownloadLink dl = createDownloadlink("https://www." + this.getHost() + "/gif/" + viewKey);
+                    if (name != null) {
+                        dl.setName(name + "_" + viewKey + ".webm");
+                    } else {
+                        dl.setName(viewKey + ".webm");
+                    }
                     /* Force fast linkcheck */
                     dl.setAvailable(true);
+                    if (fp != null) {
+                        fp.add(dl);
+                    }
                     decryptedLinks.add(dl);
                     distribute(dl);
                 }
             }
-            logger.info("Links found in page " + page + ": " + viewkeys.length);
-            links_found_in_this_page = viewkeys.length;
+            logger.info("Links found in page " + page + ": " + items.length);
+            links_found_in_this_page = items.length;
             page++;
         } while (links_found_in_this_page >= max_entries_per_page);
     }

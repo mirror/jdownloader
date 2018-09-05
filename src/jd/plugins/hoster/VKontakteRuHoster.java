@@ -26,12 +26,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -60,6 +54,12 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 //Links are coming from a decrypter
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://vkontaktedecrypted\\.ru/(picturelink/(?:\\-)?\\d+_\\d+(\\?tag=[\\d\\-]+)?|audiolink/(?:\\-)?\\d+_\\d+|videolink/[\\d\\-]+)|https?://(?:new\\.)?vk\\.com/doc[\\d\\-]+_[\\d\\-]+(\\?hash=[a-z0-9]+)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me|vkuservideo\\.net|vkuseraudio\\.net)/[^<>\"]+\\.(?:mp[34]|(?:rar|zip).+|[rz][0-9]{2}.+)" })
@@ -457,7 +457,7 @@ public class VKontakteRuHoster extends PluginForHost {
         if (dl == null) {
             // most if not all components already opened connection via either linkOk or photolinkOk
             br.getHeaders().put("Accept-Encoding", "identity");
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, finalUrl, true, getMaxChunks(downloadLink, finalUrl));
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, finalUrl, isResumeSupported(downloadLink, finalUrl), getMaxChunks(downloadLink, finalUrl));
         }
         handleServerErrors(downloadLink);
         dl.startDownload();
@@ -766,7 +766,7 @@ public class VKontakteRuHoster extends PluginForHost {
         boolean closeConnection = true;
         try {
             if (isDownload) {
-                dl = new jd.plugins.BrowserAdapter().openDownload(br2, downloadLink, finalUrl, true, getMaxChunks(downloadLink, finalUrl));
+                dl = new jd.plugins.BrowserAdapter().openDownload(br2, downloadLink, finalUrl, isResumeSupported(downloadLink, finalUrl), getMaxChunks(downloadLink, finalUrl));
                 con = dl.getConnection();
             } else {
                 con = br2.openGetConnection(finalUrl);
@@ -846,7 +846,7 @@ public class VKontakteRuHoster extends PluginForHost {
         }
         br2.getHeaders().put("Accept-Encoding", "identity");
         try {
-            dl = new jd.plugins.BrowserAdapter().openDownload(br2, downloadLink, finalUrl, true, getMaxChunks(downloadLink, finalUrl));
+            dl = new jd.plugins.BrowserAdapter().openDownload(br2, downloadLink, finalUrl, isResumeSupported(downloadLink, finalUrl), getMaxChunks(downloadLink, finalUrl));
             // request range fucked
             if (dl.getConnection().getResponseCode() == 416) {
                 logger.info("Resume failed --> Retrying from zero");
@@ -901,6 +901,18 @@ public class VKontakteRuHoster extends PluginForHost {
                 dl.getConnection().disconnect();
             } catch (final Throwable t) {
             }
+        }
+    }
+
+    private boolean isResumeSupported(DownloadLink downloadLink, String finalUrl2) {
+        if (downloadLink.getDownloadURL().matches(VKontakteRuHoster.TYPE_VIDEOLINK)) {
+            return true;
+        } else if (downloadLink.getDownloadURL().matches(VKontakteRuHoster.TYPE_VIDEOLINK) && StringUtils.containsIgnoreCase(downloadLink.getDownloadURL(), ".mp4")) {
+            return true;
+        } else if (finalUrl2 != null && finalUrl2.matches(".+\\.(jpe?g|png|gif|bmp)$")) {
+            return false;
+        } else {
+            return false;
         }
     }
 

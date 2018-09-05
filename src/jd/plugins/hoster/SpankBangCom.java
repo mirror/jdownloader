@@ -30,6 +30,7 @@ import jd.plugins.PluginException;
 import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spankbang.com" }, urls = { "http://spankbangdecrypted\\.com/\\d+" })
@@ -58,6 +59,15 @@ public class SpankBangCom extends antiDDoSForHost {
     @Override
     protected boolean useRUA() {
         return true;
+    }
+
+    @Override
+    public String getMirrorID(DownloadLink link) {
+        if (link != null && StringUtils.equals(getHost(), link.getHost())) {
+            return link.getLinkID();
+        } else {
+            return super.getMirrorID(link);
+        }
     }
 
     @Override

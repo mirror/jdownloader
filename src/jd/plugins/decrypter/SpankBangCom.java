@@ -17,7 +17,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -35,6 +34,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.UniqueAlltimeID;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spankbang.com" }, urls = { "https?://(www\\.)?([a-z]{2}\\.)?spankbang\\.com/([a-z0-9]+/video/\\?quality=[\\w\\d]+|[a-z0-9]+/(?:video|embed)/)" })
 public class SpankBangCom extends PluginForDecrypt {
@@ -135,7 +136,7 @@ public class SpankBangCom extends PluginForDecrypt {
             final String directlink = foundQualities.get(selectedQualityValue);
             if (directlink != null) {
                 final String finalname = title + "_" + selectedQualityValue + ".mp4";
-                final DownloadLink dl = createDownloadlink("http://spankbangdecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
+                final DownloadLink dl = createDownloadlink("http://spankbangdecrypted.com/" + UniqueAlltimeID.create());
                 dl.setFinalFileName(finalname);
                 dl.setContentUrl("http://spankbang.com/" + fid + "/video/?quality=" + selectedQualityValue);
                 if (fastcheck) {

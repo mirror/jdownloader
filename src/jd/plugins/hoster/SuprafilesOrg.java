@@ -27,16 +27,6 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -62,6 +52,16 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "suprafiles.org" }, urls = { "https?://(?:www\\.)?suprafiles\\.(?:net|co|org|me)/(?:embed\\-)?[a-z0-9]{12}" })
 public class SuprafilesOrg extends antiDDoSForHost {
     /* Some HTML code to identify different (error) states */
@@ -73,7 +73,7 @@ public class SuprafilesOrg extends antiDDoSForHost {
     private final String         COOKIE_HOST                        = "http://suprafiles.me".replaceFirst("https?://", SUPPORTS_HTTPS ? "https://" : "http://");
     private final String         NICE_HOSTproperty                  = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private final static String  DOMAINS                            = "suprafiles\\.(?:net|co|org)";
+    private final static String  DOMAINS                            = "suprafiles\\.(?:net|co|org|me)";
     private final static String  dllinkRegexFile                    = "https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|(?:[\\w\\-\\.]+\\.)?%s)(?::\\d{1,4})?/(?:files|d|cgi\\-bin/dl\\.cgi)/(?:\\d+/)?[a-z0-9]+/[^<>\"/]*?";
     private final static String  dllinkRegexImage                   = "https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|(?:[\\w\\-\\.]+\\.)?%s)(?:/img/\\d+/[^<>\"'\\[\\]]+|/img/[a-z0-9]+/[^<>\"'\\[\\]]+|/img/[^<>\"'\\[\\]]+|/i/\\d+/[^<>\"'\\[\\]]+|/i/\\d+/[^<>\"'\\[\\]]+(?!_t\\.[A-Za-z]{3,4}))";
     /* Errormessages inside URLs */
@@ -593,7 +593,7 @@ public class SuprafilesOrg extends antiDDoSForHost {
                      * might as well be a workaround by the XFS developers to avoid expiring reCaptchaV2 challenges.
                      */
                     logger.info("Detected captcha method \"RecaptchaV2\" for this host");
-                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6LehaD0UAAAAAGcmcox4g7ot09dyYcZQn5rfrk9l").getToken();
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6Lcbg2kUAAAAAPIeU9_l_lOUFWGV5hYBpQNdL4jj").getToken();
                     if (new Regex(correctedBR, Pattern.compile("\\$\\.post\\(\\s*?\"/ddl\"", Pattern.CASE_INSENSITIVE)).matches()) {
                         /* 2017-12-07: New */
                         /* Do not put the result in this Form as the check is handled below already */
@@ -1427,7 +1427,7 @@ public class SuprafilesOrg extends antiDDoSForHost {
                         if (dlinkbefore == null) {
                             this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "http://" + account.getHoster(), true));
                         }
-                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6LehaD0UAAAAAGcmcox4g7ot09dyYcZQn5rfrk9l").getToken();
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6Lcbg2kUAAAAAPIeU9_l_lOUFWGV5hYBpQNdL4jj").getToken();
                         if (dlinkbefore != null) {
                             this.setDownloadLink(dlinkbefore);
                         }

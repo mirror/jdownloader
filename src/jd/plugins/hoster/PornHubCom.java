@@ -41,6 +41,7 @@ import jd.controlling.AccountController;
 import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.Cookies;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Base64;
 import jd.nutils.encoding.Encoding;
@@ -124,8 +125,8 @@ public class PornHubCom extends PluginForHost {
 
     public static Object RNKEYLOCK = new Object();
 
-    public static boolean getPage(Browser br, final String url) throws Exception {
-        br.getPage(url);
+    public static boolean getPage(Browser br, final Request request) throws Exception {
+        br.getPage(request);
         String RNKEY = evalRNKEY(br);
         if (RNKEY != null) {
             int maxLoops = 8;// up to 3 loops in tests
@@ -137,7 +138,7 @@ public class PornHubCom extends PluginForHost {
                         br.setCookie(br.getHost(), "RNKEY", RNKEY);
                         Thread.sleep(1000 + ((8 - maxLoops) * 500));
                         br.setRequest(null);
-                        br.getPage(url);
+                        br.getPage(request);
                         RNKEY = evalRNKEY(br);
                     } else {
                         return false;
@@ -147,6 +148,10 @@ public class PornHubCom extends PluginForHost {
         } else {
             return true;
         }
+    }
+
+    public static boolean getPage(Browser br, final String url) throws Exception {
+        return getPage(br, br.createGetRequest(url));
     }
 
     @SuppressWarnings({ "deprecation", "static-access" })
