@@ -72,6 +72,7 @@ import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.Base64;
+import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.logging2.ClearableLogInterface;
 import org.appwork.utils.logging2.ClosableLogInterface;
 import org.appwork.utils.logging2.LogInterface;
@@ -1068,7 +1069,7 @@ public class LinkCrawler {
             link.setFinalFileName(dispositionHeader.getFilename());
             if (dispositionHeader.getEncoding() == null) {
                 try {
-                    link.setFinalFileName(URLDecoder.decode(dispositionHeader.getFilename(), "UTF-8"));
+                    link.setFinalFileName(URLEncode.decodeURIComponent(dispositionHeader.getFilename(), "UTF-8", true));
                 } catch (final IllegalArgumentException ignore) {
                 } catch (final UnsupportedEncodingException ignore) {
                 }
