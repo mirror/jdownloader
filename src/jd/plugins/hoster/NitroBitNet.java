@@ -13,10 +13,7 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
-
-import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -31,13 +28,12 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nitrobit.net" }, urls = { "http://(www\\.)?nitrobit\\.net/(?:view|watch)/[A-Z0-9]+" }) 
-public class NitroBitNet extends PluginForHost {
-
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nitrobit.net" }, urls = { "http://(www\\.)?nitrobit\\.net/(?:view|watch)/[A-Z0-9]+" })
+public class NitroBitNet extends antiDDoSForHost {
     public NitroBitNet(PluginWrapper wrapper) {
         super(wrapper);
         this.setAccountwithoutUsername(true);
@@ -54,7 +50,6 @@ public class NitroBitNet extends PluginForHost {
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-
     private String               fuid                         = null;
 
     @SuppressWarnings("deprecation")
@@ -65,12 +60,12 @@ public class NitroBitNet extends PluginForHost {
     /** Premium FULL browser response for case 'daily downloadlimit reached': "0הורדת קובץ זה תעבור על המכסה היומית" */
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception, PluginException {
         fuid = new Regex(link.getDownloadURL(), "([A-Z0-9]+)$").getMatch(0);
         link.setLinkID(fuid);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        getPage(br, link.getDownloadURL());
         if (br.containsHTML(">רוב הסיכויים שנמחק. אתה מועבר לדף הראשי<") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -96,7 +91,7 @@ public class NitroBitNet extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                con = br2.openHeadConnection(dllink);
+                con = openAntiDDoSRequestConnection(br2, br2.createHeadRequest(dllink));
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
@@ -120,7 +115,7 @@ public class NitroBitNet extends PluginForHost {
         String dllink = checkDirectLink(downloadLink, "directlink_account_premium");
         if (dllink == null) {
             this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            this.br.getPage("http://www.nitrobit.net/ajax/unlock.php?password=" + Encoding.urlEncode(acc.getPass()) + "&file=" + fuid + "&keep=false&_=" + System.currentTimeMillis());
+            getPage(br, "http://www.nitrobit.net/ajax/unlock.php?password=" + Encoding.urlEncode(acc.getPass()) + "&file=" + fuid + "&keep=false&_=" + System.currentTimeMillis());
             /**
              * TODO: Find out if maybe this contains the expire date of the account and set it: <b>לקוח יקר: </b><br />
              * תוקף קוד הגישה שלך יפוג בעוד <b style="color:red">1 ימים, 18 שעות, 53 דקות.</b><br
@@ -183,5 +178,4 @@ public class NitroBitNet extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }

@@ -2,6 +2,7 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -683,27 +684,45 @@ public abstract class K2SApi extends PluginForHost {
      * @throws PluginException
      */
     private void readConnection(final URLConnectionAdapter con, final Browser ibr) throws IOException, PluginException {
+        final Request request;
+        if (con.getRequest() != null) {
+            request = con.getRequest();
+        } else {
+            request = ibr.getRequest();
+        }
+        if (con.getRequest() != null && con.getRequest().getHtmlCode() != null) {
+            return;
+        } else if (con.getRequest() != null && !con.getRequest().isRequested()) {
+            throw new IOException("Request not sent yet!");
+        } else if (!con.isConnected()) {
+            // getInputStream/getErrorStream call connect!
+            throw new IOException("Connection is not connected!");
+        }
+        final InputStream is = getInputStream(con, ibr);
+        final byte[] responseBytes = Request.read(con, request.getReadLimit());
+        request.setResponseBytes(responseBytes);
+        LogInterface log = ibr.getLogger();
+        if (log == null) {
+            log = logger;
+        }
+        log.fine("\r\n" + request.getHtmlCode());
+        if (request.isKeepByteArray() || ibr.isKeepResponseContentBytes()) {
+            request.setKeepByteArray(true);
+            request.setResponseBytes(responseBytes);
+        }
+    }
+
+    protected InputStream getInputStream(final URLConnectionAdapter con, final Browser br) throws IOException {
         final int responseCode = con.getResponseCode();
         switch (responseCode) {
         case 502:
             // Bad Gateway
             break;
         default:
-            // allow all other response codes
             con.setAllowedResponseCodes(new int[] { responseCode });
             break;
         }
-        final byte[] responseBytes = Request.read(con, con.getRequest().getReadLimit());
-        ibr.getRequest().setResponseBytes(responseBytes);
-        LogInterface log = ibr.getLogger();
-        if (log == null) {
-            log = logger;
-        }
-        log.fine("\r\n" + ibr.getRequest().getHtmlCode());
-        if (ibr.getRequest().isKeepByteArray() || ibr.isKeepResponseContentBytes()) {
-            ibr.getRequest().setKeepByteArray(true);
-            ibr.getRequest().setResponseBytes(responseBytes);
-        }
+        return con.getInputStream();
     }
 
     private boolean loginRequiresCaptcha(final Browser ibr) {
