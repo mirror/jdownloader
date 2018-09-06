@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -26,14 +25,12 @@ import jd.plugins.DownloadLink;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dreamamateurs.com" }, urls = { "http://(www\\.)?dreamamateurs\\.com/(?:[A-Za-z0-9]+/\\d+/\\w+\\.html|link/\\d+/|\\d+/\\w+\\.html|\\w+/\\d+/\\w+)" })
 public class DreamAmateursCom extends PornEmbedParser {
-
     public DreamAmateursCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* DEV NOTES */
     /* Porn_plugin */
-
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
@@ -71,7 +68,6 @@ public class DreamAmateursCom extends PornEmbedParser {
             dl.setFinalFileName(filename + ".flv");
             decryptedLinks.add(dl);
             return decryptedLinks;
-
         }
         externID = br.getRegex("file=(.*?)\\&link=http%3A%2F%2F").getMatch(0);
         if (externID != null) {
@@ -79,7 +75,6 @@ public class DreamAmateursCom extends PornEmbedParser {
             dl.setFinalFileName(filename + ".flv");
             decryptedLinks.add(dl);
             return decryptedLinks;
-
         }
         externID = br.getRegex("\\&file=(http://(www\\.)?revengetv\\.net/[^<>\"]*?)\\&beginimage").getMatch(0);
         if (externID != null) {
@@ -87,7 +82,6 @@ public class DreamAmateursCom extends PornEmbedParser {
             dl.setFinalFileName(filename + ".flv");
             decryptedLinks.add(dl);
             return decryptedLinks;
-
         }
         externID = br.getRegex("flashvars=\"file=(http://(www\\.)?hostave3\\.net/[^<>\"]*?)\\&screenfile=").getMatch(0);
         if (externID != null) {
@@ -95,7 +89,6 @@ public class DreamAmateursCom extends PornEmbedParser {
             dl.setFinalFileName(filename + ".flv");
             decryptedLinks.add(dl);
             return decryptedLinks;
-
         }
         externID = br.getRegex("\\&file=(https?://static\\.mofos\\.com/scenes/[^<>\"]*?)\\&").getMatch(0);
         if (externID != null) {
@@ -103,7 +96,6 @@ public class DreamAmateursCom extends PornEmbedParser {
             dl.setFinalFileName(filename + ".flv");
             decryptedLinks.add(dl);
             return decryptedLinks;
-
         }
         externID = br.getRegex("so\\.addVariable\\(\\'file\\',\\'(http://(www\\.)?dreamamateurs\\.com/videos/[^<>\"]*?)\\'\\)").getMatch(0);
         if (externID != null) {
@@ -111,11 +103,18 @@ public class DreamAmateursCom extends PornEmbedParser {
             dl.setFinalFileName(filename + ".flv");
             decryptedLinks.add(dl);
             return decryptedLinks;
-
         }
         if (br.containsHTML("\\&file=http://embed\\.kickassratios\\.com/")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
+        }
+        if (br.containsHTML("dreamamateurs.com/embed/")) {
+            String embed = br.getRegex("src='(https://www.dreamamateurs.com/embed/\\d+)'").getMatch(0);
+            br.getPage(embed);
+            if (br.containsHTML("https%3A%2F%2Fsignup")) {
+                decryptedLinks.add(createOfflinelink(parameter));
+                return decryptedLinks;
+            }
         }
         logger.warning("Decrypter broken for link: " + parameter);
         return null;
@@ -125,5 +124,4 @@ public class DreamAmateursCom extends PornEmbedParser {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
