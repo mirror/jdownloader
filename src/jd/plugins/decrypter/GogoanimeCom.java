@@ -38,7 +38,7 @@ public class GogoanimeCom extends antiDDoSForDecrypt {
      * @return
      */
     public static String[] getAnnotationNames() {
-        return new String[] { "gogoanime.com", "gogoanime.to", "goodanime.co", "goodanime.net", "gooddrama.net", "playbb.me", "videowing.me", "easyvideo.me", "videozoo.me", "video66.org", "animewow.tv", "dramago.com", "playpanda.net", "byzoo.org", "vidzur.com", "animetoon.tv", "dramagalaxy.com", "toonget.com", "goodmanga.net" };
+        return new String[] { "gogoanime.com", "gogoanime.to", "goodanime.co", "goodanime.net", "gooddrama.net", "playbb.me", "videowing.me", "easyvideo.me", "videozoo.me", "video66.org", "animewow.tv", "dramago.com", "playpanda.net", "byzoo.org", "vidzur.com", "animetoon.tv", "dramagalaxy.com", "toonget.com", "goodmanga.net", "animenova.org" };
     }
 
     /**
@@ -64,7 +64,7 @@ public class GogoanimeCom extends antiDDoSForDecrypt {
     }
 
     private final String invalidLinks = ".+" + Pattern.quote(this.getHost()) + "/(category|thumbs|biography|sitemap|img|xmlrpc|fav|images|ads|gga\\-contact).*?";
-    private final String embed        = ".+/(embed(\\.php)?\\?.*?vid(eo)?=.+|embed/[a-f0-9]+|gogo/\\?.*?file=.+)";
+    private final String embed        = ".+/(embed(\\.php)?\\?.*?vid(eo)?=.+|embed/[a-z0-9\\?\\=\\&\\#\\;]+|gogo/\\?.*?file=.+)";
 
     @Override
     protected boolean useRUA() {
@@ -141,7 +141,7 @@ public class GogoanimeCom extends antiDDoSForDecrypt {
             }
             if (fpName != null) {
                 final FilePackage fp = FilePackage.getInstance();
-                fp.setName(fpName.trim());
+                fp.setName(Encoding.htmlDecode(fpName.trim()));
                 fp.addLinks(decryptedLinks);
                 fp.setProperty("ALLOW_MERGE", true);
             }
