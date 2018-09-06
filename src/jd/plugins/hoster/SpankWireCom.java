@@ -26,6 +26,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "spankwire.com" }, urls = { "https?://(?:www\\.)?spankwire\\.com/(?:.*?/video\\d+|EmbedPlayer\\.aspx/?\\?ArticleId=\\d+)" })
 public class SpankWireCom extends PluginForHost {
@@ -49,7 +50,7 @@ public class SpankWireCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        this.setBrowserExclusive();
+        setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCookie("http://spankwire.com/", "performance_timing", "video");
         br.setCookie("http://spankwire.com/", "Tablet_False", "");
@@ -87,10 +88,13 @@ public class SpankWireCom extends PluginForHost {
                 downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
                 return AvailableStatus.TRUE;
             }
-            if (this.br.containsHTML("playerData\\.articleTitle\\s+=\\s+null")) {
+            if (br.containsHTML("playerData\\.articleTitle\\s+=\\s+null")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             filename = br.getRegex("playerData.articleTitle\\s+= (\'|\")([^\']*?)(\'|\")").getMatch(1);
+            if (filename == null) {
+                filename = fileID;
+            }
             if (filename != null) {
                 filename = Encoding.htmlDecode(filename.trim());
                 filename = filename.replaceAll("\\+", " ");
@@ -192,6 +196,13 @@ public class SpankWireCom extends PluginForHost {
         }
         if (dllink != null) {
             dllink = dllink.replace("\\", "");
+        }
+        if (dllink == null) { // downloadLink.getDownloadURL().contains("EmbedPlayer.aspx")
+            String qualityUrls = br.getRegex("qualityUrls\":\\[(.*?)\\],").getMatch(0);
+            if (qualityUrls == null && br.containsHTML("\"videoUnavailable\":true")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            dllink = PluginJSonUtils.getJsonValue(qualityUrls, "src");
         }
         return dllink;
     }
