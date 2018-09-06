@@ -37,6 +37,7 @@ import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -720,7 +721,7 @@ public class RapidGatorNet extends antiDDoSForHost {
             try {
                 avoidBlock(br);
                 con = openAntiDDoSRequestConnection(br, br.createGetRequest(apiURL + "user/login?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass())));
-                handleErrors_api(null, null, account, con);
+                handleErrors_api(null, false, null, account, con);
                 if (con.getResponseCode() == 200) {
                     br.followConnection();
                     final String session_id = PluginJSonUtils.getJsonValue(br, "session_id");
@@ -772,14 +773,21 @@ public class RapidGatorNet extends antiDDoSForHost {
     }
 
     public static String readErrorStream(final URLConnectionAdapter con) throws UnsupportedEncodingException, IOException {
-        BufferedReader f = null;
+        if (con.getRequest() != null && con.getRequest().getHtmlCode() != null) {
+            return con.getRequest().getHtmlCode();
+        } else if (con.getRequest() != null && !con.getRequest().isRequested()) {
+            throw new IOException("Request not sent yet!");
+        } else if (!con.isConnected()) {
+            // getInputStream/getErrorStream call connect!
+            throw new IOException("Connection is not connected!");
+        }
+        con.setAllowedResponseCodes(new int[] { con.getResponseCode() });
         try {
-            con.setAllowedResponseCodes(new int[] { con.getResponseCode() });
             final InputStream es = con.getErrorStream();
             if (es == null) {
                 throw new IOException("No errorstream!");
             }
-            f = new BufferedReader(new InputStreamReader(es, "UTF8"));
+            final BufferedReader f = new BufferedReader(new InputStreamReader(es, "UTF8"));
             String line;
             final StringBuilder ret = new StringBuilder();
             final String sep = System.getProperty("line.separator");
@@ -791,14 +799,11 @@ public class RapidGatorNet extends antiDDoSForHost {
             }
             return ret.toString();
         } finally {
-            try {
-                f.close();
-            } catch (final Throwable e) {
-            }
+            con.disconnect();
         }
     }
 
-    private void handleErrors_api(final String session_id, final DownloadLink link, final Account account, final URLConnectionAdapter con) throws PluginException, UnsupportedEncodingException, IOException {
+    private void handleErrors_api(final String session_id, boolean retrySameSession, final DownloadLink link, final Account account, final URLConnectionAdapter con) throws PluginException, UnsupportedEncodingException, IOException {
         if (link != null) {
             if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -867,7 +872,17 @@ public class RapidGatorNet extends antiDDoSForHost {
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
-                } else if (StringUtils.containsIgnoreCase(errorMessage, "Session not exist") || StringUtils.containsIgnoreCase(errorMessage, "This download session is not for you") || StringUtils.containsIgnoreCase(errorMessage, "Session not found")) {
+                } else if (StringUtils.containsIgnoreCase(errorMessage, "Session not exist")) {
+                    if (retrySameSession) {
+                        throw new PluginException(LinkStatus.ERROR_RETRY, "RetrySameSession");
+                    } else {
+                        if (sessionReset) {
+                            logger.info("SessionReset:" + sessionReset);
+                            account.setProperty("session_id", Property.NULL);
+                        }
+                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                    }
+                } else if (StringUtils.containsIgnoreCase(errorMessage, "This download session is not for you") || StringUtils.containsIgnoreCase(errorMessage, "Session not found")) {
                     if (sessionReset) {
                         logger.info("SessionReset:" + sessionReset);
                         account.setProperty("session_id", Property.NULL);
@@ -932,8 +947,21 @@ public class RapidGatorNet extends antiDDoSForHost {
         if (fileName == null) {
             /* no final filename yet, do linkcheck */
             try {
-                con = openAntiDDoSRequestConnection(br, br.createGetRequest(apiURL + "file/info?sid=" + session_id + "&url=" + Encoding.urlEncode(link.getDownloadURL())));
-                handleErrors_api(session_id, link, account, con);
+                final Request request = br.createGetRequest(apiURL + "file/info?sid=" + session_id + "&url=" + Encoding.urlEncode(link.getDownloadURL()));
+                con = openAntiDDoSRequestConnection(br, request);
+                try {
+                    handleErrors_api(session_id, true, link, account, con);
+                } catch (PluginException e) {
+                    logger.log(e);
+                    if (e.getLinkStatus() == LinkStatus.ERROR_RETRY && StringUtils.equalsIgnoreCase("RetrySameSession", e.getMessage())) {
+                        // retry session after few seconds, maybe session is not known/cached yet on download server
+                        sleep(5000, link);
+                        con = openAntiDDoSRequestConnection(br, request.cloneRequest());
+                        handleErrors_api(session_id, false, link, account, con);
+                    } else {
+                        throw e;
+                    }
+                }
                 if (con.getResponseCode() == 200) {
                     br.followConnection();
                     fileName = PluginJSonUtils.getJsonValue(br, "filename");
@@ -963,8 +991,21 @@ public class RapidGatorNet extends antiDDoSForHost {
         }
         String url = null;
         try {
-            con = openAntiDDoSRequestConnection(br, br.createGetRequest(apiURL + "file/download?sid=" + session_id + "&url=" + Encoding.urlEncode(link.getDownloadURL())));
-            handleErrors_api(session_id, link, account, con);
+            final Request request = br.createGetRequest(apiURL + "file/download?sid=" + session_id + "&url=" + Encoding.urlEncode(link.getDownloadURL()));
+            con = openAntiDDoSRequestConnection(br, request);
+            try {
+                handleErrors_api(session_id, true, link, account, con);
+            } catch (PluginException e) {
+                logger.log(e);
+                if (e.getLinkStatus() == LinkStatus.ERROR_RETRY && StringUtils.equalsIgnoreCase("RetrySameSession", e.getMessage())) {
+                    // retry session after few seconds, maybe session is not known/cached yet on download server
+                    sleep(5000, link);
+                    con = openAntiDDoSRequestConnection(br, request.cloneRequest());
+                    handleErrors_api(session_id, false, link, account, con);
+                } else {
+                    throw e;
+                }
+            }
             if (con.getResponseCode() == 200) {
                 br.followConnection();
                 url = PluginJSonUtils.getJsonValue(br, "url");
@@ -1004,7 +1045,7 @@ public class RapidGatorNet extends antiDDoSForHost {
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, url, true, maxPremChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
-            handleErrors_api(session_id, link, account, dl.getConnection());
+            handleErrors_api(session_id, false, link, account, dl.getConnection());
             // so we can see errors maybe proxy errors etc.
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -1081,7 +1122,7 @@ public class RapidGatorNet extends antiDDoSForHost {
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, Encoding.htmlDecode(dllink), true, maxPremChunks);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
-                handleErrors_api(null, link, account, dl.getConnection());
+                handleErrors_api(null, false, link, account, dl.getConnection());
                 // so we can see errors maybe proxy errors etc.
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
