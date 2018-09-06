@@ -944,6 +944,7 @@ public class RapidGatorNet extends antiDDoSForHost {
         }
         URLConnectionAdapter con = null;
         String fileName = link.getFinalFileName();
+        boolean allowSessionRetry = true;
         if (fileName == null) {
             /* no final filename yet, do linkcheck */
             try {
@@ -954,6 +955,7 @@ public class RapidGatorNet extends antiDDoSForHost {
                 } catch (PluginException e) {
                     logger.log(e);
                     if (e.getLinkStatus() == LinkStatus.ERROR_RETRY && StringUtils.equalsIgnoreCase("RetrySameSession", e.getMessage())) {
+                        allowSessionRetry = false;
                         // retry session after few seconds, maybe session is not known/cached yet on download server
                         sleep(5000, link);
                         con = openAntiDDoSRequestConnection(br, request.cloneRequest());
@@ -997,7 +999,7 @@ public class RapidGatorNet extends antiDDoSForHost {
                 handleErrors_api(session_id, true, link, account, con);
             } catch (PluginException e) {
                 logger.log(e);
-                if (e.getLinkStatus() == LinkStatus.ERROR_RETRY && StringUtils.equalsIgnoreCase("RetrySameSession", e.getMessage())) {
+                if (allowSessionRetry && e.getLinkStatus() == LinkStatus.ERROR_RETRY && StringUtils.equalsIgnoreCase("RetrySameSession", e.getMessage())) {
                     // retry session after few seconds, maybe session is not known/cached yet on download server
                     sleep(5000, link);
                     con = openAntiDDoSRequestConnection(br, request.cloneRequest());
