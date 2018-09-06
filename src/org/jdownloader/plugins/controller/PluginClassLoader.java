@@ -7,6 +7,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.channels.ClosedByInterruptException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -31,23 +32,22 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.updatev2.ClassLoaderExtension;
 
 public class PluginClassLoader extends URLClassLoader {
-
     private static final HashMap<String, HashMap<String, Object>> sharedPluginObjectsPool = new HashMap<String, HashMap<String, Object>>();
     // http://docs.oracle.com/javase/7/docs/technotes/guides/lang/cl-mt.html
     private static final HashSet<String>                          immutableClasses        = new HashSet<String>() {
-                                                                                              {
-                                                                                                  add("java.lang.Boolean");
-                                                                                                  add("java.lang.Byte");
-                                                                                                  add("java.lang.String");
-                                                                                                  add("java.lang.Double");
-                                                                                                  add("java.lang.Integer");
-                                                                                                  add("java.lang.Long");
-                                                                                                  add("java.lang.Float");
-                                                                                                  add("java.lang.Short");
-                                                                                                  add("java.math.BigInteger");
-                                                                                                  add("java.math.BigDecimal");
-                                                                                              }
-                                                                                          };
+        {
+            add("java.lang.Boolean");
+            add("java.lang.Byte");
+            add("java.lang.String");
+            add("java.lang.Double");
+            add("java.lang.Integer");
+            add("java.lang.Long");
+            add("java.lang.Float");
+            add("java.lang.Short");
+            add("java.math.BigInteger");
+            add("java.math.BigDecimal");
+        }
+    };
 
     private static class PluginClassLoaderClass {
         private final WeakReference<Class<?>> clazz;
@@ -63,7 +63,6 @@ public class PluginClassLoader extends URLClassLoader {
     }
 
     public static class PluginClassLoaderChild extends URLClassLoader {
-
         static {
             if (Application.getJavaVersion() >= Application.JAVA17) {
                 try {
@@ -73,7 +72,6 @@ public class PluginClassLoader extends URLClassLoader {
                 }
             }
         }
-
         private static final byte _0XCA           = (byte) 0xca;
         private static final byte _0XFE           = (byte) 0xfe;
         private static final byte _0XBA           = (byte) 0xba;
@@ -90,7 +88,6 @@ public class PluginClassLoader extends URLClassLoader {
         }
 
         private boolean      jared           = Application.isJared(PluginClassLoader.class);
-
         private String       pluginClass     = null;
         private final String creationHistory = Exceptions.getStackTrace(new Throwable());
 
@@ -145,51 +142,82 @@ public class PluginClassLoader extends URLClassLoader {
             return false;
         }
 
+        private LogInterface getLogger(LogInterface logger) {
+            if (logger != null) {
+                return logger;
+            } else {
+                final LogInterface ret = LogController.getRebirthLogger(org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger());
+                if (ret == null) {
+                    return LogController.CL(false);
+                } else {
+                    return ret;
+                }
+            }
+        }
+
+        // class loading must NOT be interrupted! may result in NoClassDefFoundError which requires a restart
         private Class<?> loadAndDefineClass(final URL myUrl, final String name) throws Exception {
             int tryAgain = 5;
             byte data[] = null;
-            while (true) {
-                try {
-                    data = IO.readURL(myUrl);
+            boolean interrupted = false;
+            LogInterface logger = null;
+            try {
+                while (true) {
                     try {
-                        if (_0XCA != data[0] || _0XFE != data[1] || _0XBA != data[2] || _0XBE != data[3]) {
-                            final String id = "classloader_" + HexFormatter.byteArrayToHex(new byte[] { data[0], data[1], data[2], data[3] });
-                            final String clExtension = System.getProperty("classloader_" + HexFormatter.byteArrayToHex(new byte[] { data[0], data[1], data[2], data[3] }));
-                            data = ((ClassLoaderExtension) Class.forName(clExtension).newInstance()).run(data);
+                        try {
+                            data = IO.readURL(myUrl);
+                            try {
+                                if (_0XCA != data[0] || _0XFE != data[1] || _0XBA != data[2] || _0XBE != data[3]) {
+                                    final String id = "classloader_" + HexFormatter.byteArrayToHex(new byte[] { data[0], data[1], data[2], data[3] });
+                                    final String clExtension = System.getProperty("classloader_" + HexFormatter.byteArrayToHex(new byte[] { data[0], data[1], data[2], data[3] }));
+                                    data = ((ClassLoaderExtension) Class.forName(clExtension).newInstance()).run(data);
+                                }
+                            } catch (Throwable e) {
+                                throw new ClassFormatError("No Class File");
+                            }
+                            if (data == null || data.length == 0) {
+                                throw new ClassFormatError("No Class File");
+                            }
+                            return defineClass(name, data, 0, data.length);
+                        } catch (ClassFormatError e) {
+                            logger = getLogger(logger);
+                            if (data != null) {
+                                logger.severe("ClassFormatError:class=" + name + "|file=" + myUrl + "|size=" + data.length);
+                            } else {
+                                logger.severe("ClassFormatError:class=" + name + "|file=" + myUrl);
+                            }
+                            logger.log(e);
+                            if (--tryAgain == 0) {
+                                throw e;
+                            } else {
+                                Thread.sleep(150);
+                            }
+                        } catch (ClosedByInterruptException e) {
+                            logger = getLogger(logger);
+                            logger.severe("ClosedByInterruptException:class=" + name + "|file=" + myUrl);
+                            logger.log(e);
+                            interrupted = true;
+                        } catch (IOException e) {
+                            logger = getLogger(logger);
+                            logger.severe("IOException:class=" + name + "|file=" + myUrl);
+                            logger.log(e);
+                            if (--tryAgain == 0) {
+                                throw e;
+                            } else {
+                                Thread.sleep(150);
+                            }
                         }
-                    } catch (Throwable e) {
-                        throw new ClassFormatError("No Class File");
-                    }
-                    if (data == null || data.length == 0) {
-                        throw new ClassFormatError("No Class File");
-                    }
-                    return defineClass(name, data, 0, data.length);
-                } catch (ClassFormatError e) {
-                    LogInterface logger = LogController.getRebirthLogger(org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger());
-                    if (logger != null) {
-                        if (data != null) {
-                            logger.severe("ClassFormatError:class=" + name + "|file=" + myUrl + "|size=" + data.length);
-                        } else {
-                            logger.severe("ClassFormatError:class=" + name + "|file=" + myUrl);
-                        }
+                    } catch (InterruptedException e) {
+                        logger = getLogger(logger);
+                        logger.severe("InterruptedException:class=" + name + "|file=" + myUrl);
                         logger.log(e);
+                        // class loading must NOT be interrupted! may result in NoClassDefFoundError which requires a restart
+                        interrupted = true;
                     }
-                    if (--tryAgain == 0) {
-                        throw e;
-                    } else {
-                        Thread.sleep(150);
-                    }
-                } catch (IOException e) {
-                    LogInterface logger = LogController.getRebirthLogger(org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger());
-                    if (logger != null) {
-                        logger.severe("IOException:class=" + name + "|file=" + myUrl);
-                        logger.log(e);
-                    }
-                    if (--tryAgain == 0) {
-                        throw e;
-                    } else {
-                        Thread.sleep(150);
-                    }
+                }
+            } finally {
+                if (interrupted) {
+                    Thread.currentThread().interrupt();
                 }
             }
         }
@@ -207,7 +235,7 @@ public class PluginClassLoader extends URLClassLoader {
                     sharedPluginObjects = contains;
                 }
                 final Field[] fields = currentClass.getDeclaredFields();
-                LogSource logger = null;
+                LogInterface logger = null;
                 try {
                     synchronized (sharedPluginObjects) {
                         final HashSet<String> knownFields = new HashSet<String>(sharedPluginObjects.keySet());
@@ -217,23 +245,17 @@ public class PluginClassLoader extends URLClassLoader {
                                 final int modifiers = field.getModifiers();
                                 if (Modifier.isStatic(modifiers) && !Modifier.isFinal(modifiers)) {
                                     if (field.getType().isEnum() || field.isEnumConstant()) {
-                                        if (logger == null) {
-                                            logger = LogController.CL(false);
-                                        }
+                                        logger = getLogger(logger);
                                         logger.info("Class " + currentClassName + " has static enum: " + fieldName);
                                         continue;
                                     }
                                     if (field.getType().isPrimitive()) {
-                                        if (logger == null) {
-                                            logger = LogController.CL(false);
-                                        }
+                                        logger = getLogger(logger);
                                         logger.info("Class " + currentClassName + " has static primitive field: " + fieldName);
                                         continue;
                                     }
                                     if (immutableClasses.contains(field.getType().getName())) {
-                                        if (logger == null) {
-                                            logger = LogController.CL(false);
-                                        }
+                                        logger = getLogger(logger);
                                         logger.info("Class " + currentClassName + " has static immutable field: " + fieldName);
                                         continue;
                                     }
@@ -246,47 +268,37 @@ public class PluginClassLoader extends URLClassLoader {
                                             knownFields.remove(fieldName);
                                             continue;
                                         } catch (final Throwable e) {
-                                            if (logger == null) {
-                                                logger = LogController.CL(false);
-                                            }
+                                            logger = getLogger(logger);
                                             logger.severe("Cant modify Field " + fieldName + " for " + currentClassName);
                                         }
                                     }
                                     Object fieldObject = field.get(null);
                                     if (fieldObject != null) {
                                         if (fieldObject.getClass().getClassLoader() instanceof PluginClassLoaderChild) {
-                                            if (logger == null) {
-                                                logger = LogController.CL(false);
-                                            }
+                                            logger = getLogger(logger);
                                             logger.info("FIXME!!!! Class " + currentClassName + " has customized static field: " + fieldName + "!");
                                         }
                                         sharedPluginObjects.put(new String(fieldName), fieldObject);// dereference from field
                                     } else {
-                                        if (logger == null) {
-                                            logger = LogController.CL(false);
-                                        }
+                                        logger = getLogger(logger);
                                         logger.info("Class " + currentClassName + " has static field: " + fieldName + " with null content!");
                                     }
                                 }
                             }
                         }
                         for (final String missingField : knownFields) {
-                            if (logger == null) {
-                                logger = LogController.CL(false);
-                            }
+                            logger = getLogger(logger);
                             logger.info("Class " + currentClassName + " no longer has static field: " + missingField);
                             sharedPluginObjects.remove(missingField);
                         }
                     }
                 } catch (final Throwable e) {
-                    if (logger == null) {
-                        logger = LogController.CL(false);
-                    }
+                    logger = getLogger(logger);
                     logger.info("Throwable in Class " + currentClassName);
                     logger.log(e);
                 } finally {
-                    if (logger != null) {
-                        logger.close();
+                    if (logger != null && logger instanceof LogSource) {
+                        ((LogSource) logger).close();
                     }
                 }
             }
@@ -359,10 +371,8 @@ public class PluginClassLoader extends URLClassLoader {
                 }
                 return clazz;
             } catch (Exception e) {
-                LogInterface logger = LogController.getRebirthLogger(org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger());
-                if (logger != null) {
-                    logger.log(e);
-                }
+                final LogInterface logger = getLogger(null);
+                logger.log(e);
                 if (e instanceof UpdateRequiredClassNotFoundException) {
                     throw (UpdateRequiredClassNotFoundException) e;
                 }
@@ -371,7 +381,6 @@ public class PluginClassLoader extends URLClassLoader {
                 }
                 throw new ClassNotFoundException(name, e);
             }
-
         }
 
         /**
@@ -392,16 +401,11 @@ public class PluginClassLoader extends URLClassLoader {
     }
 
     private static final WeakHashMap<PluginClassLoaderChild, WeakReference<LazyPlugin<? extends Plugin>>> sharedLazyPluginClassLoader  = new WeakHashMap<PluginClassLoaderChild, WeakReference<LazyPlugin<? extends Plugin>>>();
-
     private static final WeakHashMap<PluginClassLoaderChild, String>                                      sharedPluginClassLoader      = new WeakHashMap<PluginClassLoaderChild, String>();
     private static final WeakHashMap<Thread, WeakReference<PluginClassLoaderChild>>                       threadPluginClassLoader      = new WeakHashMap<Thread, WeakReference<PluginClassLoaderChild>>();
-
     private static final WeakHashMap<ThreadGroup, WeakReference<PluginClassLoaderChild>>                  threadGroupPluginClassLoader = new WeakHashMap<ThreadGroup, WeakReference<PluginClassLoaderChild>>();
-
     private static final PluginClassLoader                                                                INSTANCE                     = new PluginClassLoader();
-
     private static final HashMap<String, String>                                                          DYNAMIC_LOADABLE_LOBRARIES   = new HashMap<String, String>();
-
     static {
         synchronized (DYNAMIC_LOADABLE_LOBRARIES) {
             DYNAMIC_LOADABLE_LOBRARIES.put("org.bouncycastle", "bcprov-jdk15on.jar");
@@ -535,7 +539,6 @@ public class PluginClassLoader extends URLClassLoader {
                 threadGroupPluginClassLoader.put(threadGroup, new WeakReference<PluginClassLoaderChild>(groupChild));
             }
         }
-
     }
 
     private final String creationHistory = Exceptions.getStackTrace(new Throwable());
