@@ -29,6 +29,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
@@ -87,6 +88,7 @@ public class PixivNet extends PluginForDecrypt {
             } else {
                 br.getPage(jd.plugins.hoster.PixivNet.createGalleryUrl(lid));
             }
+            // br.getRequest().setHtmlCode(IO.readFileToString(new File("/home/daniel/request")));
             /* Decrypt gallery */
             String[] links;
             if (Boolean.TRUE.equals(single) || (single == null && br.containsHTML("指定されたIDは複数枚投稿ではありません|t a multiple-image submission<"))) {
@@ -98,20 +100,20 @@ public class PixivNet extends PluginForDecrypt {
                 if (fpName == null) {
                     fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
                 }
-                links = br.getRegex("data-illust-id=\"\\d+\"><img src=\"(http[^<>\"']+)\"").getColumn(0);
+                links = br.getRegex("data-illust-id=\"\\d+\"><img src=\"(https?[^<>\"']+)\"").getColumn(0);
                 if (links.length == 0) {
                     // old layout
-                    links = br.getRegex("data-title=\"registerImage\"><img src=\"(http[^<>\"']+)\"").getColumn(0);
+                    links = br.getRegex("data-title=\"registerImage\"><img src=\"(https?[^<>\"']+)\"").getColumn(0);
                     if (links.length == 0) {
                         // regular(new layout)
-                        links = br.getRegex("\"illustId\"\\s*:\\s*\"" + lid + "\".*?\"regular\"\\s*:\\s*\"(http[^<>\"']+)\"").getColumn(0);
+                        links = br.getRegex("\"illustId\"\\s*:\\s*\"" + lid + "\".*?\"regular\"\\s*:\\s*\"(https?[^<>\"']+)\"").getColumn(0);
                     }
                 }
                 if (links.length == 0) {
-                    links = br.getRegex("data-src=\"(http[^<>\"]+)\"[^>]+class=\"original-image\"").getColumn(0);
+                    links = br.getRegex("data-src=\"(https?[^<>\"]+)\"[^>]+class=\"original-image\"").getColumn(0);
                     if (links.length == 0) {
                         // original(new layout)
-                        links = br.getRegex("\"illustId\"\\s*:\\s*\"" + lid + "\".*?\"original\"\\s*:\\s*\"(http[^<>\"']+)\"").getColumn(0);
+                        links = br.getRegex("\"illustId\"\\s*:\\s*\"" + lid + "\".*?\"original\"\\s*:\\s*\"(https?[^<>\"']+)\"").getColumn(0);
                     }
                 }
                 if (links.length == 0) {
@@ -123,6 +125,8 @@ public class PixivNet extends PluginForDecrypt {
                 if (links.length == 0 && isAdultImageLoginRequired(lid) && !loggedIn) {
                     logger.info("Adult content: Account required");
                     return decryptedLinks;
+                } else if (links.length == 0) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             } else {
                 /* Multiple urls */
@@ -142,14 +146,10 @@ public class PixivNet extends PluginForDecrypt {
                     fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
                 }
                 // old layout
-                links = br.getRegex("pixiv\\.context\\.images\\[\\d+\\]\\s*=\\s*\"(http[^\"]+)\"").getColumn(0);
+                links = br.getRegex("pixiv\\.context\\.images\\[\\d+\\]\\s*=\\s*\"(https?[^\"]+)\"").getColumn(0);
                 if (links.length == 0) {
-                    // new layout, no changes yet?
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-            }
-            if (links == null || links.length == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
             }
             if (fpName != null) {
                 fpName = Encoding.htmlOnlyDecode(fpName);

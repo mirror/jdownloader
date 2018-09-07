@@ -624,7 +624,7 @@ public class CloudyfilesCom extends PluginForHost {
                     skipWaittime = true;
                 } else if (correctedBR.contains("class=\"g-recaptcha\"")) {
                     logger.info("Detected captcha method \"reCaptchaV2\" for this host");
-                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6Lffkj0UAAAAAP1kDtS2awHYcVuilqv51Y7dgGVd").getToken();
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6LeIa20UAAAAAFgkPcEmgam1dFFL2aGXwdqzxBbR").getToken();
                     dlForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                     logger.info("Detected captcha method \"solvemedia\" for this host");

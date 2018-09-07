@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -330,7 +331,14 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
                 Captchamap = Captchamap.replaceAll("(\\&amp;|legend=1)", "");
                 final File file = this.getLocalCaptchaFile();
                 final Browser temp = getCaptchaBrowser(br);
-                temp.getDownload(file, Captchamap);
+                try {
+                    temp.getDownload(file, Captchamap);
+                } catch (final IOException e) {
+                    // 500 Internal Server Error
+                    logger.log(e);
+                    sleep(2000, param);
+                    temp.getDownload(file, Captchamap);
+                }
                 final ClickedPoint cp = getCaptchaClickedPoint(getHost(), file, param, null, JDL.L("plugins.decrypt.shrlnksbz.desc", "Read the combination in the background and click the corresponding combination in the overview!"));
                 if (cp == null) {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
