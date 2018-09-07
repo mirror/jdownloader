@@ -23,6 +23,10 @@ import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -39,10 +43,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub(?:premium)?\\.com/(?:.*\\?viewkey=[a-z0-9]+|embed/[a-z0-9]+|embed_player\\.php\\?id=\\d+|users/[^/]+/videos/public|pornstar/[^/]+(?:/gifs(/public|/video|/from_videos)?)?|users/[^/]+(?:/gifs(/public|/video|/from_videos)?)?|model/[^/]+(?:/gifs(/public|/video|/from_videos)?)?|playlist/\\d+)" })
 public class PornHubCom extends PluginForDecrypt {
@@ -80,6 +80,10 @@ public class PornHubCom extends PluginForDecrypt {
             parameter = parameter.replace("pornhubpremium.com", "pornhub.com");
         }
         jd.plugins.hoster.PornHubCom.getPage(br, parameter);
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<h2>Upgrade now<")) {
+            decryptedLinks.add(createOfflinelink(parameter));
+            return decryptedLinks;
+        }
         if (br.containsHTML("class=\"g-recaptcha\"")) {
             final Form form = br.getFormByInputFieldKeyValue("captchaType", "1");
             logger.info("Detected captcha method \"reCaptchaV2\" for this host");
