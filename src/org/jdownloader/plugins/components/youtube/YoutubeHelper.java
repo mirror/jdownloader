@@ -924,6 +924,7 @@ public class YoutubeHelper {
             if (descrambler == null) {
                 descrambler = new Regex(html5PlayerSource, "(\\w+)\\s*=\\s*function\\((\\w+)\\)\\{\\s*\\2=\\s*\\2\\.split\\(\"\"\\)").getMatch(0);
                 if (descrambler == null) {
+                    //
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
