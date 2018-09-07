@@ -3,7 +3,7 @@ package jd.plugins.hoster;
 import java.net.URL;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Random;
 
 import javax.crypto.Cipher;
@@ -11,14 +11,6 @@ import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
-import org.appwork.utils.net.URLHelper;
-import org.jdownloader.plugins.config.BasicAdvancedConfigPluginPanel;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -38,18 +30,23 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.appwork.utils.net.URLHelper;
+import org.jdownloader.plugins.config.BasicAdvancedConfigPluginPanel;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dropbox.com" }, urls = { "https?://(?:www\\.)?(dl\\-web\\.dropbox\\.com/get/.*?w=[0-9a-f]+|([\\w]+:[\\w]+@)?api\\-content\\.dropbox\\.com/\\d+/files/.+|dropboxdecrypted\\.com/.+)" })
 public class DropboxCom extends PluginForHost {
-
     public DropboxCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.dropbox.com/pricing");
-
     }
 
     public void correctDownloadLink(DownloadLink link) {
         link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("dropboxdecrypted.com/", "dropbox.com/").replaceAll("#", "%23").replaceAll("\\?dl=\\d", ""));
-
     }
 
     @Override
@@ -58,7 +55,6 @@ public class DropboxCom extends PluginForHost {
     }
 
     public interface DropboxConfig extends PluginConfigInterface {
-
         @DefaultBooleanValue(false)
         @AboutConfig
         @DescriptionForConfigEntry("If enabled, the Linkgrabber will offer a zip archive to download folders")
@@ -70,7 +66,6 @@ public class DropboxCom extends PluginForHost {
     private static final String             TYPE_S                                           = "https?://(www\\.)?dropbox\\.com/s/.+";
     private static Object                   LOCK                                             = new Object();
     private static HashMap<String, Cookies> accountMap                                       = new HashMap<String, Cookies>();
-
     private boolean                         passwordProtected                                = false;
     private String                          url                                              = null;
     private boolean                         temp_unavailable_file_generates_too_much_traffic = false;
@@ -139,7 +134,6 @@ public class DropboxCom extends PluginForHost {
                             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 60 * 1000l);
                         }
                         if (!con.getContentType().contains("html")) {
-
                             link.setDownloadSize(con.getLongContentLength());
                             String name = Encoding.htmlDecode(getFileNameFromHeader(con).trim());
                             link.setFinalFileName(name);
@@ -157,7 +151,6 @@ public class DropboxCom extends PluginForHost {
                     }
                 }
             }
-
             if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(>Error \\(404\\)<|>Dropbox \\- 404<|>We can\\'t find the page you\\'re looking for|>The file you're looking for has been)")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (this.br.containsHTML("images/sharing/error_")) {
@@ -167,12 +160,20 @@ public class DropboxCom extends PluginForHost {
                 /* A previously public shared url is now private (== offline) */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-
-            final String json_source = jd.plugins.decrypter.DropBoxCom.getJsonSource(this.br);
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source);
-            entries = (LinkedHashMap<String, Object>) jd.plugins.decrypter.DropBoxCom.getFilesList(entries).get(0);
+            String json_source = jd.plugins.decrypter.DropBoxCom.getSharedJsonSource(br);
+            final boolean isShared;
+            if (json_source != null) {
+                isShared = true;
+            } else {
+                isShared = false;
+                json_source = jd.plugins.decrypter.DropBoxCom.getJsonSource(this.br);
+            }
+            if (json_source == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(json_source);
+            entries = (Map<String, Object>) jd.plugins.decrypter.DropBoxCom.getFilesList(entries, isShared).get(0);
             final String filename = (String) entries.get("filename");
-
             if (filename == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -180,7 +181,6 @@ public class DropboxCom extends PluginForHost {
             if ("zip".equals(link.getProperty("type"))) {
                 link.setFinalFileName("Folder " + Encoding.htmlDecode(filename) + ".zip");
             }
-
             if (filesize > 0) {
                 link.setDownloadSize(filesize);
             }
@@ -238,11 +238,9 @@ public class DropboxCom extends PluginForHost {
 
     // TODO: Move into Utilities (It's here for a hack)
     // public class OAuth {
-
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         String passCode = link.getStringProperty("pass", null);
-
         String t1 = new Regex(link.getPluginPatternMatcher(), "://(.*?):.*?@").getMatch(0);
         String t2 = new Regex(link.getPluginPatternMatcher(), "://.*?:(.*?)@").getMatch(0);
         if (t1 != null && t2 != null) {
@@ -307,14 +305,12 @@ public class DropboxCom extends PluginForHost {
                 byte[] crypted_oauth_consumer_secret = org.appwork.utils.encoding.Base64.decode("cqqyvFx1IVKNPennzVKUnw==");
                 byte[] iv = new byte[] { (byte) 0xF0, 0x0B, (byte) 0xAA, (byte) 0x69, 0x42, (byte) 0xF0, 0x0B, (byte) 0xAA };
                 byte[] secretKey = (new Regex(dlURL, "passphrase=([^&]+)").getMatch(0).substring(0, 8)).getBytes("UTF-8");
-
                 SecretKey key = new SecretKeySpec(secretKey, "DES");
                 AlgorithmParameterSpec paramSpec = new IvParameterSpec(iv);
                 Cipher dcipher = Cipher.getInstance("DES/CBC/PKCS5Padding");
                 dcipher.init(Cipher.DECRYPT_MODE, key, paramSpec);
                 String oauth_consumer_key = new String(dcipher.doFinal(crypted_oauth_consumer_key), "UTF-8");
                 String oauth_token_secret = new String(dcipher.doFinal(crypted_oauth_consumer_secret), "UTF-8");
-
                 /* remove existing tokens from url */
                 dlURL = dlURL.replaceFirst("://[\\w:]+@", "://");
                 /* remove passphrase from url */
@@ -411,7 +407,6 @@ public class DropboxCom extends PluginForHost {
                 }
             }
         }
-
     }
 
     @Override
@@ -435,27 +430,22 @@ public class DropboxCom extends PluginForHost {
         url = url.replaceAll("[\\?&]oauth_\\w+?=[^&]+", "");
         url += (url.contains("?") ? "&" : "?") + "oauth_consumer_key=" + oauth_consumer_key;
         url += "&oauth_nonce=" + generateNonce();
-
         url += "&oauth_signature_method=HMAC-SHA1";
         url += "&oauth_timestamp=" + generateTimestamp();
         url += "&oauth_token=" + oauth_token;
         url += "&oauth_version=1.0";
-
         String signatureBaseString = Encoding.urlEncode(url);
         signatureBaseString = signatureBaseString.replaceFirst("%3F", "&");
         // See OAuth 1.0 spec Appendix A.5.1
         signatureBaseString = "GET&" + signatureBaseString;
-
         String keyString = oauth_consumer_secret + "&" + oauth_token_secret;
         String signature = "";
         try {
             Mac mac = Mac.getInstance("HmacSHA1");
-
             SecretKeySpec secret = new SecretKeySpec(keyString.getBytes("UTF-8"), "HmacSHA1");
             mac.init(secret);
             byte[] digest = mac.doFinal(signatureBaseString.getBytes("UTF-8"));
             signature = new String(org.appwork.utils.encoding.Base64.encodeToString(digest, false)).trim();
-
         } catch (Exception e) {
             logger.log(e);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -463,5 +453,4 @@ public class DropboxCom extends PluginForHost {
         url += "&oauth_signature=" + Encoding.urlEncode(signature);
         return url;
     }
-
 }

@@ -16,8 +16,11 @@
 package jd.plugins.decrypter;
 
 import java.awt.Dialog.ModalityType;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
@@ -31,6 +34,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DropboxCom.DropboxConfig;
 
@@ -119,12 +124,30 @@ public class DropBoxCom extends PluginForDecrypt {
         try {
             con = br.openGetConnection(link);
             if (con.getResponseCode() == 429) {
+                try {
+                    con.setAllowedResponseCodes(new int[] { con.getResponseCode() });
+                    br.followConnection();
+                } catch (IOException e) {
+                    logger.log(e);
+                }
                 logger.info("URL's downloads are disabled due to it generating too much traffic");
                 return decryptedLinks;
             } else if (con.getResponseCode() == 460) {
+                try {
+                    con.setAllowedResponseCodes(new int[] { con.getResponseCode() });
+                    br.followConnection();
+                } catch (IOException e) {
+                    logger.log(e);
+                }
                 logger.info("Restricted Content: This file is no longer available. For additional information contact Dropbox Support.");
                 return decryptedLinks;
             } else if (con.getResponseCode() == 509) {
+                try {
+                    con.setAllowedResponseCodes(new int[] { con.getResponseCode() });
+                    br.followConnection();
+                } catch (IOException e) {
+                    logger.log(e);
+                }
                 /* Temporarily unavailable links */
                 final DownloadLink dl = createDownloadlink(link.replace("dropbox.com/", "dropboxdecrypted.com/"));
                 dl.setProperty("decrypted", true);
@@ -197,14 +220,23 @@ public class DropBoxCom extends PluginForDecrypt {
             dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subFolder);
             decryptedLinks.add(dl);
         }
-        final String json_source = getJsonSource(this.br);
+        String json_source = getSharedJsonSource(br);
+        final boolean isShared;
+        if (json_source != null) {
+            isShared = true;
+        } else {
+            isShared = false;
+            json_source = getJsonSource(this.br);
+        }
+        if (json_source == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         /* 2017-01-27 new */
-        boolean isSingleFile = false;
         boolean decryptSubfolders = crawl_subfolder_string != null && crawl_subfolder_string.contains("crawl_subfolders=true");
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source);
-        final ArrayList<Object> ressourcelist_folders = getFoldersList(entries);
-        ArrayList<Object> ressourcelist_files = getFilesList(entries);
-        isSingleFile = ressourcelist_files != null && ressourcelist_files.size() == 1;
+        final List<Object> ressourcelist_folders = getFoldersList(entries, isShared);
+        final List<Object> ressourcelist_files = getFilesList(entries, isShared);
+        final boolean isSingleFile = ressourcelist_files != null && ressourcelist_files.size() == 1;
         if (ressourcelist_folders != null && ressourcelist_folders.size() > 0 && !decryptSubfolders) {
             /* Only ask user if we actually have subfolders that can be decrypted! */
             final ConfirmDialog confirm = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, link, "For this URL JDownloader can crawl the files inside the current folder or crawl subfolders as well. What would you like to do?", null, "Add files of current folder AND subfolders?", "Add only files of current folder?") {
@@ -272,25 +304,55 @@ public class DropBoxCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    public static ArrayList<Object> getFoldersList(LinkedHashMap<String, Object> entries) {
-        if (!entries.containsKey("props")) {
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "components/{0}");
+    public static List<Object> getFoldersList(Map<String, Object> map, boolean isShared) {
+        if (isShared) {
+            final List<Object> entries = (List<Object>) JavaScriptEngineFactory.walkJson(map, "entries");
+            final ArrayList<Object> ret = new ArrayList<Object>();
+            for (final Object entry : entries) {
+                if (Boolean.TRUE.equals(((Map<String, Object>) entry).get("is_dir"))) {
+                    ret.add(entry);
+                }
+            }
+            return ret;
+        } else {
+            if (!map.containsKey("props")) {
+                map = (Map<String, Object>) JavaScriptEngineFactory.walkJson(map, "components/{0}");
+            }
+            final List<Object> ret = (List<Object>) JavaScriptEngineFactory.walkJson(map, "props/contents/folders");
+            return ret;
         }
-        final ArrayList<Object> foldersList = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "props/contents/folders");
-        return foldersList;
     }
 
-    public static ArrayList<Object> getFilesList(LinkedHashMap<String, Object> entries) {
-        ArrayList<Object> filesList;
-        if (!entries.containsKey("props")) {
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "components/{0}");
+    public static List<Object> getFilesList(Map<String, Object> map, boolean isShared) {
+        if (isShared) {
+            final List<Object> entries = (List<Object>) JavaScriptEngineFactory.walkJson(map, "entries");
+            final ArrayList<Object> ret = new ArrayList<Object>();
+            for (final Object entry : entries) {
+                if (!Boolean.TRUE.equals(((Map<String, Object>) entry).get("is_dir"))) {
+                    ret.add(entry);
+                }
+            }
+            return ret;
+        } else {
+            if (!map.containsKey("props")) {
+                map = (Map<String, Object>) JavaScriptEngineFactory.walkJson(map, "components/{0}");
+            }
+            List<Object> filesList = (List<Object>) JavaScriptEngineFactory.walkJson(map, "props/contents/files");
+            /* Null? Then we probably have a single file */
+            if (filesList == null) {
+                filesList = (List<Object>) JavaScriptEngineFactory.walkJson(map, "props/files");
+            }
+            if (filesList == null) {
+                // single file
+                final Object file = JavaScriptEngineFactory.walkJson(map, "props/file");
+                if (file != null) {
+                    final ArrayList<Object> ret = new ArrayList<Object>();
+                    ret.add(file);
+                    return ret;
+                }
+            }
+            return filesList;
         }
-        filesList = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "props/contents/files");
-        /* Null? Then we probably have a single file */
-        if (filesList == null) {
-            filesList = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "props/files");
-        }
-        return filesList;
     }
 
     @Override
@@ -302,13 +364,21 @@ public class DropBoxCom extends PluginForDecrypt {
         return ret;
     }
 
+    public static String getSharedJsonSource(Browser br) {
+        String json_source = br.getRegex("(\\s*\\{\\s*\\\\\"shared_link_infos.*?\\})\\s*\\)?\\s*;").getMatch(0);
+        if (json_source != null) {
+            json_source = json_source.replaceAll("\\\\", "");
+        }
+        return json_source;
+    }
+
     public static String getJsonSource(final Browser br) {
         String json_source = br.getRegex("InitReact\\.mountComponent\\(mod,\\s*?(\\{.*?\\})\\)").getMatch(0);
         if (json_source == null) {
             json_source = br.getRegex("mod\\.initialize_module\\((\\{\"components\".*?)\\);\\s+").getMatch(0);
-        }
-        if (json_source == null) {
-            json_source = br.getRegex("mod\\.initialize_module\\((\\{.*?)\\);\\s+").getMatch(0);
+            if (json_source == null) {
+                json_source = br.getRegex("mod\\.initialize_module\\((\\{.*?)\\);\\s+").getMatch(0);
+            }
         }
         return json_source;
     }
