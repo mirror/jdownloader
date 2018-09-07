@@ -367,7 +367,8 @@ public class DropBoxCom extends PluginForDecrypt {
     public static String getSharedJsonSource(Browser br) {
         String json_source = br.getRegex("(\\s*\\{\\s*\\\\\"shared_link_infos.*?\\})\\s*\\)?\\s*;").getMatch(0);
         if (json_source != null) {
-            json_source = json_source.replaceAll("\\\\", "");
+            json_source = json_source.replaceAll("\\\\\"", "\"");
+            json_source = json_source.replaceAll("\\\\\\\"", "\"");// inner next_request_voucher
         }
         return json_source;
     }
