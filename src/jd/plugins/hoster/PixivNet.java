@@ -47,7 +47,7 @@ public class PixivNet extends PluginForHost {
     }
 
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("decryptedpixivnet://", "http://"));
+        link.setUrlDownload(link.getDownloadURL().replace("decryptedpixivnet://", "https://"));
     }
 
     @Override
@@ -61,11 +61,11 @@ public class PixivNet extends PluginForHost {
     }
 
     public static String createGalleryUrl(final String galleryid) {
-        return String.format("http://www.pixiv.net/member_illust.php?mode=manga&illust_id=%s", galleryid);
+        return String.format("https://www.pixiv.net/member_illust.php?mode=manga&illust_id=%s", galleryid);
     }
 
     public static String createSingleImageUrl(final String galleryid) {
-        return String.format("http://www.pixiv.net/member_illust.php?mode=medium&illust_id=%s", galleryid);
+        return String.format("https://www.pixiv.net/member_illust.php?mode=medium&illust_id=%s", galleryid);
     }
 
     /* Extension which will be used if no correct extension is found */

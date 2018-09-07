@@ -343,10 +343,10 @@ public abstract class antiDDoSForHost extends PluginForHost {
         if (con.getRequest() != null && con.getRequest().getHtmlCode() != null) {
             return;
         } else if (con.getRequest() != null && !con.getRequest().isRequested()) {
-            throw new IOException("Request not sent yet!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Request not sent yet!");
         } else if (!con.isConnected()) {
             // getInputStream/getErrorStream call connect!
-            throw new IOException("Connection is not connected!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Connection is not connected!");
         }
         final InputStream is = getInputStream(con, ibr);
         final byte[] responseBytes = Request.read(con, request.getReadLimit());
