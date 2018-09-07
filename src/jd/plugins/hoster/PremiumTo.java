@@ -111,15 +111,10 @@ public class PremiumTo extends UseNet {
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         final AccountInfo ac = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setProperty("multiHostSupport", Property.NULL);
-            account.setValid(false);
-            throw e;
-        }
+        login(account, true);
         Browser tbr = br.cloneBrowser();
-        tbr.getPage("http://" + this.getHost() + "/sstraffic.php");
+        tbr.setFollowRedirects(true);
+        tbr.getPage("https://" + this.getHost() + "/sstraffic.php");
         /* NormalTraffic:SpecialTraffic:TorrentTraffic */
         String[] traffic = tbr.toString().split(";");
         String additionalAccountStatus = "";
@@ -140,6 +135,7 @@ public class PremiumTo extends UseNet {
             }
         }
         final Browser hbr = br.cloneBrowser();
+        hbr.setFollowRedirects(true);
         hbr.getPage(API_BASE + "hosts.php");
         final String hosters[] = hbr.toString().split(";|\\s+");
         if (hosters != null && hosters.length != 0) {
@@ -154,7 +150,7 @@ public class PremiumTo extends UseNet {
 
     @Override
     public String getAGBLink() {
-        return "http://premium.to/";
+        return "https://premium.to/";
     }
 
     @Override
@@ -243,7 +239,7 @@ public class PremiumTo extends UseNet {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                if (br.getCookie(this.br.getHost(), "auth") == null) {
+                if (br.getCookie(this.br.getHost(), "auth", Cookies.NOTDELETEDPATTERN) == null) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 /* Save cookies */
