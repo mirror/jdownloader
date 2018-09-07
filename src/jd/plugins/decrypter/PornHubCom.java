@@ -20,12 +20,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Random;
 import java.util.Set;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -43,6 +38,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub(?:premium)?\\.com/(?:.*\\?viewkey=[a-z0-9]+|embed/[a-z0-9]+|embed_player\\.php\\?id=\\d+|users/[^/]+/videos/public|pornstar/[^/]+(?:/gifs(/public|/video|/from_videos)?)?|users/[^/]+(?:/gifs(/public|/video|/from_videos)?)?|model/[^/]+(?:/gifs(/public|/video|/from_videos)?)?|playlist/\\d+)" })
 public class PornHubCom extends PluginForDecrypt {
@@ -378,7 +377,7 @@ public class PornHubCom extends PluginForDecrypt {
             }
             if (grab) {
                 final String final_filename = fpName + "_" + qualityInfo + "p.mp4";
-                final DownloadLink dl = getDecryptDownloadlink();
+                final DownloadLink dl = getDecryptDownloadlink(viewkey, qualityInfo);
                 dl.setProperty("directlink", finallink);
                 dl.setProperty("quality", qualityInfo);
                 dl.setProperty("decryptedfilename", final_filename);
@@ -408,8 +407,8 @@ public class PornHubCom extends PluginForDecrypt {
         return br.getURL().equals("http://www.pornhub.com/") || !br.containsHTML("\\'embedSWF\\'") || br.getHttpConnection().getResponseCode() == 404;
     }
 
-    private DownloadLink getDecryptDownloadlink() {
-        return createDownloadlink("https://pornhubdecrypted" + new Random().nextInt(1000000000));
+    private DownloadLink getDecryptDownloadlink(final String viewKey, final String quality) {
+        return createDownloadlink("https://pornhubdecrypted/" + viewKey + "/" + quality);
     }
 
     public int getMaxConcurrentProcessingInstances() {
