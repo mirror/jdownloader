@@ -26,6 +26,7 @@ import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -49,7 +50,6 @@ public class ToutDebridEu extends PluginForHost {
     private static final boolean                           ACCOUNT_PREMIUM_RESUME    = true;
     private static final int                               ACCOUNT_PREMIUM_MAXCHUNKS = 0;
     private static final boolean                           USE_API                   = false;
-    private static Object                                  LOCK                      = new Object();
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap        = new HashMap<Account, HashMap<String, Long>>();
     private Account                                        currentAcc                = null;
     private DownloadLink                                   currentLink               = null;
@@ -254,7 +254,7 @@ public class ToutDebridEu extends PluginForHost {
     }
 
     private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             /* Load cookies */
             br.setCookiesExclusive(true);
             this.br = prepBR(this.br);
@@ -283,13 +283,33 @@ public class ToutDebridEu extends PluginForHost {
                 this.br = prepBR(new Browser());
             }
             br.getPage(PROTOCOL + this.getHost() + "/login");
-            br.postPage(br.getURL(), "btnSubmited=Se+connecter&txtEmail=" + Encoding.urlEncode(account.getUser()) + "&txtMdp=" + Encoding.urlEncode(account.getPass()));
+            final Form login = br.getFormbyActionRegex(".*login\\.php.*");
+            if (login == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            login.put("txtEmail", Encoding.urlEncode(account.getUser()));
+            login.put("txtMdp", Encoding.urlEncode(account.getPass()));
+            if (login.containsHTML("txtImgCode")) {
+                final String image = login.getRegex("img\\s*src\\s*=\\s*\"(.*?)\"").getMatch(0);
+                if (image == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final DownloadLink dummyLink = new DownloadLink(this, "Account", getHost(), "http://" + getHost(), true);
+                final String captcha = getCaptchaCode(image, dummyLink);
+                if (StringUtils.isEmpty(captcha)) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+                login.put("txtImgCode", Encoding.urlEncode(captcha));
+            }
+            br.submitForm(login);
             if (!isLoggedinHTML()) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
             account.saveCookies(this.br.getCookies(this.getHost()), "");
         } catch (final PluginException e) {
-            account.clearCookies("");
+            if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                account.clearCookies("");
+            }
             throw e;
         }
     }

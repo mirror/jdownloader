@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
@@ -32,9 +31,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "artstation.com" }, urls = { "https?://[a-z0-9\\-\\.]+\\.artstation\\.com/p/assets/images/.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "artstation.com" }, urls = { "https?://[a-z0-9\\-\\.]+\\.artstation\\.com/p/assets/.+" })
 public class ArtstationCom extends PluginForHost {
-
     public ArtstationCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.artstation.com/users/sign_up");
@@ -44,16 +42,13 @@ public class ArtstationCom extends PluginForHost {
     // Tags:
     // protocol: no https
     // other: image links do not use cloudflare service.
-
     /* Extension which will be used if no correct extension is found */
     public static final String   default_Extension = ".jpg";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = -1;
-
     public static final long     trust_cookie_age  = 300000l;
-
     private String               dllink            = null;
 
     @Override

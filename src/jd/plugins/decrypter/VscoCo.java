@@ -19,8 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -33,9 +31,10 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vsco.co" }, urls = { "https?://(?:[^/]+\\.vsco\\.co/grid/\\d+|(?:www\\.)?vsco\\.co/[\\w-]+/grid/\\d+|(?:www\\.)?vsco\\.co/[\\w-]+)" })
 public class VscoCo extends PluginForDecrypt {
-
     public VscoCo(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -87,11 +86,20 @@ public class VscoCo extends PluginForDecrypt {
                     return null;
                 }
                 final String medialink = (String) entries.get("permalink");
-                String url_content = (String) entries.get("responsive_url");
+                final Boolean isVideo = (Boolean) entries.get("is_video");
+                String url_content = null;
+                if (Boolean.TRUE.equals(isVideo)) {
+                    url_content = (String) entries.get("video_url");
+                } else {
+                    url_content = (String) entries.get("responsive_url");
+                }
+                if (url_content == null) {
+                    continue;
+                }
                 if (!(url_content.startsWith("http") || url_content.startsWith("//"))) {
                     url_content = Request.getLocation("//" + url_content, br.getRequest());
                 }
-                final String filename = username + "_" + fid + getFileNameExtensionFromString(url_content, ".jpg");
+                final String filename = username + "_" + fid + getFileNameExtensionFromString(url_content, Boolean.TRUE.equals(isVideo) ? ".mp4" : ".jpg");
                 final DownloadLink dl = this.createDownloadlink("directhttp://" + url_content);
                 dl.setContentUrl(medialink);
                 dl.setName(filename);
