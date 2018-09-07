@@ -31,13 +31,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -63,6 +56,13 @@ import jd.plugins.components.UserAgents;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class TurboBitNet extends PluginForHost {
@@ -671,6 +671,12 @@ public class TurboBitNet extends PluginForHost {
             }
             // we require error handling here
             if (dl.getConnection().getResponseCode() == 403 || dl.getConnection().getURL().getPath().startsWith("/error/download/ip")) {
+                try {
+                    dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
+                    br.followConnection();
+                } catch (IOException e) {
+                    logger.log(e);
+                }
                 // 403 by itself
                 // response code 403 && <p>You have reached the limit of downloads from this IP address, please contact our
                 if (downloadType == DownloadType.ACCOUNT_PREMIUM) {
@@ -681,11 +687,25 @@ public class TurboBitNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "You cannot download this file with your current IP", 60 * 60 * 1000l);
             }
             if (dl.getConnection().getResponseCode() == 404) {
+                try {
+                    dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
+                    br.followConnection();
+                } catch (IOException e) {
+                    logger.log(e);
+                }
                 logger.info("File is offline");
+                if (dl.getConnection().getURL().getPath().startsWith("landpage")) {
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Seems to be blocked by ISP", 60 * 60 * 1000l);
+                }
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getLongContentLength() == -1) {
-                br.followConnection();
+                try {
+                    dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
+                    br.followConnection();
+                } catch (IOException e) {
+                    logger.log(e);
+                }
                 handleGeneralServerErrors();
                 if (isLast) {
                     // existing error handling is broken! there is no more mirrors!
@@ -700,7 +720,7 @@ public class TurboBitNet extends PluginForHost {
             if (isLast) {
                 throw e;
             }
-            e.printStackTrace();
+            logger.log(e);
             return result;
         } finally {
             try {
