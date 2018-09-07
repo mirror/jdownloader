@@ -437,7 +437,8 @@ public class FShareVn extends PluginForHost {
                 if (cookies != null) {
                     br.setCookies(this.getHost(), cookies);
                     br.getPage("https://www." + this.getHost() + "/file/manager");
-                    if (isLoggedinHTML()) {
+                    if (isLoggedinHTML() && br.getCookie(br.getHost(), "fshare-app", Cookies.NOTDELETEDPATTERN) != null) {
+                        account.saveCookies(br.getCookies(this.getHost()), "");
                         return;
                     }
                     br.clearCookies(br.getHost());
@@ -447,13 +448,11 @@ public class FShareVn extends PluginForHost {
                 br.getHeaders().put("Referer", "https://www.fshare.vn/site/login");
                 br.getPage("https://www.fshare.vn"); // 503 with /site/location?lang=en
                 final String csrf = br.getRegex("name=\"_csrf-app\" value=\"([^<>\"]+)\"").getMatch(0);
-                final String cookie_fshare_app_old = br.getCookie(br.getHost(), "fshare-app");
-                if (csrf == null || cookie_fshare_app_old == null) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                final String cookie_fshare_app_old = br.getCookie(br.getHost(), "fshare-app", Cookies.NOTDELETEDPATTERN);
+                if (csrf == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else if (cookie_fshare_app_old == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 br.setFollowRedirects(false);
                 /*
@@ -461,25 +460,19 @@ public class FShareVn extends PluginForHost {
                  * start downloads!
                  */
                 br.postPage("/site/login", "_csrf-app=" + csrf + "&LoginForm%5Bemail%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()) + "&LoginForm%5BrememberMe%5D=0");
-                final String cookie_fshare_app_new = br.getCookie(br.getHost(), "fshare-app");
-                if (cookie_fshare_app_new == null || cookie_fshare_app_new.equalsIgnoreCase(cookie_fshare_app_old)) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                final String cookie_fshare_app_new = br.getCookie(br.getHost(), "fshare-app", Cookies.NOTDELETEDPATTERN);
+                if (cookie_fshare_app_new == null || StringUtils.equalsIgnoreCase(cookie_fshare_app_new, cookie_fshare_app_old)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 if (br.getURL().contains("/resend")) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nDein Account ist noch nicht aktiviert. Bestätige die Aktivierungsmail um ihn verwenden zu können..", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYour account is not activated yet. Confirm the activation mail to use it.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYour account is not activated yet. Confirm the activation mail to use it.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(br.getCookies(this.getHost()), "");
                 br.setFollowRedirects(isFollowingRedirects);
             } catch (final PluginException e) {
-                account.clearCookies("");
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
@@ -493,10 +486,6 @@ public class FShareVn extends PluginForHost {
         final String validUntil = br.getRegex("(?:Expire|Hạn dùng):</a>\\s*<span.*?>([^<>]*?)</span>").getMatch(0); // Version 3 (2018)
         final String accountType = br.getRegex("(?:Account type|Loại tài khoản)</a>\\s*?<span>([^<>\"]+)</span>").getMatch(0);
         if (StringUtils.equalsIgnoreCase(accountType, "VIP")) {
-            ai.setStatus("VIP Account");
-            account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-            account.setConcurrentUsePossible(true);
             if (validUntil != null) {
                 long validuntil = 0;
                 if (validUntil.contains("-")) {
@@ -509,6 +498,23 @@ public class FShareVn extends PluginForHost {
                 }
                 ai.setValidUntil(validuntil, br, "EEE, dd MMM yyyy HH:mm:ss z");
             }
+            if (ai.isExpired()) {
+                account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+                account.setConcurrentUsePossible(true);
+                ai.setStatus("Free (expired Premium)Account");
+                account.setType(AccountType.FREE);
+            } else {
+                ai.setStatus("VIP Account");
+                account.setType(AccountType.PREMIUM);
+                account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+                account.setConcurrentUsePossible(true);
+            }
+        } else if (StringUtils.equalsIgnoreCase("Bundle", accountType)) {
+            /* This is a kind of account that they give to their ADSL2+/FTTH service users. It works like VIP. */
+            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            account.setConcurrentUsePossible(true);
+            ai.setStatus("Bundle Account");
+            account.setType(AccountType.PREMIUM);
         } else if (validUntil != null) {
             long validuntil = 0;
             if (validUntil.contains("-")) {
@@ -520,23 +526,23 @@ public class FShareVn extends PluginForHost {
                 validuntil += 24 * 60 * 60 * 1000l;
             }
             ai.setValidUntil(validuntil, br, "EEE, dd MMM yyyy HH:mm:ss z");
-            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-            account.setConcurrentUsePossible(true);
-            ai.setStatus("Premium Account");
-            account.setType(AccountType.PREMIUM);
-        } else if (br.containsHTML(">BUNDLE</a>")) {
-            /* This is a kind of account that they give to their ADSL2+/FTTH service users. It works like VIP. */
-            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-            account.setConcurrentUsePossible(true);
-            ai.setStatus("Bundle Account");
-            account.setType(AccountType.PREMIUM);
+            if (ai.isExpired()) {
+                account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+                account.setConcurrentUsePossible(true);
+                ai.setStatus("Free (expired Premium)Account");
+                account.setType(AccountType.FREE);
+            } else {
+                account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+                account.setConcurrentUsePossible(true);
+                ai.setStatus("Premium Account");
+                account.setType(AccountType.PREMIUM);
+            }
         } else {
             account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
             account.setConcurrentUsePossible(true);
             ai.setStatus("Free Account");
             account.setType(AccountType.FREE);
         }
-        account.setValid(true);
         return ai;
     }
 
