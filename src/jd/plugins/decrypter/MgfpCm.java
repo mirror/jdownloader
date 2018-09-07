@@ -238,8 +238,13 @@ public class MgfpCm extends PluginForDecrypt {
             }
             // Finally set the packagename even if its set again in the linkgrabber
             // available check of the imagefap hosterplugin
+            final String galleryID = br.getRegex("\"galleryid_input\"\\s*value\\s*=\\s*\"(\\d+)").getMatch(0);
             FilePackage fp = FilePackage.getInstance();
-            fp.setName(authorsName + " - " + galleryName);
+            if (galleryID != null) {
+                fp.setName(authorsName + " - " + galleryName + " - " + galleryID);
+            } else {
+                fp.setName(authorsName + " - " + galleryName);
+            }
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;

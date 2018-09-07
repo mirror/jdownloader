@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -37,9 +36,8 @@ import jd.utils.JDUtilities;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "artstation.com" }, urls = { "https?://(?:www\\.)?artstation\\.com/(?:artist|artwork)/[^/]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "artstation.com" }, urls = { "https?://(?:www\\.)?artstation\\.com/((?:artist|artwork)/[^/]+|(?!about|marketplace|jobs|contests|blogs|users)[^/]+)" })
 public class ArtstationCom extends antiDDoSForDecrypt {
-
     public ArtstationCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -57,7 +55,6 @@ public class ArtstationCom extends antiDDoSForDecrypt {
             /* Login whenever possible - this may unlock some otherwise hidden user content. */
             jd.plugins.hoster.ArtstationCom.login(this.br, aa, false);
         }
-
         getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
@@ -65,68 +62,7 @@ public class ArtstationCom extends antiDDoSForDecrypt {
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setProperty(LinkCrawler.PACKAGE_ALLOW_INHERITANCE, true);
-        if (parameter.matches(TYPE_ARTIST)) {
-            final String username = parameter.substring(parameter.lastIndexOf("/") + 1);
-            jd.plugins.hoster.ArtstationCom.setHeaders(this.br);
-            getPage("https://www.artstation.com/users/" + username + ".json");
-            final LinkedHashMap<String, Object> json = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-            final String full_name = (String) json.get("full_name");
-            final String projectTitle = (String) json.get("title");
-            final short entries_per_page = 50;
-            int entries_total = (int) JavaScriptEngineFactory.toLong(json.get("projects_count"), 0);
-            int offset = 0;
-            int page = 1;
-            do {
-                getPage("/users/" + username + "/projects.json?randomize=false&page=" + page);
-                final LinkedHashMap<String, Object> pageJson = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-                final ArrayList<Object> ressourcelist = (ArrayList) pageJson.get("data");
-                for (final Object resource : ressourcelist) {
-                    final LinkedHashMap<String, Object> imageJson = (LinkedHashMap<String, Object>) resource;
-                    final String title = (String) imageJson.get("title");
-                    final String id = (String) imageJson.get("hash_id");
-                    final String description = (String) imageJson.get("description");
-                    if (inValidate(id)) {
-                        return null;
-                    }
-                    final String url_content = "https://artstation.com/artwork/" + id;
-                    final DownloadLink dl = createDownloadlink(url_content);
-                    String filename;
-                    if (!inValidate(title)) {
-                        filename = full_name + "_" + id + "_" + title + ".jpg";
-                    } else {
-                        filename = full_name + "_" + id + ".jpg";
-                    }
-                    filename = encodeUnicode(filename);
-                    dl.setContentUrl(url_content);
-                    if (description != null) {
-                        dl.setComment(description);
-                    }
-                    dl.setLinkID(id);
-                    dl.setName(filename);
-                    dl.setProperty("full_name", full_name);
-                    fp.add(dl);
-                    decryptedLinks.add(dl);
-                    distribute(dl);
-                    offset++;
-                }
-                if (ressourcelist.size() < entries_per_page) {
-                    /* Fail safe */
-                    break;
-                }
-                page++;
-            } while (decryptedLinks.size() < entries_total);
-
-            String packageName = "";
-            if (!inValidate(full_name)) {
-                packageName = full_name;
-            }
-            if (decryptedLinks.size() > 1) {
-                if (!inValidate(projectTitle)) {
-                    packageName = packageName + " " + projectTitle;
-                }
-            }
-            fp.setName(packageName);
-        } else {
+        if (parameter.matches(TYPE_ALBUM)) {
             final String project_id = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
             if (inValidate(project_id)) {
                 return decryptedLinks;
@@ -156,6 +92,9 @@ public class ArtstationCom extends antiDDoSForDecrypt {
                 }
                 if (fid.equals("-1") || url == null || Boolean.FALSE.equals(hasImage)) {
                     continue;
+                }
+                if (isAbort()) {
+                    break;
                 }
                 String filename = null;
                 if (!inValidate(imageTitle)) {
@@ -199,8 +138,70 @@ public class ArtstationCom extends antiDDoSForDecrypt {
                 }
             }
             fp.setName(packageName);
+        } else if (parameter.matches(TYPE_ARTIST) || true) {
+            final String username = parameter.substring(parameter.lastIndexOf("/") + 1);
+            jd.plugins.hoster.ArtstationCom.setHeaders(this.br);
+            getPage("https://www.artstation.com/users/" + username + ".json");
+            final LinkedHashMap<String, Object> json = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            final String full_name = (String) json.get("full_name");
+            final String projectTitle = (String) json.get("title");
+            final short entries_per_page = 50;
+            int entries_total = (int) JavaScriptEngineFactory.toLong(json.get("projects_count"), 0);
+            int offset = 0;
+            int page = 1;
+            do {
+                getPage("/users/" + username + "/projects.json?randomize=false&page=" + page);
+                final LinkedHashMap<String, Object> pageJson = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+                final ArrayList<Object> ressourcelist = (ArrayList) pageJson.get("data");
+                for (final Object resource : ressourcelist) {
+                    final LinkedHashMap<String, Object> imageJson = (LinkedHashMap<String, Object>) resource;
+                    final String title = (String) imageJson.get("title");
+                    final String id = (String) imageJson.get("hash_id");
+                    final String description = (String) imageJson.get("description");
+                    if (inValidate(id)) {
+                        return null;
+                    }
+                    final String url_content = "https://artstation.com/artwork/" + id;
+                    final DownloadLink dl = createDownloadlink(url_content);
+                    String filename;
+                    if (!inValidate(title)) {
+                        filename = full_name + "_" + id + "_" + title + ".jpg";
+                    } else {
+                        filename = full_name + "_" + id + ".jpg";
+                    }
+                    filename = encodeUnicode(filename);
+                    dl.setContentUrl(url_content);
+                    if (description != null) {
+                        dl.setComment(description);
+                    }
+                    dl.setLinkID(id);
+                    dl.setName(filename);
+                    dl.setProperty("full_name", full_name);
+                    fp.add(dl);
+                    decryptedLinks.add(dl);
+                    distribute(dl);
+                    offset++;
+                    if (isAbort()) {
+                        break;
+                    }
+                }
+                if (ressourcelist.size() < entries_per_page) {
+                    /* Fail safe */
+                    break;
+                }
+                page++;
+            } while (decryptedLinks.size() < entries_total);
+            String packageName = "";
+            if (!inValidate(full_name)) {
+                packageName = full_name;
+            }
+            if (decryptedLinks.size() > 1) {
+                if (!inValidate(projectTitle)) {
+                    packageName = packageName + " " + projectTitle;
+                }
+            }
+            fp.setName(packageName);
         }
         return decryptedLinks;
     }
-
 }
