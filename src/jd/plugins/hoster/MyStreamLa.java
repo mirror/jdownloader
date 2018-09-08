@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
@@ -30,9 +29,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mystream.la" }, urls = { "http://(?:www\\.)?mystream\\.la/(?:external/|embed-)[A-Za-z0-9]{12}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mystream.la" }, urls = { "https?://(?:(www|embed)\\.)?mystream\\.(?:la|to)/(?:external/|embed-)?[A-Za-z0-9]{12}" })
 public class MyStreamLa extends PluginForHost {
-
     public MyStreamLa(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -59,7 +57,7 @@ public class MyStreamLa extends PluginForHost {
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(500);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">File Not Found<|The file you were looking for could not be found|>The file was deleted by administration because|File was deleted") || br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
+        if (br.containsHTML(">File Not Found<|The video has been blocked|The file you were looking for could not be found|>The file was deleted by administration because|File was deleted") || br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = PluginJSonUtils.getJsonValue(br, "title");
