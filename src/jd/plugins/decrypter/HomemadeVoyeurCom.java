@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
@@ -28,16 +27,14 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "homemade-voyeur.com" }, urls = { "http://(?:www\\.)?(homemade\\-voyeur|yourvoyeurvideos)\\.com/(?:(?:tube/)?video/|tube/gallery/|\\d+/)[A-Za-z0-9\\-]+\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "homemade-voyeur.com" }, urls = { "https?://(?:www\\.)?(homemade\\-voyeur|yourvoyeurvideos)\\.com/(?:(?:tube/)?video/|tube/gallery/|\\d+/)[A-Za-z0-9\\-]+\\.html" })
 public class HomemadeVoyeurCom extends PluginForDecrypt {
-
     public HomemadeVoyeurCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* DEV NOTES */
     /* Porn_plugin */
-
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -58,7 +55,6 @@ public class HomemadeVoyeurCom extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(tempID));
             return decryptedLinks;
         }
-
         String filename = br.getRegex("<meta name=\"title\" content=\"([^<>\"]*?)\"").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>Your Voyeur (Videos|Pics) \\-\\s*(.*?)\\s*</title>").getMatch(1);
@@ -73,7 +69,6 @@ public class HomemadeVoyeurCom extends PluginForDecrypt {
             /* Fallback to url-filename */
             filename = new Regex(parameter, "([A-Za-z0-9\\-]+)\\.html$").getMatch(0);
         }
-
         if (parameter.contains("/tube/gallery/")) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(filename.trim());
@@ -113,7 +108,11 @@ public class HomemadeVoyeurCom extends PluginForDecrypt {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
+            if (tempID == null) {
+                tempID = br.getRegex("<source type=\"video/mp4\" src=\"([^\"]+)\"").getMatch(0);
+            }
             if (tempID == null || filename == null) {
+                logger.info("filename: " + filename + ", tempID: " + tempID);
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
@@ -121,7 +120,6 @@ public class HomemadeVoyeurCom extends PluginForDecrypt {
             dl.setFinalFileName(filename.trim() + tempID.substring(tempID.lastIndexOf(".")));
             decryptedLinks.add(dl);
         }
-
         return decryptedLinks;
     }
 
@@ -129,5 +127,4 @@ public class HomemadeVoyeurCom extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
