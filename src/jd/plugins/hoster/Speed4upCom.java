@@ -586,11 +586,13 @@ public class Speed4upCom extends antiDDoSForHost {
                         }
                     }
                 } else {
-                    getPage(this.getProtocol() + this.getHost() + "/login." + type);
-                    final String loginpostpage = loginstart + this.getHost() + "/ajax/_account_login.ajax.php";
+                    // getPage(this.getProtocol() + this.getHost() + "/login." + type);
+                    getPage("http://speed4up.com/login.html");
+                    // final String loginpostpage = loginstart + this.getHost() + "/ajax/_account_login.ajax.php";
+                    final String loginpostpage = "http://speed4up.com/ajax/_account_login.ajax.php";
                     br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-                    postPage(loginpostpage, "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                    postPageRaw(loginpostpage, "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                     if (!br.containsHTML("\"login_status\":\"success\"")) {
                         if ("de".equalsIgnoreCase(lang)) {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
