@@ -18,6 +18,7 @@ import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.swing.windowmanager.WindowManager;
@@ -63,6 +64,7 @@ public class AWTMacOSApplicationAdapter {
                 });
                 setOpenURIHandler​.invoke(desktop, openURIHandler);
             } catch (final UnsupportedOperationException ignore) {
+                ignore.printStackTrace();
             } catch (final Throwable e) {
                 e.printStackTrace();
             }
@@ -104,6 +106,7 @@ public class AWTMacOSApplicationAdapter {
                 });
                 setOpenFileHandler​.invoke(desktop, openFileHandler);
             } catch (final UnsupportedOperationException ignore) {
+                ignore.printStackTrace();
             } catch (final Throwable e) {
                 e.printStackTrace();
             }
@@ -118,16 +121,22 @@ public class AWTMacOSApplicationAdapter {
                 final Object preferencesHandler = java.lang.reflect.Proxy.newProxyInstance(preferencesHandlerInterface.getClassLoader(), new Class[] { preferencesHandlerInterface }, new InvocationHandler() {
                     @Override
                     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                        System.out.println(method.getName());
                         if ("handlePreferences​".equals(method.getName())) {
-                            appReOpened();
-                            JsonConfig.create(GraphicalUserInterfaceSettings.class).setConfigViewVisible(true);
-                            JDGui.getInstance().setContent(ConfigurationView.getInstance(), true);
+                            try {
+                                appReOpened();
+                                JsonConfig.create(GraphicalUserInterfaceSettings.class).setConfigViewVisible(true);
+                                JDGui.getInstance().setContent(ConfigurationView.getInstance(), true);
+                            } catch (Throwable ignore) {
+                                ignore.printStackTrace();
+                            }
                         }
                         return null;
                     }
                 });
                 setPreferencesHandler.invoke(desktop, preferencesHandler);
             } catch (final UnsupportedOperationException ignore) {
+                ignore.printStackTrace();
             } catch (final Throwable e) {
                 e.printStackTrace();
             }
@@ -135,14 +144,19 @@ public class AWTMacOSApplicationAdapter {
     }
 
     private void appReOpened() {
-        final JDGui swingGui = JDGui.getInstance();
-        if (swingGui == null || swingGui.getMainFrame() == null) {
-            return;
-        }
-        final JFrame mainFrame = swingGui.getMainFrame();
-        if (!mainFrame.isVisible()) {
-            WindowManager.getInstance().setVisible(mainFrame, true, FrameState.OS_DEFAULT);
-        }
+        new EDTRunner() {
+            @Override
+            protected void runInEDT() {
+                final JDGui swingGui = JDGui.getInstance();
+                if (swingGui == null || swingGui.getMainFrame() == null) {
+                    return;
+                }
+                final JFrame mainFrame = swingGui.getMainFrame();
+                if (!mainFrame.isVisible()) {
+                    WindowManager.getInstance().setVisible(mainFrame, true, FrameState.OS_DEFAULT);
+                }
+            }
+        };
     }
 
     private void setAboutHandler​(Desktop desktop) {
@@ -164,6 +178,7 @@ public class AWTMacOSApplicationAdapter {
                 });
                 setAboutHandler​.invoke(desktop, aboutHandler);
             } catch (final UnsupportedOperationException ignore) {
+                ignore.printStackTrace();
             } catch (final Throwable e) {
                 e.printStackTrace();
             }
