@@ -73,13 +73,13 @@ import com.apple.eawt.PreferencesHandler;
 import com.apple.eawt.QuitHandler;
 import com.apple.eawt.QuitResponse;
 
-public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, PreferencesHandler, AppReOpenedListener, OpenFilesHandler, OpenURIHandler {
+public class EAWTMacOSApplicationAdapter implements QuitHandler, AboutHandler, PreferencesHandler, AppReOpenedListener, OpenFilesHandler, OpenURIHandler {
     private static Thread       dockUpdater = null;
     private static final Object LOCK        = new Object();
 
     public static void enableMacSpecial() {
         Application macApplication = Application.getApplication();
-        final MacOSApplicationAdapter adapter = new MacOSApplicationAdapter();
+        final EAWTMacOSApplicationAdapter adapter = new EAWTMacOSApplicationAdapter();
         macApplication.setAboutHandler(adapter);
         macApplication.setPreferencesHandler(adapter);
         macApplication.setQuitHandler(adapter);
@@ -262,7 +262,7 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
         }
     }
 
-    private MacOSApplicationAdapter() {
+    private EAWTMacOSApplicationAdapter() {
     }
 
     public void handleQuitRequestWith(QuitEvent e, final QuitResponse response) {
