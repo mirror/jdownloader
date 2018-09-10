@@ -43,7 +43,7 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub(?:premium)?\\.com/(?:.*\\?viewkey=[a-z0-9]+|embed/[a-z0-9]+|embed_player\\.php\\?id=\\d+|users/[^/]+/videos/public|pornstar/[^/]+(?:/gifs(/public|/video|/from_videos)?)?|users/[^/]+(?:/gifs(/public|/video|/from_videos)?)?|model/[^/]+(?:/gifs(/public|/video|/from_videos)?)?|playlist/\\d+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub(?:premium)?\\.com/(?:.*\\?viewkey=[a-z0-9]+|embed/[a-z0-9]+|embed_player\\.php\\?id=\\d+|pornstar/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos(/upload)?)?|users/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos(/public)?)?|model/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos)?|playlist/\\d+)" })
 public class PornHubCom extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     public PornHubCom(PluginWrapper wrapper) {
@@ -58,7 +58,11 @@ public class PornHubCom extends PluginForDecrypt {
     @SuppressWarnings({ "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         /* Load sister-host plugin */
-        parameter = jd.plugins.hoster.PornHubCom.correctAddedURL(param.toString());
+        try {
+            parameter = jd.plugins.hoster.PornHubCom.correctAddedURL(param.toString());
+        } catch (PluginException e) {
+            parameter = param.toString().replaceFirst("https?://(?:www\\.|[a-z]{2}\\.)?pornhub(?:premium)?\\.com/", "https://pornhub.com/");
+        }
         br.setFollowRedirects(true);
         jd.plugins.hoster.PornHubCom.prepBr(br);
         Boolean premium = false;
@@ -102,37 +106,56 @@ public class PornHubCom extends PluginForDecrypt {
                 throw new DecrypterException("Decrypter broken, captcha handling is required now!");
             }
         }
+        final boolean ret;
         if (parameter.matches("(?i).*/playlist/.*")) {
-            decryptAllVideosOfAPlaylist();
+            ret = decryptAllVideosOfAPlaylist();
         } else if (parameter.matches("(?i).*/gifs.*")) {
-            decryptAllGifsOfAUser();
+            ret = decryptAllGifsOfAUser();
         } else if (parameter.matches("(?i).*/(users|pornstar|model)/.*")) {
-            decryptAllVideosOfAUser();
+            ret = decryptAllVideosOfAUser();
         } else {
-            decryptSingleVideo();
+            ret = decryptSingleVideo();
         }
-        if (decryptedLinks.isEmpty()) {
+        if (ret == false && decryptedLinks.isEmpty()) {
             throw new DecrypterException("Decrypter broken for link: " + parameter);
         }
         return decryptedLinks;
     }
 
-    private void decryptAllVideosOfAUser() throws Exception {
+    private boolean decryptAllVideosOfAUser() throws Exception {
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(createOfflinelink(parameter));
-            return;
+            return true;
         }
-        /* Access overview page */
-        if (parameter.matches("(?i).*/pornstar/.*")) {
-            jd.plugins.hoster.PornHubCom.getPage(br, parameter + "/videos/upload");
-        } else if (parameter.matches("(?i).*/model/.*")) {
+        FilePackage fp = null;
+        if (parameter.matches("(?i).*/pornstar/[^/]+/videos/upload")) {
+            jd.plugins.hoster.PornHubCom.getPage(br, parameter);
+            final String user = getUser(br);
+            if (user != null) {
+                fp = FilePackage.getInstance();
+                fp.setName("Videos uploaded by " + user);
+            }
+        } else if (parameter.matches("(?i).*/pornstar/[^/]+/videos/?")) {
+            jd.plugins.hoster.PornHubCom.getPage(br, parameter);
+            final String user = getUser(br);
+            if (user != null) {
+                fp = FilePackage.getInstance();
+                fp.setName(user + " - Upload Videos");
+            }
+        } else if (parameter.matches("(?i).*/model/[^/]+/videos/?")) {
+            jd.plugins.hoster.PornHubCom.getPage(br, parameter);
+            final String user = getUser(br);
+            if (user != null) {
+                fp = FilePackage.getInstance();
+                fp.setName(user + " - Upload Videos");
+            }
+        } else {
+            // TODO: better check for user/model/pornstar and handle all possible cases
             jd.plugins.hoster.PornHubCom.getPage(br, parameter + "/videos");
-        } else if (parameter.matches("(?i).*/users/[^/]*")) {
-            jd.plugins.hoster.PornHubCom.getPage(br, parameter + "/videos/public");
         }
         if (br.containsHTML(">There are no videos...<")) {
-            decryptedLinks.add(createOfflinelink(parameter));
-            return;
+            // decryptedLinks.add(createOfflinelink(parameter));
+            return true;
         }
         // final String username = new Regex(parameter, "users/([^/]+)/").getMatch(0);
         int page = 1;
@@ -141,9 +164,10 @@ public class PornHubCom extends PluginForDecrypt {
         final Set<String> dupes = new HashSet<String>();
         String publicVideosHTMLSnippet = null;
         String base_url = null;
+        boolean ret = false;
         do {
             if (this.isAbort()) {
-                return;
+                return true;
             }
             boolean htmlSource = true;
             if (page > 1) {
@@ -185,6 +209,10 @@ public class PornHubCom extends PluginForDecrypt {
                 if (dupes.add(viewkey)) {
                     // logger.info("http://www." + this.getHost() + "/view_video.php?viewkey=" + viewkey); // For debugging
                     final DownloadLink dl = createDownloadlink("https://www." + this.getHost() + "/view_video.php?viewkey=" + viewkey);
+                    if (fp != null) {
+                        fp.add(dl);
+                    }
+                    ret = true;
                     decryptedLinks.add(dl);
                     distribute(dl);
                 }
@@ -193,6 +221,7 @@ public class PornHubCom extends PluginForDecrypt {
             links_found_in_this_page = viewkeys.length;
             page++;
         } while (links_found_in_this_page >= max_entries_per_page);
+        return ret;
     }
 
     private String getUser(Browser br) {
@@ -200,10 +229,10 @@ public class PornHubCom extends PluginForDecrypt {
         return ret;
     }
 
-    private void decryptAllGifsOfAUser() throws Exception {
+    private boolean decryptAllGifsOfAUser() throws Exception {
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(createOfflinelink(parameter));
-            return;
+            return true;
         }
         FilePackage fp = null;
         if (StringUtils.endsWithCaseInsensitive(parameter, "/gifs/public")) {
@@ -243,7 +272,7 @@ public class PornHubCom extends PluginForDecrypt {
             jd.plugins.hoster.PornHubCom.getPage(br, parameter);
             decryptedLinks.add(createDownloadlink(br.getURL() + "/public"));
             decryptedLinks.add(createDownloadlink(br.getURL() + "/video"));
-            return;
+            return true;
         }
         br.getHeaders().put("Accept", "*/*");
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -252,9 +281,10 @@ public class PornHubCom extends PluginForDecrypt {
         int links_found_in_this_page;
         final Set<String> dupes = new HashSet<String>();
         String base_url = null;
+        boolean ret = false;
         do {
             if (this.isAbort()) {
-                return;
+                return true;
             }
             if (page > 1) {
                 final String nextpage_url = base_url + "/ajax?page=" + page;
@@ -282,6 +312,7 @@ public class PornHubCom extends PluginForDecrypt {
                     }
                     /* Force fast linkcheck */
                     dl.setAvailable(true);
+                    ret = true;
                     if (fp != null) {
                         fp.add(dl);
                     }
@@ -293,18 +324,19 @@ public class PornHubCom extends PluginForDecrypt {
             links_found_in_this_page = items.length;
             page++;
         } while (links_found_in_this_page >= max_entries_per_page);
+        return ret;
     }
 
-    private void decryptAllVideosOfAPlaylist() {
+    private boolean decryptAllVideosOfAPlaylist() {
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(createOfflinelink(parameter));
-            return;
+            return true;
         }
         final Set<String> dupes = new HashSet<String>();
         final String publicVideosHTMLSnippet = br.getRegex("(id=\"videoPlaylist\".*?</section>)").getMatch(0);
         final String[] viewkeys = new Regex(publicVideosHTMLSnippet, "_vkey=\"([a-z0-9]+)\"").getColumn(0);
         if (viewkeys == null || viewkeys.length == 0) {
-            return;
+            return false;
         }
         for (final String viewkey : viewkeys) {
             if (dupes.add(viewkey)) {
@@ -314,9 +346,10 @@ public class PornHubCom extends PluginForDecrypt {
                 distribute(dl);
             }
         }
+        return true;
     }
 
-    private void decryptSingleVideo() throws Exception {
+    private boolean decryptSingleVideo() throws Exception {
         final SubConfiguration cfg = SubConfiguration.getConfig(DOMAIN);
         final boolean bestonly = cfg.getBooleanProperty(jd.plugins.hoster.PornHubCom.BEST_ONLY, false);
         final boolean bestselectiononly = cfg.getBooleanProperty(jd.plugins.hoster.PornHubCom.BEST_SELECTION_ONLY, false);
@@ -325,7 +358,7 @@ public class PornHubCom extends PluginForDecrypt {
         if (parameter.matches(".+/embed_player\\.php\\?id=\\d+")) {
             if (br.containsHTML("No htmlCode read") || br.containsHTML("flash/novideo\\.flv")) {
                 decryptedLinks.add(createOfflinelink(parameter));
-                return;
+                return true;
             }
             final String newLink = br.getRegex("<link_url>(https?://(?:www\\.)?pornhub\\.com/view_video\\.php\\?viewkey=[a-z0-9]+)</link_url>").getMatch(0);
             if (newLink == null) {
@@ -342,65 +375,67 @@ public class PornHubCom extends PluginForDecrypt {
             dl.setFinalFileName("viewkey=" + viewkey);
             decryptedLinks.add(dl);
             logger.info("Debug info: isOffline: " + parameter);
-            return;
+            return true;
         }
         if (br.containsHTML(jd.plugins.hoster.PornHubCom.html_privatevideo)) {
             final DownloadLink dl = createOfflinelink(parameter);
             dl.setFinalFileName("This_video_is_private_" + fpName + ".mp4");
             decryptedLinks.add(dl);
             logger.info("Debug info: html_privatevideo: " + parameter);
-            return;
+            return true;
         }
         if (br.containsHTML(jd.plugins.hoster.PornHubCom.html_premium_only)) {
             decryptedLinks.add(createOfflinelink(parameter, fpName + ".mp4", "Private_video_Premium_required"));
             logger.info("Debug info: html_premium_only: " + parameter);
-            return;
+            return true;
         }
         final Map<String, String> foundLinks_all = jd.plugins.hoster.PornHubCom.getVideoLinksFree(this, br);
         logger.info("Debug info: foundLinks_all: " + foundLinks_all);
-        if (foundLinks_all == null) {
-            throw new DecrypterException("Decrypter broken");
-        }
-        final Iterator<Entry<String, String>> it = foundLinks_all.entrySet().iterator();
-        while (it.hasNext()) {
-            final Entry<String, String> next = it.next();
-            final String qualityInfo = next.getKey();
-            final String finallink = next.getValue();
-            if (StringUtils.isEmpty(finallink)) {
-                continue;
-            }
-            final boolean grab;
-            if (bestonly) {
-                grab = !bestselectiononly || cfg.getBooleanProperty(qualityInfo, true);
-            } else {
-                grab = cfg.getBooleanProperty(qualityInfo, true);
-            }
-            if (grab) {
-                final String final_filename = fpName + "_" + qualityInfo + "p.mp4";
-                final DownloadLink dl = getDecryptDownloadlink(viewkey, qualityInfo);
-                dl.setProperty("directlink", finallink);
-                dl.setProperty("quality", qualityInfo);
-                dl.setProperty("decryptedfilename", final_filename);
-                dl.setProperty("mainlink", parameter);
-                dl.setProperty("viewkey", viewkey);
-                dl.setLinkID(getHost() + "://" + viewkey + qualityInfo);
-                dl.setFinalFileName(final_filename);
-                dl.setContentUrl(parameter);
-                if (fastlinkcheck) {
-                    dl.setAvailable(true);
+        boolean ret = false;
+        if (foundLinks_all != null) {
+            final Iterator<Entry<String, String>> it = foundLinks_all.entrySet().iterator();
+            while (it.hasNext()) {
+                final Entry<String, String> next = it.next();
+                final String qualityInfo = next.getKey();
+                final String finallink = next.getValue();
+                if (StringUtils.isEmpty(finallink)) {
+                    continue;
                 }
-                logger.info("Creating " + qualityInfo + "p link.");
-                decryptedLinks.add(dl);
+                ret = true;
+                final boolean grab;
                 if (bestonly) {
-                    /* Our LinkedHashMap is already in the right order so best = first entry --> Step out of the loop */
-                    logger.info("User wants best-only");
-                    break;
+                    grab = !bestselectiononly || cfg.getBooleanProperty(qualityInfo, true);
+                } else {
+                    grab = cfg.getBooleanProperty(qualityInfo, true);
+                }
+                if (grab) {
+                    final String final_filename = fpName + "_" + qualityInfo + "p.mp4";
+                    final DownloadLink dl = getDecryptDownloadlink(viewkey, qualityInfo);
+                    dl.setProperty("directlink", finallink);
+                    dl.setProperty("quality", qualityInfo);
+                    dl.setProperty("decryptedfilename", final_filename);
+                    dl.setProperty("mainlink", parameter);
+                    dl.setProperty("viewkey", viewkey);
+                    dl.setLinkID(getHost() + "://" + viewkey + qualityInfo);
+                    dl.setFinalFileName(final_filename);
+                    dl.setContentUrl(parameter);
+                    if (fastlinkcheck) {
+                        dl.setAvailable(true);
+                    }
+                    logger.info("Creating " + qualityInfo + "p link.");
+                    decryptedLinks.add(dl);
+                    if (bestonly) {
+                        /* Our LinkedHashMap is already in the right order so best = first entry --> Step out of the loop */
+                        logger.info("User wants best-only");
+                        break;
+                    }
                 }
             }
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(fpName);
+            fp.addLinks(decryptedLinks);
         }
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(fpName);
-        fp.addLinks(decryptedLinks);
+        return ret;
     }
 
     public static boolean isOffline(final Browser br) {

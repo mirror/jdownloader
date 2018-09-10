@@ -98,7 +98,7 @@ public class Rlnks extends antiDDoSForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        if (br.containsHTML("<title>404</title>") || br.getURL().endsWith("/notfound.php")) {
+        if (br.containsHTML("<title>404</title>") || br.getURL().endsWith("/notfound.php") || br.getURL().endsWith("/notfound/")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
