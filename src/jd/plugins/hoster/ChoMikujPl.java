@@ -135,7 +135,7 @@ public class ChoMikujPl extends antiDDoSForHost {
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
-                if (!con.getContentType().contains("html")) {
+                if (con.isOK() && (con.isContentDisposition() || !con.getContentType().contains("html"))) {
                     link.setDownloadSize(con.getLongContentLength());
                     /* Only set final filename if it wasn't set before as video and */
                     /* audio streams can have bad filenames */
