@@ -222,8 +222,11 @@ public class SecondLevelLaunch {
         try {
             if (Application.getJavaVersion() <= Application.JAVA18) {
                 MacOSApplicationAdapter.enableMacSpecial();
+            } else {
+                System.setProperty("apple.eawt.quitStrategy", "CLOSE_ALL_WINDOWS");
             }
         } catch (final Throwable e) {
+            System.setProperty("apple.eawt.quitStrategy", "CLOSE_ALL_WINDOWS");
             LoggerFactory.getDefaultLogger().info("Error Initializing  Mac Look and Feel Special: " + e);
             LoggerFactory.getDefaultLogger().log(e);
         }
