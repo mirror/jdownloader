@@ -221,7 +221,7 @@ public class SecondLevelLaunch {
         // System.setProperty("apple.awt.showGrowBox", "true");
         // }
         try {
-            if (Application.getJavaVersion() <= Application.JAVA18) {
+            if (Application.getJavaVersion() < Application.JAVA19) {
                 EAWTMacOSApplicationAdapter.enableMacSpecial();
             } else {
                 AWTMacOSApplicationAdapter.enableMacSpecial();
