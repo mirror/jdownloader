@@ -107,7 +107,7 @@ public class AWTMacOSApplicationAdapter {
                 final Method setOpenURIHandler​ = desktop.getClass().getDeclaredMethod("setOpenURIHandler​​", new Class[] { openURIHandlerInterface });
                 final Object openURIHandler = java.lang.reflect.Proxy.newProxyInstance(openURIHandlerInterface.getClassLoader(), new Class[] { openURIHandlerInterface }, new InvocationHandler() {
                     @Override
-                    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                    public Object invoke(Object proxy, Method method, final Object[] args) throws Throwable {
                         TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
                             @Override
                             protected Void run() throws RuntimeException {
@@ -149,7 +149,7 @@ public class AWTMacOSApplicationAdapter {
                 final Method setOpenFileHandler​ = desktop.getClass().getDeclaredMethod("setOpenFileHandler​", new Class[] { openFilesHandlerInterface });
                 final Object openFileHandler = java.lang.reflect.Proxy.newProxyInstance(openFilesHandlerInterface.getClassLoader(), new Class[] { openFilesHandlerInterface }, new InvocationHandler() {
                     @Override
-                    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                    public Object invoke(Object proxy, Method method, final Object[] args) throws Throwable {
                         TaskQueue.getQueue().enqueue(new QueueAction<Void, RuntimeException>() {
                             @Override
                             protected Void run() throws RuntimeException {
@@ -199,7 +199,7 @@ public class AWTMacOSApplicationAdapter {
                 final Method setPreferencesHandler = desktop.getClass().getDeclaredMethod("setPreferencesHandler", new Class[] { preferencesHandlerInterface });
                 final Object preferencesHandler = java.lang.reflect.Proxy.newProxyInstance(preferencesHandlerInterface.getClassLoader(), new Class[] { preferencesHandlerInterface }, new InvocationHandler() {
                     @Override
-                    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                    public Object invoke(Object proxy, Method method, final Object[] args) throws Throwable {
                         TaskQueue.getQueue().enqueue(new QueueAction<Void, RuntimeException>() {
                             @Override
                             protected Void run() throws RuntimeException {
@@ -253,7 +253,7 @@ public class AWTMacOSApplicationAdapter {
                 final Method setAboutHandler​ = desktop.getClass().getDeclaredMethod("setAboutHandler", new Class[] { aboutHandlerInterface });
                 final Object aboutHandler = java.lang.reflect.Proxy.newProxyInstance(aboutHandlerInterface.getClassLoader(), new Class[] { aboutHandlerInterface }, new InvocationHandler() {
                     @Override
-                    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                    public Object invoke(Object proxy, Method method, final Object[] args) throws Throwable {
                         new Thread() {
                             public void run() {
                                 Thread.currentThread().setDaemon(true);
