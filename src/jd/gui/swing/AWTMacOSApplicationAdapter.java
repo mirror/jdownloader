@@ -10,6 +10,7 @@ import java.util.List;
 import javax.swing.JFrame;
 
 import jd.SecondLevelLaunch;
+import jd.controlling.TaskQueue;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkOrigin;
@@ -18,12 +19,16 @@ import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.event.queue.QueueAction;
+import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.swing.windowmanager.WindowManager;
 import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+import org.jdownloader.updatev2.RestartController;
+import org.jdownloader.updatev2.SmartRlyExitRequest;
 
 public class AWTMacOSApplicationAdapter {
     public static void enableMacSpecial() {
@@ -32,8 +37,66 @@ public class AWTMacOSApplicationAdapter {
             final AWTMacOSApplicationAdapter adapter = new AWTMacOSApplicationAdapter();
             adapter.setAboutHandler​(desktop);
             adapter.setPreferencesHandler​(desktop);
+            adapter.setQuitHandler(desktop);
             adapter.setOpenFileHandler(desktop);
             adapter.setOpenURIHandler​(desktop);
+        }
+    }
+
+    private void setQuitHandler(Desktop desktop) {
+        if (desktop != null) {
+            try {
+                final Class<?> quitHandlerInterface = Class.forName("java.awt.desktop.QuitHandler");
+                final Method setQuitHandler​ = desktop.getClass().getDeclaredMethod("setQuitHandler​", new Class[] { quitHandlerInterface });
+                final Object quitHandler = java.lang.reflect.Proxy.newProxyInstance(quitHandlerInterface.getClassLoader(), new Class[] { quitHandlerInterface }, new InvocationHandler() {
+                    @Override
+                    public Object invoke(Object proxy, Method method, final Object[] args) throws Throwable {
+                        RestartController.getInstance().exitAsynch(new SmartRlyExitRequest() {
+                            @Override
+                            public void onShutdown() {
+                                new Thread() {
+                                    public void run() {
+                                        /*
+                                         * own thread because else it will block, performQuit calls exit again
+                                         */
+                                        try {
+                                            final Object quitResponse = args[1];
+                                            final Method performQuit = quitResponse.getClass().getMethod("performQuit​", new Class[0]);
+                                            performQuit.invoke(quitResponse, new Object[0]);
+                                        } catch (Throwable e) {
+                                            e.printStackTrace();
+                                        }
+                                    };
+                                }.start();
+                            }
+
+                            @Override
+                            public void onShutdownVeto() {
+                                new Thread() {
+                                    public void run() {
+                                        /*
+                                         * own thread because else it will block, performQuit calls exit again
+                                         */
+                                        try {
+                                            final Object quitResponse = args[1];
+                                            final Method cancelQuit​ = quitResponse.getClass().getMethod("cancelQuit​​", new Class[0]);
+                                            cancelQuit​.invoke(quitResponse, new Object[0]);
+                                        } catch (Throwable e) {
+                                            e.printStackTrace();
+                                        }
+                                    };
+                                }.start();
+                            }
+                        });
+                        return null;
+                    }
+                });
+                setQuitHandler​.invoke(desktop, quitHandler);
+            } catch (final UnsupportedOperationException ignore) {
+                LoggerFactory.getDefaultLogger().log(ignore);
+            } catch (final Throwable e) {
+                LoggerFactory.getDefaultLogger().log(e);
+            }
         }
     }
 
@@ -45,16 +108,26 @@ public class AWTMacOSApplicationAdapter {
                 final Object openURIHandler = java.lang.reflect.Proxy.newProxyInstance(openURIHandlerInterface.getClassLoader(), new Class[] { openURIHandlerInterface }, new InvocationHandler() {
                     @Override
                     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-                        appReOpened();
-                        final Object openURIEvent​ = args[0];
-                        final Method getURI​ = openURIEvent​.getClass().getMethod("getURI​", new Class[0]);
-                        final URI uri = (URI) getURI​.invoke(openURIEvent​, new Object[0]);
-                        final String links = uri.toString();
-                        SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
+                        TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
                             @Override
-                            public void run() {
-                                org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Distribute links: " + links);
-                                LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(LinkOrigin.MAC_DOCK.getLinkOriginDetails(), links));
+                            protected Void run() throws RuntimeException {
+                                try {
+                                    appReOpened();
+                                    final Object openURIEvent​ = args[0];
+                                    final Method getURI​ = openURIEvent​.getClass().getMethod("getURI​", new Class[0]);
+                                    final URI uri = (URI) getURI​.invoke(openURIEvent​, new Object[0]);
+                                    final String links = uri.toString();
+                                    SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Distribute links: " + links);
+                                            LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(LinkOrigin.MAC_DOCK.getLinkOriginDetails(), links));
+                                        }
+                                    });
+                                } catch (final Throwable e) {
+                                    LoggerFactory.getDefaultLogger().log(e);
+                                }
+                                return null;
                             }
                         });
                         return null;
@@ -62,9 +135,9 @@ public class AWTMacOSApplicationAdapter {
                 });
                 setOpenURIHandler​.invoke(desktop, openURIHandler);
             } catch (final UnsupportedOperationException ignore) {
-                ignore.printStackTrace();
+                LoggerFactory.getDefaultLogger().log(ignore);
             } catch (final Throwable e) {
-                e.printStackTrace();
+                LoggerFactory.getDefaultLogger().log(e);
             }
         }
     }
@@ -77,24 +150,34 @@ public class AWTMacOSApplicationAdapter {
                 final Object openFileHandler = java.lang.reflect.Proxy.newProxyInstance(openFilesHandlerInterface.getClassLoader(), new Class[] { openFilesHandlerInterface }, new InvocationHandler() {
                     @Override
                     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-                        appReOpened();
-                        final Object openFilesEvent = args[0];
-                        Method getFiles = openFilesEvent.getClass().getMethod("getFiles", new Class[0]);
-                        final List<File> files = (List<File>) getFiles.invoke(openFilesEvent, new Object[0]);
-                        org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Handle open files from Dock " + files.toString());
-                        final StringBuilder sb = new StringBuilder();
-                        for (final File file : files) {
-                            if (sb.length() > 0) {
-                                sb.append("\r\n");
-                            }
-                            sb.append(file.toURI().toString());
-                        }
-                        final String links = sb.toString();
-                        SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
+                        TaskQueue.getQueue().enqueue(new QueueAction<Void, RuntimeException>() {
                             @Override
-                            public void run() {
-                                org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Distribute links: " + links);
-                                LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(LinkOrigin.MAC_DOCK.getLinkOriginDetails(), links));
+                            protected Void run() throws RuntimeException {
+                                try {
+                                    appReOpened();
+                                    final Object openFilesEvent = args[0];
+                                    Method getFiles = openFilesEvent.getClass().getMethod("getFiles", new Class[0]);
+                                    final List<File> files = (List<File>) getFiles.invoke(openFilesEvent, new Object[0]);
+                                    org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Handle open files from Dock " + files.toString());
+                                    final StringBuilder sb = new StringBuilder();
+                                    for (final File file : files) {
+                                        if (sb.length() > 0) {
+                                            sb.append("\r\n");
+                                        }
+                                        sb.append(file.toURI().toString());
+                                    }
+                                    final String links = sb.toString();
+                                    SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Distribute links: " + links);
+                                            LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(LinkOrigin.MAC_DOCK.getLinkOriginDetails(), links));
+                                        }
+                                    });
+                                } catch (final Throwable e) {
+                                    LoggerFactory.getDefaultLogger().log(e);
+                                }
+                                return null;
                             }
                         });
                         return null;
@@ -102,9 +185,9 @@ public class AWTMacOSApplicationAdapter {
                 });
                 setOpenFileHandler​.invoke(desktop, openFileHandler);
             } catch (final UnsupportedOperationException ignore) {
-                ignore.printStackTrace();
+                LoggerFactory.getDefaultLogger().log(ignore);
             } catch (final Throwable e) {
-                e.printStackTrace();
+                LoggerFactory.getDefaultLogger().log(e);
             }
         }
     }
@@ -117,29 +200,32 @@ public class AWTMacOSApplicationAdapter {
                 final Object preferencesHandler = java.lang.reflect.Proxy.newProxyInstance(preferencesHandlerInterface.getClassLoader(), new Class[] { preferencesHandlerInterface }, new InvocationHandler() {
                     @Override
                     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-                        new EDTRunner() {
+                        TaskQueue.getQueue().enqueue(new QueueAction<Void, RuntimeException>() {
                             @Override
-                            protected void runInEDT() {
-                                try {
-                                    System.out.println(1);
-                                    appReOpened();
-                                    System.out.println(2);
-                                    JsonConfig.create(GraphicalUserInterfaceSettings.class).setConfigViewVisible(true);
-                                    System.out.println(3);
-                                    JDGui.getInstance().setContent(ConfigurationView.getInstance(), true);
-                                } catch (Throwable ignore) {
-                                    ignore.printStackTrace();
-                                }
+                            protected Void run() throws RuntimeException {
+                                new EDTRunner() {
+                                    @Override
+                                    protected void runInEDT() {
+                                        try {
+                                            appReOpened();
+                                            JsonConfig.create(GraphicalUserInterfaceSettings.class).setConfigViewVisible(true);
+                                            JDGui.getInstance().setContent(ConfigurationView.getInstance(), true);
+                                        } catch (Throwable e) {
+                                            LoggerFactory.getDefaultLogger().log(e);
+                                        }
+                                    }
+                                };
+                                return null;
                             }
-                        };
+                        });
                         return null;
                     }
                 });
                 setPreferencesHandler.invoke(desktop, preferencesHandler);
             } catch (final UnsupportedOperationException ignore) {
-                ignore.printStackTrace();
+                LoggerFactory.getDefaultLogger().log(ignore);
             } catch (final Throwable e) {
-                e.printStackTrace();
+                LoggerFactory.getDefaultLogger().log(e);
             }
         }
     }
@@ -168,18 +254,23 @@ public class AWTMacOSApplicationAdapter {
                 final Object aboutHandler = java.lang.reflect.Proxy.newProxyInstance(aboutHandlerInterface.getClassLoader(), new Class[] { aboutHandlerInterface }, new InvocationHandler() {
                     @Override
                     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-                        try {
-                            Dialog.getInstance().showDialog(new AboutDialog());
-                        } catch (DialogNoAnswerException e1) {
-                        }
+                        new Thread() {
+                            public void run() {
+                                Thread.currentThread().setDaemon(true);
+                                try {
+                                    Dialog.getInstance().showDialog(new AboutDialog());
+                                } catch (DialogNoAnswerException e1) {
+                                }
+                            };
+                        }.start();
                         return null;
                     }
                 });
                 setAboutHandler​.invoke(desktop, aboutHandler);
             } catch (final UnsupportedOperationException ignore) {
-                ignore.printStackTrace();
+                LoggerFactory.getDefaultLogger().log(ignore);
             } catch (final Throwable e) {
-                e.printStackTrace();
+                LoggerFactory.getDefaultLogger().log(e);
             }
         }
     }
