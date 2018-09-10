@@ -31,6 +31,10 @@ import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.SmartRlyExitRequest;
 
 public class AWTMacOSApplicationAdapter {
+    public static void main(String[] args) {
+        enableMacSpecial();
+    }
+
     public static void enableMacSpecial() {
         final Desktop desktop = Desktop.getDesktop();
         if (desktop != null) {
@@ -46,8 +50,8 @@ public class AWTMacOSApplicationAdapter {
     private void setQuitHandler(Desktop desktop) {
         if (desktop != null) {
             try {
-                final Class<?> quitHandlerInterface = Class.forName("java.awt.desktop.QuitHandler");
-                final Method setQuitHandler​ = desktop.getClass().getMethod("setQuitHandler​", new Class[] { quitHandlerInterface });
+                final Class<?> quitHandlerInterface = desktop.getClass().forName("java.awt.desktop.QuitHandler");
+                final Method setQuitHandler​ = getMethod(desktop.getClass(), "setQuitHandler");
                 final Object quitHandler = java.lang.reflect.Proxy.newProxyInstance(quitHandlerInterface.getClassLoader(), new Class[] { quitHandlerInterface }, new InvocationHandler() {
                     @Override
                     public Object invoke(Object proxy, Method method, final Object[] args) throws Throwable {
@@ -109,8 +113,8 @@ public class AWTMacOSApplicationAdapter {
     private void setOpenURIHandler​(Desktop desktop) {
         if (desktop != null) {
             try {
-                final Class<?> openURIHandlerInterface = Class.forName("java.awt.desktop.OpenURIHandler​");
-                final Method setOpenURIHandler​ = desktop.getClass().getMethod("setOpenURIHandler​​", new Class[] { openURIHandlerInterface });
+                final Class<?> openURIHandlerInterface = desktop.getClass().forName("java.awt.desktop.OpenURIHandler​");
+                final Method setOpenURIHandler​ = getMethod(desktop.getClass(), "setOpenURIHandler");
                 final Object openURIHandler = java.lang.reflect.Proxy.newProxyInstance(openURIHandlerInterface.getClassLoader(), new Class[] { openURIHandlerInterface }, new InvocationHandler() {
                     @Override
                     public Object invoke(Object proxy, Method method, final Object[] args) throws Throwable {
@@ -148,11 +152,22 @@ public class AWTMacOSApplicationAdapter {
         }
     }
 
+    private final Method getMethod(final Class clz, final String name) throws NoSuchMethodException {
+        if (clz != null && name != null) {
+            for (final Method method : clz.getMethods()) {
+                if (name.equals(method.getName())) {
+                    return method;
+                }
+            }
+        }
+        throw new NoSuchMethodException(name);
+    }
+
     private void setOpenFileHandler(Desktop desktop) {
         if (desktop != null) {
             try {
-                final Class<?> openFilesHandlerInterface = Class.forName("java.awt.desktop.OpenFilesHandler​");
-                final Method setOpenFileHandler​ = desktop.getClass().getMethod("setOpenFileHandler​", new Class[] { openFilesHandlerInterface });
+                final Class<?> openFilesHandlerInterface = desktop.getClass().forName("java.awt.desktop.OpenFilesHandler");
+                final Method setOpenFileHandler​ = getMethod(desktop.getClass(), "setOpenFileHandler");
                 final Object openFileHandler = java.lang.reflect.Proxy.newProxyInstance(openFilesHandlerInterface.getClassLoader(), new Class[] { openFilesHandlerInterface }, new InvocationHandler() {
                     @Override
                     public Object invoke(Object proxy, Method method, final Object[] args) throws Throwable {
@@ -201,8 +216,8 @@ public class AWTMacOSApplicationAdapter {
     private void setPreferencesHandler​(Desktop desktop) {
         if (desktop != null) {
             try {
-                final Class<?> preferencesHandlerInterface = Class.forName("java.awt.desktop.PreferencesHandler");
-                final Method setPreferencesHandler = desktop.getClass().getMethod("setPreferencesHandler", new Class[] { preferencesHandlerInterface });
+                final Class<?> preferencesHandlerInterface = desktop.getClass().forName("java.awt.desktop.PreferencesHandler");
+                final Method setPreferencesHandler = getMethod(desktop.getClass(), "setPreferencesHandler");
                 final Object preferencesHandler = java.lang.reflect.Proxy.newProxyInstance(preferencesHandlerInterface.getClassLoader(), new Class[] { preferencesHandlerInterface }, new InvocationHandler() {
                     @Override
                     public Object invoke(Object proxy, Method method, final Object[] args) throws Throwable {
@@ -261,8 +276,8 @@ public class AWTMacOSApplicationAdapter {
     private void setAboutHandler​(Desktop desktop) {
         if (desktop != null) {
             try {
-                final Class<?> aboutHandlerInterface = Class.forName("java.awt.desktop.AboutHandler");
-                final Method setAboutHandler​ = desktop.getClass().getMethod("setAboutHandler", new Class[] { aboutHandlerInterface });
+                final Class<?> aboutHandlerInterface = desktop.getClass().forName("java.awt.desktop.AboutHandler");
+                final Method setAboutHandler​ = getMethod(desktop.getClass(), "setAboutHandler");
                 final Object aboutHandler = java.lang.reflect.Proxy.newProxyInstance(aboutHandlerInterface.getClassLoader(), new Class[] { aboutHandlerInterface }, new InvocationHandler() {
                     @Override
                     public Object invoke(Object proxy, Method method, final Object[] args) throws Throwable {
