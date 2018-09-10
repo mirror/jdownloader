@@ -47,7 +47,7 @@ public class AWTMacOSApplicationAdapter {
         if (desktop != null) {
             try {
                 final Class<?> quitHandlerInterface = Class.forName("java.awt.desktop.QuitHandler");
-                final Method setQuitHandler​ = desktop.getClass().getDeclaredMethod("setQuitHandler​", new Class[] { quitHandlerInterface });
+                final Method setQuitHandler​ = desktop.getClass().getMethod("setQuitHandler​", new Class[] { quitHandlerInterface });
                 final Object quitHandler = java.lang.reflect.Proxy.newProxyInstance(quitHandlerInterface.getClassLoader(), new Class[] { quitHandlerInterface }, new InvocationHandler() {
                     @Override
                     public Object invoke(Object proxy, Method method, final Object[] args) throws Throwable {
@@ -110,7 +110,7 @@ public class AWTMacOSApplicationAdapter {
         if (desktop != null) {
             try {
                 final Class<?> openURIHandlerInterface = Class.forName("java.awt.desktop.OpenURIHandler​");
-                final Method setOpenURIHandler​ = desktop.getClass().getDeclaredMethod("setOpenURIHandler​​", new Class[] { openURIHandlerInterface });
+                final Method setOpenURIHandler​ = desktop.getClass().getMethod("setOpenURIHandler​​", new Class[] { openURIHandlerInterface });
                 final Object openURIHandler = java.lang.reflect.Proxy.newProxyInstance(openURIHandlerInterface.getClassLoader(), new Class[] { openURIHandlerInterface }, new InvocationHandler() {
                     @Override
                     public Object invoke(Object proxy, Method method, final Object[] args) throws Throwable {
@@ -152,7 +152,7 @@ public class AWTMacOSApplicationAdapter {
         if (desktop != null) {
             try {
                 final Class<?> openFilesHandlerInterface = Class.forName("java.awt.desktop.OpenFilesHandler​");
-                final Method setOpenFileHandler​ = desktop.getClass().getDeclaredMethod("setOpenFileHandler​", new Class[] { openFilesHandlerInterface });
+                final Method setOpenFileHandler​ = desktop.getClass().getMethod("setOpenFileHandler​", new Class[] { openFilesHandlerInterface });
                 final Object openFileHandler = java.lang.reflect.Proxy.newProxyInstance(openFilesHandlerInterface.getClassLoader(), new Class[] { openFilesHandlerInterface }, new InvocationHandler() {
                     @Override
                     public Object invoke(Object proxy, Method method, final Object[] args) throws Throwable {
@@ -202,7 +202,7 @@ public class AWTMacOSApplicationAdapter {
         if (desktop != null) {
             try {
                 final Class<?> preferencesHandlerInterface = Class.forName("java.awt.desktop.PreferencesHandler");
-                final Method setPreferencesHandler = desktop.getClass().getDeclaredMethod("setPreferencesHandler", new Class[] { preferencesHandlerInterface });
+                final Method setPreferencesHandler = desktop.getClass().getMethod("setPreferencesHandler", new Class[] { preferencesHandlerInterface });
                 final Object preferencesHandler = java.lang.reflect.Proxy.newProxyInstance(preferencesHandlerInterface.getClassLoader(), new Class[] { preferencesHandlerInterface }, new InvocationHandler() {
                     @Override
                     public Object invoke(Object proxy, Method method, final Object[] args) throws Throwable {
@@ -262,7 +262,7 @@ public class AWTMacOSApplicationAdapter {
         if (desktop != null) {
             try {
                 final Class<?> aboutHandlerInterface = Class.forName("java.awt.desktop.AboutHandler");
-                final Method setAboutHandler​ = desktop.getClass().getDeclaredMethod("setAboutHandler", new Class[] { aboutHandlerInterface });
+                final Method setAboutHandler​ = desktop.getClass().getMethod("setAboutHandler", new Class[] { aboutHandlerInterface });
                 final Object aboutHandler = java.lang.reflect.Proxy.newProxyInstance(aboutHandlerInterface.getClassLoader(), new Class[] { aboutHandlerInterface }, new InvocationHandler() {
                     @Override
                     public Object invoke(Object proxy, Method method, final Object[] args) throws Throwable {
