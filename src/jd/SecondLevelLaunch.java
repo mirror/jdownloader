@@ -220,7 +220,9 @@ public class SecondLevelLaunch {
         // System.setProperty("apple.awt.showGrowBox", "true");
         // }
         try {
-            MacOSApplicationAdapter.enableMacSpecial();
+            if (Application.getJavaVersion() <= Application.JAVA18) {
+                MacOSApplicationAdapter.enableMacSpecial();
+            }
         } catch (final Throwable e) {
             LoggerFactory.getDefaultLogger().info("Error Initializing  Mac Look and Feel Special: " + e);
             LoggerFactory.getDefaultLogger().log(e);
