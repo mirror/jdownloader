@@ -53,7 +53,7 @@ public class AWTMacOSApplicationAdapter {
                 final Method setQuitHandler​ = getMethod(desktop.getClass(), "setQuitHandler");
                 final Object quitHandler = java.lang.reflect.Proxy.newProxyInstance(desktop.getClass().getClassLoader(), new Class[] { setQuitHandler​.getParameterTypes()[0] }, new InvocationHandler() {
                     @Override
-                    public Object invoke(Object proxy, Method method, final Object[] args) throws Throwable {
+                    public Object invoke(Object proxy, final Method method, final Object[] args) throws Throwable {
                         System.out.println(method.getName());
                         final Thread thread = new Thread("java.awt.desktop.QuitHandler") {
                             public void run() {
@@ -117,7 +117,7 @@ public class AWTMacOSApplicationAdapter {
                 final Method setOpenURIHandler​ = getMethod(desktop.getClass(), "setOpenURIHandler");
                 final Object openURIHandler = java.lang.reflect.Proxy.newProxyInstance(desktop.getClass().getClassLoader(), new Class[] { setOpenURIHandler​.getParameterTypes()[0] }, new InvocationHandler() {
                     @Override
-                    public Object invoke(Object proxy, Method method, final Object[] args) throws Throwable {
+                    public Object invoke(Object proxy, final Method method, final Object[] args) throws Throwable {
                         TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
                             @Override
                             protected Void run() throws RuntimeException {
@@ -169,7 +169,7 @@ public class AWTMacOSApplicationAdapter {
                 final Method setOpenFileHandler​ = getMethod(desktop.getClass(), "setOpenFileHandler");
                 final Object openFileHandler = java.lang.reflect.Proxy.newProxyInstance(desktop.getClass().getClassLoader(), new Class[] { setOpenFileHandler​.getParameterTypes()[0] }, new InvocationHandler() {
                     @Override
-                    public Object invoke(Object proxy, Method method, final Object[] args) throws Throwable {
+                    public Object invoke(Object proxy, final Method method, final Object[] args) throws Throwable {
                         TaskQueue.getQueue().enqueue(new QueueAction<Void, RuntimeException>() {
                             @Override
                             protected Void run() throws RuntimeException {
@@ -218,7 +218,7 @@ public class AWTMacOSApplicationAdapter {
                 final Method setPreferencesHandler = getMethod(desktop.getClass(), "setPreferencesHandler");
                 final Object preferencesHandler = java.lang.reflect.Proxy.newProxyInstance(desktop.getClass().getClassLoader(), new Class[] { setPreferencesHandler.getParameterTypes()[0] }, new InvocationHandler() {
                     @Override
-                    public Object invoke(Object proxy, Method method, final Object[] args) throws Throwable {
+                    public Object invoke(Object proxy, final Method method, final Object[] args) throws Throwable {
                         System.out.println(method.getName());
                         TaskQueue.getQueue().addAsynch(new QueueAction<Void, RuntimeException>() {
                             @Override
@@ -277,7 +277,7 @@ public class AWTMacOSApplicationAdapter {
                 final Method setAboutHandler​ = getMethod(desktop.getClass(), "setAboutHandler");
                 final Object aboutHandler = java.lang.reflect.Proxy.newProxyInstance(desktop.getClass().getClassLoader(), new Class[] { setAboutHandler​.getParameterTypes()[0] }, new InvocationHandler() {
                     @Override
-                    public Object invoke(Object proxy, Method method, final Object[] args) throws Throwable {
+                    public Object invoke(Object proxy, final Method method, final Object[] args) throws Throwable {
                         System.out.println(method.getName());
                         final Thread thread = new Thread("java.awt.desktop.AboutHandler") {
                             public void run() {
