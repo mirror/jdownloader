@@ -156,12 +156,13 @@ public class CloudyfilesCom extends PluginForHost {
 
     @Override
     public String rewriteHost(String host) {
+        // must be plugin host entry!
         if (host == null) {
-            return primaryDomain;
+            return "cloudyfiles.org";
         }
         for (final String supportedName : siteSupportedNames()) {
             if (supportedName.equals(host)) {
-                return primaryDomain;
+                return "cloudyfiles.org";
             }
         }
         return super.rewriteHost(host);

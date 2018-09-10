@@ -59,7 +59,6 @@ public class HitomiLa extends antiDDoSForDecrypt {
         final String fpName = br.getRegex("<title>([^<>\"]*?) \\| Hitomi\\.la</title>").getMatch(0);
         // get the image host.
         // retval = subdomain_from_galleryid(g) + retval;
-        String imghost = getImageHost(guid) + "a";
         final String[] links = br.getRegex("(/" + guid + "/(?:[^<>\"]*?\\.[a-z]+)+)").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
@@ -68,6 +67,7 @@ public class HitomiLa extends antiDDoSForDecrypt {
         final int numberOfPages = links.length;
         final DecimalFormat df = numberOfPages > 999 ? new DecimalFormat("0000") : numberOfPages > 99 ? new DecimalFormat("000") : new DecimalFormat("00");
         int i = 0;
+        String imghost = getImageHost(guid) + "a";
         boolean checked = false;
         for (final String singleLink : links) {
             ++i;
@@ -106,7 +106,7 @@ public class HitomiLa extends antiDDoSForDecrypt {
     }
 
     /**
-     * they do some javascript trickery (check reader.js). rewritten in java.
+     * they do some javascript trickery (check reader.js,common.js). rewritten in java.
      *
      * @param guid
      * @return
@@ -116,7 +116,11 @@ public class HitomiLa extends antiDDoSForDecrypt {
         // number of subdmains.
         final int i = 2;
         // guid is always present, so not sure why they have failover. That said you don't need subdomain either base domain works also!
-        final String subdomain = Character.toString((char) (97 + (Integer.parseInt(guid) % i)));
+        String g = new Regex(guid, "^\\d*(\\d)$").getMatch(0);
+        if ("1".equals(g)) {
+            g = "0";
+        }
+        final String subdomain = Character.toString((char) (97 + (Integer.parseInt(g) % i)));
         return subdomain;
     }
 }
