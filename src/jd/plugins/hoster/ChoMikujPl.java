@@ -490,7 +490,7 @@ public class ChoMikujPl extends antiDDoSForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         dl.setFilenameFix(true);
         final URLConnectionAdapter con = dl.getConnection();
-        if ((StringUtils.containsIgnoreCase(con.getContentType(), "text") && con.getResponseCode() == 200) || !con.isOK()) {
+        if (!con.isContentDisposition() && ((StringUtils.containsIgnoreCase(con.getContentType(), "text") && con.getResponseCode() == 200) || !con.isOK())) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             handleServerErrors();
@@ -546,7 +546,7 @@ public class ChoMikujPl extends antiDDoSForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, account_resume, account_maxchunks);
         dl.setFilenameFix(true);
         final URLConnectionAdapter con = dl.getConnection();
-        if ((StringUtils.containsIgnoreCase(con.getContentType(), "text") && con.getResponseCode() == 200) || !con.isOK()) {
+        if (!con.isContentDisposition() && ((StringUtils.containsIgnoreCase(con.getContentType(), "text") && con.getResponseCode() == 200) || !con.isOK())) {
             // 206 Partitial Content might have text/html content-type
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
