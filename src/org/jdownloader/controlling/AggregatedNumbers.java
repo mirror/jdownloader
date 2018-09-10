@@ -2,6 +2,7 @@ package org.jdownloader.controlling;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
@@ -10,8 +11,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.download.DownloadInterface;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.SelectionInfo.PackageView;
@@ -19,10 +22,11 @@ import org.jdownloader.plugins.ConditionalSkipReason;
 import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.MirrorLoading;
 import org.jdownloader.plugins.SkipReason;
+import org.jdownloader.settings.GeneralSettings;
 
 public class AggregatedNumbers {
-
-    private final long totalBytes;
+    protected static final boolean FORCED_MIRROR_CASE_INSENSITIVE = CrossSystem.isWindows() || JsonConfig.create(GeneralSettings.class).isForceMirrorDetectionCaseInsensitive();
+    private final long             totalBytes;
 
     public final String getFinishedString(final boolean inclDisabled) {
         if (inclDisabled) {
@@ -102,11 +106,9 @@ public class AggregatedNumbers {
 
     private final long enabledUnfinishedTotalBytes;
     private final long enabledUnfinishedLoadedBytes;
-
     private final int  connections;
     private final long disabledTotalBytes;
     private final long disabledLoadedBytes;
-
     private final long downloadsFinished;
     private final long downloadsFailed;
     private final long downloadsSkipped;
@@ -127,7 +129,12 @@ public class AggregatedNumbers {
         final boolean isEnabled = link.isEnabled();
         final DownloadLinkView view = link.getView();
         final ConditionalSkipReason conditionalSkipReason = link.getConditionalSkipReason();
-        final String displayName = view.getDisplayName();
+        final String displayName;
+        if (FORCED_MIRROR_CASE_INSENSITIVE) {
+            displayName = view.getDisplayName().toLowerCase(Locale.ENGLISH);
+        } else {
+            displayName = view.getDisplayName();
+        }
         if (isEnabled) {
             if (conditionalSkipReason instanceof MirrorLoading) {
                 final MirrorLoading mirrorLoading = (MirrorLoading) conditionalSkipReason;
@@ -153,7 +160,6 @@ public class AggregatedNumbers {
                                 linkInfo.connections = Math.max(linkInfo.connections, handlerP.size());
                             }
                         }
-
                     }
                     linkInfos.put(displayName, linkInfo);
                 }
@@ -209,7 +215,6 @@ public class AggregatedNumbers {
                 }
             }
         }
-
     }
 
     public AggregatedNumbers(final SelectionInfo<FilePackage, DownloadLink> selection) {
@@ -217,28 +222,20 @@ public class AggregatedNumbers {
         packageCount = packageViews.size();
         int linkCount = 0;
         long downloadSpeed = 0;
-
         long totalBytes = -1;
         long totalBytesDisabled = -1;
-
         long loadedBytes = 0;
         long loadedBytesDisabled = 0;
-
         long downloadsSkipped = 0;
         long downloadsSkippedDisabled = 0l;
-
         long downloadsFinished = 0l;
         long downloadsFinishedDisabled = 0l;
-
         long downloadsFailed = 0l;
         long downloadsFailedDisabled = 0l;
-
         int running = 0;
         int connections = 0;
-
         long enabledUnfinishedTotalBytes = -1;
         long enabledUnfinishedLoadedBytes = 0;
-
         for (PackageView<FilePackage, DownloadLink> packageView : packageViews) {
             final HashMap<String, AggregatedDownloadLink> linkInfos = new HashMap<String, AggregatedDownloadLink>();
             for (final DownloadLink link : packageView.getChildren()) {
@@ -321,11 +318,9 @@ public class AggregatedNumbers {
             /* no filesize is known, we use -1 to signal this */
             eta = -1;
         }
-
         this.connections = connections;
         this.running = running;
         this.downloadSpeed = downloadSpeed;
-
         this.disabledDownloadsFailed = downloadsFailedDisabled;
         this.disabledDownloadsFinished = downloadsFinishedDisabled;
         this.disabledDownloadsSkipped = downloadsSkippedDisabled;
@@ -334,7 +329,6 @@ public class AggregatedNumbers {
             totalBytesDisabled = 0;
         }
         this.disabledTotalBytes = totalBytesDisabled;
-
         this.downloadsFailed = downloadsFailed;
         this.downloadsFinished = downloadsFinished;
         this.downloadsSkipped = downloadsSkipped;
@@ -343,15 +337,12 @@ public class AggregatedNumbers {
         }
         this.totalBytes = totalBytes;
         this.loadedBytes = loadedBytes;
-
         this.enabledUnfinishedLoadedBytes = enabledUnfinishedLoadedBytes;
         if (enabledUnfinishedTotalBytes == -1 && linkCount == 0) {
             enabledUnfinishedTotalBytes = 0;
         }
         this.enabledUnfinishedTotalBytes = enabledUnfinishedTotalBytes;
-
         this.linkCount = linkCount;
-
     }
 
     public long getEnabledUnfinishedTotalBytes() {
@@ -377,5 +368,4 @@ public class AggregatedNumbers {
     public final long getLoadedBytes() {
         return loadedBytes;
     }
-
 }
