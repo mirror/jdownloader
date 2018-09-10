@@ -25,10 +25,6 @@ import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class AWTMacOSApplicationAdapter {
-    public static void main(String[] args) {
-        enableMacSpecial();
-    }
-
     public static void enableMacSpecial() {
         final Desktop desktop = Desktop.getDesktop();
         if (desktop != null) {

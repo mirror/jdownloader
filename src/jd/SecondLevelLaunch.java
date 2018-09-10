@@ -48,7 +48,8 @@ import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.controlling.proxy.ProxyController;
-import jd.gui.swing.MacOSApplicationAdapter;
+import jd.gui.swing.AWTMacOSApplicationAdapter;
+import jd.gui.swing.EAWTMacOSApplicationAdapter;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.http.Browser;
@@ -221,9 +222,9 @@ public class SecondLevelLaunch {
         // }
         try {
             if (Application.getJavaVersion() <= Application.JAVA18) {
-                MacOSApplicationAdapter.enableMacSpecial();
+                EAWTMacOSApplicationAdapter.enableMacSpecial();
             } else {
-                System.setProperty("apple.eawt.quitStrategy", "CLOSE_ALL_WINDOWS");
+                AWTMacOSApplicationAdapter.enableMacSpecial();
             }
         } catch (final Throwable e) {
             System.setProperty("apple.eawt.quitStrategy", "CLOSE_ALL_WINDOWS");
