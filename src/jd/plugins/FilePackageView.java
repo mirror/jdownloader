@@ -6,6 +6,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -20,6 +21,7 @@ import jd.plugins.download.DownloadInterface;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.controlling.DownloadLinkView;
 import org.jdownloader.extensions.extraction.ExtractionProgress;
@@ -32,6 +34,7 @@ import org.jdownloader.plugins.ConditionalSkipReason;
 import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.MirrorLoading;
 import org.jdownloader.plugins.SkipReason;
+import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class FilePackageView extends ChildrenView<DownloadLink> {
@@ -44,18 +47,19 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
     }
 
     private final FilePackage              fp;
-    protected volatile long                lastUpdateTimestamp      = -1;
-    protected volatile boolean             lastRunningState         = false;
-    protected volatile long                finishedDate             = -1;
-    protected volatile long                estimatedETA             = -1;
-    private volatile int                   offline                  = 0;
-    private volatile int                   online                   = 0;
-    private final AtomicLong               updatesRequired          = new AtomicLong(0);
-    private volatile long                  updatesDone              = -1;
-    private volatile String                availabilityColumnString = null;
-    private volatile ChildrenAvailablility availability             = ChildrenAvailablility.UNKNOWN;
-    private volatile int                   items                    = 0;
-    protected static final long            GUIUPDATETIMEOUT         = JsonConfig.create(GraphicalUserInterfaceSettings.class).getDownloadViewRefresh();
+    protected volatile long                lastUpdateTimestamp            = -1;
+    protected volatile boolean             lastRunningState               = false;
+    protected volatile long                finishedDate                   = -1;
+    protected volatile long                estimatedETA                   = -1;
+    private volatile int                   offline                        = 0;
+    private volatile int                   online                         = 0;
+    private final AtomicLong               updatesRequired                = new AtomicLong(0);
+    private volatile long                  updatesDone                    = -1;
+    private volatile String                availabilityColumnString       = null;
+    private volatile ChildrenAvailablility availability                   = ChildrenAvailablility.UNKNOWN;
+    private volatile int                   items                          = 0;
+    protected static final long            GUIUPDATETIMEOUT               = JsonConfig.create(GraphicalUserInterfaceSettings.class).getDownloadViewRefresh();
+    protected static final boolean         FORCED_MIRROR_CASE_INSENSITIVE = CrossSystem.isWindows() || JsonConfig.create(GeneralSettings.class).isForceMirrorDetectionCaseInsensitive();
 
     public boolean isEnabled() {
         return enabledCount > 0;
@@ -642,7 +646,12 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
             tmp.newFinalCount++;
         }
         final boolean isEnabled = link.isEnabled();
-        final String displayName = view.getDisplayName();
+        final String displayName;
+        if (FORCED_MIRROR_CASE_INSENSITIVE) {
+            displayName = view.getDisplayName().toLowerCase(Locale.ENGLISH);
+        } else {
+            displayName = view.getDisplayName();
+        }
         if (isEnabled) {
             if (finalLinkState == null || FinalLinkState.PLUGIN_DEFECT.equals(finalLinkState)) {
                 tmp.allFinished = false;

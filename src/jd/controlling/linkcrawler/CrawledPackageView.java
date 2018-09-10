@@ -6,38 +6,41 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicLong;
 
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.ChildrenView;
 import jd.plugins.DownloadLink;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelData.PackageControllerTableModelDataPackage;
 import org.jdownloader.gui.views.downloads.columns.AvailabilityColumn;
 import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
+import org.jdownloader.settings.GeneralSettings;
 
 public class CrawledPackageView extends ChildrenView<CrawledLink> {
-
     private static class LinkInfo {
         private long bytesTotal = -1;
     }
 
-    protected volatile long                fileSize                 = -1;
-    private volatile DomainInfo[]          domainInfos              = new DomainInfo[0];
-    protected volatile boolean             enabled                  = false;
-    private volatile int                   offline                  = 0;
-    private volatile int                   online                   = 0;
-    private volatile int                   items                    = 0;
-    private final AtomicLong               updatesRequired          = new AtomicLong(0);
-    private volatile long                  updatesDone              = -1;
-
+    protected volatile long                fileSize                       = -1;
+    private volatile DomainInfo[]          domainInfos                    = new DomainInfo[0];
+    protected volatile boolean             enabled                        = false;
+    private volatile int                   offline                        = 0;
+    private volatile int                   online                         = 0;
+    private volatile int                   items                          = 0;
+    private final AtomicLong               updatesRequired                = new AtomicLong(0);
+    private volatile long                  updatesDone                    = -1;
     private volatile String                commonSourceUrl;
-    private volatile String                availabilityColumnString = null;
-    private volatile ChildrenAvailablility availability             = ChildrenAvailablility.UNKNOWN;
+    private volatile String                availabilityColumnString       = null;
+    private volatile ChildrenAvailablility availability                   = ChildrenAvailablility.UNKNOWN;
     private final CrawledPackage           pkg;
+    protected static final boolean         FORCED_MIRROR_CASE_INSENSITIVE = CrossSystem.isWindows() || JsonConfig.create(GeneralSettings.class).isForceMirrorDetectionCaseInsensitive();
 
     public CrawledPackageView() {
         this(null);
@@ -82,7 +85,6 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
         int                             newOnline         = 0;
         boolean                         newEnabled        = false;
         int                             newOffline        = 0;
-
         String                          sameSource        = null;
         boolean                         sameSourceFullUrl = true;
         long                            lupdatesRequired  = updatesRequired.get();
@@ -103,7 +105,6 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
             writeTmpToFields(tmp);
             final ArrayList<DomainInfo> lst = new ArrayList<DomainInfo>(tmp.domains);
             Collections.sort(lst, new Comparator<DomainInfo>() {
-
                 @Override
                 public int compare(DomainInfo o1, DomainInfo o2) {
                     return o1.getTld().compareTo(o2.getTld());
@@ -145,7 +146,6 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
     protected void addtoTmp(Temp tmp, CrawledLink link) {
         final DownloadLink dlLink = link.getDownloadLink();
         final String sourceUrl = dlLink.getView().getDisplayUrl();
-
         if (sourceUrl != null) {
             tmp.sameSource = StringUtils.getCommonalities(tmp.sameSource, sourceUrl);
             tmp.sameSourceFullUrl = tmp.sameSourceFullUrl && tmp.sameSource.equals(sourceUrl);
@@ -161,7 +161,12 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
             // online
             tmp.newOnline++;
         }
-        final String name = link.getName();
+        final String name;
+        if (FORCED_MIRROR_CASE_INSENSITIVE) {
+            name = link.getName().toLowerCase(Locale.ENGLISH);
+        } else {
+            name = link.getName();
+        }
         LinkInfo existing = tmp.linkInfos.get(name);
         final long linkSize = link.getSize();
         if (existing == null) {
@@ -241,5 +246,4 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
     public int size() {
         return items;
     }
-
 }
