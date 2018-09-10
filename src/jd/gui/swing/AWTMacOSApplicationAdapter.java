@@ -55,12 +55,9 @@ public class AWTMacOSApplicationAdapter {
                     @Override
                     public Object invoke(Object proxy, Method method, final Object[] args) throws Throwable {
                         System.out.println(method.getName());
-                        new Thread("java.awt.desktop.QuitHandler") {
-                            {
-                                Thread.currentThread().setDaemon(true);
-                            }
-
+                        final Thread thread = new Thread("java.awt.desktop.QuitHandler") {
                             public void run() {
+                                System.out.println(method.getName());
                                 RestartController.getInstance().exitAsynch(new SmartRlyExitRequest() {
                                     @Override
                                     public void onShutdown() {
@@ -99,7 +96,9 @@ public class AWTMacOSApplicationAdapter {
                                     }
                                 });
                             };
-                        }.start();
+                        };
+                        thread.setDaemon(true);
+                        thread.start();
                         return null;
                     }
                 });
@@ -280,11 +279,7 @@ public class AWTMacOSApplicationAdapter {
                     @Override
                     public Object invoke(Object proxy, Method method, final Object[] args) throws Throwable {
                         System.out.println(method.getName());
-                        new Thread("java.awt.desktop.AboutHandler") {
-                            {
-                                Thread.currentThread().setDaemon(true);
-                            }
-
+                        final Thread thread = new Thread("java.awt.desktop.AboutHandler") {
                             public void run() {
                                 new EDTRunner() {
                                     @Override
@@ -296,7 +291,9 @@ public class AWTMacOSApplicationAdapter {
                                     }
                                 };
                             };
-                        }.start();
+                        };
+                        thread.setDaemon(true);
+                        thread.start();
                         return null;
                     }
                 });
