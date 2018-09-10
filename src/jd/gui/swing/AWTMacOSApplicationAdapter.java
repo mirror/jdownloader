@@ -51,43 +51,49 @@ public class AWTMacOSApplicationAdapter {
                 final Object quitHandler = java.lang.reflect.Proxy.newProxyInstance(quitHandlerInterface.getClassLoader(), new Class[] { quitHandlerInterface }, new InvocationHandler() {
                     @Override
                     public Object invoke(Object proxy, Method method, final Object[] args) throws Throwable {
-                        RestartController.getInstance().exitAsynch(new SmartRlyExitRequest() {
-                            @Override
-                            public void onShutdown() {
-                                new Thread() {
-                                    public void run() {
-                                        /*
-                                         * own thread because else it will block, performQuit calls exit again
-                                         */
-                                        try {
-                                            final Object quitResponse = args[1];
-                                            final Method performQuit = quitResponse.getClass().getMethod("performQuit​", new Class[0]);
-                                            performQuit.invoke(quitResponse, new Object[0]);
-                                        } catch (Throwable e) {
-                                            e.printStackTrace();
-                                        }
-                                    };
-                                }.start();
-                            }
+                        System.out.println(method.getName());
+                        new Thread("java.awt.desktop.QuitHandler") {
+                            public void run() {
+                                Thread.currentThread().setDaemon(true);
+                                RestartController.getInstance().exitAsynch(new SmartRlyExitRequest() {
+                                    @Override
+                                    public void onShutdown() {
+                                        new Thread() {
+                                            public void run() {
+                                                /*
+                                                 * own thread because else it will block, performQuit calls exit again
+                                                 */
+                                                try {
+                                                    final Object quitResponse = args[1];
+                                                    final Method performQuit = quitResponse.getClass().getMethod("performQuit​", new Class[0]);
+                                                    performQuit.invoke(quitResponse, new Object[0]);
+                                                } catch (Throwable e) {
+                                                    e.printStackTrace();
+                                                }
+                                            };
+                                        }.start();
+                                    }
 
-                            @Override
-                            public void onShutdownVeto() {
-                                new Thread() {
-                                    public void run() {
-                                        /*
-                                         * own thread because else it will block, performQuit calls exit again
-                                         */
-                                        try {
-                                            final Object quitResponse = args[1];
-                                            final Method cancelQuit​ = quitResponse.getClass().getMethod("cancelQuit​​", new Class[0]);
-                                            cancelQuit​.invoke(quitResponse, new Object[0]);
-                                        } catch (Throwable e) {
-                                            e.printStackTrace();
-                                        }
-                                    };
-                                }.start();
-                            }
-                        });
+                                    @Override
+                                    public void onShutdownVeto() {
+                                        new Thread() {
+                                            public void run() {
+                                                /*
+                                                 * own thread because else it will block, performQuit calls exit again
+                                                 */
+                                                try {
+                                                    final Object quitResponse = args[1];
+                                                    final Method cancelQuit​ = quitResponse.getClass().getMethod("cancelQuit​​", new Class[0]);
+                                                    cancelQuit​.invoke(quitResponse, new Object[0]);
+                                                } catch (Throwable e) {
+                                                    e.printStackTrace();
+                                                }
+                                            };
+                                        }.start();
+                                    }
+                                });
+                            };
+                        }.start();
                         return null;
                     }
                 });
@@ -200,7 +206,13 @@ public class AWTMacOSApplicationAdapter {
                 final Object preferencesHandler = java.lang.reflect.Proxy.newProxyInstance(preferencesHandlerInterface.getClassLoader(), new Class[] { preferencesHandlerInterface }, new InvocationHandler() {
                     @Override
                     public Object invoke(Object proxy, Method method, final Object[] args) throws Throwable {
-                        TaskQueue.getQueue().enqueue(new QueueAction<Void, RuntimeException>() {
+                        System.out.println(method.getName());
+                        TaskQueue.getQueue().addAsynch(new QueueAction<Void, RuntimeException>() {
+                            @Override
+                            protected boolean allowAsync() {
+                                return true;
+                            }
+
                             @Override
                             protected Void run() throws RuntimeException {
                                 new EDTRunner() {
@@ -254,13 +266,19 @@ public class AWTMacOSApplicationAdapter {
                 final Object aboutHandler = java.lang.reflect.Proxy.newProxyInstance(aboutHandlerInterface.getClassLoader(), new Class[] { aboutHandlerInterface }, new InvocationHandler() {
                     @Override
                     public Object invoke(Object proxy, Method method, final Object[] args) throws Throwable {
-                        new Thread() {
+                        System.out.println(method.getName());
+                        new Thread("java.awt.desktop.AboutHandler") {
                             public void run() {
                                 Thread.currentThread().setDaemon(true);
-                                try {
-                                    Dialog.getInstance().showDialog(new AboutDialog());
-                                } catch (DialogNoAnswerException e1) {
-                                }
+                                new EDTRunner() {
+                                    @Override
+                                    protected void runInEDT() {
+                                        try {
+                                            Dialog.getInstance().showDialog(new AboutDialog());
+                                        } catch (DialogNoAnswerException e1) {
+                                        }
+                                    }
+                                };
                             };
                         }.start();
                         return null;
