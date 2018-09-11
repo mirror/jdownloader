@@ -57,7 +57,7 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPlugin
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cloudyfiles.org" }, urls = { "https?://(?:www\\.)?cloudyfiles\\.(?:com|co|org|me)/(?:embed\\-)?[a-z0-9]{12}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cloudyfiles.me" }, urls = { "https?://(?:www\\.)?cloudyfiles\\.(?:com|co|org|me)/(?:embed\\-)?[a-z0-9]{12}" })
 public class CloudyfilesCom extends PluginForHost {
     /* Some HTML code to identify different (error) states */
     private static final String            HTML_PASSWORDPROTECTED             = "<br><b>Passwor(d|t):</b> <input";
@@ -69,7 +69,7 @@ public class CloudyfilesCom extends PluginForHost {
     private final String                   COOKIE_HOST                        = (SUPPORTS_HTTPS ? "https://" : "http://") + primaryDomain;
     private final String                   NICE_HOSTproperty                  = primaryDomain.replaceAll("(\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                            = "(cloudyfiles\\.(?:co|com|org))";
+    private static final String            DOMAINS                            = "(cloudyfiles\\.(?:co|com|org|me))";
     /* Errormessages inside URLs */
     private static final String            URL_ERROR_PREMIUMONLY              = "/?op=login&redirect=";
     /* All kinds of XFS-plugin-configuration settings - be sure to configure this correctly when developing new XFS plugins! */
@@ -158,11 +158,11 @@ public class CloudyfilesCom extends PluginForHost {
     public String rewriteHost(String host) {
         // must be plugin host entry!
         if (host == null) {
-            return "cloudyfiles.org";
+            return "cloudyfiles.me";
         }
         for (final String supportedName : siteSupportedNames()) {
             if (supportedName.equals(host)) {
-                return "cloudyfiles.org";
+                return "cloudyfiles.me";
             }
         }
         return super.rewriteHost(host);

@@ -62,7 +62,7 @@ import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "suprafiles.org" }, urls = { "https?://(?:www\\.)?suprafiles\\.(?:net|co|org|me)/(?:embed\\-)?[a-z0-9]{12}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "suprafiles.me" }, urls = { "https?://(?:www\\.)?suprafiles\\.(?:net|co|org|me)/(?:embed\\-)?[a-z0-9]{12}" })
 public class SuprafilesOrg extends antiDDoSForHost {
     /* Some HTML code to identify different (error) states */
     private static final String  HTML_PASSWORDPROTECTED             = "<br><b>Passwor(d|t):</b> <input";
@@ -151,6 +151,20 @@ public class SuprafilesOrg extends antiDDoSForHost {
     @Override
     public String[] siteSupportedNames() {
         return new String[] { "suprafiles.net", "suprafiles.co", "suprafiles.org", "suprafiles.me" };
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        // must be plugin host entry!
+        if (host == null) {
+            return "suprafiles.me";
+        }
+        for (final String supportedName : siteSupportedNames()) {
+            if (supportedName.equals(host)) {
+                return "suprafiles.me";
+            }
+        }
+        return super.rewriteHost(host);
     }
 
     @Override
