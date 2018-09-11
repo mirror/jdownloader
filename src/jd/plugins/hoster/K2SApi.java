@@ -47,6 +47,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
 
+import org.appwork.storage.JSonStorage;
 import org.appwork.storage.simplejson.JSonUtils;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogInterface;
@@ -486,7 +487,15 @@ public abstract class K2SApi extends PluginForHost {
                     // captcha can't be blank! Why we don't return null I don't know!
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
-                postPageRaw(br, "/geturl", "{\"file_id\":\"" + fuid + "\",\"free_download_key\":null,\"captcha_challenge\":\"" + challenge + "\",\"captcha_response\":\"" + JSonUtils.escape(code) + "\"}", account);
+                final String custom_referer = this.getPluginConfig().getStringProperty(CUSTOM_REFERER, null);
+                final Map<String, Object> getURL = new HashMap<String, Object>();
+                getURL.put("file_id", fuid);
+                getURL.put("captcha_challenge", challenge);
+                getURL.put("captcha_response", code);
+                if (StringUtils.isNotEmpty(custom_referer)) {
+                    getURL.put("url_referrer", custom_referer);
+                }
+                postPageRaw(br, "/geturl", JSonStorage.toString(getURL), account);
                 final String free_download_key = PluginJSonUtils.getJsonValue(br, "free_download_key");
                 if (inValidate(free_download_key)) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -497,7 +506,10 @@ public abstract class K2SApi extends PluginForHost {
                     // fail over
                     sleep(31 * 1001l, downloadLink);
                 }
-                postPageRaw(br, "/geturl", "{\"file_id\":\"" + fuid + "\",\"free_download_key\":\"" + free_download_key + "\",\"captcha_challenge\":null,\"captcha_response\":null}", account);
+                getURL.put("free_download_key", free_download_key);
+                getURL.remove("captcha_challenge");
+                getURL.remove("captcha_response");
+                postPageRaw(br, "/geturl", JSonStorage.toString(getURL), account);
             } else {
                 // premium download
                 postPageRaw(br, "/geturl", "{\"auth_token\":\"" + getAuthToken(account) + "\",\"file_id\":\"" + fuid + "\"}", account);
