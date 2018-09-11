@@ -277,9 +277,9 @@ public interface LinkgrabberSettings extends ConfigInterface {
 
     @AboutConfig
     @DefaultEnumValue("DEFAULT")
-    void setAutoConfirmManagerPiority(Priority selectedItem);
+    void setAutoConfirmManagerPriority(Priority selectedItem);
 
-    Priority getAutoConfirmManagerPiority();
+    Priority getAutoConfirmManagerPriority();
 
     @AboutConfig
     @DefaultBooleanValue(false)
