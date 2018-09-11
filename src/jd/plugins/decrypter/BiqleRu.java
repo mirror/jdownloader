@@ -19,21 +19,20 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.encoding.Base64;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.encoding.Base64;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "biqle.ru", "daxab.com", "divxcim.com" }, urls = { "https?://(?:www\\.)?biqle\\.(com|ru|org)/watch/(?:\\-)?\\d+_\\d+", "https?://(?:www\\.)?daxab\\.com/embed/(?:\\-)?\\d+_\\d+", "https?://(?:www\\.)?divxcim\\.com/video_ext\\.php\\?oid=(?:\\-)?\\d+\\&id=\\d+" })
 public class BiqleRu extends PluginForDecrypt {
@@ -118,8 +117,26 @@ public class BiqleRu extends PluginForDecrypt {
                     }
                     return ret;
                 }
+            } else {
+                // vk mode
+                final String daxabExt = br.getRegex("((?:https?:)?//daxab\\.com/ext\\.php\\?oid=[0-9\\-]+&id=\\d+&hash=[a-zA-Z0-9]+)\"").getMatch(0);
+                final Browser brc = br.cloneBrowser();
+                brc.getPage(daxabExt);
+                String escapeString = brc.getRegex("unescape\\('([^']+)'").getMatch(0);
+                escapeString = Encoding.htmlDecode(escapeString);
+                String base64String = new Regex(escapeString, "base64,(.+?)\"").getMatch(0);
+                String decodeString = Encoding.Base64Decode(base64String);
+                String action = new Regex(decodeString, "action=\"([^\"]+)\"").getMatch(0);
+                String oid = new Regex(decodeString, "oid\" value=\"([^\"]+)\"").getMatch(0);
+                String id = new Regex(decodeString, "id\" value=\"([^\"]+)\"").getMatch(0);
+                String hash = new Regex(decodeString, "hash\" value=\"([^\"]+)\"").getMatch(0);
+                String reqUrl = String.format("https:%s?oid=%s&id=%s&hash=%s&autoplay=0", action, oid, id, hash);
+                final DownloadLink downloadLink = createDownloadlink(reqUrl);
+                downloadLink.setFinalFileName(title + ".mp4");
+                downloadLink.setContainerUrl(param.getCryptedUrl());
+                ret.add(downloadLink);
+                return ret;
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
             final String parameter = param.toString();
             final String videoid_part;
