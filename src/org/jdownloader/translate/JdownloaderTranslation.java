@@ -566,7 +566,6 @@ public interface JdownloaderTranslation extends TranslateInterface {
     // "JDownloader cannot connect to %s1! Your Proxy Server requires authentication. \r\nCheck your credentials...",
     // "JDownloader kann nicht nach %s1 verbinden! Dein Proxyserver benötigt Anmeldedaten.\r\nBitte überprüfe die Zugangsdaten..." })
     // String ProxyController_updateProxy_proxy_auth_required_msg_updater(String host);
-
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Authentication failed" })
     // String ProxyController_updateProxy_baned_auth();
@@ -883,7 +882,7 @@ public interface JdownloaderTranslation extends TranslateInterface {
     String ConfirmLinksContextAction_getTranslationForAssignPriorityEnabled();
 
     @Default(lngs = { "en" }, values = { "Download Priority:" })
-    String ConfirmLinksContextAction_getTranslationForPiority();
+    String ConfirmLinksContextAction_getTranslationForPriority();
 
     @Default(lngs = { "en" }, values = { "If the selection contains offline links..." })
     String ConfirmLinksContextAction_getTranslationForHandleOffline();
