@@ -10,6 +10,8 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.KeyStroke;
 
+import jd.controlling.linkcollector.LinkCollector;
+
 import org.appwork.swing.MigPanel;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.controlling.Priority;
@@ -21,8 +23,6 @@ import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextActi
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction.AutoStartOptions;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction.OnOfflineLinksAction;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
-
-import jd.controlling.linkcollector.LinkCollector;
 
 public class AutoConfirmStopAction extends CustomizableAppAction implements CustomSettingsPanelInterface {
     public AutoConfirmStopAction() {
@@ -36,16 +36,13 @@ public class AutoConfirmStopAction extends CustomizableAppAction implements Cust
 
     @Override
     public JComponent createSettingsPanel() {
-
         MigPanel p = new MigPanel("ins 0,wrap 2", "[grow,fill][]", "[]");
         SwingUtils.setOpaque(p, false);
-
         p.add(new JLabel(ConfirmLinksContextAction.getTranslationForAutoStart()));
         final JComboBox<AutoStartOptions> autostart = new JComboBox<AutoStartOptions>(AutoStartOptions.values());
         p.add(autostart, "newline,spanx");
         autostart.setSelectedItem(CFG_LINKGRABBER.CFG.getAutoConfirmManagerAutoStart());
         autostart.addActionListener(new ActionListener() {
-
             @Override
             public void actionPerformed(ActionEvent e) {
                 CFG_LINKGRABBER.CFG.setAutoConfirmManagerAutoStart((AutoStartOptions) autostart.getSelectedItem());
@@ -57,25 +54,21 @@ public class AutoConfirmStopAction extends CustomizableAppAction implements Cust
         SwingUtils.setOpaque(cb, false);
         cb.setSelected(CFG_LINKGRABBER.CFG.isAutoConfirmManagerClearListAfterConfirm());
         cb.addActionListener(new ActionListener() {
-
             @Override
             public void actionPerformed(ActionEvent e) {
                 CFG_LINKGRABBER.CFG.setAutoConfirmManagerClearListAfterConfirm(cb.isSelected());
             }
         });
         p.add(cb);
-
         //
         p.add(new JLabel(ConfirmLinksContextAction.getTranslationForPiority()), "newline");
-
         final JComboBox<Priority> priority = new JComboBox<Priority>(Priority.values());
         p.add(priority, "newline,spanx");
-        priority.setSelectedItem(CFG_LINKGRABBER.CFG.getAutoConfirmManagerPiority());
+        priority.setSelectedItem(CFG_LINKGRABBER.CFG.getAutoConfirmManagerPriority());
         priority.addActionListener(new ActionListener() {
-
             @Override
             public void actionPerformed(ActionEvent e) {
-                CFG_LINKGRABBER.CFG.setAutoConfirmManagerPiority((Priority) priority.getSelectedItem());
+                CFG_LINKGRABBER.CFG.setAutoConfirmManagerPriority((Priority) priority.getSelectedItem());
             }
         });
         //
@@ -85,22 +78,18 @@ public class AutoConfirmStopAction extends CustomizableAppAction implements Cust
         cbPrioprity.setSelected(CFG_LINKGRABBER.CFG.isAutoConfirmManagerAssignPriorityEnabled());
         p.add(cbPrioprity);
         cbPrioprity.addActionListener(new ActionListener() {
-
             @Override
             public void actionPerformed(ActionEvent e) {
                 CFG_LINKGRABBER.CFG.setAutoConfirmManagerAssignPriorityEnabled(cbPrioprity.isSelected());
             }
         });
-
         //
         p.add(new JLabel(ConfirmLinksContextAction.getTranslationForForceDownloads()), "newline");
-
         final JCheckBox cbForce = new JCheckBox();
         cbForce.setSelected(CFG_LINKGRABBER.CFG.isAutoConfirmManagerForceDownloads());
         p.add(cbForce);
         SwingUtils.setOpaque(cbForce, false);
         cbForce.addActionListener(new ActionListener() {
-
             @Override
             public void actionPerformed(ActionEvent e) {
                 CFG_LINKGRABBER.CFG.setAutoConfirmManagerForceDownloads(cbForce.isSelected());
@@ -108,12 +97,10 @@ public class AutoConfirmStopAction extends CustomizableAppAction implements Cust
         });
         //
         p.add(new JLabel(ConfirmLinksContextAction.getTranslationForHandleOffline()), "newline");
-
         final JComboBox<OnOfflineLinksAction> onOfflineLinks = new JComboBox<OnOfflineLinksAction>(OnOfflineLinksAction.values());
         p.add(onOfflineLinks, "newline,spanx");
         onOfflineLinks.setSelectedItem(CFG_LINKGRABBER.CFG.getAutoConfirmManagerHandleOffline());
         onOfflineLinks.addActionListener(new ActionListener() {
-
             @Override
             public void actionPerformed(ActionEvent e) {
                 CFG_LINKGRABBER.CFG.setAutoConfirmManagerHandleOffline((OnOfflineLinksAction) onOfflineLinks.getSelectedItem());
@@ -126,5 +113,4 @@ public class AutoConfirmStopAction extends CustomizableAppAction implements Cust
     public void actionPerformed(ActionEvent e) {
         LinkCollector.getInstance().getAutoStartManager().interrupt();
     }
-
 }

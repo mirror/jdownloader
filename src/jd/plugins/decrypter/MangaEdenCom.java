@@ -13,13 +13,10 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -31,9 +28,10 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangaeden.com" }, urls = { "http://(www\\.)?mangaeden\\.com/(?:[a-z]{2}/)?[a-z0-9\\-]+/[a-z0-9\\-]+/\\d+(?:\\.\\d+)?/1/" }) 
-public class MangaEdenCom extends antiDDoSForDecrypt {
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangaeden.com" }, urls = { "https?://(www\\.)?mangaeden\\.com/(?:[a-z]{2}/)?[a-z0-9\\-]+/[a-z0-9\\-]+/\\d+(?:\\.\\d+)?/1/" })
+public class MangaEdenCom extends antiDDoSForDecrypt {
     public MangaEdenCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -60,17 +58,20 @@ public class MangaEdenCom extends antiDDoSForDecrypt {
             return null;
         }
         fpName = Encoding.htmlDecode(fpName.trim()).replace("\n", "");
-
         for (final String currentPage : pages) {
             if (!cryptedLinks.contains(currentPage)) {
                 cryptedLinks.add(currentPage);
             }
         }
-
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(Encoding.htmlDecode(fpName.trim()));
         // decrypt all pages
         final DecimalFormat df = new DecimalFormat(cryptedLinks.size() < 100 ? "00" : "000");
         int counter = 1;
         for (final String currentPage : cryptedLinks) {
+            if (isAbort()) {
+                break;
+            }
             if (!br.getURL().endsWith(currentPage)) {
                 getPage(currentPage);
             }
@@ -78,11 +79,11 @@ public class MangaEdenCom extends antiDDoSForDecrypt {
             final DownloadLink dd = createDownloadlink("directhttp://" + decryptedlink);
             dd.setAvailable(true);
             dd.setFinalFileName(fpName + "_" + df.format(counter) + getFileNameExtensionFromString(decryptedlink, ".jpg"));
+            fp.add(dd);
+            distribute(dd);
             decryptedLinks.add(dd);
             counter++;
         }
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(fpName.trim()));
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
@@ -103,5 +104,4 @@ public class MangaEdenCom extends antiDDoSForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

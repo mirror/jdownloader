@@ -328,7 +328,8 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
                 if (Captchamap == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                Captchamap = Captchamap.replaceAll("(\\&amp;|legend=1)", "");
+                Captchamap = Captchamap.replaceAll("\\&amp;", "&");
+                Captchamap = Captchamap.replaceAll("&legend=1", "");
                 final File file = this.getLocalCaptchaFile();
                 final Browser temp = getCaptchaBrowser(br);
                 try {
@@ -353,7 +354,7 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
                 while (br.getRedirectLocation() != null) {
                     getPage(br.getRedirectLocation());
                 }
-                if (br.containsHTML(">\\s*Your choice was wrong\\.\\s*<") || br.getFormBySubmitvalue("Try+again") != null) {
+                if (br.containsHTML(">\\s*Your choice was wrong\\.\\s*<") || br.getFormBySubmitvalue("Try+again") != null || br.containsHTML("(/captcha/|captcha_container|\"Captcha\"|id=\"captcha\")")) {
                     invalidateLastChallengeResponse();
                     if (i + 1 >= max) {
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);

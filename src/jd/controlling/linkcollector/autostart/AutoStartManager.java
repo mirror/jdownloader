@@ -114,7 +114,7 @@ public class AutoStartManager implements GenericConfigEventListener<Boolean> {
                             if (!CFG_LINKGRABBER.CFG.isAutoConfirmManagerAssignPriorityEnabled()) {
                                 priority = null;
                             } else {
-                                priority = CFG_LINKGRABBER.CFG.getAutoConfirmManagerPiority();
+                                priority = CFG_LINKGRABBER.CFG.getAutoConfirmManagerPriority();
                             }
                             final SelectionInfo<CrawledPackage, CrawledLink> si;
                             if (createNewSelection) {

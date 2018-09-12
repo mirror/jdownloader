@@ -213,7 +213,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
     private Priority piority = Priority.DEFAULT;
 
     public static String getTranslationForPiority() {
-        return _JDT.T.ConfirmLinksContextAction_getTranslationForPiority();
+        return _JDT.T.ConfirmLinksContextAction_getTranslationForPriority();
     }
 
     @Customizer(link = "#getTranslationForPiority")
