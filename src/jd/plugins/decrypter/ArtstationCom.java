@@ -42,8 +42,8 @@ public class ArtstationCom extends antiDDoSForDecrypt {
         super(wrapper);
     }
 
-    private static final String TYPE_ARTIST = "https?://(?:www\\.)?artstation\\.com/artist/[^/]+";
-    private static final String TYPE_ALBUM  = "https?://(?:www\\.)?artstation\\.com/artwork/[A-Z0-9]+";
+    private static final String TYPE_ARTIST = "(?i)https?://(?:www\\.)?artstation\\.com/artist/[^/]+";
+    private static final String TYPE_ALBUM  = "(?i)https?://(?:www\\.)?artstation\\.com/artwork/[a-zA-Z0-9]+";
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
