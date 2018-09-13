@@ -78,7 +78,7 @@ public class FapduCom extends PluginForHost {
                 }
             }
         }
-        if (dllink == null && br.containsHTML("pornative.com")) {
+        if (dllink == null && br.containsHTML("pornative.com|yobt.com")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (filename == null || dllink == null) {
@@ -86,6 +86,7 @@ public class FapduCom extends PluginForHost {
             if (br.containsHTML("<object type=\"application/x-shockwave-flash\"") && br.containsHTML("tjoob\\.com/xmoov_flv/player/\"")) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Embeded links to 3rd party providers are not supported in dedicated hoster plugins.");
             }
+            logger.info("filename: " + filename + ", dllink: " + dllink);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.htmlDecode(dllink);
