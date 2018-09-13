@@ -13,30 +13,28 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "amateurgalore.net" }, urls = { "http://(www\\.)?amateurgalore\\.net/(index/video/[a-z0-9_\\-]+|[a-z]+/\\d+/[A-Za-z0-9\\-]+\\.html)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "amateurgalore.net" }, urls = { "https?://(www\\.)?amateurgalore\\.net/(index/video/[a-z0-9_\\-]+|[a-z]+/\\d+/[A-Za-z0-9\\-]+\\.html)" })
 public class AmateurGaloreNet extends PluginForDecrypt {
-
     public AmateurGaloreNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* DEV NOTES */
     /* Porn_plugin */
-
-    private static final String NEWLINK = "http://(www\\.)?amateurgalore\\.net/[a-z]+/\\d+/[A-Za-z0-9\\-]+\\.html";
+    private static final String NEWLINK = "https?://(www\\.)?amateurgalore\\.net/[a-z]+/\\d+/[A-Za-z0-9\\-]+\\.html";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -57,6 +55,9 @@ public class AmateurGaloreNet extends PluginForDecrypt {
             }
         }
         filename = br.getRegex("<meta name=\"DC\\.title\" content=\"([^<>\"]*?) \\- Amateur Porn \\- AmateurGalore \\- Free Amateur Porn\"").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<h1>([^<>]+)</h1>").getMatch(0);
+        }
         if (filename != null) {
             filename = Encoding.htmlDecode(filename.trim());
         }
@@ -145,6 +146,19 @@ public class AmateurGaloreNet extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
+        String iframe = br.getRegex("<iframe src=\"([^<>\"]+)\"").getMatch(0);
+        if (iframe != null) {
+            Browser br2 = br.cloneBrowser();
+            br2.getPage(iframe);
+            String finallink = br2.getRegex("<source src=\"([^<>\"]+)\"").getMatch(0);
+            if (finallink != null) {
+                // DownloadLink dl = createDownloadlink(externID);
+                DownloadLink dl = createDownloadlink("directhttp://" + finallink);
+                dl.setFinalFileName(filename + ".mp4");
+                decryptedLinks.add(dl);
+                return decryptedLinks;
+            }
+        }
         // Nothing there
         if (!br.containsHTML("id=\"video_extended\"")) {
             logger.info("Link broken: " + parameter);
@@ -161,5 +175,4 @@ public class AmateurGaloreNet extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
