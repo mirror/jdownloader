@@ -142,6 +142,9 @@ public class ArtstationCom extends antiDDoSForDecrypt {
             final String username = parameter.substring(parameter.lastIndexOf("/") + 1);
             jd.plugins.hoster.ArtstationCom.setHeaders(this.br);
             getPage("https://www.artstation.com/users/" + username + ".json");
+            if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
+                return decryptedLinks;
+            }
             final LinkedHashMap<String, Object> json = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             final String full_name = (String) json.get("full_name");
             final String projectTitle = (String) json.get("title");
