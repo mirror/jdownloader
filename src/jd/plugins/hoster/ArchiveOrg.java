@@ -32,7 +32,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "archive.org" }, urls = { "https?://(?:www\\.)?archive\\.org/download/[^/]+/[^/]+" })
+import org.appwork.utils.StringUtils;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "archive.org" }, urls = { "https?://(?:www\\.)?archive\\.org/download/[^/]+/[^/]+(/.+)?" })
 public class ArchiveOrg extends PluginForHost {
     public ArchiveOrg(PluginWrapper wrapper) {
         super(wrapper);
@@ -76,7 +78,7 @@ public class ArchiveOrg extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (con.isOK()) {
+            } else if (con.isOK() && (con.isContentDisposition() || StringUtils.containsIgnoreCase(con.getContentType(), "application"))) {
                 link.setFinalFileName(getFileNameFromHeader(con));
                 link.setDownloadSize(con.getLongContentLength());
                 return AvailableStatus.TRUE;
@@ -96,7 +98,11 @@ public class ArchiveOrg extends PluginForHost {
         if (registered_only) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
-        doDownload(null, downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        if (downloadLink.getPluginPatternMatcher().matches("(?i).+\\.zip/.+")) {
+            doDownload(null, downloadLink, false, 1, "free_directlink");
+        } else {
+            doDownload(null, downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        }
     }
 
     private void doDownload(final Account account, final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
@@ -184,7 +190,11 @@ public class ArchiveOrg extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(this.br, account, false);
-        doDownload(account, link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
+        if (link.getPluginPatternMatcher().matches("(?i).+\\.zip/.+")) {
+            doDownload(account, link, false, 1, "account_free_directlink");
+        } else {
+            doDownload(account, link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
+        }
     }
 
     @Override

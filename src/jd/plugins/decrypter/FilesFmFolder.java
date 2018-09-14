@@ -79,10 +79,7 @@ public class FilesFmFolder extends PluginForDecrypt {
             return null;
         }
         for (final String singleLink : links) {
-            String filename = new Regex(singleLink, "\\&n=([^<>\"]*?)(?:\\')?\"").getMatch(0);
-            if (filename == null) {
-                filename = new Regex(singleLink, "\\&n=([^<>\"]*?)\\'").getMatch(0);
-            }
+            final String filename = new Regex(singleLink, "\\&n=([^<>\"']+)").getMatch(0);
             final String filesize = new Regex(singleLink, "class=\"file_size\">([^<>}\"]*?)<").getMatch(0);
             final String fileid = new Regex(singleLink, "(?:\\?|&)i=([a-z0-9]+)").getMatch(0);
             if (filename == null || filesize == null || fileid == null) {

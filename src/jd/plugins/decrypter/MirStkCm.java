@@ -51,7 +51,7 @@ public class MirStkCm extends antiDDoSForDecrypt {
      * I've noticed this with mediafire links for example http://mirrorstack.com/mf_dbfzhyf2hnxm will at times return
      * http://www.mediafire.com/?HASH(0x15053b48), you can then reload a couple times and it will work in jd.. provider problem not plugin.
      * Other example links I've used seem to work fine. - Please keep code generic as possible.
-     *
+     * 
      * Don't use package name as these type of link protection services export a list of hoster urls of a single file. When one imports many
      * links (parts), JD loads many instances of the decrypter and each url/parameter/instance gets a separate packagename and that sucks.
      * It's best to use linkgrabbers default auto packagename sorting.
@@ -134,6 +134,9 @@ public class MirStkCm extends antiDDoSForDecrypt {
                 if (!singleLink.matches(regexSingleLink)) {
                     finallink = singleLink;
                 }
+                if (isAbort()) {
+                    break;
+                }
                 final Browser brc = br.cloneBrowser();
                 if (finallink == null) {
                     // if parameter == singlelink, no need for another page get
@@ -194,19 +197,22 @@ public class MirStkCm extends antiDDoSForDecrypt {
                             getPage(brc, singleLink + add_char);
                             finallink = brc.getRedirectLocation();
                             if (finallink == null) {
-                                // fail over
-                                final String[] links = HTMLParser.getHttpLinks(brc.toString(), "");
-                                for (final String link : links) {
-                                    if (!Browser.getHost(link).contains(Browser.getHost(brc.getURL()))) {
-                                        final DownloadLink dl = createDownloadlink(link);
-                                        if (fp != null) {
-                                            fp.add(dl);
+                                finallink = brc.getRegex("name\\s*=\\s*\"shturl\"[^>]*value\\s*=\\s*\"(https?://[^>]*?)\"").getMatch(0);
+                                if (finallink == null) {
+                                    // fail over
+                                    final String[] links = HTMLParser.getHttpLinks(brc.toString(), "");
+                                    for (final String link : links) {
+                                        if (!Browser.getHost(link).contains(Browser.getHost(brc.getURL()))) {
+                                            final DownloadLink dl = createDownloadlink(link);
+                                            if (fp != null) {
+                                                fp.add(dl);
+                                            }
+                                            decryptedLinks.add(dl);
+                                            distribute(dl);
                                         }
-                                        decryptedLinks.add(dl);
-                                        distribute(dl);
                                     }
+                                    continue;
                                 }
-                                continue;
                             }
                         }
                     }
