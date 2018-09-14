@@ -146,14 +146,15 @@ public class AmateurGaloreNet extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        String iframe = br.getRegex("<iframe src=\"([^<>\"]+)\"").getMatch(0);
-        if (iframe != null) {
+        String embed = br.getRegex("<iframe src=\"([^<>\"]+)\"").getMatch(0);
+        if (embed != null) {
             Browser br2 = br.cloneBrowser();
-            br2.getPage(iframe);
+            br2.getPage(embed);
             String finallink = br2.getRegex("<source src=\"([^<>\"]+)\"").getMatch(0);
             if (finallink != null) {
                 // DownloadLink dl = createDownloadlink(externID);
                 DownloadLink dl = createDownloadlink("directhttp://" + finallink);
+                dl.setContentUrl(embed);
                 dl.setFinalFileName(filename + ".mp4");
                 decryptedLinks.add(dl);
                 return decryptedLinks;
