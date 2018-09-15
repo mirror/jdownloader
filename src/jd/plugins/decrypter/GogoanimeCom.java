@@ -50,7 +50,7 @@ public class GogoanimeCom extends antiDDoSForDecrypt {
         String[] a = new String[getAnnotationNames().length];
         int i = 0;
         for (final String domain : getAnnotationNames()) {
-            a[i] = "http://(?:\\w+\\.)?" + Pattern.quote(domain) + "/(?:embed/[a-f0-9]+|embed(\\.php)?\\?.*?vid(?:eo)?=.+|gogo/\\?.*?file=.+|(?!flowplayer)(?:[a-z\\-]+\\-(drama|movie|episode)/)?[a-z0-9\\-_]+(?:/\\d+)?)";
+            a[i] = "http://(?:\\w+\\.)?" + Pattern.quote(domain) + "/(?:embed/[a-f0-9]+|embed(\\.php)?\\?.*?vid(?:eo)?=.+|gogo/\\?.*?file=.+|(?!flowplayer)(?:[a-z\\-]+\\-(drama|movie|episode)/)?[a-z0-9\\-_\\-]+(?:/[\\d\\-_\\-]+)?)";
             i++;
         }
         return a;
@@ -132,6 +132,22 @@ public class GogoanimeCom extends antiDDoSForDecrypt {
                         dl.setProperty("forcenochunkload", Boolean.TRUE);
                         dl.setProperty("forcenochunk", Boolean.TRUE);
                         decryptedLinks.add(dl);
+                    }
+                }
+            }
+            // Handle tabs in case the video is split into multiple parts (JD default behavior would grab only the currently visible tab)
+            if (br.containsHTML("<div id=\"streams\">")) {
+                int contentStart = br.toString().indexOf("<div id=\"streams\">");
+                int contentEnd = br.toString().indexOf("<div id=\"comments\">", contentStart);
+                if (contentEnd < 0) {
+                    contentEnd = br.toString().indexOf("<div id=\"footer\">", contentStart);
+                }
+                String contentBlock = br.toString().substring(contentStart, contentEnd);
+                String[][] regExMatches = new Regex(contentBlock, ">[\r\n ]*<li>[\r\n ]*<a href=\"(.+?)\"[\\ >]").getMatches();
+                if (regExMatches.length > 0) {
+                    for (String[] regExMatch : regExMatches) {
+                        final String matchedURL = Encoding.htmlDecode(regExMatch[0]);
+                        decryptedLinks.add(createDownloadlink(matchedURL));
                     }
                 }
             }
