@@ -16,7 +16,6 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 import org.appwork.utils.Regex;
 
@@ -75,20 +74,22 @@ public class DramaGalaxy extends PluginForDecrypt {
                 String videoURL = Encoding.htmlDecode(videoURLMatch[0]);
                 decryptedLinks.add(createDownloadlink(videoURL));
             }
-            regExMatches = br.getRegex(Pattern.quote(parameterBase) + "/[A-Za-z0-9_\\-]+").getMatches();
-            if (regExMatches.length > 0) {
-                // On index pages, grab everything resembling listed episodes
-                for (String[] regExMatch : regExMatches) {
-                    final String matchedURL = Encoding.htmlDecode(regExMatch[0]);
-                    // We only want episodes for this show, none of the other crud.
-                    decryptedLinks.add(createDownloadlink(matchedURL));
+            // On index pages, grab everything resembling listed episodes and paging links
+            if (br.containsHTML("<div id=\"videos\">")) {
+                int videoListStart = br.toString().indexOf("<div id=\"videos\">");
+                int videoListEnd = br.toString().indexOf("<div id=\"comments\">", videoListStart);
+                if (videoListEnd < 0) {
+                    videoListEnd = br.toString().indexOf("<div id=\"footer\">", videoListStart);
                 }
-                // Handle possible pagination of the episode list
-                regExMatches = br.getRegex("href=\"" + Pattern.quote(parameterBase) + "(.*?)\" onclick=\"window\\.location\\.href").getMatches();
-                for (String[] regExMatch : regExMatches) {
-                    final String matchedURL = Encoding.htmlDecode(regExMatch[0]);
-                    // We only want episodes for this show, none of the other crud.
-                    decryptedLinks.add(createDownloadlink(matchedURL));
+                if (videoListEnd > videoListStart) {
+                    String videoListSearchText = br.toString().substring(videoListStart, videoListEnd);
+                    regExMatches = new Regex(videoListSearchText, "href=\"(.*?)\"").getMatches();
+                    if (regExMatches.length > 0) {
+                        for (String[] regExMatch : regExMatches) {
+                            final String matchedURL = Encoding.htmlDecode(regExMatch[0]);
+                            decryptedLinks.add(createDownloadlink(matchedURL));
+                        }
+                    }
                 }
             }
             if (!title.isEmpty()) {

@@ -38,7 +38,7 @@ public class GogoanimeCom extends antiDDoSForDecrypt {
      * @return
      */
     public static String[] getAnnotationNames() {
-        return new String[] { "gogoanime.com", "gogoanime.to", "goodanime.co", "goodanime.net", "gooddrama.to", "playbb.me", "videowing.me", "easyvideo.me", "videozoo.me", "video66.org", "animewow.org", "dramago.com", "playpanda.net", "byzoo.org", "vidzur.com", "animetoon.org", "toonget.com", "goodmanga.net", "animenova.org" };
+        return new String[] { "gogoanime.com", "gogoanime.to", "goodanime.co", "goodanime.net", "gooddrama.to", "playbb.me", "videowing.me", "easyvideo.me", "videozoo.me", "video66.org", "animewow.org", "dramago.com", "playpanda.net", "byzoo.org", "vidzur.com", "animetoon.org", "toonget.com", "goodmanga.net", "animenova.org", "toonova.net" };
     }
 
     /**
@@ -123,10 +123,6 @@ public class GogoanimeCom extends antiDDoSForDecrypt {
                 fpName = br.getRegex("<title>(?:Watch\\s*)?([^<>\"]*?)( \\w+ Sub.*?|\\s*\\|\\s* Watch anime online, English anime online)?</title>").getMatch(0);
             }
             final String[] links = br.getRegex("<iframe.*?src=(\"|\\')(http[^<>\"]+)\\1").getColumn(1);
-            if (links == null || links.length == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
             for (String singleLink : links) {
                 // lets prevent returning of links which contain itself.
                 if (singleLink.matches(embed)) {
@@ -138,6 +134,28 @@ public class GogoanimeCom extends antiDDoSForDecrypt {
                         decryptedLinks.add(dl);
                     }
                 }
+            }
+            // On index pages, grab everything resembling listed episodes and paging links
+            if (br.containsHTML("<div id=\"videos\">")) {
+                int videoListStart = br.toString().indexOf("<div id=\"videos\">");
+                int videoListEnd = br.toString().indexOf("<div id=\"comments\">", videoListStart);
+                if (videoListEnd < 0) {
+                    videoListEnd = br.toString().indexOf("<div id=\"footer\">", videoListStart);
+                }
+                if (videoListEnd > videoListStart) {
+                    String videoListSearchText = br.toString().substring(videoListStart, videoListEnd);
+                    String[][] videoListSearchExMatches = new Regex(videoListSearchText, "href=\"(.*?)\"").getMatches();
+                    if (videoListSearchExMatches.length > 0) {
+                        for (String[] videoListSearchMatch : videoListSearchExMatches) {
+                            final String matchedURL = Encoding.htmlDecode(videoListSearchMatch[0]);
+                            decryptedLinks.add(createDownloadlink(matchedURL));
+                        }
+                    }
+                }
+            }
+            if (decryptedLinks.size() == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
             }
             if (fpName != null) {
                 final FilePackage fp = FilePackage.getInstance();
