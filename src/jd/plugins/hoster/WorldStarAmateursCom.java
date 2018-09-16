@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
@@ -28,22 +27,21 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "theyfuckwewatch.com" }, urls = { "http://(?:www\\.)?(?:worldstaramateurs\\.com|theyfuckwewatch\\.com)/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ysporn.com" }, urls = { "https?://(?:www\\.)?(?:worldstaramateurs\\.com|theyfuckwewatch\\.com|ysporn\\.com)/\\d+" })
 public class WorldStarAmateursCom extends PluginForHost {
-
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "worldstaramateurs.com", "theyfuckwewatch.com" };
+        return new String[] { "worldstaramateurs.com", "theyfuckwewatch.com", "ysporn.com" };
     }
 
     @Override
     public String rewriteHost(String host) {
         if (host == null) {
-            return "theyfuckwewatch.com";
+            return "ysporn.com";
         }
         for (final String supportedName : siteSupportedNames()) {
             if (supportedName.equals(host)) {
-                return "theyfuckwewatch.com";
+                return "ysporn.com";
             }
         }
         return super.rewriteHost(host);
@@ -63,6 +61,9 @@ public class WorldStarAmateursCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
+        if (downloadLink.getDownloadURL().contains("worldstaramateurs")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         final String linkid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
@@ -70,6 +71,9 @@ public class WorldStarAmateursCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<h1(?:\\s*class=\"title\")?>([^<>\"]*?)</h1>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<h7>([^<>\"]*?)</h7>").getMatch(0);
+        }
         if (filename == null) {
             filename = linkid;
         }
