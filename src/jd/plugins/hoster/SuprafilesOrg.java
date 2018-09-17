@@ -132,6 +132,7 @@ public class SuprafilesOrg extends antiDDoSForHost {
     /* don't touch the following! */
     private static AtomicInteger maxFree                            = new AtomicInteger(1);
     private static Object        LOCK                               = new Object();
+    private final String         rc2SiteKey                         = "6LeIJW8UAAAAAJd49FRnWO78iSNadcQ0xoPlU-95";
 
     /**
      * DEV NOTES XfileSharingProBasic Version 2.7.6.7<br />
@@ -607,7 +608,7 @@ public class SuprafilesOrg extends antiDDoSForHost {
                      * might as well be a workaround by the XFS developers to avoid expiring reCaptchaV2 challenges.
                      */
                     logger.info("Detected captcha method \"RecaptchaV2\" for this host");
-                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6Lcbg2kUAAAAAPIeU9_l_lOUFWGV5hYBpQNdL4jj").getToken();
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, rc2SiteKey).getToken();
                     if (new Regex(correctedBR, Pattern.compile("\\$\\.post\\(\\s*?\"/ddl\"", Pattern.CASE_INSENSITIVE)).matches()) {
                         /* 2017-12-07: New */
                         /* Do not put the result in this Form as the check is handled below already */
@@ -1441,7 +1442,7 @@ public class SuprafilesOrg extends antiDDoSForHost {
                         if (dlinkbefore == null) {
                             this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "http://" + account.getHoster(), true));
                         }
-                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6Lcbg2kUAAAAAPIeU9_l_lOUFWGV5hYBpQNdL4jj").getToken();
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, rc2SiteKey).getToken();
                         if (dlinkbefore != null) {
                             this.setDownloadLink(dlinkbefore);
                         }

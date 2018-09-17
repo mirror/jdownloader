@@ -64,7 +64,7 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vidto.me", "vidtome.co" }, urls = { "https?://(www\\.)?vidto\\.(me|se)/((vid)?embed\\-)?[a-z0-9]{12}", "https?://(www\\.)?vidtome\\.co/((vid)?embed\\-)?[a-z0-9]{12}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vidto.me", "vidtome.co" }, urls = { "https?://(www\\.)?vidto\\.(me|se)/((vid)?embed\\-)?[a-z0-9]{12}", "https?://(www\\.)?vidtome\\.(co|stream)/((vid)?embed\\-)?[a-z0-9]{12}" })
 @SuppressWarnings("deprecation")
 public class VidToMe extends antiDDoSForHost {
     // Site Setters

@@ -636,9 +636,9 @@ public class SecondLevelLaunch {
             @Override
             public void run() {
                 try {
-                    if (Application.getJavaVersion() < Application.JAVA17) {
+                    if (Application.getJavaVersion() < Application.JAVA18) {
                         HTTPConnectionImpl.setDefaultSSLSocketStreamFactory(new BCTLSSocketStreamFactory());
-                        LoggerFactory.getDefaultLogger().info("Use 'BouncyCastle' for default SSLSocketStreamFactory because: java version < 1.7");
+                        LoggerFactory.getDefaultLogger().info("Use 'BouncyCastle' for default SSLSocketStreamFactory because: java version < 1.8");
                     } else if (StringUtils.containsIgnoreCase(System.getProperty("java.vm.name"), "OpenJDK")) {
                         HTTPConnectionImpl.setDefaultSSLSocketStreamFactory(new BCTLSSocketStreamFactory());
                         LoggerFactory.getDefaultLogger().info("Use 'BouncyCastle' for default SSLSocketStreamFactory because: OpenJDK VM detected");
