@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.io.IOException;
@@ -29,9 +28,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mikseri.net" }, urls = { "http://(www\\.)?mikseri\\.net/(artists/[^/]+/[^/]+/\\d+/|artists/\\?id=\\d+|artists/[^\"\\']+\\.\\d+)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mikseri.net" }, urls = { "http://(www\\.)?mikseri\\.net/(artists/[^/]+/[^/]+/\\d+/|artists/\\?id=\\d+|artists/[^\"\\']+\\.\\d+)" })
 public class MikSeriNet extends PluginForDecrypt {
-
     public MikSeriNet(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -110,23 +108,23 @@ public class MikSeriNet extends PluginForDecrypt {
             }
             decryptedLinks.add(fina);
         }
-
         return decryptedLinks;
     }
 
     private DownloadLink getSingleLink(String iD) throws IOException {
         br.getPage("http://www.mikseri.net/player/songlist.php?newsession=1&type=1&parameter=" + iD);
-        String finallink = br.getRegex("<SongUrl>(http://[^<>\"]*?)</SongUrl>").getMatch(0);
+        String finallink = br.getRegex("<SongUrl>([^<>\"]*?)</SongUrl>").getMatch(0);
         if (finallink == null) {
             return null;
         }
+        if (!finallink.contains("http")) {
+            finallink = "http:" + finallink;
+        }
         return createDownloadlink("directhttp://" + finallink);
-
     }
 
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
