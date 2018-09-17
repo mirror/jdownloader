@@ -169,7 +169,7 @@ public class GogoanimeCom extends antiDDoSForDecrypt {
                     }
                 }
             }
-            if (decryptedLinks.size() == 0) {
+            if (decryptedLinks.size() == 0 && br.containsHTML("<div id=\"(streams|videos)\">")) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
