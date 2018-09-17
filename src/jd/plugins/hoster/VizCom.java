@@ -194,17 +194,15 @@ public class VizCom extends PluginForHost {
                 br.getPage("https://www.viz.com/");
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 // br.getPage("https://www.viz.com/account/refresh_login_links");
-                br.postPage("https://www." + account.getHoster() + "/account/try_login.json?callback=jQuery" + System.currentTimeMillis() + "_" + new Random().nextInt(1000000000), "a=n&rem_user=1&login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+                br.postPage("https://www." + account.getHoster() + "/account/try_login.json?callback=jQuery" + System.currentTimeMillis() + "_" + new Random().nextInt(1000000000), "a=n&login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
                 final String okay = PluginJSonUtils.getJsonValue(this.br, "ok");
-                final String trust_user_id_token_web = PluginJSonUtils.getJsonValue(this.br, "trust_user_id_token_web");
-                if (this.br.getHttpConnection().getResponseCode() != 200 || !"1".equals(okay) || trust_user_id_token_web == null || trust_user_id_token_web.equals("")) {
+                if (this.br.getHttpConnection().getResponseCode() != 200 || !"1".equals(okay)) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                br.setCookie(br.getHost(), "remember_token", trust_user_id_token_web);
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
@@ -224,8 +222,8 @@ public class VizCom extends PluginForHost {
             throw e;
         }
         /*
-         * 2017-01-25: Treat all as free accounts - accounts do not have an exact status - users can buy single items which are then
-         * unlocked to view/download in their account.
+         * 2017-01-25: Treat all as free accounts - accounts do not have an exact status - users can buy single items which are then unlocked to
+         * view/download in their account.
          */
         account.setType(AccountType.FREE);
         account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
