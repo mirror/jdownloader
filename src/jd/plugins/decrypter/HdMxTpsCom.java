@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.io.IOException;
@@ -30,9 +29,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hdmixtapes.com" }, urls = { "http://(www\\.)?hdmixtapes\\.com/(newsingles|mixtape(s)?)/.+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hdmixtapes.com" }, urls = { "http://(www\\.)?hdmixtapes\\.com/(newsingles|mixtape(s)?)/.+" })
 public class HdMxTpsCom extends PluginForDecrypt {
-
     /* must be static so all plugins share same lock */
     private static Object LOCK = new Object();
 
@@ -45,7 +43,6 @@ public class HdMxTpsCom extends PluginForDecrypt {
     private static final String INVALIDLOGIN = "(;Invalid username or password<|>The following errors have ocured while proccesing your request:<)";
 
     // private static final String LOGINPAGE = "http://up.tl/login";
-
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -83,7 +80,9 @@ public class HdMxTpsCom extends PluginForDecrypt {
             finallink = br.getRegex("<div style=\"margin-top:40px;\">[\t\n\r ]+<a href=\"(http.*?)\"").getMatch(0);
             if (finallink == null) {
                 finallink = br.getRegex("<\\!--<a href=\"(http://.*?)\"").getMatch(0);
-                if (finallink == null) finallink = br.getRegex("\\d+\\&url=(http://.*?)\"").getMatch(0);
+                if (finallink == null) {
+                    finallink = br.getRegex("\\d+\\&url=(https?://.*?)\"").getMatch(0);
+                }
             }
         }
         if (finallink == null && br.containsHTML("download_counter\\.php\\?action=mixtape\\&id_mixtape=\\d+\\&url=\"")) {
@@ -95,6 +94,7 @@ public class HdMxTpsCom extends PluginForDecrypt {
             return null;
         }
         decryptedLinks.add(createDownloadlink(finallink));
+        logger.info("Link created: " + finallink);
         return decryptedLinks;
     }
 
@@ -115,9 +115,13 @@ public class HdMxTpsCom extends PluginForDecrypt {
                     this.getPluginConfig().setProperty("user", Property.NULL);
                     this.getPluginConfig().setProperty("pass", Property.NULL);
                     username = UserIO.getInstance().requestInputDialog("Enter Loginname for " + DOMAIN + " :");
-                    if (username == null) return false;
+                    if (username == null) {
+                        return false;
+                    }
                     password = UserIO.getInstance().requestInputDialog("Enter password for " + DOMAIN + " :");
-                    if (password == null) return false;
+                    if (password == null) {
+                        return false;
+                    }
                     br.postPage(POSTPAGE, "go_login=true&x=&y=&username=" + Encoding.urlEncode(username) + "&password=" + Encoding.urlEncode(password));
                 } else {
                     this.getPluginConfig().setProperty("user", username);
@@ -125,7 +129,6 @@ public class HdMxTpsCom extends PluginForDecrypt {
                     this.getPluginConfig().save();
                     return true;
                 }
-
             }
         }
         return false;
@@ -135,5 +138,4 @@ public class HdMxTpsCom extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
