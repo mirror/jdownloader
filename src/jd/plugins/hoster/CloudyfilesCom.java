@@ -124,6 +124,7 @@ public class CloudyfilesCom extends PluginForHost {
     /* don't touch the following! */
     private static AtomicInteger           maxFree                            = new AtomicInteger(1);
     private static Object                  LOCK                               = new Object();
+    private final String                   rc2SiteKey                         = "6LdQJG8UAAAAAPMzvbfW-ec-N3oNj9d8BjMzDRX5";
 
     /**
      * DEV NOTES XfileSharingProBasic Version 2.7.3.4<br />
@@ -625,7 +626,7 @@ public class CloudyfilesCom extends PluginForHost {
                     skipWaittime = true;
                 } else if (correctedBR.contains("class=\"g-recaptcha\"")) {
                     logger.info("Detected captcha method \"reCaptchaV2\" for this host");
-                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6LeIa20UAAAAAFgkPcEmgam1dFFL2aGXwdqzxBbR").getToken();
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, rc2SiteKey).getToken();
                     dlForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                     logger.info("Detected captcha method \"solvemedia\" for this host");

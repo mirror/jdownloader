@@ -294,8 +294,8 @@ public class OneFichierCom extends PluginForHost {
                 br.getPage(this.getDownloadlinkNEW(downloadLink));
                 br.setFollowRedirects(false);
             }
-            errorHandling(downloadLink, br);
-            if (pwProtected) {
+            errorHandling(downloadLink, account, br);
+            if (pwProtected || br.containsHTML(HTML_PASSWORDPROTECTED)) {
                 handlePassword();
                 dllink = br.getRedirectLocation();
                 if (dllink == null) {
@@ -320,7 +320,7 @@ public class OneFichierCom extends PluginForHost {
                 sleep(2000, downloadLink);
                 // br2.submitForm(a1);
                 br2.postPageRaw(br.getURL(), "");
-                errorHandling(downloadLink, br2);
+                errorHandling(downloadLink, account, br2);
                 if (br2.containsHTML("not possible to unregistered users")) {
                     final Account aa = AccountController.getInstance().getValidAccount(this);
                     if (aa != null) {
@@ -350,7 +350,7 @@ public class OneFichierCom extends PluginForHost {
                     br3.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
                     sleep(2000, downloadLink);
                     br3.submitForm(a2);
-                    errorHandling(downloadLink, br3);
+                    errorHandling(downloadLink, account, br3);
                     if (dllink == null) {
                         dllink = br3.getRedirectLocation();
                     }
@@ -380,14 +380,14 @@ public class OneFichierCom extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
-            errorHandling(downloadLink, br);
+            errorHandling(downloadLink, account, br);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty(PROPERTY_FREELINK, dllink);
         dl.startDownload();
     }
 
-    private void errorHandling(final DownloadLink downloadLink, final Browser ibr) throws Exception {
+    private void errorHandling(final DownloadLink downloadLink, final Account account, final Browser ibr) throws Exception {
         long responsecode = 200;
         if (ibr.getHttpConnection() != null) {
             responsecode = ibr.getHttpConnection().getResponseCode();
@@ -414,6 +414,12 @@ public class OneFichierCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many connections - wait before starting new downloads", 3 * 60 * 1000l);
         } else if (ibr.containsHTML("not possible to free unregistered users")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        } else if (ibr.containsHTML("Your account will be unlock")) {
+            if (account != null) {
+                throw new AccountUnavailableException("Locked for security reasons", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP blocked for security reasons", 60 * 60 * 1000l);
+            }
         }
         errorIpBlockedHandling(ibr);
     }
@@ -634,9 +640,9 @@ public class OneFichierCom extends PluginForHost {
             br.setFollowRedirects(false);
             br.getPage(link.getDownloadURL());
             // error checking, offline links can happen here.
-            errorHandling(link, br);
+            errorHandling(link, account, br);
             dllink = br.getRedirectLocation();
-            if (pwProtected) {
+            if (pwProtected || br.containsHTML(HTML_PASSWORDPROTECTED)) {
                 handlePassword();
                 /*
                  * The users' 'direct download' setting has no effect on the password handling so we should always get a redirect to the
@@ -701,7 +707,7 @@ public class OneFichierCom extends PluginForHost {
                     }
                     logger.warning("The final dllink seems not to be a file!");
                     br.followConnection();
-                    errorHandling(link, br);
+                    errorHandling(link, account, br);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
@@ -790,19 +796,6 @@ public class OneFichierCom extends PluginForHost {
             formdata = "dl=Download";
         }
         return formdata;
-    }
-
-    /** Returns an accessible downloadlink in the VERY OLD format. */
-    @SuppressWarnings("unused")
-    private String getDownloadlinkVERY_OLD(final DownloadLink dl) {
-        final String host_of_current_downloadlink = Browser.getHost(dl.getDownloadURL());
-        return "https://" + getFID(dl) + "." + host_of_current_downloadlink + "/en/index.html";
-    }
-
-    /** Returns an accessible downloadlink in the OLD format. */
-    private String getDownloadlinkOLD(final DownloadLink dl) {
-        final String host_of_current_downloadlink = Browser.getHost(dl.getDownloadURL());
-        return "https://" + getFID(dl) + "." + host_of_current_downloadlink + "/";
     }
 
     /** Returns an accessible downloadlink in the NEW format. */
