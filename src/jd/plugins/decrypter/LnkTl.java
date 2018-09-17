@@ -21,6 +21,9 @@ import java.util.LinkedHashMap;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -32,10 +35,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "link.tl" }, urls = { "https?://(www\\.)?link\\.tl/(?!advertising|\\w+/.+)?[A-Za-z0-9\\-]{4,}" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "link.tl" }, urls = { "https?://(www\\.)?link\\.tl/(?!advertising|about-us|contact|login|privacy-policy|rates|register|storage|term-of-use|themes|\\w+/.+)[A-Za-z0-9\\-]{4,}" })
 public class LnkTl extends antiDDoSForDecrypt {
     public LnkTl(PluginWrapper wrapper) {
         super(wrapper);
