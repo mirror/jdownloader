@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package org.jdownloader.gui.jdtrayicon;
 
 import javax.swing.JLabel;
@@ -23,17 +22,18 @@ import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.gui.swing.components.JWindowTooltip;
 import jd.gui.swing.jdgui.components.JDProgressBar;
 import jd.nutils.Formatter;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.AggregatedNumbers;
 import org.jdownloader.gui.jdtrayicon.translate._TRAY;
+import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 
 public class TrayIconTooltip extends JWindowTooltip {
-
     private static final long serialVersionUID = -400023413449818691L;
-
     private JLabel            lblSpeed;
     private JLabel            lblDlRunning;
     private JDProgressBar     prgTotal;
@@ -60,29 +60,26 @@ public class TrayIconTooltip extends JWindowTooltip {
     @Override
     protected void updateContent() {
         final Thread thread = Thread.currentThread();
-        final AggregatedNumbers dla = new AggregatedNumbers(DownloadsTableModel.getInstance().getTable().getSelectionInfo(false, false));
-
-        new EDTRunner() {
-
-            @Override
-            protected void runInEDT() {
-                if (isVisible()) {
-                    long totalDl = dla.getTotalBytes();
-                    long curDl = dla.getLoadedBytes();
-
-                    lblDlRunning.setText(String.valueOf(DownloadWatchDog.getInstance().getRunningDownloadLinks().size()));
-                    lblSpeed.setText(Formatter.formatReadable(DownloadWatchDog.getInstance().getDownloadSpeedManager().getSpeed()) + "/s");
-
-                    lblProgress.setText(Formatter.formatFilesize(curDl, 0) + " / " + Formatter.formatFilesize(totalDl, 0));
-                    prgTotal.setMaximum(totalDl);
-                    prgTotal.setValue(curDl);
-
-                    lblETA.setText(dla.getEtaString());
-                } else {
-                    updater.compareAndSet(thread, null);
+        final SelectionInfo<FilePackage, DownloadLink> selection = DownloadsTableModel.getInstance().getTable().getSelectionInfo(false, false);
+        if (selection != null) {
+            final AggregatedNumbers dla = new AggregatedNumbers(selection);
+            new EDTRunner() {
+                @Override
+                protected void runInEDT() {
+                    if (isVisible()) {
+                        long totalDl = dla.getTotalBytes();
+                        long curDl = dla.getLoadedBytes();
+                        lblDlRunning.setText(String.valueOf(DownloadWatchDog.getInstance().getRunningDownloadLinks().size()));
+                        lblSpeed.setText(Formatter.formatReadable(DownloadWatchDog.getInstance().getDownloadSpeedManager().getSpeed()) + "/s");
+                        lblProgress.setText(Formatter.formatFilesize(curDl, 0) + " / " + Formatter.formatFilesize(totalDl, 0));
+                        prgTotal.setMaximum(totalDl);
+                        prgTotal.setValue(curDl);
+                        lblETA.setText(dla.getEtaString());
+                    } else {
+                        updater.compareAndSet(thread, null);
+                    }
                 }
-            }
-        }.waitForEDT();
-
+            }.waitForEDT();
+        }
     }
 }
