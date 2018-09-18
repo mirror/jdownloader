@@ -327,15 +327,18 @@ public class MediafireCom extends PluginForHost {
                     /* pw protected files can directly redirect to download */
                     url = br.getRedirectLocation();
                 }
+                if (url == null) {
+                    url = br.getRegex("(https?://download\\d+.mediafire\\.com/[^\"']+)").getMatch(0);
+                }
             }
             trycounter++;
         } while (trycounter < max_number_of_free_retries && url == null);
         if (url == null) {
             if (!captchaCorrect) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            logger.info("PluginError 721");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.setFollowRedirects(true);
         br.setDebug(true);
