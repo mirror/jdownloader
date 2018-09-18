@@ -117,6 +117,13 @@ public class GenericF4MDecrypter extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.getPage(url);
         br.followRedirect();
+        if (br.containsHTML("#EXTM3U")) {
+            final DownloadLink m3u8 = new DownloadLink(null, null, plugin.getHost(), br.getURL(), true);
+            m3u8.setProperty("Referer", referer);
+            m3u8.setProperty("cookies", cookiesString);
+            ret.add(m3u8);
+            return ret;
+        }
         final List<HDSContainer> containers = HDSContainer.getHDSQualities(br);
         if (containers != null) {
             final String urlName = getFileNameFromURL(br._getURL());

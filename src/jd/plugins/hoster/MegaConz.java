@@ -47,6 +47,7 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -771,9 +772,10 @@ public class MegaConz extends PluginForHost {
                         timeLeft = 60 * 60 * 1000l;
                     }
                     if (account != null) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Bandwidth Limit Exceeded", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                        throw new AccountUnavailableException("Bandwidth Limit Exceeded", timeLeft);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Bandwidth Limit Exceeded", timeLeft);
                     }
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Bandwidth Limit Exceeded", timeLeft);
                 }
                 if (StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "html")) {
                     br.followConnection();
