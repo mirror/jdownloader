@@ -89,6 +89,9 @@ public class MikSeriNet extends PluginForDecrypt {
                     return null;
                 }
                 decryptedLinks.add(fina);
+                String SongName = br.getRegex("<SongName><\\!\\[CDATA\\[([^<>\"]*?)\\]\\]>").getMatch(0);
+                String SongId = br.getRegex("<SongId>([^<>\"]*?)</SongId>").getMatch(0);
+                fina.setFinalFileName(SongId + "." + SongName + ".mp3");
                 progress.increase(1);
             }
             if (fpName != null) {
@@ -107,6 +110,9 @@ public class MikSeriNet extends PluginForDecrypt {
                 return null;
             }
             decryptedLinks.add(fina);
+            String SongName = br.getRegex("<SongName><\\!\\[CDATA\\[([^<>\"]*?)\\]\\]>").getMatch(0);
+            String SongId = br.getRegex("<SongId>([^<>\"]*?)</SongId>").getMatch(0);
+            fina.setFinalFileName(SongId + "." + SongName + ".mp3");
         }
         return decryptedLinks;
     }
