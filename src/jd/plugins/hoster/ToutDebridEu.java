@@ -23,6 +23,7 @@ import java.util.HashMap;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -39,6 +40,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tout-debrid.eu" }, urls = { "" })
@@ -268,16 +270,25 @@ public class ToutDebridEu extends PluginForHost {
 
     private void loginWebsite(final Account account, final boolean force) throws Exception {
         try {
-            final Cookies cookies = account.loadCookies("");
+            Cookies cookies = account.loadCookies("");
             if (cookies != null) {
+                final String cookieAge = TimeFormatter.formatMilliSeconds(System.currentTimeMillis() - account.getCookiesTimeStamp(""), 0);
                 this.br.setCookies(this.getHost(), cookies);
                 /*
                  * Even though login is forced first check if our cookies are still valid --> If not, force login!
                  */
                 br.getPage(PROTOCOL + this.getHost() + "/debrideur");
                 if (isLoggedinHTML()) {
-                    account.saveCookies(this.br.getCookies(this.getHost()), "");
+                    logger.info("Login via cached cookies successful:" + account.getType() + "|CookieAge:" + cookieAge);
+                    cookies = this.br.getCookies(this.getHost());
+                    final Cookie owner = cookies.get("owner");
+                    if (owner != null) {
+                        owner.setExpires(null);
+                    }
+                    account.saveCookies(cookies, "");
                     return;
+                } else {
+                    logger.info("Login via cached cookies failed:" + account.getType() + "|CookieAge:" + cookieAge);
                 }
                 /* Clear cookies to prevent unknown errors as we'll perform a full login below now. */
                 this.br = prepBR(new Browser());
@@ -305,7 +316,12 @@ public class ToutDebridEu extends PluginForHost {
             if (!isLoggedinHTML()) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-            account.saveCookies(this.br.getCookies(this.getHost()), "");
+            cookies = this.br.getCookies(this.getHost());
+            final Cookie owner = cookies.get("owner");
+            if (owner != null) {
+                owner.setExpires(null);
+            }
+            account.saveCookies(cookies, "");
         } catch (final PluginException e) {
             if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                 account.clearCookies("");
