@@ -17,11 +17,8 @@ import org.appwork.utils.swing.windowmanager.WindowManager;
 import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
 
 public abstract class JWindowTooltip extends JWindow {
-
     private static final long                 serialVersionUID = -7191050140766206744L;
-
     protected NullsafeAtomicReference<Thread> updater          = new NullsafeAtomicReference<Thread>(null);
-
     private Point                             point;
 
     public JWindowTooltip() {
@@ -29,9 +26,7 @@ public abstract class JWindowTooltip extends JWindow {
         panel.setOpaque(true);
         panel.setBackground(new Color(0xb9cee9));
         panel.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, panel.getBackground().darker()));
-
         addContent(panel);
-
         WindowManager.getInstance().setVisible(this, false, FrameState.OS_DEFAULT);
         this.setAlwaysOnTop(true);
         this.add(panel);
@@ -42,21 +37,25 @@ public abstract class JWindowTooltip extends JWindow {
         this.point = point;
         TooltipUpdater thread = new TooltipUpdater();
         Thread oldThread = updater.getAndSet(thread);
-        if (oldThread != null) oldThread.interrupt();
+        if (oldThread != null) {
+            oldThread.interrupt();
+        }
         thread.start();
     }
 
     public void hideTooltip() {
         Thread thread = updater.getAndSet(null);
-        if (thread != null) thread.interrupt();
+        if (thread != null) {
+            thread.interrupt();
+        }
         new EDTHelper<Object>() {
-
             @Override
             public Object edtRun() {
-                if (isVisible()) WindowManager.getInstance().setVisible(JWindowTooltip.this, false, FrameState.OS_DEFAULT);
+                if (isVisible()) {
+                    WindowManager.getInstance().setVisible(JWindowTooltip.this, false, FrameState.OS_DEFAULT);
+                }
                 return null;
             }
-
         }.start();
     }
 
@@ -90,7 +89,6 @@ public abstract class JWindowTooltip extends JWindow {
     protected abstract void updateContent();
 
     private class TooltipUpdater extends Thread implements Runnable {
-
         public void run() {
             try {
                 pack();
@@ -99,8 +97,8 @@ public abstract class JWindowTooltip extends JWindow {
                 toFront();
                 Thread thread = Thread.currentThread();
                 while (thread == updater.get()) {
-                    updateContent();
                     try {
+                        updateContent();
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
                         return;
@@ -111,5 +109,4 @@ public abstract class JWindowTooltip extends JWindow {
             }
         }
     }
-
 }

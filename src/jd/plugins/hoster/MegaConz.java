@@ -40,6 +40,7 @@ import jd.controlling.downloadcontroller.DiskSpaceReservation;
 import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Base64;
@@ -207,6 +208,7 @@ public class MegaConz extends PluginForHost {
             try {
                 apiRequest(account, sid, null, "sml"/* logOut */);
             } catch (final PluginException ignore) {
+                logger.log(ignore);
             }
         }
     }
@@ -273,8 +275,12 @@ public class MegaConz extends PluginForHost {
                     }
                 }
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } catch (Exception e) {
-                apiLogoff(account);
+            } catch (BrowserException e) {
+                throw e;
+            } catch (PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    apiLogoff(account);
+                }
                 throw e;
             }
         }
