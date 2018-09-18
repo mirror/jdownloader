@@ -412,7 +412,7 @@ public class FileBoomMe extends K2SApi {
                         if (br.containsHTML("Your Premium account has expired")) {
                             account.setType(Account.AccountType.FREE);
                         }
-                        logger.info("Login via ached cookies successful:" + account.getType() + "|CookieAge:" + cookieAge);
+                        logger.info("Login via cached cookies successful:" + account.getType() + "|CookieAge:" + cookieAge);
                         account.saveCookies(br.getCookies(MAINPAGE), "");
                         return;
                     }
