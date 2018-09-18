@@ -29,7 +29,7 @@ import jd.plugins.PluginForDecrypt;
  *
  */
 @SuppressWarnings("deprecation")
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "doramatv.ru" }, urls = { "http://(www\\.)?doramatv\\.ru/(?!\\?offset=).*" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "doramatv.ru" }, urls = { "http://(www\\.)?doramatv\\.ru/.*" })
 public class DoramatvRuDecrypter extends PluginForDecrypt {
     /*
      * (non-Javadoc)
@@ -43,6 +43,10 @@ public class DoramatvRuDecrypter extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String link = parameter.getCryptedUrl();
+        if (link.contains("/?offset=")) {
+            logger.info("Wrong link");
+            return decryptedLinks;
+        }
         String seriesTitle = link.split("/")[link.split("/").length - 1];
         if (link.contains("series")) {
             // it is only a single episode
