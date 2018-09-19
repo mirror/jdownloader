@@ -592,6 +592,21 @@ public class OneFichierCom extends PluginForHost {
     }
 
     @Override
+    protected long getStartIntervall(final DownloadLink downloadLink, final Account account) {
+        if (account == null || !AccountType.PREMIUM.equals(account.getType()) || downloadLink == null) {
+            return super.getStartIntervall(downloadLink, account);
+        } else {
+            final long knownDownloadSize = downloadLink.getKnownDownloadSize();
+            if (knownDownloadSize > 0 && knownDownloadSize <= 50 * 1024 * 1024) {
+                // avoid IP block because of too many downloads in short time
+                return 30 * 60 * 1000l;
+            } else {
+                return super.getStartIntervall(downloadLink, account);
+            }
+        }
+    }
+
+    @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         setConstants(account, link);
         requestFileInformation(link);
