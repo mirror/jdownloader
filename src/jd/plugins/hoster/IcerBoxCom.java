@@ -13,14 +13,7 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-import org.appwork.utils.formatter.TimeFormatter;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -44,6 +37,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 /**
  *
  * @author raztoki
@@ -51,7 +49,6 @@ import jd.plugins.components.PluginJSonUtils;
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "icerbox.com" }, urls = { "https?://(www\\.)?icerbox\\.com/[A-Z0-9]{8}" })
 public class IcerBoxCom extends antiDDoSForHost {
-
     private final String language = System.getProperty("user.language");
     private final String baseURL  = "https://icerbox.com";
     private final String apiURL   = "https://icerbox.com/api/v1";
@@ -273,7 +270,7 @@ public class IcerBoxCom extends antiDDoSForHost {
                 handleApiErrors(ajax, account, null);
                 // recaptcha can happen here on brute force attack
                 if (ajax.getHttpConnection().getResponseCode() == 429) {
-                    final DownloadLink dummyLink = new DownloadLink(this, "Account Login", getHost(), getHost(), true);
+                    final DownloadLink dummyLink = new DownloadLink(this, "Account Login", getHost(), "https://" + getHost(), true);
                     final DownloadLink odl = this.getDownloadLink();
                     this.setDownloadLink(dummyLink);
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, ajax, "6LcKRRITAAAAAExk3Pb2MfEBMP7HGTk8HG4cRBXv").getToken();
@@ -283,7 +280,6 @@ public class IcerBoxCom extends antiDDoSForHost {
                     postPage(ajax, apiURL + "/auth/login", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
                     handleApiErrors(ajax, account, null);
                     if (ajax.getHttpConnection().getResponseCode() == 429) {
-
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
                 }
@@ -380,7 +376,6 @@ public class IcerBoxCom extends antiDDoSForHost {
             handleDownloadErrors(account, downloadLink, true);
         }
         downloadLink.setProperty(directlinkproperty, dllink);
-
         dl.startDownload();
     }
 
@@ -549,5 +544,4 @@ public class IcerBoxCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Website Under Construction!", 15 * 60 * 1000l);
         }
     }
-
 }

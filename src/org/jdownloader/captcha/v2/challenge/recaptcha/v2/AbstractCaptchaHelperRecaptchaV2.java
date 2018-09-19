@@ -67,6 +67,15 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
                         url = url.replaceAll("^(?i)(https?://)", "http://");
                     }
                 }
+            } else if (StringUtils.equals(url, siteDomain) || StringUtils.equals(url, plugin.getHost())) {
+                url = "http://" + url;
+                if (br != null && br.getRequest() != null) {
+                    if (StringUtils.startsWithCaseInsensitive(br.getURL(), "https")) {
+                        url = url.replaceAll("^(?i)(https?://)", "https://");
+                    } else {
+                        url = url.replaceAll("^(?i)(https?://)", "http://");
+                    }
+                }
             } else {
                 url = null;
             }
