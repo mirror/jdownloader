@@ -13,13 +13,15 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
+
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -31,12 +33,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "yunpan.cn" }, urls = { "https?://(?:www\\.)?(([a-z0-9]+\\.[a-z0-9]+\\.)?yunpan\\.cn/lk/[A-Za-z0-9]+(?:#\\d+)?(?:\\-0)?(?:\\&downloadpassword=[^<>\"\\&=]+)?|yunpan\\.cn/[a-zA-Z0-9]{13})" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "yunpan.cn" }, urls = { "https?://(?:www\\.)?(([a-z0-9]+\\.[a-z0-9]+\\.)?yunpan\\.cn/lk/[A-Za-z0-9]+(?:#\\d+)?(?:\\-0)?(?:\\&downloadpassword=[^<>\"\\&=]+)?|yunpan\\.cn/[a-zA-Z0-9]{13})" })
 public class YunpanCn extends antiDDoSForDecrypt {
-
     public YunpanCn(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -48,7 +46,7 @@ public class YunpanCn extends antiDDoSForDecrypt {
 
     @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        this.br.setFollowRedirects(true);
+        br.setFollowRedirects(true);
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         parameter = param.toString();
         fid = new Regex(parameter, "yunpan\\.cn/(?:lk/)?([A-Za-z0-9]+)").getMatch(0);
@@ -62,24 +60,24 @@ public class YunpanCn extends antiDDoSForDecrypt {
         final String host;
         final String host_url = new Regex(parameter, "https?://([^/]+)/").getMatch(0);
         if (host_url.equals("yunpan.cn") || subfolder_id == null) {
-            this.br.getPage(parameter);
-            host = new Regex(this.br.getURL(), "https?://([^/]+)/").getMatch(0);
+            br.getPage(parameter);
+            host = new Regex(br.getURL(), "https?://([^/]+)/").getMatch(0);
             host_with_protocol = "http://" + host;
             /* Usually there was a redirect --> Use that as new url to prevent future redirects */
-            parameter = this.br.getURL();
-            if (this.br.containsHTML(jd.plugins.hoster.YunPanCn.html_preDownloadPassword)) {
+            parameter = br.getURL();
+            if (br.containsHTML(jd.plugins.hoster.YunPanCn.html_preDownloadPassword)) {
                 handlePassword(param);
             }
-            json = this.br.getRegex("data:(\\[.*?\\])").getMatch(0);
+            json = br.getRegex("data:(\\[.*?\\])").getMatch(0);
             if (json == null) {
-                json = this.br.getRegex("var\\s*?SYS_CONF\\s*?=\\s*?(\\{.*?\\})").getMatch(0);
+                json = br.getRegex("var\\s*?SYS_CONF\\s*?=\\s*?(\\{.*?\\})").getMatch(0);
             }
-            if (json == null && this.br.containsHTML("id=\"linkError\"")) {
-                decryptedLinks.add(this.createOfflinelink(parameter));
+            if (json == null && br.containsHTML("id=\"linkError\"")) {
+                decryptedLinks.add(createOfflinelink(parameter));
                 return decryptedLinks;
-            } else if (json == null && this.br.containsHTML("top\\.location = ")) {
+            } else if (json == null && br.containsHTML("top\\.location = |<title>404")) {
                 /* 404 and redirect to mainpage */
-                decryptedLinks.add(this.createOfflinelink(parameter));
+                decryptedLinks.add(createOfflinelink(parameter));
                 return decryptedLinks;
             }
             if (json == null) {
@@ -90,14 +88,14 @@ public class YunpanCn extends antiDDoSForDecrypt {
             host_with_protocol = "http://" + host;
             if (passCode != null) {
                 /* Important - we need that cookie! */
-                this.br.getPage(parameter);
+                br.getPage(parameter);
                 /* ... and that password cookie! */
                 handlePassword(param);
             }
-            this.br.getHeaders().put("Referer", parameter);
-            this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            this.br.postPage(host_with_protocol + "/share/listsharedir", "nid=" + subfolder_id + "&surl=" + fid + "&page_size=300&page=0&field=name&order=asc");
-            json = this.br.getRegex("data:(\\[.*?\\])").getMatch(0);
+            br.getHeaders().put("Referer", parameter);
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.postPage(host_with_protocol + "/share/listsharedir", "nid=" + subfolder_id + "&surl=" + fid + "&page_size=300&page=0&field=name&order=asc");
+            json = br.getRegex("data:(\\[.*?\\])").getMatch(0);
         }
         DownloadLink dl = null;
         HashMap<String, Object> entries = null;
@@ -146,7 +144,6 @@ public class YunpanCn extends antiDDoSForDecrypt {
             }
             decryptedLinks.add(dl);
         }
-
         return decryptedLinks;
     }
 
@@ -167,7 +164,6 @@ public class YunpanCn extends antiDDoSForDecrypt {
         if (failed) {
             throw new DecrypterException(DecrypterException.PASSWORD);
         }
-        this.br.getPage(parameter);
+        br.getPage(parameter);
     }
-
 }
