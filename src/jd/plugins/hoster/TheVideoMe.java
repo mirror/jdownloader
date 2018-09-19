@@ -393,7 +393,7 @@ public class TheVideoMe extends antiDDoSForHost {
                 if (!authenticated) {
                     logger.info("Pairing: No authenticated - requires captcha");
                     brv.getPage("/pair");
-                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, brv).getToken();
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, brv, "6Ld4TlsUAAAAAAeU5tInYtZNMEOTANb6LKxP94it").getToken();
                     brv.getPage("/pair?activate=1&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
                     /*
                      * Possible 'response' (String) errormessages here (WITH ""): <br /> "Invalid Captcha!" <br /> "Captcha is required!"
