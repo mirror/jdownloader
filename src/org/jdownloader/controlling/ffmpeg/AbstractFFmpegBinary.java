@@ -17,11 +17,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.plugins.PluginProgress;
-import jd.plugins.download.raf.FileBytesMap;
-
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.storage.config.JsonConfig;
@@ -41,6 +36,11 @@ import org.appwork.utils.processes.ProcessBuilderFactory;
 import org.jdownloader.downloader.hls.M3U8Playlist;
 import org.jdownloader.downloader.hls.M3U8Playlist.M3U8Segment;
 
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.plugins.PluginProgress;
+import jd.plugins.download.raf.FileBytesMap;
+
 public class AbstractFFmpegBinary {
     public static enum FLAGTYPE {
         LIB,
@@ -51,6 +51,7 @@ public class AbstractFFmpegBinary {
     public static enum FLAG {
         OPUS(FLAGTYPE.CODEC, "D.A...\\s*opus"), // encode/decode
         VORBIS(FLAGTYPE.CODEC, "D.A...\\s*vorbis"), // encode/decode
+        AV1(FLAGTYPE.CODEC, "D.V...\\s*av1"), // encode/decode
         WEBM(FLAGTYPE.FORMAT, "E\\s*(webm|matroska,webm)"), // mux
         DASH(FLAGTYPE.FORMAT, "E\\s*dash"), // mux
         HLS(FLAGTYPE.FORMAT, "D\\s*(hls|applehttp)");// demux
@@ -726,6 +727,7 @@ public class AbstractFFmpegBinary {
         DEFAULT_FORMAT_BY_EXTENSION.put(".wav", "wav");
         DEFAULT_FORMAT_BY_EXTENSION.put(".m4a", "ipod");
         DEFAULT_FORMAT_BY_EXTENSION.put(".m4v", "ipod");
+        DEFAULT_FORMAT_BY_EXTENSION.put(".mp4", "av1");
     }
 
     public boolean requiresAdtstoAsc(final String format) {

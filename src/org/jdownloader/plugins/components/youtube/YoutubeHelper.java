@@ -2398,7 +2398,7 @@ public class YoutubeHelper {
     private static Set<AbstractFFmpegBinary.FLAG> FFMPEG_SUPPORTED_FLAGS = null;
 
     private synchronized static Boolean isSupported(YoutubeITAG itag) {
-        if (itag != null && itag.getAudioCodec() != null) {
+        if (itag != null) {
             if (FFMPEG_SUPPORTED_FLAGS == null) {
                 final FFmpeg ffmpeg = new FFmpeg();
                 if (ffmpeg.isAvailable() && ffmpeg.isCompatible()) {
@@ -2406,12 +2406,20 @@ public class YoutubeHelper {
                 }
             }
             if (FFMPEG_SUPPORTED_FLAGS != null) {
-                switch (itag.getAudioCodec()) {
-                case OPUS:
-                    return FFMPEG_SUPPORTED_FLAGS.contains(AbstractFFmpegBinary.FLAG.OPUS);
-                case VORBIS:
-                case VORBIS_SPATIAL:
-                    return FFMPEG_SUPPORTED_FLAGS.contains(AbstractFFmpegBinary.FLAG.VORBIS);
+                if (itag.getVideoCodec() != null) {
+                    switch (itag.getVideoCodec()) {
+                    case AV1:
+                        return FFMPEG_SUPPORTED_FLAGS.contains(AbstractFFmpegBinary.FLAG.AV1);
+                    }
+                }
+                if (itag.getAudioCodec() != null) {
+                    switch (itag.getAudioCodec()) {
+                    case OPUS:
+                        return FFMPEG_SUPPORTED_FLAGS.contains(AbstractFFmpegBinary.FLAG.OPUS);
+                    case VORBIS:
+                    case VORBIS_SPATIAL:
+                        return FFMPEG_SUPPORTED_FLAGS.contains(AbstractFFmpegBinary.FLAG.VORBIS);
+                    }
                 }
             }
         }
