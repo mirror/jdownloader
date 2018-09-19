@@ -96,7 +96,8 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         } else if (parameter.matches(type_player_private_external)) {
             parameter = parameter.replace("/external/", "/video/");
         } else if (!parameter.matches(type_player_private_forced_referer) && parameter.matches(type_player)) {
-            parameter = "https://vimeo.com/" + parameter.substring(parameter.lastIndexOf("/") + 1);
+            // parameter = "https://vimeo.com/" + parameter.substring(parameter.lastIndexOf("/") + 1);
+            parameter = "https://vimeo.com/" + new Regex(parameter, "https://player.vimeo.com/video/(\\d+)").getMatch(0);
         }
         // when testing and dropping to frame, components will fail without clean browser.
         br = new Browser();
