@@ -225,10 +225,16 @@ public class ItagHelper {
     }
 
     private static FileContainer getVideoContainer(YoutubeITAG dashVideo, YoutubeITAG dashAudio) {
+        switch (dashVideo.getVideoCodec()) {
+        case AV1:
+            return FileContainer.MP4;
+        }
         switch (dashVideo.getRawContainer()) {
         case DASH_VIDEO:
             switch (dashVideo.getVideoCodec()) {
             case H264:
+                return FileContainer.MP4;
+            case AV1:
                 return FileContainer.MP4;
             case H263:
                 throw new WTFException();
@@ -468,6 +474,20 @@ public class ItagHelper {
             switch (audioCodec) {
             case AAC:
             case AAC_SPATIAL:
+                return true;
+            default:
+                return false;
+            }
+        case AV1:
+            switch (audioCodec) {
+            case AAC:
+            case AAC_SPATIAL:
+                return true;
+            case OPUS:
+                // ffmpeg opus in MP4 support is experimental, add '-strict -2' if you want to use it.
+                return false;
+            case VORBIS:
+            case VORBIS_SPATIAL:
                 return true;
             default:
                 return false;
