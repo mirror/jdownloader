@@ -17,9 +17,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -31,7 +28,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "short.am" }, urls = { "https?://(?:www\\.)?s(ho)?rt\\.am/[A-Za-z0-9]+" })
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "short.am" }, urls = { "https?://(?:www\\.)?s(ho)?rt\\.am/(?!images|include|login|templates|js|assets|join|manage)[A-Za-z0-9]+" })
 public class ShortAm extends antiDDoSForDecrypt {
     public ShortAm(PluginWrapper wrapper) {
         super(wrapper);

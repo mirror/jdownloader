@@ -68,11 +68,12 @@ public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelper
             jobs.add(ChallengeResponseController.getInstance().handle(c));
             if (!c.isSolved()) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            } else if (!c.isCaptchaResponseValid()) {
+                final String value = c.getResult().getValue();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Captcha reponse value did not validate:" + value);
+            } else {
+                return c.getResult().getValue();
             }
-            if (!c.isCaptchaResponseValid()) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Captcha reponse value did not validate!");
-            }
-            return c.getResult().getValue();
         } catch (PluginException e) {
             for (int i = 0; i < jobs.size(); i++) {
                 jobs.get(i).invalidate();

@@ -36,12 +36,12 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadmagnet.com" }, urls = { "https?://(?:www\\.)?(?:multi\\.hotshare\\.biz|uploadmagnet\\.com|pdownload\\.net|zlinx\\.me|filesuploader\\.com|multiupload\\.biz|multimirrorupload\\.com|multifilemirror\\.com)/([a-z0-9]{1,2}_)?([a-z0-9]{12})" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadmagnet.com", "mirr.re" }, urls = { "https?://(?:www\\.)?(?:multi\\.hotshare\\.biz|uploadmagnet\\.com|pdownload\\.net|zlinx\\.me|filesuploader\\.com|multiupload\\.biz|multimirrorupload\\.com|multifilemirror\\.com)/([a-zA-Z0-9]{1,2}_)?([a-zA-Z0-9]{12})", "https?://(?:www\\.)?(?:mirr\\.re)/d/([a-zA-Z0-9]+)" })
 public class MirStkCm extends antiDDoSForDecrypt {
     @Override
     public String[] siteSupportedNames() {
         if ("uploadmagnet.com".equals(getHost())) {
-            return new String[] { "multi.hotshare.biz", "uploadmagnet.com", "pdownload.net", "zlinx.me", "filesuploader.com", "multiupload.biz", "multimirrorupload.com", "multifilemirror.com" };
+            return new String[] { "multi.hotshare.biz", "uploadmagnet.com", "pdownload.net", "zlinx.me", "filesuploader.com", "multiupload.biz", "multimirrorupload.com", "multifilemirror.com", "mirr.re" };
         }
         return null;
     }
@@ -51,7 +51,7 @@ public class MirStkCm extends antiDDoSForDecrypt {
      * I've noticed this with mediafire links for example http://mirrorstack.com/mf_dbfzhyf2hnxm will at times return
      * http://www.mediafire.com/?HASH(0x15053b48), you can then reload a couple times and it will work in jd.. provider problem not plugin.
      * Other example links I've used seem to work fine. - Please keep code generic as possible.
-     * 
+     *
      * Don't use package name as these type of link protection services export a list of hoster urls of a single file. When one imports many
      * links (parts), JD loads many instances of the decrypter and each url/parameter/instance gets a separate packagename and that sucks.
      * It's best to use linkgrabbers default auto packagename sorting.
@@ -70,9 +70,9 @@ public class MirStkCm extends antiDDoSForDecrypt {
     // version 0.6
     // Tags: Multi file upload, mirror, mirrorstack, GeneralMultiuploadDecrypter
     // Single link format eg. http://sitedomain/xx_uid. xx = hoster abbreviation
-    private final String regexSingleLink = "(https?://[^/]+/(?:en/)?[a-z0-9]{1,2}_(?:[a-z0-9]{12}|[a-zA-Z0-9]{16}))";
+    private final String regexSingleLink = "(https?://[^/]+/(?:en/)?[a-zA-Z0-9]{1,2}_(?:[a-zA-Z0-9]{12}|[a-zA-ZA-Z0-9]{16}))";
     // Normal link format eg. http://sitedomain/uid
-    private final String regexNormalLink = "(https?://[^/]+/[a-z0-9]{12})";
+    private final String regexNormalLink = "(https?://[^/]+/[a-zA-Z0-9]{12})";
 
     public MirStkCm(PluginWrapper wrapper) {
         super(wrapper);
