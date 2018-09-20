@@ -44,6 +44,8 @@ import jd.utils.locale.JDL;
 
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DefaultIntValue;
+import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -598,8 +600,9 @@ public class OneFichierCom extends PluginForHost {
         } else {
             final long knownDownloadSize = downloadLink.getKnownDownloadSize();
             if (knownDownloadSize > 0 && knownDownloadSize <= 50 * 1024 * 1024) {
+                final int wait = PluginJsonConfig.get(OneFichierConfigInterface.class).getSmallFilesWaitInterval();
                 // avoid IP block because of too many downloads in short time
-                return 30 * 1000l;
+                return Math.max(0, wait);
             } else {
                 return super.getStartIntervall(downloadLink, account);
             }
@@ -887,6 +890,10 @@ public class OneFichierCom extends PluginForHost {
             public String getPreferSSLEnabled_label() {
                 return _JDT.T.lit_prefer_ssl();
             }
+
+            public String getSmallFilesWaitInterval_label() {
+                return "Wait x seconds for small files (smaller than 50 mbyte) to prevent IP block";
+            }
         }
 
         public static final OneFichierConfigInterfaceTranslation TRANSLATION = new OneFichierConfigInterfaceTranslation();
@@ -904,6 +911,13 @@ public class OneFichierCom extends PluginForHost {
         boolean isPreferSSLEnabled();
 
         void setPreferSSLEnabled(boolean b);
+
+        @AboutConfig
+        @DefaultIntValue(10)
+        @SpinnerValidator(min = 0, max = 60)
+        int getSmallFilesWaitInterval();
+
+        void setSmallFilesWaitInterval(int i);
     }
 
     private void prepareBrowser(final Browser br) {
