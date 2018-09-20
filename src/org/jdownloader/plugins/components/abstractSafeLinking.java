@@ -96,7 +96,10 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
         } else {
             // now comes the json
             ajaxPostPageRaw("/v1/protected", PluginJSonUtils.ammendJson(null, "hash", uid));
-            final String message = PluginJSonUtils.getJsonValue(ajax, "message");
+            String message = PluginJSonUtils.getJsonValue(ajax, "message");
+            if (message == null) {
+                message = PluginJSonUtils.getJsonValue(ajax, "messsage");
+            }
             if (StringUtils.containsIgnoreCase(message, "not found") || StringUtils.containsIgnoreCase(message, "not found")) {
                 decryptedLinks.add(createOfflinelink(parameter));
                 return decryptedLinks;
