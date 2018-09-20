@@ -1,26 +1,40 @@
 package org.jdownloader.controlling.ffmpeg;
 
 public class FFMpegException extends Exception {
+    public static enum ERROR {
+        TOO_OLD,
+        UNKNOWN,
+        DISK_FULL
+    }
 
-    private final String std;
-    private final String error;
+    private final String stdout;
+    private final String stderr;
+    private final ERROR  error;
+
+    public ERROR getError() {
+        return error;
+    }
 
     public FFMpegException(final String string) {
         this(string, null, null);
     }
 
-    public FFMpegException(String string, String std, String error) {
+    public FFMpegException(String string, String stdout, String stderr) {
+        this(string, stdout, stderr, ERROR.UNKNOWN);
+    }
+
+    public FFMpegException(String string, String stdout, String stderr, ERROR error) {
         super(string);
-        this.std = std;
-        this.error = error;
+        this.stdout = stdout;
+        this.stderr = stderr;
+        this.error = error != null ? error : ERROR.UNKNOWN;
     }
 
-    public String getStd() {
-        return std;
+    public String getStdOut() {
+        return stdout;
     }
 
-    public String getError() {
-        return error;
+    public String getStdErr() {
+        return stderr;
     }
-
 }

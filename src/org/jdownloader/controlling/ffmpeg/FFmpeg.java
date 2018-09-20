@@ -96,6 +96,18 @@ public class FFmpeg extends AbstractFFmpegBinary {
 
     private static final Object LOCK = new Object();
 
+    protected void throwFFMpegException(FFMpegException e) throws FFMpegException {
+        if (e != null) {
+            switch (e.getError()) {
+            case DISK_FULL:
+            case TOO_OLD:
+                throw e;
+            default:
+                break;
+            }
+        }
+    }
+
     protected boolean demux(FFMpegProgress progress, String out, String audioIn, final String demuxCommand[]) throws InterruptedException, IOException, FFMpegException {
         synchronized (LOCK) {
             logger.info("Demux:Input=" + audioIn + "|Output=" + out);
@@ -108,8 +120,9 @@ public class FFmpeg extends AbstractFFmpegBinary {
             try {
                 stdOut = runCommand(progress, fillCommand(out, null, audioIn, null, demuxCommand));
             } catch (FFMpegException e) {
+                throwFFMpegException(e);
                 // some systems have problems with special chars to find the in or out file.
-                if ((e.getError() != null && e.getError().contains("No such file or directory")) || (CrossSystem.isMac() && !outFile.exists())) {
+                if ((e.getStdErr() != null && e.getStdErr().contains("No such file or directory")) || (CrossSystem.isMac() && !outFile.exists())) {
                     final File tmpAudioIn = Application.getTempResource("ffmpeg_audio_in_" + UniqueAlltimeID.create());
                     final File tmpOut = Application.getTempResource("ffmpeg_out" + UniqueAlltimeID.create());
                     logger.info("Try special char workaround!");
@@ -163,8 +176,9 @@ public class FFmpeg extends AbstractFFmpegBinary {
             try {
                 stdOut = runCommand(progress, fillCommand(out, videoIn, audioIn, null, muxCommand));
             } catch (FFMpegException e) {
+                throwFFMpegException(e);
                 // some systems have problems with special chars to find the in or out file.
-                if ((e.getError() != null && e.getError().contains("No such file or directory")) || (CrossSystem.isMac() && !outFile.exists())) {
+                if ((e.getStdErr() != null && e.getStdErr().contains("No such file or directory")) || (CrossSystem.isMac() && !outFile.exists())) {
                     final File tmpAudioIn = Application.getTempResource("ffmpeg_audio_in_" + UniqueAlltimeID.create());
                     final File tmpVideoIn = Application.getTempResource("ffmpeg_video_in_" + UniqueAlltimeID.create());
                     final File tmpOut = Application.getTempResource("ffmpeg_out" + UniqueAlltimeID.create());
@@ -223,7 +237,8 @@ public class FFmpeg extends AbstractFFmpegBinary {
                 String res = runCommand(null, infoCommand);
                 //
             } catch (FFMpegException e) {
-                String[][] audioStreams = new Regex(e.getError(), "Stream \\#0\\:(\\d+)[^\\:]*\\: Audio\\: ([\\w\\d]+)").getMatches();
+                throwFFMpegException(e);
+                String[][] audioStreams = new Regex(e.getStdErr(), "Stream \\#0\\:(\\d+)[^\\:]*\\: Audio\\: ([\\w\\d]+)").getMatches();
                 int i = 0;
                 ret = new ArrayList<File>();
                 for (String[] audioStream : audioStreams) {
@@ -237,8 +252,9 @@ public class FFmpeg extends AbstractFFmpegBinary {
                     try {
                         command = runCommand(progress, fillCommand(tempout, null, audioIn, map, config.getDemuxGenericCommand()));
                     } catch (FFMpegException e1) {
+                        throwFFMpegException(e1);
                         // some systems have problems with special chars to find the in or out file.
-                        if (e.getError() != null && e.getError().contains("No such file or directory")) {
+                        if (e.getStdErr() != null && e.getStdErr().contains("No such file or directory")) {
                             File tmpAudioIn = Application.getTempResource("ffmpeg_audio_in_" + UniqueAlltimeID.create());
                             File tmpOut = Application.getTempResource("ffmpeg_out" + UniqueAlltimeID.create());
                             File outFile = new File(tempout);
