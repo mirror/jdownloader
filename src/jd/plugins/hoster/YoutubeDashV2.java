@@ -1657,6 +1657,10 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                             }
                         } catch (FFMpegException e) {
                             if (FFMpegException.ERROR.DISK_FULL.equals(e.getError())) {
+                                final File incomplete = new File(downloadLink.getFileOutput());
+                                if (incomplete.isFile()) {
+                                    incomplete.delete();
+                                }
                                 throw new SkipReasonException(SkipReason.DISK_FULL, e);
                             } else {
                                 throw e;
@@ -1717,7 +1721,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                 }
             } catch (final FileIsLockedException e) {
                 logger.log(e);
-                throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
+                throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS, null, e);
             } finally {
                 if (httpServer != null) {
                     httpServer.stop();
