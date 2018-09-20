@@ -24,6 +24,10 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -48,10 +52,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filerio.in", "filerio.com", "filekeen.com" }, urls = { "https?://(www\\.)?(filerio\\.in|filekeen\\.com|filerio\\.com)/[a-z0-9]{12}", "vSGzhkIKEfRUhbUNUSED_REGEXfdgrtjRET36fdfjhtwe85t7459zghwghior", "vSGzhkIKEfRUhbUNUSED_REGEXfdgdadadrtjRET36fdfjhtwe85t7459zghwghior1" })
 public class FileRioCom extends PluginForHost {
@@ -105,7 +105,7 @@ public class FileRioCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.setCookie(COOKIE_HOST, "lang", "english");
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, Pattern.compile("((;|>)File Not Found(<|\\&)|file has been expired due to inactivity|file has been removed by its owner|>File has been removed due to Copyright|>File has been removed)", Pattern.CASE_INSENSITIVE)).matches()) {
+        if (new Regex(correctedBR, Pattern.compile("((;|>)File Not Found(<|\\&)|file has been expired due to inactivity|file (has been|was) removed)", Pattern.CASE_INSENSITIVE)).matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (correctedBR.contains(MAINTENANCE)) {
