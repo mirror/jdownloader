@@ -62,10 +62,10 @@ public class RlGalleriesNt extends PluginForDecrypt {
         String[] links = br.getRegex("'(/image(?:_new)?\\.php\\?cn=\\d+&uid=[A-Za-z0-9]+&where=.*?)'").getColumn(0);
         if (links == null || links.length == 0) {
             links = br.getRegex("'(/porn-picture-[^'\"]*\\.(jpe?g|png|gif))'").getColumn(0);
-        }
-        if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            if (links == null || links.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
         }
         FilePackage fp = FilePackage.getInstance();
         if (fpName != null) {
