@@ -360,7 +360,7 @@ public class HLSDownloader extends DownloadInterface {
                             }
                         }
                     } catch (FFMpegException e) {
-                        final String res = e.getError();
+                        final String res = e.getStdErr();
                         format = new Regex(res, "Output \\#0\\, ([^\\,]+)").getMatch(0);
                         if (format == null) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, -1, e);
@@ -374,7 +374,7 @@ public class HLSDownloader extends DownloadInterface {
         return format;
     }
 
-    private void runConcat() throws IOException, PluginException {
+    private void runConcat() throws IOException, SkipReasonException, PluginException {
         try {
             final FFmpeg ffmpeg = new FFmpeg() {
                 @Override
@@ -463,7 +463,7 @@ public class HLSDownloader extends DownloadInterface {
                     deleteOutput = false;
                 } catch (FFMpegException e) {
                     // some systems have problems with special chars to find the in or out file.
-                    if (e.getError() != null && e.getError().contains("No such file or directory")) {
+                    if (e.getStdErr() != null && e.getStdErr().contains("No such file or directory")) {
                         final File tmpOut = Application.getTempResource("ffmpeg_out" + UniqueAlltimeID.create());
                         outputFile.set(tmpOut);
                         ffmpeg.runCommand(null, buildConcatCommandLine(concatFormat, ffmpeg, tmpOut.getAbsolutePath()));
@@ -486,11 +486,16 @@ public class HLSDownloader extends DownloadInterface {
                 }
             }
         } catch (final FFMpegException e) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, e.getMessage(), -1, e);
-        } catch (Throwable e) {
+            if (FFMpegException.ERROR.DISK_FULL.equals(e.getError())) {
+                throw new SkipReasonException(SkipReason.DISK_FULL, e);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, e.getMessage(), -1, e);
+            }
+        } catch (Exception e) {
             if (logger != null) {
                 logger.log(e);
             }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, e.getMessage(), -1, e);
         } finally {
             // link.removePluginProgress(set);
             final HttpServer server = this.server;
@@ -602,11 +607,11 @@ public class HLSDownloader extends DownloadInterface {
                     lastBitrate.set(-1);
                     lastBytesWritten.set(bytesWritten.get());
                     currentPlayListIndex.set(index);
-                    partFile.flag.set(true);
+                    partFile.flag.set(true);// TODO: validate download first before flag is set
                     ffmpeg.runCommand(null, buildDownloadCommandLine(downloadFormat, ffmpeg, destination.getAbsolutePath()));
                 } catch (FFMpegException e) {
                     // some systems have problems with special chars to find the in or out file.
-                    if (e.getError() != null && e.getError().contains("No such file or directory")) {
+                    if (e.getStdErr() != null && e.getStdErr().contains("No such file or directory")) {
                         final File tmpOut = Application.getTempResource("ffmpeg_out" + UniqueAlltimeID.create());
                         ffmpeg.runCommand(null, buildDownloadCommandLine(downloadFormat, ffmpeg, tmpOut.getAbsolutePath()));
                         destination.delete();
@@ -617,7 +622,11 @@ public class HLSDownloader extends DownloadInterface {
                 }
             }
         } catch (final FFMpegException e) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, e.getMessage(), -1, e);
+            if (FFMpegException.ERROR.DISK_FULL.equals(e.getError())) {
+                throw new SkipReasonException(SkipReason.DISK_FULL, e);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, e.getMessage(), -1, e);
+            }
         } catch (Exception e) {
             if (logger != null) {
                 logger.log(e);

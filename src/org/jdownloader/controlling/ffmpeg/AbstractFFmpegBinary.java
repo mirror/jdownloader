@@ -17,6 +17,11 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.plugins.PluginProgress;
+import jd.plugins.download.raf.FileBytesMap;
+
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.storage.config.JsonConfig;
@@ -33,13 +38,9 @@ import org.appwork.utils.net.httpserver.requests.PostRequest;
 import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.processes.ProcessBuilderFactory;
+import org.jdownloader.controlling.ffmpeg.FFMpegException.ERROR;
 import org.jdownloader.downloader.hls.M3U8Playlist;
 import org.jdownloader.downloader.hls.M3U8Playlist.M3U8Segment;
-
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.plugins.PluginProgress;
-import jd.plugins.download.raf.FileBytesMap;
 
 public class AbstractFFmpegBinary {
     public static enum FLAGTYPE {
@@ -83,6 +84,9 @@ public class AbstractFFmpegBinary {
                     }
                     ret.addAll(supported);
                 }
+            }
+            if (ret != null && logger != null) {
+                logger.info("ffmpeg: " + ret);
             }
             return ret;
         } catch (Throwable e) {
@@ -872,9 +876,12 @@ public class AbstractFFmpegBinary {
                     final boolean okay = exitCode == 0;
                     if (!okay) {
                         if (StringUtils.containsIgnoreCase(lastStderr, "Unrecognized option 'c:v'") || StringUtils.containsIgnoreCase(lastStderr, "Unrecognized option '-c:v'")) {
-                            throw new FFMpegException("FFmpeg version too old", lastStdout, lastStderr);
+                            throw new FFMpegException("FFmpeg version too old", lastStdout, lastStderr, ERROR.TOO_OLD);
+                        } else if (StringUtils.containsIgnoreCase(lastStderr, "No space left on device") && StringUtils.containsIgnoreCase(lastStderr, "Error writing")) {
+                            throw new FFMpegException("FFmpeg Failed", lastStdout, lastStderr, ERROR.DISK_FULL);
+                        } else {
+                            throw new FFMpegException("FFmpeg Failed", lastStdout, lastStderr);
                         }
-                        throw new FFMpegException("FFmpeg Failed", lastStdout, lastStderr);
                     } else {
                         return lastStdout;
                     }

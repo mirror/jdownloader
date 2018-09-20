@@ -1655,6 +1655,12 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI.T.YoutubeDash_handleFree_error_());
                                 }
                             }
+                        } catch (FFMpegException e) {
+                            if (FFMpegException.ERROR.DISK_FULL.equals(e.getError())) {
+                                throw new SkipReasonException(SkipReason.DISK_FULL, e);
+                            } else {
+                                throw e;
+                            }
                         } finally {
                             downloadLink.removePluginProgress(progress);
                         }
