@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -26,6 +25,14 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -50,21 +57,11 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vidwatch.me" }, urls = { "https?://(?:www\\.)?(?:vidwatch|vidwatch3)\\.me/(?:embed\\-)?[a-z0-9]{12}" })
 public class VidwatchMe extends PluginForHost {
-
     /* Some HTML code to identify different (error) states */
     private static final String            HTML_PASSWORDPROTECTED             = "<br><b>Passwor(d|t):</b> <input";
     private static final String            HTML_MAINTENANCE_MODE              = ">This server is in maintenance mode";
-
     /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
     private static final String            COOKIE_HOST                        = "http://vidwatch.me";
@@ -72,10 +69,8 @@ public class VidwatchMe extends PluginForHost {
     private static final String            NICE_HOSTproperty                  = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
     private static final String            DOMAINS                            = "(vidwatch\\.me|vidwatch3\\.me)";
-
     /* Errormessages inside URLs */
     private static final String            URL_ERROR_PREMIUMONLY              = "/?op=login&redirect=";
-
     /* All kinds of XFS-plugin-configuration settings - be sure to configure this correctly when developing new XFS plugins! */
     /*
      * If activated, filename can be null - fuid will be used instead then. Also the code will check for imagehosts-continue-POST-forms and
@@ -92,7 +87,6 @@ public class VidwatchMe extends PluginForHost {
      * will check for videohoster "next" Download/Ad- Form.
      */
     private final boolean                  IMAGEHOSTER                        = false;
-
     private final boolean                  SUPPORTS_HTTPS                     = false;
     private final boolean                  SUPPORTS_HTTPS_FORCED              = false;
     private final boolean                  SUPPORTS_AVAILABLECHECK_ALT        = false;
@@ -104,33 +98,27 @@ public class VidwatchMe extends PluginForHost {
      * contains misleading information such as fake texts.
      */
     private final boolean                  ENABLE_HTML_FILESIZE_CHECK         = false;
-
     /* Pre-Download waittime stuff */
     private final boolean                  WAITFORCED                         = false;
     private final int                      WAITSECONDSMIN                     = 3;
     private final int                      WAITSECONDSMAX                     = 100;
     private final int                      WAITSECONDSFORCED                  = 5;
-
     /* Supported linktypes */
     private final String                   TYPE_EMBED                         = "https?://[A-Za-z0-9\\-\\.]+/embed\\-[a-z0-9]{12}";
     private final String                   TYPE_NORMAL                        = "https?://[A-Za-z0-9\\-\\.]+/[a-z0-9]{12}";
-
     /* Texts displayed to the user in some errorcases */
     private final String                   USERTEXT_ALLWAIT_SHORT             = "Waiting till new downloads can be started";
     private final String                   USERTEXT_MAINTENANCE               = "This server is under maintenance";
     private final String                   USERTEXT_PREMIUMONLY_LINKCHECK     = "Only downloadable via premium or registered";
-
     /* Properties */
     private final String                   PROPERTY_DLLINK_FREE               = "freelink";
     private final String                   PROPERTY_DLLINK_ACCOUNT_FREE       = "freelink2";
     private final String                   PROPERTY_DLLINK_ACCOUNT_PREMIUM    = "premlink";
     private final String                   PROPERTY_PASS                      = "pass";
-
     /* Used variables */
     private String                         correctedBR                        = "";
     private String                         fuid                               = null;
     private String                         passCode                           = null;
-
     private static AtomicReference<String> agent                              = new AtomicReference<String>(null);
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
     private static AtomicInteger           totalMaxSimultanFreeDownload       = new AtomicInteger(5);
@@ -148,7 +136,6 @@ public class VidwatchMe extends PluginForHost {
      * captchatype: null<br />
      * other:<br />
      */
-
     @SuppressWarnings({ "deprecation", "unused" })
     @Override
     public void correctDownloadLink(final DownloadLink link) {
@@ -192,9 +179,7 @@ public class VidwatchMe extends PluginForHost {
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-
         altbr = this.br.cloneBrowser();
-
         if (new Regex(correctedBR, HTML_MAINTENANCE_MODE).matches()) {
             /* In maintenance mode this sometimes is a way to find filenames! */
             if (SUPPORTS_AVAILABLECHECK_ABUSE) {
@@ -242,9 +227,7 @@ public class VidwatchMe extends PluginForHost {
             logger.warning("Alternative linkcheck failed!");
             return AvailableStatus.UNCHECKABLE;
         }
-
         scanInfo(fileInfo);
-
         /* Filename abbreviated over x chars long --> Use getFnameViaAbuseLink as a workaround to find the full-length filename! */
         if (!inValidate(fileInfo[0]) && fileInfo[0].trim().endsWith("&#133;") && SUPPORTS_AVAILABLECHECK_ABUSE) {
             logger.warning("filename length is larrrge");
@@ -254,7 +237,6 @@ public class VidwatchMe extends PluginForHost {
             logger.info("Failed to find filename, trying getFnameViaAbuseLink");
             fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
         }
-
         if (inValidate(fileInfo[0]) && IMAGEHOSTER) {
             /*
              * Imagehosts often do not show any filenames, at least not on the first page plus they often have their abuse-url disabled. Add
@@ -303,7 +285,6 @@ public class VidwatchMe extends PluginForHost {
     private String[] scanInfo(final String[] fileInfo) {
         final String sharebox0 = "copy\\(this\\);.+>(.+) - ([\\d\\.]+ (?:B|KB|MB|GB))</a></textarea>[\r\n\t ]+</div>";
         final String sharebox1 = "copy\\(this\\);.+\\](.+) - ([\\d\\.]+ (?:B|KB|MB|GB))\\[/URL\\]";
-
         /* standard traits from base page */
         if (inValidate(fileInfo[0])) {
             fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + DOMAINS + "/" + fuid + "/(.*?)</font>").getMatch(2);
@@ -334,6 +315,9 @@ public class VidwatchMe extends PluginForHost {
         }
         if (inValidate(fileInfo[0])) {
             fileInfo[0] = new Regex(correctedBR, "<div id=\"content\" class=\"left\">[^<>]*?<h2>([^<>]+)</h2>").getMatch(0);
+        }
+        if (inValidate(fileInfo[0])) {
+            fileInfo[0] = new Regex(correctedBR, "<title>(?:Watch )?([^<>]+?)(?:mp4)?</title>").getMatch(0);
         }
         if (ENABLE_HTML_FILESIZE_CHECK) {
             if (inValidate(fileInfo[1])) {
@@ -632,7 +616,6 @@ public class VidwatchMe extends PluginForHost {
                     dlForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                     logger.info("Detected captcha method \"solvemedia\" for this host");
-
                     final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                     File cf = null;
                     try {
@@ -793,14 +776,11 @@ public class VidwatchMe extends PluginForHost {
     private void correctBR() throws NumberFormatException, PluginException {
         correctedBR = br.toString();
         ArrayList<String> regexStuff = new ArrayList<String>();
-
         // remove custom rules first!!! As html can change because of generic cleanup rules.
-
         /* generic cleanup */
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
         regexStuff.add("(display: ?none;\">.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
-
         for (String aRegex : regexStuff) {
             String results[] = new Regex(correctedBR, aRegex).getColumn(0);
             if (results != null) {
@@ -886,26 +866,21 @@ public class VidwatchMe extends PluginForHost {
 
     private String decodeDownloadLink(final String s) {
         String decoded = null;
-
         try {
             Regex params = new Regex(s, "\\'(.*?[^\\\\])\\',(\\d+),(\\d+),\\'(.*?)\\'");
-
             String p = params.getMatch(0).replaceAll("\\\\", "");
             int a = Integer.parseInt(params.getMatch(1));
             int c = Integer.parseInt(params.getMatch(2));
             String[] k = params.getMatch(3).split("\\|");
-
             while (c != 0) {
                 c--;
                 if (k[c].length() != 0) {
                     p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
                 }
             }
-
             decoded = p;
         } catch (Exception e) {
         }
-
         String finallink = null;
         if (decoded != null) {
             /* Open regex is possible because in the unpacked JS there are usually only 1 links */
@@ -983,7 +958,6 @@ public class VidwatchMe extends PluginForHost {
             }
             wait = i;
         }
-
         wait -= passedTime;
         if (wait > 0) {
             logger.info("Waiting waittime: " + wait);
@@ -1401,5 +1375,4 @@ public class VidwatchMe extends PluginForHost {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.SibSoft_XFileShare;
     }
-
 }
