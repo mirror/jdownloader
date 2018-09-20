@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Random;
 
 import jd.PluginWrapper;
@@ -58,7 +59,10 @@ public class RlGalleriesNt extends PluginForDecrypt {
         if (fpName == null) {
             fpName = br.getRegex("<h\\d+[^<]*>\\s*([^<]*?)\\s*porn galleries\\s*</h\\d+").getMatch(0);
         }
-        final String[] links = br.getRegex("'(/image(?:_new)?\\.php\\?cn=\\d+&uid=[A-Za-z0-9]+&where=.*?)'").getColumn(0);
+        String[] links = br.getRegex("'(/image(?:_new)?\\.php\\?cn=\\d+&uid=[A-Za-z0-9]+&where=.*?)'").getColumn(0);
+        if (links == null || links.length == 0) {
+            links = br.getRegex("'(/porn-picture-[^'\"]*\\.(jpe?g|png|gif))'").getColumn(0);
+        }
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -69,10 +73,14 @@ public class RlGalleriesNt extends PluginForDecrypt {
         }
         int counter = 1;
         final Browser brc = br.cloneBrowser();
+        final HashSet<String> dups = new HashSet<String>();
         for (final String aLink : links) {
             if (isAbort()) {
                 logger.info("Decryption process aborted by user, stopping...");
                 break;
+            }
+            if (!dups.add(aLink)) {
+                continue;
             }
             logger.info("Decrypting link " + counter + " of " + links.length);
             sleep(new Random().nextInt(3) + 1000, param);
