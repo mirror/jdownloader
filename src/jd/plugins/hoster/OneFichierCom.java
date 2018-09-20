@@ -599,7 +599,7 @@ public class OneFichierCom extends PluginForHost {
             final long knownDownloadSize = downloadLink.getKnownDownloadSize();
             if (knownDownloadSize > 0 && knownDownloadSize <= 50 * 1024 * 1024) {
                 // avoid IP block because of too many downloads in short time
-                return 30 * 60 * 1000l;
+                return 30 * 1000l;
             } else {
                 return super.getStartIntervall(downloadLink, account);
             }
