@@ -18,6 +18,14 @@ import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.network.rtmp.url.RtmpUrlConnection;
+import jd.nutils.JDHash;
+import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.hoster.RTMPDownload;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.Regex;
@@ -31,14 +39,6 @@ import org.jdownloader.nativ.NativeProcess;
 import org.jdownloader.plugins.DownloadPluginProgress;
 import org.jdownloader.settings.RtmpdumpSettings;
 import org.jdownloader.translate._JDT;
-
-import jd.network.rtmp.url.RtmpUrlConnection;
-import jd.nutils.JDHash;
-import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.hoster.RTMPDownload;
 
 public class RtmpDump extends RTMPDownload {
     private static class RTMPCon implements SpeedMeterInterface, ThrottledConnection {
@@ -108,32 +108,31 @@ public class RtmpDump extends RTMPDownload {
      * @return Whether or not rtmpdump executable was found
      */
     private synchronized boolean findRtmpDump() {
-        if (RTMPDUMP != null) {
-            return RTMPDUMP.length() > 0;
+        String ret = RTMPDUMP;
+        if (ret != null) {
+            return ret.length() > 0;
         }
         if (CrossSystem.isUnix() || CrossSystem.isMac()) {
-            RTMPDUMP = "/usr/local/bin/rtmpdump";
-            if (!new File(RTMPDUMP).exists()) {
-                RTMPDUMP = "/usr/bin/rtmpdump";
-            }
-            if (!new File(RTMPDUMP).exists()) {
-                RTMPDUMP = null;
+            if (new File("/usr/local/bin/rtmpdump").isFile()) {
+                ret = "/usr/local/bin/rtmpdump";
+            } else if (new File("/usr/bin/rtmpdump").isFile()) {
+                ret = "/usr/bin/rtmpdump";
             }
         }
         if (CrossSystem.isWindows()) {
-            RTMPDUMP = Application.getResource("tools/Windows/rtmpdump/rtmpdump.exe").getAbsolutePath();
-        } else if (CrossSystem.isLinux() && RTMPDUMP == null) {
-            RTMPDUMP = Application.getResource("tools/linux/rtmpdump/rtmpdump").getAbsolutePath();
-        } else if (CrossSystem.isMac() && RTMPDUMP == null) {
-            RTMPDUMP = Application.getResource("tools/mac/rtmpdump/rtmpdump").getAbsolutePath();
+            ret = Application.getResource("tools/Windows/rtmpdump/rtmpdump.exe").getAbsolutePath();
+        } else if (CrossSystem.isLinux() && ret == null) {
+            ret = Application.getResource("tools/linux/rtmpdump/rtmpdump").getAbsolutePath();
+        } else if (CrossSystem.isMac() && ret == null) {
+            ret = Application.getResource("tools/mac/rtmpdump/rtmpdump").getAbsolutePath();
         }
-        if (RTMPDUMP != null && !new File(RTMPDUMP).exists()) {
-            RTMPDUMP = null;
+        if (ret != null && new File(ret).isFile()) {
+            new File(ret).setExecutable(true);
+            RTMPDUMP = ret;
+            return true;
+        } else {
+            return false;
         }
-        if (RTMPDUMP == null) {
-            RTMPDUMP = "";
-        }
-        return RTMPDUMP.length() > 0;
     }
 
     private void getProcessId() {
