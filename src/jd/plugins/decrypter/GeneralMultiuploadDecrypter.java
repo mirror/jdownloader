@@ -21,6 +21,10 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Random;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -37,12 +41,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mirrorcop.com", "multiupfile.com", "multfile.com", "maxmirror.com", "exoshare.com", "go4up.com", "uploadonall.com", "qooy.com", "uploader.ro", "uploadmirrors.com", "megaupper.com", "calabox.com" }, urls = { "http://(www\\.)?mirrorcop\\.com/downloads/[A-Z0-9]+", "http://(www\\.)?multiupfile\\.com/f/[a-f0-9]+", "http://(www\\.)?multfile\\.com/files/[0-9A-Za-z]{1,15}", "http://(www\\.)?maxmirror\\.com/download/[0-9A-Z]{8}", "http://(www\\.)?(exoshare\\.com|multi\\.la)/(download\\.php\\?uid=|s/)[A-Z0-9]{8}", "https?://(\\w+\\.)?go4up\\.com/{1,}(dl/|link\\.php\\?id=)\\w{1,15}", "https?://(www\\.)?uploadonall\\.com/(download|files)/[A-Z0-9]{8}", "http://(www\\.)?qooy\\.com/files/[0-9A-Z]{8,10}", "http://[\\w\\.]*?uploader\\.ro/files/[0-9A-Z]{8}",
-        "http://[\\w\\.]*?uploadmirrors\\.(com|org)/download/[0-9A-Z]{8}", "http://[\\w\\.]*?megaupper\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?(?:shrta|calabox)\\.com/files/[0-9A-Z]{8}" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mirrorcop.com", "multiupfile.com", "multfile.com", "maxmirror.com", "exoshare.com", "go4up.com", "uploadonall.com", "qooy.com", "uploader.ro", "uploadmirrors.com", "megaupper.com", "calabox.com" }, urls = { "http://(www\\.)?mirrorcop\\.com/downloads/[A-Z0-9]+", "http://(www\\.)?multiupfile\\.com/f/[a-f0-9]+", "http://(www\\.)?multfile\\.com/files/[0-9A-Za-z]{1,15}", "http://(www\\.)?maxmirror\\.com/download/[0-9A-Z]{8}", "http://(www\\.)?(exoshare\\.com|multi\\.la)/(download\\.php\\?uid=|s/)[A-Z0-9]{8}", "https?://(\\w+\\.)?go4up\\.com/{1,}(dl/|link\\.php\\?id=)\\w{1,15}", "https?://(www\\.)?uploadonall\\.com/(download|files)/[A-Z0-9]{8}", "http://(www\\.)?qooy\\.com/files/[0-9A-Z]{8,10}", "http://[\\w\\.]*?uploader\\.ro/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploadmirrors\\.(com|org)/download/[0-9A-Z]{8}",
+        "http://[\\w\\.]*?megaupper\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?(?:shrta|calabox)\\.com/files/[0-9A-Z]{8}" })
 public class GeneralMultiuploadDecrypter extends antiDDoSForDecrypt {
     public GeneralMultiuploadDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -125,7 +125,7 @@ public class GeneralMultiuploadDecrypter extends antiDDoSForDecrypt {
             getPage(brc, "/download/gethosts/" + id + "/" + customFileName);
             final String urls[] = brc.getRegex("\"link\":\"(.*?)\",\"button\"").getColumn(0);
             final String urls_broken[] = brc.getRegex("\"link\":\"(File currently in queue\\.|Error occured)\"").getColumn(0);
-            if (urls.length == urls_broken.length) {
+            if (urls.length == urls_broken.length || brc.containsHTML(">A PHP Error was encountered<")) {
                 final DownloadLink link;
                 /* None of these mirrors was successfully uploaded --> Link offline! */
                 decryptedLinks.add(link = createOfflinelink(parameter));
