@@ -78,7 +78,7 @@ public class ArchiveOrg extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (con.isOK() && (con.isContentDisposition() || StringUtils.containsIgnoreCase(con.getContentType(), "application"))) {
+            } else if (con.isOK() && (con.isContentDisposition() || StringUtils.containsIgnoreCase(con.getContentType(), "application") || StringUtils.containsIgnoreCase(con.getContentType(), "video"))) {
                 link.setFinalFileName(getFileNameFromHeader(con));
                 link.setDownloadSize(con.getLongContentLength());
                 return AvailableStatus.TRUE;
