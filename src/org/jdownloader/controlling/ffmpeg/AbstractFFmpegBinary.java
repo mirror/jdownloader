@@ -731,7 +731,6 @@ public class AbstractFFmpegBinary {
         DEFAULT_FORMAT_BY_EXTENSION.put(".wav", "wav");
         DEFAULT_FORMAT_BY_EXTENSION.put(".m4a", "ipod");
         DEFAULT_FORMAT_BY_EXTENSION.put(".m4v", "ipod");
-        DEFAULT_FORMAT_BY_EXTENSION.put(".mp4", "av1");
     }
 
     public boolean requiresAdtstoAsc(final String format) {
