@@ -59,7 +59,7 @@ import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailyuploads.cc" }, urls = { "https?://(?:www\\.)?dailyuploads\\.(?:cc|net)/(embed\\-)?[a-z0-9]{12}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailyuploads.net" }, urls = { "https?://(?:www\\.)?dailyuploads\\.(?:cc|net)/(embed\\-)?[a-z0-9]{12}" })
 public class DailyuploadsCc extends PluginForHost {
     private String                         correctedBR                  = "";
     private String                         passCode                     = null;
@@ -141,6 +141,15 @@ public class DailyuploadsCc extends PluginForHost {
     @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/tos.html";
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if (host == null || "dailyuploads.cc".equals(host)) {
+            return "dailyuploads.net";
+        } else {
+            return super.rewriteHost(host);
+        }
     }
 
     @SuppressWarnings("deprecation")
