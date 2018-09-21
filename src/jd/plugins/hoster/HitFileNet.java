@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -98,82 +97,6 @@ public class HitFileNet extends antiDDoSForHost {
         link.setUrlDownload(MAINPAGE + "/" + fid);
     }
 
-    /** 01.12.14: turbobit.net & hitfile.net Linkchecker is broken - will hopefully be back soon! */
-    // @Override
-    @SuppressWarnings("deprecation")
-    public boolean checkLinks(final DownloadLink[] urls) {
-        if (urls == null || urls.length == 0) {
-            return false;
-        }
-        try {
-            final Browser br = new Browser();
-            br.setCookie(MAINPAGE, "user_lang", "en");
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.setCookiesExclusive(true);
-            final StringBuilder sb = new StringBuilder();
-            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
-            int index = 0;
-            while (true) {
-                links.clear();
-                while (true) {
-                    /* we test 50 links at once */
-                    if (index == urls.length || links.size() > 49) {
-                        break;
-                    }
-                    links.add(urls[index]);
-                    index++;
-                }
-                sb.delete(0, sb.capacity());
-                sb.append("links_to_check=");
-                for (final DownloadLink dl : links) {
-                    sb.append(dl.getDownloadURL());
-                    sb.append("%0A");
-                }
-                /*
-                 * '/linkchecker/csv' is the official "API" method but this will only return fileID and online/offline - not even the
-                 * filename
-                 */
-                br.postPage("https://" + getHost() + "/linkchecker/check", sb.toString());
-                for (final DownloadLink dllink : links) {
-                    final String linkID = getID(dllink.getDownloadURL());
-                    final Regex fileInfo = br.getRegex(Pattern.compile("<td>" + linkID + "</td>[\t\n\r ]+<td>([^<>/\"]*?)</td>[\t\n\r ]+<td style=\"text\\-align:center;\">(?:[\t\n\r ]+)<img src=\"(?:[^<>\"]+)?/img/icon/(done|error)\\.png\""));
-                    if (fileInfo.getMatches() == null || fileInfo.getMatches().length == 0) {
-                        dllink.setAvailable(false);
-                        logger.warning("Linkchecker broken for " + getHost());
-                    } else {
-                        if (fileInfo.getMatch(1).equals("error")) {
-                            dllink.setAvailable(false);
-                        } else {
-                            final String name = fileInfo.getMatch(0);
-                            dllink.setAvailable(true);
-                            dllink.setFinalFileName(Encoding.htmlDecode(name.trim()));
-                        }
-                    }
-                }
-                if (index == urls.length) {
-                    break;
-                }
-            }
-        } catch (final Exception e) {
-            return false;
-        }
-        return true;
-    }
-
-    private String escape(final String s) {
-        /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
-        final byte[] org = s.getBytes();
-        final StringBuilder sb = new StringBuilder();
-        String code;
-        for (final byte element : org) {
-            sb.append('%');
-            code = Integer.toHexString(element);
-            code = code.length() % 2 > 0 ? "0" + code : code;
-            sb.append(code.substring(code.length() - 2));
-        }
-        return sb + "";
-    }
-
     @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
@@ -203,10 +126,6 @@ public class HitFileNet extends antiDDoSForHost {
     @Override
     public String getAGBLink() {
         return "https://hitfile.net/rules";
-    }
-
-    private String getID(final String downloadlink) {
-        return new Regex(downloadlink, getHost() + "/(.+)").getMatch(0);
     }
 
     @Override
@@ -672,19 +591,13 @@ public class HitFileNet extends antiDDoSForHost {
         final String filename = br.getRegex("You download: \\&nbsp; <span class=\\'[a-z0-9\\- ]+\\'></span><span>([^<>\"]*?)</span>").getMatch(0);
         final String filesize = br.getRegex("\\((\\d+(,\\d+)? (b|Kb|Mb|Gb))\\)").getMatch(0);
         if (filename == null) {
-            return AvailableStatus.FALSE;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (filesize == null) {
-            return AvailableStatus.FALSE;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         downloadLink.setName(filename);
-        // if (!downloadLink.isAvailabilityStatusChecked()) {
-        // return AvailableStatus.UNCHECKED;
-        // }
-        // if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) {
-        // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        // }
         return AvailableStatus.TRUE;
     }
 
