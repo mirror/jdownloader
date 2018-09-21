@@ -66,7 +66,7 @@ public class FilerNet extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload("http://filer.net/get/" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+        link.setUrlDownload("https://filer.net/get/" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
     }
 
     private void prepBrowser() {
@@ -453,10 +453,10 @@ public class FilerNet extends PluginForHost {
 
     private void handleErrors(final Account account, final boolean afterDownload) throws PluginException {
         // Temporary errorhandling for a bug which isn't handled by the API
-        if (br.getURL().equals("http://filer.net/error/500")) {
+        if (br.getURL().endsWith("/error/500")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfehler", 60 * 60 * 1000l);
         }
-        if (br.getURL().equals("http://filer.net/error/430") || br.containsHTML("Diese Adresse ist nicht bekannt oder")) {
+        if (br.getURL().endsWith("/error/430") || br.containsHTML("Diese Adresse ist nicht bekannt oder")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (afterDownload && br.containsHTML("filer\\.net/register")) {
