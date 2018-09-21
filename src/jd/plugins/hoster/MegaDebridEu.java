@@ -19,9 +19,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -39,12 +36,13 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mega-debrid.eu" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
 public class MegaDebridEu extends PluginForHost {
-
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static final String                            NOCHUNKS           = "NOCHUNKS";
-    private static Object                                  ACCLOCK            = new Object();
     private final String                                   mName              = "www.mega-debrid.eu";
     private final String                                   mProt              = "https://";
 
@@ -108,7 +106,7 @@ public class MegaDebridEu extends PluginForHost {
     }
 
     private String login(Account account) throws Exception {
-        synchronized (ACCLOCK) {
+        synchronized (account) {
             br.getPage(mProt + mName + "/api.php?action=connectUser&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
             if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
                 // server issue
@@ -144,7 +142,7 @@ public class MegaDebridEu extends PluginForHost {
                 }
             }
         }
-        String url = link.getDownloadURL();
+        String url = link.getDefaultPlugin().buildExternalDownloadURL(link, this);
         // link corrections
         if (link.getHost().matches("ddlstorage\\.com")) {
             // needs full url!

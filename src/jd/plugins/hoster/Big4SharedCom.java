@@ -27,16 +27,6 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -58,9 +48,20 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "big4shared.com" }, urls = { "https?://(?:www\\.)?(?:big4shared\\.com|b4sh\\.me)/(?:embed\\-)?[a-z0-9]{12}" })
 public class Big4SharedCom extends antiDDoSForHost {
@@ -158,6 +159,16 @@ public class Big4SharedCom extends antiDDoSForHost {
             }
             link.setPluginPatternMatcher(COOKIE_HOST + "/" + fuid);
             link.setLinkID(getHost() + "://" + fuid);
+        }
+    }
+
+    @Override
+    public String buildExternalDownloadURL(DownloadLink downloadLink, PluginForHost buildForThisPlugin) {
+        final String fuid = getFUIDFromURL(downloadLink);
+        if (fuid != null) {
+            return COOKIE_HOST + "/" + fuid + "/";
+        } else {
+            return super.buildExternalDownloadURL(downloadLink, buildForThisPlugin);
         }
     }
 
@@ -1129,6 +1140,7 @@ public class Big4SharedCom extends antiDDoSForHost {
             final String result = new Regex(new URL(dl.getPluginPatternMatcher()).getPath(), "/(?:embed\\-)?([a-z0-9]{12})$").getMatch(0);
             return result;
         } catch (MalformedURLException e) {
+            logger.log(e);
             e.printStackTrace();
         }
         return null;
