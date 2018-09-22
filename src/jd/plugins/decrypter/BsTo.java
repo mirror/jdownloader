@@ -64,7 +64,7 @@ public class BsTo extends PluginForDecrypt {
         }
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Seite nicht gefunden<")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
