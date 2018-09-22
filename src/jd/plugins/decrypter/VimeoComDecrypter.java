@@ -190,7 +190,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 }
             }
             final String videoID = getVideoID(parameter);
-            if (videoID == null) {
+            if (videoID == null && !parameter.contains("ondemand")) {
                 /* This should never happen but can happen when adding support for new linktypes. */
                 return null;
             }
