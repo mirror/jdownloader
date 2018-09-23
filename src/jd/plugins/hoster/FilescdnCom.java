@@ -25,6 +25,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -46,12 +52,6 @@ import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filescdn.com" }, urls = { "https?://(www\\.)?filescdn\\.(com|net)/(?:embed\\-)?[a-z0-9]{12}" })
 public class FilescdnCom extends antiDDoSForHost {
@@ -104,6 +104,7 @@ public class FilescdnCom extends antiDDoSForHost {
     private static final String            PROPERTY_PASS                   = "pass";
     /* Used variables */
     private String                         correctedBR                     = "";
+    private String                         dllink                          = null;
     private String                         fuid                            = null;
     private String                         passCode                        = null;
     private static AtomicReference<String> agent                           = new AtomicReference<String>(null);
@@ -115,7 +116,7 @@ public class FilescdnCom extends antiDDoSForHost {
 
     /**
      * DEV NOTES XfileSharingProBasic Version 2.7.1.9<br />
-     * mods: requestFileInformation[Offline RegEx]<br />
+     * mods: requestFileInformation[Offline RegEx], https://svn.jdownloader.org/issues/86084<br />
      * limit-info: premium untested, set FREE account limits<br />
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
      * ALL) it is usually impossible to get any filename/filesize/status information!<br />
@@ -163,6 +164,26 @@ public class FilescdnCom extends antiDDoSForHost {
         correctDownloadLink(link);
         prepBrowser(this.br);
         setFUID(link);
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openHeadConnection(link.getDownloadURL());
+            if (con.getContentType().contains("html")) {
+                con.disconnect();
+            } else if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (con.isOK() && (con.getLongContentLength() > 0 || con.isContentDisposition())) {
+                link.setFinalFileName(getFileNameFromHeader(con));
+                link.setDownloadSize(con.getLongContentLength());
+                dllink = link.getDownloadURL();
+                return AvailableStatus.TRUE;
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        } finally {
+            if (con != null) {
+                con.disconnect();
+            }
+        }
         getPage(link.getDownloadURL());
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired|The file you are trying to download is no longer|The file has been removed because of)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -352,7 +373,9 @@ public class FilescdnCom extends antiDDoSForHost {
         br.setFollowRedirects(false);
         passCode = downloadLink.getStringProperty(PROPERTY_PASS);
         /* 1, bring up saved final links */
-        String dllink = checkDirectLink(downloadLink, directlinkproperty);
+        if (dllink == null) {
+            dllink = checkDirectLink(downloadLink, directlinkproperty);
+        }
         /* 2, check for streaming/direct links on the first page */
         if (dllink == null) {
             dllink = getDllink();
@@ -1194,7 +1217,9 @@ public class FilescdnCom extends antiDDoSForHost {
             requestFileInformation(downloadLink);
             doFree(downloadLink, true, -2, PROPERTY_DLLINK_ACCOUNT_FREE);
         } else {
-            String dllink = checkDirectLink(downloadLink, PROPERTY_DLLINK_ACCOUNT_PREMIUM);
+            if (dllink == null) {
+                dllink = checkDirectLink(downloadLink, PROPERTY_DLLINK_ACCOUNT_PREMIUM);
+            }
             if (dllink == null) {
                 br.setFollowRedirects(false);
                 getPage(downloadLink.getDownloadURL());
