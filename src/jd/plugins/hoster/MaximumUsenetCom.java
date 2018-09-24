@@ -133,7 +133,7 @@ public class MaximumUsenetCom extends UseNet {
             try {
                 verifyUseNetLogins(account);
                 return ai;
-            } catch (InvalidAuthException e) {
+            } catch (final InvalidAuthException e) {
                 logger.log(e);
                 final DownloadLink dummyLink = new DownloadLink(this, "Account:" + getUsername(account), getHost(), "https://www.maximumusenet.com", true);
                 final AskDownloadPasswordDialogInterface handle = UIOManager.I().show(AskDownloadPasswordDialogInterface.class, new AskForPasswordDialog("Please enter your MaximumUsenet Usenet Password", dummyLink));
@@ -150,7 +150,7 @@ public class MaximumUsenetCom extends UseNet {
                     }
                 }
             }
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, null, PluginException.VALUE_ID_PREMIUM_DISABLE);
         } catch (final PluginException e) {
             if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                 account.clearCookies("");
@@ -165,7 +165,6 @@ public class MaximumUsenetCom extends UseNet {
         final List<UsenetServer> ret = new ArrayList<UsenetServer>();
         ret.addAll(UsenetServer.createServerList("useast.maximumusenet.com", false, 119, 443, 8080));
         ret.addAll(UsenetServer.createServerList("us-secure.maximumusenet.com", true, 563, 80, 81));
-
         ret.addAll(UsenetServer.createServerList("europe.maximumusenet.com", false, 119, 443, 8080));
         ret.addAll(UsenetServer.createServerList("europe-ssl.maximumusenet.com", true, 563, 80, 81));
         return ret;

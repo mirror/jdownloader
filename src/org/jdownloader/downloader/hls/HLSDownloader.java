@@ -952,6 +952,7 @@ public class HLSDownloader extends DownloadInterface {
                         br.setLogger(requestLogger);
                         OutputStream requestOutputStream = null;
                         MeteredThrottledInputStream meteredThrottledInputStream = null;
+                        final long timeoutBuffer = 10 * 1000l;
                         try {
                             retryLoop: for (int retry = 0; retry < 10; retry++) {
                                 try {
@@ -967,7 +968,7 @@ public class HLSDownloader extends DownloadInterface {
                                     }
                                     URLConnectionAdapter connection = null;
                                     try {
-                                        ffmpeg.updateLastUpdateTimestamp();
+                                        ffmpeg.updateLastUpdateTimestamp(getRequest.getConnectTimeout() + getRequest.getReadTimeout() + timeoutBuffer);
                                         connection = br.openRequestConnection(getRequest);
                                         if (connection.getResponseCode() != 200 && connection.getResponseCode() != 206) {
                                             throw new IOException("ResponseCode(" + connection.getResponseCode() + ") must be 200 or 206!");
@@ -979,8 +980,9 @@ public class HLSDownloader extends DownloadInterface {
                                         } else {
                                             return false;
                                         }
+                                    } finally {
+                                        ffmpeg.updateLastUpdateTimestamp();
                                     }
-                                    ffmpeg.updateLastUpdateTimestamp();
                                     final byte[] readWriteBuffer = new byte[32 * 1024];
                                     final long length;
                                     if (fileBytesMap.getFinalSize() > 0) {
@@ -1108,7 +1110,7 @@ public class HLSDownloader extends DownloadInterface {
                                                 }
                                             }
                                             if (len > 0) {
-                                                ffmpeg.updateLastUpdateTimestamp();
+                                                ffmpeg.updateLastUpdateTimestamp(getRequest.getReadTimeout() + timeoutBuffer);
                                                 try {
                                                     outputStream.write(readWriteBuffer, 0, len);
                                                 } catch (IOException e) {

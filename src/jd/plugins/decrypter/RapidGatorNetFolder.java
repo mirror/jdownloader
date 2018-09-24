@@ -17,8 +17,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Request;
@@ -27,14 +25,17 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidgator.net" }, urls = { "https?://(?:www\\.)?(?:rapidgator\\.net|rg\\.to)/folder/\\d+/[^/]+\\.html" })
 @SuppressWarnings("deprecation")
-public class RapidGatorNetFolder extends PluginForDecrypt {
-
+public class RapidGatorNetFolder extends antiDDoSForDecrypt {
     private String parameter = null;
     private String uid       = null;
 
@@ -49,6 +50,7 @@ public class RapidGatorNetFolder extends PluginForDecrypt {
         // standardise browser configurations to avoid detection.
         final PluginForHost plugin = JDUtilities.getPluginForHost("rapidgator.net");
         ((jd.plugins.hoster.RapidGatorNet) plugin).setBrowser(br);
+        ((jd.plugins.hoster.RapidGatorNet) plugin).setLogger(getLogger());
         // normal stuff
         br.setFollowRedirects(true);
         ((jd.plugins.hoster.RapidGatorNet) plugin).getPage(parameter);
@@ -83,12 +85,12 @@ public class RapidGatorNetFolder extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private void parsePage(ArrayList<DownloadLink> ret) {
+    private void parsePage(ArrayList<DownloadLink> ret) throws Exception {
         final String[] subfolders = br.getRegex("<td><a href=\"(/folder/\\d+/[^<>\"/]+\\.html)\">").getColumn(0);
         String[][] links = br.getRegex("\"(/file/([a-z0-9]{32}|\\d+)/([^\"]+))\".*?>([\\d\\.]+ (KB|MB|GB))").getMatches();
         if ((links == null || links.length == 0) && (subfolders == null || subfolders.length == 0)) {
             logger.warning("Empty folder, or possible plugin defect. Please confirm this issue within your browser, if the plugin is truely broken please report issue to JDownloader Development Team. " + parameter);
-            return;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (links != null && links.length != 0) {
             for (String[] dl : links) {
@@ -111,5 +113,4 @@ public class RapidGatorNetFolder extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
