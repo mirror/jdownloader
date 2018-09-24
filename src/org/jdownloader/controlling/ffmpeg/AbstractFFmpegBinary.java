@@ -433,7 +433,7 @@ public class AbstractFFmpegBinary {
         updateLastUpdateTimestamp(0);
     }
 
-    public void updateLastUpdateTimestamp(int add) {
+    public void updateLastUpdateTimestamp(long add) {
         lastUpdateTimeStamp.set(System.currentTimeMillis() + Math.max(0, add));
     }
 
@@ -929,7 +929,7 @@ public class AbstractFFmpegBinary {
     }
 
     protected long getLastUpdateTimestampTimeout() {
-        return 60000;
+        return 60 * 1000l;
     }
 
     public static long formatStringToMilliseconds(final String text) {

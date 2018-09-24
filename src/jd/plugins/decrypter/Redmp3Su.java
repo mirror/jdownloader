@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "redmp3.su" }, urls = { "https?://(?:www\\.)?(red-?mp3|mp3-?red)\\.(su|co|me|cc)/album/\\d+/[a-z0-9\\-]+\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mp3-red.ru" }, urls = { "https?://(?:www\\.)?(red-?mp3|mp3-?red)\\.(su|co|me|cc|ru)/album/\\d+/[a-z0-9\\-]+\\.html" })
 public class Redmp3Su extends PluginForDecrypt {
     public Redmp3Su(PluginWrapper wrapper) {
         super(wrapper);
@@ -49,6 +49,9 @@ public class Redmp3Su extends PluginForDecrypt {
             return null;
         }
         for (String singleLink : links) {
+            if (br.containsHTML("/artist" + singleLink)) {
+                continue;
+            }
             singleLink = br.getURL(singleLink).toString();
             final String name_url = new Regex(singleLink, "([a-z0-9\\-]+)\\.html$").getMatch(0);
             final DownloadLink dl = createDownloadlink(singleLink);
