@@ -327,7 +327,7 @@ public class UploadbuzzNet extends antiDDoSForHost {
         }
         if (inValidate(fileInfo[0])) {
             /* 2017-04-11: Typically for XVideoSharing sites */
-            fileInfo[0] = new Regex(correctedBR, Pattern.compile("<title>Watch ([^<>\"]+)</title>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+            fileInfo[0] = new Regex(correctedBR, Pattern.compile("<title>(?:Watch|Download) ([^<>\"]+)</title>", Pattern.CASE_INSENSITIVE)).getMatch(0);
         }
         if (SUPPORTS_HTML_FILESIZE_CHECK) {
             if (inValidate(fileInfo[1])) {
