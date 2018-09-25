@@ -24,6 +24,7 @@ import java.util.Locale;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -37,6 +38,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
@@ -239,8 +241,6 @@ public class IcerBoxCom extends antiDDoSForHost {
         }
     }
 
-    protected static Object LOCK = new Object();
-
     /**
      * useAPI frame work? <br />
      * Override this when incorrect
@@ -258,39 +258,49 @@ public class IcerBoxCom extends antiDDoSForHost {
     }
 
     private AccountInfo fetchAccountInfoApi(final Account account) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 if (inValidate(account.getUser()) || !account.getUser().matches(".+@.+")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYou haven't provided a valid username (must be email address)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 final AccountInfo ai = new AccountInfo();
-                Browser ajax = new Browser();
+                final Browser ajax = new Browser();
                 ajax.getHeaders().put("Accept", "application/json");
-                postPage(ajax, apiURL + "/auth/login", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                handleApiErrors(ajax, account, null);
-                // recaptcha can happen here on brute force attack
-                if (ajax.getHttpConnection().getResponseCode() == 429) {
-                    final DownloadLink dummyLink = new DownloadLink(this, "Account Login", getHost(), "https://" + getHost(), true);
-                    final DownloadLink odl = this.getDownloadLink();
-                    this.setDownloadLink(dummyLink);
-                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, ajax, "6LcKRRITAAAAAExk3Pb2MfEBMP7HGTk8HG4cRBXv").getToken();
-                    if (odl != null) {
-                        this.setDownloadLink(odl);
+                String token = account.getStringProperty("token", null);
+                if (StringUtils.isNotEmpty(token)) {
+                    ajax.getHeaders().put("Authorization", "Bearer " + token);
+                    getPage(ajax, apiURL + "/user/account");
+                    if (ajax.containsHTML("\"token_invalid\"") || ajax.getRequest().getHttpConnection().getResponseCode() != 200 || ajax.getHostCookie("ddl", Cookies.NOTDELETEDPATTERN) == null) {
+                        token = null;
                     }
-                    postPage(ajax, apiURL + "/auth/login", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
+                }
+                if (StringUtils.isEmpty(token)) {
+                    postPage(ajax, apiURL + "/auth/login", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                     handleApiErrors(ajax, account, null);
-                    if (ajax.getHttpConnection().getResponseCode() == 429 || ajax.getHttpConnection().getResponseCode() == 422) {
-                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    // recaptcha can happen here on brute force attack
+                    if (ajax.getHttpConnection().getResponseCode() == 429) {
+                        final DownloadLink dummyLink = new DownloadLink(this, "Account Login", getHost(), "https://" + getHost(), true);
+                        final DownloadLink odl = this.getDownloadLink();
+                        this.setDownloadLink(dummyLink);
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, ajax, "6LcKRRITAAAAAExk3Pb2MfEBMP7HGTk8HG4cRBXv").getToken();
+                        if (odl != null) {
+                            this.setDownloadLink(odl);
+                        }
+                        postPage(ajax, apiURL + "/auth/login", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
+                        handleApiErrors(ajax, account, null);
+                        if (ajax.getHttpConnection().getResponseCode() == 429 || ajax.getHttpConnection().getResponseCode() == 422) {
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        }
                     }
+                    // token
+                    token = PluginJSonUtils.getJsonValue(ajax, "token");
+                    if (token == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    account.setProperty("token", token);
+                    ajax.getHeaders().put("Authorization", "Bearer " + token);
+                    getPage(ajax, apiURL + "/user/account");
                 }
-                // token
-                final String token = PluginJSonUtils.getJsonValue(ajax, "token");
-                if (token == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                account.setProperty("token", token);
-                ajax.getHeaders().put("Authorization", "Bearer " + account.getStringProperty("token"));
-                getPage(ajax, apiURL + "/user/account");
                 final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
                 final Boolean is_premium = (Boolean) JavaScriptEngineFactory.walkJson(entries, "data/has_premium");
                 final String expire = (String) JavaScriptEngineFactory.walkJson(entries, "data/premium/date");
@@ -337,7 +347,7 @@ public class IcerBoxCom extends antiDDoSForHost {
 
     private void handleDownload_API(final DownloadLink downloadLink, final Account account) throws Exception {
         // prevent more than one download starting at a time, so that we don't perform relogin multiple times within synchronised queues
-        synchronized (LOCK) {
+        synchronized (account) {
             requestFileInformationApi(downloadLink);
             dllink = checkDirectLink(downloadLink, directlinkproperty);
             if (inValidate(dllink)) {

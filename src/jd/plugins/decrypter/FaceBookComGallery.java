@@ -1438,6 +1438,10 @@ public class FaceBookComGallery extends PluginForDecrypt {
             }
 
             @Override
+            public void exception(String msg, Throwable e) {
+            }
+
+            @Override
             public void fine(String msg) {
             }
         };

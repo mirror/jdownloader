@@ -450,7 +450,7 @@ public class EightTracksCom extends antiDDoSForHost {
         return dllink;
     }
 
-    private String getFinalDirectlink(final String dlink) {
+    private String getFinalDirectlink(final String dlink) throws InterruptedException {
         if (dlink != null && dlink.contains("soundcloud.com/")) {
             final Browser br2 = br.cloneBrowser();
             br2.setFollowRedirects(false);
@@ -458,7 +458,7 @@ public class EightTracksCom extends antiDDoSForHost {
                 accessSoundcloudLink(br2, dlink);
             } catch (final Throwable e) {
             }
-            final String streamlink = jd.plugins.hoster.SoundcloudCom.getDirectlink(br2.toString(), null);
+            final String streamlink = jd.plugins.hoster.SoundcloudCom.getDirectlink(this, br2.toString(), null);
             return streamlink;
         } else {
             return dlink;
