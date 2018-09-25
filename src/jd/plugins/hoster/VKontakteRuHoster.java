@@ -55,6 +55,7 @@ import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
@@ -142,8 +143,15 @@ public class VKontakteRuHoster extends PluginForHost {
         final CrawledLink ret = super.convert(link);
         final String url = link.getDownloadURL();
         if (url != null && url.matches(TYPE_DIRECT)) {
-            final String filename = extractFileNameFromURL(url);
+            String filename = extractFileNameFromURL(url);
             if (filename != null) {
+                final String extension = Files.getExtension(filename);
+                if (StringUtils.endsWithCaseInsensitive(filename, "." + extension)) {
+                    final String urlName = new Regex(url, ".+/([^/].+\\." + Pattern.quote(extension) + ")$").getMatch(0);
+                    if (urlName != null) {
+                        filename = urlName;
+                    }
+                }
                 try {
                     final String urlDecoded = SimpleFTP.BestEncodingGuessingURLDecode(filename);
                     link.setFinalFileName(urlDecoded);
@@ -750,7 +758,7 @@ public class VKontakteRuHoster extends PluginForHost {
      * @return <b>1</b>: Link is valid and can be downloaded, <b>0</b>: Link leads to HTML, times out or other problems occured, <b>404</b>:
      *         Server 404 response
      */
-    private int linkOk(final DownloadLink downloadLink, final String finalfilename, final boolean isDownload) throws Exception {
+    private int linkOk(final DownloadLink downloadLink, String finalfilename, final boolean isDownload) throws Exception {
         // invalidate is required!
         if (StringUtils.isEmpty(finalUrl)) {
             return 0;
@@ -773,10 +781,12 @@ public class VKontakteRuHoster extends PluginForHost {
             }
             if (!con.getContentType().contains("html")) {
                 final long foundFilesize = con.getLongContentLength();
-                if (finalfilename == null) {
-                    downloadLink.setFinalFileName(Encoding.htmlDecode(Plugin.getFileNameFromHeader(con)));
-                } else {
-                    downloadLink.setFinalFileName(Encoding.urlDecode(finalfilename, false));
+                if (!downloadLink.isNameSet()) {
+                    if (finalfilename == null) {
+                        downloadLink.setFinalFileName(Encoding.htmlDecode(Plugin.getFileNameFromHeader(con)));
+                    } else {
+                        downloadLink.setFinalFileName(Encoding.urlDecode(finalfilename, false));
+                    }
                 }
                 /* 2016-12-01: Set filesize if it has not been set before. */
                 if (downloadLink.getDownloadSize() < foundFilesize) {

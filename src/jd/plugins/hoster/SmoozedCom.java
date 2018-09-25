@@ -52,9 +52,7 @@ import org.jdownloader.plugins.controller.host.PluginFinder;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "smoozed.com" }, urls = { "" })
 public class SmoozedCom extends antiDDoSForHost {
-
     private final String                                     API                  = "www.smoozed.com";
-
     private static WeakHashMap<Account, Map<String, Object>> ACCOUNTINFOS         = new WeakHashMap<Account, Map<String, Object>>();
     public static final String                               PROPERTY_ACCOUNTINFO = "ACCOUNTINFO";
     public static final String                               PROPERTY_ACCOUNTHASH = "ACCOUNTHASH";
@@ -83,7 +81,6 @@ public class SmoozedCom extends antiDDoSForHost {
                 final Map<String, Object> map = ACCOUNTINFOS.get(account);
                 if (map != null) {
                     Collections.sort(downloadLinks, new Comparator<DownloadLink>() {
-
                         public int compare(Number x, Number y) {
                             if (x != null && y != null) {
                                 return (x.intValue() < y.intValue()) ? 1 : ((x.intValue() == y.intValue()) ? 0 : -1);
@@ -114,7 +111,6 @@ public class SmoozedCom extends antiDDoSForHost {
                             }
                             return compare(o1Priority, o2Priority);
                         }
-
                     });
                 }
             }
@@ -177,10 +173,12 @@ public class SmoozedCom extends antiDDoSForHost {
                 account.setProperty(PROPERTY_ACCOUNTHASH, Hash.getSHA256((account.getUser() + account.getPass()).toLowerCase(Locale.ENGLISH)));
                 return responseMap;
             } catch (final PluginException e) {
-                account.removeProperty(PROPERTY_ACCOUNTINFO);
-                account.removeProperty(PROPERTY_ACCOUNTHASH);
-                account.clearCookies("");
-                ACCOUNTINFOS.remove(account);
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.removeProperty(PROPERTY_ACCOUNTINFO);
+                    account.removeProperty(PROPERTY_ACCOUNTHASH);
+                    account.clearCookies("");
+                    ACCOUNTINFOS.remove(account);
+                }
                 throw e;
             }
         }
@@ -357,7 +355,6 @@ public class SmoozedCom extends antiDDoSForHost {
         if (e != null && e instanceof PluginException && log != null) {
             try {
                 if (getPluginConfig().getBooleanProperty(AUTOLOG, false) == true) {
-
                     final ByteArrayOutputStream bos = new ByteArrayOutputStream();
                     final Base64OutputStream os = new Base64OutputStream(bos);
                     os.write(log.toString().getBytes("UTF-8"));
@@ -740,7 +737,6 @@ public class SmoozedCom extends antiDDoSForHost {
             ai.setTrafficMax(traffic_Max);
             ai.setTrafficLeft(traffic_Max - traffic_Used);
         }
-
         final List hoster_List = get(map, List.class, "data", "hoster");
         if (hoster_List != null) {
             final PluginFinder pluginFinder = new PluginFinder();
@@ -836,5 +832,4 @@ public class SmoozedCom extends antiDDoSForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

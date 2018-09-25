@@ -15,6 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.net.URL;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -108,6 +110,9 @@ public class NexusmodsCom extends antiDDoSForHost {
             dllink = br.getRegex("\"(https?://filedelivery\\.nexusmods\\.com/[^<>\"]+)\"").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("\"(https?://(?:www\\.)?nexusmods\\.com/[^<>\"]*Libs/Common/Managers/Downloads\\?Download[^<>\"]+)\"").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("id\\s*=\\s*\"dl_link\"\\s*value\\s*=\\s*\"(https?://(?:[a-z0-9]*\\.)?(?:nexusmods|nexus-cdn)\\.com/[^<>\"]*?)\"").getMatch(0);
+                }
             }
         }
         String filename = br.getRegex("filedelivery\\.nexusmods\\.com/\\d+/([^<>\"]+)\\?fid=").getMatch(0);
@@ -115,6 +120,9 @@ public class NexusmodsCom extends antiDDoSForHost {
             filename = br.getRegex("data-link\\s*=\\s*\"https?://[^<>\"]+/files/\\d+/([^<>\"/]+)\\?").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("data-link\\s*=\\s*\"https?://[^<>\"]+/\\d+/\\d+/([^<>\"/]+)\\?").getMatch(0);
+                if (filename == null && dllink != null) {
+                    filename = getFileNameFromURL(new URL(dllink));
+                }
             }
             if (filename == null) {
                 filename = fid;

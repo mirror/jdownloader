@@ -376,6 +376,9 @@ public abstract class antiDDoSForHost extends PluginForHost {
         case 502:
             // Bad Gateway
             break;
+        case 542:
+            // A timeout occurred
+            break;
         default:
             con.setAllowedResponseCodes(new int[] { responseCode });
             break;

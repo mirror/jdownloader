@@ -35,6 +35,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -237,18 +238,29 @@ public class FreeDiscPl extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String server_filename = getFileNameFromDispositionHeader(dl.getConnection());
+        fileNameHandling(downloadLink, dl.getConnection());
+        downloadLink.setProperty(directlinkproperty, dllink);
+        dl.startDownload();
+    }
+
+    private final void fileNameHandling(DownloadLink downloadLink, URLConnectionAdapter con) {
+        String server_filename = getFileNameFromDispositionHeader(con);
         if (server_filename != null) {
             server_filename = Encoding.htmlDecode(server_filename);
             downloadLink.setFinalFileName(server_filename);
-        } else {
-            final String urlName = getFileNameFromURL(dl.getConnection().getURL());
-            if (downloadLink.getFinalFileName() == null && urlName != null && org.appwork.utils.Files.getExtension(urlName) != null) {
-                downloadLink.setFinalFileName(downloadLink.getName() + org.appwork.utils.Files.getExtension(urlName));
+        } else if (downloadLink.getFinalFileName() == null) {
+            final String urlName = getFileNameFromURL(con.getURL());
+            if (urlName != null && org.appwork.utils.Files.getExtension(urlName) != null) {
+                final String existingExtension = Files.getExtension(downloadLink.getName());
+                if (StringUtils.equalsIgnoreCase(existingExtension, "avi") || StringUtils.equalsIgnoreCase(existingExtension, "mp4")) {
+                    // replace extension
+                    downloadLink.setFinalFileName(downloadLink.getName().replaceFirst(existingExtension + "$", Files.getExtension(urlName)));
+                } else {
+                    // add extension
+                    downloadLink.setFinalFileName(downloadLink.getName() + "." + org.appwork.utils.Files.getExtension(urlName));
+                }
             }
         }
-        downloadLink.setProperty(directlinkproperty, dllink);
-        dl.startDownload();
     }
 
     public static boolean isBotBlocked(final Browser br) {
@@ -429,11 +441,7 @@ public class FreeDiscPl extends PluginForHost {
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            String server_filename = getFileNameFromHeader(dl.getConnection());
-            if (server_filename != null) {
-                server_filename = Encoding.htmlDecode(server_filename);
-                link.setFinalFileName(server_filename);
-            }
+            fileNameHandling(link, dl.getConnection());
             link.setProperty("premium_directlink", dllink);
             dl.startDownload();
         }
