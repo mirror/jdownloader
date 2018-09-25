@@ -49,6 +49,12 @@ public class Zip4J extends IExtraction {
         return false;
     }
 
+    private final ExtractionExtension extension;
+
+    public Zip4J(ExtractionExtension extension) {
+        this.extension = extension;
+    }
+
     public File getExtractFilePath(final FileHeader item, final ExtractionController ctrl, final AtomicBoolean skipped) throws MultiSevenZipException, ZipException {
         final Archive archive = getExtractionController().getArchive();
         String itemPath = item.getFileName();
@@ -360,7 +366,7 @@ public class Zip4J extends IExtraction {
     public DummyArchive checkComplete(Archive archive) throws CheckException {
         if (archive.getArchiveType() != null) {
             try {
-                final DummyArchive ret = new DummyArchive(archive, archive.getArchiveType().name());
+                final DummyArchive ret = new DummyArchive(archive, archive.getArchiveType());
                 boolean hasMissingArchiveFiles = false;
                 for (ArchiveFile archiveFile : archive.getArchiveFiles()) {
                     if (archiveFile instanceof MissingArchiveFile) {

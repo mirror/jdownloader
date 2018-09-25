@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package org.jdownloader.extensions.extraction.split;
 
 import java.io.File;
@@ -51,7 +50,6 @@ import org.jdownloader.extensions.extraction.multi.CheckException;
  *
  */
 public class HJSplit extends IExtraction {
-
     private final SplitType splitType = SplitType.HJ_SPLIT;
 
     public Archive buildArchive(ArchiveFactory link, boolean allowDeepInspection) throws ArchiveException {
@@ -61,6 +59,12 @@ public class HJSplit extends IExtraction {
     @Override
     public boolean findPassword(ExtractionController controller, String password, boolean optimized) {
         return true;
+    }
+
+    private final ExtractionExtension extension;
+
+    public HJSplit(ExtractionExtension extension) {
+        this.extension = extension;
     }
 
     @Override
@@ -117,7 +121,7 @@ public class HJSplit extends IExtraction {
     public DummyArchive checkComplete(Archive archive) throws CheckException {
         if (archive.getSplitType() == splitType) {
             try {
-                final DummyArchive ret = new DummyArchive(archive, splitType.name());
+                final DummyArchive ret = new DummyArchive(archive, splitType);
                 boolean hasMissingArchiveFiles = false;
                 for (ArchiveFile archiveFile : archive.getArchiveFiles()) {
                     if (archiveFile instanceof MissingArchiveFile) {
@@ -197,5 +201,4 @@ public class HJSplit extends IExtraction {
         }
         return false;
     }
-
 }

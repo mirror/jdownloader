@@ -28,9 +28,7 @@ import org.jdownloader.extensions.extraction.multi.CheckException;
 import org.jdownloader.logging.LogController;
 
 public class HachaSplit extends IExtraction {
-
     public static class HachaHeader {
-
         protected final String fileName;
 
         public String getFileName() {
@@ -66,6 +64,12 @@ public class HachaSplit extends IExtraction {
 
     public Archive buildArchive(ArchiveFactory link, boolean allowDeepInspection) throws ArchiveException {
         return SplitType.createArchive(link, splitType, allowDeepInspection);
+    }
+
+    private final ExtractionExtension extension;
+
+    public HachaSplit(ExtractionExtension extension) {
+        this.extension = extension;
     }
 
     @Override
@@ -115,7 +119,7 @@ public class HachaSplit extends IExtraction {
     public DummyArchive checkComplete(Archive archive) throws CheckException {
         if (archive.getSplitType() == splitType) {
             try {
-                final DummyArchive ret = new DummyArchive(archive, splitType.name());
+                final DummyArchive ret = new DummyArchive(archive, splitType);
                 boolean hasMissingArchiveFiles = false;
                 for (ArchiveFile archiveFile : archive.getArchiveFiles()) {
                     if (archiveFile instanceof MissingArchiveFile) {
@@ -209,5 +213,4 @@ public class HachaSplit extends IExtraction {
         }
         return false;
     }
-
 }

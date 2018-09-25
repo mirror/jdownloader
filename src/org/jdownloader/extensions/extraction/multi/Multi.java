@@ -26,10 +26,13 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.controlling.downloadcontroller.IfFileExistsDialogInterface;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import net.sf.sevenzipjbinding.ArchiveFormat;
 import net.sf.sevenzipjbinding.ExtractOperationResult;
 import net.sf.sevenzipjbinding.IArchiveExtractCallback;
@@ -67,6 +70,7 @@ import org.jdownloader.extensions.extraction.IExtraction;
 import org.jdownloader.extensions.extraction.Item;
 import org.jdownloader.extensions.extraction.MissingArchiveFile;
 import org.jdownloader.extensions.extraction.Signature;
+import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFactory;
 import org.jdownloader.extensions.extraction.content.ContentView;
 import org.jdownloader.extensions.extraction.content.PackedFile;
 import org.jdownloader.extensions.extraction.gui.iffileexistsdialog.IfFileExistsDialog;
@@ -77,6 +81,7 @@ public class Multi extends IExtraction {
     private SevenZipArchiveWrapper     inArchive;
     private IInStream                  inStream;
     private Closeable                  closable;
+    private final ExtractionExtension  extension;
     private final static ArchiveType[] SUPPORTED_ARCHIVE_TYPES;
     static {
         final ArrayList<ArchiveType> archiveTypes = new ArrayList<ArchiveType>();
@@ -88,8 +93,12 @@ public class Multi extends IExtraction {
         SUPPORTED_ARCHIVE_TYPES = archiveTypes.toArray(new ArchiveType[0]);
     }
 
-    public Multi() {
+    public Multi(ExtractionExtension extension) {
         crack = 0;
+        this.extension = extension;
+        if (extension != null) {
+            setLogger(extension.getLogger());
+        }
         inArchive = null;
     }
 
@@ -420,7 +429,7 @@ public class Multi extends IExtraction {
     public DummyArchive checkComplete(Archive archive) throws CheckException {
         if (archive.getArchiveType() != null) {
             try {
-                final DummyArchive ret = new DummyArchive(archive, archive.getArchiveType().name());
+                final DummyArchive ret = new DummyArchive(archive, archive.getArchiveType());
                 boolean hasMissingArchiveFiles = false;
                 for (ArchiveFile archiveFile : archive.getArchiveFiles()) {
                     if (archiveFile instanceof MissingArchiveFile) {
@@ -434,6 +443,43 @@ public class Multi extends IExtraction {
                     final String partNumberOfFirstArchiveFile = archiveType.getPartNumberString(firstArchiveFile);
                     if (archiveType.getFirstPartIndex() != archiveType.getPartNumber(partNumberOfFirstArchiveFile)) {
                         throw new CheckException("Wrong firstArchiveFile(" + firstArchiveFile + ") for Archive(" + archive.getName() + ")");
+                    }
+                    final Archive parentArchive = archive.getParentArchive();
+                    if (parentArchive != null) {
+                        int possibleNextArchiveFile = -1;
+                        for (ArchiveFile archiveFile : archive.getArchiveFiles()) {
+                            int partNum = archiveType.getPartNumber(archiveType.getPartNumberString(archiveFile.getFilePath()));
+                            if (possibleNextArchiveFile == -1) {
+                                possibleNextArchiveFile = partNum + 1;
+                            } else {
+                                possibleNextArchiveFile = Math.max(possibleNextArchiveFile, partNum + 1);
+                            }
+                        }
+                        final List<ArchiveFile> maybeMissingArchiveFiles = ArchiveType.getMissingArchiveFiles(archive, archiveType, possibleNextArchiveFile);
+                        if (maybeMissingArchiveFiles.size() > 0 && parentArchive.getFactory() instanceof DownloadLinkArchiveFactory) {
+                            final DownloadLinkArchiveFactory factory = (DownloadLinkArchiveFactory) parentArchive.getFactory();
+                            final Set<String> archiveIDs = new HashSet<String>();
+                            factoryLoop: for (final DownloadLink downloadLink : factory.getDownloadLinks()) {
+                                final FilePackage fp = downloadLink.getFilePackage();
+                                final boolean readL = fp.getModifyLock().readLock();
+                                try {
+                                    final List<Archive> searchArchives = extension.getArchivesFromPackageChildren(fp.getChildren(), archiveIDs, -1);
+                                    if (searchArchives != null) {
+                                        for (final Archive searchArchive : searchArchives) {
+                                            archiveIDs.add(searchArchive.getArchiveID());
+                                            for (ArchiveFile maybeMissingArchiveFile : maybeMissingArchiveFiles) {
+                                                if (StringUtils.equals(maybeMissingArchiveFile.getName(), searchArchive.getName())) {
+                                                    ret.add(new DummyArchiveFile(maybeMissingArchiveFile));
+                                                    break factoryLoop;
+                                                }
+                                            }
+                                        }
+                                    }
+                                } finally {
+                                    fp.getModifyLock().readUnlock(readL);
+                                }
+                            }
+                        }
                     }
                 }
                 return ret;
@@ -1141,25 +1187,25 @@ public class Multi extends IExtraction {
                     if (signatureString.length() >= 24) {
                         /*
                          * 0x0001 Volume attribute (archive volume)
-                         *
+                         * 
                          * 0x0002 Archive comment present RAR 3.x uses the separate comment block and does not set this flag.
-                         *
+                         * 
                          * 0x0004 Archive lock attribute
-                         *
+                         * 
                          * 0x0008 Solid attribute (solid archive)
-                         *
+                         * 
                          * 0x0010 New volume naming scheme ('volname.partN.rar')
-                         *
+                         * 
                          * 0x0020 Authenticity information present RAR 3.x does not set this flag.
-                         *
+                         * 
                          * 0x0040 Recovery record present
-                         *
+                         * 
                          * 0x0080 Block headers are encrypted
                          */
                         final String headerBitFlags1 = "" + signatureString.charAt(20) + signatureString.charAt(21);
                         /*
                          * 0x0100 FIRST Volume
-                         *
+                         * 
                          * 0x0200 EncryptedVerion
                          */
                         // final String headerBitFlags2 = "" + signatureString.charAt(22) + signatureString.charAt(23);

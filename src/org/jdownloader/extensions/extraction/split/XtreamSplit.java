@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package org.jdownloader.extensions.extraction.split;
 
 import java.io.EOFException;
@@ -59,14 +58,16 @@ import org.jdownloader.extensions.extraction.multi.CheckException;
 import org.jdownloader.settings.IfFileExistsAction;
 
 public class XtreamSplit extends IExtraction {
-
     private final static int                       HEADER_SIZE = 104;
-
     private boolean                                md5         = false;
     private File                                   outputFile;
     private final WeakHashMap<ArchiveFile, byte[]> hashes      = new WeakHashMap<ArchiveFile, byte[]>();
-
     private final SplitType                        splitType   = SplitType.XTREMSPLIT;
+    private final ExtractionExtension              extension;
+
+    public XtreamSplit(ExtractionExtension extension) {
+        this.extension = extension;
+    }
 
     public Archive buildArchive(ArchiveFactory link, boolean allowDeepInspection) throws ArchiveException {
         return SplitType.createArchive(link, splitType, allowDeepInspection);
@@ -150,7 +151,6 @@ public class XtreamSplit extends IExtraction {
             final RandomAccessFile ffos = fos;
             final NullsafeAtomicReference<IOException> ioException = new NullsafeAtomicReference<IOException>(null);
             flusher = new FileBytesCacheFlusher() {
-
                 @Override
                 public void flushed() {
                 }
@@ -197,7 +197,6 @@ public class XtreamSplit extends IExtraction {
                         }
                         partLength = partLength - toBeSkipped;
                     }
-
                     long partRead = 0;
                     // Skip md5 hashes at the end if it's the last file
                     final boolean isItTheLastFile = partIndex == (archive.getArchiveFiles().size() - 1);
@@ -229,7 +228,6 @@ public class XtreamSplit extends IExtraction {
                             throw new EOFException("EOF during merge");
                         }
                     }
-
                     // Check MD5 hashes
                     if (md5) {
                         final byte[] calculatedHash = md.digest();
@@ -260,7 +258,6 @@ public class XtreamSplit extends IExtraction {
         } finally {
             final FileBytesCacheFlusher fflusher = flusher;
             cache.execute(new Runnable() {
-
                 @Override
                 public void run() {
                     if (fileOpen.get()) {
@@ -273,7 +270,6 @@ public class XtreamSplit extends IExtraction {
                         }
                     }
                 }
-
             });
             try {
                 try {
@@ -339,7 +335,6 @@ public class XtreamSplit extends IExtraction {
                 final RandomAccessFile raf = IO.open(lastFile, "r");
                 try {
                     awfc = new AWFCUtils(new InputStream() {
-
                         @Override
                         public int read() throws IOException {
                             return raf.read();
@@ -384,7 +379,7 @@ public class XtreamSplit extends IExtraction {
     public DummyArchive checkComplete(Archive archive) throws CheckException {
         if (archive.getSplitType() == splitType) {
             try {
-                final DummyArchive ret = new DummyArchive(archive, splitType.name());
+                final DummyArchive ret = new DummyArchive(archive, splitType);
                 boolean hasMissingArchiveFiles = false;
                 for (ArchiveFile archiveFile : archive.getArchiveFiles()) {
                     if (archiveFile instanceof MissingArchiveFile) {
@@ -454,5 +449,4 @@ public class XtreamSplit extends IExtraction {
         }
         return false;
     }
-
 }
