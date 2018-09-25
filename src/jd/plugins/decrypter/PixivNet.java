@@ -308,7 +308,7 @@ public class PixivNet extends PluginForDecrypt {
     }
 
     private boolean isAdultImageLoginRequired(String lid) {
-        return br.containsHTML("r18=true") || br.containsHTML("\"illustId\"\\s*:\\s*\"" + lid + "\".*?\"xRestrict\"\\s*:\\s*1");
+        return br.containsHTML("r18=true") || br.containsHTML("\"illustId\"\\s*:\\s*\"" + lid + "\".*?\"xRestrict\"\\s*:\\s*1") || br.containsHTML("r18-image");
     }
 
     public static boolean isAccountOrRightsRequired(final Browser br) {

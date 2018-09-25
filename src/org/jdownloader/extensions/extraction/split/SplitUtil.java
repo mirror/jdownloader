@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package org.jdownloader.extensions.extraction.split;
 
 import java.io.File;
@@ -44,14 +43,7 @@ import org.jdownloader.extensions.extraction.content.PackedFile;
 import org.jdownloader.extensions.extraction.gui.iffileexistsdialog.IfFileExistsDialog;
 import org.jdownloader.settings.IfFileExistsAction;
 
-/**
- * Utils for the joiner.
- *
- * @author botzi
- *
- */
 class SplitUtil {
-
     /**
      * Merges the files from the archive. The filepaths need to be sortable.
      *
@@ -142,7 +134,6 @@ class SplitUtil {
             final RandomAccessFile ffos = fos;
             final NullsafeAtomicReference<IOException> ioException = new NullsafeAtomicReference<IOException>(null);
             flusher = new FileBytesCacheFlusher() {
-
                 @Override
                 public void flushed() {
                 }
@@ -208,7 +199,6 @@ class SplitUtil {
         } finally {
             final FileBytesCacheFlusher fflusher = flusher;
             cache.execute(new Runnable() {
-
                 @Override
                 public void run() {
                     if (fileOpen.get()) {
@@ -221,7 +211,6 @@ class SplitUtil {
                         }
                     }
                 }
-
             });
             try {
                 try {
@@ -238,5 +227,4 @@ class SplitUtil {
         }
         return true;
     }
-
 }
