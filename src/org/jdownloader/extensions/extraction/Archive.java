@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package org.jdownloader.extensions.extraction;
 
 import java.io.File;
@@ -38,7 +37,6 @@ import org.jdownloader.extensions.extraction.split.SplitType;
  *
  */
 public class Archive {
-
     public static String getBestArchiveID(List<ArchiveFile> archiveFiles, final String suggestedArchiveID) {
         final HashMap<String, ArchiveID> scores = new HashMap<String, ArchiveID>();
         for (final ArchiveFile archiveFile : archiveFiles) {
@@ -109,17 +107,14 @@ public class Archive {
      * ArchiveFiles of the archive.
      */
     private List<ArchiveFile> archives;
-
     /**
      * Exitcode of the extrraction.
      */
     private int               exitCode    = -1;
-
     /**
      * Type of the archive.
      */
     private ArchiveType       archiveType = null;
-
     private SplitType         splitType   = null;
 
     public SplitType getSplitType() {
@@ -135,31 +130,25 @@ public class Archive {
             return getArchiveType().getBestArchiveFileMatch(this, fileName);
         } else if (getSplitType() != null) {
             return getSplitType().getBestArchiveFileMatch(this, fileName);
+        } else {
+            return null;
         }
-        return null;
     }
 
     /**
      * ArchiveFiles CRC error.
      */
     private final List<ArchiveFile>                      crcError;
-
     /**
      * List of the extracted files.
      */
     private final List<File>                             extractedFiles;
-
     private final List<File>                             skippedFiles;
-
     private final ArchiveFactory                         factory;
-
     private String                                       name;
-
     private ContentView                                  contents;
-
     private boolean                                      passwordRequiredToOpen;
     private volatile String                              archiveID            = null;
-
     private volatile WeakReference<ExtractionController> extractionController = null;
 
     public String getArchiveID() {
@@ -190,8 +179,9 @@ public class Archive {
     public Archive getRootArchive() {
         if (getParentArchive() != null) {
             return getParentArchive().getRootArchive();
+        } else {
+            return this;
         }
-        return this;
     }
 
     private volatile ArchiveFormat cachedArchiveFormat = null;
@@ -374,5 +364,4 @@ public class Archive {
             notifyChanges(ArchiveSettings.AUTO_EXTRACT);
         }
     }
-
 }

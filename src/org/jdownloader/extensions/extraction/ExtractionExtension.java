@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://gnu.org/licenses/>.
-
 package org.jdownloader.extensions.extraction;
 
 import java.io.File;
@@ -32,6 +31,7 @@ import jd.config.SubConfiguration;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.packagecontroller.PackageControllerModifyVetoListener;
 import jd.gui.swing.jdgui.menu.actions.sendlogs.LogAction;
 import jd.plugins.AddonPanel;
@@ -102,15 +102,12 @@ import org.jdownloader.gui.views.downloads.contextmenumanager.MenuManagerDownloa
 import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkGrabberMoreSubMenu;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.MenuManagerLinkgrabberTableContext;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.IfFileExistsAction;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.translate._JDT;
 
 public class ExtractionExtension extends AbstractExtension<ExtractionConfig, ExtractionTranslation> implements FileCreationListener, MenuExtenderHandler, PackageControllerModifyVetoListener<FilePackage, DownloadLink> {
-
     private ExtractionQueue       extractionQueue = new ExtractionQueue();
-
     private ExtractionEventSender eventSender     = new ExtractionEventSender();
 
     public ExtractionEventSender getEventSender() {
@@ -118,11 +115,8 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
     }
 
     private final Set<IExtraction>     extractors        = new CopyOnWriteArraySet<IExtraction>();
-
     private ExtractionConfigPanel      configPanel;
-
     private static ExtractionExtension INSTANCE;
-
     private ExtractionListenerIcon     statusbarListener = null;
     private ShutdownVetoListener       listener          = null;
     private boolean                    lazyInitOnStart   = false;
@@ -148,13 +142,13 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
      */
     private void initExtractors() {
         /* the order is important because hjsplit and multi listen to same patterns (xy.001, because 7zip can have that pattern as well) */
-        setExtractor(new UnixSplit());
-        setExtractor(new XtreamSplit());
-        setExtractor(new HachaSplit());
-        setExtractor(new HJSplit());
-        setExtractor(new Zip4J());
+        addExtractor(new UnixSplit(this));
+        addExtractor(new XtreamSplit(this));
+        addExtractor(new HachaSplit(this));
+        addExtractor(new HJSplit(this));
+        addExtractor(new Zip4J(this));
         /* must be last one! */
-        setExtractor(new Multi());
+        addExtractor(new Multi(this));
     }
 
     /**
@@ -163,7 +157,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
      * @param extractor
      *            The extractor.
      */
-    public void setExtractor(IExtraction extractor) {
+    public void addExtractor(IExtraction extractor) {
         extractors.add(extractor);
         extractor.setLogger(logger);
     }
@@ -190,7 +184,16 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             logger.info("Archive:" + archive.getName() + "|Empty");
             return null;
         }
-        if (isComplete(archive) == false) {
+        DummyArchive dummyArchive = null;
+        try {
+            dummyArchive = createDummyArchive(archive);
+        } catch (CheckException e) {
+            logger.log(e);
+        }
+        if (dummyArchive != null) {
+            logger.info(dummyArchive.toString());
+        }
+        if (dummyArchive == null || !dummyArchive.isComplete()) {
             logger.info("Archive:" + archive.getName() + "|Incomplete");
             return null;
         }
@@ -303,9 +306,10 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
     public boolean isComplete(Archive archive) {
         try {
             final DummyArchive ret = createDummyArchive(archive);
-            return ret != null && ret.isComplete();
+            final boolean isComplete = ret != null && ret.isComplete();
+            return isComplete;
         } catch (CheckException e) {
-            LogController.CL().log(e);
+            logger.log(e);
         }
         return false;
     }
@@ -321,7 +325,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             for (IExtraction extractor : extractors) {
                 try {
                     if (Boolean.TRUE.equals(extractor.isSupported(factory, true))) {
-                        final IExtraction ret = extractor.getClass().newInstance();
+                        final IExtraction ret = extractor.getClass().getConstructor(new Class[] { this.getClass() }).newInstance(this);
                         ret.setLogger(extractor.logger);
                         return ret;
                     }
@@ -343,13 +347,10 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         FileCreationManager.getInstance().getEventSender().removeListener(this);
         if (!org.appwork.utils.Application.isHeadless()) {
             SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
-
                 public void run() {
                     new EDTRunner() {
-
                         @Override
                         protected void runInEDT() {
-
                             if (statusbarListener != null) {
                                 statusbarListener.cleanup();
                                 eventSender.removeListener(statusbarListener);
@@ -399,13 +400,11 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         }
         LinkCollector.getInstance().setArchiver(this);
         DownloadController.getInstance().addVetoListener(this);
-
         FileCreationManager.getInstance().getEventSender().addListener(this);
         if (!org.appwork.utils.Application.isHeadless()) {
             SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
                 public void run() {
                     new EDTRunner() {
-
                         @Override
                         protected void runInEDT() {
                             if (statusbarListener != null) {
@@ -421,7 +420,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             });
         }
         ShutdownController.getInstance().addShutdownVetoListener(listener = new ShutdownVetoListener() {
-
             @Override
             public void onShutdownVetoRequest(ShutdownRequest request) throws ShutdownVetoException {
                 if (request.hasVetos()) {
@@ -434,7 +432,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                     }
                 } else {
                     if (!extractionQueue.isEmpty() || extractionQueue.getCurrentQueueEntry() != null) {
-
                         if (UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _JDT.T.Extraction_onShutdownRequest_(), _JDT.T.Extraction_onShutdownRequest_msg(), NewTheme.I().getIcon(org.jdownloader.gui.IconKey.ICON_EXTRACT, 32), _JDT.T.literally_yes(), null)) {
                             return;
                         }
@@ -455,7 +452,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             @Override
             public void onShutdownVeto(ShutdownRequest request) {
             }
-
         });
         new Thread() {
             public void run() {
@@ -487,7 +483,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                                 final ExceptionDialogInterface dialog = UIOManager.I().show(ExceptionDialogInterface.class, ed);
                                 dialog.throwCloseExceptions();
                                 new EDTRunner() {
-
                                     @Override
                                     protected void runInEDT() {
                                         final LogAction la = new LogAction();
@@ -510,10 +505,8 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         }
         lazyInitOnStart = true;
         initExtractors();
-
         // addListener(new ExtractionListenerFile());
         eventSender.addListener(new ExtractionListenerList());
-
         final Iterator<IExtraction> it = extractors.iterator();
         final List<IExtraction> remove = new ArrayList<IExtraction>();
         while (it.hasNext()) {
@@ -594,7 +587,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                 getSettings().setOldPWListImported(true);
             }
         }
-
     }
 
     @Override
@@ -667,12 +659,21 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             logger.info("Caller:" + caller + "Archive:" + archive.getName() + "|AutoExtractionDisabled");
             return false;
         }
-        final boolean complete = isComplete(archive);
+        DummyArchive dummyArchive = null;
+        try {
+            dummyArchive = createDummyArchive(archive);
+        } catch (CheckException e) {
+            logger.log(e);
+        }
+        if (dummyArchive != null) {
+            logger.info(dummyArchive.toString());
+        }
+        final boolean complete = dummyArchive != null && dummyArchive.isComplete();
         if (complete) {
-            logger.info("Caller:" + caller + "Archive:" + archive.getName() + "|Complete|Size:" + archive.getArchiveFiles().size());
+            logger.info("Caller:" + caller + "|Archive:" + archive.getName() + "|Complete|Size:" + archive.getArchiveFiles().size());
             return true;
         } else {
-            logger.info("Caller:" + caller + "Archive:" + archive.getName() + "|Incomplete");
+            logger.info("Caller:" + caller + "|Archive:" + archive.getName() + "|Incomplete");
             return false;
         }
     }
@@ -799,7 +800,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             return CFG_LINKGRABBER.AUTO_EXTRACTION_ENABLED.isEnabled();
         }
         return false;
-
     }
 
     public Archive getArchiveByFactory(ArchiveFactory clf) {
@@ -811,13 +811,71 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         }
     }
 
+    public List<Archive> getArchivesFromPackageChildren(List<? extends Object> nodes, Set<String> ignoreArchiveIDs, int maxArchives) {
+        final ArrayList<Archive> archives = new ArrayList<Archive>();
+        HashSet<String> archiveIDs = null;
+        if (ignoreArchiveIDs != null) {
+            archiveIDs = new HashSet<String>();
+            archiveIDs.addAll(ignoreArchiveIDs);
+        }
+        buildLoop: for (final Object child : nodes) {
+            if (child instanceof CrawledLink) {
+                final DownloadLink dlLink = ((CrawledLink) child).getDownloadLink();
+                if (dlLink != null && (Boolean.FALSE.equals(dlLink.isPartOfAnArchive()) || (archiveIDs != null && archiveIDs.contains(dlLink.getArchiveID())))) {
+                    //
+                    continue buildLoop;
+                }
+            } else if (child instanceof DownloadLink) {
+                final DownloadLink dlLink = (DownloadLink) child;
+                if (Boolean.FALSE.equals(dlLink.isPartOfAnArchive()) || (archiveIDs != null && archiveIDs.contains(dlLink.getArchiveID()))) {
+                    //
+                    continue buildLoop;
+                }
+            } else if (child instanceof ArchiveFactory) {
+                final ArchiveFactory af = ((ArchiveFactory) child);
+                if (Boolean.FALSE.equals(af.isPartOfAnArchive()) || (archiveIDs != null && archiveIDs.contains(af.getArchiveID()))) {
+                    //
+                    continue buildLoop;
+                }
+            }
+            for (final Archive archive : archives) {
+                if (archive.contains(child)) {
+                    continue buildLoop;
+                }
+            }
+            final ArchiveFactory af;
+            if (child instanceof CrawledLink) {
+                af = new CrawledLinkFactory(((CrawledLink) child));
+            } else if (child instanceof DownloadLink) {
+                af = new DownloadLinkArchiveFactory(((DownloadLink) child));
+            } else if (child instanceof File) {
+                af = new FileArchiveFactory(((File) child));
+            } else if (child instanceof ArchiveFactory) {
+                af = (ArchiveFactory) child;
+            } else {
+                continue buildLoop;
+            }
+            final Archive archive = getArchiveByFactory(af);
+            if (archive != null) {
+                archives.add(archive);
+                if (archiveIDs == null) {
+                    archiveIDs = new HashSet<String>();
+                }
+                archiveIDs.add(archive.getArchiveID());
+                if (maxArchives > 0 && archives.size() >= maxArchives) {
+                    return archives;
+                }
+            }
+        }
+        return archives;
+    }
+
     public IfFileExistsAction getIfFileExistsAction(Archive archive) {
         IfFileExistsAction ret = archive.getSettings()._getIfFileExistsAction();
         if (ret != null) {
             return ret;
         }
         return getSettings().getIfFileExistsAction();
-
     }
 
     public File getFinalExtractToFolder(Archive archive, boolean raw) {
@@ -829,7 +887,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                 if (!raw) {
                     path = PackagizerController.replaceDynamicTags(path, ArchiveFactory.PACKAGENAME, null);
                 }
-
                 path = archive.getFactory().createExtractSubPath(path, archive);
                 File ret = new File(path);
                 ret = appendSubFolder(archive, ret);
@@ -863,7 +920,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
      */
     protected File appendSubFolder(Archive archive, File ret) {
         if (getSettings().isSubpathEnabled()) {
-
             if (archive.getContentView().getFileCount() < getSettings().getSubPathMinFilesTreshhold()) {
                 logger.info("No Subfolder because Root contains only " + archive.getContentView().getFileCount() + " files");
                 return ret;
@@ -874,14 +930,11 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             }
             if (archive.getContentView().getDirectoryCount() + archive.getContentView().getFileCount() < getSettings().getSubPathMinFilesOrFoldersTreshhold()) {
                 logger.info("No Subfolder because Root contains only " + (archive.getContentView().getDirectoryCount() + archive.getContentView().getFileCount()) + " files and folders");
-
                 return ret;
             }
-
             String sub = getSettings().getSubPath();
             if (!StringUtils.isEmpty(sub)) {
                 sub = archive.getFactory().createExtractSubPath(sub, archive);
-
                 if (!StringUtils.isEmpty(sub)) {
                     sub = sub.trim();
                     ret = new File(ret, sub);
@@ -909,18 +962,15 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                     break;
                 }
             }
-
             final ArchivesSubMenu root = new ArchivesSubMenu();
             root.add(new MenuItemData(new ActionData(ValidateArchivesAction.class)));
             root.add(new SeparatorData());
             root.add(new MenuItemData(new ActionData(AutoExtractEnabledToggleAction.class)));
             root.add(new MenuItemData(new ActionData(SetExtractToAction.class)));
             root.add(new MenuItemData(new ActionData(SetExtractPasswordAction.class)));
-
             final CleanupSubMenu cleanup = new CleanupSubMenu();
             cleanup.add(new MenuItemData(new ActionData(CleanupAutoDeleteFilesEnabledToggleAction.class)));
             cleanup.add(new MenuItemData(new ActionData(CleanupAutoDeleteLinksEnabledToggleAction.class)));
-
             root.add(cleanup);
             if (addonLinkIndex != -1) {
                 mr.getItems().add(addonLinkIndex, root);
@@ -945,11 +995,9 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             root.add(new MenuItemData(new ActionData(AutoExtractEnabledToggleAction.class)));
             root.add(new MenuItemData(new ActionData(SetExtractToAction.class)));
             root.add(new MenuItemData(new ActionData(SetExtractPasswordAction.class)));
-
             final CleanupSubMenu cleanup = new CleanupSubMenu();
             cleanup.add(new MenuItemData(new ActionData(CleanupAutoDeleteFilesEnabledToggleAction.class)));
             cleanup.add(new MenuItemData(new ActionData(CleanupAutoDeleteLinksEnabledToggleAction.class)));
-
             root.add(cleanup);
             if (addonLinkIndex != -1) {
                 mr.getItems().add(addonLinkIndex, root);
@@ -965,7 +1013,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         ExtensionsMenuContainer container = new ExtensionsMenuContainer();
         container.add(ExtractAction.class);
         return container;
-
     }
 
     private MenuItemData updateMainToolbar(MenuContainerRoot mr) {
@@ -1003,5 +1050,4 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
     @Override
     public void onNewFolder(Object caller, File folder) {
     }
-
 }

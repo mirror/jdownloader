@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package org.jdownloader.extensions.extraction.split;
 
 import org.jdownloader.extensions.extraction.Archive;
@@ -31,8 +30,12 @@ import org.jdownloader.extensions.extraction.multi.ArchiveException;
 import org.jdownloader.extensions.extraction.multi.CheckException;
 
 public class UnixSplit extends IExtraction {
+    private final SplitType           splitType = SplitType.UNIX_SPLIT;
+    private final ExtractionExtension extension;
 
-    private final SplitType splitType = SplitType.UNIX_SPLIT;
+    public UnixSplit(ExtractionExtension extension) {
+        this.extension = extension;
+    }
 
     public Archive buildArchive(ArchiveFactory link, boolean allowDeepInspection) throws ArchiveException {
         return SplitType.createArchive(link, splitType, allowDeepInspection);
@@ -84,7 +87,7 @@ public class UnixSplit extends IExtraction {
     public DummyArchive checkComplete(Archive archive) throws CheckException {
         if (archive.getSplitType() == splitType) {
             try {
-                final DummyArchive ret = new DummyArchive(archive, splitType.name());
+                final DummyArchive ret = new DummyArchive(archive, splitType);
                 boolean hasMissingArchiveFiles = false;
                 for (ArchiveFile archiveFile : archive.getArchiveFiles()) {
                     if (archiveFile instanceof MissingArchiveFile) {

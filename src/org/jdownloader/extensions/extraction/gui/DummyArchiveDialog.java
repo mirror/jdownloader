@@ -16,7 +16,6 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.AbstractIcon;
 
 public class DummyArchiveDialog extends AbstractDialog<Object> {
-
     private final DummyArchive archive;
 
     public DummyArchiveDialog(DummyArchive da) {
@@ -42,26 +41,23 @@ public class DummyArchiveDialog extends AbstractDialog<Object> {
             d.add(lbl, "pushx,growx");
             lbl.setIcon(new AbstractIcon(IconKey.ICON_OK, 32));
             lbl.setText(T.T.ValidateArchiveAction_actionPerformed_(archive.getSize()));
-
             lbl = new JLabel();
             d.add(lbl, "pushx,growx");
             lbl.setIcon(new AbstractIcon(IconKey.ICON_INFO, 32));
-            lbl.setText(T.T.ValidateArchiveAction_actionPerformed_information(archive.getArchiveType()));
+            lbl.setText(T.T.ValidateArchiveAction_actionPerformed_information(archive.getType()));
         } else {
             JLabel lbl = new JLabel();
             d.add(lbl, "pushx,growx");
             lbl.setIcon(new AbstractIcon(IconKey.ICON_STOP, 32));
             lbl.setText(T.T.ValidateArchiveAction_actionPerformed_bad(archive.getSize()));
-
             lbl = new JLabel();
             d.add(lbl, "pushx,growx");
             lbl.setIcon(new AbstractIcon(IconKey.ICON_INFO, 32));
-            lbl.setText(T.T.ValidateArchiveAction_actionPerformed_information(archive.getArchiveType()));
+            lbl.setText(T.T.ValidateArchiveAction_actionPerformed_information(archive.getType()));
         }
         DummyArchiveContentsTable table = new DummyArchiveContentsTable(archive);
         d.add(new JScrollPane(table), "spanx,pushx,growx");
         setPreferredSize(new Dimension(500, 500));
         return d;
     }
-
 }
