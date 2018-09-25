@@ -17,8 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -29,7 +27,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropmefiles.com" }, urls = { "http://(www\\.)?dropmefiles\\.com/[A-Za-z0-9]+" })
+import org.appwork.utils.formatter.SizeFormatter;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropmefiles.com" }, urls = { "https?://(www\\.)?dropmefiles\\.com/[A-Za-z0-9]+" })
 public class DropmefilesCom extends PluginForHost {
     public DropmefilesCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -65,7 +65,7 @@ public class DropmefilesCom extends PluginForHost {
             if (dlinfo.length >= 3) {
                 filename = dlinfo[1];
             }
-            dllink = new Regex(downloadurl_source, "(http.+)").getMatch(0);
+            dllink = new Regex(downloadurl_source, "(https?.+)").getMatch(0);
         }
         if (filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
