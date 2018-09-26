@@ -63,6 +63,7 @@ import org.jdownloader.controlling.DownloadLinkView;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.controlling.UrlProtection;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
 import org.jdownloader.controlling.linkcrawler.GenericVariants;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
@@ -178,9 +179,21 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         return partOfAnArchive;
     }
 
-    public void setPartOfAnArchive(final Boolean notAnArchive) {
-        if (!Boolean.FALSE.equals(notAnArchive) || Files.getExtension(getName()) != null) {
-            this.partOfAnArchive = notAnArchive;
+    public void setPartOfAnArchive(final Boolean archivePart) {
+        if (!Boolean.FALSE.equals(archivePart) || Files.getExtension(getName()) != null) {
+            if (Boolean.FALSE.equals(archivePart) && getLinkInfo().getExtension().isSameExtensionGroup(CompiledFiletypeFilter.ArchiveExtensions.AA)) {
+                /**
+                 * in case the file has a known archive extension, we can't say for sure that it's NOT part of an archive because other
+                 * parts of the archive might be existing in another archive
+                 *
+                 * example:
+                 *
+                 * part01.rar.001, part01.rar.002, part01.rar.003, part02.rar
+                 */
+                this.partOfAnArchive = null;
+            } else {
+                this.partOfAnArchive = archivePart;
+            }
         }
     }
 
