@@ -56,6 +56,10 @@ import org.jdownloader.settings.IfFileExistsAction;
 
 class SplitUtil {
     protected static void checkComplete(ExtractionExtension extension, Archive archive, DummyArchive dummyArchive) throws CheckException {
+        if (true) {
+            // not finished yet
+            return;
+        }
         final SplitType splitType = archive.getSplitType();
         if (dummyArchive.isComplete() && splitType != null) {
             final ArchiveFile lastArchiveFile = archive.getLastArchiveFile();
