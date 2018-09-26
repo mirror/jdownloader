@@ -110,19 +110,15 @@ public class Archive {
     /**
      * Exitcode of the extrraction.
      */
-    private int               exitCode    = -1;
+    private int               exitCode = -1;
     /**
      * Type of the archive.
      */
-    private ArchiveType       archiveType = null;
-    private SplitType         splitType   = null;
+    private final ArchiveType archiveType;
+    private final SplitType   splitType;
 
     public SplitType getSplitType() {
         return splitType;
-    }
-
-    public void setSplitType(SplitType splitType) {
-        this.splitType = splitType;
     }
 
     public ArchiveFile getBestArchiveFileMatch(final String fileName) {
@@ -163,13 +159,26 @@ public class Archive {
         return factory;
     }
 
-    public Archive(final ArchiveFactory link) {
+    public Archive(final ArchiveFactory link, ArchiveType archiveType) {
         factory = link;
         archives = new CopyOnWriteArrayList<ArchiveFile>();
         crcError = new CopyOnWriteArrayList<ArchiveFile>();
         extractedFiles = new CopyOnWriteArrayList<File>();
         skippedFiles = new CopyOnWriteArrayList<File>();
         contents = new ContentView();
+        this.archiveType = archiveType;
+        this.splitType = null;
+    }
+
+    public Archive(final ArchiveFactory link, SplitType splitType) {
+        factory = link;
+        archives = new CopyOnWriteArrayList<ArchiveFile>();
+        crcError = new CopyOnWriteArrayList<ArchiveFile>();
+        extractedFiles = new CopyOnWriteArrayList<File>();
+        skippedFiles = new CopyOnWriteArrayList<File>();
+        contents = new ContentView();
+        this.splitType = splitType;
+        this.archiveType = null;
     }
 
     public Archive getParentArchive() {
@@ -181,6 +190,16 @@ public class Archive {
             return getParentArchive().getRootArchive();
         } else {
             return this;
+        }
+    }
+
+    public ArchiveFile getLastArchiveFile() {
+        if (archiveType != null) {
+            return ArchiveType.getLastArchiveFile(this);
+        } else if (splitType != null) {
+            return SplitType.getLastArchiveFile(this);
+        } else {
+            return null;
         }
     }
 
@@ -236,10 +255,6 @@ public class Archive {
 
     public void setArchiveFiles(java.util.List<ArchiveFile> collection) {
         this.archives = new CopyOnWriteArrayList<ArchiveFile>(collection);
-    }
-
-    public void setArchiveType(ArchiveType singleFile) {
-        this.archiveType = singleFile;
     }
 
     public ArchiveType getArchiveType() {

@@ -9,6 +9,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -28,6 +30,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
+import org.appwork.exceptions.WTFException;
+import org.appwork.storage.config.WeakHashSet;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
@@ -36,7 +40,8 @@ import org.jdownloader.auth.Login;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ftp" }, urls = { "ftp://.*?\\.[\\p{L}\\p{Nd}a-zA-Z0-9]{1,}(:\\d+)?/([^\"\r\n ]+|$)" })
 public class Ftp extends PluginForDecrypt {
-    private static HashMap<String, Integer> LOCKS = new HashMap<String, Integer>();
+    private static Map<String, Integer>     LIMITS = new HashMap<String, Integer>();
+    private static Map<String, Set<Thread>> LOCKS  = new HashMap<String, Set<Thread>>();
 
     public Ftp(PluginWrapper wrapper) {
         super(wrapper);
@@ -45,15 +50,53 @@ public class Ftp extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink cLink, ProgressController progress) throws Exception {
         final String lockHost = Browser.getHost(cLink.getCryptedUrl());
-        final Integer lock;
+        final Set<Thread> locks;
         synchronized (LOCKS) {
-            lock = LOCKS.get(lockHost);
+            Set<Thread> tmp = LOCKS.get(lockHost);
+            if (tmp == null) {
+                tmp = new WeakHashSet<Thread>();
+                LOCKS.put(lockHost, tmp);
+            }
+            locks = tmp;
         }
-        if (lock == null) {
-            return internalDecryptIt(cLink, progress, -1);
-        } else {
-            synchronized (lock) {
-                return internalDecryptIt(cLink, progress, lock);
+        final Thread thread = Thread.currentThread();
+        while (true) {
+            try {
+                int limit = -1;
+                while (true) {
+                    synchronized (LIMITS) {
+                        final Integer l = LIMITS.get(lockHost);
+                        if (l == null) {
+                            limit = -1;
+                        } else {
+                            limit = l;
+                        }
+                    }
+                    synchronized (locks) {
+                        if (isAbort()) {
+                            throw new InterruptedException();
+                        } else if (limit == -1 || locks.size() < limit) {
+                            locks.add(thread);
+                            break;
+                        } else if (locks.size() > limit) {
+                            locks.wait(5000);
+                        }
+                    }
+                }
+                try {
+                    return internalDecryptIt(cLink, progress, limit);
+                } catch (WTFException e) {
+                    if ("retry".equals(e.getMessage())) {
+                        continue;
+                    } else {
+                        throw e;
+                    }
+                }
+            } finally {
+                synchronized (locks) {
+                    locks.remove(thread);
+                    locks.notifyAll();
+                }
             }
         }
     }
@@ -81,18 +124,16 @@ public class Ftp extends PluginForDecrypt {
             try {
                 ftp.connect(url);
             } catch (IOException e) {
+                logger.log(e);
                 final String message = e.getMessage();
-                if ((StringUtils.containsIgnoreCase(message, "Sorry, the maximum number of clients") || StringUtils.startsWithCaseInsensitive(message, "421")) && maxFTPConnections == -1) {
+                final Integer limit = jd.plugins.hoster.Ftp.getConnectionLimit(e);
+                if (limit != null && maxFTPConnections == -1) {
                     final String lockHost = Browser.getHost(cLink.getCryptedUrl());
-                    final String maxConnections = new Regex(e.getMessage(), "Sorry, the maximum number of clients \\((\\d+)\\)").getMatch(0);
-                    synchronized (LOCKS) {
-                        if (maxConnections != null) {
-                            LOCKS.put(lockHost, Integer.parseInt(maxConnections));
-                        } else {
-                            LOCKS.put(lockHost, new Integer(1));
-                        }
+                    synchronized (LIMITS) {
+                        LIMITS.put(lockHost, Math.max(1, limit));
                     }
-                    return decryptIt(cLink, progress);
+                    sleep(5000, cLink);
+                    throw new WTFException("retry", e);
                 } else if (StringUtils.contains(message, "was unable to log in with the supplied") || StringUtils.contains(message, "530 Login or Password incorrect")) {
                     final DownloadLink dummyLink = new DownloadLink(null, null, url.getHost(), cLink.getCryptedUrl(), true);
                     final Login login = requestLogins(org.jdownloader.translate._JDT.T.DirectHTTP_getBasicAuth_message(), null, dummyLink);

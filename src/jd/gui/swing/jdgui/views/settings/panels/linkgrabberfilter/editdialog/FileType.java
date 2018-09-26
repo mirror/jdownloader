@@ -16,7 +16,7 @@ import org.jdownloader.images.NewTheme;
 
 public enum FileType {
     HASH(HashExtensions.MD5),
-    AUDIO(AudioExtensions.AA),
+    AUDIO(AudioExtensions.AAC),
     VIDEO(VideoExtensions.ASF),
     ARCHIVE(ArchiveExtensions.ACE),
     IMAGE(ImageExtensions.BMP),
@@ -46,5 +46,4 @@ public enum FileType {
     public Icon getIcon() {
         return NewTheme.I().getIcon(filter.getIconID(), 18);
     }
-
 }

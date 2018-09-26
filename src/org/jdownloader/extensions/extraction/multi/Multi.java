@@ -429,60 +429,58 @@ public class Multi extends IExtraction {
     public DummyArchive checkComplete(Archive archive) throws CheckException {
         if (archive.getArchiveType() != null) {
             try {
-                final DummyArchive ret = new DummyArchive(archive, archive.getArchiveType());
-                boolean hasMissingArchiveFiles = false;
-                for (ArchiveFile archiveFile : archive.getArchiveFiles()) {
-                    if (archiveFile instanceof MissingArchiveFile) {
-                        hasMissingArchiveFiles = true;
-                    }
-                    ret.add(new DummyArchiveFile(archiveFile));
+                final DummyArchive dummyArchive = new DummyArchive(archive, archive.getArchiveType());
+                for (final ArchiveFile archiveFile : archive.getArchiveFiles()) {
+                    dummyArchive.add(new DummyArchiveFile(archiveFile));
                 }
-                if (hasMissingArchiveFiles == false) {
+                if (dummyArchive.isComplete()) {
                     final ArchiveType archiveType = archive.getArchiveType();
                     final String firstArchiveFile = archive.getArchiveFiles().get(0).getFilePath();
                     final String partNumberOfFirstArchiveFile = archiveType.getPartNumberString(firstArchiveFile);
                     if (archiveType.getFirstPartIndex() != archiveType.getPartNumber(partNumberOfFirstArchiveFile)) {
                         throw new CheckException("Wrong firstArchiveFile(" + firstArchiveFile + ") for Archive(" + archive.getName() + ")");
                     }
-                    final Archive parentArchive = archive.getParentArchive();
-                    if (parentArchive != null) {
-                        int possibleNextArchiveFile = -1;
-                        for (ArchiveFile archiveFile : archive.getArchiveFiles()) {
-                            int partNum = archiveType.getPartNumber(archiveType.getPartNumberString(archiveFile.getFilePath()));
-                            if (possibleNextArchiveFile == -1) {
-                                possibleNextArchiveFile = partNum + 1;
-                            } else {
-                                possibleNextArchiveFile = Math.max(possibleNextArchiveFile, partNum + 1);
-                            }
+                    final ArchiveFile lastArchiveFile = archive.getLastArchiveFile();
+                    if (lastArchiveFile != null) {
+                        final DownloadLinkArchiveFactory factory;
+                        if (archive.getFactory() instanceof DownloadLinkArchiveFactory) {
+                            factory = (DownloadLinkArchiveFactory) archive.getFactory();
+                        } else if (archive.getParentArchive() != null && archive.getParentArchive().getFactory() instanceof DownloadLinkArchiveFactory) {
+                            factory = (DownloadLinkArchiveFactory) archive.getParentArchive().getFactory();
+                        } else {
+                            factory = null;
                         }
-                        final List<ArchiveFile> maybeMissingArchiveFiles = ArchiveType.getMissingArchiveFiles(archive, archiveType, possibleNextArchiveFile);
-                        if (maybeMissingArchiveFiles.size() > 0 && parentArchive.getFactory() instanceof DownloadLinkArchiveFactory) {
-                            final DownloadLinkArchiveFactory factory = (DownloadLinkArchiveFactory) parentArchive.getFactory();
-                            final Set<String> archiveIDs = new HashSet<String>();
-                            factoryLoop: for (final DownloadLink downloadLink : factory.getDownloadLinks()) {
-                                final FilePackage fp = downloadLink.getFilePackage();
-                                final boolean readL = fp.getModifyLock().readLock();
-                                try {
-                                    final List<Archive> searchArchives = extension.getArchivesFromPackageChildren(fp.getChildren(), archiveIDs, -1);
-                                    if (searchArchives != null) {
-                                        for (final Archive searchArchive : searchArchives) {
-                                            archiveIDs.add(searchArchive.getArchiveID());
-                                            for (ArchiveFile maybeMissingArchiveFile : maybeMissingArchiveFiles) {
-                                                if (StringUtils.equals(maybeMissingArchiveFile.getName(), searchArchive.getName())) {
-                                                    ret.add(new DummyArchiveFile(maybeMissingArchiveFile));
-                                                    break factoryLoop;
+                        if (factory != null) {
+                            final int nextIndex = archiveType.getPartNumber(archiveType.getPartNumberString(lastArchiveFile.getFilePath())) + 1;
+                            final List<ArchiveFile> maybeMissingArchiveFiles = ArchiveType.getMissingArchiveFiles(archive, archiveType, nextIndex);
+                            if (maybeMissingArchiveFiles.size() > 0) {
+                                final Set<String> archiveIDs = new HashSet<String>();
+                                factoryLoop: for (final DownloadLink downloadLink : factory.getDownloadLinks()) {
+                                    final FilePackage fp = downloadLink.getFilePackage();
+                                    final boolean readL = fp.getModifyLock().readLock();
+                                    try {
+                                        final List<Archive> searchArchives = extension.getArchivesFromPackageChildren(fp.getChildren(), archiveIDs, -1);
+                                        if (searchArchives != null) {
+                                            for (final Archive searchArchive : searchArchives) {
+                                                if (archiveIDs.add(searchArchive.getArchiveID())) {
+                                                    for (ArchiveFile maybeMissingArchiveFile : maybeMissingArchiveFiles) {
+                                                        if (StringUtils.equals(maybeMissingArchiveFile.getName(), searchArchive.getName())) {
+                                                            dummyArchive.add(new DummyArchiveFile(new MissingArchiveFile(searchArchive, maybeMissingArchiveFile.getFilePath())));
+                                                            break factoryLoop;
+                                                        }
+                                                    }
                                                 }
                                             }
                                         }
+                                    } finally {
+                                        fp.getModifyLock().readUnlock(readL);
                                     }
-                                } finally {
-                                    fp.getModifyLock().readUnlock(readL);
                                 }
                             }
                         }
                     }
                 }
-                return ret;
+                return dummyArchive;
             } catch (CheckException e) {
                 throw e;
             } catch (Throwable e) {

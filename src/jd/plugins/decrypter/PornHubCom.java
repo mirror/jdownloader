@@ -22,10 +22,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -42,6 +38,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub(?:premium)?\\.com/(?:.*\\?viewkey=[a-z0-9]+|embed/[a-z0-9]+|embed_player\\.php\\?id=\\d+|pornstar/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos(/upload)?)?|users/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos(/public)?)?|model/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos)?|playlist/\\d+)" })
 public class PornHubCom extends PluginForDecrypt {
@@ -108,18 +108,24 @@ public class PornHubCom extends PluginForDecrypt {
         }
         final boolean ret;
         if (parameter.matches("(?i).*/playlist/.*")) {
+            logger.info("PlayList");
             ret = decryptAllVideosOfAPlaylist();
         } else if (parameter.matches("(?i).*/gifs.*")) {
+            logger.info("Gif");
             ret = decryptAllGifsOfAUser();
         } else if (parameter.matches("(?i).*/(model|pornstar)/.*")) {
+            logger.info("Model/Pornstar");
             ret = decryptAllVideosOfAPornstar();
         } else if (parameter.matches("(?i).*/users/.*")) {
             if (br.getURL().contains("/model/")) { // Handle /users/ that has been switched to /model/
+                logger.info("Users->Model");
                 ret = decryptAllVideosOfAPornstar();
             } else {
+                logger.info("Users");
                 ret = decryptAllVideosOfAUser();
             }
         } else {
+            logger.info("Video");
             ret = decryptSingleVideo();
         }
         if (ret == false && decryptedLinks.isEmpty()) {
@@ -134,15 +140,12 @@ public class PornHubCom extends PluginForDecrypt {
             return true;
         }
         final Set<String> dupes = new HashSet<String>();
-        int page = 1;
-        String next = null;
+        final Set<String> pages = new HashSet<String>();
         do {
             if (this.isAbort()) {
                 return true;
             }
-            // String[] viewkeys = br.getRegex("<a href=\"/view_video.php\\?viewkey=([^\"]+?)\"").getColumn(0); // Most Recent
-            // String[] viewkeys = br.getRegex("<a href=\"https://www.pornhub.com/view_video.php\\?viewkey=([^\"]+?)\"").getColumn(0);
-            String[] viewkeys = br.getRegex("<a href=\"(?:https://www.pornhub.com)?/view_video.php\\?viewkey=([^\"]+?)\"").getColumn(0);
+            final String[] viewkeys = br.getRegex("<a href=\"(?:https?://(?:www\\.|[a-z]{2}\\.)?pornhub(?:premium)?.com)?/view_video.php\\?viewkey=([^\"]+?)\"").getColumn(0);
             logger.info("Links found: " + viewkeys.length);
             for (final String viewkey : viewkeys) {
                 logger.info("viewkey: " + viewkey);
@@ -152,11 +155,13 @@ public class PornHubCom extends PluginForDecrypt {
                     distribute(dl);
                 }
             }
-            next = br.getRegex("page_next[^\"]*?\"><a href=\"([^\"]+?)\"").getMatch(0);
-            if (next != null) {
+            final String next = br.getRegex("page_next[^\"]*?\"><a href=\"([^\"]+?)\"").getMatch(0);
+            if (next != null && pages.add(next)) {
                 br.getPage(next);
+            } else {
+                break;
             }
-        } while (next != null);
+        } while (true);
         return true;
     }
 
@@ -405,7 +410,7 @@ public class PornHubCom extends PluginForDecrypt {
                 decryptedLinks.add(createOfflinelink(parameter));
                 return true;
             }
-            final String newLink = br.getRegex("<link_url>(https?://(?:www\\.)?pornhub\\.com/view_video\\.php\\?viewkey=[a-z0-9]+)</link_url>").getMatch(0);
+            final String newLink = br.getRegex("<link_url>(https?://(?:www\\.|[a-z]{2}\\.)?pornhub(?:premium)?\\.com/view_video\\.php\\?viewkey=[a-z0-9]+)</link_url>").getMatch(0);
             if (newLink == null) {
                 throw new DecrypterException("Decrypter broken for link: " + parameter);
             }
@@ -446,7 +451,6 @@ public class PornHubCom extends PluginForDecrypt {
                 if (StringUtils.isEmpty(finallink)) {
                     continue;
                 }
-                ret = true;
                 final boolean grab;
                 if (bestonly) {
                     grab = !bestselectiononly || cfg.getBooleanProperty(qualityInfo, true);
@@ -454,6 +458,8 @@ public class PornHubCom extends PluginForDecrypt {
                     grab = cfg.getBooleanProperty(qualityInfo, true);
                 }
                 if (grab) {
+                    ret = true;
+                    logger.info("Grab:" + qualityInfo);
                     final String final_filename = fpName + "_" + qualityInfo + "p.mp4";
                     final DownloadLink dl = getDecryptDownloadlink(viewkey, qualityInfo);
                     dl.setProperty("directlink", finallink);
@@ -467,13 +473,14 @@ public class PornHubCom extends PluginForDecrypt {
                     if (fastlinkcheck) {
                         dl.setAvailable(true);
                     }
-                    logger.info("Creating " + qualityInfo + "p link.");
                     decryptedLinks.add(dl);
                     if (bestonly) {
                         /* Our LinkedHashMap is already in the right order so best = first entry --> Step out of the loop */
                         logger.info("User wants best-only");
                         break;
                     }
+                } else {
+                    logger.info("Don't grab:" + qualityInfo);
                 }
             }
             final FilePackage fp = FilePackage.getInstance();

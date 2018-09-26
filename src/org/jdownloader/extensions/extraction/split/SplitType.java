@@ -388,7 +388,12 @@ public enum SplitType {
         @Override
         protected boolean isValidPart(int partIndex, ArchiveFile archiveFile) {
             if (partIndex == 0 && archiveFile.exists()) {
-                return HachaSplit.parseHachaHeader(archiveFile) != null;
+                try {
+                    return HachaSplit.parseHachaHeader(archiveFile) != null;
+                } catch (Exception e) {
+                    LogController.CL().log(e);
+                    return false;
+                }
             } else {
                 return true;
             }
@@ -440,6 +445,24 @@ public enum SplitType {
             }
         }
         return null;
+    }
+
+    public static ArchiveFile getLastArchiveFile(final Archive archive) {
+        final SplitType type = archive.getSplitType();
+        if (type != null) {
+            int index = -1;
+            ArchiveFile ret = null;
+            for (final ArchiveFile archiveFile : archive.getArchiveFiles()) {
+                final int partNum = type.getPartNumber(type.getPartNumberString(archiveFile.getFilePath()));
+                if (index == -1 || partNum > index) {
+                    index = partNum;
+                    ret = archiveFile;
+                }
+            }
+            return ret;
+        } else {
+            return null;
+        }
     }
 
     public static List<ArchiveFile> getMissingArchiveFiles(Archive archive, SplitType splitType, int numberOfParts) {
@@ -519,9 +542,8 @@ public enum SplitType {
             }
             if (splitType.looksLikeAnArchive(availableParts)) {
                 final String[] fileNameParts = splitType.getMatches(link.getName());
-                final Archive archive = link.createArchive();
+                final Archive archive = link.createArchive(splitType);
                 archive.setName(fileNameParts[0]);
-                archive.setSplitType(splitType);
                 final String rawID = splitType.name() + "|" + fileNameParts[0] + splitType.buildIDPattern(fileNameParts);
                 final String ID = Hash.getSHA256(rawID);
                 final String archiveID = Archive.getBestArchiveID(foundArchiveFiles, ID);

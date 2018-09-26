@@ -29,16 +29,17 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wikifeet.com" }, urls = { "https?://(?!pics\\.)(?:\\w+\\.)?wikifeetx?\\.com/[a-zA-Z0-9\\-\\_]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wikifeet.com" }, urls = { "https?://(?!pics\\.)(?:\\w+\\.)?wikifeetx?\\.com/[a-zA-Z%0-9\\-\\_]+" })
 public class WikifeetCom extends PluginForDecrypt {
     public WikifeetCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     // public static final String type_pic = "https?://(?:\\w+\\.)?pics\\.wikifeetx?\\.com";
-    public static final String type_wikifeet = "https?://(?:\\w+\\.)?wikifeetx?\\.com/[a-zA-Z0-9\\-\\_]+";
+    public static final String type_wikifeet = "https?://(?:\\w+\\.)?wikifeetx?\\.com/[a-zA-Z%0-9\\-\\_]+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -66,6 +67,7 @@ public class WikifeetCom extends PluginForDecrypt {
                 final String dlurl = "directhttp://http://pics.wikifeet.com/" + cfName + "-Feet-" + pid + ".jpg";
                 final DownloadLink dl = this.createDownloadlink(dlurl);
                 dl.setName(cfName + "_" + pid);
+                dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
                 dl.setAvailable(true);
                 dl.setProperty("fid", cfName + pid);
                 decryptedLinks.add(dl);

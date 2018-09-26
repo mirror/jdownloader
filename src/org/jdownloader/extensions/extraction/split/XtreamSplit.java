@@ -50,7 +50,6 @@ import org.jdownloader.extensions.extraction.ExtractionControllerException;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.IExtraction;
 import org.jdownloader.extensions.extraction.Item;
-import org.jdownloader.extensions.extraction.MissingArchiveFile;
 import org.jdownloader.extensions.extraction.content.PackedFile;
 import org.jdownloader.extensions.extraction.gui.iffileexistsdialog.IfFileExistsDialog;
 import org.jdownloader.extensions.extraction.multi.ArchiveException;
@@ -379,16 +378,12 @@ public class XtreamSplit extends IExtraction {
     public DummyArchive checkComplete(Archive archive) throws CheckException {
         if (archive.getSplitType() == splitType) {
             try {
-                final DummyArchive ret = new DummyArchive(archive, splitType);
-                boolean hasMissingArchiveFiles = false;
+                final DummyArchive dummyArchive = new DummyArchive(archive, splitType);
                 for (ArchiveFile archiveFile : archive.getArchiveFiles()) {
-                    if (archiveFile instanceof MissingArchiveFile) {
-                        hasMissingArchiveFiles = true;
-                    }
-                    ret.add(new DummyArchiveFile(archiveFile));
+                    dummyArchive.add(new DummyArchiveFile(archiveFile));
                 }
                 final ArchiveFile firstFile = archive.getArchiveFiles().get(0);
-                if (hasMissingArchiveFiles == false && firstFile.exists()) {
+                if (dummyArchive.isComplete() && firstFile.exists()) {
                     final String firstArchiveFile = firstFile.getFilePath();
                     final String partNumberOfFirstArchiveFile = splitType.getPartNumberString(firstArchiveFile);
                     if (splitType.getFirstPartIndex() != splitType.getPartNumber(partNumberOfFirstArchiveFile)) {
@@ -410,13 +405,13 @@ public class XtreamSplit extends IExtraction {
                         final List<ArchiveFile> missingArchiveFiles = SplitType.getMissingArchiveFiles(archive, splitType, numberOfParts);
                         if (missingArchiveFiles != null) {
                             for (ArchiveFile missingArchiveFile : missingArchiveFiles) {
-                                ret.add(new DummyArchiveFile(missingArchiveFile));
+                                dummyArchive.add(new DummyArchiveFile(missingArchiveFile));
                             }
                         }
-                        if (ret.getSize() < numberOfParts) {
-                            throw new CheckException("Missing archiveParts(" + numberOfParts + "!=" + ret.getSize() + ") for Archive(" + archive.getName() + ")");
-                        } else if (ret.getSize() > numberOfParts) {
-                            throw new CheckException("Too many archiveParts(" + numberOfParts + "!=" + ret.getSize() + ") for Archive(" + archive.getName() + ")");
+                        if (dummyArchive.getSize() < numberOfParts) {
+                            throw new CheckException("Missing archiveParts(" + numberOfParts + "!=" + dummyArchive.getSize() + ") for Archive(" + archive.getName() + ")");
+                        } else if (dummyArchive.getSize() > numberOfParts) {
+                            throw new CheckException("Too many archiveParts(" + numberOfParts + "!=" + dummyArchive.getSize() + ") for Archive(" + archive.getName() + ")");
                         }
                     } finally {
                         if (is != null) {
@@ -424,7 +419,7 @@ public class XtreamSplit extends IExtraction {
                         }
                     }
                 }
-                return ret;
+                return dummyArchive;
             } catch (CheckException e) {
                 throw e;
             } catch (Throwable e) {

@@ -88,21 +88,39 @@ public class Ftp extends PluginForHost {
         return false;
     }
 
+    public static Integer getConnectionLimit(IOException e) {
+        final String msg = e.getMessage();
+        if ((StringUtils.containsIgnoreCase(msg, "530 Stop connecting"))) {
+            final String maxConnections = new Regex(e.getMessage(), "You have\\s*(\\d+)\\s*connections now currently opened").getMatch(0);
+            if (maxConnections != null) {
+                return Math.max(1, Integer.parseInt(maxConnections) - 1);
+            } else {
+                return 1;
+            }
+        } else if (StringUtils.containsIgnoreCase(msg, "Sorry, the maximum number of clients") || StringUtils.startsWithCaseInsensitive(msg, "421")) {
+            final String maxConnections = new Regex(e.getMessage(), "Sorry, the maximum number of clients \\((\\d+)\\)").getMatch(0);
+            if (maxConnections != null) {
+                return Math.max(1, Integer.parseInt(maxConnections) - 1);
+            } else {
+                return 1;
+            }
+        } else {
+            return null;
+        }
+    }
+
     private void connect(SimpleFTP ftp, final DownloadLink downloadLink, URL url) throws Exception {
         try {
             ftp.connect(url);
         } catch (IOException e) {
-            final String msg = e.getMessage();
-            if (StringUtils.containsIgnoreCase(msg, "Sorry, the maximum number of clients") || StringUtils.startsWithCaseInsensitive(msg, "421")) {
-                final String maxConnections = new Regex(e.getMessage(), "Sorry, the maximum number of clients \\((\\d+)\\)").getMatch(0);
-                if (maxConnections != null) {
-                    downloadLink.setProperty("MAX_FTP_CONNECTIONS", Integer.parseInt(maxConnections));
-                } else {
-                    downloadLink.setProperty("MAX_FTP_CONNECTIONS", 1);
-                }
+            logger.log(e);
+            final Integer limit = getConnectionLimit(e);
+            if (limit != null) {
+                downloadLink.setProperty("MAX_FTP_CONNECTIONS", limit);
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Connection limit reached", 30 * 1000l);
+            } else {
+                throw e;
             }
-            throw e;
         }
     }
 

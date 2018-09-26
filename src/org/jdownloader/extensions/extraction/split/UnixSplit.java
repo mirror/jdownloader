@@ -25,7 +25,6 @@ import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
 import org.jdownloader.extensions.extraction.ExtractionControllerException;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.IExtraction;
-import org.jdownloader.extensions.extraction.MissingArchiveFile;
 import org.jdownloader.extensions.extraction.multi.ArchiveException;
 import org.jdownloader.extensions.extraction.multi.CheckException;
 
@@ -62,6 +61,7 @@ public class UnixSplit extends IExtraction {
                 }
                 return;
             } catch (ExtractionControllerException e) {
+                setException(e);
                 archive.setExitCode(e.getExitCode());
             }
         } else {
@@ -87,23 +87,20 @@ public class UnixSplit extends IExtraction {
     public DummyArchive checkComplete(Archive archive) throws CheckException {
         if (archive.getSplitType() == splitType) {
             try {
-                final DummyArchive ret = new DummyArchive(archive, splitType);
-                boolean hasMissingArchiveFiles = false;
-                for (ArchiveFile archiveFile : archive.getArchiveFiles()) {
-                    if (archiveFile instanceof MissingArchiveFile) {
-                        hasMissingArchiveFiles = true;
-                    }
-                    ret.add(new DummyArchiveFile(archiveFile));
+                final DummyArchive dummyArchive = new DummyArchive(archive, splitType);
+                for (final ArchiveFile archiveFile : archive.getArchiveFiles()) {
+                    dummyArchive.add(new DummyArchiveFile(archiveFile));
                 }
-                if (hasMissingArchiveFiles == false) {
+                if (dummyArchive.isComplete()) {
                     final ArchiveFile firstFile = archive.getArchiveFiles().get(0);
                     final String firstArchiveFile = firstFile.getFilePath();
                     final String partNumberOfFirstArchiveFile = splitType.getPartNumberString(firstArchiveFile);
                     if (splitType.getFirstPartIndex() != splitType.getPartNumber(partNumberOfFirstArchiveFile)) {
                         throw new CheckException("Wrong firstArchiveFile(" + firstArchiveFile + ") for Archive(" + archive.getName() + ")");
                     }
+                    SplitUtil.checkComplete(extension, archive, dummyArchive);
                 }
-                return ret;
+                return dummyArchive;
             } catch (CheckException e) {
                 throw e;
             } catch (Throwable e) {

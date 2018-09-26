@@ -30,7 +30,7 @@ public class FiletypeFilter extends Filter implements Storable {
             cond.add(ArchiveExtensions.ACE.getDesc());
         }
         if (audioFilesEnabled) {
-            cond.add(AudioExtensions.AA.getDesc());
+            cond.add(AudioExtensions.AAC.getDesc());
         }
         if (imagesEnabled) {
             cond.add(ImageExtensions.BMP.getDesc());

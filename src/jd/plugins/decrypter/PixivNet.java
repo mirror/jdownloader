@@ -52,6 +52,16 @@ public class PixivNet extends PluginForDecrypt {
     private static final String TYPE_GALLERY_MEDIUM = ".+/member_illust\\.php\\?mode=medium\\&illust_id=\\d+";
     private static final String TYPE_GALLERY_MANGA  = ".+/member_illust\\.php\\?mode=manga\\&illust_id=\\d+";
 
+    private Integer getPageCount(Browser br, final String lid) {
+        final String userIllust = br.getRegex("(\\{[^{]*\"illustId\"\\s*:\\s*\"" + lid + "[^{]*\\})").getMatch(0);
+        final String pageCount = new Regex(userIllust, "\"pageCount\"\\s*:\\s*(\\d+)").getMatch(0);
+        if (pageCount != null) {
+            return Integer.parseInt(pageCount);
+        } else {
+            return null;
+        }
+    }
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -74,7 +84,8 @@ public class PixivNet extends PluginForDecrypt {
         if (parameter.matches(TYPE_GALLERY)) {
             if (parameter.matches(TYPE_GALLERY_MEDIUM)) {
                 br.getPage(jd.plugins.hoster.PixivNet.createSingleImageUrl(lid));
-                if (br.containsHTML("mode=manga&amp;illust_id=" + lid)) {
+                final Integer pageCount = getPageCount(br, lid);
+                if (br.containsHTML("mode=manga&amp;illust_id=" + lid) || (pageCount != null && pageCount.intValue() > 1)) {
                     parameter = jd.plugins.hoster.PixivNet.createGalleryUrl(lid);
                     br.getPage(parameter);
                     single = Boolean.FALSE;
@@ -83,7 +94,8 @@ public class PixivNet extends PluginForDecrypt {
                 }
             } else if (parameter.matches(TYPE_GALLERY_MANGA)) {
                 br.getPage(jd.plugins.hoster.PixivNet.createGalleryUrl(lid));
-                if (br.containsHTML("指定されたIDは複数枚投稿ではありません|t a multiple-image submission<")) {
+                final Integer pageCount = getPageCount(br, lid);
+                if (br.containsHTML("指定されたIDは複数枚投稿ではありません|t a multiple-image submission<") | (pageCount != null && pageCount.intValue() == 1)) {
                     parameter = jd.plugins.hoster.PixivNet.createSingleImageUrl(lid);
                     br.getPage(parameter);
                     single = Boolean.TRUE;
@@ -156,8 +168,8 @@ public class PixivNet extends PluginForDecrypt {
                     fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
                 }
                 // old layout
-                add(links, br, "pixiv\\.context\\.images\\[\\d+\\]\\s*=\\s*\"(https?[^\"]+)\"");
-                if (links.isEmpty()) {
+                final boolean found = add(links, br, "pixiv\\.context\\.images\\[\\d+\\]\\s*=\\s*\"(https?[^\"]+)\"");
+                if (!found) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }

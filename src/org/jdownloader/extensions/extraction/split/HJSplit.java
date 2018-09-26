@@ -37,7 +37,6 @@ import org.jdownloader.extensions.extraction.ExtractionControllerException;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.FileSignatures;
 import org.jdownloader.extensions.extraction.IExtraction;
-import org.jdownloader.extensions.extraction.MissingArchiveFile;
 import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkFactory;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFactory;
 import org.jdownloader.extensions.extraction.multi.ArchiveException;
@@ -94,8 +93,10 @@ public class HJSplit extends IExtraction {
                 }
                 return;
             } catch (ExtractionControllerException e) {
+                setException(e);
                 archive.setExitCode(e.getExitCode());
             } catch (IOException e) {
+                setException(e);
                 archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
             }
         } else {
@@ -121,15 +122,11 @@ public class HJSplit extends IExtraction {
     public DummyArchive checkComplete(Archive archive) throws CheckException {
         if (archive.getSplitType() == splitType) {
             try {
-                final DummyArchive ret = new DummyArchive(archive, splitType);
-                boolean hasMissingArchiveFiles = false;
-                for (ArchiveFile archiveFile : archive.getArchiveFiles()) {
-                    if (archiveFile instanceof MissingArchiveFile) {
-                        hasMissingArchiveFiles = true;
-                    }
-                    ret.add(new DummyArchiveFile(archiveFile));
+                final DummyArchive dummyArchive = new DummyArchive(archive, splitType);
+                for (final ArchiveFile archiveFile : archive.getArchiveFiles()) {
+                    dummyArchive.add(new DummyArchiveFile(archiveFile));
                 }
-                if (hasMissingArchiveFiles == false) {
+                if (dummyArchive.isComplete()) {
                     final ArchiveFile firstFile = archive.getArchiveFiles().get(0);
                     final String firstArchiveFile = firstFile.getFilePath();
                     final String partNumberOfFirstArchiveFile = splitType.getPartNumberString(firstArchiveFile);
@@ -147,18 +144,20 @@ public class HJSplit extends IExtraction {
                             final List<ArchiveFile> missingArchiveFiles = SplitType.getMissingArchiveFiles(archive, splitType, numberOfParts);
                             if (missingArchiveFiles != null) {
                                 for (ArchiveFile missingArchiveFile : missingArchiveFiles) {
-                                    ret.add(new DummyArchiveFile(missingArchiveFile));
+                                    dummyArchive.add(new DummyArchiveFile(missingArchiveFile));
                                 }
                             }
-                            if (ret.getSize() < numberOfParts) {
-                                throw new CheckException("Missing archiveParts(" + numberOfParts + "!=" + ret.getSize() + ") for Archive(" + archive.getName() + ")");
-                            } else if (ret.getSize() > numberOfParts) {
-                                throw new CheckException("Too many archiveParts(" + numberOfParts + "!=" + ret.getSize() + ") for Archive(" + archive.getName() + ")");
+                            if (dummyArchive.getSize() < numberOfParts) {
+                                throw new CheckException("Missing archiveParts(" + numberOfParts + "!=" + dummyArchive.getSize() + ") for Archive(" + archive.getName() + ")");
+                            } else if (dummyArchive.getSize() > numberOfParts) {
+                                throw new CheckException("Too many archiveParts(" + numberOfParts + "!=" + dummyArchive.getSize() + ") for Archive(" + archive.getName() + ")");
                             }
+                        } else {
+                            SplitUtil.checkComplete(extension, archive, dummyArchive);
                         }
                     }
                 }
-                return ret;
+                return dummyArchive;
             } catch (CheckException e) {
                 throw e;
             } catch (Throwable e) {

@@ -140,6 +140,11 @@ public enum EventTrigger implements LabelInterface {
         public String getLabel() {
             return T.T.NONE();
         }
+
+        @Override
+        public HashMap<String, Object> getTestProperties() {
+            return new HashMap<String, Object>();
+        }
     },
     ON_OUTGOING_REMOTE_API_EVENT {
         @Override
@@ -818,9 +823,7 @@ public enum EventTrigger implements LabelInterface {
         }
     }
 
-    public HashMap<String, Object> getTestProperties() {
-        return new HashMap<String, Object>();
-    }
+    public abstract HashMap<String, Object> getTestProperties();
 
     public ArraySet<Class<?>> getAPIClasses() {
         ArraySet<Class<?>> clazzes = new ArraySet<Class<?>>();

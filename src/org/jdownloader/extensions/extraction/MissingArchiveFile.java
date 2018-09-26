@@ -6,9 +6,14 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.FileCreationManager.DeleteOption;
 
 public class MissingArchiveFile implements ArchiveFile {
-    private final String name;
-    private final String filePath;
-    private String       archiveID = null;
+    private final String  name;
+    private final String  filePath;
+    private String        archiveID = null;
+    private final Archive missingOrIncompleteArchive;
+
+    public Archive getMissingOrIncompleteArchive() {
+        return missingOrIncompleteArchive;
+    }
 
     @Override
     public Boolean isComplete() {
@@ -28,6 +33,13 @@ public class MissingArchiveFile implements ArchiveFile {
     public MissingArchiveFile(final String name, final String filePath) {
         this.name = name;
         this.filePath = filePath;
+        this.missingOrIncompleteArchive = null;
+    }
+
+    public MissingArchiveFile(Archive missingArchive, final String filePath) {
+        this.name = missingArchive.getName();
+        this.missingOrIncompleteArchive = missingArchive;
+        this.filePath = filePath;
     }
 
     @Override
@@ -42,6 +54,15 @@ public class MissingArchiveFile implements ArchiveFile {
             return StringUtils.equals(getName(), ((MissingArchiveFile) obj).getName());
         } else {
             return false;
+        }
+    }
+
+    @Override
+    public String toString() {
+        if (missingOrIncompleteArchive != null) {
+            return "MissingArchiveFile:" + missingOrIncompleteArchive + "|" + missingOrIncompleteArchive.getArchiveFiles();
+        } else {
+            return "MissingArchiveFile:" + getName();
         }
     }
 
