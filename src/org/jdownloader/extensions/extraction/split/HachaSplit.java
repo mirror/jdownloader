@@ -20,12 +20,10 @@ import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
 import org.jdownloader.extensions.extraction.ExtractionControllerException;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.IExtraction;
-import org.jdownloader.extensions.extraction.MissingArchiveFile;
 import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkFactory;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFactory;
 import org.jdownloader.extensions.extraction.multi.ArchiveException;
 import org.jdownloader.extensions.extraction.multi.CheckException;
-import org.jdownloader.logging.LogController;
 
 public class HachaSplit extends IExtraction {
     public static class HachaHeader {
@@ -94,7 +92,11 @@ public class HachaSplit extends IExtraction {
                 }
                 return;
             } catch (ExtractionControllerException e) {
+                setException(e);
                 archive.setExitCode(e.getExitCode());
+            } catch (Exception e) {
+                setException(e);
+                archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
             }
         } else {
             archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
@@ -119,15 +121,11 @@ public class HachaSplit extends IExtraction {
     public DummyArchive checkComplete(Archive archive) throws CheckException {
         if (archive.getSplitType() == splitType) {
             try {
-                final DummyArchive ret = new DummyArchive(archive, splitType);
-                boolean hasMissingArchiveFiles = false;
-                for (ArchiveFile archiveFile : archive.getArchiveFiles()) {
-                    if (archiveFile instanceof MissingArchiveFile) {
-                        hasMissingArchiveFiles = true;
-                    }
-                    ret.add(new DummyArchiveFile(archiveFile));
+                final DummyArchive dummyArchive = new DummyArchive(archive, splitType);
+                for (final ArchiveFile archiveFile : archive.getArchiveFiles()) {
+                    dummyArchive.add(new DummyArchiveFile(archiveFile));
                 }
-                if (hasMissingArchiveFiles == false) {
+                if (dummyArchive.isComplete()) {
                     final ArchiveFile firstFile = archive.getArchiveFiles().get(0);
                     final String firstArchiveFile = firstFile.getFilePath();
                     final String partNumberOfFirstArchiveFile = splitType.getPartNumberString(firstArchiveFile);
@@ -136,20 +134,23 @@ public class HachaSplit extends IExtraction {
                     }
                     if (firstFile.exists()) {
                         final HachaHeader hachaHeader = parseHachaHeader(firstFile);
+                        if (hachaHeader == null) {
+                            throw new CheckException("HachaHeader not found");
+                        }
                         final List<ArchiveFile> missingArchiveFiles = SplitType.getMissingArchiveFiles(archive, splitType, hachaHeader.getNumberOfParts());
                         if (missingArchiveFiles != null) {
                             for (ArchiveFile missingArchiveFile : missingArchiveFiles) {
-                                ret.add(new DummyArchiveFile(missingArchiveFile));
+                                dummyArchive.add(new DummyArchiveFile(missingArchiveFile));
                             }
                         }
-                        if (ret.getSize() < hachaHeader.getNumberOfParts()) {
-                            throw new CheckException("Missing archiveParts(" + hachaHeader.getNumberOfParts() + "!=" + ret.getSize() + ") for Archive(" + archive.getName() + ")");
-                        } else if (ret.getSize() > hachaHeader.getNumberOfParts()) {
-                            throw new CheckException("Too many archiveParts(" + hachaHeader.getNumberOfParts() + "!=" + ret.getSize() + ") for Archive(" + archive.getName() + ")");
+                        if (dummyArchive.getSize() < hachaHeader.getNumberOfParts()) {
+                            throw new CheckException("Missing archiveParts(" + hachaHeader.getNumberOfParts() + "!=" + dummyArchive.getSize() + ") for Archive(" + archive.getName() + ")");
+                        } else if (dummyArchive.getSize() > hachaHeader.getNumberOfParts()) {
+                            throw new CheckException("Too many archiveParts(" + hachaHeader.getNumberOfParts() + "!=" + dummyArchive.getSize() + ") for Archive(" + archive.getName() + ")");
                         }
                     }
                 }
-                return ret;
+                return dummyArchive;
             } catch (CheckException e) {
                 throw e;
             } catch (Throwable e) {
@@ -159,23 +160,19 @@ public class HachaSplit extends IExtraction {
         return null;
     }
 
-    public static HachaHeader parseHachaHeader(ArchiveFile archiveFile) {
-        try {
-            if (archiveFile != null && archiveFile.exists()) {
-                final byte[] hachaHeaderBytes = IO.readFile(new File(archiveFile.getFilePath()), 1024);
-                if (hachaHeaderBytes.length > 9) {
-                    final String hachaHeaderString = new String(hachaHeaderBytes, 9, hachaHeaderBytes.length - 9, "US-ASCII");
-                    final String parsedHachaHeader[] = new Regex(hachaHeaderString, "\\?{5}(.*?)\\?{5}(\\d+)\\?{5}(\\d+)\\?{5}").getRow(0);
-                    final long fileSize = Long.parseLong(parsedHachaHeader[1]);
-                    final int headerSize = 4 + (5 * 5) + parsedHachaHeader[0].length() + parsedHachaHeader[1].length() + parsedHachaHeader[2].length();
-                    final long completeSize = fileSize + headerSize;
-                    final long segmentSize = Long.parseLong(parsedHachaHeader[2]);
-                    final int numberOfParts = (int) (completeSize / segmentSize) + (completeSize % segmentSize == 0 ? 0 : 1);
-                    return new HachaHeader(parsedHachaHeader[0], headerSize, fileSize, numberOfParts);
-                }
+    public static HachaHeader parseHachaHeader(ArchiveFile archiveFile) throws Exception {
+        if (archiveFile != null && archiveFile.exists()) {
+            final byte[] hachaHeaderBytes = IO.readFile(new File(archiveFile.getFilePath()), 1024);
+            if (hachaHeaderBytes.length > 9) {
+                final String hachaHeaderString = new String(hachaHeaderBytes, 9, hachaHeaderBytes.length - 9, "US-ASCII");
+                final String parsedHachaHeader[] = new Regex(hachaHeaderString, "\\?{5}(.*?)\\?{5}(\\d+)\\?{5}(\\d+)\\?{5}").getRow(0);
+                final long fileSize = Long.parseLong(parsedHachaHeader[1]);
+                final int headerSize = 4 + (5 * 5) + parsedHachaHeader[0].length() + parsedHachaHeader[1].length() + parsedHachaHeader[2].length();
+                final long completeSize = fileSize + headerSize;
+                final long segmentSize = Long.parseLong(parsedHachaHeader[2]);
+                final int numberOfParts = (int) (completeSize / segmentSize) + (completeSize % segmentSize == 0 ? 0 : 1);
+                return new HachaHeader(parsedHachaHeader[0], headerSize, fileSize, numberOfParts);
             }
-        } catch (final Throwable e) {
-            LogController.CL().log(e);
         }
         return null;
     }

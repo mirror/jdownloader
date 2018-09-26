@@ -38,7 +38,7 @@ public class CoubComDecrypter extends PluginForDecrypt {
     /** Using API: http://coub.com/dev/docs */
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        this.br.setLoadLimit(this.br.getLoadLimit() * 4);
+        this.br.setLoadLimit(this.br.getDefaultLoadLimit() * 4);
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         final String lid = new Regex(parameter, "/([^/]+)$").getMatch(0);

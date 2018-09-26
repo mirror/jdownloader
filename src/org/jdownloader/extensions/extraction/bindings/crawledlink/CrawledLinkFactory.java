@@ -25,11 +25,12 @@ import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.extraction.BooleanStatus;
 import org.jdownloader.extensions.extraction.bindings.file.FileArchiveFactory;
+import org.jdownloader.extensions.extraction.multi.ArchiveType;
+import org.jdownloader.extensions.extraction.split.SplitType;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.settings.GeneralSettings;
 
 public class CrawledLinkFactory extends CrawledLinkArchiveFile implements ArchiveFactory {
-
     public CrawledLinkFactory(CrawledLink l) {
         super(l);
     }
@@ -211,8 +212,12 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
         return null;
     }
 
-    public Archive createArchive() {
-        return new Archive(this);
+    public Archive createArchive(ArchiveType archiveType) {
+        return new Archive(this, archiveType);
+    }
+
+    public Archive createArchive(SplitType splitType) {
+        return new Archive(this, splitType);
     }
 
     public File toFile(String path) {
@@ -245,5 +250,4 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
         }
         return BooleanStatus.UNSET;
     }
-
 }

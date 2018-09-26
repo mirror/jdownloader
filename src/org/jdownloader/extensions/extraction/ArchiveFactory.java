@@ -3,6 +3,9 @@ package org.jdownloader.extensions.extraction;
 import java.io.File;
 import java.util.Collection;
 
+import org.jdownloader.extensions.extraction.multi.ArchiveType;
+import org.jdownloader.extensions.extraction.split.SplitType;
+
 public interface ArchiveFactory extends ArchiveFile {
     public static final String SUBFOLDER   = "%SUBFOLDER%";
     public static final String ARCHIVENAME = "%ARCHIVENAME%";
@@ -20,7 +23,6 @@ public interface ArchiveFactory extends ArchiveFile {
     public boolean isDeepExtraction();
 
     // void fireExtractToChange(Archive archive);
-
     Collection<? extends String> getGuessedPasswordList(Archive archive);
 
     // archive.getFirstDownloadLink().getLinkStatus().removeStatus(LinkStatus.ERROR_POST_PROCESS);
@@ -38,8 +40,9 @@ public interface ArchiveFactory extends ArchiveFile {
 
     BooleanStatus getDefaultAutoExtract();
 
-    Archive createArchive();
+    Archive createArchive(ArchiveType archiveType);
+
+    Archive createArchive(SplitType archiveType);
 
     File toFile(String path);
-
 }

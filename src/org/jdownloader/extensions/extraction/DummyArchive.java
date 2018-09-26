@@ -83,7 +83,7 @@ public class DummyArchive {
             } else {
                 sb.append("Existing:");
             }
-            sb.append(dummyArchiveFile.getName());
+            sb.append(dummyArchiveFile.toString());
         }
         sb.append("\r\n");
         sb.append("Complete:");

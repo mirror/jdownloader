@@ -26,10 +26,11 @@ import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.extraction.BooleanStatus;
 import org.jdownloader.extensions.extraction.bindings.file.FileArchiveFactory;
+import org.jdownloader.extensions.extraction.multi.ArchiveType;
+import org.jdownloader.extensions.extraction.split.SplitType;
 import org.jdownloader.settings.GeneralSettings;
 
 public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implements ArchiveFactory {
-
     public static final String DOWNLOADLINK_KEY_EXTRACTEDPATH = "EXTRACTEDPATH";
 
     public DownloadLinkArchiveFactory(DownloadLink link) {
@@ -132,7 +133,6 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
         final String fileParent = new File(file).getParent();
         final HashMap<String, ArchiveFile> map = new HashMap<String, ArchiveFile>();
         DownloadController.getInstance().visitNodes(new AbstractNodeVisitor<DownloadLink, FilePackage>() {
-
             @Override
             public Boolean visitPackageNode(FilePackage pkg) {
                 if (CrossSystem.isWindows()) {
@@ -166,10 +166,8 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
                     }
                 }
                 return true;
-
             }
         }, true);
-
         final List<ArchiveFile> localFiles = new FileArchiveFactory(new File(getFilePath())).createPartFileList(file, pattern);
         for (ArchiveFile localFile : localFiles) {
             final ArchiveFile archiveFile = map.get(localFile.getName());
@@ -231,8 +229,12 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
         return new File(getFilePath()).getParent();
     }
 
-    public Archive createArchive() {
-        return new DownloadLinkArchive(this);
+    public Archive createArchive(ArchiveType archiveType) {
+        return new DownloadLinkArchive(this, archiveType);
+    }
+
+    public Archive createArchive(SplitType splitType) {
+        return new DownloadLinkArchive(this, splitType);
     }
 
     @Override
@@ -244,5 +246,4 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
     public BooleanStatus getDefaultAutoExtract() {
         return BooleanStatus.UNSET;
     }
-
 }

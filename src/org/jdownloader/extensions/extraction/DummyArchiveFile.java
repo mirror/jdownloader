@@ -9,7 +9,6 @@ import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkA
 import org.jdownloader.extensions.extraction.bindings.file.FileArchiveFile;
 
 public class DummyArchiveFile {
-
     private final String      name;
     private final boolean     missing;
     private final ArchiveFile archiveFile;
@@ -41,7 +40,11 @@ public class DummyArchiveFile {
     }
 
     public String toString() {
-        return name;
+        if (archiveFile != null) {
+            return archiveFile.toString();
+        } else {
+            return name;
+        }
     }
 
     public DummyArchiveFile(ArchiveFile af) {
@@ -76,10 +79,6 @@ public class DummyArchiveFile {
     }
 
     public boolean isLocalFileAvailable() {
-        if (archiveFile != null) {
-            return archiveFile.exists();
-        }
-        return false;
+        return archiveFile != null && archiveFile.exists();
     }
-
 }

@@ -92,7 +92,6 @@ public class QuickFilterTypeTable extends FilterTable {
             public boolean hasNewDisabledFilters() {
                 return false;
             }
-
         };
     }
 
@@ -129,10 +128,9 @@ public class QuickFilterTypeTable extends FilterTable {
                                 super.setEnabled(enabled);
                                 QuickFilterTypeTable.this.setEnabled(enabled, this);
                             }
-
                         });
                         knownExtensionFilters.add(filter);
-                        allFilters.add(filter = new ExtensionFilter(AudioExtensions.AA) {
+                        allFilters.add(filter = new ExtensionFilter(AudioExtensions.AAC) {
                             final private String description = _JDT.T.audiofilter_description();
 
                             protected String getID() {
@@ -148,7 +146,6 @@ public class QuickFilterTypeTable extends FilterTable {
                                 super.setEnabled(enabled);
                                 QuickFilterTypeTable.this.setEnabled(enabled, this);
                             }
-
                         });
                         knownExtensionFilters.add(filter);
                         allFilters.add(filter = new ExtensionFilter(VideoExtensions.ASF) {
@@ -166,7 +163,6 @@ public class QuickFilterTypeTable extends FilterTable {
                             public void setEnabled(boolean enabled) {
                                 super.setEnabled(enabled);
                                 QuickFilterTypeTable.this.setEnabled(enabled, this);
-
                             }
                         });
                         knownExtensionFilters.add(filter);
@@ -229,7 +225,6 @@ public class QuickFilterTypeTable extends FilterTable {
                          * now we add special extensionfilter which will handle all unknown extensions
                          */
                         final ExtensionsFilterInterface other = new ExtensionsFilterInterface() {
-
                             @Override
                             public String name() {
                                 return "OTHERS";
@@ -275,7 +270,6 @@ public class QuickFilterTypeTable extends FilterTable {
 
                             protected String getID() {
                                 return "Type_Others";
-
                             }
 
                             public String getDescription() {
@@ -329,5 +323,4 @@ public class QuickFilterTypeTable extends FilterTable {
     public boolean isFilteringChildrenNodes() {
         return isEnabled() && enabledFilters.size() > 0;
     }
-
 }

@@ -35,7 +35,7 @@ public class LinkInfoSandbox {
             return "HashExtensions";
         } else if (extension.isSameExtensionGroup(DocumentExtensions.CSV)) {
             return "DocumentExtensions";
-        } else if (extension.isSameExtensionGroup(AudioExtensions.AA)) {
+        } else if (extension.isSameExtensionGroup(AudioExtensions.AAC)) {
             return "AudioExtensions";
         } else if (extension.isSameExtensionGroup(VideoExtensions.ASF)) {
             return "VideoExtensions";

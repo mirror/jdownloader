@@ -160,7 +160,7 @@ public enum ArchiveType {
             return 1;
         }
 
-        private final int multiPartThreshold = 90;
+        private final int multiPartThreshold = 50;
 
         @Override
         protected boolean looksLikeAnArchive(BitSet bitset) {
@@ -1354,6 +1354,24 @@ public enum ArchiveType {
         return null;
     }
 
+    public static ArchiveFile getLastArchiveFile(final Archive archive) {
+        final ArchiveType type = archive.getArchiveType();
+        if (type != null) {
+            int index = -1;
+            ArchiveFile ret = null;
+            for (final ArchiveFile archiveFile : archive.getArchiveFiles()) {
+                final int partNum = type.getPartNumber(type.getPartNumberString(archiveFile.getFilePath()));
+                if (index == -1 || partNum > index) {
+                    index = partNum;
+                    ret = archiveFile;
+                }
+            }
+            return ret;
+        } else {
+            return null;
+        }
+    }
+
     public ArchiveFile getBestArchiveFileMatch(final Archive archive, final String fileName) {
         final ArchiveType archiveType = archive.getArchiveType();
         if (archiveType == this) {
@@ -1454,9 +1472,8 @@ public enum ArchiveType {
                 }
                 if (archiveType.looksLikeAnArchive(availableParts)) {
                     final String[] fileNameParts = archiveType.getMatches(link.getName());
-                    final Archive archive = link.createArchive();
+                    final Archive archive = link.createArchive(archiveType);
                     archive.setName(fileNameParts[0]);
-                    archive.setArchiveType(archiveType);
                     final String rawID = archiveType.name() + " |" + fileNameParts[0] + archiveType.buildIDPattern(fileNameParts, isMultiPart);
                     final String ID = Hash.getSHA256(rawID);
                     final String archiveID = Archive.getBestArchiveID(foundArchiveFiles, ID);

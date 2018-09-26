@@ -144,11 +144,10 @@ public class PornHubCom extends PluginForHost {
                     } else if (--maxLoops > 0) {
                         br.setCookie(br.getHost(), "RNKEY", RNKEY);
                         Thread.sleep(1000 + ((8 - maxLoops) * 500));
-                        br.setRequest(null);
                         br.getPage(request);
                         RNKEY = evalRNKEY(br);
                     } else {
-                        return false;
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
             }
@@ -779,7 +778,7 @@ public class PornHubCom extends PluginForHost {
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.getHeaders().put("Accept-Language", "en-US,en;q=0.8,de;q=0.6");
         br.getHeaders().put("Accept-Charset", null);
-        br.setLoadLimit(br.getLoadLimit() * 4);
+        br.setLoadLimit(br.getDefaultLoadLimit() * 4);
     }
 
     public static void getPolicyFiles() throws Exception {

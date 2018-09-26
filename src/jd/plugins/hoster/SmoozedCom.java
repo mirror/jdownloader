@@ -563,6 +563,8 @@ public class SmoozedCom extends antiDDoSForHost {
                     }
                 }
             }
+        } else if (br.containsHTML("DNS points to prohibited IP")) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Cloudflare server error at smoozed.com", 10 * 60 * 1000l);
         }
     }
 

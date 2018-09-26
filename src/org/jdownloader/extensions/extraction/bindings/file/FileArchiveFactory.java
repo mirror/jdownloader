@@ -19,10 +19,11 @@ import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.extraction.BooleanStatus;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFactory;
+import org.jdownloader.extensions.extraction.multi.ArchiveType;
+import org.jdownloader.extensions.extraction.split.SplitType;
 import org.jdownloader.settings.GeneralSettings;
 
 public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactory {
-
     private final Archive origin;
 
     public FileArchiveFactory(File archiveStartFile) {
@@ -71,12 +72,23 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
         return ret;
     }
 
-    public Archive createArchive() {
+    public Archive createArchive(SplitType splitType) {
         if (origin == null) {
-            return new Archive(this);
+            return new Archive(this, splitType);
         }
-        return new Archive(this) {
+        return new Archive(this, splitType) {
+            @Override
+            public Archive getParentArchive() {
+                return origin;
+            }
+        };
+    }
 
+    public Archive createArchive(ArchiveType archiveType) {
+        if (origin == null) {
+            return new Archive(this, archiveType);
+        }
+        return new Archive(this, archiveType) {
             @Override
             public Archive getParentArchive() {
                 return origin;
@@ -129,11 +141,9 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
             if (path.contains("$DATE:")) {
                 int start = path.indexOf("$DATE:");
                 int end = start + 6;
-
                 while (end < path.length() && path.charAt(end) != '$') {
                     end++;
                 }
-
                 try {
                     SimpleDateFormat format = new SimpleDateFormat(path.substring(start + 6, end));
                     path = path.replace(path.substring(start, end + 1), format.format(new Date()));
@@ -167,5 +177,4 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
     public BooleanStatus getDefaultAutoExtract() {
         return BooleanStatus.UNSET;
     }
-
 }

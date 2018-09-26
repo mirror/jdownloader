@@ -179,7 +179,6 @@ public class CompiledFiletypeFilter {
         OGG,
         S3M,
         FourMP("4MP"),
-        AA,
         AIF,
         AIFF,
         AU,
@@ -347,7 +346,8 @@ public class CompiledFiletypeFilter {
         XZ,
         TGZ,
         LZH,
-        LHA;
+        LHA,
+        AA("[a-z]{2}");
         private final Pattern  pattern;
         private static Pattern allPattern;
 
@@ -461,7 +461,7 @@ public class CompiledFiletypeFilter {
             filterInterfaces.add(HashExtensions.MD5);
         }
         if (filetypeFilter.isAudioFilesEnabled()) {
-            filterInterfaces.add(AudioExtensions.AA);
+            filterInterfaces.add(AudioExtensions.AAC);
         }
         if (filetypeFilter.isImagesEnabled()) {
             filterInterfaces.add(ImageExtensions.BMP);
