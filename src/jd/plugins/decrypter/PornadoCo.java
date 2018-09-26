@@ -24,7 +24,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornado.co", "tubesafari.com", "tubeharmony.com" }, urls = { "https?://(?:www\\.)?pornado\\.co/video\\?id=[0-9\\-_]+\\&d=.+", "https?://(?:www\\.)?tubesafari\\.com/video\\?id=[0-9\\-_]+\\&d=.+", "https?://(?:www\\.)?tubeharmony\\.com/video\\?id=[0-9\\-_]+\\&d=.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornado.co", "tubesafari.com", "tubeharmony.com" }, urls = { "https?://(?:www\\.)?pornado\\.co/video\\?id=[a-z0-9\\-_]+\\&d=.+", "https?://(?:www\\.)?tubesafari\\.com/video\\?id=[a-z0-9\\-_]+\\&d=.+", "https?://(?:www\\.)?tubeharmony\\.com/video\\?id=[a-z0-9\\-_]+\\&d=.+" })
 public class PornadoCo extends PornEmbedParser {
     public PornadoCo(PluginWrapper wrapper) {
         super(wrapper);
