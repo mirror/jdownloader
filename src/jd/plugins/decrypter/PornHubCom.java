@@ -22,6 +22,10 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -38,10 +42,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub(?:premium)?\\.com/(?:.*\\?viewkey=[a-z0-9]+|embed/[a-z0-9]+|embed_player\\.php\\?id=\\d+|pornstar/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos(/upload)?)?|users/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos(/public)?)?|model/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos)?|playlist/\\d+)" })
 public class PornHubCom extends PluginForDecrypt {
@@ -111,8 +111,14 @@ public class PornHubCom extends PluginForDecrypt {
             ret = decryptAllVideosOfAPlaylist();
         } else if (parameter.matches("(?i).*/gifs.*")) {
             ret = decryptAllGifsOfAUser();
-        } else if (parameter.matches("(?i).*/(users|pornstar|model)/.*")) {
-            ret = decryptAllVideosOfAUser();
+        } else if (parameter.matches("(?i).*/(model|pornstar)/.*")) {
+            ret = decryptAllVideosOfAPornstar();
+        } else if (parameter.matches("(?i).*/users/.*")) {
+            if (br.getURL().contains("/model/")) { // Handle /users/ that has been switched to /model/
+                ret = decryptAllVideosOfAPornstar();
+            } else {
+                ret = decryptAllVideosOfAUser();
+            }
         } else {
             ret = decryptSingleVideo();
         }
@@ -120,6 +126,38 @@ public class PornHubCom extends PluginForDecrypt {
             throw new DecrypterException("Decrypter broken for link: " + parameter);
         }
         return decryptedLinks;
+    }
+
+    private boolean decryptAllVideosOfAPornstar() throws Exception {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            decryptedLinks.add(createOfflinelink(parameter));
+            return true;
+        }
+        final Set<String> dupes = new HashSet<String>();
+        int page = 1;
+        String next = null;
+        do {
+            if (this.isAbort()) {
+                return true;
+            }
+            // String[] viewkeys = br.getRegex("<a href=\"/view_video.php\\?viewkey=([^\"]+?)\"").getColumn(0); // Most Recent
+            // String[] viewkeys = br.getRegex("<a href=\"https://www.pornhub.com/view_video.php\\?viewkey=([^\"]+?)\"").getColumn(0);
+            String[] viewkeys = br.getRegex("<a href=\"(?:https://www.pornhub.com)?/view_video.php\\?viewkey=([^\"]+?)\"").getColumn(0);
+            logger.info("Links found: " + viewkeys.length);
+            for (final String viewkey : viewkeys) {
+                logger.info("viewkey: " + viewkey);
+                if (dupes.add(viewkey)) {
+                    final DownloadLink dl = createDownloadlink("https://www." + getHost() + "/view_video.php?viewkey=" + viewkey);
+                    decryptedLinks.add(dl);
+                    distribute(dl);
+                }
+            }
+            next = br.getRegex("page_next[^\"]*?\"><a href=\"([^\"]+?)\"").getMatch(0);
+            if (next != null) {
+                br.getPage(next);
+            }
+        } while (next != null);
+        return true;
     }
 
     private boolean decryptAllVideosOfAUser() throws Exception {
@@ -153,8 +191,6 @@ public class PornHubCom extends PluginForDecrypt {
         } else if (parameter.matches("(?i).*/users/[^/]*/?")) {
             jd.plugins.hoster.PornHubCom.getPage(br, new Regex(parameter, "(.*/users/[^/]*)").getMatch(0) + "/videos/public");
             final String user = getUser(br);
-            // TODO: Handle /users/ that is switched to /model/
-            // create ticket with example links
             if (user != null) {
                 fp = FilePackage.getInstance();
                 fp.setName(user + "'s Public Videos");
