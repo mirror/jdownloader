@@ -58,8 +58,8 @@ public class WikifeetCom extends PluginForDecrypt {
         if (parameter.matches(type_wikifeet)) {
             final String gData = this.br.getRegex("messanger\\[\\'gdata\\'\\] = ([\\s\\S]*?);").getMatch(0);
             List<Object> data = (List<Object>) JavaScriptEngineFactory.jsonToJavaObject(gData);
-            if (data.size() < 1 || cfName == null) {
-                return null;
+            if (data.size() == 0) {
+                return decryptedLinks;
             }
             for (final Object entry : data) {
                 Map<String, Object> entryMap = (Map<String, Object>) entry;
