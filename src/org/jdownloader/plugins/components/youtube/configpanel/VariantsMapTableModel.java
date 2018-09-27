@@ -342,6 +342,7 @@ public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper>
             addExtComponentRowHighlighter(new ExtComponentRowHighlighter<AbstractVariantWrapper>(Color.RED, null, null) {
                 final boolean isOpusSupported   = supportedFlags.contains(AbstractFFmpegBinary.FLAG.OPUS);
                 final boolean isVorbisSupported = supportedFlags.contains(AbstractFFmpegBinary.FLAG.VORBIS);
+                final boolean isAV1Supported    = supportedFlags.contains(AbstractFFmpegBinary.FLAG.AV1);
 
                 @Override
                 protected Color getBackground(Color current) {
@@ -350,7 +351,9 @@ public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper>
 
                 @Override
                 public boolean accept(ExtColumn<AbstractVariantWrapper> column, AbstractVariantWrapper value, boolean selected, boolean focus, int row) {
-                    if (StringUtils.equalsIgnoreCase("Opus", value.getAudioCodec())) {
+                    if (StringUtils.endsWithCaseInsensitive("AV1", value.getVideoCodec())) {
+                        return !isAV1Supported;
+                    } else if (StringUtils.equalsIgnoreCase("Opus", value.getAudioCodec())) {
                         return !isOpusSupported;
                     } else if (StringUtils.equalsIgnoreCase("Vorbis", value.getAudioCodec())) {
                         return !isVorbisSupported;
@@ -388,6 +391,7 @@ public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper>
                     switch (((AudioInterface) value.variant).getAudioCodec()) {
                     case AAC_SPATIAL:
                     case VORBIS_SPATIAL:
+                    case OPUS_SPATIAL:
                         audioProjection = _JDT.T.youtube_spatial();
                     }
                 }
@@ -661,6 +665,7 @@ public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper>
                 switch (((AudioInterface) e.variant).getAudioCodec()) {
                 case AAC_SPATIAL:
                 case VORBIS_SPATIAL:
+                case OPUS_SPATIAL:
                     hasAudioSpatial = true;
                 }
             }

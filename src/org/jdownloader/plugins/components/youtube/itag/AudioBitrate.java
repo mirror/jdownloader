@@ -7,6 +7,7 @@ import org.jdownloader.plugins.components.youtube.variants.AbstractVariant;
 import org.jdownloader.plugins.components.youtube.variants.AudioInterface;
 
 public enum AudioBitrate implements IntegerInterface, LabelInterface {
+    KBIT_512(512),
     KBIT_384(384),
     KBIT_256(256),
     KBIT_192(192),

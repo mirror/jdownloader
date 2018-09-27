@@ -14,13 +14,11 @@ import org.jdownloader.plugins.components.youtube.itag.AudioCodec;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
 
 public class YoutubeConfigStorageHandlerFactory implements StorageHandlerFactory<YoutubeConfig>, DefaultFactoryInterface {
-
     @Override
     public StorageHandler<YoutubeConfig> create(File resource, Class<YoutubeConfig> configInterface) {
         StorageHandler ret = new StorageHandler<YoutubeConfig>(resource, configInterface);
         ret.setDefaultFactory(this);
         return ret;
-
     }
 
     @Override
@@ -41,6 +39,7 @@ public class YoutubeConfigStorageHandlerFactory implements StorageHandlerFactory
             ArrayList<AudioCodec> ret = new ArrayList<AudioCodec>();
             ret.add(AudioCodec.AAC_SPATIAL);
             ret.add(AudioCodec.VORBIS_SPATIAL);
+            ret.add(AudioCodec.OPUS_SPATIAL);
             return ret;
         }
         if (handler == CFG_YOUTUBE.COLLECTIONS) {
@@ -48,5 +47,4 @@ public class YoutubeConfigStorageHandlerFactory implements StorageHandlerFactory
         }
         return o;
     }
-
 }

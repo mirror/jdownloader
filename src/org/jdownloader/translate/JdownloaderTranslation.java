@@ -1031,6 +1031,9 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "AAC Spatial 6 Channel" })
     String AudioCodec_aac_spatial();
 
+    @Default(lngs = { "en" }, values = { "Opus Spatial 6 Channel" })
+    String AudioCodec_opus_spatial();
+
     @Default(lngs = { "en" }, values = { "Spatial" })
     String YOUTUBE_surround();
 

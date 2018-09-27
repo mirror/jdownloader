@@ -132,7 +132,7 @@ public class PornHubCom extends PluginForHost {
 
     public static Object RNKEYLOCK = new Object();
 
-    public static boolean getPage(Browser br, final Request request) throws Exception {
+    public static Request getPage(Browser br, final Request request) throws Exception {
         br.getPage(request);
         String RNKEY = evalRNKEY(br);
         if (RNKEY != null) {
@@ -140,11 +140,11 @@ public class PornHubCom extends PluginForHost {
             synchronized (RNKEYLOCK) {
                 while (true) {
                     if (RNKEY == null) {
-                        return true;
+                        return br.getRequest();
                     } else if (--maxLoops > 0) {
                         br.setCookie(br.getHost(), "RNKEY", RNKEY);
                         Thread.sleep(1000 + ((8 - maxLoops) * 500));
-                        br.getPage(request);
+                        br.getPage(request.cloneRequest());
                         RNKEY = evalRNKEY(br);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -152,11 +152,11 @@ public class PornHubCom extends PluginForHost {
                 }
             }
         } else {
-            return true;
+            return br.getRequest();
         }
     }
 
-    public static boolean getPage(Browser br, final String url) throws Exception {
+    public static Request getPage(Browser br, final String url) throws Exception {
         return getPage(br, br.createGetRequest(url));
     }
 
@@ -421,7 +421,7 @@ public class PornHubCom extends PluginForHost {
                 /* viewkey should never be null! */
                 final String viewkey = getViewkeyFromURL(br.getURL());
                 if (viewkey != null) {
-                    br.getPage(createPornhubVideoLinkEmbedFree(br, viewkey));
+                    getPage(br, createPornhubVideoLinkEmbedFree(br, viewkey));
                     var_player_quality_dp = br.getRegex("\"quality_(\\d+)p\"\\s*?:\\s*?\"(https?[^\"]+)\"").getMatches();
                     matchPlaces = new int[] { 0, 1 };
                 }

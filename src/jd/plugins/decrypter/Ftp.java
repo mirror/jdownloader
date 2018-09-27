@@ -14,7 +14,9 @@ import java.util.Set;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawlerLock;
 import jd.controlling.proxy.ProxyController;
 import jd.http.Browser;
 import jd.http.BrowserSettingsThread;
@@ -37,6 +39,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyException;
 import org.jdownloader.auth.Login;
+import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ftp" }, urls = { "ftp://.*?\\.[\\p{L}\\p{Nd}a-zA-Z0-9]{1,}(:\\d+)?/([^\"\r\n ]+|$)" })
 public class Ftp extends PluginForDecrypt {
@@ -50,14 +53,14 @@ public class Ftp extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink cLink, ProgressController progress) throws Exception {
         final String lockHost = Browser.getHost(cLink.getCryptedUrl());
-        final Set<Thread> locks;
+        final Set<Thread> hostLocks;
         synchronized (LOCKS) {
             Set<Thread> tmp = LOCKS.get(lockHost);
             if (tmp == null) {
                 tmp = new WeakHashSet<Thread>();
                 LOCKS.put(lockHost, tmp);
             }
-            locks = tmp;
+            hostLocks = tmp;
         }
         final Thread thread = Thread.currentThread();
         while (true) {
@@ -72,14 +75,14 @@ public class Ftp extends PluginForDecrypt {
                             limit = l;
                         }
                     }
-                    synchronized (locks) {
+                    synchronized (hostLocks) {
                         if (isAbort()) {
                             throw new InterruptedException();
-                        } else if (limit == -1 || locks.size() < limit) {
-                            locks.add(thread);
+                        } else if (limit == -1 || hostLocks.size() < limit) {
+                            hostLocks.add(thread);
                             break;
-                        } else if (locks.size() > limit) {
-                            locks.wait(5000);
+                        } else if (hostLocks.size() > limit) {
+                            hostLocks.wait(5000);
                         }
                     }
                 }
@@ -93,15 +96,15 @@ public class Ftp extends PluginForDecrypt {
                     }
                 }
             } finally {
-                synchronized (locks) {
-                    locks.remove(thread);
-                    locks.notifyAll();
+                synchronized (hostLocks) {
+                    hostLocks.remove(thread);
+                    hostLocks.notifyAll();
                 }
             }
         }
     }
 
-    private ArrayList<DownloadLink> internalDecryptIt(CryptedLink cLink, ProgressController progress, final int maxFTPConnections) throws Exception {
+    private ArrayList<DownloadLink> internalDecryptIt(final CryptedLink cLink, ProgressController progress, final int maxFTPConnections) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>() {
             @Override
             public boolean add(final DownloadLink link) {
@@ -129,9 +132,29 @@ public class Ftp extends PluginForDecrypt {
                 final Integer limit = jd.plugins.hoster.Ftp.getConnectionLimit(e);
                 if (limit != null && maxFTPConnections == -1) {
                     final String lockHost = Browser.getHost(cLink.getCryptedUrl());
+                    final int maxConcurrency = Math.max(1, limit);
                     synchronized (LIMITS) {
-                        LIMITS.put(lockHost, Math.max(1, limit));
+                        LIMITS.put(lockHost, maxConcurrency);
                     }
+                    getCrawler().addSequentialLockObject(new LinkCrawlerLock() {
+                        @Override
+                        public int maxConcurrency() {
+                            return 1;
+                        }
+
+                        private final String pluginID = getPluginID(Ftp.this.getLazyC());
+                        private final String host     = Browser.getHost(cLink.getCryptedUrl());
+
+                        @Override
+                        public String toString() {
+                            return pluginID + "|" + host + "|" + maxConcurrency;
+                        }
+
+                        @Override
+                        public boolean matches(LazyCrawlerPlugin plugin, CrawledLink crawledLink) {
+                            return StringUtils.equals(pluginID, getPluginID(plugin)) && StringUtils.equalsIgnoreCase(host, Browser.getHost(crawledLink.getURL()));
+                        }
+                    });
                     sleep(5000, cLink);
                     throw new WTFException("retry", e);
                 } else if (StringUtils.contains(message, "was unable to log in with the supplied") || StringUtils.contains(message, "530 Login or Password incorrect")) {
