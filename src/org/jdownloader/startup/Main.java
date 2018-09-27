@@ -21,7 +21,6 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.lang.reflect.Type;
 
-import org.appwork.loggingv3.LogSourceRedirector;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.JsonSerializer;
 import org.appwork.storage.TypeRef;
@@ -34,6 +33,7 @@ import org.appwork.utils.IO.SYNC;
 import org.appwork.utils.IOErrorHandler;
 import org.appwork.utils.Regex;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.logging2.LogSourceRedirector;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.ExtensionController;
