@@ -240,6 +240,10 @@ public class AboutDialog extends AbstractDialog<Integer> {
 
     private ExtButton disable(final Object object) {
         ExtButton ret = new ExtButton(new AppAction() {
+            /**
+             *
+             */
+            private static final long serialVersionUID = 1L;
             {
                 setName(object + "");
             }
