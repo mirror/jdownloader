@@ -21,8 +21,7 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.lang.reflect.Type;
 
-import jd.gui.swing.laf.LookAndFeelController;
-
+import org.appwork.loggingv3.LogSourceRedirector;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.JsonSerializer;
 import org.appwork.storage.TypeRef;
@@ -45,6 +44,8 @@ import org.jdownloader.myjdownloader.client.json.MyJDJsonMapper;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 
+import jd.gui.swing.laf.LookAndFeelController;
+
 public class Main {
     public static ParameterHandler PARAMETER_HANDLER = null;
     static {
@@ -54,6 +55,9 @@ public class Main {
         if (System.getProperty("java.net.preferIPv4Stack") == null) {
             // TODO: remove once all IPv6 changes are finished @jiaz
             System.setProperty("java.net.preferIPv4Stack", "true");
+        }
+        if (System.getProperty("LogV3_FACTORY") == null) {
+            System.setProperty("LogV3_FACTORY", LogSourceRedirector.class.getName());
         }
         org.appwork.utils.Application.setApplication(".jd_home");
         org.appwork.utils.Application.getRoot(jd.SecondLevelLaunch.class);
