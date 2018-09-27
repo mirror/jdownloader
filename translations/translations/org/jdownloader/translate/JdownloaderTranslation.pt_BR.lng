@@ -11,6 +11,7 @@ AddContainerAction_delete_container_msg=Deseja excluir %s1 após adicionar o(s) 
 AddContainerAction_delete_container_title=Excluir arquivos container?
 AddFilteredStuffAction_getTranslationForOnlyVisibleIfThereIsFilteredStuff=Somente visível se houver conteúdo filtrado
 AudioCodec_aac_spatial=AAC 6 canais espacial
+AudioCodec_opus_spatial=Opus Spatial 6 Canais
 AudioCodec_vorbis_spatial=Vorbis 4 canais espacial
 AuthExceptionGenericBan_toString=Autenticação faltando em %s1
 AuthExceptionGenericBan_toString_plugin=%s2: Autenticação faltando para %s1
