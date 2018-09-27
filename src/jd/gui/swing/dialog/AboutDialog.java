@@ -112,7 +112,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
             btn.setBorder(null);
             links.add(btn);
             links.add(new JLink(_GUI.T.jd_gui_swing_components_AboutDialog_homepage(), new AbstractIcon(IconKey.ICON_URL, 16), new URL("http://www.jdownloader.org/home?lng=en")));
-            links.add(new JLink(_GUI.T.jd_gui_swing_components_AboutDialog_forum(), new AbstractIcon(IconKey.ICON_BOARD, 16), new URL("http://board.jdownloader.org")));
+            links.add(new JLink(_GUI.T.jd_gui_swing_components_AboutDialog_forum(), new AbstractIcon(IconKey.ICON_BOARD, 16), new URL("https://board.jdownloader.org")));
             links.add(new JLink(_GUI.T.jd_gui_swing_components_AboutDialog_contributers(), new AbstractIcon(IconKey.ICON_CONTRIBUTER, 16), new URL("http://jdownloader.org/knowledge/wiki/contributers")));
         } catch (MalformedURLException e1) {
             e1.printStackTrace();
@@ -216,7 +216,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
         stats.add(new JLabel("UPNP:"), "");
         stats.add(disable("Cling (http://4thline.org/projects/cling)"));
         stats.add(new JLabel("Extraction:"), "");
-        stats.add(disable("7ZipJBindings (http://sevenzipjbind.sourceforge.net/)"));
+        stats.add(disable("7ZipJBindings (https://github.com/borisbrodski/sevenzipjbinding)"));
         stats.add(disable("Zip4J (http://www.lingala.net/zip4j/)"), "skip");
         stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_laf()), "");
         stats.add(disable("Synthetica (http://www.jyloo.com/synthetica/)"));
