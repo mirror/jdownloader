@@ -602,7 +602,7 @@ public class OneFichierCom extends PluginForHost {
             if (knownDownloadSize > 0 && knownDownloadSize <= 50 * 1024 * 1024) {
                 final int wait = PluginJsonConfig.get(OneFichierConfigInterface.class).getSmallFilesWaitInterval();
                 // avoid IP block because of too many downloads in short time
-                return Math.max(0, wait);
+                return Math.max(0, wait * 1000);
             } else {
                 return super.getStartIntervall(downloadLink, account);
             }

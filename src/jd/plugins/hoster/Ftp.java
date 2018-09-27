@@ -117,7 +117,7 @@ public class Ftp extends PluginForHost {
             final Integer limit = getConnectionLimit(e);
             if (limit != null) {
                 downloadLink.setProperty("MAX_FTP_CONNECTIONS", limit);
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Connection limit reached", 30 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Connection limit reached", 30 * 1000l, e);
             } else {
                 throw e;
             }

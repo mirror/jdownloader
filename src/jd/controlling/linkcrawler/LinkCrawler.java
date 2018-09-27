@@ -121,48 +121,48 @@ public class LinkCrawler {
         DEEP
     }
 
-    private final static String                            DIRECT_HTTP                 = "directhttp";
-    private final static String                            HTTP_LINKS                  = "http links";
-    private java.util.List<CrawledLink>                    crawledLinks                = new ArrayList<CrawledLink>();
-    private AtomicInteger                                  crawledLinksCounter         = new AtomicInteger(0);
-    private java.util.List<CrawledLink>                    filteredLinks               = new ArrayList<CrawledLink>();
-    private AtomicInteger                                  filteredLinksCounter        = new AtomicInteger(0);
-    private java.util.List<CrawledLink>                    brokenLinks                 = new ArrayList<CrawledLink>();
-    private AtomicInteger                                  brokenLinksCounter          = new AtomicInteger(0);
-    private java.util.List<CrawledLink>                    unhandledLinks              = new ArrayList<CrawledLink>();
-    private final AtomicInteger                            unhandledLinksCounter       = new AtomicInteger(0);
-    private final AtomicInteger                            processedLinksCounter       = new AtomicInteger(0);
-    private final AtomicBoolean                            runningState                = new AtomicBoolean(false);
-    private final AtomicInteger                            crawler                     = new AtomicInteger(0);
-    private final static AtomicInteger                     CRAWLER                     = new AtomicInteger(0);
-    private final Map<String, Object>                      duplicateFinderContainer;
-    private final Map<String, Set<Object>>                 duplicateFinderCrawler;
-    private final Map<String, CrawledLink>                 duplicateFinderFinal;
-    private final Map<String, Object>                      duplicateFinderDeep;
-    private final Map<CrawledLink, Object>                 loopPreventionEmbedded;
-    private LinkCrawlerHandler                             handler                     = null;
-    protected static final ThreadPoolExecutor              threadPool;
-    private LinkCrawlerFilter                              filter                      = null;
-    private final LinkCrawler                              parentCrawler;
-    private final long                                     created;
-    public final static String                             PACKAGE_ALLOW_MERGE         = "ALLOW_MERGE";
-    public final static String                             PACKAGE_ALLOW_INHERITANCE   = "ALLOW_INHERITANCE";
-    public final static String                             PACKAGE_CLEANUP_NAME        = "CLEANUP_NAME";
-    public final static String                             PACKAGE_IGNORE_VARIOUS      = "PACKAGE_IGNORE_VARIOUS";
-    public static final UniqueAlltimeID                    PERMANENT_OFFLINE_ID        = new UniqueAlltimeID();
-    private boolean                                        doDuplicateFinderFinalCheck = true;
-    private List<LazyCrawlerPlugin>                        unsortedLazyCrawlerPlugins;
-    protected final PluginClassLoaderChild                 classLoader;
-    private final String                                   defaultDownloadFolder;
-    private final AtomicReference<List<LazyCrawlerPlugin>> sortedLazyCrawlerPlugins    = new AtomicReference<List<LazyCrawlerPlugin>>();
-    private final AtomicReference<List<LazyHostPlugin>>    sortedLazyHostPlugins       = new AtomicReference<List<LazyHostPlugin>>();
-    private final AtomicReference<List<LinkCrawlerRule>>   linkCrawlerRules            = new AtomicReference<List<LinkCrawlerRule>>();
-    private LinkCrawlerDeepInspector                       deepInspector               = null;
-    private DirectHTTPPermission                           directHTTPPermission        = DirectHTTPPermission.ALWAYS;
-    protected final UniqueAlltimeID                        uniqueAlltimeID             = new UniqueAlltimeID();
-    protected final WeakHashMap<LinkCrawler, Object>       children                    = new WeakHashMap<LinkCrawler, Object>();
-    protected final static WeakHashMap<Object, String>     SEQUENTIALLOCKS             = new WeakHashMap<Object, String>();
-    protected final AtomicReference<LinkCrawlerGeneration> linkCrawlerGeneration       = new AtomicReference<LinkCrawlerGeneration>(null);
+    private final static String                                      DIRECT_HTTP                 = "directhttp";
+    private final static String                                      HTTP_LINKS                  = "http links";
+    private java.util.List<CrawledLink>                              crawledLinks                = new ArrayList<CrawledLink>();
+    private AtomicInteger                                            crawledLinksCounter         = new AtomicInteger(0);
+    private java.util.List<CrawledLink>                              filteredLinks               = new ArrayList<CrawledLink>();
+    private AtomicInteger                                            filteredLinksCounter        = new AtomicInteger(0);
+    private java.util.List<CrawledLink>                              brokenLinks                 = new ArrayList<CrawledLink>();
+    private AtomicInteger                                            brokenLinksCounter          = new AtomicInteger(0);
+    private java.util.List<CrawledLink>                              unhandledLinks              = new ArrayList<CrawledLink>();
+    private final AtomicInteger                                      unhandledLinksCounter       = new AtomicInteger(0);
+    private final AtomicInteger                                      processedLinksCounter       = new AtomicInteger(0);
+    private final AtomicBoolean                                      runningState                = new AtomicBoolean(false);
+    private final AtomicInteger                                      crawler                     = new AtomicInteger(0);
+    private final static AtomicInteger                               CRAWLER                     = new AtomicInteger(0);
+    private final Map<String, Object>                                duplicateFinderContainer;
+    private final Map<String, Set<Object>>                           duplicateFinderCrawler;
+    private final Map<String, CrawledLink>                           duplicateFinderFinal;
+    private final Map<String, Object>                                duplicateFinderDeep;
+    private final Map<CrawledLink, Object>                           loopPreventionEmbedded;
+    private LinkCrawlerHandler                                       handler                     = null;
+    protected static final ThreadPoolExecutor                        threadPool;
+    private LinkCrawlerFilter                                        filter                      = null;
+    private final LinkCrawler                                        parentCrawler;
+    private final long                                               created;
+    public final static String                                       PACKAGE_ALLOW_MERGE         = "ALLOW_MERGE";
+    public final static String                                       PACKAGE_ALLOW_INHERITANCE   = "ALLOW_INHERITANCE";
+    public final static String                                       PACKAGE_CLEANUP_NAME        = "CLEANUP_NAME";
+    public final static String                                       PACKAGE_IGNORE_VARIOUS      = "PACKAGE_IGNORE_VARIOUS";
+    public static final UniqueAlltimeID                              PERMANENT_OFFLINE_ID        = new UniqueAlltimeID();
+    private boolean                                                  doDuplicateFinderFinalCheck = true;
+    private List<LazyCrawlerPlugin>                                  unsortedLazyCrawlerPlugins;
+    protected final PluginClassLoaderChild                           classLoader;
+    private final String                                             defaultDownloadFolder;
+    private final AtomicReference<List<LazyCrawlerPlugin>>           sortedLazyCrawlerPlugins    = new AtomicReference<List<LazyCrawlerPlugin>>();
+    private final AtomicReference<List<LazyHostPlugin>>              sortedLazyHostPlugins       = new AtomicReference<List<LazyHostPlugin>>();
+    private final AtomicReference<List<LinkCrawlerRule>>             linkCrawlerRules            = new AtomicReference<List<LinkCrawlerRule>>();
+    private LinkCrawlerDeepInspector                                 deepInspector               = null;
+    private DirectHTTPPermission                                     directHTTPPermission        = DirectHTTPPermission.ALWAYS;
+    protected final UniqueAlltimeID                                  uniqueAlltimeID             = new UniqueAlltimeID();
+    protected final WeakHashMap<LinkCrawler, Object>                 children                    = new WeakHashMap<LinkCrawler, Object>();
+    protected final static WeakHashMap<LinkCrawler, LinkCrawlerLock> LOCKS                       = new WeakHashMap<LinkCrawler, LinkCrawlerLock>();
+    protected final AtomicReference<LinkCrawlerGeneration>           linkCrawlerGeneration       = new AtomicReference<LinkCrawlerGeneration>(null);
 
     protected LinkCrawlerGeneration getValidLinkCrawlerGeneration() {
         synchronized (linkCrawlerGeneration) {
@@ -187,17 +187,54 @@ public class LinkCrawler {
         }
     }
 
-    protected static Object getSequentialLockObject(final LazyCrawlerPlugin plugin) {
-        synchronized (SEQUENTIALLOCKS) {
-            final String lockID = plugin.getDisplayName() + "." + plugin.getLazyPluginClass().getClassName();
-            for (final Entry<Object, String> lock : SEQUENTIALLOCKS.entrySet()) {
-                if (StringUtils.equals(lock.getValue(), lockID)) {
-                    return lock.getKey();
+    protected LinkCrawlerLock getLinkCrawlerLock(final LazyCrawlerPlugin plugin, final CrawledLink crawledLink) {
+        synchronized (LOCKS) {
+            LinkCrawlerLock ret = null;
+            for (final LinkCrawlerLock lock : LOCKS.values()) {
+                if (lock.matches(plugin, crawledLink) && (ret == null || lock.maxConcurrency() < ret.maxConcurrency())) {
+                    ret = lock;
                 }
             }
-            final Object lock = new Object();
-            SEQUENTIALLOCKS.put(lock, lockID);
-            return lock;
+            if (ret == null) {
+                ret = new LinkCrawlerLock() {
+                    private final String pluginID = getPluginID(plugin);
+
+                    @Override
+                    public boolean matches(LazyCrawlerPlugin plugin, CrawledLink crawledLink) {
+                        return StringUtils.equals(pluginID, getPluginID(plugin));
+                    }
+
+                    @Override
+                    public String toString() {
+                        return pluginID + "|" + maxConcurrency();
+                    }
+
+                    @Override
+                    public int maxConcurrency() {
+                        return Math.max(1, plugin.getMaxConcurrentInstances());
+                    }
+                };
+                LOCKS.put(getRoot(), ret);
+            }
+            return ret;
+        }
+    }
+
+    public void addSequentialLockObject(LinkCrawlerLock lock) {
+        if (lock != null) {
+            synchronized (LOCKS) {
+                LOCKS.put(getRoot(), lock);
+            }
+        }
+    }
+
+    public boolean removeSequentialLockObject(LinkCrawlerLock lock) {
+        if (lock != null) {
+            synchronized (LOCKS) {
+                return LOCKS.values().remove(lock);
+            }
+        } else {
+            return false;
         }
     }
 
@@ -1576,16 +1613,9 @@ public class LinkCrawler {
                                             }
                                         }
 
-                                        private final Object sequentialLockObject = getSequentialLockObject(pDecrypt);
-
                                         @Override
-                                        protected Object sequentialLockingObject() {
-                                            return sequentialLockObject;
-                                        }
-
-                                        @Override
-                                        protected int maxConcurrency() {
-                                            return pDecrypt.getMaxConcurrentInstances();
+                                        protected LinkCrawlerLock getLinkCrawlerLock() {
+                                            return LinkCrawler.this.getLinkCrawlerLock(pDecrypt, decryptThis);
                                         }
 
                                         @Override

@@ -334,19 +334,19 @@ public class TbCmV2 extends PluginForDecrypt {
             }
             ArrayList<YoutubeClipData> playlist;
             videoIdsToAdd.addAll(playlist = parsePlaylist(playlistID));
-            if (Boolean.TRUE.equals(channelWorkaround) && playlist.size() == 0) {
-                // failed
-                channelWorkaround = Boolean.FALSE;
+            if (Boolean.TRUE.equals(channelWorkaround)) {
+                if (playlist.size() == 0) {
+                    videoIdsToAdd.addAll(parseChannelgrid(channelID));
+                    Collections.reverse(videoIdsToAdd);
+                    reversePlaylistNumber = true;
+                }
             }
-            if (Boolean.TRUE.equals(userWorkaround) && playlist.size() == 0) {
-                // failed
-                userWorkaround = Boolean.FALSE;
-            }
-            if (Boolean.FALSE.equals(channelWorkaround)) {
-                videoIdsToAdd.addAll(parseChannelgrid(channelID));
-            }
-            if (Boolean.FALSE.equals(userWorkaround)) {
-                videoIdsToAdd.addAll(parseUsergrid(userID));
+            if (Boolean.TRUE.equals(userWorkaround)) {
+                if (playlist.size() == 0) {
+                    videoIdsToAdd.addAll(parseUsergrid(userID));
+                    Collections.reverse(videoIdsToAdd);
+                    reversePlaylistNumber = true;
+                }
             }
             // some unknown playlist type?
             if (videoIdsToAdd.size() == 0 && StringUtils.isNotEmpty(playlistID)) {
@@ -363,10 +363,6 @@ public class TbCmV2 extends PluginForDecrypt {
             // newest so playlist counter is correct.
             // userworkaround == true == newest to oldest
             // channelworkaround == true == newest to oldest.
-            if (Boolean.TRUE.equals(userWorkaround) || Boolean.TRUE.equals(channelWorkaround)) {
-                Collections.reverse(videoIdsToAdd);
-                reversePlaylistNumber = true;
-            }
         } catch (InterruptedException e) {
             return decryptedLinks;
         }

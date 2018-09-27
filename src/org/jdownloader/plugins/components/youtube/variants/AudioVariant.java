@@ -64,6 +64,7 @@ public class AudioVariant extends AbstractVariant<GenericAudioInfo> implements A
         switch (getiTagAudioOrVideoItagEquivalent().getAudioCodec()) {
         case AAC_SPATIAL:
         case VORBIS_SPATIAL:
+        case OPUS_SPATIAL:
             id = id.replace("*SPATIAL*", _JDT.T.YOUTUBE_surround());
             break;
         default:
@@ -104,6 +105,7 @@ public class AudioVariant extends AbstractVariant<GenericAudioInfo> implements A
         switch (getiTagAudioOrVideoItagEquivalent().getAudioCodec()) {
         case AAC_SPATIAL:
         case VORBIS_SPATIAL:
+        case OPUS_SPATIAL:
             id = id.replace("*SURROUND*", "Spatial");
             break;
         default:

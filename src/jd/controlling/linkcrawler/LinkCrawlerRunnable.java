@@ -8,7 +8,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import jd.controlling.linkcrawler.LinkCrawler.LinkCrawlerGeneration;
 
 public abstract class LinkCrawlerRunnable implements Runnable {
-
     private final LinkCrawlerGeneration                               generation;
     private final LinkCrawler                                         crawler;
     static final HashMap<Object, java.util.List<LinkCrawlerRunnable>> SEQ_RUNNABLES = new HashMap<Object, java.util.List<LinkCrawlerRunnable>>();
@@ -30,7 +29,7 @@ public abstract class LinkCrawlerRunnable implements Runnable {
     }
 
     public void run() {
-        if (sequentialLockingObject() == null || maxConcurrency() == Integer.MAX_VALUE) {
+        if (getLinkCrawlerLock() == null) {
             run_now();
         } else {
             run_delayed();
@@ -38,8 +37,8 @@ public abstract class LinkCrawlerRunnable implements Runnable {
     }
 
     protected void run_delayed() {
-        final Object lock = sequentialLockingObject();
-        final int maxConcurrency = maxConcurrency();
+        final LinkCrawlerLock lock = getLinkCrawlerLock();
+        final int maxConcurrency = lock.maxConcurrency();
         final LinkCrawlerRunnable startRunnable;
         synchronized (SEQ_RUNNABLES) {
             List<LinkCrawlerRunnable> seqs = SEQ_RUNNABLES.get(lock);
@@ -114,11 +113,7 @@ public abstract class LinkCrawlerRunnable implements Runnable {
         return 0;
     }
 
-    protected Object sequentialLockingObject() {
+    protected LinkCrawlerLock getLinkCrawlerLock() {
         return null;
-    }
-
-    protected int maxConcurrency() {
-        return Integer.MAX_VALUE;
     }
 }
