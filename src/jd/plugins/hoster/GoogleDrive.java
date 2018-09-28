@@ -159,6 +159,8 @@ public class GoogleDrive extends PluginForHost {
         String filename = br.getRegex("'title': '([^<>\"]*?)'").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("\"filename\":\"([^\"]+)\",").getMatch(0);
+        } else {
+            filename = filename.replace("의 사본", "");
         }
         if (filename == null) {
             filename = br.getRegex("<title>([^\"]+) - Google Drive</title>").getMatch(0);
