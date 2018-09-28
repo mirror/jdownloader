@@ -238,7 +238,10 @@ public class GoogleDrive extends PluginForDecrypt {
                         entries = (LinkedHashMap<String, Object>) item;
                         // kind within entries, returns false positives 20170709-raz
                         final String kind = entries.get("mimeType") != null && ((String) entries.get("mimeType")).contains(".folder") ? "folder" : (String) entries.get("kind");
-                        final String title = (String) entries.get("title");
+                        String title = (String) entries.get("title");
+                        if (title != null) {
+                            title = title.replace("의 사본", "");
+                        }
                         final long fileSize = JavaScriptEngineFactory.toLong(entries.get("fileSize"), 0);
                         final String id = (String) entries.get("id");
                         if (kind == null || title == null || id == null) {
