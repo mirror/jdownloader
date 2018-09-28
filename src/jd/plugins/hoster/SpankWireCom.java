@@ -75,9 +75,9 @@ public class SpankWireCom extends PluginForHost {
         }
         String filename = null;
         if (!downloadLink.getDownloadURL().contains("EmbedPlayer.aspx")) {
-            filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
+            filename = br.getRegex("<title>(.*?)( - Spankwire.com)?\\s*?</title>").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex("<title>(.*?) \\- Spankwire\\.com\\s*?</title>").getMatch(0);
+                filename = br.getRegex("title\">(.*?)</h1>").getMatch(0);
                 if (filename == null) {
                     filename = br.getRegex("<meta name=\"Description\" content=\"Watch (.*?) on Spankwire now\\!").getMatch(0);
                 }
