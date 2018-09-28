@@ -13,13 +13,10 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -34,9 +31,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "500px.com" }, urls = { "https?://(?:www\\.)?500px\\.com/photo/\\d+" })
 public class FivehundretPxCom extends PluginForHost {
-
     public FivehundretPxCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -45,7 +43,6 @@ public class FivehundretPxCom extends PluginForHost {
     // Tags:
     // protocol: no https
     // other:
-
     private String dllink = null;
 
     @Override
@@ -57,7 +54,7 @@ public class FivehundretPxCom extends PluginForHost {
     public void correctDownloadLink(DownloadLink link) throws Exception {
         if (link.getSetLinkID() == null) {
             final String ID = new Regex(link.getPluginPatternMatcher(), "photo/(\\d+)").getMatch(0);
-            link.setLinkID(ID);
+            link.setLinkID(getHost() + "://" + ID);
         }
     }
 
