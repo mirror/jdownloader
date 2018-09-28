@@ -244,21 +244,26 @@ public class ZeveraCom extends PluginForHost {
         /* TODO: Check if this is actually the fair use value ... */
         final String fair_use_used_str = PluginJSonUtils.getJson(br, "limit_used");
         final String premium_until_str = PluginJSonUtils.getJson(br, "premium_until");
-        final long premium_until = premium_until_str != null ? Long.parseLong(premium_until_str) * 1000 : 0;
-        if (premium_until > System.currentTimeMillis()) {
-            account.setType(AccountType.PREMIUM);
-            if (!StringUtils.isEmpty(fair_use_used_str)) {
-                final double d = Double.parseDouble(fair_use_used_str);
-                ai.setStatus("Premium | Fair usage:" + (100 - ((int) (d * 100.0))) + "%");
-            } else {
-                ai.setStatus("Premium");
-            }
-            ai.setValidUntil(premium_until);
-            ai.setUnlimitedTraffic();
-        } else {
-            /* Expired == FREE */
+        if (StringUtils.equalsIgnoreCase("false", premium_until_str)) {
             account.setType(AccountType.FREE);
             ai.setTrafficLeft(0);
+        } else {
+            final long premium_until = premium_until_str != null ? Long.parseLong(premium_until_str) * 1000 : 0;
+            if (premium_until > System.currentTimeMillis()) {
+                account.setType(AccountType.PREMIUM);
+                if (!StringUtils.isEmpty(fair_use_used_str)) {
+                    final double d = Double.parseDouble(fair_use_used_str);
+                    ai.setStatus("Premium | Fair usage:" + (100 - ((int) (d * 100.0))) + "%");
+                } else {
+                    ai.setStatus("Premium");
+                }
+                ai.setValidUntil(premium_until);
+                ai.setUnlimitedTraffic();
+            } else {
+                /* Expired == FREE */
+                account.setType(AccountType.FREE);
+                ai.setTrafficLeft(0);
+            }
         }
         br.getPage("/api/services/list?client_id=" + clientID + "&pin=" + Encoding.urlEncode(account.getPass()));
         final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
