@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -29,9 +28,8 @@ import jd.plugins.PluginForDecrypt;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vine.co" }, urls = { "https?://(?:www\\.)?vine\\.co/(?!v/)[^\\s]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vine.co" }, urls = { "https?://(?:www\\.)?vine\\.co/(?!v/)[^\\s]+" })
 public class VineCoDecrypter extends PluginForDecrypt {
-
     public VineCoDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -76,34 +74,28 @@ public class VineCoDecrypter extends PluginForDecrypt {
             this.br.getPage("https://vine.co/api/timelines/users/" + userid + "?page=" + page_current + "&anchor=00&size=" + count_per_page);
             entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             resource_data_list = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "data/records");
-
             count_total = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "data/count"), -1);
             if (count_total < 1) {
                 /* The user did not post any videos --> Link offline */
                 decryptedLinks.add(this.createDownloadlink(parameter));
                 return decryptedLinks;
             }
-
             if (resource_data_list == null || resource_data_list.size() == 0) {
                 /* Fail safe */
                 break;
             }
-
             for (final Object o : resource_data_list) {
                 entries = (LinkedHashMap<String, Object>) o;
                 final String description = (String) entries.get("description");
                 final String permalinkUrl = (String) entries.get("permalinkUrl");
-
                 if (permalinkUrl == null) {
                     return null;
                 }
-
                 if (!permalinkUrl.matches("https?://(www\\.)?vine\\.co/v/[A-Za-z0-9]+")) {
                     /* Skip invalid urls */
                     continue;
                 }
                 final String fid = permalinkUrl.substring(permalinkUrl.lastIndexOf("/") + 1);
-
                 final DownloadLink dl = this.createDownloadlink(permalinkUrl);
                 dl.setContentUrl(permalinkUrl);
                 if (description != null) {
@@ -111,7 +103,7 @@ public class VineCoDecrypter extends PluginForDecrypt {
                 }
                 String fname;
                 if (description != null && !"".equals(description)) {
-                    fname = fid + "_" + encodeUnicode(description);
+                    fname = encodeUnicode(description);
                 } else {
                     fname = fid;
                 }
@@ -119,15 +111,13 @@ public class VineCoDecrypter extends PluginForDecrypt {
                 dl.setName(fname);
                 dl.setAvailable(true);
                 dl._setFilePackage(fp);
-                dl.setLinkID(fid);
+                dl.setLinkID(getHost() + "://" + fid);
                 distribute(dl);
                 decryptedLinks.add(dl);
                 count_decrypted++;
             }
             page_current++;
         } while (count_decrypted < count_total);
-
         return decryptedLinks;
     }
-
 }

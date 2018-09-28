@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -35,7 +34,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "embedy.cc" }, urls = { "https?://(?:www\\.)?embedy\\.cc/movies/[A-Za-z0-9=]+" })
 public class EmbedyCc extends PluginForDecrypt {
-
     public EmbedyCc(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -46,27 +44,22 @@ public class EmbedyCc extends PluginForDecrypt {
         final String linkid = new Regex(parameter, "/movies/(.+)").getMatch(0);
         this.br.setFollowRedirects(true);
         br.getPage(parameter);
-
         if (br.getHttpConnection().getResponseCode() == 404 || !this.br.getURL().contains("/movies/")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-
         String fpName = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
         if (fpName == null) {
             fpName = linkid;
         }
         this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         this.br.postPage("https://" + this.getHost() + "/video.get/", "video=" + Encoding.urlEncode(linkid));
-
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "response/1/files");
-
         final Iterator<Entry<String, Object>> it = entries.entrySet().iterator();
         while (it.hasNext()) {
             final Entry<String, Object> ipentry = it.next();
@@ -75,20 +68,22 @@ public class EmbedyCc extends PluginForDecrypt {
             if (url == null || !url.startsWith("http") || quality == null) {
                 continue;
             }
-            final DownloadLink dl = createDownloadlink(url);
+            final DownloadLink dl;
             if (url.contains(this.getHost())) {
+                dl = createDownloadlink("directhttp://" + url);
                 /* Hoster by embedy.cc and/or vk.com[vk.me] */
                 dl.setFinalFileName(fpName + "_" + quality + ".mp4");
                 dl.setAvailable(true);
+                dl.setProperty("refURL", parameter);
+                dl.setProperty("requestType", "GET");
+            } else {
+                dl = createDownloadlink(url);
             }
             decryptedLinks.add(dl);
         }
-
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName.trim()));
         fp.addLinks(decryptedLinks);
-
         return decryptedLinks;
     }
-
 }
