@@ -86,9 +86,7 @@ public class Uploadedto extends PluginForHost {
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
     private static AtomicInteger           totalMaxSimultanFreeDownload              = new AtomicInteger(20);
     /* don't touch the following! */
-    private static AtomicInteger           maxFree                                   = new AtomicInteger(1);
     private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS              = -1;
-    private static AtomicInteger           maxPrem                                   = new AtomicInteger(1);
     // spaces will be '_'(checkLinks) and ' '(requestFileInformation), '_' stay '_'
     private char[]                         FILENAMEREPLACES                          = new char[] { ' ', '_', '[', ']' };
     /* Reconnect-workaround-related */
@@ -116,6 +114,7 @@ public class Uploadedto extends PluginForHost {
     private static final String            UPLOADED_FINAL_FILENAME                   = "UPLOADED_FINAL_FILENAME";
     private static final String            CURRENT_DOMAIN                            = "http://uploaded.net/";
     private static final String            HTML_MAINTENANCE                          = ">uploaded\\.net - Maintenance|Dear User, Uploaded is in maintenance mode|Lieber Kunde, wir führen kurze Wartungsarbeiten durch";
+    private static AtomicInteger           maxFree                                   = new AtomicInteger(1);
 
     private String getProtocol() {
         if (avoidHTTPS) {
@@ -252,7 +251,7 @@ public class Uploadedto extends PluginForHost {
     }
 
     public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
-        if ((account == null || account.getBooleanProperty("free", false)) && downloadLink.getVerifiedFileSize() > 1073741824) {
+        if ((account == null || !AccountType.PREMIUM.equals(account.getType())) && downloadLink.getVerifiedFileSize() > 1073741824) {
             return false;
         } else {
             return true;
@@ -553,8 +552,9 @@ public class Uploadedto extends PluginForHost {
                     ai.setUnlimitedTraffic();
                     ai.setValidUntil(-1);
                     ai.setStatus("Free account");
-                    account.setProperty("free", true);
                     account.setType(AccountType.FREE);
+                    account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+                    account.setConcurrentUsePossible(ACCOUNT_FREE_CONCURRENT_USAGE_POSSIBLE);
                 } else if ("premium".equals(tokenType)) {
                     String traffic = br.getRegex("traffic_left\":\\s*?\"?(\\d+)").getMatch(0);
                     long max = 100 * 1024 * 1024 * 1024l;
@@ -570,19 +570,28 @@ public class Uploadedto extends PluginForHost {
                         if (refreshIn != null) {
                             throw new AccountUnavailableException("DownloadAvailable:" + downloadAvailable, Long.parseLong(refreshIn) * 1000);
                         } else {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "DownloadAvailable:" + downloadAvailable, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                            throw new AccountUnavailableException("DownloadAvailable:" + downloadAvailable, 60 * 60 * 1000l);
                         }
                     }
-                    ai.setStatus("Premium account");
-                    account.setProperty("free", false);
-                    account.setType(AccountType.PREMIUM);
                     if (!ai.isExpired()) {
-                        account.setValid(true);
+                        ai.setStatus("Premium account");
+                        account.setType(AccountType.PREMIUM);
+                        account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+                        account.setConcurrentUsePossible(ACCOUNT_PREMIUM_CONCURRENT_USAGE_POSSIBLE);
+                    } else {
+                        ai.setStatus("Free (expired Premium) account");
+                        account.setType(AccountType.FREE);
+                        ai.setUnlimitedTraffic();
+                        ai.setValidUntil(-1);
+                        account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+                        account.setConcurrentUsePossible(ACCOUNT_FREE_CONCURRENT_USAGE_POSSIBLE);
                     }
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
+        } catch (AccountUnavailableException e) {
+            throw e;
         } catch (final PluginException e) {
             if (e.getLinkStatus() != LinkStatus.ERROR_PREMIUM) {
                 if (usePremiumAPI.compareAndSet(true, false)) {
@@ -607,7 +616,6 @@ public class Uploadedto extends PluginForHost {
     public AccountInfo site_Fetch_accountinfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         /* reset maxPrem workaround on every fetchaccount info */
-        maxPrem.set(1);
         prepBrowser();
         site_login(account, true);
         postPage(br, getProtocol() + "uploaded.net/status", "uid=" + Encoding.urlEncode(account.getUser()) + "&upw=" + Encoding.urlEncode(account.getPass()));
@@ -628,16 +636,12 @@ public class Uploadedto extends PluginForHost {
         }
         String isPremium = br.getMatch("status: (premium)");
         if (isPremium == null) {
-            account.setValid(true);
-            ai.setStatus("Free account");
             ai.setUnlimitedTraffic();
-            try {
-                maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
-                account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
-                account.setConcurrentUsePossible(ACCOUNT_FREE_CONCURRENT_USAGE_POSSIBLE);
-            } catch (final Throwable e) {
-            }
-            account.setProperty("free", true);
+            ai.setValidUntil(-1);
+            ai.setStatus("Free account");
+            account.setType(AccountType.FREE);
+            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+            account.setConcurrentUsePossible(ACCOUNT_FREE_CONCURRENT_USAGE_POSSIBLE);
             if (preferAPI(account)) {
                 account.setProperty("NOAPI", account.getPass());
             }
@@ -653,13 +657,19 @@ public class Uploadedto extends PluginForHost {
             long current = Long.parseLong(traffic);
             ai.setTrafficMax(Math.max(max, current));
             ai.setTrafficLeft(current);
-            try {
-                maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            if (ai.isExpired()) {
+                ai.setStatus("Free (expired Premium) account");
+                account.setType(AccountType.FREE);
+                ai.setUnlimitedTraffic();
+                ai.setValidUntil(-1);
+                account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+                account.setConcurrentUsePossible(ACCOUNT_FREE_CONCURRENT_USAGE_POSSIBLE);
+            } else {
+                ai.setStatus("Premium account");
+                account.setType(AccountType.PREMIUM);
                 account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
                 account.setConcurrentUsePossible(ACCOUNT_PREMIUM_CONCURRENT_USAGE_POSSIBLE);
-            } catch (final Throwable e) {
             }
-            account.setProperty("free", false);
             if (preferAPI(account)) {
                 account.setProperty("NOAPI", account.getPass());
             }
@@ -1310,24 +1320,8 @@ public class Uploadedto extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "API Error. Please contact Uploaded.to Support.", 5 * 60 * 1000l);
                 }
                 account.setProperty("tokenType", tokenType);
-                if ("premium".equals(tokenType)) {
-                    try {
-                        maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-                        account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-                        account.setConcurrentUsePossible(ACCOUNT_PREMIUM_CONCURRENT_USAGE_POSSIBLE);
-                    } catch (final Throwable e) {
-                    }
-                } else {
-                    try {
-                        maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
-                        account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
-                        account.setConcurrentUsePossible(ACCOUNT_FREE_CONCURRENT_USAGE_POSSIBLE);
-                    } catch (final Throwable e) {
-                    }
-                }
                 return tokenType;
             } catch (final PluginException e) {
-                maxPrem.set(-1);
                 account.setProperty("token", null);
                 account.setProperty("tokenType", null);
                 throw e;
@@ -1355,7 +1349,7 @@ public class Uploadedto extends PluginForHost {
                 requestFileInformation(downloadLink);
             }
             site_login(account, false);
-            if (account.getBooleanProperty("free")) {
+            if (!AccountType.PREMIUM.equals(account.getType())) {
                 doFree(downloadLink, account);
             } else {
                 logger.info("Premium Account, WEB download method in use!");
@@ -1762,12 +1756,6 @@ public class Uploadedto extends PluginForHost {
         }
     }
 
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
-    }
-
     private void prepBrowser() throws IOException, PluginException, InterruptedException {
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
@@ -1909,23 +1897,23 @@ public class Uploadedto extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-        {
-            put("SETTING_ACTIVATEACCOUNTERRORHANDLING", "Activate experimental free account errorhandling: Reconnect and switch between free accounts (to get more dl speed), also prevents having to enter additional captchas in between downloads.");
-            put("SETTING_EXPERIMENTALHANDLING", "Activate reconnect workaround for freeusers: Prevents having to enter additional captchas in between downloads.");
-            put("SETTING_SSL_CONNECTION", "Use Secure Communication over SSL (HTTPS://)");
-            put("SETTING_PREFER_PREMIUM_DOWNLOAD_API", "By enabling this feature, JDownloader downloads via custom download API. On failure it will auto revert to web method!\r\nBy disabling this feature, JDownloader downloads via Web download method. Web method is generally less reliable than API method.");
-            put("SETTING_DOWNLOAD_ABUSED", "Activate download of DMCA blocked links?\r\n-This function enabled uploaders to download their own links which have a 'legacy takedown' status till uploaded irrevocably deletes them\r\nNote the following:\r\n-When activated, links which have the public status 'offline' will get an 'uncheckable' status instead\r\n--> If they're still downloadable, their filename- and size will be shown on downloadstart\r\n--> If they're really offline, the correct (offline) status will be shown on downloadstart");
-        }
-    };
+                                                  {
+                                                      put("SETTING_ACTIVATEACCOUNTERRORHANDLING", "Activate experimental free account errorhandling: Reconnect and switch between free accounts (to get more dl speed), also prevents having to enter additional captchas in between downloads.");
+                                                      put("SETTING_EXPERIMENTALHANDLING", "Activate reconnect workaround for freeusers: Prevents having to enter additional captchas in between downloads.");
+                                                      put("SETTING_SSL_CONNECTION", "Use Secure Communication over SSL (HTTPS://)");
+                                                      put("SETTING_PREFER_PREMIUM_DOWNLOAD_API", "By enabling this feature, JDownloader downloads via custom download API. On failure it will auto revert to web method!\r\nBy disabling this feature, JDownloader downloads via Web download method. Web method is generally less reliable than API method.");
+                                                      put("SETTING_DOWNLOAD_ABUSED", "Activate download of DMCA blocked links?\r\n-This function enabled uploaders to download their own links which have a 'legacy takedown' status till uploaded irrevocably deletes them\r\nNote the following:\r\n-When activated, links which have the public status 'offline' will get an 'uncheckable' status instead\r\n--> If they're still downloadable, their filename- and size will be shown on downloadstart\r\n--> If they're really offline, the correct (offline) status will be shown on downloadstart");
+                                                  }
+                                              };
     private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
-        {
-            put("SETTING_ACTIVATEACCOUNTERRORHANDLING", "Aktiviere experimentielles free Account Handling: Führe Reconnects aus und wechsle zwischen verfügbaren free Accounts (um die Downloadgeschwindigkeit zu erhöhen). Verhindert auch sinnlose Captchaabfragen zwischen Downloads.");
-            put("SETTING_EXPERIMENTALHANDLING", "Aktiviere Reconnect Workaround: Verhindert sinnlose Captchaabfragen zwischen Downloads.");
-            put("SETTING_SSL_CONNECTION", "Verwende sichere Verbindungen per SSL (HTTPS://)");
-            put("SETTING_PREFER_PREMIUM_DOWNLOAD_API", "Ist dieses Feature aktiviert, verwendet JDownloader die Programmierschnittstelle (API). Nach Fehlversuchen wird automatisch zum Handling per Webseite gewechselt.\r\nIst dieses Feature deaktiviert benutzt JDownloader ausschließlich die Webseite. Die Webseite ist allgemein instabiler als die API.");
-            put("SETTING_DOWNLOAD_ABUSED", "Aktiviere Download DMCA gesperrter Links?\r\nBedenke folgendes:\r\n-Diese Funktion erlaubt es Uploadern, ihre eigenen mit 'legacy takedown' Status versehenen Links in dem vom Hoster gegebenen Zeitraum noch herunterladen zu können\r\n-Diese Funktion führt dazu, dass Links, die öffentlich den Status 'offline' haben, stattdessen den Status 'nicht überprüft' bekommen\r\n--> Falls diese wirklich offline sind, wird der korrekte (offline) Status erst beim Downloadstart angezeigt\r\n--> Falls diese noch ladbar sind, werden deren Dateiname- und Größe beim Downloadstart angezeigt");
-        }
-    };
+                                                  {
+                                                      put("SETTING_ACTIVATEACCOUNTERRORHANDLING", "Aktiviere experimentielles free Account Handling: Führe Reconnects aus und wechsle zwischen verfügbaren free Accounts (um die Downloadgeschwindigkeit zu erhöhen). Verhindert auch sinnlose Captchaabfragen zwischen Downloads.");
+                                                      put("SETTING_EXPERIMENTALHANDLING", "Aktiviere Reconnect Workaround: Verhindert sinnlose Captchaabfragen zwischen Downloads.");
+                                                      put("SETTING_SSL_CONNECTION", "Verwende sichere Verbindungen per SSL (HTTPS://)");
+                                                      put("SETTING_PREFER_PREMIUM_DOWNLOAD_API", "Ist dieses Feature aktiviert, verwendet JDownloader die Programmierschnittstelle (API). Nach Fehlversuchen wird automatisch zum Handling per Webseite gewechselt.\r\nIst dieses Feature deaktiviert benutzt JDownloader ausschließlich die Webseite. Die Webseite ist allgemein instabiler als die API.");
+                                                      put("SETTING_DOWNLOAD_ABUSED", "Aktiviere Download DMCA gesperrter Links?\r\nBedenke folgendes:\r\n-Diese Funktion erlaubt es Uploadern, ihre eigenen mit 'legacy takedown' Status versehenen Links in dem vom Hoster gegebenen Zeitraum noch herunterladen zu können\r\n-Diese Funktion führt dazu, dass Links, die öffentlich den Status 'offline' haben, stattdessen den Status 'nicht überprüft' bekommen\r\n--> Falls diese wirklich offline sind, wird der korrekte (offline) Status erst beim Downloadstart angezeigt\r\n--> Falls diese noch ladbar sind, werden deren Dateiname- und Größe beim Downloadstart angezeigt");
+                                                  }
+                                              };
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
