@@ -13,10 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -32,11 +33,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "researchgate.net" }, urls = { "https?://(?:www\\.)?researchgate\\.net/publication/\\d+_[A-Za-z0-9\\-_]+" })
 public class ResearchgateNet extends PluginForHost {
-
     public ResearchgateNet(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -52,7 +50,6 @@ public class ResearchgateNet extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         dllink = null;
-
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
@@ -64,7 +61,9 @@ public class ResearchgateNet extends PluginForHost {
         dllink = PluginJSonUtils.getJsonValue(json_source, "downloadLink");
         String filename = PluginJSonUtils.getJsonValue(json_source, "fileName");
         final String filesize = PluginJSonUtils.getJsonValue(json_source, "fileSize");
-
+        if (dllink == null) {
+            dllink = br.getRegex("full-text\" href=\"([^\"]+)\"").getMatch(0);
+        }
         if (filename == null || filename.equals("")) {
             filename = br.getRegex("<title>([^<>\"]+)(\\(PDF Download Available\\))?</title>").getMatch(0);
         }
@@ -140,5 +139,4 @@ public class ResearchgateNet extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }
