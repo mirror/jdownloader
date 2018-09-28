@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -29,9 +28,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.StringUtils;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vine.co" }, urls = { "https?://(www\\.)?vine\\.co/v/[A-Za-z0-9]+" })
 public class VineCo extends PluginForHost {
-
     public VineCo(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -44,6 +44,20 @@ public class VineCo extends PluginForHost {
         return "https://vine.co/terms";
     }
 
+    @Override
+    public String getMirrorID(DownloadLink link) {
+        if (link != null && StringUtils.equals(getHost(), link.getHost())) {
+            final String ret = link.getDownloadURL().substring(link.getDownloadURL().lastIndexOf("/") + 1);
+            if (ret != null) {
+                return getHost() + "://" + ret;
+            } else {
+                return null;
+            }
+        } else {
+            return super.getMirrorID(link);
+        }
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
@@ -53,7 +67,7 @@ public class VineCo extends PluginForHost {
         br.setFollowRedirects(true);
         this.br.setAllowedResponseCodes(410);
         final String fid = downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().lastIndexOf("/") + 1);
-        downloadLink.setLinkID(fid);
+        downloadLink.setLinkID(getHost() + "://" + fid);
         br.getPage(String.format("https://archive.%s/posts/%s.json", this.getHost(), fid));
         final int responsecode = this.br.getHttpConnection().getResponseCode();
         if (responsecode == 403 || responsecode == 404 || responsecode == 410) {
@@ -74,7 +88,7 @@ public class VineCo extends PluginForHost {
         filename = filename.trim();
         filename = encodeUnicode(filename);
         /* Include linkid in filename to avoid false positive duplicate! */
-        filename = fid + "_" + filename + ".mp4";
+        filename = filename + ".mp4";
         downloadLink.setFinalFileName(filename);
         URLConnectionAdapter con = null;
         try {
