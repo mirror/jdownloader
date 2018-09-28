@@ -208,6 +208,7 @@ public class GoogleDrive extends PluginForHost {
                     if (con.isContentDisposition()) {
                         final String fileName = getFileNameFromHeader(con);
                         if (fileName != null) {
+                            filename = filename.replace("의 사본", "");
                             link.setFinalFileName(fileName);
                         }
                         if (con.getCompleteContentLength() != -1) {
