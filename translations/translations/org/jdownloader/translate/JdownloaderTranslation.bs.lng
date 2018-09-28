@@ -11,6 +11,7 @@ AddContainerAction_delete_container_msg=Želite li da izbrišete %s1 nakon dodav
 AddContainerAction_delete_container_title=Izbrisati Kontejner Dokumente?
 AddFilteredStuffAction_getTranslationForOnlyVisibleIfThereIsFilteredStuff=Vidljivo samo ako postoje filtrirane stvari
 AudioCodec_aac_spatial=AAC Prostorno, 6 Kanala
+AudioCodec_opus_spatial=Opus prostorno 6 kanala
 AudioCodec_vorbis_spatial=Vorbis Prostorni 4 Kanala
 AuthExceptionGenericBan_toString=Nedostaje autentifikacija za %s1
 AuthExceptionGenericBan_toString_plugin=%s2: Nedostaje autentifikacija za %s1
