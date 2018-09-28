@@ -18,9 +18,6 @@ package jd.plugins.hoster;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -33,6 +30,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vshare.io" }, urls = { "https?://(?:www\\.)?vshare\\.io/(?:d|v)/[a-z0-9]+" })
 public class VshareIo extends PluginForHost {
@@ -125,18 +125,24 @@ public class VshareIo extends PluginForHost {
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
-            br.getPage(String.format("/v/%s/width-650/height-430/1", getFID(downloadLink)));
-            dllink = getDllink();
+            dllink = br.getRegex("\"(https?://s\\d+\\.vshare\\.io/download,.*?)\"").getMatch(0);
             if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                br.getPage(String.format("/v/%s/width-650/height-430/1", getFID(downloadLink)));
+                dllink = getDllink();
+                if (dllink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (dl.getConnection().isContentDisposition()) {
+            downloadLink.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
+        } else if (dl.getConnection().getContentType().contains("html") || !dl.getConnection().isOK()) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            downloadLink.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         }
-        downloadLink.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
     }
 
