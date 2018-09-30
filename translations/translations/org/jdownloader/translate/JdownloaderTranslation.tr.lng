@@ -11,6 +11,7 @@ AddContainerAction_delete_container_msg=JDownloader'a bağlantı(lar) eklendikte
 AddContainerAction_delete_container_title=Kalıp Dosyaları silinsin mi?
 AddFilteredStuffAction_getTranslationForOnlyVisibleIfThereIsFilteredStuff=Eğer süzülmüş öğe varsa Sadece Görünsün
 AudioCodec_aac_spatial=AAC Uzamsal 6 Kanal
+AudioCodec_opus_spatial=Opus Spatial 6 Kanal
 AudioCodec_vorbis_spatial=Vorbis Uzamsal 4 Kanal
 AuthExceptionGenericBan_toString=%s1 için kimlik doğrulaması eksik
 AuthExceptionGenericBan_toString_plugin=%s2: %s1 için kimlik doğrulaması eksik
