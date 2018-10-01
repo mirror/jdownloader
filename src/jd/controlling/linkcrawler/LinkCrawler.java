@@ -123,6 +123,7 @@ public class LinkCrawler {
 
     private final static String                                      DIRECT_HTTP                 = "directhttp";
     private final static String                                      HTTP_LINKS                  = "http links";
+    private final static int                                         MAX_THREADS;
     private java.util.List<CrawledLink>                              crawledLinks                = new ArrayList<CrawledLink>();
     private AtomicInteger                                            crawledLinksCounter         = new AtomicInteger(0);
     private java.util.List<CrawledLink>                              filteredLinks               = new ArrayList<CrawledLink>();
@@ -274,15 +275,19 @@ public class LinkCrawler {
         return null;
     }
 
+    public int getMaxThreads() {
+        return MAX_THREADS;
+    }
+
     static {
-        final int maxThreads = Math.max(CONFIG.getMaxThreads(), 1);
+        MAX_THREADS = Math.max(CONFIG.getMaxThreads(), 1);
         final int keepAlive = Math.max(CONFIG.getThreadKeepAlive(), 100);
         /**
          * PriorityBlockingQueue leaks last Item for some java versions
          *
          * http://bugs.java.com/bugdatabase/view_bug.do?bug_id=7161229
          */
-        threadPool = new ThreadPoolExecutor(maxThreads, maxThreads, keepAlive, TimeUnit.MILLISECONDS, new PriorityBlockingQueue<Runnable>(100, new Comparator<Runnable>() {
+        threadPool = new ThreadPoolExecutor(MAX_THREADS, MAX_THREADS, keepAlive, TimeUnit.MILLISECONDS, new PriorityBlockingQueue<Runnable>(100, new Comparator<Runnable>() {
             public int compare(Runnable o1, Runnable o2) {
                 if (o1 == o2) {
                     return 0;

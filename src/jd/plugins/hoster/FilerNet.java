@@ -66,7 +66,17 @@ public class FilerNet extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload("https://filer.net/get/" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+        link.setUrlDownload("https://filer.net/get/" + getFileID(link));
+    }
+
+    private final String getFileID(DownloadLink link) {
+        return new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+    }
+
+    @Override
+    public String getLinkID(DownloadLink link) {
+        final String fileID = getFileID(link);
+        return getHost() + "://" + fileID;
     }
 
     private void prepBrowser() {

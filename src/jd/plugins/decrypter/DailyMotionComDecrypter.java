@@ -17,7 +17,9 @@ package jd.plugins.decrypter;
 
 import java.math.BigDecimal;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -34,6 +36,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
@@ -383,12 +386,25 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         if (filename == null) {
             filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
         }
-        videoSource = getVideosource(this.br);
-        LinkedHashMap<String, Object> json = null;
+        videoSource = getVideosource(this, this.br, videoId);
         // channel might not be present above, but is within videoSource
-        if (videoSource != null && channelName == null) {
-            json = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(videoSource);
-            channelName = (String) JavaScriptEngineFactory.walkJson(json, "metadata/owner/username");
+        if (videoSource != null) {
+            final LinkedHashMap<String, Object> json = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(videoSource);
+            if (channelName == null) {
+                channelName = (String) JavaScriptEngineFactory.walkJson(json, "metadata/owner/username");
+                if (channelName == null) {
+                    channelName = (String) JavaScriptEngineFactory.walkJson(json, "owner/username");
+                }
+            }
+            if (strdate == null) {
+                final Number created_time = (Number) JavaScriptEngineFactory.walkJson(json, "created_time");
+                if (created_time != null) {
+                    strdate = new SimpleDateFormat("yyyy-MM-ddHH:mm:ssz", Locale.ENGLISH).format(new Date(created_time.intValue() * 1000l));
+                }
+            }
+            if (filename == null) {
+                filename = (String) JavaScriptEngineFactory.walkJson(json, "title");
+            }
         }
         if (videoSource == null || filename == null || videoId == null || channelName == null || strdate == null) {
             logger.warning("Decrypter failed: " + parameter);
@@ -540,11 +556,14 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
                 QUALITIES.put(qualityNumber, dlinfo);
             }
         }
-        if (QUALITIES.isEmpty() && videosource.startsWith("{\"context\"")) {
+        if (QUALITIES.isEmpty() && (videosource.startsWith("{\"context\"") || videosource.contains("\"qualities\""))) {
             /* "New" player July 2015 */
             try {
-                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(videosource);
-                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "metadata/qualities");
+                final LinkedHashMap<String, Object> map = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(videosource);
+                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(map, "metadata/qualities");
+                if (entries == null) {
+                    entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(map, "qualities");
+                }
                 /* TODO: Maybe add HLS support in case it gives us more/other formats/qualities */
                 final String[][] qualities_2 = { { "2160@60", "7" }, { "2160", "7" }, { "1440@60", "6" }, { "1440", "6" }, { "1080@60", "5" }, { "1080", "5" }, { "720@60", "4" }, { "720", "4" }, { "480", "3" }, { "380", "2" }, { "240", "1" }, { "144", "0" } };
                 for (final String quality[] : qualities_2) {
@@ -618,29 +637,14 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
     }
 
     /* Sync the following functions in hoster- and decrypterplugin */
-    public static String getVideosource(final Browser br) {
-        String videosource = br.getRegex("\"sequence\":\"([^<>\"]*?)\"").getMatch(0);
-        if (videosource == null) {
-            videosource = br.getRegex("%2Fsequence%2F(.*?)</object>").getMatch(0);
-            if (videosource != null) {
-                videosource = Encoding.urlDecode(videosource, false);
-            }
+    public static String getVideosource(Plugin plugin, final Browser br, final String videoID) throws Exception {
+        if (videoID != null) {
+            final Browser brc = br.cloneBrowser();
+            brc.getPage("http://www.dailymotion.com/player/metadata/video/" + videoID + "?integration=inline&GK_PV5_NEON=1");
+            return brc.toString();
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (videosource == null) {
-            videosource = br.getRegex("name=\"flashvars\" value=\"(.*?)\"/></object>").getMatch(0);
-        }
-        if (videosource == null) {
-            /*
-             * This source is unsupported however we only need to have it here so the handling later will eventually fail and jump into
-             * embed-fallback mode. See here (some users seem to get another/new videoplayer):
-             * https://board.jdownloader.org/showthread.php?t=64943&page=2
-             */
-            videosource = br.getRegex("window\\.playerV5 = dmp\\.create\\(document\\.getElementById\\(\\'player\\'\\), (\\{.*?\\}\\})\\);").getMatch(0);
-        }
-        if (videosource == null) {
-            videosource = br.getRegex("(\\{\"context\":.*?[\\}]{2,3});").getMatch(0);
-        }
-        return videosource;
     }
 
     private DownloadLink setVideoDownloadlink(final Browser br, final LinkedHashMap<String, String[]> foundqualities, final String qualityValue) throws ParseException {
