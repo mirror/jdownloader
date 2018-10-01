@@ -162,6 +162,19 @@ public class PackagizerLinkSandbox {
         }
     }
 
+    public Object getProperty(String key) {
+        if (link != null) {
+            return new CrawledLinkSandbox(link).getProperty(key);
+        }
+        return null;
+    }
+
+    public void setProperty(String key, Object value) {
+        if (link != null) {
+            new CrawledLinkSandbox(link).setProperty(key, value);
+        }
+    }
+
     @ScriptAPI(description = "Sets the Link Priority", parameters = { "HIGHEST|HIGHER|HIGH|DEFAULT|LOWER" })
     public void setPriority(String priority) {
         if (link != null) {

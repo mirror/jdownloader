@@ -45,7 +45,7 @@ public class DownloadLinkSandBox {
     }
 
     public DownloadLinkSandBox() {
-        downloadLink = null;
+        this(null);
     }
 
     public String getPriority() {
