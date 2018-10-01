@@ -37,7 +37,6 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
 import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
@@ -56,7 +55,6 @@ public class SmoozedCom extends antiDDoSForHost {
     private static WeakHashMap<Account, Map<String, Object>> ACCOUNTINFOS         = new WeakHashMap<Account, Map<String, Object>>();
     public static final String                               PROPERTY_ACCOUNTINFO = "ACCOUNTINFO";
     public static final String                               PROPERTY_ACCOUNTHASH = "ACCOUNTHASH";
-    private final String                                     SSL                  = "SSL";
 
     public SmoozedCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -335,18 +333,12 @@ public class SmoozedCom extends antiDDoSForHost {
     private final String AUTOMIRROR = "AUTOMIRROR";
 
     public void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SSL, "Use SSL?").setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), AUTOLOG, "Send debug logs to Smoozed.com automatically?").setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), AUTOMIRROR, "Enable Smoozed.com mirror selection mode?").setDefaultValue(true));
     }
 
     private String getProtocol() {
-        boolean ssl = getPluginConfig().getBooleanProperty(SSL, true);
-        if (ssl && Application.getJavaVersion() >= Application.JAVA17) {
-            return "https://";
-        } else {
-            return "http://";
-        }
+        return "https://";
     }
 
     @Override
@@ -426,7 +418,13 @@ public class SmoozedCom extends antiDDoSForHost {
     }
 
     private Request apiConfigJS(final Account account, final String session_Key) throws Exception {
-        getPage(getAPI() + "/config.js?session_key=" + Encoding.urlEncode(session_Key));
+        final boolean redirect = br.isFollowingRedirects();
+        try {
+            br.setFollowRedirects(true);
+            getPage(getAPI() + "/config.js?session_key=" + Encoding.urlEncode(session_Key));
+        } finally {
+            br.setFollowRedirects(redirect);
+        }
         final Request request = br.getRequest();
         errorHandling(request, account, session_Key, "/config.js", null);
         final String responseString = request.getHtmlCode();
@@ -579,7 +577,13 @@ public class SmoozedCom extends antiDDoSForHost {
         } else {
             postParam = param + "&silent_errors=true";
         }
-        postPage(getAPI() + method, postParam);
+        final boolean redirect = br.isFollowingRedirects();
+        try {
+            br.setFollowRedirects(true);
+            postPage(getAPI() + method, postParam);
+        } finally {
+            br.setFollowRedirects(redirect);
+        }
         final Request request = br.getRequest();
         errorHandling(request, account, session_Key, method, null);
         return request;
