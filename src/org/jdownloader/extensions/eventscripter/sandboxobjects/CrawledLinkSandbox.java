@@ -8,6 +8,7 @@ import java.util.WeakHashMap;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.PackageController;
+import jd.plugins.DownloadLink;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JsonKeyValueStorage;
@@ -66,7 +67,7 @@ public class CrawledLinkSandbox {
     }
 
     public CrawledLinkSandbox() {
-        link = null;
+        this(null);
     }
 
     @Override
@@ -89,7 +90,10 @@ public class CrawledLinkSandbox {
 
     public Object getProperty(String key) {
         if (link != null) {
-            return link.getDownloadLink().getProperty(key);
+            final DownloadLink downloadLink = link.getDownloadLink();
+            if (downloadLink != null) {
+                return downloadLink.getProperty(key);
+            }
         }
         return null;
     }
@@ -177,12 +181,10 @@ public class CrawledLinkSandbox {
 
     public void setProperty(String key, Object value) {
         if (link != null) {
-            if (value != null) {
-                if (!canStore(value)) {
-                    throw new WTFException("Type " + value.getClass().getSimpleName() + " is not supported");
-                }
+            final DownloadLink downloadLink = link.getDownloadLink();
+            if (downloadLink != null) {
+                new DownloadLinkSandBox(downloadLink).setProperty(key, value);
             }
-            link.getDownloadLink().setProperty(key, value);
         }
     }
 
