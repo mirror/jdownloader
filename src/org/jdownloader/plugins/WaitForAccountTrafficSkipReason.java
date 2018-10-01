@@ -15,9 +15,7 @@ import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
 import org.jdownloader.translate._JDT;
 
 public class WaitForAccountTrafficSkipReason implements ConditionalSkipReason, IgnorableConditionalSkipReason {
-
     private final static SIZEUNIT MAXSIZEUNIT = JsonConfig.create(GraphicalUserInterfaceSettings.class).getMaxSizeUnit();
-
     private final Account         account;
     private final Icon            icon;
     private final long            trafficRequired;
@@ -51,6 +49,11 @@ public class WaitForAccountTrafficSkipReason implements ConditionalSkipReason, I
     }
 
     @Override
+    public String toString() {
+        return "WaitForAccountTrafficSkipReason|Account:" + getAccount() + "|" + getMessage(this, null);
+    }
+
+    @Override
     public boolean isConditionReached() {
         return account.isEnabled() == false || account.isValid() == false || account.getAccountController() == null || hasEnoughTraffic();
     }
@@ -72,5 +75,4 @@ public class WaitForAccountTrafficSkipReason implements ConditionalSkipReason, I
     @Override
     public void finalize(DownloadLink link) {
     }
-
 }
