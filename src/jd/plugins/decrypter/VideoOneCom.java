@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -24,10 +23,11 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "video-one.com" }, urls = { "http://(www\\.)?video\\-one\\.com/video/[a-z0-9]+\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "video-one.com" }, urls = { "https?://(www\\.)?video\\-one\\.com/([a-z]+/)?pornvideo/[a-z0-9]+" })
 public class VideoOneCom extends PornEmbedParser {
-
     public VideoOneCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -36,8 +36,11 @@ public class VideoOneCom extends PornEmbedParser {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.getPage(parameter);
-        String filename = new Regex(parameter, "http://(www\\.)?video\\-one\\.com/video/([a-z0-9]+)\\.html").getMatch(1);
-        br.getPage("http://m.8-d.com/prein");
+        String filename = new Regex(parameter, "https?://(?:www\\.)?video\\-one\\.com/(?:[a-z]+/)?pornvideo/([a-z0-9]+)").getMatch(0);
+        if (br.containsHTML("<source src='//[^']+m3u8'")) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); // Needs hoster plugin to process this.
+        }
+        br.getPage("https://m.8-d.com/prein");
         final Regex th = br.getRegex("\\&t=(\\d+)\\&h=([a-z0-9]+)\"");
         String t = th.getMatch(0);
         String h = th.getMatch(1);
@@ -52,13 +55,11 @@ public class VideoOneCom extends PornEmbedParser {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-
         br.getPage("http://video-one.com/newvid/" + filename + "?t=" + t + "&h=" + h + "&p=video-one.com/eval/seq/2");
         if (br.containsHTML(">Video Content Not Available<|No htmlCode read")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-
         String externID = null;
         String fuu = null;
         final String continueURL = br.getRegex("\"(http://(\\d+\\.\\d+\\.\\d+\\.\\d+|[a-z0-9\\.]+)/visions/[^<>\"]*?)\"").getMatch(0);
@@ -115,7 +116,6 @@ public class VideoOneCom extends PornEmbedParser {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
-
         /** Or not crypted... */
         decryptedLinks.addAll(findEmbedUrls(filename));
         if (!decryptedLinks.isEmpty()) {
@@ -144,7 +144,6 @@ public class VideoOneCom extends PornEmbedParser {
             String var1 = br.getRegex("\"JavaScript\"> var [A-Za-z0-9]+ = \\'([^<>\"]*?)\\';").getMatch(0);
             String var2 = "";
             String var4 = br.getRegex("[A-Za-z0-9]+ = \"\"; function [A-Za-z0-9]+\\(\\) \\{[A-Za-z0-9]+ = \\'(.*?)\\';[A-Za-z0-9]+\\(\\);").getMatch(0);
-
             for (int i = 0; i < var4.length(); i++) {
                 char indexofVar4 = var4.charAt(i);
                 int indexofvar1 = var1.indexOf(indexofVar4);
@@ -165,5 +164,4 @@ public class VideoOneCom extends PornEmbedParser {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
