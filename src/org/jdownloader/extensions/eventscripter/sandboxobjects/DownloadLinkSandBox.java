@@ -3,6 +3,7 @@ package org.jdownloader.extensions.eventscripter.sandboxobjects;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.WeakHashMap;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
@@ -202,6 +203,14 @@ public class DownloadLinkSandBox {
                 }
             }
             downloadLink.setProperty(key, value);
+        }
+    }
+
+    public Map<String, Object> getProperties() {
+        if (downloadLink != null) {
+            return downloadLink.getProperties();
+        } else {
+            return null;
         }
     }
 

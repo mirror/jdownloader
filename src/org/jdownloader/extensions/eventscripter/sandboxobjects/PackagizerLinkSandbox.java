@@ -1,6 +1,7 @@
 package org.jdownloader.extensions.eventscripter.sandboxobjects;
 
 import java.io.File;
+import java.util.Map;
 
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.PackageInfo;
@@ -165,6 +166,13 @@ public class PackagizerLinkSandbox {
     public Object getProperty(String key) {
         if (link != null) {
             return new CrawledLinkSandbox(link).getProperty(key);
+        }
+        return null;
+    }
+
+    public Map<String, Object> getProperties() {
+        if (link != null) {
+            return new CrawledLinkSandbox(link).getProperties();
         }
         return null;
     }
