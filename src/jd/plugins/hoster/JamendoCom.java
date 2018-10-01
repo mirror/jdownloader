@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
@@ -30,9 +29,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jamendo.com" }, urls = { "https?://(?:www\\.)?jamendo\\.com/.?.?/?(?:track/|download/album/|download/a|download/track/)\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jamendo.com" }, urls = { "https?://(?:[\\w\\-]*\\.)?jamendo\\.com/.?.?/?(?:track/|download/album/|download/a|download/track/)\\d+" })
 public class JamendoCom extends PluginForHost {
-
     private String             PREFER_HIGHQUALITY = "PREFER_HIGHQUALITY";
     public static final String PREFER_WHOLEALBUM  = "PREFER_WHOLEALBUM";
 
@@ -168,5 +166,4 @@ public class JamendoCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_HIGHQUALITY, JDL.L("plugins.hoster.jamendo", "Prefer High Quality Download")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_WHOLEALBUM, JDL.L("plugins.decrypt.jamendoalbum", "Prefer whole Album as Zip")).setDefaultValue(true));
     }
-
 }
