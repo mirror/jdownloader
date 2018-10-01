@@ -564,7 +564,7 @@ public class WorldBytezCom extends antiDDoSForHost {
         /** Ticket Time */
         String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
         if (ttt == null) {
-            ttt = new Regex(correctedBR, "id=\"countdown\">[^<>\"]+<span\\s*(?:id=\"[^<>\"]+\")?(?:\\s*class=\"[^<>\"]+\")?>\\s*(\\d+)\\s*</span>").getMatch(0);
+            ttt = new Regex(correctedBR, "id=\"countdown\">[^\"<>]*(?:<br>)?[^\"<>]*<span\\s*(?:id=\"[^<>\"]+\")?(?:\\s*class=\"[^<>\"]+\")?>\\s*(\\d+)\\s*</span").getMatch(0);
         }
         if (ttt != null) {
             int tt = Integer.parseInt(ttt);
