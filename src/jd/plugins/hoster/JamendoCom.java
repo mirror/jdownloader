@@ -57,7 +57,7 @@ public class JamendoCom extends PluginForHost {
         String trackDownloadID = new Regex(parameter.getDownloadURL(), "/download/track/(\\d+)").getMatch(0);
         if (trackDownloadID != null) {
             br.setFollowRedirects(true);
-            br.getPage("http://www." + this.getHost() + "/en/track/" + trackDownloadID);
+            br.getPage("https://www." + this.getHost() + "/en/track/" + trackDownloadID);
             String Track = br.getRegex("og:title\" content=\"(.*?)\"").getMatch(0);
             String Artist = br.getRegex("og:description\" content=\"Track by (.*?) - \\d").getMatch(0);
             if (Track == null || Artist == null) {
@@ -97,7 +97,7 @@ public class JamendoCom extends PluginForHost {
         }
         if (albumDownloadID != null) {
             br.setFollowRedirects(true);
-            br.getPage("http://www.jamendo.com/en/list/a" + albumDownloadID);
+            br.getPage("https://www.jamendo.com/en/list/a" + albumDownloadID);
             String album = br.getRegex("og:title\" content=\"(.*?)\"").getMatch(0);
             String artist = br.getRegex("og:description\" content=\"Album by (.*?)\"").getMatch(0);
             if (album == null || artist == null) {
