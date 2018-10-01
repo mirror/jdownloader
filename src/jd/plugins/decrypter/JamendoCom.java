@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -28,9 +27,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jamendo.com" }, urls = { "http://[\\w\\.\\-]*?jamendo\\.com/.?.?/?(album/\\d+|artist/.+|list/a\\d+)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jamendo.com" }, urls = { "https?://[\\w\\.\\-]*?jamendo\\.com/.?.?/?(album/\\d+|artist/.+|list/a\\d+)" })
 public class JamendoCom extends PluginForDecrypt {
-
     public JamendoCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -49,7 +47,7 @@ public class JamendoCom extends PluginForDecrypt {
         if (url.contains("/album") || url.contains("list/a")) {
             String AlbumID = new Regex(url, "list/a(\\d+)").getMatch(0);
             br.setFollowRedirects(true);
-            br.getPage("http://www.jamendo.com/en/album/" + AlbumID);
+            br.getPage("https://www.jamendo.com/en/album/" + AlbumID);
             if (!url.contains("/album") && !url.contains("list/a")) {
                 decryptedLinks.add(this.createOfflinelink(url));
                 return decryptedLinks;
@@ -77,7 +75,7 @@ public class JamendoCom extends PluginForDecrypt {
                 decryptedLinks.add(link);
             } else {
                 for (final String track[] : tracks) {
-                    final DownloadLink link = createDownloadlink("http://www.jamendo.com/en/track/" + track[0]);
+                    final DownloadLink link = createDownloadlink("https://www.jamendo.com/en/track/" + track[0]);
                     link.setName(artist + " - " + album + " - " + track[1] + ".mp3");
                     link.setAvailable(true);
                     fp.add(link);
@@ -87,7 +85,7 @@ public class JamendoCom extends PluginForDecrypt {
         } else {
             String artistID = new Regex(parameter.toString(), "artist/(.+)").getMatch(0);
             br.setFollowRedirects(true);
-            br.getPage("http://www.jamendo.com/en/artist/" + artistID);
+            br.getPage("https://www.jamendo.com/en/artist/" + artistID);
             String artist = br.getRegex("([^\"]+)\" property=\"og:title").getMatch(0);
             String albums[] = br.getRegex("<h2>\\s+<a href='/en/list/a(\\d+)/\\w+' >").getColumn(0);
             DownloadLink link;
@@ -96,7 +94,7 @@ public class JamendoCom extends PluginForDecrypt {
                     link = createDownloadlink("http://storage-new.newjamendo.com/en/download/a" + album);
                     link.setName(artist + " - " + album + ".zip");
                 } else {
-                    link = createDownloadlink("http://www.jamendo.com/en/album/" + album);
+                    link = createDownloadlink("https://www.jamendo.com/en/album/" + album);
                 }
                 decryptedLinks.add(link);
             }
@@ -108,5 +106,4 @@ public class JamendoCom extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
