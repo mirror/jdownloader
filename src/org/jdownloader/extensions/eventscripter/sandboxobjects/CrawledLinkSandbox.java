@@ -3,6 +3,7 @@ package org.jdownloader.extensions.eventscripter.sandboxobjects;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.WeakHashMap;
 
 import jd.controlling.linkcrawler.CrawledLink;
@@ -186,6 +187,16 @@ public class CrawledLinkSandbox {
                 new DownloadLinkSandBox(downloadLink).setProperty(key, value);
             }
         }
+    }
+
+    public Map<String, Object> getProperties() {
+        if (link != null) {
+            final DownloadLink downloadLink = link.getDownloadLink();
+            if (downloadLink != null) {
+                return new DownloadLinkSandBox(downloadLink).getProperties();
+            }
+        }
+        return null;
     }
 
     private boolean canStore(final Object value) {
