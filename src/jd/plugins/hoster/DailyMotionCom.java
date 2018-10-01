@@ -50,8 +50,8 @@ import org.jdownloader.plugins.components.hls.HlsContainer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "https?://dailymotiondecrypted\\.com/video/\\w+" })
 public class DailyMotionCom extends PluginForHost {
-    public static String getVideosource(final Browser br) {
-        return jd.plugins.decrypter.DailyMotionComDecrypter.getVideosource(br);
+    public String getVideosource(final Browser br, final String videoID) throws Exception {
+        return jd.plugins.decrypter.DailyMotionComDecrypter.getVideosource(this, br, videoID);
     }
 
     public static LinkedHashMap<String, String[]> findVideoQualities(final Plugin plugin, final Browser br, final String parameter, String videosource) throws Exception {
@@ -128,7 +128,7 @@ public class DailyMotionCom extends PluginForHost {
             if (videoURL != null) {
                 br.getPage(videoURL);
             }
-            final String videoSource = DailyMotionComDecrypter.getVideosource(this.br);
+            final String videoSource = DailyMotionComDecrypter.getVideosource(this, this.br, getVideoID(downloadLink));
             if (videoSource != null) {
                 final LinkedHashMap<String, String[]> foundQualities = DailyMotionComDecrypter.findVideoQualities(this, this.br, videoURL, videoSource);
                 final String qualityValue = downloadLink.getStringProperty("qualityvalue", null);
@@ -212,6 +212,15 @@ public class DailyMotionCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    private String getVideoID(DownloadLink downloadLink) throws Exception {
+        final String ret = downloadLink.getStringProperty("plain_videoid", null);
+        if (ret == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            return ret;
+        }
+    }
+
     public void doFree(final DownloadLink downloadLink) throws Exception {
         if (isHDS(downloadLink)) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "HDS stream download is not supported (yet)!");
@@ -268,7 +277,7 @@ public class DailyMotionCom extends PluginForHost {
             br.getPage(mainlink);
             logger.info("findFreshDirectlink - getPage mainlink has been done, next: getVideosource");
             br.setFollowRedirects(false);
-            final String videosource = getVideosource(br);
+            final String videosource = getVideosource(br, getVideoID(dl));
             if (videosource == null) {
                 logger.info("videosource: " + videosource);
                 return null;

@@ -3,6 +3,7 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Random;
 
@@ -16,6 +17,8 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
@@ -181,7 +184,10 @@ public class TedCom extends PluginForDecrypt {
                 }
                 return;
             }
-            final LinkedHashMap<String, Object> http_stream_url_list = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "media/internal");
+            LinkedHashMap<String, Object> http_stream_url_list = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "media/internal");
+            if (http_stream_url_list == null) {
+                http_stream_url_list = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "talks/{0}/player_talks/{0}/resources");
+            }
             entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "talks/{0}");
             String title = (String) entries.get("title");
             if (title == null) {
@@ -200,12 +206,24 @@ public class TedCom extends PluginForDecrypt {
             final Iterator<Entry<String, Object>> iteratorAvailableQualities = http_stream_url_list.entrySet().iterator();
             while (iteratorAvailableQualities.hasNext()) {
                 final Entry<String, Object> currentObject = iteratorAvailableQualities.next();
+                if ("hls".equals(currentObject.getKey())) {
+                    // TODO: check after HLS support
+                    continue;
+                }
                 final String qualityKey = currentObject.getKey();
-                final LinkedHashMap<String, Object> tmp = (LinkedHashMap<String, Object>) currentObject.getValue();
+                final LinkedHashMap<String, Object> tmp;
+                if (currentObject.getValue() instanceof List) {
+                    tmp = (LinkedHashMap<String, Object>) ((List<Object>) currentObject.getValue()).get(0);
+                } else {
+                    tmp = (LinkedHashMap<String, Object>) currentObject.getValue();
+                }
                 final long filesize = JavaScriptEngineFactory.toLong(tmp.get("filesize_bytes"), 0);
-                final String url_http = (String) tmp.get("uri");
+                String url_http = (String) tmp.get("uri");
                 if (url_http == null) {
-                    throw new DecrypterException("Decrypter broken");
+                    url_http = (String) tmp.get("file");
+                    if (url_http == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                 }
                 if (qualityKey.equalsIgnoreCase("audio-podcast")) {
                     /* Audio download user selection is handled below. */
@@ -214,7 +232,7 @@ public class TedCom extends PluginForDecrypt {
                     break;
                 } else if (!formats.containsKey(qualityKey)) {
                     /* Skip unknown qualities */
-                    continue;
+                    // continue;
                 }
                 final DownloadLink dl = createDownloadlink("decrypted://decryptedtedcom.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
                 dl.setProperty("directlink", url_http);
@@ -226,28 +244,31 @@ public class TedCom extends PluginForDecrypt {
                 final String[] vidinfo = formats.get(qualityKey);
                 /* Get format-String for filename */
                 String formatString = "";
-                final String videoCodec = vidinfo[0];
-                final String videoBitrate = vidinfo[1];
-                final String videoResolution = vidinfo[2];
-                final String audioCodec = vidinfo[3];
-                final String audioBitrate = vidinfo[4];
-                if (videoCodec != null) {
-                    formatString += videoCodec + "_";
-                }
-                if (videoResolution != null) {
-                    formatString += videoResolution + "_";
-                }
-                if (videoBitrate != null) {
-                    formatString += videoBitrate + "_";
-                }
-                if (audioCodec != null) {
-                    formatString += audioCodec + "_";
-                }
-                if (audioBitrate != null) {
-                    formatString += audioBitrate;
-                }
-                if (formatString.endsWith("_")) {
-                    formatString = formatString.substring(0, formatString.lastIndexOf("_"));
+                if (vidinfo != null) {
+                    // TODO: check after HLS support
+                    final String videoCodec = vidinfo[0];
+                    final String videoBitrate = vidinfo[1];
+                    final String videoResolution = vidinfo[2];
+                    final String audioCodec = vidinfo[3];
+                    final String audioBitrate = vidinfo[4];
+                    if (videoCodec != null) {
+                        formatString += videoCodec + "_";
+                    }
+                    if (videoResolution != null) {
+                        formatString += videoResolution + "_";
+                    }
+                    if (videoBitrate != null) {
+                        formatString += videoBitrate + "_";
+                    }
+                    if (audioCodec != null) {
+                        formatString += audioCodec + "_";
+                    }
+                    if (audioBitrate != null) {
+                        formatString += audioBitrate;
+                    }
+                    if (formatString.endsWith("_")) {
+                        formatString = formatString.substring(0, formatString.lastIndexOf("_"));
+                    }
                 }
                 final String finalName = title + "_" + formatString + ".mp4";
                 dl.setFinalFileName(finalName);
@@ -272,6 +293,8 @@ public class TedCom extends PluginForDecrypt {
                     decryptedLinks.add(dl);
                 }
             }
+            // TODO: check after HLS support
+            decryptedLinks.addAll(foundVideoLinks.values());
             if (url_mp3 != null && cfg.getBooleanProperty(GRAB_MP3, false)) {
                 final DownloadLink dl = createDownloadlink("decrypted://decryptedtedcom.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
                 final String finalName = title + "_mp3.mp3";

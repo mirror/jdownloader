@@ -29,15 +29,15 @@ public abstract class LinkCrawlerRunnable implements Runnable {
     }
 
     public void run() {
-        if (getLinkCrawlerLock() == null) {
+        final LinkCrawlerLock lock = getLinkCrawlerLock();
+        if (lock == null || lock.maxConcurrency() == Integer.MAX_VALUE || lock.maxConcurrency() > getLinkCrawler().getMaxThreads()) {
             run_now();
         } else {
-            run_delayed();
+            run_delayed(lock);
         }
     }
 
-    protected void run_delayed() {
-        final LinkCrawlerLock lock = getLinkCrawlerLock();
+    protected void run_delayed(LinkCrawlerLock lock) {
         final int maxConcurrency = lock.maxConcurrency();
         final LinkCrawlerRunnable startRunnable;
         synchronized (SEQ_RUNNABLES) {
