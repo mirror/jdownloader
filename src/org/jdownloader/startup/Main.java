@@ -56,8 +56,8 @@ public class Main {
             // TODO: remove once all IPv6 changes are finished @jiaz
             System.setProperty("java.net.preferIPv4Stack", "true");
         }
-        if (System.getProperty("LogV3_FACTORY") == null) {
-            System.setProperty("LogV3_FACTORY", LogSourceRedirector.class.getName());
+        if (System.getProperty("org.appwork.LoggerFactory") == null) {
+            System.setProperty("org.appwork.LoggerFactory", LogSourceRedirector.class.getName());
         }
         org.appwork.utils.Application.setApplication(".jd_home");
         org.appwork.utils.Application.getRoot(jd.SecondLevelLaunch.class);
