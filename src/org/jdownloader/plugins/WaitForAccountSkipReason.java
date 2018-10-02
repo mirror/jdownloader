@@ -41,7 +41,7 @@ public class WaitForAccountSkipReason implements ConditionalSkipReason, Ignorabl
 
     @Override
     public String toString() {
-        return "WaitForAccountSkipReason|Account:" + getAccount() + "|" + getMessage(this, null);
+        return "WaitForAccountSkipReason(Account:" + getAccount() + "|" + getMessage(this, null) + ")";
     }
 
     @Override
