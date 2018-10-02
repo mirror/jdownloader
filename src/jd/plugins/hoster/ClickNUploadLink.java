@@ -410,7 +410,7 @@ public class ClickNUploadLink extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, false, 1, PROPERTY_DLLINK_FREE);
+        doFree(downloadLink, true, 1, PROPERTY_DLLINK_FREE);
     }
 
     @SuppressWarnings({ "unused", "deprecation" })
