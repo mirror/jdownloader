@@ -592,7 +592,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
                     }
                 }
             } catch (final Throwable e) {
-                e.printStackTrace();
+                plugin.getLogger().log(e);
             }
         }
         // List empty or only 1 link found -> Check for (more) links
@@ -640,8 +640,16 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
     public static String getVideosource(Plugin plugin, final Browser br, final String videoID) throws Exception {
         if (videoID != null) {
             final Browser brc = br.cloneBrowser();
-            brc.getPage("http://www.dailymotion.com/player/metadata/video/" + videoID + "?integration=inline&GK_PV5_NEON=1");
-            return brc.toString();
+            brc.setFollowRedirects(true);
+            brc.getPage("https://www.dailymotion.com/player/metadata/video/" + videoID + "?integration=inline&GK_PV5_NEON=1");
+            if (brc.getHttpConnection().isOK() && StringUtils.containsIgnoreCase(brc.getHttpConnection().getContentType(), "json")) {
+                return brc.toString();
+            } else {
+                brc.setRequest(null);
+                brc.getPage("https://www.dailymotion.com/embed/video/" + videoID);
+                final String config = brc.getRegex("var\\s*config\\s*=\\s*(\\{.*?};)\\s*window").getMatch(0);
+                return config;
+            }
         } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

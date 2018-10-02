@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Locale;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -53,7 +54,7 @@ public class WlnkEc extends PluginForDecrypt {
         } else {
             captchaCode = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
         }
-        this.br.postPage(this.br.getURL(), "submit=unlock&g-recaptcha-response=" + Encoding.urlEncode(captchaCode));
+        this.br.postPage(this.br.getURL(), "submit=unlock&captcha-response-newvar=" + Encoding.urlEncode(captchaCode.toUpperCase(Locale.ENGLISH)));
         if (br.containsHTML("Captcha invalide")) {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }

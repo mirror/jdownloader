@@ -50,7 +50,7 @@ public class WaitForAccountTrafficSkipReason implements ConditionalSkipReason, I
 
     @Override
     public String toString() {
-        return "WaitForAccountTrafficSkipReason|Account:" + getAccount() + "|" + getMessage(this, null);
+        return "WaitForAccountTrafficSkipReason(Account:" + getAccount() + "|" + getMessage(this, null) + ")";
     }
 
     @Override
