@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -54,16 +53,15 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filedwon.info", "filedwon.com" }, urls = { "https?://(www\\.)?filedwon\\.(com|net|info)/[a-z0-9]{12}", "589ut90j59ujktojhzDELETE_MErf56uj43zgfjz" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4file.net" }, urls = { "https?://(www\\.)?(filedwon\\.(com|net|info)|4file\\.net)/[a-z0-9]{12}" })
 public class FileDwonCom extends PluginForHost {
-
     private String               correctedBR                  = "";
     private String               passCode                     = null;
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     // primary website url, take note of redirects
-    private static final String  COOKIE_HOST                  = "http://filedwon.info";
+    private static final String  COOKIE_HOST                  = "http://4file.net";
     // domain names used within download links.
-    private static final String  DOMAINS                      = "(filedwon\\.info|filedwon\\.net|filedwon\\.com)";
+    private static final String  DOMAINS                      = "(filedwon\\.info|filedwon\\.net|filedwon\\.com|4file\\.net)";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -87,7 +85,6 @@ public class FileDwonCom extends PluginForHost {
     // protocol: no https
     // captchatype: 4dignum
     // other:
-
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         // link cleanup, but respect users protocol choosing.
@@ -100,6 +97,15 @@ public class FileDwonCom extends PluginForHost {
         String desiredHost = new Regex(COOKIE_HOST, "https?://([^/]+)").getMatch(0);
         String importedHost = new Regex(link.getDownloadURL(), "https?://([^/]+)").getMatch(0);
         link.setUrlDownload(link.getDownloadURL().replaceAll(importedHost, desiredHost));
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if (host == null || "filedwon.info".equals(host) || "filedwon.net".equals(host) || "filedwon.com".equals(host) || "4file.net".equals(host)) {
+            return "4file.net";
+        } else {
+            return super.rewriteHost(host);
+        }
     }
 
     @Override
@@ -335,7 +341,6 @@ public class FileDwonCom extends PluginForHost {
                     skipWaittime = true;
                 } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                     logger.info("Detected captcha method \"solvemedia\" for this host");
-
                     final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                     final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
                     final String code = getCaptchaCode("solvemedia", cf, downloadLink);
@@ -438,14 +443,11 @@ public class FileDwonCom extends PluginForHost {
     public void correctBR() throws NumberFormatException, PluginException {
         correctedBR = br.toString();
         ArrayList<String> regexStuff = new ArrayList<String>();
-
         // remove custom rules first!!! As html can change because of generic cleanup rules.
-
         // generic cleanup
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
         regexStuff.add("(display: ?none;\">.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
-
         for (String aRegex : regexStuff) {
             String results[] = new Regex(correctedBR, aRegex).getColumn(0);
             if (results != null) {
@@ -477,26 +479,21 @@ public class FileDwonCom extends PluginForHost {
 
     private String decodeDownloadLink(final String s) {
         String decoded = null;
-
         try {
             Regex params = new Regex(s, "\\'(.*?[^\\\\])\\',(\\d+),(\\d+),\\'(.*?)\\'");
-
             String p = params.getMatch(0).replaceAll("\\\\", "");
             int a = Integer.parseInt(params.getMatch(1));
             int c = Integer.parseInt(params.getMatch(2));
             String[] k = params.getMatch(3).split("\\|");
-
             while (c != 0) {
                 c--;
                 if (k[c].length() != 0) {
                     p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
                 }
             }
-
             decoded = p;
         } catch (Exception e) {
         }
-
         String finallink = null;
         if (decoded != null) {
             finallink = new Regex(decoded, "name=\"src\"value=\"(.*?)\"").getMatch(0);
@@ -947,5 +944,4 @@ public class FileDwonCom extends PluginForHost {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.SibSoft_XFileShare;
     }
-
 }
