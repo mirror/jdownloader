@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 39683 $", interfaceVersion = 3, names = { "getcomics.info" }, urls = { "https://getcomics\\.info/[A-Za-z0-9_\\-]+/[A-Za-z0-9_\\-]+" })
+@DecrypterPlugin(revision = "$Revision: 39909 $", interfaceVersion = 3, names = { "getcomics.info" }, urls = { "https://getcomics\\.info/[A-Za-z0-9_\\-]+/[A-Za-z0-9_\\-]+" })
 public class GetComics extends PluginForDecrypt {
     public GetComics(PluginWrapper wrapper) {
         super(wrapper);
@@ -55,7 +55,7 @@ public class GetComics extends PluginForDecrypt {
             sectionEnd = page.indexOf("<section class=\"post-footer\">", sectionStart);
         }
         String section = page.substring(sectionStart, sectionEnd);
-        String[][] regExMatches = new Regex(section, "a href=\"(.+?)\"").getMatches();
+        String[][] regExMatches = new Regex(section, "a[^>]+href=\"(.+?)\"").getMatches();
         for (String[] regExMatch : regExMatches) {
             String matchedURL = Encoding.htmlDecode(regExMatch[0]);
             decryptedLinks.add(createDownloadlink(matchedURL));
