@@ -15,30 +15,8 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.ByteArrayInputStream;
 import java.util.LinkedHashMap;
 import java.util.Locale;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathFactory;
-
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.downloader.hds.HDSDownloader;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.config.MediathekProperties;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.Order;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -51,6 +29,18 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MediathekHelper;
+
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.downloader.hds.HDSDownloader;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.config.MediathekProperties;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tvnow.de" }, urls = { "https?://(?:www\\.)?(?:nowtv|tvnow)\\.(?:de|ch)/[a-z0-9\\-]+/[a-z0-9\\-]+/.+" })
 public class TvnowDe extends PluginForHost {
@@ -243,6 +233,7 @@ public class TvnowDe extends PluginForHost {
             // }
         }
         if (!StringUtils.isEmpty(hlsMaster)) {
+            hlsMaster = hlsMaster.replaceAll("(filter=.*?)(&|$)", "");// show all available qualities
             br.getPage(hlsMaster);
             final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
             if (hlsbest == null) {
@@ -301,48 +292,6 @@ public class TvnowDe extends PluginForHost {
     @SuppressWarnings("deprecation")
     private String getURLPart(final DownloadLink dl) {
         return new Regex(dl.getDownloadURL(), "/([a-z0-9\\-]+/[a-z0-9\\-]+)$").getMatch(0);
-    }
-
-    private String parseManifest() {
-        try {
-            final DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-            final XPath xPath = XPathFactory.newInstance().newXPath();
-            Document d = parser.parse(new ByteArrayInputStream(br.toString().getBytes("UTF-8")));
-            NodeList nl = (NodeList) xPath.evaluate("/manifest/media", d, XPathConstants.NODESET);
-            for (int i = 0; i < nl.getLength(); i++) {
-                Node n = nl.item(i);
-                String streamId = null;
-                String bootstrapInfoId = null;
-                String drmAdditionalHeaderId = null;
-                String url = null;
-                if (n.getAttributes().getNamedItem("url") != null) {
-                    /* Crypted */
-                    url = n.getAttributes().getNamedItem("url").getTextContent();
-                    streamId = n.getAttributes().getNamedItem("streamId").getTextContent();
-                    bootstrapInfoId = n.getAttributes().getNamedItem("bootstrapInfoId").getTextContent();
-                    drmAdditionalHeaderId = n.getAttributes().getNamedItem("drmAdditionalHeaderId").getTextContent();
-                } else {
-                    /* Uncrypted */
-                    url = n.getAttributes().getNamedItem("href").getTextContent();
-                }
-                if (url.startsWith("http")) {
-                    return url;
-                } else {
-                    String base = br.getBaseURL();
-                    return base + url;
-                }
-                // System.out.println(n);
-                // String tc = n.getTextContent();
-                // String media = xPath.evaluate("metadata", n).trim();
-                // byte[] mediaB = Base64.decode(media);
-                // media = new String(mediaB, "UTF-8");
-                // System.out.println(media);
-            }
-        } catch (Throwable e) {
-            e.printStackTrace();
-        } finally {
-        }
-        return null;
     }
 
     @Override

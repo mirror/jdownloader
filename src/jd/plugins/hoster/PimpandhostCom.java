@@ -13,10 +13,7 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -29,9 +26,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pimpandhost.com" }, urls = { "https?://(?:www\\.)?pimpandhost\\.com/image/\\d+" })
 public class PimpandhostCom extends PluginForHost {
-
     public PimpandhostCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -40,14 +38,12 @@ public class PimpandhostCom extends PluginForHost {
     // Tags:
     // protocol: no https
     // other:
-
     /* Extension which will be used if no correct extension is found */
     private static final String  default_extension = ".jpg";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
     private boolean              server_issues     = false;
 
@@ -69,7 +65,7 @@ public class PimpandhostCom extends PluginForHost {
         }
         final String url_filename = new Regex(link.getDownloadURL(), "/(.*)$").getMatch(0);
         final String filesize = this.br.getRegex(">Size: ([^<>\"]+)<").getMatch(0);
-        String filename = br.getRegex("<title>([^<>\"]+) \\| pimpandhost\\.com</title>").getMatch(0);
+        String filename = br.getRegex("<title>\\s*([^<>\"]+)(\\s*\\|\\s*pimpandhost\\.com)?</title>").getMatch(0);
         if (filename == null) {
             filename = url_filename;
         }
@@ -83,9 +79,13 @@ public class PimpandhostCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported feature");
         }
         /* Maybe required to get highest quality: br.getPage("http://pimpandhost.com/image/" + picID + "-original.html"); */
-        dllink = br.getRegex("<img[^>]*?class=\"normal\"[^>]*?src=\"(http[^<>\"]+)\"").getMatch(0);
+        dllink = br.getRegex("<img[^>]*?class=\"normal\"[^>]*?src=\"(https?[^<>\"]+)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("<img[^>]*?class=\"normal\"[^>]*?src=\"(//[^<>\"]+)\"").getMatch(0);
+        }
         final String ext;
         if (dllink != null) {
+            dllink = br.getURL(dllink).toString();
             ext = getFileNameExtensionFromString(dllink, default_extension);
         } else {
             ext = default_extension;
@@ -95,6 +95,7 @@ public class PimpandhostCom extends PluginForHost {
         }
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
+            link.setName(filename);
         } else if (dllink != null) {
             dllink = Encoding.htmlDecode(dllink);
             link.setFinalFileName(filename);
