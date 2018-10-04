@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -26,16 +25,14 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "timekiller-erotic.com" }, urls = { "http://(www\\.)?timekiller\\-erotic\\.com/(Video/\\d+/.*?|PornHub/\\d+/[a-z0-9\\-_]+)\\.html" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "timekiller-erotic.com" }, urls = { "http://(www\\.)?timekiller\\-erotic\\.com/(Video/\\d+/.*?|PornHub/\\d+/[a-z0-9\\-_]+)\\.html" })
 public class TimeKillerEroticCom extends PluginForDecrypt {
-
     public TimeKillerEroticCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* DEV NOTES */
     /* Porn_plugin */
-
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
@@ -97,7 +94,6 @@ public class TimeKillerEroticCom extends PluginForDecrypt {
                 dl.setFinalFileName(filename + ".flv");
                 decryptedLinks.add(dl);
                 return decryptedLinks;
-
             }
             externID = br.getRegex("var urlAddress = \"(http://.*?)\"").getMatch(0);
             if (externID != null) {
@@ -192,6 +188,9 @@ public class TimeKillerEroticCom extends PluginForDecrypt {
             }
             // drtuber.com embed v3
             externID = br.getRegex("(http://(www\\.)?drtuber\\.com/player/config_embed3\\.php\\?vkey=[a-z0-9]+)").getMatch(0);
+            if (externID == null) {
+                externID = br.getRegex("(https?://(www\\.)?drtuber\\.com/embed/\\d+)").getMatch(0);
+            }
             if (externID != null) {
                 decryptedLinks.add(createDownloadlink(externID));
                 return decryptedLinks;
@@ -224,5 +223,4 @@ public class TimeKillerEroticCom extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

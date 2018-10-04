@@ -20,6 +20,9 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -39,9 +42,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "drtuber.com" }, urls = { "https?://(www\\.|m\\.)?drtuber\\.com/(video/\\d+|player/config_embed3\\.php\\?vkey=[a-z0-9]+|embed/\\d+)" })
 public class DrTuberCom extends PluginForHost {
@@ -199,11 +199,29 @@ public class DrTuberCom extends PluginForHost {
                     dllink = getUncryptedFinallink();
                 }
                 if (dllink == null) {
+                    final String vid = new Regex(downloadLink.getDownloadURL(), "(?:embed|video)/(\\d+)").getMatch(0);
+                    final Browser br1 = br.cloneBrowser();
+                    br1.getPage("https://www.drtuber.com/player_config_json/?vid=" + vid);
+                    // dllink = br1.getRegex("(https://acdn.*?mp4)").getMatch(0);
+                    // String files = PluginJSonUtils.getJsonValue(br1.toString(), "files");
+                    final String files = br1.getRegex("files\":(.*?\\}),").getMatch(0);
+                    if (files != null) {
+                        dllink = PluginJSonUtils.getJsonValue(files, "hq");
+                        if (dllink == null) {
+                            dllink = PluginJSonUtils.getJsonValue(files, "lq");
+                        }
+                        if (dllink != null) {
+                            downloadLink.setProperty("directlink", dllink);
+                            checkDirectLink(downloadLink, "directlink");
+                        }
+                    }
+                }
+                if (dllink == null) {
                     final boolean new_handling = true;
                     if (new_handling) {
                         /*
                          * Very very very very bad js workaround
-                         * 
+                         *
                          * IMPORTANT: If we find no other way to fix this in the future, switch to /embed/ links, old handling still works
                          * fine for them
                          */
@@ -311,6 +329,8 @@ public class DrTuberCom extends PluginForHost {
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
+                } else {
+                    downloadLink.setDownloadSize(con.getLongContentLength());
                 }
             } catch (final Exception e) {
                 downloadLink.setProperty(property, Property.NULL);
