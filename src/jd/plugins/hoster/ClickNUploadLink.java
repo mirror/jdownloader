@@ -410,7 +410,13 @@ public class ClickNUploadLink extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 1, PROPERTY_DLLINK_FREE);
+        final int maxChunks;
+        if (getPluginConfig().getBooleanProperty("ENABLE_EXPERIMENTAL_FREE_2_CHUNKS", false)) {
+            maxChunks = -2;
+        } else {
+            maxChunks = 1;
+        }
+        doFree(downloadLink, true, maxChunks, PROPERTY_DLLINK_FREE);
     }
 
     @SuppressWarnings({ "unused", "deprecation" })
@@ -1195,10 +1201,12 @@ public class ClickNUploadLink extends antiDDoSForHost {
     }
 
     private static final String  ENABLE_UNLIMITED_DOWNLOADS        = "ENABLE_UNLIMITED_DOWNLOADS";
+    private static final String  ENABLE_EXPERIMENTAL_FREE_2_CHUNKS = "ENABLE_EXPERIMENTAL_FREE_2_CHUNKS";
     private static final boolean defaultENABLE_UNLIMITED_DOWNLOADS = false;
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ENABLE_UNLIMITED_DOWNLOADS, "Enable unlimited (=20) simultaneous (free) downloads?\r\nWARNING: This may cause download failures / loops!").setDefaultValue(defaultENABLE_UNLIMITED_DOWNLOADS));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ENABLE_EXPERIMENTAL_FREE_2_CHUNKS, "Experimental allow max 2 chunks for free downloads?").setDefaultValue(false));
     }
 
     @Override
