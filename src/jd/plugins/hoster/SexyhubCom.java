@@ -181,6 +181,7 @@ public class SexyhubCom extends PluginForHost {
                     }
                     logger.info("Cookie login failed --> Performing full login");
                     br = prepBR(new Browser());
+                    br.clearCookies(getHost());
                 }
                 br.getPage("https://ma." + account.getHoster() + "/access/login/");
                 final Form submit = br.getFormbyActionRegex(".*/access/submit.*");
@@ -191,7 +192,7 @@ public class SexyhubCom extends PluginForHost {
                 submit.put("password", Encoding.urlEncode(account.getPass()));
                 submit.put("rememberme", "on");
                 if (br.containsHTML("google\\.com/recaptcha/api")) {
-                    final DownloadLink dummyLink = new DownloadLink(this, "Account", account.getHoster(), "https://members." + account.getHoster() + "/", true);
+                    final DownloadLink dummyLink = new DownloadLink(this, "Account", account.getHoster(), "https://ma." + account.getHoster() + "/", true);
                     final DownloadLink old = this.getDownloadLink();
                     if (old == null) {
                         this.setDownloadLink(dummyLink);
