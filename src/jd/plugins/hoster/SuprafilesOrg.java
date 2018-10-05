@@ -62,18 +62,18 @@ import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "suprafiles.me" }, urls = { "https?://(?:www\\.)?suprafiles\\.(?:net|co|org|me)/(?:embed\\-)?[a-z0-9]{12}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sfiles.org" }, urls = { "https?://(?:www\\.)?(suprafiles\\.(?:net|co|org|me)|sfiles\\.org)/(?:embed\\-)?[a-z0-9]{12}" })
 public class SuprafilesOrg extends antiDDoSForHost {
     /* Some HTML code to identify different (error) states */
     private static final String  HTML_PASSWORDPROTECTED             = "<br><b>Passwor(d|t):</b> <input";
     private static final String  HTML_MAINTENANCE_MODE              = ">This server is in maintenance mode";
     /* Here comes our XFS-configuration */
-    private final boolean        SUPPORTS_HTTPS                     = false;
+    private final boolean        SUPPORTS_HTTPS                     = true;
     /* primary website url, take note of redirects */
-    private final String         COOKIE_HOST                        = "http://suprafiles.me".replaceFirst("https?://", SUPPORTS_HTTPS ? "https://" : "http://");
+    private final String         COOKIE_HOST                        = "http://sfiles.org".replaceFirst("https?://", SUPPORTS_HTTPS ? "https://" : "http://");
     private final String         NICE_HOSTproperty                  = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private final static String  DOMAINS                            = "suprafiles\\.(?:net|co|org|me)";
+    private final static String  DOMAINS                            = "(suprafiles\\.(?:net|co|org|me)|sfiles\\.org)";
     private final static String  dllinkRegexFile                    = "https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|(?:[\\w\\-\\.]+\\.)?%s)(?::\\d{1,4})?/(?:files|d|cgi\\-bin/dl\\.cgi)/(?:\\d+/)?[a-z0-9]+/[^<>\"/]*?";
     private final static String  dllinkRegexImage                   = "https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|(?:[\\w\\-\\.]+\\.)?%s)(?:/img/\\d+/[^<>\"'\\[\\]]+|/img/[a-z0-9]+/[^<>\"'\\[\\]]+|/img/[^<>\"'\\[\\]]+|/i/\\d+/[^<>\"'\\[\\]]+|/i/\\d+/[^<>\"'\\[\\]]+(?!_t\\.[A-Za-z]{3,4}))";
     /* Errormessages inside URLs */
@@ -132,7 +132,7 @@ public class SuprafilesOrg extends antiDDoSForHost {
     /* don't touch the following! */
     private static AtomicInteger maxFree                            = new AtomicInteger(1);
     private static Object        LOCK                               = new Object();
-    private final String         rc2SiteKey                         = "6LeOxHAUAAAAAG1oFDPEfbKx3u1JcK8QxkxFo8NT";
+    private final String         rc2SiteKey                         = "6Ldom3EUAAAAAEhnCBOcr8zBbFvQdw3_0fJxb4sz";
 
     /**
      * DEV NOTES XfileSharingProBasic Version 2.7.6.7<br />
@@ -151,18 +151,18 @@ public class SuprafilesOrg extends antiDDoSForHost {
      */
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "suprafiles.net", "suprafiles.co", "suprafiles.org", "suprafiles.me" };
+        return new String[] { "suprafiles.net", "suprafiles.co", "suprafiles.org", "suprafiles.me", "sfiles.org" };
     }
 
     @Override
     public String rewriteHost(String host) {
         // must be plugin host entry!
         if (host == null) {
-            return "suprafiles.me";
+            return "sfiles.org";
         }
         for (final String supportedName : siteSupportedNames()) {
             if (supportedName.equals(host)) {
-                return "suprafiles.me";
+                return "sfiles.org";
             }
         }
         return super.rewriteHost(host);

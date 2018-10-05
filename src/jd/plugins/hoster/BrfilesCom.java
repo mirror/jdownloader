@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -31,6 +30,7 @@ import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -51,7 +51,6 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPlugin
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "brfiles.com" }, urls = { "https?://(?:www\\.)?(?:brfiles\\.com|brfil\\.es)/f/[A-Za-z0-9]+(/[^/]+?:)?" })
 public class BrfilesCom extends PluginForHost {
-
     public BrfilesCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(mainpage + "/cadastro/");
@@ -66,7 +65,6 @@ public class BrfilesCom extends PluginForHost {
      * captchatype: reCaptchaV2<br />
      * other: alternative linkcheck#2: statistics URL: host.tld/<fid>~s<br />
      */
-
     @Override
     public String getAGBLink() {
         return mainpage + "/terms." + type;
@@ -83,7 +81,6 @@ public class BrfilesCom extends PluginForHost {
     private static final boolean           supportshttps_FORCED                         = false;
     /* In case there is no information when accessing the main link */
     private static final boolean           available_CHECK_OVER_INFO_PAGE               = false;
-    private static final boolean           useOldLoginMethod                            = true;
     private static final boolean           enable_RANDOM_UA                             = false;
     /* Known errors */
     private static final String            url_ERROR_SIMULTANDLSLIMIT                   = "e=You+have+reached+the+maximum+concurrent+downloads";
@@ -97,7 +94,6 @@ public class BrfilesCom extends PluginForHost {
     private static final String            errortext_ERROR_SERVER                       = "Server error";
     private static final String            errortext_ERROR_PREMIUMONLY                  = "This file can only be downloaded by premium (or registered) users";
     private static final String            errortext_ERROR_SIMULTANDLSLIMIT             = "Max. simultan downloads limit reached, wait to start more downloads from this host";
-
     /* Connection stuff */
     private static final boolean           free_RESUME                                  = true;
     private static final int               free_MAXCHUNKS                               = 1;
@@ -108,7 +104,6 @@ public class BrfilesCom extends PluginForHost {
     private static final boolean           account_PREMIUM_RESUME                       = true;
     private static final int               account_PREMIUM_MAXCHUNKS                    = 0;
     private static final int               account_PREMIUM_MAXDOWNLOADS                 = 20;
-
     private static AtomicInteger           MAXPREM                                      = new AtomicInteger(1);
     private static AtomicReference<String> agent                                        = new AtomicReference<String>(null);
 
@@ -515,51 +510,47 @@ public class BrfilesCom extends PluginForHost {
         return br;
     }
 
-    private static final Object LOCK = new Object();
-
     private void login(final Account account, boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
                 prepBrowser(this.br);
                 br.setFollowRedirects(true);
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null && !force) {
+                if (cookies != null) {
                     this.br.setCookies(this.getHost(), cookies);
-                    return;
+                    br.getPage(this.getProtocol() + this.getHost() + "/");
+                    if (!br.containsHTML("/logout/?\"") || br.getHostCookie("brf_auth", Cookies.NOTDELETEDPATTERN) == null) {
+                        br.clearCookies(getHost());
+                    } else {
+                        br.getPage("/account_home/");
+                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        return;
+                    }
                 }
                 br.getPage(this.getProtocol() + this.getHost() + "/");
                 final String lang = System.getProperty("user.language");
-                final String loginstart = new Regex(br.getURL(), "(https?://(www\\.)?)").getMatch(0);
-                if (useOldLoginMethod) {
-                    br.postPage(this.getProtocol() + this.getHost() + "/login/", "submit=&submitme=1&redirect=&btn-enviar=&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                    if (br.containsHTML(">Your username and password are invalid<") || !br.containsHTML("/logout/?\"")) {
-                        if ("de".equalsIgnoreCase(lang)) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        } else {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        }
-                    }
-                    br.getPage(loginstart + this.getHost() + "/account_home/");
-                } else {
-                    br.getPage(this.getProtocol() + this.getHost() + "/login." + type);
-                    final String loginpostpage = loginstart + this.getHost() + "/ajax/_account_login.ajax.php";
-                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                    br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-                    br.postPage(loginpostpage, "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                    if (!br.containsHTML("\"login_status\":\"success\"")) {
-                        if ("de".equalsIgnoreCase(lang)) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        } else {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        }
-                    }
-                    br.getPage(loginstart + this.getHost() + "/account_home." + type);
+                final Form login = br.getForm(0);
+                if (login == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                login.put("username", Encoding.urlEncode(account.getUser()));
+                login.put("password", Encoding.urlEncode(account.getPass()));
+                br.submitForm(login);
+                if (br.containsHTML(">Your username and password are invalid<") || !br.containsHTML("/logout/?\"") || br.getHostCookie("brf_auth", Cookies.NOTDELETEDPATTERN) == null) {
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                br.getPage("/account_home/");
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
-                account.clearCookies("");
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
@@ -571,12 +562,7 @@ public class BrfilesCom extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         /* reset maxPrem workaround on every fetchaccount info */
         MAXPREM.set(1);
-        try {
-            login(account, true);
-        } catch (final PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account, true);
         final boolean isUploader = br.containsHTML("class=\"badge badge\\-success\">(?:UPLOADER)</span>");
         if (!br.containsHTML("class=\"badge badge\\-success\">(?:PAID USER|USUARIO DE PAGO|CONTA PREMIUM)</span>")) {
             account.setType(AccountType.FREE);
@@ -586,19 +572,9 @@ public class BrfilesCom extends PluginForHost {
             MAXPREM.set(account_FREE_MAXDOWNLOADS);
             ai.setStatus("Registered (free) account");
         } else {
-            String expire;
-            if (useOldLoginMethod) {
-                /* 2016-11-29: Special */
-                br.getPage("/account_edit/");
-                expire = br.getRegex("Data de vencimento: </label>\\s*?<div class=\"[^\"]+\">\\s*?(\\d{2}/\\d{2}/\\d{4})\\s*?<").getMatch(0);
-            } else {
-                br.getPage("/upgrade." + type);
-                expire = br.getRegex("Reverts To Free Account:[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
-                if (expire == null) {
-                    /* More wide RegEx to be more language independant */
-                    expire = br.getRegex(">[\t\n\r ]*?(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})[\t\n\r ]*?<").getMatch(0);
-                }
-            }
+            /* 2016-11-29: Special */
+            br.getPage("/account_edit/");
+            String expire = br.getRegex("Data de vencimento: </label>\\s*?<div class=\"[^\"]+\">\\s*?(\\d{2}/\\d{2}/\\d{4})\\s*?<").getMatch(0);
             if (expire == null && isUploader) {
                 final GregorianCalendar calendar = new GregorianCalendar();
                 calendar.setTimeInMillis(System.currentTimeMillis());
@@ -612,9 +588,9 @@ public class BrfilesCom extends PluginForHost {
             long expire_milliseconds = 0;
             if (!expire.contains(":")) {
                 /* 2016-11-29: Special */
-                expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "MM/dd/yyyy", Locale.ENGLISH);
+                expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "dd/MM/yyyy", Locale.ENGLISH);
             } else {
-                expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "MM/dd/yyyy hh:mm:ss", Locale.ENGLISH);
+                expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "dd/MM/yyyy hh:mm:ss", Locale.ENGLISH);
             }
             if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
                 account.setType(AccountType.FREE);
@@ -697,5 +673,4 @@ public class BrfilesCom extends PluginForHost {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.MFScripts_YetiShare;
     }
-
 }

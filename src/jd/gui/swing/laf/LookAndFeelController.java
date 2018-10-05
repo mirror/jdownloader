@@ -26,6 +26,7 @@ import javax.swing.plaf.metal.MetalLookAndFeel;
 
 import jd.SecondLevelLaunch;
 
+import org.appwork.loggingv3.LogV3;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -247,12 +248,12 @@ public class LookAndFeelController implements LAFManagerInterface {
                 LAFOptions.init(laf);
             }
         } catch (Throwable e) {
-            LogController.CL().log(e);
+            LogV3.log(e);
             try {
                 LookAndFeel currentLaf = UIManager.getLookAndFeel();
                 // this may happen if the updater launcher already has set the look and feel.
                 if (currentLaf != null && !(currentLaf instanceof MetalLookAndFeel)) {
-                    LogController.CL().info("Don't set System look and feel " + currentLaf + " is already set");
+                    LogV3.info("Don't set System look and feel " + currentLaf + " is already set");
                     return;
                 }
                 UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());

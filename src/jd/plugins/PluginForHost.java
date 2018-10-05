@@ -351,7 +351,11 @@ public abstract class PluginForHost extends Plugin {
         if (StringUtils.isEmpty(throwable.getMessage())) {
             errorMsg = _JDT.T.AccountController_updateAccountInfo_status_uncheckable();
         } else {
-            errorMsg = throwable.getMessage();
+            if (browserException != null && browserException.getRequest() != null) {
+                errorMsg = browserException.getSuperMessage();
+            } else {
+                errorMsg = throwable.getMessage();
+            }
         }
         account.setError(AccountError.TEMP_DISABLED, 60 * 60 * 1000l, errorMsg);
         return ai;

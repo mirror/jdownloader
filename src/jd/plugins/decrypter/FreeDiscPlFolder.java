@@ -83,8 +83,8 @@ public class FreeDiscPlFolder extends PluginForDecrypt {
         // final String[] entries = br.getRegex("div class=\"dir-item\"><div.*?</div></div></div>").getColumn(-1);
         final String[] entries = br.getRegex("div\\s*class=\"dir-item\">[^~]*?</div>\\s*</div>").getColumn(-1);
         // final String fileEntry = "class=('|\"|)[\\w -]+\\1><a href=\"(/[^<>\"]*?,f-[^<>\"]*?)\"[^>]*>(.*?)</a>";
-        final String fileEntry = "class=('|\"|)[\\w -]+\\1>\\s*<a\\s*href=\"(/[^<>\"]*?,f-[^<>\"]*?)\"[^>]*>\\s*(.*?)</a>";
-        final String folderEntry = "class=('|\"|)[\\w -]+\\1>\\s*<a href=\"(/?[A-Za-z0-9\\-_]+,d-\\d+[^<>\"]*?)\"";
+        final String fileEntry = "class=('|\"|)[\\w -]+\\1>\\s*<a\\s*(?:class\\s*=\\s*\"[^\"]*\")?\\s*href=\"(/[^<>\"]*?,f-[^<>\"]*?)\"[^>]*>\\s*(.*?)\\s*</a>";
+        final String folderEntry = "class=('|\"|)[\\w -]+\\1>\\s*<a\\s*(?:class\\s*=\\s*\"[^\"]*\")?\\s*href=\"(/?[A-Za-z0-9\\-_]+,d-\\d+[^<>\"]*?)\"";
         if (entries != null && entries.length > 0) {
             for (final String e : entries) {
                 final String folder = new Regex(e, folderEntry).getMatch(1);
