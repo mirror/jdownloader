@@ -19,6 +19,7 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -26,6 +27,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
@@ -52,11 +55,16 @@ public class VizCom extends antiDDoSForDecrypt {
          * Fog: Length: x pages is always visible. but not always correct for pages available (e.g. previews) so we check the javascript for
          * the proper amount of pages, and then only use Length: x pages if var pages = 0
          */
-        // String pages_str = br.getRegex("<strong>Length</strong>\\s*?(\\d+)\\s*?pages\\s*?</div>").getMatch(0);
-        String pages_str = br.getRegex("var pages\\s*=\\s*(\\d+);").getMatch(0);
-        if (pages_str == null || "0".equals(pages_str)) {
-            /* Fog: If it reaches this point, assume that this is the correct amount of pages (WSJ seems to always set var pages = 0) */
+        final boolean hasAccount = AccountController.getInstance().getValidAccount(this) != null;
+        String pages_str = null;
+        if (hasAccount) {
             pages_str = br.getRegex("<strong>Length</strong>\\s*(\\d+)\\s*pages\\s*</div>").getMatch(0);
+        }
+        if (pages_str == null || "0".equals(pages_str)) {
+            pages_str = br.getRegex("var pages\\s*=\\s*(\\d+);").getMatch(0);
+            if (pages_str == null || "0".equals(pages_str)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         final int pages = Integer.parseInt(pages_str);
         final DecimalFormat page_formatter_page = new DecimalFormat("000");
