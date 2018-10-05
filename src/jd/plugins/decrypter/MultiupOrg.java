@@ -19,6 +19,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -28,11 +29,12 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multiup.org" }, urls = { "https?://(www\\.)?multiup\\.(org|eu)/(?:en|fr/)?(fichiers/download/[a-z0-9]{32}_[^<> \"'&%]+|([a-z]{2}/)?(download|mirror)/[a-z0-9]{32}/[^<> \"'&%]+|\\?lien=[a-z0-9]{32}_[^<> \"'&%]+|[a-f0-9]{32})" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multiup.org" }, urls = { "https?://(www\\.)?multiup\\.(org|eu)/(?:en|fr/)?(fichiers/download/[a-z0-9]{32}_[^<> \"'&%]+|([a-z]{2}/)?(download|mirror)/[a-z0-9]{32}(/[^<> \"'&%]+)?|\\?lien=[a-z0-9]{32}_[^<> \"'&%]+|[a-f0-9]{32})" })
 public class MultiupOrg extends antiDDoSForDecrypt {
     // DEV NOTES:
     // DO NOT REMOVE COMPONENTS YOU DONT UNDERSTAND! When in doubt ask raztoki to fix.
@@ -68,11 +70,8 @@ public class MultiupOrg extends antiDDoSForDecrypt {
             param.setCryptedUrl(parameter);
         }
         getPage(parameter.replace("/en/download/", "/en/mirror/"));
-        String webSiteFilename = br.getRegex("<title>\\s*Download\\s*(.*?)\\s*-\\sMirror").getMatch(0);
-        if (webSiteFilename == null) {
-            webSiteFilename = br.getRegex("<meta name=\"description\" content=\"Download\\s*(.*?)\\s*\\(").getMatch(0);
-        }
-        if (filename == null) {
+        final String webSiteFilename = getWebsiteFileName(br);
+        if (!StringUtils.isEmpty(webSiteFilename)) {
             filename = webSiteFilename;
         }
         String webSiteFileSize = br.getRegex("<meta name=\"description\" content=\"Download\\s*.*?\\s*\\(([0-9\\.]+\\s*[KGMiB]+)").getMatch(0);
@@ -117,7 +116,7 @@ public class MultiupOrg extends antiDDoSForDecrypt {
         if (br.getRequest() == null) {
             getPage(parameter);
         }
-        return br.getRegex("Size\\s*:\\s*([0-9\\.]+\\s*[GMK]iB)\\s*<br").getMatch(0);
+        return getWebsiteFileSize(br);
     }
 
     private String getFilename(String parameter) throws Exception {
@@ -125,9 +124,28 @@ public class MultiupOrg extends antiDDoSForDecrypt {
         if (filename == null) {
             // here it can be present within html source
             getPage(parameter);
-            filename = br.getRegex("Filename\\s*:\\s*(.*?)\\s*<br").getMatch(0);
+            return getWebsiteFileName(br);
         }
         return filename;
+    }
+
+    private String getWebsiteFileSize(Browser br) {
+        String fileSize = br.getRegex("Size\\s*:\\s*([0-9\\.]+\\s*[GMK]iB)\\s*<br").getMatch(0);
+        if (fileSize == null) {
+            fileSize = br.getRegex("\"description\"\\s*content\\s*=\\s*\"\\s*(?:Mirror\\s*list|Download)\\s*.*?\\s*\\(([0-9\\.]+\\s*[GMK]iB)\\)").getMatch(0);
+        }
+        return fileSize;
+    }
+
+    private String getWebsiteFileName(Browser br) {
+        String fileName = br.getRegex("<title>\\s*Download\\s*(.*?)\\s*-\\sMirror").getMatch(0);
+        if (fileName == null) {
+            fileName = br.getRegex("<meta name=\"description\" content=\"Download\\s*(.*?)\\s*\\(").getMatch(0);
+            if (fileName == null) {
+                fileName = br.getRegex("<title>\\s*Mirror list\\s*(.*?)\\s*-\\sMirror").getMatch(0);
+            }
+        }
+        return fileName;
     }
 
     private String getFUID(String parameter) {
