@@ -27,17 +27,9 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -61,6 +53,16 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filefox.cc" }, urls = { "https?://(?:www\\.)?filefox\\.cc/(?:embed\\-)?[a-z0-9]{12}" })
 public class FilefoxCc extends antiDDoSForHost {
@@ -165,6 +167,11 @@ public class FilefoxCc extends antiDDoSForHost {
 
     @Override
     protected Browser prepBrowser(final Browser prepBr, final String host) {
+        final String custom_referer = this.getPluginConfig().getStringProperty(CUSTOM_REFERER, null);
+        if (custom_referer != null && !custom_referer.equals("")) {
+            /* Specified Referer gives us 150 KB/s in free mode vs ~50 KB/s without that. */
+            br.getHeaders().put("Referer", custom_referer);
+        }
         if (!(this.browserPrepped.containsKey(prepBr) && this.browserPrepped.get(prepBr) == Boolean.TRUE)) {
             super.prepBrowser(prepBr, host);
             /* define custom browser headers and language settings */
@@ -178,8 +185,15 @@ public class FilefoxCc extends antiDDoSForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, this.getPluginConfig(), CUSTOM_REFERER, "Set custom Referer here").setDefaultValue(null));
+    } /* Plugin settings */
+
+    private static final String CUSTOM_REFERER = "CUSTOM_REFERER";
+
     public FilefoxCc(PluginWrapper wrapper) {
         super(wrapper);
+        this.setConfigElements();
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 

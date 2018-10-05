@@ -3,8 +3,8 @@ package org.jdownloader.updatev2;
 import java.util.regex.Pattern;
 
 import org.appwork.exceptions.WTFException;
+import org.appwork.loggingv3.LogV3;
 import org.appwork.storage.Storable;
-import org.jdownloader.logging.LogController;
 
 public class FilterList implements Storable {
     public enum Type {
@@ -68,13 +68,13 @@ public class FilterList implements Storable {
                         try {
                             accountPatterns[i] = Pattern.compile(username, Pattern.CASE_INSENSITIVE);
                         } catch (Throwable e) {
-                            LogController.CL().log(e);
+                            LogV3.log(e);
                             accountPatterns[i] = Pattern.compile(".*" + Pattern.quote(username) + ".*", Pattern.CASE_INSENSITIVE);
                         }
                         try {
                             domainPatterns[i] = Pattern.compile(host, Pattern.CASE_INSENSITIVE);
                         } catch (Throwable e) {
-                            LogController.CL().log(e);
+                            LogV3.log(e);
                             domainPatterns[i] = Pattern.compile(".*" + Pattern.quote(host) + ".*", Pattern.CASE_INSENSITIVE);
                         }
                     } else {
@@ -82,7 +82,7 @@ public class FilterList implements Storable {
                         try {
                             domainPatterns[i] = Pattern.compile(entry, Pattern.CASE_INSENSITIVE);
                         } catch (Throwable e) {
-                            LogController.CL().log(e);
+                            LogV3.log(e);
                             domainPatterns[i] = Pattern.compile(".*" + Pattern.quote(entry) + ".*", Pattern.CASE_INSENSITIVE);
                         }
                     }

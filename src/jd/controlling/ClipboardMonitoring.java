@@ -330,13 +330,21 @@ public class ClipboardMonitoring {
         }
     }
 
-    private boolean ignoreTransferable(Transferable transferable, DataFlavor[] dataFlavors) {
+    public static enum IGNORE {
+        PACKAGECONTROLLER,
+        LOCAL,
+        JVM,
+        EMPTY,
+        NO
+    }
+
+    private IGNORE ignoreTransferable(Transferable transferable, DataFlavor[] dataFlavors) {
         if (transferable == null && (dataFlavors == null || dataFlavors.length == 0)) {
-            return true;
+            return IGNORE.EMPTY;
         }
         if (isDataFlavorSupported(transferable, dataFlavors, PackageControllerTableTransferable.FLAVOR)) {
             /* we have Package/Children in clipboard, skip them */
-            return true;
+            return IGNORE.PACKAGECONTROLLER;
         }
         try {
             if (transferable != null && transferable.getClass().getName().contains("TransferableProxy")) {
@@ -344,20 +352,20 @@ public class ClipboardMonitoring {
                 if (isLocal != null) {
                     isLocal.setAccessible(true);
                     if (Boolean.TRUE.equals(isLocal.getBoolean(transferable))) {
-                        return true;
+                        return IGNORE.LOCAL;
                     }
                 }
             } else if (dataFlavors != null) {
                 for (final DataFlavor dataFlavor : dataFlavors) {
                     if (StringUtils.equals(dataFlavor.getHumanPresentableName(), "application/x-java-jvm-local-objectref")) {
-                        return true;
+                        return IGNORE.JVM;
                     }
                 }
             }
         } catch (final Throwable e) {
             e.printStackTrace();
         }
-        return false;
+        return IGNORE.NO;
     }
 
     public static Transferable getTransferable() {
@@ -401,6 +409,7 @@ public class ClipboardMonitoring {
                             while (Thread.currentThread() == ClipboardMonitoring.this.monitoringThread.get()) {
                                 final CHANGE_FLAG changeFlag = clipboardChangeDetector.waitForClipboardChanges();
                                 if (Thread.currentThread() != ClipboardMonitoring.this.monitoringThread.get()) {
+                                    logger.finer("Changed ClipBoard Monitoring Thread");
                                     return;
                                 } else if (CHANGE_FLAG.INTERRUPTED.equals(changeFlag)) {
                                     logger.finer("Interrupted ClipBoard Monitoring Thread");
@@ -418,8 +427,19 @@ public class ClipboardMonitoring {
                                         currentContent = clipboard.getContents(null);
                                         dataFlavors = null;
                                     }
-                                    if (ignoreTransferable(currentContent, dataFlavors)) {
+                                    final IGNORE ignoreFlag = ignoreTransferable(currentContent, dataFlavors);
+                                    switch (ignoreFlag) {
+                                    case EMPTY:
+                                    case JVM:
+                                    case LOCAL:
+                                    case PACKAGECONTROLLER:
+                                        if (CHANGE_FLAG.DETECTED.equals(changeFlag)) {
+                                            roundIndex.getAndIncrement();
+                                        }
                                         continue;
+                                    case NO:
+                                    default:
+                                        break;
                                     }
                                     String handleThisRound = null;
                                     boolean macOSWorkaroundNeeded = false;
