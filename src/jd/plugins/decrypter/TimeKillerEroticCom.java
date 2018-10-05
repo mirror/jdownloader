@@ -216,12 +216,13 @@ public class TimeKillerEroticCom extends PluginForDecrypt {
             // pornhub handling number 2
             externID = br.getRegex("name=\"FlashVars\" value=\"options=(http://(www\\.)?pornhub\\.com/embed_player(_v\\d+)?\\.php\\?id=\\d+)\"").getMatch(0);
             if (externID != null) {
+                br.setFollowRedirects(true);
                 br.getPage(externID);
                 if (br.containsHTML("<link_url>N/A</link_url>")) {
-                    logger.info("Link offline: " + parameter);
+                    decryptedLinks.add(createOfflinelink(parameter));
                     return decryptedLinks;
                 }
-                externID = br.getRegex("<link_url>(http://[^<>\"]*?)</link_url>").getMatch(0);
+                externID = br.getRegex("<link_url>(http[^<>\"]*?)</link_url>").getMatch(0);
                 if (externID == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
