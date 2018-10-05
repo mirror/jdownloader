@@ -22,11 +22,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -45,6 +40,11 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pinterest.com" }, urls = { "https?://(?:(?:www|[a-z]{2})\\.)?pinterest\\.(?:com|de|fr)/(pin/[A-Za-z0-9\\-_]+/|[^/]+/[^/]+/(?:[^/]+/)?)" })
 public class PinterestComDecrypter extends PluginForDecrypt {
@@ -406,15 +406,15 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         String numberof_pins_str = br.getRegex("class=\"value\">(\\d+(?:\\.\\d+)?)</span> <span class=\"label\">Pins</span>").getMatch(0);
         if (numberof_pins_str == null) {
             numberof_pins_str = br.getRegex("class=\'value\'>(\\d+(?:\\.\\d+)?)</span> <span class=\'label\'>Pins</span>").getMatch(0);
-        }
-        if (numberof_pins_str == null) {
-            numberof_pins_str = br.getRegex("name=\"pinterestapp:pins\" content=\"(\\d+)\"").getMatch(0);
-        }
-        if (numberof_pins_str == null) {
-            numberof_pins_str = Long.toString(JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(json_root, "resource_response/data/pin_count"), 0));
-            if (numberof_pins_str == null || numberof_pins_str.equals("0")) {
-                /* Wider attempt */
-                numberof_pins_str = PluginJSonUtils.getJson(json_source_for_crawl_process, "pin_count");
+            if (numberof_pins_str == null) {
+                numberof_pins_str = br.getRegex("name=\"pinterestapp:pins\" content=\"(\\d+)\"").getMatch(0);
+                if (numberof_pins_str == null) {
+                    numberof_pins_str = Long.toString(JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(json_root, "resource_response/data/pin_count"), 0));
+                    if (numberof_pins_str == null || numberof_pins_str.equals("0")) {
+                        /* Wider attempt */
+                        numberof_pins_str = PluginJSonUtils.getJson(json_source_for_crawl_process, "pin_count");
+                    }
+                }
             }
         }
         if (numberof_pins_str == null) {
@@ -525,6 +525,12 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                          * API.
                          */
                         resource_data_list = (ArrayList) json_root.get("resourceDataCache");
+                        if (resource_data_list == null) {
+                            final Map<String, Map<String, Object>> reactBoardFeedResource = (Map<String, Map<String, Object>>) JavaScriptEngineFactory.walkJson(json_root, "resources/data/ReactBoardFeedResource/");
+                            if (reactBoardFeedResource != null) {
+                                pin_list = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(reactBoardFeedResource.values().iterator().next(), "data/board_feed");
+                            }
+                        }
                     }
                     // new website response (tested without login) -raztoki20160405
                     final LinkedHashMap<String, Object> test = (LinkedHashMap<String, Object>) json_root.get("_dv");

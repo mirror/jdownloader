@@ -295,8 +295,8 @@ public class PinterestCom extends PluginForHost {
         return "JDownloader's Pinterest plugin helps downloading pictures from pinterest.com.";
     }
 
-    public static final String  ENABLE_DESCRIPTION_IN_FILENAMES                      = "ENABLE_DESCRIPTION_IN_FILENAMES";
-    public static final boolean defaultENABLE_DESCRIPTION_IN_FILENAMES               = false;
+    public static final String  ENABLE_DESCRIPTION_IN_FILENAMES             = "ENABLE_DESCRIPTION_IN_FILENAMES";
+    public static final boolean defaultENABLE_DESCRIPTION_IN_FILENAMES      = false;
     public static final String  ENABLE_CRAWL_ALTERNATIVE_SOURCE_URLS        = "ENABLE_CRAWL_ALTERNATIVE_URLS_INSIDE_COMMENTS";
     public static final boolean defaultENABLE_CRAWL_ALTERNATIVE_SOURCE_URLS = false;
 
