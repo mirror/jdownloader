@@ -12,22 +12,16 @@ import org.appwork.utils.os.CrossSystem.OperatingSystem;
 import org.jdownloader.updatev2.UpdateController;
 
 public class FFMpegInstallThread extends Thread {
-
-    public static final String   FFMPEG        = "ffmpeg";
-
-    public static final String   FFMPEG_10_6   = "ffmpeg_10.6+";
-
-    public static final String   FFMPEG_10_5_X = "ffmpeg_10.5.x-";
-
+    public static final String   FFMPEG_GENRIC        = "ffmpeg";
+    public static final String   FFMPEG_MAC_MIN_10_10 = "ffmpeg_10.10+";
+    public static final String   FFMPEG_MAC_MIN_10_6  = "ffmpeg_10.6+";
+    public static final String   FFMPEG_MAC_10_5_X    = "ffmpeg_10.5.x-";
     /**
      *
      */
     private final FFmpegProvider fFmpegProvider;
-
-    private volatile long        progress      = -1;
-
-    private volatile boolean     success       = false;
-
+    private volatile long        progress             = -1;
+    private volatile boolean     success              = false;
     private final String         task;
 
     public FFMpegInstallThread(FFmpegProvider fFmpegProvider, String task) {
@@ -122,7 +116,11 @@ public class FFMpegInstallThread extends Thread {
             if (!CrossSystem.getOS().isMinimum(OperatingSystem.MAC_SNOW_LEOPOARD) || !CrossSystem.is64BitOperatingSystem()) {
                 return Application.getResource("tools/mac/ffmpeg_10.5.x-/" + name);
             } else {
-                return Application.getResource("tools/mac/ffmpeg_10.6+/" + name);
+                if (CrossSystem.getOS().isMinimum(OperatingSystem.MAC_YOSEMITE)) {
+                    return Application.getResource("tools/mac/ffmpeg_10.10+/" + name);
+                } else {
+                    return Application.getResource("tools/mac/ffmpeg_10.6+/" + name);
+                }
             }
         } else if (CrossSystem.isLinux() || CrossSystem.isBSD()) {
             final String os;
@@ -161,13 +159,16 @@ public class FFMpegInstallThread extends Thread {
         switch (CrossSystem.getOSFamily()) {
         case MAC:
             if (!CrossSystem.getOS().isMinimum(OperatingSystem.MAC_SNOW_LEOPOARD) || !CrossSystem.is64BitOperatingSystem()) {
-                return FFMPEG_10_5_X;
+                return FFMPEG_MAC_10_5_X;
             } else {
-                return FFMPEG_10_6;
+                if (CrossSystem.getOS().isMinimum(OperatingSystem.MAC_YOSEMITE)) {
+                    return FFMPEG_MAC_MIN_10_10;
+                } else {
+                    return FFMPEG_MAC_MIN_10_6;
+                }
             }
         default:
-            return FFMPEG;
+            return FFMPEG_GENRIC;
         }
     }
-
 }
