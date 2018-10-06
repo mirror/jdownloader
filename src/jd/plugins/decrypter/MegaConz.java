@@ -82,12 +82,13 @@ public class MegaConz extends PluginForDecrypt {
             containerURL = parameter.getCryptedUrl();
         }
         br.setLoadLimit(256 * 1024 * 1024);
+        br.setConnectTimeout(60);
         br.setReadTimeout(3 * 60 * 1000);
         br.getHeaders().put("APPID", "JDownloader");
         final URLConnectionAdapter con = br.openRequestConnection(br.createJSonPostRequest("https://eu.api.mega.co.nz/cs?id=" + CS.incrementAndGet() + "&n=" + folderID, "[{\"a\":\"f\",\"c\":\"1\",\"r\":\"1\"}]"));
         final Object response;
         try {
-            response = JSonStorage.restoreFromInputStream(con.getInputStream(), TypeRef.OBJECT, null);
+            response = JSonStorage.getMapper().inputStreamToObject(con.getInputStream(), TypeRef.OBJECT);
         } finally {
             con.disconnect();
         }
