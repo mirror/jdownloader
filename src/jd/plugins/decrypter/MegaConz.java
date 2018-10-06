@@ -7,6 +7,8 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.crypto.BadPaddingException;
@@ -16,18 +18,23 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Base64;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.co.nz" }, urls = { "(?:https?://(www\\.)?mega\\.(co\\.)?nz/[^/:]*#F|chrome://mega/content/secure\\.html#F|mega:/*#F)(!|%21)[a-zA-Z0-9]+(!|%21)[a-zA-Z0-9_,\\-%]{16,}((!|%21)[a-zA-Z0-9]+)?" })
 public class MegaConz extends PluginForDecrypt {
@@ -74,36 +81,52 @@ public class MegaConz extends PluginForDecrypt {
         } else {
             containerURL = parameter.getCryptedUrl();
         }
-        br.setLoadLimit(32 * 1024 * 1024);
+        br.setLoadLimit(256 * 1024 * 1024);
+        br.setReadTimeout(3 * 60 * 1000);
         br.getHeaders().put("APPID", "JDownloader");
-        br.postPageRaw("https://eu.api.mega.co.nz/cs?id=" + CS.incrementAndGet() + "&n=" + folderID, "[{\"a\":\"f\",\"c\":\"1\",\"r\":\"1\"}]");
-        final String nodes[] = br.getRegex("\\{\\s*?(\"h\".*?)\\}").getColumn(0);
+        final URLConnectionAdapter con = br.openRequestConnection(br.createJSonPostRequest("https://eu.api.mega.co.nz/cs?id=" + CS.incrementAndGet() + "&n=" + folderID, "[{\"a\":\"f\",\"c\":\"1\",\"r\":\"1\"}]"));
+        final Object response;
+        try {
+            response = JSonStorage.restoreFromInputStream(con.getInputStream(), TypeRef.OBJECT, null);
+        } finally {
+            con.disconnect();
+        }
+        if (response instanceof Number) {
+            return decryptedLinks;
+        } else if (!(response instanceof List)) {
+            logger.info(JSonStorage.toString(response));
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final List<Map<String, Object>> nodes = (List<Map<String, Object>>) ((List<Map<String, Object>>) response).get(0).get("f");
         /*
          * p = parent node (ID)
-         * 
+         *
          * s = size
-         * 
+         *
          * t = type (0=file, 1=folder, 2=root, 3=inbox, 4=trash
-         * 
+         *
          * ts = timestamp
-         * 
+         *
          * h = node (ID)
-         * 
+         *
          * u = owner
-         * 
+         *
          * a = attribute (contains name)
-         * 
+         *
          * k = node key
          */
         final HashMap<String, MegaFolder> folders = new HashMap<String, MegaFolder>();
-        for (final String node : nodes) {
-            final String encryptedNodeKey = new Regex(getField("k", node), ":(.*?)$").getMatch(0);
+        for (final Map<String, Object> node : nodes) {
+            final String encryptedNodeKey = new Regex(node.get("k"), ":(.*?)$").getMatch(0);
             if (encryptedNodeKey == null) {
                 continue;
             }
-            String nodeAttr = getField("a", node);
-            final String nodeID = getField("h", node);
-            final String nodeParentID = getField("p", node);
+            if (isAbort()) {
+                break;
+            }
+            String nodeAttr = (String) node.get("a");
+            final String nodeID = (String) node.get("h");
+            final String nodeParentID = (String) node.get("p");
             final String nodeKey;
             try {
                 nodeKey = decryptNodeKey(encryptedNodeKey, masterKey);
@@ -117,7 +140,7 @@ public class MegaConz extends PluginForDecrypt {
                 continue;
             }
             final String nodeName = removeEscape(new Regex(nodeAttr, "\"n\"\\s*?:\\s*?\"(.*?)(?<!\\\\)\"").getMatch(0));
-            final String nodeType = getField("t", node);
+            final String nodeType = String.valueOf(node.get("t"));
             if ("1".equals(nodeType)) {
                 /* folder */
                 final MegaFolder fo = new MegaFolder(nodeID);
@@ -126,8 +149,8 @@ public class MegaConz extends PluginForDecrypt {
                 folders.put(nodeID, fo);
             } else if ("0".equals(nodeType)) {
                 /* file */
-                final String nodeSize = getField("s", node);
-                if (nodeSize == null) {
+                final Long nodeSize = JavaScriptEngineFactory.toLong(node.get("s"), -1);
+                if (nodeSize == -1) {
                     continue;
                 }
                 final MegaFolder folder = folders.get(nodeParentID);
@@ -175,15 +198,12 @@ public class MegaConz extends PluginForDecrypt {
                 link.setFinalFileName(nodeName);
                 link.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, path);
                 link.setAvailable(true);
-                try {
-                    link.setVerifiedFileSize(Long.parseLong(nodeSize));
-                } catch (final Throwable e) {
-                    link.setDownloadSize(Long.parseLong(nodeSize));
-                }
+                link.setVerifiedFileSize(nodeSize);
                 if (fp != null) {
                     fp.add(link);
                 }
                 decryptedLinks.add(link);
+                distribute(link);
             }
         }
         return decryptedLinks;
@@ -226,10 +246,6 @@ public class MegaConz extends PluginForDecrypt {
             System.arraycopy(cipher.doFinal(Arrays.copyOfRange(encryptedNodeKeyBytes, index, index + 16)), 0, ret, index, 16);
         }
         return Base64.encodeToString(ret, false);
-    }
-
-    private String getField(String field, String input) {
-        return new Regex(input, "\"" + field + "\":\\s*?\"?(.*?)(\"|,)").getMatch(0);
     }
 
     private String decrypt(String input, String keyString) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException, PluginException {
