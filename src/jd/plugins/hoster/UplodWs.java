@@ -49,7 +49,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uplod.ws" }, urls = { "https?://(?:www\\.)?(?:uploadshub\\.com|upload\\.so|uplod\\.ws|uplod\\.cc|uplod\\.org|uplod\\.io)/(?:embed\\-)?[a-z0-9]{12}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uplod.ws" }, urls = { "https?://(?:www\\.)?(?:uploadshub\\.com|upload\\.(?:so|ac)|uplod\\.(?:ws|cc|org|io))/(?:embed\\-)?[a-z0-9]{12}" })
 public class UplodWs extends antiDDoSForHost {
     /* Some HTML code to identify different (error) states */
     private static final String            HTML_PASSWORDPROTECTED          = "<br><b>Passwor(d|t):</b> <input";
@@ -959,7 +959,8 @@ public class UplodWs extends antiDDoSForHost {
                 theLink.setProperty(PROPERTY_PASS, Property.NULL);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
             }
-            if (correctedBR.contains("Wrong captcha")) {
+            // if (correctedBR.contains("Wrong captcha")) {
+            if (br.containsHTML("Wrong captcha")) {
                 logger.warning("Wrong captcha or wrong password!");
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
