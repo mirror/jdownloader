@@ -733,6 +733,9 @@ public class UplodWs extends antiDDoSForHost {
             }
         }
         if (dllink == null) {
+            dllink = new Regex(correctedBR, "<a href=\"(.*?)\" class=\"btn").getMatch(0);
+        }
+        if (dllink == null) {
             /* Sometimes used for streaming */
             dllink = new Regex(correctedBR, "file:[\t\n\r ]*?\"(http[^<>\"]*?\\.(?:mp4|flv))\"").getMatch(0);
         }
