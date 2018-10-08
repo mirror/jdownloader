@@ -389,6 +389,13 @@ public class GoogleDrive extends PluginForHost {
             break;
         }
         try {
+            if (downloadLink.getFinalFileName() == null) {
+                String fileName = getFileNameFromHeader(dl.getConnection());
+                if (fileName != null) {
+                    fileName = fileName.replace("의 사본", "");
+                    downloadLink.setFinalFileName(fileName);
+                }
+            }
             if (!this.dl.startDownload()) {
                 try {
                     if (dl.externalDownloadStop()) {

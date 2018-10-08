@@ -450,19 +450,11 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     public void setChunks(int chunks) {
         if (chunks == getChunks()) {
             return;
-        }
-        if (chunks <= 0) {
+        } else if (chunks == 0) {
             removeProperty(PROPERTY_CHUNKS);
         } else {
             setProperty(PROPERTY_CHUNKS, chunks);
         }
-        SingleDownloadController dlc = getDownloadLinkController();
-        // DownloadInterface dli = null;
-        // if (dlc != null && (dli = dlc.getDownloadInstance()) != null) {
-        // if (dli instanceof HTTPDownloader) {
-        // ((HTTPDownloader) dli).setChunkNum(chunks);
-        // }
-        // }
         if (hasNotificationListener()) {
             notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.CHUNKS, chunks));
         }

@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.URL;
@@ -51,9 +50,7 @@ import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
@@ -223,11 +220,7 @@ public class NitroFlareCom extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        if (useAPI()) {
-            return requestFileInformationApi(link);
-        } else {
-            return requestFileInformationWeb(link);
-        }
+        return requestFileInformationWeb(link);
     }
 
     private AvailableStatus requestFileInformationWeb(final DownloadLink link) throws Exception {
@@ -260,14 +253,10 @@ public class NitroFlareCom extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         setConstants(null);
-        if (useAPI() && false) {
-            handleDownload_API(downloadLink, null);
-        } else {
-            this.setBrowserExclusive();
-            br.setFollowRedirects(true);
-            requestFileInformationApi(downloadLink);
-            doFree(null, downloadLink);
-        }
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        requestFileInformationApi(downloadLink);
+        doFree(null, downloadLink);
     }
 
     private final void doFree(final Account account, final DownloadLink downloadLink) throws Exception {
@@ -310,7 +299,6 @@ public class NitroFlareCom extends antiDDoSForHost {
             final long t = System.currentTimeMillis();
             final String waittime = br.getRegex("<div id=\"CountDownTimer\" data-timer=\"(\\d+)\"").getMatch(0);
             // register wait i guess, it should return 1
-            Recaptcha rc = null;
             final int repeat = 5;
             for (int i = 1; i <= repeat; i++) {
                 if (br.containsHTML("plugins/cool-captcha/captcha.php")) {
@@ -328,13 +316,8 @@ public class NitroFlareCom extends antiDDoSForHost {
                     }
                     ajaxPost(br, "/ajax/freeDownload.php", "method=fetchDownload&captcha=" + Encoding.urlEncode(captchaCode));
                 } else {
-                    if (rc == null) {
-                        rc = new Recaptcha(br, this);
-                        rc.findID();
-                    }
-                    rc.load();
-                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final String c = getCaptchaCode("recaptcha", cf, downloadLink);
+                    final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br);
+                    final String c = rc2.getToken();
                     if (inValidate(c)) {
                         // fixes timeout issues or client refresh, we have no idea at this stage
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
@@ -350,7 +333,7 @@ public class NitroFlareCom extends antiDDoSForHost {
                             sleep(wait * 1000l, downloadLink);
                         }
                     }
-                    ajaxPost(br, "/ajax/freeDownload.php", "method=fetchDownload&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
+                    ajaxPost(br, "/ajax/freeDownload.php", "method=fetchDownload&captcha=" + Encoding.urlEncode(c) + "&g-recaptcha-response=" + Encoding.urlEncode(c));
                 }
                 if (ajax.containsHTML("The captcha wasn't entered correctly|You have to fill the captcha")) {
                     if (i + 1 == repeat) {
@@ -513,107 +496,17 @@ public class NitroFlareCom extends antiDDoSForHost {
         }
     }
 
-    private static String  preferAPI                  = "preferAPI";
-    private static String  trustAPIPremiumOnly        = "trustAPIPremiumOnly";
-    private static String  allowMultipleFreeDownloads = "allowMultipleFreeDownloads";
-    private static boolean preferAPIdefault           = false;
+    private static String trustAPIPremiumOnly        = "trustAPIPremiumOnly";
+    private static String allowMultipleFreeDownloads = "allowMultipleFreeDownloads";
 
     private void setConfigElement() {
-        final ConfigEntry apie = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), preferAPI, "Use API for Premium Accounts and single url linkcheck (API = lots of recaptchav1, WEB = recaptchav2 once.)").setDefaultValue(preferAPIdefault);
-        getConfig().addEntry(apie);
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), allowMultipleFreeDownloads, "Allow multiple free downloads?\r\nThis might result in fatal errors!").setDefaultValue(false).setEnabledCondidtion(apie, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), allowMultipleFreeDownloads, "Allow multiple free downloads?\r\nThis might result in fatal errors!").setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), trustAPIPremiumOnly, "Trust API about Premium Only flag?").setDefaultValue(true));
-    }
-
-    /**
-     * useAPI frame work? <br />
-     * Override this when incorrect
-     *
-     * @return
-     */
-    private boolean useAPI() {
-        return false; // getPluginConfig().getBooleanProperty(preferAPI, preferAPIdefault);
     }
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        if (useAPI()) {
-            return fetchAccountInfoApi(account);
-        } else {
-            return fetchAccountInfoWeb(account, false, true);
-        }
-    }
-
-    private AccountInfo fetchAccountInfoApi(final Account account) throws Exception {
-        synchronized (LOCK) {
-            final AccountInfo ai = new AccountInfo();
-            final String req = apiURL + "/getKeyInfo?" + validateAccount(account);
-            getPage(req);
-            handleApiErrors(account, null);
-            // recaptcha can happen here on brute force attack
-            String recap = PluginJSonUtils.getJsonValue(br, "recaptchaPublic");
-            if (!inValidate(recap)) {
-                logger.info("Detected captcha method \"Re Captcha\"");
-                final Browser captcha = br.cloneBrowser();
-                final DownloadLink dummyLink = new DownloadLink(null, "Account Login Requires Recaptcha", this.getHost(), br.getURL(), true);
-                final Recaptcha rc = new Recaptcha(captcha, this);
-                // after 5 wrong guesses they ban ip/account
-                rc.setId(recap);
-                rc.load();
-                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                final String c = getCaptchaCode("recaptcha", cf, dummyLink);
-                if (inValidate(c)) {
-                    // fixes timeout issues or client refresh, we have no idea at this stage
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                }
-                getPage(req + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
-                handleApiErrors(account, null);
-                if ("error".equalsIgnoreCase(PluginJSonUtils.getJsonValue(br, "type")) && "6".equalsIgnoreCase(PluginJSonUtils.getJsonValue(br, "code"))) {
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                }
-            }
-            final String expire = PluginJSonUtils.getJsonValue(br, "expiryDate");
-            final String status = PluginJSonUtils.getJsonValue(br, "status");
-            final String storage = PluginJSonUtils.getJsonValue(br, "storageUsed");
-            final String trafficLeft = PluginJSonUtils.getJsonValue(br, "trafficLeft");
-            final String trafficMax = PluginJSonUtils.getJsonValue(br, "trafficMax");
-            if (inValidate(status)) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (!inValidate(expire) && !"0".equalsIgnoreCase(expire)) {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
-            }
-            if ("banned".equalsIgnoreCase(status)) {
-                if ("de".equalsIgnoreCase(language)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYour account has been banned! (transate me)", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYour account has been banned!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-            } else if ("expired".equalsIgnoreCase(status) || "inactive".equalsIgnoreCase(status) || ai.isExpired()) {
-                // expired(free)? account
-                account.setType(AccountType.FREE);
-                // dont support free account?
-                ai.setStatus("Free Account");
-                ai.setExpired(true);
-            } else if ("active".equalsIgnoreCase(status)) {
-                // premium account
-                account.setType(AccountType.PREMIUM);
-                ai.setStatus("Premium Account");
-                account.setValid(true);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (!inValidate(storage)) {
-                ai.setUsedSpace(Long.parseLong(storage));
-            }
-            if (!inValidate(trafficLeft)) {
-                ai.setTrafficLeft(Long.parseLong(trafficLeft));
-            }
-            if (!inValidate(trafficMax)) {
-                ai.setTrafficMax(Long.parseLong(trafficMax));
-            }
-            return ai;
-        }
+        return fetchAccountInfoWeb(account, false, true);
     }
 
     private AccountInfo fetchAccountInfoWeb(final Account account, boolean fullLogin, boolean fullInfo) throws Exception {
@@ -773,10 +666,6 @@ public class NitroFlareCom extends antiDDoSForHost {
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         setConstants(account);
-        if (useAPI()) {
-            handleDownload_API(downloadLink, account);
-            return;
-        }
         // when they turn off additional captchas within api vs website, we will go back to website
         requestFileInformationWeb(downloadLink);
         fetchAccountInfoWeb(account, false, false);
@@ -824,70 +713,6 @@ public class NitroFlareCom extends antiDDoSForHost {
         handleDownloadErrors(account, downloadLink, true);
     }
 
-    private void handleDownload_API(final DownloadLink downloadLink, final Account account) throws Exception {
-        requestFileInformationApi(downloadLink);
-        dllink = checkDirectLink(downloadLink, directlinkproperty);
-        if (inValidate(dllink)) {
-            // links that require premium...
-            if (downloadLink.getBooleanProperty("premiumRequired", false) && account == null) {
-                throwPremiumRequiredException(downloadLink, true);
-            }
-            String req = apiURL + "/getDownloadLink?file=" + getFUID(downloadLink) + (account != null ? "&" + validateAccount(account) : "");
-            // needed for when dropping to frame, the cookie session seems to carry over current position in download sequence and you get
-            // recaptcha error codes at first step.
-            br = new Browser();
-            getPage(req);
-            handleApiErrors(account, downloadLink);
-            // error handling here.
-            if ("free".equalsIgnoreCase(PluginJSonUtils.getJsonValue(br, "linkType"))) {
-                String accessLink = PluginJSonUtils.getJsonValue(br, "accessLink");
-                if (inValidate(accessLink)) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                req = apiURL + "/" + accessLink;
-                // wait
-                String delay = PluginJSonUtils.getJsonValue(br, "delay");
-                long startTime = System.currentTimeMillis();
-                String recap = PluginJSonUtils.getJsonValue(br, "recaptchaPublic");
-                if (!inValidate(recap)) {
-                    logger.info("Detected captcha method \"Re Captcha\"");
-                    final Recaptcha rc = new Recaptcha(br, this);
-                    rc.setId(recap);
-                    rc.load();
-                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final String c = getCaptchaCode("recaptcha", cf, downloadLink);
-                    if (!inValidate(delay)) {
-                        sleep((Long.parseLong(delay) * 1000) - (System.currentTimeMillis() - startTime), downloadLink);
-                    }
-                    if (inValidate(c)) {
-                        // fixes timeout issues or client refresh, we have no idea at this stage
-                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                    }
-                    getPage(req + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
-                    if (("error".equalsIgnoreCase(PluginJSonUtils.getJsonValue(br, "type")) && "6".equalsIgnoreCase(PluginJSonUtils.getJsonValue(br, "code"))) || (!inValidate(PluginJSonUtils.getJsonValue(br, "accessLink")) && !inValidate(PluginJSonUtils.getJsonValue(br, "recaptchaPublic")))) {
-                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                    }
-                }
-            }
-            // some times error 4 is found here
-            handleApiErrors(account, downloadLink);
-            dllink = PluginJSonUtils.getJsonValue(br, "url");
-            if (inValidate(dllink)) {
-                if (br.toString().matches("Connect failed: Can't connect to local MySQL server.+")) {
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE);
-                }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumes, chunks);
-        if (!dl.getConnection().isContentDisposition()) {
-            downloadLink.setProperty(directlinkproperty, Property.NULL);
-            handleDownloadErrors(account, downloadLink, true);
-        }
-        downloadLink.setProperty(directlinkproperty, dllink);
-        dl.startDownload();
-    }
-
     private final void handleDownloadErrors(final Account account, final DownloadLink downloadLink, final boolean lastChance) throws PluginException, IOException {
         // don't fill logger with crapola
         if (br.getRequest().getHtmlCode() == null) {
@@ -917,63 +742,6 @@ public class NitroFlareCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'link expired'", 2 * 60 * 1000l);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-    }
-
-    private void handleApiErrors(final Account account, final DownloadLink downloadLink) throws Exception {
-        // API Error handling codes.
-        // 1 => 'Access denied', (banned for trying incorrect x times for y minutes
-        // 2 => 'Invalid premium key',
-        // 3 => 'Bad input',
-        // 4 => 'File doesn't exist',
-        // 5 => 'Free downloading is not possible. You have to wait 60 minutes between free downloads.',
-        // 6 => 'Invalid captcha',
-        // 7 => 'Free users can download only 1 file at the same time'
-        // 8 => ﻿{"type":"error","message":"Wrong login","code":8}
-        if (br.containsHTML("In these moments we are upgrading the site system")) {
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Nitroflare.com is maintenance mode. Try again later", 60 * 60 * 1000);
-        }
-        final String type = PluginJSonUtils.getJsonValue(br, "type");
-        final String code = PluginJSonUtils.getJsonValue(br, "code");
-        final String msg = PluginJSonUtils.getJsonValue(br, "message");
-        final int cde = (!inValidate(code) && code.matches("\\d+") ? Integer.parseInt(code) : -1);
-        if ("error".equalsIgnoreCase(type)) {
-            try {
-                if (cde == 1) {
-                    if (account == null) {
-                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, (!inValidate(msg) ? msg : null), 60 * 60 * 1000);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, (!inValidate(msg) ? msg : null), 60 * 60 * 1000);
-                    }
-                } else if (cde == 2) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, msg, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else if (cde == 3 && downloadLink != null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, (!inValidate(msg) ? msg : null));
-                } else if (cde == 4 && downloadLink != null) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, (!inValidate(msg) ? msg : null));
-                } else if (cde == 5 && downloadLink != null) {
-                    final String time = new Regex(msg, "You have to wait (\\d+) minutes").getMatch(0);
-                    final long t = (!inValidate(time) ? Long.parseLong(time) * 60 * 1000 : 1 * 60 * 60 * 1000);
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (!inValidate(msg) ? msg : null), t);
-                } else if (cde == 7 && downloadLink != null) {
-                    // shouldn't happen as its hard limited.
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (!inValidate(msg) ? msg : "You can't download more than one file within a certain time period in free mode"), 60 * 60 * 1000l);
-                } else if (cde == 8) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nIncorrect login attempt!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else if (cde == 9) {
-                    if (account != null) {
-                        account.setAccountInfo(fetchAccountInfo(account));
-                        throw new PluginException(LinkStatus.ERROR_RETRY, (!inValidate(msg) ? msg : null));
-                    } else {
-                        // this shouldn't happen
-                    }
-                }
-            } catch (final PluginException p) {
-                if (!inValidate(msg)) {
-                    logger.warning("ERROR :: " + msg);
-                }
-                throw p;
-            }
         }
     }
 
