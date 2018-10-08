@@ -17,9 +17,6 @@ package jd.plugins;
 
 import java.nio.charset.CharacterCodingException;
 
-import org.appwork.storage.config.JsonConfig;
-import org.jdownloader.settings.GeneralSettings;
-
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.reconnect.ipcheck.IP;
 import jd.http.Browser;
@@ -30,20 +27,51 @@ import jd.parser.html.Form;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.Downloadable;
-import jd.plugins.download.raf.OldRAFDownload;
+
+import org.appwork.storage.config.JsonConfig;
+import org.jdownloader.settings.GeneralSettings;
 
 public class BrowserAdapter {
-
     public static final int ERROR_REDIRECTED = -1;
 
-    private static DownloadInterface getDownloadInterface(Downloadable downloadable, Request request, boolean resumeEnabled, int chunksCount) throws Exception {
-        OldRAFDownload dl = new OldRAFDownload(downloadable, request);
-        int chunks = downloadable.getChunks();
-        if (chunksCount == 0) {
-            dl.setChunkNum(chunks <= 0 ? JsonConfig.create(GeneralSettings.class).getMaxChunksPerFile() : chunks);
+    private static DownloadInterface getDownloadInterface(Downloadable downloadable, Request request, boolean resumeEnabled, int pluginConnections) throws Exception {
+        final jd.plugins.download.raf.OldRAFDownload dl = new jd.plugins.download.raf.OldRAFDownload(downloadable, request);
+        final int customizedConnections = downloadable.getChunks();
+        final int setConnections;
+        if (pluginConnections > 0) {
+            // pluginConnection has fixed value
+            if (customizedConnections == 0) {
+                // no customized, use pluginConnections
+                setConnections = pluginConnections;
+            } else {
+                // use smaller of pluginConnections and customizedConnections
+                setConnections = Math.min(pluginConnections, Math.abs(customizedConnections));
+            }
+        } else if (pluginConnections == 0) {
+            // pluginConnection has no limits
+            final int max = JsonConfig.create(GeneralSettings.class).getMaxChunksPerFile();
+            if (customizedConnections == 0) {
+                // no limits for pluginConnections, use max
+                setConnections = max;
+            } else if (customizedConnections > 0) {
+                // prefer customizedConnections over max
+                setConnections = customizedConnections;
+            } else {
+                // use smaller of customizedConnections and max
+                setConnections = Math.min(max, Math.abs(customizedConnections));
+            }
         } else {
-            dl.setChunkNum(chunksCount < 0 ? Math.min(chunksCount * -1, chunks <= 0 ? JsonConfig.create(GeneralSettings.class).getMaxChunksPerFile() : chunks) : chunksCount);
+            // pluginConnections has limits
+            final int max = JsonConfig.create(GeneralSettings.class).getMaxChunksPerFile();
+            if (customizedConnections == 0) {
+                // use smaller of pluginsConnections and max
+                setConnections = Math.min(max, Math.abs(pluginConnections));
+            } else {
+                // use smaller of pluginsConnections and customizedConnections
+                setConnections = Math.min(customizedConnections, Math.abs(pluginConnections));
+            }
         }
+        dl.setChunkNum(setConnections);
         dl.setResume(resumeEnabled);
         return dl;
     }
