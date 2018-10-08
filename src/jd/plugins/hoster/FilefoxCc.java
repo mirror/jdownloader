@@ -44,6 +44,7 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountRequiredException;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -466,11 +467,11 @@ public class FilefoxCc extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, false, 1, PROPERTY_DLLINK_FREE);
+        doFree(downloadLink, null, false, 1, PROPERTY_DLLINK_FREE);
     }
 
     @SuppressWarnings({ "unused" })
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void doFree(final DownloadLink downloadLink, final Account account, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         passCode = downloadLink.getStringProperty(PROPERTY_PASS);
         /* 1, bring up saved final links */
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
@@ -535,7 +536,7 @@ public class FilefoxCc extends antiDDoSForHost {
         }
         /* 6, do we have an imagehost? */
         if (dllink == null && IMAGEHOSTER) {
-            checkErrors(downloadLink, false);
+            checkErrors(downloadLink, account, false);
             Form imghost_next_form = null;
             do {
                 imghost_next_form = br.getFormbyKey("next");
@@ -543,7 +544,7 @@ public class FilefoxCc extends antiDDoSForHost {
                     imghost_next_form.remove("method_premium");
                     /* end of backward compatibility */
                     submitForm(imghost_next_form);
-                    checkErrors(downloadLink, false);
+                    checkErrors(downloadLink, account, false);
                     dllink = getDllink();
                     /* For imagehosts, filenames are often not given until we can actually see/download the image! */
                     final String image_filename = new Regex(correctedBR, "class=\"pic\" alt=\"([^<>\"]*?)\"").getMatch(0);
@@ -568,7 +569,7 @@ public class FilefoxCc extends antiDDoSForHost {
                 }
                 /* end of backward compatibility */
                 submitForm(download1);
-                checkErrors(downloadLink, false);
+                checkErrors(downloadLink, account, false);
                 dllink = getDllink();
             }
         }
@@ -580,7 +581,7 @@ public class FilefoxCc extends antiDDoSForHost {
             // }
             if (dlForm == null) {
                 /* Last chance - maybe our errorhandling kicks in here. */
-                checkErrors(downloadLink, false);
+                checkErrors(downloadLink, account, false);
                 /* Okay we finally have no idea what happened ... */
                 handlePluginBroken(downloadLink, "dlform_f1_null", 3);
             }
@@ -629,7 +630,7 @@ public class FilefoxCc extends antiDDoSForHost {
                         this.submitForm(br, specialCaptchaForm);
                         if (!br.toString().equalsIgnoreCase("OK")) {
                             logger.warning("Fatal reCaptchaV2 special handling failure");
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                         }
                         br.getHeaders().remove("X-Requested-With");
                     } else {
@@ -726,7 +727,7 @@ public class FilefoxCc extends antiDDoSForHost {
                 }
                 submitForm(dlForm);
                 logger.info("Submitted DLForm");
-                checkErrors(downloadLink, true);
+                checkErrors(downloadLink, account, true);
                 dllink = getDllink();
                 if (dllink == null && (!br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"") || i == repeat)) {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
@@ -1192,7 +1193,7 @@ public class FilefoxCc extends antiDDoSForHost {
      * Checks for (-& handles) all kinds of errors e.g. wrong captcha, wrong downloadpassword, waittimes and server error-responsecodes such
      * as 403, 404 and 503.
      */
-    private void checkErrors(final DownloadLink theLink, final boolean checkAll) throws NumberFormatException, PluginException {
+    private void checkErrors(final DownloadLink theLink, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
         if (checkAll) {
             if (new Regex(correctedBR, HTML_PASSWORDPROTECTED).matches() && correctedBR.contains("Wrong password")) {
                 /* handle password has failed in the past, additional try catching / resetting values */
@@ -1211,6 +1212,13 @@ public class FilefoxCc extends antiDDoSForHost {
         }
         if (new Regex(correctedBR, "class\\s*=\\s*\"paid-only\"").matches()) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Paid Only");
+        }
+        if (new Regex(correctedBR, "You have reached the daily download limit").matches()) {
+            if (account != null) {
+                throw new AccountUnavailableException("You have reached the daily download limit", 1 * 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You have reached the daily download limit", 1 * 60 * 60 * 1000l);
+            }
         }
         /** Wait time reconnect handling */
         if (new Regex(correctedBR, "(You have reached the download(\\-| )limit|>\\s*You have to wait|>\\s*Wait[^<>]*?or )").matches()) {
@@ -1475,7 +1483,7 @@ public class FilefoxCc extends antiDDoSForHost {
         if (account.getType() == AccountType.FREE) {
             /* Perform linkcheck after logging in */
             requestFileInformation(downloadLink);
-            doFree(downloadLink, false, 1, PROPERTY_DLLINK_ACCOUNT_FREE);
+            doFree(downloadLink, account, false, 1, PROPERTY_DLLINK_ACCOUNT_FREE);
         } else {
             String dllink = checkDirectLink(downloadLink, PROPERTY_DLLINK_ACCOUNT_PREMIUM);
             if (dllink == null) {
@@ -1486,12 +1494,12 @@ public class FilefoxCc extends antiDDoSForHost {
                     if (dlform != null && new Regex(correctedBR, HTML_PASSWORDPROTECTED).matches()) {
                         handlePassword(dlform, downloadLink);
                     }
-                    checkErrors(downloadLink, true);
+                    checkErrors(downloadLink, account, true);
                     if (dlform == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     submitForm(dlform);
-                    checkErrors(downloadLink, true);
+                    checkErrors(downloadLink, account, true);
                     dllink = getDllink();
                 }
             }
