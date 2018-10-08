@@ -1081,11 +1081,13 @@ public class VKontakteRuHoster extends PluginForHost {
             br.setDebug(true);
             br.setVerbose(true);
         }
-        String useragent = SubConfiguration.getConfig("vkontakte.ru").getStringProperty(VKADVANCED_USER_AGENT, default_user_agent);
-        if (useragent.equals("") || useragent.length() <= 3) {
-            useragent = default_user_agent;
+        String useragent = SubConfiguration.getConfig("vkontakte.ru").getStringProperty(VKADVANCED_USER_AGENT, "");
+        if (StringUtils.isEmpty(useragent) || useragent.length() <= 3) {
+            useragent = null;
         }
-        br.getHeaders().put("User-Agent", useragent);
+        if (useragent != null) {
+            br.getHeaders().put("User-Agent", useragent);
+        }
         /* Set English language */
         br.setCookie(DOMAIN, "remixlang", "3");
         if (isDecryption) {

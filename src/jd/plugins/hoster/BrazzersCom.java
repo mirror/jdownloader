@@ -120,7 +120,11 @@ public class BrazzersCom extends antiDDoSForHost {
         final String fid;
         if (link.getDownloadURL().matches(type_premium_video) || link.getDownloadURL().matches(type_premium_pic)) {
             fid = link.getStringProperty("fid", null);
-            this.login(this.br, aa, false);
+            if (aa != null) {
+                this.login(this.br, aa, false);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            }
             dllink = link.getDownloadURL();
             URLConnectionAdapter con = null;
             try {
@@ -376,10 +380,8 @@ public class BrazzersCom extends antiDDoSForHost {
         }
     }
 
-    private static Object LOCK = new Object();
-
     public void login(Browser br, final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 pornportalPrepBR(br, "ma.brazzers.com");
                 br.setCookiesExclusive(true);
@@ -431,7 +433,9 @@ public class BrazzersCom extends antiDDoSForHost {
                 }
                 account.saveCookies(br.getCookies(account.getHoster()), "");
             } catch (final PluginException e) {
-                account.clearCookies("");
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
@@ -441,12 +445,7 @@ public class BrazzersCom extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(this.br, account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(this.br, account, true);
         ai.setUnlimitedTraffic();
         /*
          * 2016-09-28: No way to verify premium status and/or expire date - I guess if an account works, it always has a subscription
