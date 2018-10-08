@@ -47,7 +47,7 @@ import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "heroupload.com" }, urls = { "https?://(?:www\\.)?heroupload\\.com/[A-Za-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "heroupload.com" }, urls = { "https?://(?:www\\.)?heroupload\\.(?:com|us)/[A-Za-z0-9]+" })
 public class HerouploadCom extends antiDDoSForHost {
     public HerouploadCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -69,14 +69,14 @@ public class HerouploadCom extends antiDDoSForHost {
     }
 
     /* Basic constants */
-    private final String                   mainpage                                     = "http://heroupload.com";
-    private final String                   domains                                      = "(heroupload\\.com)";
+    private final String                   mainpage                                     = "http://www.heroupload.us";
+    private final String                   domains                                      = "(heroupload\\.us)";
     private final String                   type                                         = "html";
     private static final int               wait_BETWEEN_DOWNLOADS_LIMIT_MINUTES_DEFAULT = 10;
     private static final int               additional_WAIT_SECONDS                      = 3;
     private static final int               directlinkfound_WAIT_SECONDS                 = 10;
-    private static final boolean           supportshttps                                = true;
-    private static final boolean           supportshttps_FORCED                         = true;
+    private static final boolean           supportshttps                                = false;
+    private static final boolean           supportshttps_FORCED                         = false;
     private static final boolean           requiresWWW                                  = true;
     /* In case there is no information when accessing the main link */
     private static final boolean           available_CHECK_OVER_INFO_PAGE               = true;
