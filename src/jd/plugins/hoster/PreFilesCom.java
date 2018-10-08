@@ -31,6 +31,7 @@ import java.util.regex.Pattern;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
@@ -71,6 +72,7 @@ public class PreFilesCom extends antiDDoSForHost {
     // don't touch
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
     private static Object        LOCK                         = new Object();
+    private final String         rc2SiteKey                   = "6LddPc8SAAAAAAEWe0qoJ4P7U_XSKtBoxj3OJ1OJ";
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.6.8-raz
@@ -83,7 +85,7 @@ public class PreFilesCom extends antiDDoSForHost {
     // other: no redirects, no www.
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://").replace("://www.", "://"));
+        link.setUrlDownload(link.getDownloadURL().replace("http://", "https://").replace("://www.", "://"));
     }
 
     @Override
@@ -315,6 +317,10 @@ public class PreFilesCom extends antiDDoSForHost {
                     dlForm = rc.getForm();
                     /** wait time is often skippable for reCaptcha handling */
                     skipWaittime = true;
+                } else if (correctedBR.contains("class=\"g-recaptcha")) {
+                    logger.info("Detected captcha method \"reCaptchaV2\" for this host");
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, rc2SiteKey).getToken();
+                    dlForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 }
                 /* Captcha END */
                 if (password) {
