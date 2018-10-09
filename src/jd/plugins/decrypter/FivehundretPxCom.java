@@ -20,7 +20,7 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "500px.com" }, urls = { "https?://(?:www\\.)?500px\\.com/(?!editors|about|studio|login|singup|licensing|popular|upgrade|business|photo)[^/]+(/galleries/[^/]+|/featured)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "500px.com" }, urls = { "https?://(?:www\\.)?500px\\.com/(?!editors|about|studio|login|signup|licensing|popular|upgrade|business|photo|settings|city|terms|search|pro|jobs|fresh|privacy)[^/]+(/galleries/[^/]+|/featured)?" })
 public class FivehundretPxCom extends antiDDoSForDecrypt {
     public FivehundretPxCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -29,6 +29,7 @@ public class FivehundretPxCom extends antiDDoSForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        br.setFollowRedirects(true);
         if (parameter.toString().matches(".+/galleries/.+") || parameter.toString().matches(".+/featured")) {
             getPage(br, parameter.toString());
             String curatorID = br.getRegex("App\\.CuratorId\\s*=\\s*(\\d+)").getMatch(0);
