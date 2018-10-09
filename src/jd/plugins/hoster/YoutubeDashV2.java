@@ -1228,7 +1228,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
             final String url = streamData.getBaseUrl();
             rateByPass = true;
             // they auto add ratebypass for some of the higher quality itags. if you get two duplicate you will get 403. -raztoki
-            request = new GetRequest(URLHelper.parseLocation(new URL(url), (!containsParameter(url, "ratebypass=yes") ? "&ratebypass=yes" : "") + (!containsParameter(url, "cmbypass=yes") ? "&cmbypass=yes" : "")));
+            request = new GetRequest(URLHelper.parseLocation(new URL(url), (!containsParameter(url, "ratebypass=yes") ? "&ratebypass=yes" : "")));
         } else {
             rateByPass = false;
             request = new GetRequest(streamData.getBaseUrl());
@@ -1965,17 +1965,20 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
 
     @Override
     public void resetDownloadlink(DownloadLink downloadLink) {
-        resetStreamUrls(downloadLink);
-        final YoutubeProperties data = downloadLink.bindData(YoutubeProperties.class);
-        data.setDashAudioBytesLoaded(0);
-        data.setDashAudioFinished(false);
-        data.setDashAudioSize(-1);
-        data.setDashVideoBytesLoaded(0);
-        data.setDashVideoFinished(false);
-        data.setDashVideoSize(-1);
-        downloadLink.setProperty(DASH_VIDEO_CHUNKS, Property.NULL);
-        downloadLink.setProperty(DASH_AUDIO_CHUNKS, Property.NULL);
-        ClipDataCache.clearCache(downloadLink);
+        if (downloadLink != null) {
+            resetStreamUrls(downloadLink);
+            final YoutubeProperties data = downloadLink.bindData(YoutubeProperties.class);
+            downloadLink.getTempProperties().removeProperty("ratebypass");
+            data.setDashAudioBytesLoaded(0);
+            data.setDashAudioFinished(false);
+            data.setDashAudioSize(-1);
+            data.setDashVideoBytesLoaded(0);
+            data.setDashVideoFinished(false);
+            data.setDashVideoSize(-1);
+            downloadLink.setProperty(DASH_VIDEO_CHUNKS, Property.NULL);
+            downloadLink.setProperty(DASH_AUDIO_CHUNKS, Property.NULL);
+            ClipDataCache.clearCache(downloadLink);
+        }
     }
 
     @Override

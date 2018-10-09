@@ -54,6 +54,7 @@ import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.filter.RegexFilter;
 import org.jdownloader.controlling.filter.RegexFilter.MatchType;
+import org.jdownloader.controlling.packagizer.PackagizerControllerListener.STATE;
 import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.extraction.BooleanStatus;
 import org.jdownloader.extensions.extraction.ExtractionController;
@@ -761,33 +762,59 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
     }
 
     public void runByFile(final CrawledLink link) {
+        final STATE firstState;
+        if (isTestInstance() == false && !org.jdownloader.settings.staticreferences.CFG_PACKAGIZER.PACKAGIZER_ENABLED.isEnabled()) {
+            firstState = STATE.AFTER;
+        } else {
+            firstState = STATE.BEFORE;
+        }
         if (getEventSender().hasListener()) {
             getEventSender().fireEvent(new PackagizerControllerEvent() {
                 @Override
                 public void sendTo(PackagizerControllerListener listener) {
-                    listener.onPackagizerRunAfterLinkcheck(link);
+                    listener.onPackagizerRunAfterLinkcheck(link, firstState);
                 }
             });
         }
-        if (isTestInstance() == false && !org.jdownloader.settings.staticreferences.CFG_PACKAGIZER.PACKAGIZER_ENABLED.isEnabled()) {
-            return;
+        if (STATE.BEFORE.equals(firstState)) {
+            applyPackagizerRules(link, rules, true);
+            if (getEventSender().hasListener()) {
+                getEventSender().fireEvent(new PackagizerControllerEvent() {
+                    @Override
+                    public void sendTo(PackagizerControllerListener listener) {
+                        listener.onPackagizerRunAfterLinkcheck(link, STATE.AFTER);
+                    }
+                });
+            }
         }
-        applyPackagizerRules(link, rules, true);
     }
 
     public void runByUrl(final CrawledLink link) {
+        final STATE firstState;
+        if (isTestInstance() == false && !org.jdownloader.settings.staticreferences.CFG_PACKAGIZER.PACKAGIZER_ENABLED.isEnabled()) {
+            firstState = STATE.AFTER;
+        } else {
+            firstState = STATE.BEFORE;
+        }
         if (getEventSender().hasListener()) {
             getEventSender().fireEvent(new PackagizerControllerEvent() {
                 @Override
                 public void sendTo(PackagizerControllerListener listener) {
-                    listener.onPackagizerRunBeforeLinkcheck(link);
+                    listener.onPackagizerRunBeforeLinkcheck(link, firstState);
                 }
             });
         }
-        if (isTestInstance() == false && !org.jdownloader.settings.staticreferences.CFG_PACKAGIZER.PACKAGIZER_ENABLED.isEnabled()) {
-            return;
+        if (STATE.BEFORE.equals(firstState)) {
+            applyPackagizerRules(link, rules, false);
+            if (getEventSender().hasListener()) {
+                getEventSender().fireEvent(new PackagizerControllerEvent() {
+                    @Override
+                    public void sendTo(PackagizerControllerListener listener) {
+                        listener.onPackagizerRunAfterLinkcheck(link, STATE.AFTER);
+                    }
+                });
+            }
         }
-        applyPackagizerRules(link, rules, false);
     }
 
     private void applyPackagizerRules(final CrawledLink link, final List<PackagizerRuleWrapper> rules, final boolean afterOnlineCheck) {
