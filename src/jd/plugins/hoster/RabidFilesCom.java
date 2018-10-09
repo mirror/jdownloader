@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -22,6 +21,11 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -43,14 +47,8 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rabidfiles.com" }, urls = { "https?://(www\\.)?rabidfiles\\.com/[A-Za-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rabidfiles.com" }, urls = { "https?://(www\\.)?(rabidfiles\\.com|animefiles.online)/[A-Za-z0-9]+" })
 public class RabidFilesCom extends PluginForHost {
-
     @SuppressWarnings("deprecation")
     public RabidFilesCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -64,15 +62,14 @@ public class RabidFilesCom extends PluginForHost {
     // protocol: no https
     // captchatype: solvemedia
     // other:
-
     @Override
     public String getAGBLink() {
         return mainpage + "/terms." + type;
     }
 
     /* Basic constants */
-    private final String         mainpage                                     = "http://rabidfiles.com";
-    private final String         domains                                      = "(rabidfiles\\.com)";
+    private final String         mainpage                                     = "http://animefiles.online";
+    private final String         domains                                      = "(animefiles.online)";
     private final String         type                                         = "html";
     private static final int     wait_BETWEEN_DOWNLOADS_LIMIT_MINUTES_DEFAULT = 10;
     private static final int     additional_WAIT_SECONDS                      = 3;
@@ -92,7 +89,6 @@ public class RabidFilesCom extends PluginForHost {
     private static final String  errortext_ERROR_SERVER                       = "Server error";
     private static final String  errortext_ERROR_PREMIUMONLY                  = "This file can only be downloaded by premium (or registered) users";
     private static final String  errortext_ERROR_SIMULTANDLSLIMIT             = "Max. simultan downloads limit reached, wait to start more downloads from this host";
-
     /* Connection stuff */
     private static final boolean free_RESUME                                  = true;
     private static final int     free_MAXCHUNKS                               = 0;
@@ -103,7 +99,6 @@ public class RabidFilesCom extends PluginForHost {
     private static final boolean account_PREMIUM_RESUME                       = true;
     private static final int     account_PREMIUM_MAXCHUNKS                    = 0;
     private static final int     account_PREMIUM_MAXDOWNLOADS                 = 20;
-
     private static AtomicInteger MAXPREM                                      = new AtomicInteger(1);
 
     @SuppressWarnings("deprecation")
@@ -620,5 +615,4 @@ public class RabidFilesCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
