@@ -626,12 +626,13 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
     }
 
     @Override
-    public void onPackagizerRunBeforeLinkcheck(CrawledLink link) {
+    public void onPackagizerRunBeforeLinkcheck(final CrawledLink link, final STATE state) {
         for (ScriptEntry script : entries) {
             if (script.isEnabled() && EventTrigger.ON_PACKAGIZER.equals(script.getEventTrigger()) && StringUtils.isNotEmpty(script.getScript())) {
                 try {
-                    HashMap<String, Object> props = new HashMap<String, Object>();
+                    final HashMap<String, Object> props = new HashMap<String, Object>();
                     props.put("linkcheckDone", false);
+                    props.put("state", state.name());
                     props.put("link", new PackagizerLinkSandbox(link));
                     runScript(script, props);
                 } catch (Throwable e) {
@@ -642,12 +643,13 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
     }
 
     @Override
-    public void onPackagizerRunAfterLinkcheck(CrawledLink link) {
+    public void onPackagizerRunAfterLinkcheck(final CrawledLink link, final STATE state) {
         for (ScriptEntry script : entries) {
             if (script.isEnabled() && EventTrigger.ON_PACKAGIZER.equals(script.getEventTrigger()) && StringUtils.isNotEmpty(script.getScript())) {
                 try {
-                    HashMap<String, Object> props = new HashMap<String, Object>();
+                    final HashMap<String, Object> props = new HashMap<String, Object>();
                     props.put("linkcheckDone", true);
+                    props.put("state", state.name());
                     props.put("link", new PackagizerLinkSandbox(link));
                     runScript(script, props);
                 } catch (Throwable e) {

@@ -239,6 +239,7 @@ public enum EventTrigger implements LabelInterface {
         public HashMap<String, Object> getTestProperties() {
             HashMap<String, Object> props = new HashMap<String, Object>();
             props.put("linkcheckDone", true);
+            props.put("state", "BEFORE");
             props.put("link", new PackagizerLinkSandbox());
             return props;
         }

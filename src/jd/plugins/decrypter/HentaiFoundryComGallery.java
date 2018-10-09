@@ -71,6 +71,8 @@ public class HentaiFoundryComGallery extends PluginForDecrypt {
         final String fpName = new Regex(parameter, "/user/(.+)").getMatch(0);
         int page = 1;
         String next = null;
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(Encoding.htmlDecode(fpName.trim()));
         do {
             if (this.isAbort()) {
                 logger.info("Decryption aborted by user: " + parameter);
@@ -105,13 +107,12 @@ public class HentaiFoundryComGallery extends PluginForDecrypt {
                 dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.BMP);
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
+                fp.add(dl);
+                distribute(dl);
             }
             next = br.getRegex("class=\"next\"><a href=\"(/pictures/user/.*?/page/\\d+)\">Next").getMatch(0);
             page++;
         } while (next != null);
-        FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(fpName.trim()));
-        fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
 

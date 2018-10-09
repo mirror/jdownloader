@@ -26,7 +26,6 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class FilterTableModel extends ExtTableModel<PackagizerRule> implements PackagizerControllerListener {
-
     private static final long serialVersionUID = -7756459932564776739L;
 
     public FilterTableModel(String id) {
@@ -46,15 +45,11 @@ public class FilterTableModel extends ExtTableModel<PackagizerRule> implements P
 
     @Override
     protected void initColumns() {
-
         this.addColumn(new ExtCheckColumn<PackagizerRule>(_GUI.T.settings_linkgrabber_filter_columns_enabled()) {
-
             private static final long serialVersionUID = -4667150369226691276L;
 
             public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
-
                 final ExtTableHeaderRenderer ret = new ExtTableHeaderRenderer(this, jTableHeader) {
-
                     private static final long serialVersionUID = 3938290423337000265L;
                     private final Icon        ok               = NewTheme.I().getIcon(IconKey.ICON_OK, 14);
 
@@ -66,9 +61,7 @@ public class FilterTableModel extends ExtTableModel<PackagizerRule> implements P
                         setText(null);
                         return this;
                     }
-
                 };
-
                 return ret;
             }
 
@@ -89,7 +82,6 @@ public class FilterTableModel extends ExtTableModel<PackagizerRule> implements P
 
             @Override
             public boolean isEditable(PackagizerRule obj) {
-
                 return true;
             }
 
@@ -105,9 +97,7 @@ public class FilterTableModel extends ExtTableModel<PackagizerRule> implements P
             }
         });
         addColumn(new OrderColumn());
-
         addColumn(new ExtTextColumn<PackagizerRule>(_GUI.T.settings_linkgrabber_filter_columns_name()) {
-
             /**
              *
              */
@@ -143,9 +133,7 @@ public class FilterTableModel extends ExtTableModel<PackagizerRule> implements P
                 return value.getName();
             }
         });
-
         addColumn(new ExtTextColumn<PackagizerRule>(_GUI.T.settings_linkgrabber_filter_columns_cond()) {
-
             /**
              *
              */
@@ -178,18 +166,15 @@ public class FilterTableModel extends ExtTableModel<PackagizerRule> implements P
             @Override
             public String getStringValue(PackagizerRule value) {
                 if (!value.isValid()) {
-
                     return _GUI.T.FilterTableModel_initColumns_invalid_condition_();
                 }
                 return value.toString();
             }
         });
-
     }
 
     @Override
     public boolean move(java.util.List<PackagizerRule> transferData, int dropRow) {
-
         try {
             java.util.List<PackagizerRule> list = PackagizerController.getInstance().list();
             final java.util.List<PackagizerRule> newdata = new ArrayList<PackagizerRule>();
@@ -206,7 +191,6 @@ public class FilterTableModel extends ExtTableModel<PackagizerRule> implements P
         } catch (Throwable t) {
             t.printStackTrace();
         }
-
         return false;
     }
 
@@ -216,10 +200,10 @@ public class FilterTableModel extends ExtTableModel<PackagizerRule> implements P
     }
 
     @Override
-    public void onPackagizerRunBeforeLinkcheck(CrawledLink link) {
+    public void onPackagizerRunBeforeLinkcheck(CrawledLink link, final STATE state) {
     }
 
     @Override
-    public void onPackagizerRunAfterLinkcheck(CrawledLink link) {
+    public void onPackagizerRunAfterLinkcheck(CrawledLink link, final STATE state) {
     }
 }
