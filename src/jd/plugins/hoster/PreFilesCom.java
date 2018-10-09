@@ -136,7 +136,7 @@ public class PreFilesCom extends antiDDoSForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, ">(Sorry! )?The file you were looking for could not be found").matches()) {
+        if (new Regex(correctedBR, ">(Sorry! )?The file you were looking for could not be found|>File not Found").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (correctedBR.contains(MAINTENANCE)) {
