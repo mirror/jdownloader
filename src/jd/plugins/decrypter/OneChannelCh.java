@@ -40,7 +40,7 @@ import jd.plugins.FilePackage;
  * note: primewire.ag using cloudflare. -raztoki20150225
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1channel.ch" }, urls = { "https?://(?:www\\.)?(?:vodly\\.to|primewire\\.(ag|is|life)|primewire\\.unblocked\\.cc)/(?:watch\\-\\d+([A-Za-z0-9\\-_]+)?|tv\\-\\d+[A-Za-z0-9\\-_]+/season\\-\\d+\\-episode\\-\\d+)|http://(?:www\\.)?letmewatchthis\\.lv/movies/view/watch\\-\\d+[A-Za-z0-9\\-]+|https?://(?:www\\.)?primewire\\.site/go.php.*" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1channel.ch" }, urls = { "https?://(?:www\\.)?(?:vodly\\.to|primewire\\.(ag|is|life|site|fun)|primewire\\.unblocked\\.cc)/(?:watch\\-\\d+([A-Za-z0-9\\-_]+)?|tv\\-\\d+[A-Za-z0-9\\-_]+/season\\-\\d+\\-episode\\-\\d+)|http://(?:www\\.)?letmewatchthis\\.lv/movies/view/watch\\-\\d+[A-Za-z0-9\\-]+|https?://(?:www\\.)?primewire\\.(ag|is|life|site|fun)/go.php.*" })
 public class OneChannelCh extends antiDDoSForDecrypt {
     public OneChannelCh(PluginWrapper wrapper) {
         super(wrapper);
@@ -76,7 +76,6 @@ public class OneChannelCh extends antiDDoSForDecrypt {
             if (fpName == null) {
                 fpName = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\">").getMatch(0);
             }
-            String page = br.toString();
             if (parameter.contains("season-") && fpName != null) {
                 final Regex seasonAndEpisode = br.getRegex("<a href=\"/tv\\-[^<>\"/]*?/[^<>\"/]*?\">([^<>\"]*?)</a>[\t\n\r ]+</strong>[\t\n\r ]+> <strong>([^<>\"]*?)</strong>");
                 if (seasonAndEpisode.getMatches().length != 0) {
@@ -84,7 +83,7 @@ public class OneChannelCh extends antiDDoSForDecrypt {
                     fpName = fpName + " - " + Encoding.htmlDecode(seasonAndEpisode.getMatch(0)) + " - " + Encoding.htmlDecode(seasonAndEpisode.getMatch(1));
                 }
             }
-            if (parameter.contains("go.php")) {
+            if (parameter.contains("go.php") && br.toString().contains("p,a,c,k,e,d")) {
                 final String js = br.getRegex("eval\\((function\\(p,a,c,k,e,d\\)[^\r\n]+\\))\\)").getMatch(0);
                 final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(null);
                 final ScriptEngine engine = manager.getEngineByName("javascript");
@@ -95,12 +94,11 @@ public class OneChannelCh extends antiDDoSForDecrypt {
                     String finallink = new Regex(result, "go\\('(.*?)'\\)").getMatch(0);
                     fpName = br.getRegex("<title>Watching ([^<>]*?)</title>").getMatch(0);
                     decryptedLinks.add(createDownloadlink(finallink));
-                    return decryptedLinks;
                 } catch (final Exception e) {
                     e.printStackTrace();
                 }
             } else {
-                final String[] links = br.getRegex("(/\\w+\\.php[^\"]*[&?](?:url|link)=[^\"]*?|/(?:external|goto|gohere)\\.php[^<>\"]*?)\"").getColumn(0);
+                final String[] links = br.getRegex("(/\\w+\\.php[^\"]*[&?](?:url|link)=[^\"]*?|/(?:external|goto|gohere|go)\\.php[^<>\"]*?)\"").getColumn(0);
                 if (links == null || links.length == 0) {
                     if (br.containsHTML("\\'HD Sponsor\\'")) {
                         logger.info("Found no downloadlink in link: " + parameter);
@@ -110,13 +108,18 @@ public class OneChannelCh extends antiDDoSForDecrypt {
                     return null;
                 }
                 br.setFollowRedirects(false);
-                for (final String singleLink : links) {
+                for (String singleLink : links) {
+                    singleLink = Encoding.htmlDecode(singleLink);
                     if (!dupe.add(singleLink)) {
                         continue;
                     }
                     String finallink;
                     final String b64link = new Regex(singleLink, "[&?](?:url|link)=([^<>\"&]+)").getMatch(0);
-                    if (b64link != null) {
+                    if (singleLink.contains("go.php")) {
+                        final Browser br2 = br.cloneBrowser();
+                        getPage(br2, singleLink);
+                        finallink = br2.getRedirectLocation() == null ? br2.getURL() : br2.getRedirectLocation();
+                    } else if (b64link != null) {
                         finallink = Encoding.Base64Decode(b64link);
                         finallink = Request.getLocation(finallink, br.getRequest());
                     } else {
