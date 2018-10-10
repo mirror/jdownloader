@@ -24,6 +24,8 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.gui.UserIO;
 import jd.http.Browser;
@@ -39,8 +41,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keezmovies.com" }, urls = { "https?://(www\\.)?(keezmovies\\.com/embed_player\\.php\\?v?id=\\d+|keezmoviesdecrypted\\.com/video/[\\w\\-]+)" })
 public class KeezMoviesCom extends antiDDoSForHost {
@@ -121,7 +121,7 @@ public class KeezMoviesCom extends antiDDoSForHost {
                 filename = br.getRegex("<h1 class=\"title_video_page\">([^<>\"]*?)</h1>").getMatch(0);
             }
             FLASHVARS = br.getRegex("<param name=\"flashvars\" value=\"(.*?)\"").getMatch(0);
-            FLASHVARS_JSON = br.getRegex("var flashvars\\s*=\\s*\\{(.*?)\\};").getMatch(0);
+            FLASHVARS_JSON = br.getRegex("flashvars\\s*=\\s*\\{(.*?)\\};").getMatch(0);
             if (FLASHVARS == null && FLASHVARS_JSON == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
