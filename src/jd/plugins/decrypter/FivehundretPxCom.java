@@ -4,6 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -13,12 +19,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "500px.com" }, urls = { "https?://(?:www\\.)?500px\\.com/(?!editors|about|studio|login|signup|licensing|popular|upgrade|business|photo|settings|city|terms|search|pro|jobs|fresh|privacy)[^/]+(/galleries/[^/]+|/featured)?" })
 public class FivehundretPxCom extends antiDDoSForDecrypt {
@@ -119,6 +119,10 @@ public class FivehundretPxCom extends antiDDoSForDecrypt {
             }
         } else {
             getPage(br, parameter.toString());
+            if (br.containsHTML(">Sorry, no such page")) {
+                ret.add(createOfflinelink(parameter.toString()));
+                return ret;
+            }
             String curatorID = br.getRegex("App\\.CuratorId\\s*=\\s*(\\d+)").getMatch(0);
             if (curatorID == null) {
                 curatorID = br.getRegex("500px.com/user/(\\d+)").getMatch(0);
