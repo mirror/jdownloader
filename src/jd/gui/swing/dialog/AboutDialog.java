@@ -220,7 +220,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
         stats.add(disable("Zip4J (http://www.lingala.net/zip4j/)"), "skip");
         stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_laf()), "");
         stats.add(disable("Synthetica (http://www.jyloo.com/synthetica/)"));
-        stats.add(disable(_GUI.T.jd_gui_swing_components_AboutDialog_synthetica2("(#289416475)")), "skip");
+        stats.add(disable(_GUI.T.jd_gui_swing_components_AboutDialog_synthetica2("(#112044)")), "skip");
         stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_icons()), "");
         stats.add(disable("See /themes/* folder for Icon Licenses"), "");
         stats.add(disable("Icons8 (https://icons8.com/)"), "skip");
