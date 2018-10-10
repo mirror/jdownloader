@@ -21,7 +21,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
@@ -40,7 +39,6 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
-import jd.plugins.CaptchaException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -80,7 +78,6 @@ public class UpstoRe extends antiDDoSForHost {
     /* Constants (limits) */
     private static final long              FREE_RECONNECTWAIT            = 1 * 60 * 60 * 1000L;
     private static final long              FREE_RECONNECTWAIT_ADDITIONAL = 60 * 1000l;
-    private static Object                  LOCK                          = new Object();
     private final String                   MAINPAGE                      = "http://upstore.net";
     private final String                   INVALIDLINKS                  = "https?://[^/]+/(faq|privacy|terms|d/|aff|login|account|dmca|imprint|message|panel|premium|contacts)";
     private static String[]                IPCHECK                       = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
@@ -95,11 +92,6 @@ public class UpstoRe extends antiDDoSForHost {
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("upsto.re/", "upstore.net/").replace("http://", "https://"));
-    }
-
-    @Override
-    protected boolean useRUA() {
-        return true;
     }
 
     /**
@@ -291,31 +283,19 @@ public class UpstoRe extends antiDDoSForHost {
 
     @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
                 br.setCookie(getHost(), "lang", "en");
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            br.setCookie(MAINPAGE, key, value);
-                        }
-                        // re-use same agent from cached session.
-                        final String ua = account.getStringProperty("ua", null);
-                        if (ua != null && !ua.equals(userAgent.get())) {
-                            // cloudflare routine sets user-agent on first request.
-                            userAgent.set(ua);
-                        }
-                        br.setCookie(getHost(), "lang", "en");
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    br.setCookies(MAINPAGE, cookies);
+                    getPage("https://upstore.net");
+                    if (!browserCookiesMatchLoginCookies(br) || br.containsHTML("/account/login")) {
+                        br.clearCookies(MAINPAGE);
+                    } else {
+                        account.saveCookies(br.getCookies(MAINPAGE), "");
                         return;
                     }
                 }
@@ -328,53 +308,39 @@ public class UpstoRe extends antiDDoSForHost {
                 }
                 // goto first page
                 br.setCookie(getHost(), "lang", "en");
-                getPage("https://upstore.net/");
-                // getPage("/account/soclogin/?url=https%3A%2F%2Fupstore.net%2F");
-                postPage("/account/login/", "url=https%253A%252F%252Fupstore.net%252F&send=Login&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                // some times they force captcha
-                final String cap = br.getRegex(regexLoginCaptcha).getMatch(-1);
-                if (cap != null) {
+                getPage("https://upstore.net/account/login/");
+                final Form login = br.getFormbyActionRegex(".+/login.*");
+                if (login == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                login.put("email", Encoding.urlEncode(account.getUser()));
+                login.put("password", Encoding.urlEncode(account.getPass()));
+                if (login.containsHTML(regexLoginCaptcha)) {
+                    final String cap = br.getRegex(regexLoginCaptcha).getMatch(-1);
                     final DownloadLink dummyLink = new DownloadLink(this, "Account", this.getHost(), MAINPAGE, true);
-                    String code = null;
-                    try {
-                        code = getCaptchaCode(cap, dummyLink);
-                    } catch (Throwable e) {
-                        if (e instanceof CaptchaException) {
-                            // JD2 reference to skip button we should abort!
-                            throw (CaptchaException) e;
-                        }
-                    }
+                    final String code = getCaptchaCode(cap, dummyLink);
                     if (code == null) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nCaptcha required and wasn't provided, account disabled!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                    postPage(br.getURL(), "url=http%253A%252F%252Fupstore.net%252F&send=sign+in&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&captcha=" + Encoding.urlEncode(code));
-                    if (br.containsHTML(regexLoginCaptcha)) {
-                        // incorrect captcha, or form values changed
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nIncorrect catpcha, account disabled!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    } else {
+                        login.put("captcha", Encoding.urlEncode(code));
                     }
                 }
-                if (!browserCookiesMatchLoginCookies(br)) {
+                submitForm(login);
+                if (br.containsHTML(regexLoginCaptcha)) {
+                    // incorrect captcha, or form values changed
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                } else if (!browserCookiesMatchLoginCookies(br)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 // Save cookies
-                final HashMap<String, String> cookies = getBrowsersLoginCookies(br);
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
-                account.setProperty("ua", br.getHeaders().get("User-Agent"));
-                account.setProperty("lastlogin", System.currentTimeMillis());
+                account.saveCookies(br.getCookies(MAINPAGE), "");
             } catch (final PluginException e) {
-                dumpCachedLoginSession(account);
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
-    }
-
-    private void dumpCachedLoginSession(final Account account) {
-        account.setProperty("cookies", Property.NULL);
-        account.setProperty("lastlogin", Property.NULL);
-        account.setProperty("ua", Property.NULL);
-        userAgent.set(null);
     }
 
     /**
@@ -482,7 +448,7 @@ public class UpstoRe extends antiDDoSForHost {
      * @throws Exception
      */
     private boolean areWeStillLoggedIn(Account account) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             boolean isFollowingRedirects = br.isFollowingRedirects();
             try {
                 br = new Browser();
@@ -497,10 +463,9 @@ public class UpstoRe extends antiDDoSForHost {
                 // upstore doesn't remove invalid cookies, so we need to also check against account types!
                 if (browserCookiesMatchLoginCookies(br) && (br.containsHTML(this.lifetimeAccount) || br.containsHTML("unlimited premium") || getPremiumTill(br) > 0)) {
                     // save these incase they changed value.
-                    final HashMap<String, String> cookies = getBrowsersLoginCookies(br);
-                    account.setProperty("cookies", cookies);
+                    account.saveCookies(br.getCookies(MAINPAGE), "");
                 } else {
-                    dumpCachedLoginSession(account);
+                    account.clearCookies("");
                     br = new Browser();
                     login(account, false);
                 }
@@ -551,7 +516,7 @@ public class UpstoRe extends antiDDoSForHost {
     private final String premDlLimit = "It is strange, but you have reached a download limit for today";
 
     private AccountInfo trafficLeft(Account account) throws PluginException {
-        synchronized (LOCK) {
+        synchronized (account) {
             AccountInfo ai = account.getAccountInfo();
             String maxLimit = br.getRegex(premDlLimit + " \\((\\d+ (MB|GB|TB))\\)").getMatch(0);
             if (maxLimit != null) {

@@ -711,6 +711,8 @@ public class TbCmV2 extends PluginForDecrypt {
                     for (String id : videos) {
                         if (dupeCheckSet.add(id)) {
                             ret.add(new YoutubeClipData(id, counter++));
+                        } else {
+                            logger.info("Ignore dupe entry:" + id);
                         }
                     }
                 }
@@ -721,6 +723,8 @@ public class TbCmV2 extends PluginForDecrypt {
                             String id = getVideoIDByUrl(relativeUrl);
                             if (dupeCheckSet.add(id)) {
                                 ret.add(new YoutubeClipData(id, counter++));
+                            } else {
+                                logger.info("Ignore dupe entry:" + id);
                             }
                         }
                     }
@@ -872,6 +876,8 @@ public class TbCmV2 extends PluginForDecrypt {
                             String id = getVideoIDByUrl(relativeUrl);
                             if (dupeCheckSet.add(id)) {
                                 ret.add(new YoutubeClipData(id, counter++));
+                            } else {
+                                logger.info("Ignore dupe entry:" + id);
                             }
                         }
                     }
@@ -889,6 +895,8 @@ public class TbCmV2 extends PluginForDecrypt {
                                     if (id != null) {
                                         if (dupeCheckSet.add(id)) {
                                             ret.add(new YoutubeClipData(id, counter++));
+                                        } else {
+                                            logger.info("Ignore dupe entry:" + id);
                                         }
                                     }
                                 }
@@ -934,6 +942,8 @@ public class TbCmV2 extends PluginForDecrypt {
                                     if (id != null) {
                                         if (dupeCheckSet.add(id)) {
                                             ret.add(new YoutubeClipData(id, counter++));
+                                        } else {
+                                            logger.info("Ignore dupe entry:" + id);
                                         }
                                     }
                                 }
@@ -1042,6 +1052,8 @@ public class TbCmV2 extends PluginForDecrypt {
                         String id = getVideoIDByUrl(relativeUrl);
                         if (dupeCheckSet.add(id)) {
                             ret.add(new YoutubeClipData(id, counter++));
+                        } else {
+                            logger.info("Ignore dupe entry:" + id);
                         }
                     }
                 }
@@ -1112,6 +1124,8 @@ public class TbCmV2 extends PluginForDecrypt {
                         String id = getVideoIDByUrl(relativeUrl);
                         if (dupeCheckSet.add(id)) {
                             ret.add(new YoutubeClipData(id, counter++));
+                        } else {
+                            logger.info("Ignore dupe entry:" + id);
                         }
                     }
                 }
@@ -1142,6 +1156,8 @@ public class TbCmV2 extends PluginForDecrypt {
                 for (String vid : videos) {
                     if (dupeCheckSet.add(vid)) {
                         ret.add(new YoutubeClipData(vid, counter++));
+                    } else {
+                        logger.info("Ignore dupe entry:" + vid);
                     }
                 }
             }
