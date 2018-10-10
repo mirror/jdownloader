@@ -33,6 +33,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
@@ -196,22 +197,30 @@ public class MirStkCm extends antiDDoSForDecrypt {
                             sleep(wait * 1000, param);
                             getPage(brc, singleLink + add_char);
                             finallink = brc.getRedirectLocation();
-                            if (finallink == null) {
+                            if (StringUtils.isEmpty(finallink)) {
                                 finallink = brc.getRegex("name\\s*=\\s*\"shturl\"[^>]*value\\s*=\\s*\"(https?://[^>]*?)\"").getMatch(0);
-                                if (finallink == null) {
-                                    // fail over
-                                    final String[] links = HTMLParser.getHttpLinks(brc.toString(), "");
-                                    for (final String link : links) {
-                                        if (!Browser.getHost(link).contains(Browser.getHost(brc.getURL()))) {
-                                            final DownloadLink dl = createDownloadlink(link);
-                                            if (fp != null) {
-                                                fp.add(dl);
-                                            }
-                                            decryptedLinks.add(dl);
-                                            distribute(dl);
-                                        }
+                                if (StringUtils.isEmpty(finallink)) {
+                                    final Form button = brc.getFormBySubmitvalue("Download");
+                                    if (button != null) {
+                                        final Browser br2 = brc.cloneBrowser();
+                                        br2.submitForm(button);
+                                        finallink = br2.getRedirectLocation();
                                     }
-                                    continue;
+                                    if (StringUtils.isEmpty(finallink)) {
+                                        // fail over
+                                        final String[] links = HTMLParser.getHttpLinks(brc.toString(), "");
+                                        for (final String link : links) {
+                                            if (!Browser.getHost(link).contains(Browser.getHost(brc.getURL()))) {
+                                                final DownloadLink dl = createDownloadlink(link);
+                                                if (fp != null) {
+                                                    fp.add(dl);
+                                                }
+                                                decryptedLinks.add(dl);
+                                                distribute(dl);
+                                            }
+                                        }
+                                        continue;
+                                    }
                                 }
                             }
                         }
