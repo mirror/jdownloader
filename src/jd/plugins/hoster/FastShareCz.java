@@ -149,6 +149,8 @@ public class FastShareCz extends antiDDoSForHost {
                 logger.info("fastshare.cz: Unknown error -> Plugin is broken");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+        } else {
+            dl.setFilenameFix(true);
         }
         dl.startDownload();
     }
@@ -242,6 +244,8 @@ public class FastShareCz extends antiDDoSForHost {
             }
             logger.warning("The final dllink seems not to be a file!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            dl.setFilenameFix(true);
         }
         dl.startDownload();
     }

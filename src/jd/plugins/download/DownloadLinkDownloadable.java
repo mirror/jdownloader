@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.util.ArrayList;
@@ -21,7 +22,6 @@ import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.DownloadLinkDatabindingInterface;
@@ -31,28 +31,27 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
 import jd.plugins.download.HashInfo.TYPE;
 
-import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
 import org.jdownloader.controlling.FileCreationManager;
-import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.HashCheckPluginProgress;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.settings.GeneralSettings;
 
 public class DownloadLinkDownloadable implements Downloadable {
-    private static volatile boolean crcHashingInProgress = false;    
+    private static volatile boolean crcHashingInProgress = false;
     /**
      *
      */
-    private final DownloadLink  downloadLink;
-    private final PluginForHost plugin;
+    private final DownloadLink      downloadLink;
+    private final PluginForHost     plugin;
 
     public DownloadLinkDownloadable(DownloadLink downloadLink) {
         this.downloadLink = downloadLink;
@@ -589,24 +588,47 @@ public class DownloadLinkDownloadable implements Downloadable {
     @Override
     public void updateFinalFileName() {
         if (getFinalFileName() == null) {
-            LogInterface logger = getLogger();
-            DownloadInterface dl = getDownloadInterface();
-            URLConnectionAdapter connection = getDownloadInterface().getConnection();
+            final LogInterface logger = getLogger();
+            final DownloadInterface dl = getDownloadInterface();
+            final URLConnectionAdapter connection = getDownloadInterface().getConnection();
             logger.info("FinalFileName is not set yet!");
-            if (connection.isContentDisposition() || dl.allowFilenameFromURL) {
-                String name = Plugin.getFileNameFromHeader(connection);
-                logger.info("FinalFileName: set to '" + name + "' from connection");
+            final DispositionHeader dispositonHeader = Plugin.parseDispositionHeader(connection);
+            String name = null;
+            if (dispositonHeader != null && StringUtils.isNotEmpty(dispositonHeader.getFilename())) {
+                name = dispositonHeader.getFilename();
+                if (dl.fixWrongContentDispositionHeader && dispositonHeader.getEncoding() == null) {
+                    name = decodeURIComponent(name, null);
+                }
+                logger.info("FinalFileName: set to '" + name + "' from connection:" + dispositonHeader + "|fix:" + dl.fixWrongContentDispositionHeader);
+                setFinalFileName(name);
+            } else if (StringUtils.isNotEmpty(name = Plugin.getFileNameFromURL(connection.getURL()))) {
                 if (dl.fixWrongContentDispositionHeader) {
-                    setFinalFileName(Encoding.htmlDecode(name));
-                } else {
+                    name = decodeURIComponent(name, null);
+                }
+                logger.info("FinalFileName: set to '" + name + "' from url:" + connection.getURL().toString() + "|fix:" + dl.fixWrongContentDispositionHeader);
+                setFinalFileName(name);
+            } else {
+                name = getName();
+                if (StringUtils.isNotEmpty(name)) {
+                    logger.info("FinalFileName: set to '" + name + "' from plugin");
                     setFinalFileName(name);
                 }
-            } else {
-                String name = getName();
-                logger.info("FinalFileName: set to '" + name + "' from plugin");
-                setFinalFileName(name);
             }
         }
+    }
+
+    protected String decodeURIComponent(final String name, String charSet) {
+        try {
+            if (StringUtils.isEmpty(charSet)) {
+                charSet = "UTF-8";
+            }
+            return URLEncode.decodeURIComponent(name, charSet, true);
+        } catch (final IllegalArgumentException ignore) {
+            getLogger().log(ignore);
+        } catch (final UnsupportedEncodingException ignore) {
+            getLogger().log(ignore);
+        }
+        return name;
     }
 
     @Override
@@ -624,8 +646,8 @@ public class DownloadLinkDownloadable implements Downloadable {
     public int getChunks() {
         return downloadLink.getChunks();
     }
-    
+
     public static boolean isCrcHashingInProgress() {
         return crcHashingInProgress;
-    }    
+    }
 }
