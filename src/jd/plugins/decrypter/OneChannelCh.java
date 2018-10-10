@@ -18,7 +18,11 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -36,7 +40,7 @@ import jd.plugins.FilePackage;
  * note: primewire.ag using cloudflare. -raztoki20150225
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1channel.ch" }, urls = { "https?://(?:www\\.)?(?:vodly\\.to|primewire\\.(ag|is|life|site)|primewire\\.unblocked\\.cc)/(?:watch\\-\\d+([A-Za-z0-9\\-_]+)?|tv\\-\\d+[A-Za-z0-9\\-_]+/season\\-\\d+\\-episode\\-\\d+)|http://(?:www\\.)?letmewatchthis\\.lv/movies/view/watch\\-\\d+[A-Za-z0-9\\-]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1channel.ch" }, urls = { "https?://(?:www\\.)?(?:vodly\\.to|primewire\\.(ag|is|life)|primewire\\.unblocked\\.cc)/(?:watch\\-\\d+([A-Za-z0-9\\-_]+)?|tv\\-\\d+[A-Za-z0-9\\-_]+/season\\-\\d+\\-episode\\-\\d+)|http://(?:www\\.)?letmewatchthis\\.lv/movies/view/watch\\-\\d+[A-Za-z0-9\\-]+|https?://(?:www\\.)?primewire\\.site/go.php.*" })
 public class OneChannelCh extends antiDDoSForDecrypt {
     public OneChannelCh(PluginWrapper wrapper) {
         super(wrapper);
@@ -72,6 +76,7 @@ public class OneChannelCh extends antiDDoSForDecrypt {
             if (fpName == null) {
                 fpName = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\">").getMatch(0);
             }
+            String page = br.toString();
             if (parameter.contains("season-") && fpName != null) {
                 final Regex seasonAndEpisode = br.getRegex("<a href=\"/tv\\-[^<>\"/]*?/[^<>\"/]*?\">([^<>\"]*?)</a>[\t\n\r ]+</strong>[\t\n\r ]+> <strong>([^<>\"]*?)</strong>");
                 if (seasonAndEpisode.getMatches().length != 0) {
@@ -79,39 +84,56 @@ public class OneChannelCh extends antiDDoSForDecrypt {
                     fpName = fpName + " - " + Encoding.htmlDecode(seasonAndEpisode.getMatch(0)) + " - " + Encoding.htmlDecode(seasonAndEpisode.getMatch(1));
                 }
             }
-            final String[] links = br.getRegex("(/\\w+\\.php[^\"]*[&?](?:url|link)=[^\"]*?|/(?:external|goto|gohere)\\.php[^<>\"]*?)\"").getColumn(0);
-            if (links == null || links.length == 0) {
-                if (br.containsHTML("\\'HD Sponsor\\'")) {
-                    logger.info("Found no downloadlink in link: " + parameter);
+            if (parameter.contains("go.php")) {
+                final String js = br.getRegex("eval\\((function\\(p,a,c,k,e,d\\)[^\r\n]+\\))\\)").getMatch(0);
+                final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(null);
+                final ScriptEngine engine = manager.getEngineByName("javascript");
+                String result = null;
+                try {
+                    engine.eval("var res = " + js + ";");
+                    result = (String) engine.get("res");
+                    String finallink = new Regex(result, "go\\('(.*?)'\\)").getMatch(0);
+                    fpName = br.getRegex("<title>Watching ([^<>]*?)</title>").getMatch(0);
+                    decryptedLinks.add(createDownloadlink(finallink));
                     return decryptedLinks;
+                } catch (final Exception e) {
+                    e.printStackTrace();
                 }
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            br.setFollowRedirects(false);
-            for (final String singleLink : links) {
-                if (!dupe.add(singleLink)) {
-                    continue;
-                }
-                String finallink;
-                final String b64link = new Regex(singleLink, "[&?](?:url|link)=([^<>\"&]+)").getMatch(0);
-                if (b64link != null) {
-                    finallink = Encoding.Base64Decode(b64link);
-                    finallink = Request.getLocation(finallink, br.getRequest());
-                } else {
-                    final Browser br2 = br.cloneBrowser();
-                    getPage(br2, singleLink);
-                    finallink = br2.getRedirectLocation();
-                    if (finallink == null) {
-                        finallink = br2.getRegex("<frame src=\"(http[^<>\"]*?)\"").getMatch(0);
+            } else {
+                final String[] links = br.getRegex("(/\\w+\\.php[^\"]*[&?](?:url|link)=[^\"]*?|/(?:external|goto|gohere)\\.php[^<>\"]*?)\"").getColumn(0);
+                if (links == null || links.length == 0) {
+                    if (br.containsHTML("\\'HD Sponsor\\'")) {
+                        logger.info("Found no downloadlink in link: " + parameter);
+                        return decryptedLinks;
                     }
-                }
-                if (finallink == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
-                if (dupe.add(finallink)) {
-                    decryptedLinks.add(createDownloadlink(finallink));
+                br.setFollowRedirects(false);
+                for (final String singleLink : links) {
+                    if (!dupe.add(singleLink)) {
+                        continue;
+                    }
+                    String finallink;
+                    final String b64link = new Regex(singleLink, "[&?](?:url|link)=([^<>\"&]+)").getMatch(0);
+                    if (b64link != null) {
+                        finallink = Encoding.Base64Decode(b64link);
+                        finallink = Request.getLocation(finallink, br.getRequest());
+                    } else {
+                        final Browser br2 = br.cloneBrowser();
+                        getPage(br2, singleLink);
+                        finallink = br2.getRedirectLocation();
+                        if (finallink == null) {
+                            finallink = br2.getRegex("<frame src=\"(http[^<>\"]*?)\"").getMatch(0);
+                        }
+                    }
+                    if (finallink == null) {
+                        logger.warning("Decrypter broken for link: " + parameter);
+                        return null;
+                    }
+                    if (dupe.add(finallink)) {
+                        decryptedLinks.add(createDownloadlink(finallink));
+                    }
                 }
             }
             if (fpName != null) {
