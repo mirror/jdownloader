@@ -39,7 +39,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hentai-foundry.com" }, urls = { "https?://www\\.hentai-foundry\\.com/pictures/user/[A-Za-z0-9\\-_]+/\\d+|http://www\\.hentai-foundry\\.com/stories/user/[A-Za-z0-9\\-_]+/\\d+/[A-Za-z0-9\\-_]+\\.pdf" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hentai-foundry.com" }, urls = { "https?://www\\.hentai-foundry\\.com/pictures/user/[A-Za-z0-9\\-_]+/\\d+|https?://www\\.hentai-foundry\\.com/stories/user/[A-Za-z0-9\\-_]+/\\d+/[A-Za-z0-9\\-_]+\\.pdf" })
 public class HentaiFoundryCom extends PluginForHost {
     public HentaiFoundryCom(PluginWrapper wrapper) {
         super(wrapper);
