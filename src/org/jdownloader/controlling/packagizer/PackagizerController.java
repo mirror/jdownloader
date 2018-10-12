@@ -509,7 +509,13 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                     final String host = link.getHost();
                     return Pattern.compile("<jd:hoster:" + Pattern.quote(String.valueOf(id)) + "/?>").matcher(input).replaceAll(Matcher.quoteReplacement(preprocessReplacement(replaceVariable, Encoding.urlDecode(StringUtils.valueOrEmpty(host), false))));
                 }
-                final Regex regex = new Regex(link.getURL(), lgr.getHosterRule().getPattern());
+                final String url;
+                if (link.getDownloadLink() != null) {
+                    url = link.getDownloadLink().getContentUrlOrPatternMatcher();
+                } else {
+                    url = link.getURL();
+                }
+                final Regex regex = new Regex(url, lgr.getHosterRule().getPattern());
                 if (regex.matches()) {
                     final String[] values = regex.getRow(0);
                     return Pattern.compile("<jd:hoster:" + Pattern.quote(String.valueOf(id)) + "/?>").matcher(input).replaceAll(Matcher.quoteReplacement(preprocessReplacement(replaceVariable, Encoding.urlDecode(StringUtils.valueOrEmpty(values[id - 1]), false))));
