@@ -21,23 +21,6 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
 
-import jd.config.SubConfiguration;
-import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
-import jd.controlling.downloadcontroller.DownloadLinkCandidate;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkchecker.LinkCheckerThread;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
-import jd.http.Browser;
-import jd.http.ClonedProxy;
-import jd.http.ProxySelectorInterface;
-import jd.http.Request;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.Account;
-import jd.plugins.Plugin;
-import jd.plugins.PluginForHost;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.shutdown.ShutdownController;
@@ -95,6 +78,23 @@ import com.btr.proxy.util.Logger;
 import com.btr.proxy.util.Logger.LogBackEnd;
 import com.btr.proxy.util.Logger.LogLevel;
 
+import jd.config.SubConfiguration;
+import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
+import jd.controlling.downloadcontroller.DownloadLinkCandidate;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkchecker.LinkCheckerThread;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.http.Browser;
+import jd.http.ClonedProxy;
+import jd.http.ProxySelectorInterface;
+import jd.http.Request;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Account;
+import jd.plugins.Plugin;
+import jd.plugins.PluginForHost;
+
 //import com.btr.proxy.search.ProxySearchStrategy;
 //import com.btr.proxy.search.browser.firefox.FirefoxProxySearchStrategy;
 //import com.btr.proxy.search.desktop.DesktopProxySearchStrategy;
@@ -129,9 +129,15 @@ public class ProxyController implements ProxySelectorInterface {
                                                                                                 @Override
                                                                                                 public void killQueue() {
                                                                                                     LogController.CL().log(new Throwable("YOU CANNOT KILL ME!"));
-                                                                                                    /*
-                                                                                                     * this queue can't be killed
-                                                                                                     */
+                                                                                                                                                                 /*
+                                                                                                                                                                  * this
+                                                                                                                                                                  * queue
+                                                                                                                                                                  * can
+                                                                                                                                                                  * '
+                                                                                                                                                                  * t
+                                                                                                                                                                  * be
+                                                                                                                                                                  * killed
+                                                                                                                                                                  */
                                                                                                 }
                                                                                             };
     private final ConfigEventSender<Object>                                 customProxyListEventSender;
@@ -192,16 +198,16 @@ public class ProxyController implements ProxySelectorInterface {
         });
         getEventSender().addListener(new DefaultEventListener<ProxyEvent<AbstractProxySelectorImpl>>() {
             final DelayedRunnable asyncSaving = new DelayedRunnable(5000l, 60000l) {
-                                                  @Override
-                                                  public void delayedrun() {
-                                                      ProxyController.this.saveProxySettings();
-                                                  }
+                @Override
+                public void delayedrun() {
+                    ProxyController.this.saveProxySettings();
+                }
 
-                                                  @Override
-                                                  public String getID() {
-                                                      return "ProxyController";
-                                                  }
-                                              };
+                @Override
+                public String getID() {
+                    return "ProxyController";
+                }
+            };
 
             @Override
             public void onEvent(final ProxyEvent<AbstractProxySelectorImpl> event) {
@@ -935,12 +941,24 @@ public class ProxyController implements ProxySelectorInterface {
                         getDialog().setMinimumSize(new Dimension(450, getPreferredSize().height));
                         super.pack();
                     }
+
+                    @Override
+                    public boolean isTypeEditable() {
+                        return super.isTypeEditable() && typeEditable;
+                    }
+
+                    @Override
+                    public boolean isHostEditable() {
+                        return super.isHostEditable() && typeEditable;
+                    }
+
+                    @Override
+                    public boolean isPortEditable() {
+                        return super.isPortEditable() && typeEditable;
+                    }
                 };
                 pd.setTimeout(5 * 60 * 1000);
                 pd.setAuthRequired(true);
-                pd.setTypeEditable(typeEditable);
-                pd.setHostEditable(typeEditable);
-                pd.setPortEditable(typeEditable);
                 pd.setTitle(title);
                 proxy = Dialog.getInstance().showDialog(pd);
                 rememberCheckBox = pd.isRememberChecked();
