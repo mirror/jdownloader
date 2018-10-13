@@ -321,21 +321,24 @@ public class SenditCloud extends antiDDoSForHost {
         }
         if (ENABLE_HTML_FILESIZE_CHECK) {
             if (inValidate(fileInfo[1])) {
-                fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
+                fileInfo[1] = new Regex(correctedBR, "Size:</b>([^<>\"]+)<").getMatch(0);
                 if (inValidate(fileInfo[1])) {
-                    fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
-                    // next two are details from sharing box
+                    fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
                     if (inValidate(fileInfo[1])) {
-                        fileInfo[1] = new Regex(correctedBR, sharebox0).getMatch(1);
+                        fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
+                        // next two are details from sharing box
                         if (inValidate(fileInfo[1])) {
-                            fileInfo[1] = new Regex(correctedBR, sharebox1).getMatch(1);
-                            // generic failover#1
+                            fileInfo[1] = new Regex(correctedBR, sharebox0).getMatch(1);
                             if (inValidate(fileInfo[1])) {
-                                fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
-                            }
-                            // generic failover#2
-                            if (inValidate(fileInfo[1])) {
-                                fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(?:B(?:ytes?)?))").getMatch(0);
+                                fileInfo[1] = new Regex(correctedBR, sharebox1).getMatch(1);
+                                // generic failover#1
+                                if (inValidate(fileInfo[1])) {
+                                    fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+                                }
+                                // generic failover#2
+                                if (inValidate(fileInfo[1])) {
+                                    fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(?:B(?:ytes?)?))").getMatch(0);
+                                }
                             }
                         }
                     }
