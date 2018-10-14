@@ -18,6 +18,12 @@ package jd.plugins.hoster;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.Regex;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -27,12 +33,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.Regex;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision: 35559 $", interfaceVersion = 3, names = { "hqq.tv" }, urls = { "https?://(?:www\\.)?hqq\\.(?:tv|watch)/.+|https?://waaw\\.tv/watch_video\\.php\\?v=[A-Za-z0-9]+" })
 public class HqqTv extends antiDDoSForHost {
@@ -121,21 +121,25 @@ public class HqqTv extends antiDDoSForHost {
         for (String es : escapedString) {
             unescapedString.append(Encoding.htmlDecode(es));
         }
-        String[] keyNames = new Regex(unescapedString.toString(), "link_1: ([^,]+), server_1: ([^,]+),").getRow(0);
+        String[] keyNames = new Regex(unescapedString.toString(), "link_(\\d+): ([^,]+), server_(\\d+): ([^,]+),").getRow(0);
+        if (keyNames == null || keyNames.length == 0) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         jsWise = br.getRegex(";eval\\((function\\(w,i,s,e.+?)\\);\\s*</").getMatch(0);
         if (jsWise == null) {
             /* 2017-07-18 */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         decode = decodeWise(jsWise);
-        String linkl = new Regex(decode, "var " + keyNames[0] + " = \"([^\"]+)").getMatch(0);
-        String serverl = new Regex(decode, "var " + keyNames[1] + " = \"([^\"]+)").getMatch(0);
+        String linkl = new Regex(decode, "var " + keyNames[1] + " = \"([^\"]+)").getMatch(0);
+        String serverl = new Regex(decode, "var " + keyNames[3] + " = \"([^\"]+)").getMatch(0);
         sb = new StringBuffer();
         sb.append("/player/get_md5.php?at=");
         sb.append(at);
-        sb.append("&adb=0%2F&b=1&link_1=");
+        sb.append("&adb=0%2F&b=1");
+        sb.append(String.format("&link_%s=", keyNames[0]));
         sb.append(linkl);
-        sb.append("&server_1=");
+        sb.append(String.format("&server_%s=", keyNames[2]));
         sb.append(serverl);
         sb.append("&vid=");
         sb.append(vid);
