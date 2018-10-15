@@ -17,9 +17,13 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -30,10 +34,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datoid.cz" }, urls = { "https?://(www\\.)?datoid\\.(cz|sk)/[A-Za-z0-9]+(?:/.*)?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datoid.cz" }, urls = { "https?://(?;www\\.)?datoid\\.(?:cz|sk)/[A-Za-z]+[0-9]+(?:/.*)?" })
 public class DatoidCz extends PluginForHost {
     public DatoidCz(PluginWrapper wrapper) {
         super(wrapper);
@@ -49,6 +50,16 @@ public class DatoidCz extends PluginForHost {
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("datoid.sk/", "datoid.cz/"));
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = new Regex(link.getPluginPatternMatcher(), "datoid\\.(?:cz|sk)/([A-Za-z]+)").getMatch(0);
+        if (linkid != null) {
+            return linkid;
+        } else {
+            return super.getLinkID(link);
+        }
     }
 
     @SuppressWarnings("deprecation")
@@ -100,13 +111,23 @@ public class DatoidCz extends PluginForHost {
             logger.info("Only downloadable by Premium Account holders");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
+        final String continue_url = br.getRegex("class=\"btn btn-large btn-download detail-download\" href=\"(/f/[^<>\"]+)\"").getMatch(0);
+        if (continue_url == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.getPage(continue_url);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-        br.getPage(br.getURL().replace("datoid.cz/", "datoid.cz/f/") + "?request=1&_=" + System.currentTimeMillis());
+        br.getPage(continue_url + "?request=1&_=" + System.currentTimeMillis());
+        final String redirect = PluginJSonUtils.getJson(br, "redirect");
+        if (!StringUtils.isEmpty(redirect)) {
+            /* Redirect will lead to main-page and we don't want that! */
+            // br.getPage(redirect);
+            br.getPage("/detail/popup-download?code=" + getLinkID(downloadLink) + "&_=" + System.currentTimeMillis());
+        }
         if (br.containsHTML("\"error\":\"IP in use\"")) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
-        }
-        if (br.containsHTML("\"No anonymous free slots\"")) {
+        } else if (br.containsHTML("\"No anonymous free slots\"") || br.containsHTML("class=\"hidden free-slots-in-use\"") /* 2018-10-15 */) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available", 5 * 60 * 1000l);
         }
         // final int wait = Integer.parseInt(getJson("wait"));
@@ -124,7 +145,6 @@ public class DatoidCz extends PluginForHost {
         dl.startDownload();
     }
 
-    @SuppressWarnings("unchecked")
     private String login(final Account account) throws Exception {
         br.setFollowRedirects(false);
         br.getPage("http://api.datoid.cz/v1/login?email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));

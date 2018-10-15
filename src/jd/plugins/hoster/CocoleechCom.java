@@ -23,6 +23,15 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.IO;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.CountingOutputStream;
+import org.jdownloader.plugins.ConditionalSkipReasonException;
+import org.jdownloader.plugins.WaitingSkipReason;
+import org.jdownloader.plugins.WaitingSkipReason.CAUSE;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -38,12 +47,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.IO;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.CountingOutputStream;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cocoleech.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" })
 public class CocoleechCom extends PluginForHost {
@@ -127,8 +130,11 @@ public class CocoleechCom extends PluginForHost {
                 final int maxDlsForCurrentHost = hostMaxdlsMap.get(currentHost);
                 final AtomicInteger currentRunningDlsForCurrentHost = hostRunningDlsNumMap.get(currentHost);
                 if (currentRunningDlsForCurrentHost.get() >= maxDlsForCurrentHost) {
-                    /* Max simultaneous downloads reached for current host. */
-                    return false;
+                    /*
+                     * Max downloads for specific host for this MOCH reached --> Avoid irritating/wrong 'Account missing' errormessage for
+                     * this case - wait and retry!
+                     */
+                    throw new ConditionalSkipReasonException(new WaitingSkipReason(CAUSE.HOST_TEMP_UNAVAILABLE, 15 * 1000, null));
                 }
             }
         }

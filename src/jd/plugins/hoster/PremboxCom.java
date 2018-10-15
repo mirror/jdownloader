@@ -22,6 +22,9 @@ import java.util.LinkedHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.appwork.storage.simplejson.JSonUtils;
+import org.jdownloader.plugins.ConditionalSkipReasonException;
+import org.jdownloader.plugins.WaitingSkipReason;
+import org.jdownloader.plugins.WaitingSkipReason.CAUSE;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -130,7 +133,11 @@ public class PremboxCom extends PluginForHost {
                 final int maxDlsForCurrentHost = hostMaxdlsMap.get(currentHost);
                 final AtomicInteger currentRunningDlsForCurrentHost = hostRunningDlsNumMap.get(currentHost);
                 if (currentRunningDlsForCurrentHost.get() >= maxDlsForCurrentHost) {
-                    return false;
+                    /*
+                     * Max downloads for specific host for this MOCH reached --> Avoid irritating/wrong 'Account missing' errormessage for
+                     * this case - wait and retry!
+                     */
+                    throw new ConditionalSkipReasonException(new WaitingSkipReason(CAUSE.HOST_TEMP_UNAVAILABLE, 15 * 1000, null));
                 }
             }
         }

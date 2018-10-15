@@ -23,6 +23,9 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.ConditionalSkipReasonException;
+import org.jdownloader.plugins.WaitingSkipReason;
+import org.jdownloader.plugins.WaitingSkipReason.CAUSE;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
@@ -113,7 +116,6 @@ public class MobilismOrg extends antiDDoSForHost {
         return AvailableStatus.UNCHECKABLE;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public boolean canHandle(final DownloadLink downloadLink, final Account account) throws Exception {
         if (account == null) {
@@ -136,7 +138,11 @@ public class MobilismOrg extends antiDDoSForHost {
                 final int maxDlsForCurrentHost = hostMaxdlsMap.get(currentHost);
                 final AtomicInteger currentRunningDlsForCurrentHost = hostRunningDlsNumMap.get(currentHost);
                 if (currentRunningDlsForCurrentHost.get() >= maxDlsForCurrentHost) {
-                    return false;
+                    /*
+                     * Max downloads for specific host for this MOCH reached --> Avoid irritating/wrong 'Account missing' errormessage for
+                     * this case - wait and retry!
+                     */
+                    throw new ConditionalSkipReasonException(new WaitingSkipReason(CAUSE.HOST_TEMP_UNAVAILABLE, 15 * 1000, null));
                 }
             }
         }
@@ -217,8 +223,8 @@ public class MobilismOrg extends antiDDoSForHost {
         br = new Browser();
         final boolean forceNewLinkGeneration = true;
         /*
-         * When JD is started the first time and the user starts downloads right away, a full login might not yet have happened but it is needed to
-         * get the individual host limits.
+         * When JD is started the first time and the user starts downloads right away, a full login might not yet have happened but it is
+         * needed to get the individual host limits.
          */
         synchronized (CTRLLOCK) {
             if (hostMaxchunksMap.isEmpty() || hostMaxdlsMap.isEmpty()) {
@@ -359,8 +365,8 @@ public class MobilismOrg extends antiDDoSForHost {
                     }
                 }
                 /*
-                 * 2016-01-24: When logged in and want to download it leads us to: http://mblservices.org/amember/login --> Here our initial login data does
-                 * not work ...
+                 * 2016-01-24: When logged in and want to download it leads us to: http://mblservices.org/amember/login --> Here our initial
+                 * login data does not work ...
                  */
                 /*
                  * 20160201: above statement is no longer valid.. website login works in via browser (tested in chrome)
@@ -418,8 +424,8 @@ public class MobilismOrg extends antiDDoSForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree which
-     * allows the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
+     * which allows the next singleton download to start, or at least try.
      *
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
