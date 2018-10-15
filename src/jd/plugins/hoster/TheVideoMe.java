@@ -15,19 +15,25 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.SortedMap;
-import java.util.TreeMap;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -38,7 +44,6 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
-import jd.parser.html.HTMLParser;
 import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -53,16 +58,7 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "thevideo.me" }, urls = { "https?://(www\\.)?(thevideo\\.me|thevideo\\.cc|vev\\.io)/((?:vid)?embed\\-|embed/)?[a-z0-9]{12}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vev.io" }, urls = { "https?://(?:www\\.)?(thevideo\\.me|thevideo\\.cc|vev\\.io)/((?:vid)?embed\\-|embed/)?[a-z0-9]{12}" })
 public class TheVideoMe extends antiDDoSForHost {
     private String               correctedBR                  = "";
     private String               passCode                     = null;
@@ -85,6 +81,7 @@ public class TheVideoMe extends antiDDoSForHost {
     private static final boolean VIDEOHOSTER_4                = true;
     private static final boolean SUPPORTSHTTPS                = true;
     private final boolean        ENABLE_HTML_FILESIZE_CHECK   = false;
+    private static final boolean ENABLE_API_AVAILABLECHECK    = true;
     /* Connection stuff */
     private static final boolean FREE_RESUME                  = true;
     private static final int     FREE_MAXCHUNKS               = -2;
@@ -134,6 +131,14 @@ public class TheVideoMe extends antiDDoSForHost {
     }
 
     @Override
+    public String rewriteHost(String host) {
+        if ("thevideo.me".equals(host)) {
+            return "vev.io";
+        }
+        return super.rewriteHost(host);
+    }
+
+    @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/tos.html";
     }
@@ -148,21 +153,36 @@ public class TheVideoMe extends antiDDoSForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br.setFollowRedirects(true);
         setFUID(link);
-        getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, "(No such file|>\\s*File Not Found\\s*<|>The file was removed by|Reason for deletion:\n|>Video encoding error|>Video not found)").matches()) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (new Regex(correctedBR, MAINTENANCE).matches()) {
-            link.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
-            return AvailableStatus.UNCHECKABLE;
-        }
-        if (br.getURL().contains("/?op=login&redirect=")) {
-            link.getLinkStatus().setStatusText(PREMIUMONLY2);
-            return AvailableStatus.UNCHECKABLE;
-        }
         final String[] fileInfo = new String[3];
-        scanInfo(fileInfo);
-        if (fileInfo[0] == null || fileInfo[0].equals("")) {
+        if (ENABLE_API_AVAILABLECHECK) {
+            /* 2018-10-15: New */
+            getPage("https://" + this.getHost() + "/api/serve/video/" + this.fuid);
+            final String errorcode = PluginJSonUtils.getJson(br, "code");
+            if (errorcode != null) {
+                /* E.. {"code":400,"message":"invalid video code","errors":[]} */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            fileInfo[0] = PluginJSonUtils.getJson(br, "title");
+            if (StringUtils.isEmpty(fileInfo[0])) {
+                /* Fallback */
+                fileInfo[0] = this.fuid;
+            }
+        } else {
+            getPage(link.getDownloadURL());
+            if (new Regex(correctedBR, "(No such file|>\\s*File Not Found\\s*<|>The file was removed by|Reason for deletion:\n|>Video encoding error|>Video not found)").matches()) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (new Regex(correctedBR, MAINTENANCE).matches()) {
+                link.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
+                return AvailableStatus.UNCHECKABLE;
+            }
+            if (br.getURL().contains("/?op=login&redirect=")) {
+                link.getLinkStatus().setStatusText(PREMIUMONLY2);
+                return AvailableStatus.UNCHECKABLE;
+            }
+            scanInfo(fileInfo);
+        }
+        if (StringUtils.isEmpty(fileInfo[0])) {
             if (correctedBR.contains("You have reached the download(\\-| )limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
                 return AvailableStatus.UNCHECKABLE;
@@ -265,6 +285,10 @@ public class TheVideoMe extends antiDDoSForHost {
 
     @SuppressWarnings({ "unused", "deprecation" })
     public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        if (ENABLE_API_AVAILABLECHECK) {
+            /* Important! Access our main content URL first! */
+            getPage(downloadLink.getDownloadURL());
+        }
         /* Prevent redirects when we access the main url again later below. */
         final String url_from_availablecheck = this.br.getURL();
         br.setFollowRedirects(false);
@@ -357,17 +381,109 @@ public class TheVideoMe extends antiDDoSForHost {
                 logger.warning("VIDEOHOSTER_3 handling failed");
             }
         }
-        if (dllink == null && VIDEOHOSTER_2) {
+        if (VIDEOHOSTER_4 && StringUtils.isEmpty(dllink) && StringUtils.isEmpty(auth_code) && StringUtils.isEmpty(special_js_bullshit_code)) {
+            synchronized (LOCK) {
+                /* 2018-10-15: Thx to: github.com/Kodi-vStream/venom-xbmc-addons/issues/2144 */
+                /*
+                 * 2017-07-28: Try pairing as a fallback if we cannot work around it <br /> This is commonly used in KODI.
+                 */
+                int count = 0;
+                boolean authenticated = false;
+                do {
+                    logger.info("Attempting Pairing: " + count);
+                    /* Remove cookies & headers */
+                    brv = br.cloneBrowser();
+                    brv.setFollowRedirects(true);
+                    brv.getHeaders().put("Accept", "application/json");
+                    brv.getPage(String.format("/api/pair?file_code=%s&check", this.fuid));
+                    /* Bad: {"sessions":[]}, Good: {"sessions":[{"ip":"12.12.12.12","expire":8528}]} */
+                    try {
+                        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(brv.toString());
+                        final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("sessions");
+                        if (!ressourcelist.isEmpty()) {
+                            authenticated = true;
+                        }
+                    } catch (final Throwable e) {
+                    }
+                    if (!authenticated) {
+                        logger.info("Pairing: No authenticated - requires captcha");
+                        brv.getPage("/pair");
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, brv, "6Ld4TlsUAAAAAAeU5tInYtZNMEOTANb6LKxP94it").getToken();
+                        brv.getPage("/pair?activate=1&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
+                        /*
+                         * Possible 'response' (String) errormessages here (WITH ""): <br /> "Invalid Captcha!" <br />
+                         * "Captcha is required!"
+                         */
+                        if (Boolean.parseBoolean(PluginJSonUtils.getJson(brv, "status"))) {
+                            logger.info("Pairing: Seems to be successful");
+                        } else {
+                            logger.info("Pairing: Seems to have failed");
+                        }
+                    } else {
+                        final String authentification_expire_seconds = PluginJSonUtils.getJson(brv, "expire");
+                        if (!StringUtils.isEmpty(authentification_expire_seconds) && authentification_expire_seconds.matches("\\d+")) {
+                            logger.info("Pairing: Authenticated for: " + TimeFormatter.formatSeconds(Long.parseLong(authentification_expire_seconds), 0));
+                        } else {
+                            logger.info("Pairing: Authenticated");
+                        }
+                        break;
+                    }
+                    count++;
+                } while (!authenticated && count <= 1);
+                if (authenticated) {
+                    brv.getHeaders().put("Accept", "application/json");
+                    brv.getHeaders().put("Content-Type", "application/json;charset=UTF-8");
+                    brv.postPage("/api/serve/video/" + this.fuid, "");
+                    logger.info("Pairing successful");
+                    try {
+                        final String dllink_temp = this.getDllink(brv.toString());
+                        if (!StringUtils.isEmpty(auth_code)) {
+                            logger.info("Pairing: Found auth_code");
+                        } else {
+                            /* 2018-10-15: auth_code is not required anymore */
+                            logger.info("Pairing: Failed to find auth_code");
+                        }
+                        if (!StringUtils.isEmpty(dllink_temp)) {
+                            logger.info("Pairing: Found downloadlink --> Using it");
+                            dllink = dllink_temp;
+                        } else {
+                            logger.warning("Pairing: Failed to find downloadlink");
+                        }
+                    } catch (final Throwable e) {
+                        logger.warning("Pairing: json handling failed");
+                    }
+                } else {
+                    logger.info("Pairing failed");
+                }
+            }
+        }
+        if (VIDEOHOSTER_2 && StringUtils.isEmpty(dllink)) {
             try {
                 logger.info("Trying to get link via embed");
-                final String embed_access = "/embed-" + fuid + ".html";
+                final String embed_access = "/embed/" + fuid;
                 getPage(embed_access);
-                special_js_bullshit_code = getSpecialJsBullshit();
-                dllink = getDllink();
+                if (br.containsHTML("while we validate your request")) {
+                    /*
+                     * 2018-10-15: Captcha required, reCaptchaKey currently hardcoded (ATTENTION: This is a different key than used for the
+                     * 'pairing' handling!!)
+                     */
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6LczkHAUAAAAAO6frTIweoNAgvLg_RWmoe8JZJkU").getToken();
+                    brv.getHeaders().put("content-type", "application/json;charset=UTF-8");
+                    brv.getHeaders().put("x-adblock", "0");
+                    brv.postPageRaw("/api/serve/video/" + this.fuid, "{\"g-recaptcha-response\":\"" + recaptchaV2Response + "\"}");
+                } else {
+                    /* Without captcha - untested */
+                    brv.postPage("/api/serve/video/" + this.fuid, "");
+                }
+                /* 2018-10-15: special_js_bullshit_code is not required anymore */
+                // special_js_bullshit_code = getSpecialJsBullshit();
+                dllink = getDllink(brv.toString());
                 if (dllink == null) {
                     logger.info("Failed to get link via embed because: " + br.toString());
                 } else {
                     logger.info("Successfully found link via embed");
+                    /* Do not modify url later! */
+                    is_correct_finallink = true;
                 }
             } catch (final Throwable e) {
                 logger.info("Failed to get link via embed");
@@ -375,250 +491,6 @@ public class TheVideoMe extends antiDDoSForHost {
             if (dllink == null) {
                 /* If failed, go back to the beginning */
                 getPage(url_from_availablecheck);
-            }
-        }
-        if (VIDEOHOSTER_4 && StringUtils.isEmpty(auth_code) && StringUtils.isEmpty(special_js_bullshit_code)) {
-            /*
-             * 2017-07-28: Try pairing as a fallback if we cannot work around it <br /> This is commonly used in KODI.
-             */
-            int count = 0;
-            boolean authenticated = false;
-            do {
-                logger.info("Attempting Pairing: " + count);
-                /* Remove cookies & headers */
-                brv = br.cloneBrowser();
-                brv.setFollowRedirects(true);
-                brv.getPage(String.format("/pair?file_code=%s&check", this.fuid));
-                authenticated = Boolean.parseBoolean(PluginJSonUtils.getJson(brv, "status"));
-                if (!authenticated) {
-                    logger.info("Pairing: No authenticated - requires captcha");
-                    brv.getPage("/pair");
-                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, brv, "6Ld4TlsUAAAAAAeU5tInYtZNMEOTANb6LKxP94it").getToken();
-                    brv.getPage("/pair?activate=1&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
-                    /*
-                     * Possible 'response' (String) errormessages here (WITH ""): <br /> "Invalid Captcha!" <br /> "Captcha is required!"
-                     */
-                    if (Boolean.parseBoolean(PluginJSonUtils.getJson(brv, "status"))) {
-                        logger.info("Pairing: Seems to be successful");
-                    } else {
-                        logger.info("Pairing: Seems to have failed");
-                    }
-                } else {
-                    logger.info("Pairing: Authenticated");
-                    break;
-                }
-                count++;
-            } while (!authenticated && count <= 1);
-            if (authenticated) {
-                logger.info("Pairing successful");
-                try {
-                    String dllink_temp = null;
-                    LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(brv.toString());
-                    entries = (LinkedHashMap<String, Object>) entries.get("response");
-                    auth_code = (String) entries.get("vt");
-                    /* Quality selection */
-                    final String configuredQuality = getConfiguredVideoHeight();
-                    final boolean downloadBEST = !configuredQuality.matches("\\d+");
-                    if (!downloadBEST) {
-                        dllink_temp = (String) entries.get(configuredQuality + "p");
-                    }
-                    if (StringUtils.isEmpty(dllink_temp)) {
-                        /* User wants best quality or his selected quality was not available. */
-                        dllink_temp = (String) entries.get("1080p");
-                        if (StringUtils.isEmpty(dllink_temp)) {
-                            dllink_temp = (String) entries.get("720p");
-                            if (StringUtils.isEmpty(dllink_temp)) {
-                                dllink_temp = (String) entries.get("480p");
-                                if (StringUtils.isEmpty(dllink_temp)) {
-                                    dllink_temp = (String) entries.get("360p");
-                                    if (StringUtils.isEmpty(dllink_temp)) {
-                                        dllink_temp = (String) entries.get("240p");
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    if (!StringUtils.isEmpty(auth_code)) {
-                        logger.info("Pairing: Found auth_code");
-                    } else {
-                        logger.warning("Pairing: Failed to find auth_code");
-                    }
-                    if (!StringUtils.isEmpty(dllink_temp)) {
-                        logger.info("Pairing: Found downloadlink --> Using it");
-                        dllink = dllink_temp;
-                    } else {
-                        logger.warning("Pairing: Failed to find downloadlink");
-                    }
-                } catch (final Throwable e) {
-                    logger.warning("Pairing: json handling failed");
-                }
-            } else {
-                logger.info("Pairing failed");
-            }
-        }
-        /* Fifth, continue like normal */
-        if (dllink == null) {
-            checkErrors(downloadLink, false);
-            final Form download1 = getFormByKey("op", "download1");
-            if (download1 != null) {
-                download1.remove("method_premium");
-                /*
-                 * stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable!
-                 */
-                if (downloadLink.getName().contains("'")) {
-                    String fname = new Regex(br, "<input type=\"hidden\" name=\"fname\" value=\"([^\"]+)\">").getMatch(0);
-                    if (fname != null) {
-                        download1.put("fname", Encoding.urlEncode(fname));
-                    } else {
-                        logger.warning("Could not find 'fname'");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                }
-                final String gfk = new Regex(correctedBR, "\\'gfk\\', value: \\'([^<>\"]*?)\\'").getMatch(0);
-                final String vhash = new Regex(correctedBR, "\\'_vhash\\', value: \\'([^<>\"]*?)\\'").getMatch(0);
-                if (gfk != null) {
-                    download1.put("gfk", gfk);
-                }
-                if (vhash != null) {
-                    download1.put("_vhash", vhash);
-                }
-                /* end of backward compatibility */
-                submitForm(download1);
-                checkErrors(downloadLink, false);
-                dllink = getDllink();
-            }
-        }
-        if (dllink == null) {
-            Form dlForm = br.getFormbyProperty("name", "F1");
-            if (dlForm == null) {
-                handlePluginBroken(downloadLink, "dlform_f1_null", 3);
-            }
-            /* how many forms deep do you want to try? */
-            int repeat = 2;
-            for (int i = 0; i <= repeat; i++) {
-                dlForm.remove(null);
-                final long timeBefore = System.currentTimeMillis();
-                boolean password = false;
-                boolean skipWaittime = false;
-                if (new Regex(correctedBR, PASSWORDTEXT).matches()) {
-                    password = true;
-                    logger.info("The downloadlink seems to be password protected.");
-                }
-                /* md5 can be on the subsequent pages - it is to be found very rare in current XFS versions */
-                if (downloadLink.getMD5Hash() == null) {
-                    String md5hash = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
-                    if (md5hash != null) {
-                        downloadLink.setMD5Hash(md5hash.trim());
-                    }
-                }
-                /* Captcha START */
-                if (correctedBR.contains(";background:#ccc;text-align")) {
-                    logger.info("Detected captcha method \"plaintext captchas\" for this host");
-                    /* Captcha method by ManiacMansion */
-                    final String[][] letters = new Regex(br, "<span style=\\'position:absolute;padding\\-left:(\\d+)px;padding\\-top:\\d+px;\\'>(&#\\d+;)</span>").getMatches();
-                    if (letters == null || letters.length == 0) {
-                        logger.warning("plaintext captchahandling broken!");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    final SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
-                    for (String[] letter : letters) {
-                        capMap.put(Integer.parseInt(letter[0]), Encoding.htmlDecode(letter[1]));
-                    }
-                    final StringBuilder code = new StringBuilder();
-                    for (String value : capMap.values()) {
-                        code.append(value);
-                    }
-                    dlForm.put("code", code.toString());
-                    logger.info("Put captchacode " + code.toString() + " obtained by captcha metod \"plaintext captchas\" in the form.");
-                } else if (correctedBR.contains("/captchas/")) {
-                    logger.info("Detected captcha method \"Standard captcha\" for this host");
-                    final String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
-                    String captchaurl = null;
-                    if (sitelinks == null || sitelinks.length == 0) {
-                        logger.warning("Standard captcha captchahandling broken!");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    for (String link : sitelinks) {
-                        if (link.contains("/captchas/")) {
-                            captchaurl = link;
-                            break;
-                        }
-                    }
-                    if (captchaurl == null) {
-                        logger.warning("Standard captcha captchahandling broken!");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    String code = getCaptchaCode("xfilesharingprobasic", captchaurl, downloadLink);
-                    dlForm.put("code", code);
-                    logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
-                } else if (new Regex(correctedBR, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {
-                    logger.info("Detected captcha method \"Re Captcha\" for this host");
-                    final Recaptcha rc = new Recaptcha(br, this);
-                    rc.findID();
-                    rc.load();
-                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final String c = getCaptchaCode("recaptcha", cf, downloadLink);
-                    dlForm.put("recaptcha_challenge_field", rc.getChallenge());
-                    dlForm.put("recaptcha_response_field", Encoding.urlEncode(c));
-                    logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
-                    /* wait time is usually skippable for reCaptcha handling */
-                    skipWaittime = true;
-                } else if (br.containsHTML("solvemedia\\.com/papi/")) {
-                    logger.info("Detected captcha method \"solvemedia\" for this host");
-                    final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
-                    File cf = null;
-                    try {
-                        cf = sm.downloadCaptcha(getLocalCaptchaFile());
-                    } catch (final Exception e) {
-                        if (org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
-                            throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
-                        }
-                        throw e;
-                    }
-                    final String code = getCaptchaCode("solvemedia", cf, downloadLink);
-                    final String chid = sm.getChallenge(code);
-                    dlForm.put("adcopy_challenge", chid);
-                    dlForm.put("adcopy_response", "manual_challenge");
-                } else if (br.containsHTML("id=\"capcode\" name= \"capcode\"")) {
-                    logger.info("Detected captcha method \"keycaptca\"");
-                    String result = handleCaptchaChallenge(getDownloadLink(), new KeyCaptcha(this, br, getDownloadLink()).createChallenge(this));
-                    if (result == null) {
-                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                    }
-                    if ("CANCEL".equals(result)) {
-                        throw new PluginException(LinkStatus.ERROR_FATAL);
-                    }
-                    dlForm.put("capcode", result);
-                    skipWaittime = false;
-                }
-                /* Captcha END */
-                if (password) {
-                    passCode = handlePassword(dlForm, downloadLink);
-                }
-                if (!skipWaittime) {
-                    waitTime(timeBefore, downloadLink);
-                }
-                submitForm(dlForm);
-                logger.info("Submitted DLForm");
-                checkErrors(downloadLink, true);
-                dllink = getDllink();
-                if (dllink == null && (!br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"") || i == repeat)) {
-                    logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } else if (dllink == null && br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"")) {
-                    dlForm = br.getFormbyProperty("name", "F1");
-                    try {
-                        invalidateLastChallengeResponse();
-                    } catch (final Throwable e) {
-                    }
-                    continue;
-                } else {
-                    try {
-                        validateLastChallengeResponse();
-                    } catch (final Throwable e) {
-                    }
-                    break;
-                }
             }
         }
         if (!is_correct_finallink && auth_code == null && !StringUtils.isEmpty(dllink) && !StringUtils.isEmpty(special_js_bullshit_code) && !is_saved_directlink) {
@@ -773,53 +645,72 @@ public class TheVideoMe extends antiDDoSForHost {
     private String js = null;
 
     public String getDllink(final String source) {
+        final HashMap<String, String> qualities = new HashMap<String, String>();
         String dllink = br.getRedirectLocation();
         if (dllink == null || !isDllink(dllink)) {
             // json within javascript var. note: within br not correctedbr
             js = new Regex(br, "var jwConfig_vars = (\\{.*?\\});").getMatch(0);
             if (js != null) {
                 try {
-                    final String configuredQuality = getConfiguredVideoHeight();
-                    final boolean downloadBEST = !configuredQuality.matches("\\d+");
                     final String[] sources = PluginJSonUtils.getJsonResultsFromArray(PluginJSonUtils.getJsonArray(js, "sources"));
                     if (sources != null) {
-                        final HashMap<String, String> result = new HashMap<String, String>();
                         for (final String sourcee : sources) {
                             final String label = PluginJSonUtils.getJson(sourcee, "label");
                             final String file = PluginJSonUtils.getJson(sourcee, "file");
-                            result.put(label, file);
+                            qualities.put(label, file);
                         }
-                        // get best
-                        if (!downloadBEST) {
-                            dllink = result.get(configuredQuality + "p");
-                        }
-                        if (dllink == null) {
-                            /* User wants best quality or his selected quality was not available. */
-                            dllink = result.get("1080p");
-                            if (dllink == null) {
-                                dllink = result.get("720p");
-                                if (dllink == null) {
-                                    dllink = result.get("480p");
-                                    if (dllink == null) {
-                                        dllink = result.get("360p");
-                                        if (dllink == null) {
-                                            dllink = result.get("240p");
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    if (dllink != null) {
-                        return dllink;
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
         }
+        if (source.startsWith("{\"qualities")) {
+            try {
+                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(source);
+                entries = (LinkedHashMap<String, Object>) entries.get("qualities");
+                final Iterator<Entry<String, Object>> iterator = entries.entrySet().iterator();
+                while (iterator.hasNext()) {
+                    final Entry<String, Object> entry = iterator.next();
+                    final String label = entry.getKey();
+                    final String url = (String) entry.getValue();
+                    if (label != null && url != null) {
+                        qualities.put(label, url);
+                    }
+                }
+            } catch (final Throwable e) {
+            }
+        }
+        if (!qualities.isEmpty()) {
+            /* Multiple qualities available --> Return what the user prefers. */
+            final String configuredQuality = getConfiguredVideoHeight();
+            final boolean downloadBEST = !configuredQuality.matches("\\d+");
+            // get best
+            if (!downloadBEST) {
+                dllink = qualities.get(configuredQuality + "p");
+            }
+            if (dllink == null) {
+                /* User wants best quality or his selected quality was not available. */
+                dllink = qualities.get("1080p");
+                if (dllink == null) {
+                    dllink = qualities.get("720p");
+                    if (dllink == null) {
+                        dllink = qualities.get("480p");
+                        if (dllink == null) {
+                            dllink = qualities.get("360p");
+                            if (dllink == null) {
+                                dllink = qualities.get("240p");
+                            }
+                        }
+                    }
+                }
+            }
+            if (dllink != null) {
+                return dllink;
+            }
+        }
         if (dllink == null) {
-            dllink = br.getRegex("\"(https?://d\\d*.\\.thevideo\\.me.*?)\"").getMatch(0);
+            dllink = br.getRegex("\"(https?://d\\d*.\\." + DOMAINS + ".*?)\"").getMatch(0);
         }
         if (dllink == null) {
             dllink = new Regex(source, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
@@ -836,7 +727,7 @@ public class TheVideoMe extends antiDDoSForHost {
             }
         }
         if (dllink == null) {
-            dllink = new Regex(source, "(https?://[a-z0-9]+\\.thevideo\\.me:\\d+/[^<>\"\\']+)").getMatch(0);
+            dllink = new Regex(source, "(https?://[a-z0-9]+\\." + DOMAINS + ":\\d+/[^<>\"\\']+)").getMatch(0);
         }
         if (dllink == null) {
             /* Sometimes used for streaming */
@@ -1257,7 +1148,8 @@ public class TheVideoMe extends antiDDoSForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                getPage(COOKIE_HOST + "/login.html");
+                /** TODO: Fix me / reCaptchaV2 login */
+                getPage(COOKIE_HOST + "/auth/login");
                 final Form loginform = br.getFormbyProperty("name", "FL");
                 if (loginform == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {

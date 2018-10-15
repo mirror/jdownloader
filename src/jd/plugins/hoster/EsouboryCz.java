@@ -20,6 +20,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -28,6 +32,7 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -35,15 +40,13 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "esoubory.cz" }, urls = { "http://(www\\.)?esoubory\\.cz/soubor/[a-z0-9]+/([a-z0-9\\-]+/|[a-z0-9\\-]+\\.html)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "esoubory.cz" }, urls = { "https?://(?:www\\.)?esoubory\\.cz/soubor/[a-z0-9]+/([a-z0-9\\-]+/|[a-z0-9\\-]+\\.html)" })
 public class EsouboryCz extends PluginForHost {
     public EsouboryCz(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www.esoubory.cz/credits/buy/");
+        this.enablePremium("https://www.esoubory.cz/credits/buy/");
     }
 
     /* Using similar API (and same owner): esoubory.cz, filesloop.com */
@@ -52,6 +55,7 @@ public class EsouboryCz extends PluginForHost {
         return "http://www.esoubory.cz/";
     }
 
+    private static final String                            API_BASE           = "https://www.esoubory.cz/api";
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
 
     private void prepBr() {
@@ -81,21 +85,13 @@ public class EsouboryCz extends PluginForHost {
         String filesize;
         if (aa != null) {
             /* Prefer API */
-            br.getPage("http://www.esoubory.cz/api/exists?token=" + getToken(aa) + "&url=" + Encoding.urlEncode(link.getDownloadURL()));
+            br.getPage(API_BASE + "/exists?token=" + getToken(aa) + "&url=" + Encoding.urlEncode(link.getDownloadURL()));
             if (!br.containsHTML("\"exists\":true")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            /* Basically just a workaround for "\"" in json response - should not happen anymore after the 04.12.14 */
-            filename = br.getRegex("\"filename\":\"([^<>]+)\",").getMatch(0);
-            if (filename == null) {
-                filename = getJson("filename");
-            }
+            filename = PluginJSonUtils.getJson(br, "filename");
             filename = Encoding.unicodeDecode(filename);
-            filename = Encoding.htmlDecode(filename).trim();
-            filename = filename.replace("\\", "");
-            /* Basically just a workaround for "\"" in json response */
-            filename = encodeUnicode(filename);
-            filesize = getJson("filesize");
+            filesize = PluginJSonUtils.getJson(br, "filesize");
             link.setDownloadSize(Long.parseLong(filesize));
             link.setFinalFileName(filename);
         } else {
@@ -121,14 +117,7 @@ public class EsouboryCz extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        try {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        } catch (final Throwable e) {
-            if (e instanceof PluginException) {
-                throw (PluginException) e;
-            }
-        }
-        throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
 
     @Override
@@ -145,12 +134,11 @@ public class EsouboryCz extends PluginForHost {
     private void handleDL(final DownloadLink link, final Account account) throws Exception {
         String finallink = checkDirectLink(link, "esouborydirectlink");
         if (finallink == null) {
-            br.getPage("http://www.esoubory.cz/api/filelink?token=" + getToken(account) + "&url=" + Encoding.urlEncode(link.getDownloadURL()));
+            br.getPage(API_BASE + "/filelink?token=" + getToken(account) + "&url=" + Encoding.urlEncode(link.getDownloadURL()));
             if (br.containsHTML("\"error\":\"not\\-enough\\-credits\"")) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
-            finallink = getJson("link");
-            finallink = finallink.replace("\\", "");
+            finallink = PluginJSonUtils.getJson(br, "link");
             link.setProperty("esouborydirectlink", finallink);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, finallink, true, -2);
@@ -186,17 +174,21 @@ public class EsouboryCz extends PluginForHost {
         handleDL(link, account);
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        account.setValid(true);
         account.setConcurrentUsePossible(true);
         account.setMaxSimultanDownloads(-1);
         prepBr();
-        br.getPage("http://www.esoubory.cz/api/accountinfo?token=" + getToken(account));
-        ai.setTrafficLeft(SizeFormatter.getSize(getJson("credit") + "MB"));
-        br.getPage("http://www.esoubory.cz/api/list");
+        br.getPage(API_BASE + "/accountinfo?token=" + getToken(account));
+        String trafficLeftMB = PluginJSonUtils.getJson(br, "credit");
+        if (!StringUtils.isEmpty(trafficLeftMB)) {
+            if (trafficLeftMB.matches("\\d+")) {
+                trafficLeftMB += "MB";
+            }
+            ai.setTrafficLeft(SizeFormatter.getSize(trafficLeftMB));
+        }
+        br.getPage(API_BASE + "/list");
         String hostsSup = br.getRegex("\"list\":\"(.*?)\"").getMatch(0);
         if (hostsSup != null) {
             hostsSup = hostsSup.replace("\\", "");
@@ -206,22 +198,21 @@ public class EsouboryCz extends PluginForHost {
             ai.setMultiHostSupport(this, supportedHosts);
         }
         ai.setStatus("Premium account");
+        account.setType(AccountType.PREMIUM);
         return ai;
     }
 
     private String getToken(final Account account) throws Exception {
         String token = account.getStringProperty("token", null);
         if (token == null) {
-            br.getPage("http://www.esoubory.cz/api/login?email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            br.getPage(API_BASE + "/login?email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
             if (br.containsHTML("\"error\":\"login\\-failed\"")) {
-                final String lang = System.getProperty("user.language");
-                if ("de".equalsIgnoreCase(lang)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-            token = getJson("token");
+            token = PluginJSonUtils.getJson(br, "token");
+            if (StringUtils.isEmpty(token)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             account.setProperty("token", token);
         }
         return token;
@@ -244,14 +235,6 @@ public class EsouboryCz extends PluginForHost {
             }
         }
         return dllink;
-    }
-
-    private String getJson(final String parameter) {
-        String result = br.getRegex("\"" + parameter + "\":(\\d+)").getMatch(0);
-        if (result == null) {
-            result = br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
-        }
-        return result;
     }
 
     @SuppressWarnings("unused")

@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -21,6 +20,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.jdownloader.plugins.ConditionalSkipReasonException;
+import org.jdownloader.plugins.WaitingSkipReason;
+import org.jdownloader.plugins.WaitingSkipReason.CAUSE;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -39,20 +44,14 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filesloop.com" }, urls = { "https?://(?:www\\.)?filesloop\\.com/myfiles/.+" })
 public class FilesloopCom extends PluginForHost {
-
     /* Using similar API (and same owner): esoubory.cz, filesloop.com */
-
     private static final String                            DOMAIN               = "https://www.filesloop.com/api/";
     private static final String                            NICE_HOST            = "filesloop.com";
     private static final String                            NICE_HOSTproperty    = NICE_HOST.replaceAll("(\\.|\\-)", "");
     private static final String                            NORESUME             = NICE_HOSTproperty + "NORESUME";
     private static final String                            PROPERTY_LOGINTOKEN  = "fileslooplogintoken";
-
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap   = new HashMap<Account, HashMap<String, Long>>();
     /* Contains <host><number of max possible chunks per download> */
     private static HashMap<String, Boolean>                hostResumeMap        = new HashMap<String, Boolean>();
@@ -64,12 +63,10 @@ public class FilesloopCom extends PluginForHost {
     private static HashMap<String, Long>                   hostMaxfilesizeMap   = new HashMap<String, Long>();
     /* Contains <host><number of currently running simultan downloads> */
     private static HashMap<String, AtomicInteger>          hostRunningDlsNumMap = new HashMap<String, AtomicInteger>();
-
     /* Last updated: 31.03.15 */
     private static final int                               defaultMAXDOWNLOADS  = 10;
     private static final int                               defaultMAXCHUNKS     = 1;
     private static final boolean                           defaultRESUME        = true;
-
     private static Object                                  CTRLLOCK             = new Object();
     private int                                            statuscode           = 0;
     private static AtomicInteger                           maxPrem              = new AtomicInteger(1);
@@ -142,7 +139,11 @@ public class FilesloopCom extends PluginForHost {
                 final int maxDlsForCurrentHost = hostMaxdlsMap.get(currentHost);
                 final AtomicInteger currentRunningDlsForCurrentHost = hostRunningDlsNumMap.get(currentHost);
                 if (currentRunningDlsForCurrentHost.get() >= maxDlsForCurrentHost) {
-                    return false;
+                    /*
+                     * Max downloads for specific host for this MOCH reached --> Avoid irritating/wrong 'Account missing' errormessage for
+                     * this case - wait and retry!
+                     */
+                    throw new ConditionalSkipReasonException(new WaitingSkipReason(CAUSE.HOST_TEMP_UNAVAILABLE, 15 * 1000, null));
                 }
             }
         }
@@ -200,7 +201,6 @@ public class FilesloopCom extends PluginForHost {
                 }
             }
         }
-
         if (hostResumeMap != null) {
             final String thishost = link.getHost();
             synchronized (hostResumeMap) {
@@ -247,7 +247,6 @@ public class FilesloopCom extends PluginForHost {
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         this.br = newBrowser();
-
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap != null) {
@@ -263,7 +262,6 @@ public class FilesloopCom extends PluginForHost {
                 }
             }
         }
-
         /*
          * When JD is started the first time and the user starts downloads right away, a full login might not yet have happened but it is
          * needed to get the individual host limits.
@@ -276,7 +274,6 @@ public class FilesloopCom extends PluginForHost {
         }
         this.setConstants(account, link);
         login(false);
-
         handleDL(account, link);
     }
 
@@ -330,7 +327,6 @@ public class FilesloopCom extends PluginForHost {
         this.br = newBrowser();
         final AccountInfo ai = new AccountInfo();
         br.setFollowRedirects(true);
-
         if (!account.getUser().matches(".+@.+\\..+")) {
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBitte gib deine E-Mail Adresse ins Benutzername Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -338,17 +334,14 @@ public class FilesloopCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail adress in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
-
         login(true);
         this.getAPISafe(DOMAIN + "accountinfo?token=" + currLogintoken);
-
         final String accounttype = PluginJSonUtils.getJsonValue(br, "premium");
         final String validuntil = PluginJSonUtils.getJsonValue(br, "premium_to");
         long timestamp_validuntil = 0;
         if (validuntil != null) {
             timestamp_validuntil = Long.parseLong(validuntil) * 1000;
         }
-
         /* Expired premium == FREE but API will still say its premium so we have to identify the real account type via expire date. */
         /*
          * 2016-02-01: Free accounts ('Trail plan') can download one file up to 1 GB. On download attempt of multiple files (I was actually
@@ -365,7 +358,6 @@ public class FilesloopCom extends PluginForHost {
             account.setType(AccountType.FREE);
             ai.setStatus("Registered (free) account");
         }
-
         this.getAPISafe(DOMAIN + "list");
         ArrayList<String> supportedhostslist = new ArrayList();
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
@@ -376,7 +368,6 @@ public class FilesloopCom extends PluginForHost {
             final int maxdownloads = this.correctMaxdls((int) JavaScriptEngineFactory.toLong(entries.get("max_download"), defaultMAXDOWNLOADS));
             final int maxchunks = this.correctChunks((int) JavaScriptEngineFactory.toLong(entries.get("max_connection"), defaultMAXCHUNKS));
             final String host = ((String) entries.get("domain")).toLowerCase();
-
             boolean resumable = defaultRESUME;
             final Object resumableo = entries.get("resumable");
             if (resumableo instanceof Boolean) {
@@ -384,12 +375,10 @@ public class FilesloopCom extends PluginForHost {
             } else {
                 resumable = Boolean.parseBoolean((String) resumableo);
             }
-
             /* WTF they put their own domain in there - skip that! */
             if (host.equals("filesloop.com")) {
                 continue;
             }
-
             hostMaxchunksMap.put(host, maxchunks);
             hostMaxdlsMap.put(host, maxdownloads);
             hostResumeMap.put(host, resumable);
@@ -404,7 +393,6 @@ public class FilesloopCom extends PluginForHost {
         account.setValid(true);
         account.setConcurrentUsePossible(true);
         ai.setUnlimitedTraffic();
-
         hostMaxchunksMap.clear();
         hostMaxdlsMap.clear();
         ai.setMultiHostSupport(this, supportedhostslist);
@@ -492,7 +480,7 @@ public class FilesloopCom extends PluginForHost {
      *
      * @param controlSlot
      *            (+1|-1)
-     * */
+     */
     private void controlSlot(final int num) {
         synchronized (CTRLLOCK) {
             final String currentHost = correctHost(this.currDownloadLink.getHost());
@@ -634,7 +622,7 @@ public class FilesloopCom extends PluginForHost {
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
      * @author raztoki
-     * */
+     */
     private boolean inValidate(final String s) {
         if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
             return true;
@@ -655,5 +643,4 @@ public class FilesloopCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

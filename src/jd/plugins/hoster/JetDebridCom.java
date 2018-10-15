@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -23,6 +22,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.ConditionalSkipReasonException;
+import org.jdownloader.plugins.WaitingSkipReason;
+import org.jdownloader.plugins.WaitingSkipReason.CAUSE;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -42,18 +47,13 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "jetdebrid.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "jetdebrid.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
 public class JetDebridCom extends PluginForHost {
-
     /* Tags: Script vinaget.us */
     private static final String                            DOMAIN               = "http://jetdebrid.com/";
     private static final String                            NICE_HOST            = "jetdebrid.com";
     private static final String                            NICE_HOSTproperty    = NICE_HOST.replaceAll("(\\.|\\-)", "");
     private static final String                            NORESUME             = NICE_HOSTproperty + "NORESUME";
-
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap   = new HashMap<Account, HashMap<String, Long>>();
     /* Contains <host><number of max possible chunks per download> */
     private static HashMap<String, Boolean>                hostResumeMap        = new HashMap<String, Boolean>();
@@ -63,12 +63,10 @@ public class JetDebridCom extends PluginForHost {
     private static HashMap<String, Integer>                hostMaxdlsMap        = new HashMap<String, Integer>();
     /* Contains <host><number of currently running simultan downloads> */
     private static HashMap<String, AtomicInteger>          hostRunningDlsNumMap = new HashMap<String, AtomicInteger>();
-
     /* Last updated: 31.03.15 */
     private static final int                               defaultMAXDOWNLOADS  = 20;
     private static final int                               defaultMAXCHUNKS     = -7;
     private static final boolean                           defaultRESUME        = true;
-
     private static Object                                  CTRLLOCK             = new Object();
     private int                                            statuscode           = 0;
     private static AtomicInteger                           maxPrem              = new AtomicInteger(1);
@@ -122,7 +120,11 @@ public class JetDebridCom extends PluginForHost {
                 final int maxDlsForCurrentHost = hostMaxdlsMap.get(currentHost);
                 final AtomicInteger currentRunningDlsForCurrentHost = hostRunningDlsNumMap.get(currentHost);
                 if (currentRunningDlsForCurrentHost.get() >= maxDlsForCurrentHost) {
-                    return false;
+                    /*
+                     * Max downloads for specific host for this MOCH reached --> Avoid irritating/wrong 'Account missing' errormessage for
+                     * this case - wait and retry!
+                     */
+                    throw new ConditionalSkipReasonException(new WaitingSkipReason(CAUSE.HOST_TEMP_UNAVAILABLE, 15 * 1000, null));
                 }
             }
         }
@@ -155,7 +157,6 @@ public class JetDebridCom extends PluginForHost {
                 }
             }
         }
-
         if (hostResumeMap != null) {
             final String thishost = link.getHost();
             synchronized (hostResumeMap) {
@@ -204,7 +205,6 @@ public class JetDebridCom extends PluginForHost {
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         this.br = newBrowser();
-
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap != null) {
@@ -220,7 +220,6 @@ public class JetDebridCom extends PluginForHost {
                 }
             }
         }
-
         /*
          * When JD is started the first time and the user starts downloads right away, a full login might not yet have happened but it is
          * needed to get the individual host limits.
@@ -234,7 +233,6 @@ public class JetDebridCom extends PluginForHost {
             }
         }
         this.setConstants(account, link);
-
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null) {
             /* request creation of downloadlink */
@@ -306,14 +304,10 @@ public class JetDebridCom extends PluginForHost {
         this.br = newBrowser();
         final AccountInfo ai = new AccountInfo();
         br.setFollowRedirects(true);
-
         this.login(account);
-
         this.getAPISafe("/user_dashboard.php");
-
         final String accounttype = br.getRegex(">Status</td>.*?value=([^<>\"]*?)>").getMatch(0);
         final String validuntil = br.getRegex(">Expire Date</td>.*?value=([^<>\"]*?)>").getMatch(0);
-
         if (accounttype.equalsIgnoreCase("Premium")) {
             if (validuntil != null) {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(validuntil, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
@@ -332,7 +326,6 @@ public class JetDebridCom extends PluginForHost {
         final List<String> list = Arrays.asList(supportedHosts);
         account.setValid(true);
         account.setConcurrentUsePossible(true);
-
         hostMaxchunksMap.clear();
         hostMaxdlsMap.clear();
         ai.setMultiHostSupport(this, list);
@@ -461,7 +454,7 @@ public class JetDebridCom extends PluginForHost {
      *
      * @param controlSlot
      *            (+1|-1)
-     * */
+     */
     private void controlSlot(final int num) {
         synchronized (CTRLLOCK) {
             final String currentHost = correctHost(this.currDownloadLink.getHost());
@@ -539,7 +532,7 @@ public class JetDebridCom extends PluginForHost {
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
      * @author raztoki
-     * */
+     */
     private boolean inValidate(final String s) {
         if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
             return true;
@@ -587,5 +580,4 @@ public class JetDebridCom extends PluginForHost {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.Unknown_MultihosterScript;
     }
-
 }

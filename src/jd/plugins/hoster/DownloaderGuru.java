@@ -20,6 +20,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.ConditionalSkipReasonException;
+import org.jdownloader.plugins.WaitingSkipReason;
+import org.jdownloader.plugins.WaitingSkipReason.CAUSE;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -40,10 +47,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.DownloadLinkDownloadable;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "downloader.guru" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" })
 public class DownloaderGuru extends PluginForHost {
@@ -110,7 +113,11 @@ public class DownloaderGuru extends PluginForHost {
                 final int maxDlsForCurrentHost = hostMaxdlsMap.get(currentHost);
                 final AtomicInteger currentRunningDlsForCurrentHost = hostRunningDlsNumMap.get(currentHost);
                 if (currentRunningDlsForCurrentHost.get() >= maxDlsForCurrentHost) {
-                    return false;
+                    /*
+                     * Max downloads for specific host for this MOCH reached --> Avoid irritating/wrong 'Account missing' errormessage for
+                     * this case - wait and retry!
+                     */
+                    throw new ConditionalSkipReasonException(new WaitingSkipReason(CAUSE.HOST_TEMP_UNAVAILABLE, 15 * 1000, null));
                 }
             }
         }
@@ -137,7 +144,9 @@ public class DownloaderGuru extends PluginForHost {
             /* request creation of downloadlink */
             /* Make sure that the file exists - unnecessary step in my opinion (psp) but admin wanted to have it implemented this way. */
             this.postRawAPISafe(account, API_ENDPOINT + "Transfers.ashx?sendlinks=1", link.getDownloadURL());
-            /* Returns json map "transfers" which contains array with usually only 1 object --> In this map we can find the "GeneratedLink" */
+            /*
+             * Returns json map "transfers" which contains array with usually only 1 object --> In this map we can find the "GeneratedLink"
+             */
             dllink = PluginJSonUtils.getJsonValue(this.br, "GeneratedLink");
             if (dllink == null || !dllink.startsWith("http")) {
                 logger.warning("Final downloadlink is null");
@@ -317,7 +326,9 @@ public class DownloaderGuru extends PluginForHost {
         prepBR(this.br);
         final AccountInfo ai = new AccountInfo();
         login(account, false);
-        /* As long as we always perform a full login, this call is never needed as full login will return account type and expire date too. */
+        /*
+         * As long as we always perform a full login, this call is never needed as full login will return account type and expire date too.
+         */
         // accessUserInfo();
         final ArrayList<String> supportedhostslist = new ArrayList();
         final ArrayList<String> supportedhostslistTables = new ArrayList();
