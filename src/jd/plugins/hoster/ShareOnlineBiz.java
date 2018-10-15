@@ -54,6 +54,7 @@ import jd.plugins.PluginException;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.os.CrossSystem;
@@ -1057,7 +1058,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                     br.setFollowRedirects(true);
                     final String page;
                     try {
-                        page = apiGetPage(userProtocolApi() + "://api.share-online.biz/cgi-bin?q=userdetails&aux=traffic&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                        page = apiGetPage(userProtocolApi() + "://api.share-online.biz/cgi-bin?q=userdetails&aux=traffic&username=" + URLEncode.encodeURIComponent(account.getUser()) + "&password=" + URLEncode.encodeURIComponent(account.getPass()));
                     } finally {
                         br.setFollowRedirects(follow);
                     }
