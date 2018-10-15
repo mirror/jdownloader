@@ -59,7 +59,7 @@ public class IvPasteCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         br.getPage("https://ivpaste.com/p/" + ID);
-        if (br.containsHTML("<b>Acceda desde: <a")) {
+        if (br.containsHTML("<b>Acceda desde: <a|Error: .*? NO EXISTE")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
