@@ -92,7 +92,8 @@ public class OneChannelCh extends antiDDoSForDecrypt {
                     engine.eval("var res = " + js + ";");
                     result = (String) engine.get("res");
                     String finallink = new Regex(result, "go\\('(.*?)'\\)").getMatch(0);
-                    fpName = br.getRegex("<title>Watching ([^<>]*?)</title>").getMatch(0);
+                    fpName = new Regex(parameter, "title=([^<>]*?)(&|$)").getMatch(0);
+                    fpName = (fpName == null) ? br.getRegex("<title>Watching ([^<>]*?)</title>").getMatch(0) : fpName.replaceAll("(-|_|\\&20)", " ");
                     decryptedLinks.add(createDownloadlink(finallink));
                 } catch (final Exception e) {
                     e.printStackTrace();
