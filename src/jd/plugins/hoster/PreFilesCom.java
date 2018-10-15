@@ -189,7 +189,7 @@ public class PreFilesCom extends antiDDoSForHost {
             fileInfo[0] = new Regex(correctedBR, "/([^<>\"/]+)\">Download File<").getMatch(0);
         }
         if (fileInfo[0] == null) {
-            fileInfo[0] = new Regex(correctedBR, "<title>([^<>\"]+) \\&lsaquo; Prefiles\\.com</title>").getMatch(0);
+            fileInfo[0] = new Regex(correctedBR, "<title>([^<>\"]+)(  - PreFiles.com)?</title>").getMatch(0);
         }
         if (fileInfo[1] == null) {
             fileInfo[1] = new Regex(correctedBR, "<small>\\(([^<>\"]*?)\\)</small>").getMatch(0);
@@ -512,7 +512,7 @@ public class PreFilesCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This service does not allow downloads from your country", 3 * 60 * 60 * 1000l);
         }
         /** Error handling for only-premium links */
-        if (new Regex(correctedBR, "( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download larger files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit|>File owner set free user can download max|for Premium Users only<|can be downloaded by premium members only)").matches()) {
+        if (new Regex(correctedBR, "( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download larger files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit|>File owner set free user can download max|for Premium Users only<|by premium members only|by PRO Membership)").matches()) {
             String filesizelimit = new Regex(correctedBR, "You can download files up to(.*?)only").getMatch(0);
             if (filesizelimit == null) {
                 filesizelimit = new Regex(correctedBR, ">Files over ([^<>\"]*?) can be downloaded by premium members only").getMatch(0);
