@@ -41,10 +41,10 @@ import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
-import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -58,7 +58,7 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vev.io" }, urls = { "https?://(?:www\\.)?(thevideo\\.me|thevideo\\.cc|vev\\.io)/((?:vid)?embed\\-|embed/)?[a-z0-9]{12}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vev.io" }, urls = { "https?://(?:www\\.)?(?:thevideo\\.me|thevideo\\.cc|vev\\.io)/((?:vid)?embed\\-|embed/)?[a-z0-9]{12}" })
 public class TheVideoMe extends antiDDoSForHost {
     private String               correctedBR                  = "";
     private String               passCode                     = null;
@@ -84,13 +84,13 @@ public class TheVideoMe extends antiDDoSForHost {
     private static final boolean ENABLE_API_AVAILABLECHECK    = true;
     /* Connection stuff */
     private static final boolean FREE_RESUME                  = true;
-    private static final int     FREE_MAXCHUNKS               = -2;
-    private static final int     FREE_MAXDOWNLOADS            = 2;
+    private static final int     FREE_MAXCHUNKS               = 0;
+    private static final int     FREE_MAXDOWNLOADS            = 20;
     private static final boolean ACCOUNT_FREE_RESUME          = true;
-    private static final int     ACCOUNT_FREE_MAXCHUNKS       = -2;
-    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 2;
+    private static final int     ACCOUNT_FREE_MAXCHUNKS       = 0;
+    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = -2;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
@@ -105,11 +105,11 @@ public class TheVideoMe extends antiDDoSForHost {
     // mods: heavily modified, DO NOT UPGRADE!
     // limit-info:
     // protocol: no https
-    // captchatype: null
-    // other: VIDEOHOSTER_2-handling only works for "official" videos, returns "in conversion stage" error for all others - does not
-    // matter, we try anyways
+    // captchatype: reCaptchaV2
+    // other:
     // They fight against DL-managers - other possibility to get dllink easier: https://thevideo.me/pair and
-    // https://thevideo.me/pair?file_code=<fuid>&check
+    // https://thevideo.me/pair?file_code=<fuid>&check --> After solving captcha, we can download for 4 hours without having to enter any
+    // captcha!
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         /* link cleanup, but respect users protocol choosing */
@@ -285,12 +285,13 @@ public class TheVideoMe extends antiDDoSForHost {
 
     @SuppressWarnings({ "unused", "deprecation" })
     public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        if (ENABLE_API_AVAILABLECHECK) {
-            /* Important! Access our main content URL first! */
-            getPage(downloadLink.getDownloadURL());
-        }
         /* Prevent redirects when we access the main url again later below. */
-        final String url_from_availablecheck = this.br.getURL();
+        final String url_from_availablecheck;
+        if (ENABLE_API_AVAILABLECHECK) {
+            url_from_availablecheck = "https://" + this.getHost() + "/" + this.fuid;
+        } else {
+            url_from_availablecheck = this.br.getURL();
+        }
         br.setFollowRedirects(false);
         passCode = downloadLink.getStringProperty("pass");
         /* First, bring up saved final links */
@@ -303,13 +304,9 @@ public class TheVideoMe extends antiDDoSForHost {
         if (dllink != null) {
             is_saved_directlink = true;
         }
-        /* Second, check for streaming/direct links on the first page */
-        if (dllink == null) {
-            dllink = getDllink();
-        }
         Browser brv = br.cloneBrowser();
-        /* Third, do they provide video hosting? */
-        if (dllink == null && VIDEOHOSTER) {
+        /* Do they provide video hosting? */
+        if (VIDEOHOSTER && StringUtils.isEmpty(dllink)) {
             try {
                 logger.info("Trying to get link via vidembed");
                 getPage(brv, "/vidembed-" + fuid);
@@ -323,6 +320,7 @@ public class TheVideoMe extends antiDDoSForHost {
                 logger.info("Failed to get link via vidembed");
             }
         }
+        /* Check for multi-quality-stream downloading */
         if (dllink == null && VIDEOHOSTER_3) {
             /* TODO 2016-09-16: Fix this! */
             try {
@@ -352,7 +350,7 @@ public class TheVideoMe extends antiDDoSForHost {
                         if (origdl != null) {
                             origdl.setAction("/download/" + this.fuid + "/" + q + "/" + dlid);
                             origdl.remove("dl");
-                            brv.submitForm(origdl);
+                            submitForm(brv, origdl);
                             dllink = this.getDllink(brv.toString());
                         }
                     }
@@ -363,7 +361,7 @@ public class TheVideoMe extends antiDDoSForHost {
                         // http://thevideo.me/dljsv/xme2krekhp78
                         special_js_bullshit_code = brv.getRegex("/dljsv/([^<>\"\\'/]+)\"").getMatch(0);
                         if (special_js_bullshit_code != null) {
-                            brv.getPage("/dljsv/" + this.fuid);
+                            getPage(brv, "/dljsv/" + this.fuid);
                             final String special_id = brv.getRegex("each\\|([A-Za-z0-9]+)").getMatch(0);
                             if (special_id != null) {
                                 dllink += "?download=true&vt=" + special_id;
@@ -381,60 +379,87 @@ public class TheVideoMe extends antiDDoSForHost {
                 logger.warning("VIDEOHOSTER_3 handling failed");
             }
         }
+        /* Check pairing/API-stream/download */
         if (VIDEOHOSTER_4 && StringUtils.isEmpty(dllink) && StringUtils.isEmpty(auth_code) && StringUtils.isEmpty(special_js_bullshit_code)) {
             synchronized (LOCK) {
+                logger.info("Trying to get link via 'pairing' handling");
                 /* 2018-10-15: Thx to: github.com/Kodi-vStream/venom-xbmc-addons/issues/2144 */
                 /*
                  * 2017-07-28: Try pairing as a fallback if we cannot work around it <br /> This is commonly used in KODI.
                  */
-                int count = 0;
+                int attempt = 0;
                 boolean authenticated = false;
+                /* Remove cookies & headers */
+                brv = new Browser();
+                brv.setFollowRedirects(true);
                 do {
-                    logger.info("Attempting Pairing: " + count);
-                    /* Remove cookies & headers */
-                    brv = br.cloneBrowser();
-                    brv.setFollowRedirects(true);
+                    logger.info("Pairing: attempt: " + attempt);
                     brv.getHeaders().put("Accept", "application/json");
-                    brv.getPage(String.format("/api/pair?file_code=%s&check", this.fuid));
+                    if (attempt == 0) {
+                        /* First loop */
+                        /* Old way */
+                        // brv.getPage(String.format("https://" + br.getHost() + "/api/pair?file_code=%s&check", this.fuid));
+                        /* Not required - can be skipped */
+                        // getPage(brv, "https://" + br.getHost() + "/api/client");
+                        getPage(brv, "https://" + br.getHost() + "/api/pair");
+                    }
                     /* Bad: {"sessions":[]}, Good: {"sessions":[{"ip":"12.12.12.12","expire":8528}]} */
                     try {
-                        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(brv.toString());
-                        final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("sessions");
+                        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(brv.toString());
+                        final ArrayList<Object> ressourcelist;
+                        if (entries.containsKey("sessions")) {
+                            /* First try */
+                            ressourcelist = (ArrayList<Object>) entries.get("sessions");
+                        } else {
+                            /* After solving captcha */
+                            entries = (LinkedHashMap<String, Object>) entries.get("session");
+                            /*
+                             * Array with 'whitelisted' IP addresses belonging to current 'ihash' --> Usually this will only have one entry
+                             */
+                            ressourcelist = (ArrayList<Object>) entries.get("ip");
+                        }
                         if (!ressourcelist.isEmpty()) {
                             authenticated = true;
                         }
                     } catch (final Throwable e) {
+                        logger.warning("Pairing: json might have changed");
                     }
                     if (!authenticated) {
-                        logger.info("Pairing: No authenticated - requires captcha");
-                        brv.getPage("/pair");
-                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, brv, "6Ld4TlsUAAAAAAeU5tInYtZNMEOTANb6LKxP94it").getToken();
-                        brv.getPage("/pair?activate=1&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
+                        if (attempt == 0) {
+                            logger.info("Pairing: No authenticated - requires captcha");
+                        } else {
+                            logger.info("Pairing: No authenticated - requires captcha --> 2nd attempt --> Something is not right");
+                        }
+                        /* Use normal browser here --> This step is skippable! */
+                        // getPage("/pair");
+                        // final LinkedHashMap<String, Object> pairingJson = getJsonObject(br);
                         /*
-                         * Possible 'response' (String) errormessages here (WITH ""): <br /> "Invalid Captcha!" <br />
-                         * "Captcha is required!"
+                         * Generate 'unique' hash - via browser this may identify the user so the json IP-address array we get later can be
+                         * assigned to one user - wo do not want/need that. Keep in mind: This is NOT how the ihash value is generated via
+                         * website!!
                          */
-                        if (Boolean.parseBoolean(PluginJSonUtils.getJson(brv, "status"))) {
-                            logger.info("Pairing: Seems to be successful");
-                        } else {
-                            logger.info("Pairing: Seems to have failed");
-                        }
-                    } else {
-                        final String authentification_expire_seconds = PluginJSonUtils.getJson(brv, "expire");
-                        if (!StringUtils.isEmpty(authentification_expire_seconds) && authentification_expire_seconds.matches("\\d+")) {
-                            logger.info("Pairing: Authenticated for: " + TimeFormatter.formatSeconds(Long.parseLong(authentification_expire_seconds), 0));
-                        } else {
-                            logger.info("Pairing: Authenticated");
-                        }
-                        break;
+                        String ihash = JDHash.getSHA1(System.currentTimeMillis() + "");
+                        ihash = ihash.substring(0, 24);
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, brv, "6Ld4TlsUAAAAAAeU5tInYtZNMEOTANb6LKxP94it").getToken();
+                        logger.info("Pairing: Captcha done, sending ...");
+                        /* Use brv again here */
+                        prepareJsonHeaders(brv);
+                        postPageRaw(brv, "/api/pair", "{\"g-recaptcha-response\":\"" + recaptchaV2Response + "\",\"ihash\":\"" + ihash + "\"}");
+                        /* Old way */
+                        // brv.getPage("/pair?activate=1&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
                     }
-                    count++;
-                } while (!authenticated && count <= 1);
+                    attempt++;
+                } while (!authenticated && attempt <= 2);
                 if (authenticated) {
-                    brv.getHeaders().put("Accept", "application/json");
-                    brv.getHeaders().put("Content-Type", "application/json;charset=UTF-8");
-                    brv.postPage("/api/serve/video/" + this.fuid, "");
-                    logger.info("Pairing successful");
+                    final String authentification_expire_seconds = PluginJSonUtils.getJson(brv, "expire");
+                    if (!StringUtils.isEmpty(authentification_expire_seconds) && authentification_expire_seconds.matches("\\d+")) {
+                        logger.info("Pairing: Authenticated for: " + TimeFormatter.formatSeconds(Long.parseLong(authentification_expire_seconds), 0));
+                    } else {
+                        logger.info("Pairing: Authenticated");
+                    }
+                    prepareJsonHeaders(brv);
+                    brv.getHeaders().put("Referer", "https://" + this.br.getHost() + "/" + this.fuid);
+                    postPage(brv, "/api/serve/video/" + this.fuid, "");
                     try {
                         final String dllink_temp = this.getDllink(brv.toString());
                         if (!StringUtils.isEmpty(auth_code)) {
@@ -453,27 +478,38 @@ public class TheVideoMe extends antiDDoSForHost {
                         logger.warning("Pairing: json handling failed");
                     }
                 } else {
-                    logger.info("Pairing failed");
+                    logger.warning("Pairing: failed - possible broken pairing handling");
                 }
             }
         }
+        /**
+         * TODO: 2018-10-17: Maybe add manual pairing handling here (open pairing page in Browser or at least display dialog and ask user to
+         * do so)
+         */
+        /* Check if embedded content is downloadable */
         if (VIDEOHOSTER_2 && StringUtils.isEmpty(dllink)) {
             try {
-                logger.info("Trying to get link via embed");
+                logger.info("VIDEOHOSTER_2: Trying to get link via embed");
                 final String embed_access = "/embed/" + fuid;
+                /** TODO: There is a way to use this completely without HTML - find it! */
+                br.getHeaders().put("Referer", "https://" + br.getHost() + "/" + this.fuid);
                 getPage(embed_access);
                 if (br.containsHTML("while we validate your request")) {
                     /*
                      * 2018-10-15: Captcha required, reCaptchaKey currently hardcoded (ATTENTION: This is a different key than used for the
                      * 'pairing' handling!!)
                      */
+                    logger.info("VIDEOHOSTER_2: Captcha required");
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6LczkHAUAAAAAO6frTIweoNAgvLg_RWmoe8JZJkU").getToken();
-                    brv.getHeaders().put("content-type", "application/json;charset=UTF-8");
+                    logger.info("VIDEOHOSTER_2: Captcha done, sending ...");
+                    prepareJsonHeaders(brv);
+                    /* Let's add this header and hope that it will serve us better download conditions than without. */
                     brv.getHeaders().put("x-adblock", "0");
-                    brv.postPageRaw("/api/serve/video/" + this.fuid, "{\"g-recaptcha-response\":\"" + recaptchaV2Response + "\"}");
+                    postPageRaw(brv, "/api/serve/video/" + this.fuid, "{\"g-recaptcha-response\":\"" + recaptchaV2Response + "\"}");
                 } else {
-                    /* Without captcha - untested */
-                    brv.postPage("/api/serve/video/" + this.fuid, "");
+                    /* Without captcha it works this way */
+                    logger.info("VIDEOHOSTER_2: Captcha NOT required");
+                    postPage(brv, "/api/serve/video/" + this.fuid, "");
                 }
                 /* 2018-10-15: special_js_bullshit_code is not required anymore */
                 // special_js_bullshit_code = getSpecialJsBullshit();
@@ -488,12 +524,21 @@ public class TheVideoMe extends antiDDoSForHost {
             } catch (final Throwable e) {
                 logger.info("Failed to get link via embed");
             }
-            if (dllink == null) {
-                /* If failed, go back to the beginning */
-                getPage(url_from_availablecheck);
-            }
         }
-        if (!is_correct_finallink && auth_code == null && !StringUtils.isEmpty(dllink) && !StringUtils.isEmpty(special_js_bullshit_code) && !is_saved_directlink) {
+        if (StringUtils.isEmpty(dllink)) {
+            /* Last attempt - let's see if we find our downloadurl inside normal html --> Chances are very low */
+            logger.info("Trying to get link via 'normal' download handling");
+            /* Access main URL if it hasn't been accessed before! */
+            if (ENABLE_API_AVAILABLECHECK || !br.getURL().contains(this.getHost() + "/" + this.fuid)) {
+                getPage(downloadLink.getDownloadURL());
+            }
+            dllink = getDllink();
+        }
+        if (StringUtils.isEmpty(dllink)) {
+            logger.warning("dllink is null");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (!is_correct_finallink && auth_code == null && !StringUtils.isEmpty(special_js_bullshit_code) && !is_saved_directlink) {
             /* Some code to prevent their measures of blocking us (2016-08-19: They rickrolled us :D) */
             getPage(brv, "/vsign/player/" + special_js_bullshit_code);
             final String jscrap = doThis(brv);
@@ -535,6 +580,22 @@ public class TheVideoMe extends antiDDoSForHost {
             /* remove download slot */
             controlFree(-1);
         }
+    }
+
+    private Browser prepareJsonHeaders(final Browser br) {
+        br.getHeaders().put("Accept", "application/json");
+        br.getHeaders().put("Content-Type", "application/json;charset=utf-8");
+        return br;
+    }
+
+    private LinkedHashMap<String, Object> getJsonObject(final Browser br) {
+        LinkedHashMap<String, Object> entries = null;
+        try {
+            final String json_source = br.getRegex("window\\.__INITIAL_STATE__=(\\{.*?\\});").getMatch(0);
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source);
+        } catch (final Throwable e) {
+        }
+        return entries;
     }
 
     private String doThis(Browser brv) {
@@ -579,7 +640,7 @@ public class TheVideoMe extends antiDDoSForHost {
             /* no account, yes we can expect captcha */
             return true;
         }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("nopremium"))) {
+        if (acc.getType() == AccountType.FREE) {
             /* free accounts also have captchas */
             return true;
         }
@@ -819,33 +880,6 @@ public class TheVideoMe extends antiDDoSForHost {
                 sleep(wait * 1000l, downloadLink);
             }
         }
-    }
-
-    // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
-    /**
-     * Returns the first form that has a 'key' that equals 'value'.
-     *
-     * @param key
-     * @param value
-     * @return
-     */
-    private Form getFormByKey(final String key, final String value) {
-        Form[] workaround = br.getForms();
-        if (workaround != null) {
-            for (Form f : workaround) {
-                for (InputField field : f.getInputFields()) {
-                    if (key != null && key.equals(field.getKey())) {
-                        if (value == null && field.getValue() == null) {
-                            return f;
-                        }
-                        if (value != null && value.equals(field.getValue())) {
-                            return f;
-                        }
-                    }
-                }
-            }
-        }
-        return null;
     }
 
     /**
@@ -1099,26 +1133,16 @@ public class TheVideoMe extends antiDDoSForHost {
         }
         if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
             maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
-            account.setProperty("nopremium", true);
-            try {
-                account.setType(AccountType.FREE);
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(false);
-            } catch (final Throwable e) {
-                /* not available in old Stable 0.9.581 */
-            }
+            account.setType(AccountType.FREE);
+            account.setMaxSimultanDownloads(maxPrem.get());
+            account.setConcurrentUsePossible(false);
             ai.setStatus("Registered (free) account");
         } else {
             ai.setValidUntil(expire_milliseconds);
             maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-            account.setProperty("nopremium", false);
-            try {
-                account.setType(AccountType.PREMIUM);
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(true);
-            } catch (final Throwable e) {
-                /* not available in old Stable 0.9.581 */
-            }
+            account.setType(AccountType.PREMIUM);
+            account.setMaxSimultanDownloads(maxPrem.get());
+            account.setConcurrentUsePossible(true);
             ai.setStatus("Premium account");
         }
         return ai;
@@ -1175,11 +1199,11 @@ public class TheVideoMe extends antiDDoSForHost {
                 if (!br.getURL().contains("/?op=my_account")) {
                     getPage("/?op=my_account");
                 }
-                if (!new Regex(correctedBR, "Premium(?:-| )Account expire|>Renew premium<|<strong>Premium</strong>|").matches()) {
-                    account.setProperty("nopremium", true);
-                } else {
-                    account.setProperty("nopremium", false);
-                }
+                // if (!new Regex(correctedBR, "Premium(?:-| )Account expire|>Renew premium<|<strong>Premium</strong>|").matches()) {
+                // account.setProperty("nopremium", true);
+                // } else {
+                // account.setProperty("nopremium", false);
+                // }
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", fetchCookies(this.getHost()));
@@ -1196,7 +1220,7 @@ public class TheVideoMe extends antiDDoSForHost {
         passCode = downloadLink.getStringProperty("pass");
         requestFileInformation(downloadLink);
         login(account, false);
-        if (account.getBooleanProperty("nopremium")) {
+        if (account.getType() == AccountType.FREE) {
             requestFileInformation(downloadLink);
             doFree(downloadLink, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "freelink2");
         } else {
