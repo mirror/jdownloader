@@ -56,11 +56,11 @@ public class UplodWs extends antiDDoSForHost {
     private static final String            HTML_MAINTENANCE_MODE           = ">This server is in maintenance mode";
     /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                     = "https://uplod.io";
+    private static final String            COOKIE_HOST                     = "https://upload.ac";
     private static final String            NICE_HOST                       = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty               = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                         = "(uploadshub\\.com|upload\\.so|uplod\\.ws|uplod\\.cc|uplod\\.org|uplod\\.io)";
+    private static final String            DOMAINS                         = "(upload\\.ac|uploadshub\\.com|upload\\.so|uplod\\.ws|uplod\\.cc|uplod\\.org|uplod\\.io)";
     /* Errormessages inside URLs */
     private static final String            URL_ERROR_PREMIUMONLY           = "/?op=login&redirect=";
     /* All kinds of XFS-plugin-configuration settings - be sure to configure this correctly when developing new XFS plugins! */
@@ -284,7 +284,10 @@ public class UplodWs extends antiDDoSForHost {
             }
         }
         if (fileInfo[0] == null) {
-            fileInfo[0] = new Regex(correctedBR, "class=\"dfilename\">([^<>\"]*?)<").getMatch(0);
+            fileInfo[0] = new Regex(correctedBR, "class=\"(?:dfilename|title)\">([^<>\"]*?)<").getMatch(0);
+        }
+        if (fileInfo[0] == null) {
+            fileInfo[0] = new Regex(correctedBR, "<title>(?:Download )?([^<>]*?)</title>").getMatch(0);
         }
         if (ENABLE_HTML_FILESIZE_CHECK) {
             if (fileInfo[1] == null) {
@@ -733,7 +736,7 @@ public class UplodWs extends antiDDoSForHost {
             }
         }
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "<a href=\"(.*?)\" class=\"btn").getMatch(0);
+            dllink = new Regex(correctedBR, "Download link generated[^\"]+<a href=\"(.*?)\" class=\"btn").getMatch(0);
         }
         if (dllink == null) {
             /* Sometimes used for streaming */
