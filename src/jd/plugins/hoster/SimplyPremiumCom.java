@@ -15,13 +15,13 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
@@ -49,17 +49,18 @@ public class SimplyPremiumCom extends PluginForHost {
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static final String                            NICE_HOST          = "simply-premium.com";
     private static final String                            NICE_HOSTproperty  = "simplypremiumcom";
+    private static final String                            API_BASE           = "https://www.simply-premium.com";
     private static String                                  APIKEY             = null;
     private static Object                                  LOCK               = new Object();
 
     public SimplyPremiumCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www.simply-premium.com/vip.php");
+        this.enablePremium("https://www.simply-premium.com/vip.php");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.simply-premium.com/terms_and_conditions.php";
+        return "https://www.simply-premium.com/terms_and_conditions.php";
     }
 
     private Browser newBrowser() {
@@ -182,7 +183,7 @@ public class SimplyPremiumCom extends PluginForHost {
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null) {
             /* request download information */
-            br.getPage("http://www.simply-premium.com/premium.php?info=&link=" + Encoding.urlEncode(link.getDownloadURL()));
+            br.getPage(API_BASE + "/premium.php?info=&link=" + Encoding.urlEncode(link.getDownloadURL()));
             downloadErrorhandling(account, link);
             /* request download */
             dllink = getXML("download");
@@ -252,7 +253,7 @@ public class SimplyPremiumCom extends PluginForHost {
         this.br = newBrowser();
         final AccountInfo ai = new AccountInfo();
         getapikey(account);
-        br.getPage("http://simply-premium.com/api/user.php?apikey=" + APIKEY);
+        br.getPage(API_BASE + "/api/user.php?apikey=" + APIKEY);
         final String acctype = getXML("account_typ");
         if (acctype == null) {
             final String lang = System.getProperty("user.language");
@@ -276,7 +277,7 @@ public class SimplyPremiumCom extends PluginForHost {
         if ("1".equals(acctype)) {
             String expire = getXML("timeend");
             expire = expire.trim();
-            if (expire.equals("")) {
+            if (StringUtils.isEmpty(expire)) {
                 ai.setExpired(true);
                 return ai;
             }
@@ -309,7 +310,7 @@ public class SimplyPremiumCom extends PluginForHost {
         account.setProperty("acc_type", accdesc);
         account.setProperty("resume_allowed", resumeAllowed);
         /* online=1 == show only working hosts */
-        br.getPage("http://www.simply-premium.com/api/hosts.php?online=1");
+        br.getPage("/api/hosts.php?online=1");
         final String[] hostDomains = br.getRegex("<host>([^<>\"]*?)</host>").getColumn(0);
         if (hostDomains != null) {
             final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hostDomains));
@@ -317,7 +318,6 @@ public class SimplyPremiumCom extends PluginForHost {
         }
         account.setMaxSimultanDownloads(maxSimultanDls);
         account.setConcurrentUsePossible(true);
-        account.setValid(true);
         ai.setStatus(accdesc);
         return ai;
     }
@@ -330,7 +330,7 @@ public class SimplyPremiumCom extends PluginForHost {
             }
             APIKEY = acc.getStringProperty(NICE_HOSTproperty + "apikey", null);
             if (APIKEY != null && acmatch) {
-                br.setCookie("http://simply-premium.com/", "apikey", APIKEY);
+                br.setCookie(API_BASE, "apikey", APIKEY);
             } else {
                 login(acc);
             }
@@ -339,24 +339,23 @@ public class SimplyPremiumCom extends PluginForHost {
 
     private void login(final Account account) throws IOException, Exception {
         final String lang = System.getProperty("user.language");
-        br.getPage("http://simply-premium.com/login.php?login_name=" + Encoding.urlEncode(account.getUser()) + "&login_pass=" + Encoding.urlEncode(account.getPass()));
+        br.getPage(API_BASE + "/login.php?login_name=" + Encoding.urlEncode(account.getUser()) + "&login_pass=" + Encoding.urlEncode(account.getPass()));
         if (br.containsHTML("<error>captcha_required</error>")) {
-            final DownloadLink dummyLink = new DownloadLink(this, "Account", "simply-premium.com", "http://simply-premium.com", true);
-            final Recaptcha rc = new Recaptcha(br, this);
-            final String rcID = getXML("captcha");
-            rc.setId(rcID);
-            rc.load();
-            for (int i = 1; i <= 3; i++) {
-                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                final String c = getCaptchaCode("recaptcha", cf, dummyLink);
-                br.getPage("http://simply-premium.com/login.php?login_name=" + Encoding.urlEncode(account.getUser()) + "&login_pass=" + Encoding.urlEncode(account.getPass()) + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
-                if (br.containsHTML("<error>captcha_incorrect</error>")) {
-                    rc.reload();
-                    continue;
-                }
-                break;
+            final String rcKey = getXML("captcha");
+            if (StringUtils.isEmpty(rcKey)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            final DownloadLink dlinkbefore = this.getDownloadLink();
+            if (dlinkbefore == null) {
+                this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true));
+            }
+            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, rcKey).getToken();
+            if (dlinkbefore != null) {
+                this.setDownloadLink(dlinkbefore);
+            }
+            br.getPage("/login.php?login_name=" + Encoding.urlEncode(account.getUser()) + "&login_pass=" + Encoding.urlEncode(account.getPass()) + "&g-recaptcha-response=" + recaptchaV2Response);
             if (br.containsHTML("<error>captcha_incorrect</error>")) {
+                /* Rare case */
                 if ("de".equalsIgnoreCase(lang)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, ungültiges Passwort und/oder ungültiges Login-Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else {
@@ -375,7 +374,6 @@ public class SimplyPremiumCom extends PluginForHost {
             }
         } else if (br.containsHTML("<error>no_longer_valid</error>")) {
             account.getAccountInfo().setExpired(true);
-            account.setValid(false);
             if ("de".equalsIgnoreCase(lang)) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nAccount abgelaufen!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             } else {
@@ -384,11 +382,7 @@ public class SimplyPremiumCom extends PluginForHost {
         }
         APIKEY = br.getRegex("<apikey>([A-Za-z0-9]+)</apikey>").getMatch(0);
         if (APIKEY == null || br.containsHTML("<error>not_valid</error>")) {
-            if ("de".equalsIgnoreCase(lang)) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         account.setProperty(NICE_HOSTproperty + "apikey", APIKEY);
         account.setProperty("name", Encoding.urlEncode(account.getUser()));
