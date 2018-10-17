@@ -79,6 +79,10 @@ public class IvPasteCom extends PluginForDecrypt {
                 logger.info(i + "/3:Unsupported captchatype: " + parameter);
                 sleep(1000l, param);
                 br.getPage("http://ivpaste.com/p/" + ID);
+            } else if (br.containsHTML("coinhive-captcha")) {
+                logger.info(i + "/3:Unsupported captchatype: " + parameter);
+                sleep(1000l, param);
+                br.getPage("http://ivpaste.com/p/" + ID);
             } else if (form.containsHTML("areyouahuman\\.com/")) {
                 final String areweahuman = new CaptchaHelperCrawlerPluginAreYouHuman(this, br).getToken();
                 form.put("session_secret", Encoding.urlEncode(areweahuman));
