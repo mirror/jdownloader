@@ -21,8 +21,6 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -45,18 +43,19 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nicovideo.jp" }, urls = { "http://(www\\.)?nicovideo\\.jp/watch/(sm|so|nm)?\\d+" })
-public class NicoVideoJp extends PluginForHost {
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-    private static final String  MAINPAGE                    = "http://www.nicovideo.jp/";
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nicovideo.jp" }, urls = { "https?://(www\\.)?nicovideo\\.jp/watch/(sm|so|nm)?\\d+" })
+public class NicoVideoJp extends PluginForHost {
+    private static final String  MAINPAGE                    = "https://www.nicovideo.jp/";
     private static final String  ONLYREGISTEREDUSERTEXT      = "Only downloadable for registered users";
     private static final String  CUSTOM_DATE                 = "CUSTOM_DATE";
     private static final String  CUSTOM_FILENAME             = "CUSTOM_FILENAME";
-    private static final String  TYPE_NM                     = "http://(www\\.)?nicovideo\\.jp/watch/nm\\d+";
-    private static final String  TYPE_SM                     = "http://(www\\.)?nicovideo\\.jp/watch/sm\\d+";
-    private static final String  TYPE_SO                     = "http://(www\\.)?nicovideo\\.jp/watch/so\\d+";
+    private static final String  TYPE_NM                     = "https?://(www\\.)?nicovideo\\.jp/watch/nm\\d+";
+    private static final String  TYPE_SM                     = "https?://(www\\.)?nicovideo\\.jp/watch/sm\\d+";
+    private static final String  TYPE_SO                     = "https?://(www\\.)?nicovideo\\.jp/watch/so\\d+";
     /* Other types may redirect to this type. This is the only type which is also downloadable without account (sometimes?). */
-    private static final String  TYPE_WATCH                  = "http://(www\\.)?nicovideo\\.jp/watch/\\d+";
+    private static final String  TYPE_WATCH                  = "https?://(www\\.)?nicovideo\\.jp/watch/\\d+";
     private static final String  default_extension           = ".flv";
     private static final String  privatevid                  = "account.nicovideo.jp";
     private static final String  NOCHUNKS                    = "NOCHUNKS";
@@ -86,14 +85,6 @@ public class NicoVideoJp extends PluginForHost {
     public void init() {
         super.init();
         Browser.setRequestIntervalLimitGlobal(getHost(), 500);
-    }
-
-    @Override
-    public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
-        if (account == null) {
-            return false;
-        }
-        return true;
     }
 
     private LinkedHashMap<String, Object> entries = null;
@@ -310,15 +301,15 @@ public class NicoVideoJp extends PluginForHost {
         String dllink = null;
         // really old shit (from free), not sure if this actually works.
         final String linkid_url = getLinkId();
-        br.getPage("//ext.nicovideo.jp/api/getthreadkey?language_id=1&thread=" + linkid_url);
-        br.getPage("//ext.nicovideo.jp/thumb_watch/" + linkid_url + "?&w=644&h=408&nli=1");
+        br.getPage("https://ext.nicovideo.jp/api/getthreadkey?language_id=1&thread=" + linkid_url);
+        br.getPage("https://ext.nicovideo.jp/thumb_watch/" + linkid_url + "?&w=644&h=408&nli=1");
         final String playkey = br.getRegex("thumbPlayKey':\\s*'([^<>\"]*?)'").getMatch(0);
         final String accessFromHash = br.getRegex("accessFromHash':\\s*'([^<>\"]*?)'").getMatch(0);
         if (playkey == null || accessFromHash == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String accessPOST = "k=" + Encoding.urlEncode(playkey) + "&v=" + linkid_url + "&as3=1&accessFromDomain=&accessFromHash=" + Encoding.urlEncode(accessFromHash) + "&accessFromCount=0";
-        br.postPage("//ext.nicovideo.jp/thumb_watch", accessPOST);
+        br.postPage("https://ext.nicovideo.jp/thumb_watch", accessPOST);
         dllink = new Regex(Encoding.htmlDecode(br.toString()), "\\&url=(https?://.*?)\\&").getMatch(0);
         if (dllink == null) {
             dllink = new Regex(Encoding.htmlDecode(br.toString()), "(https?://smile-com\\d+\\.nicovideo\\.jp/smile\\?v=[0-9\\.]+)").getMatch(0);
@@ -334,7 +325,7 @@ public class NicoVideoJp extends PluginForHost {
         String dllink = null;
         // newest html5 (works 20170811)
         if (JavaScriptEngineFactory.walkJson(entries, "video/dmcInfo") != null) {
-            ajaxPost("//api.dmc.nico:2805/api/sessions?_format=json", constructJSON());
+            ajaxPost("http://api.dmc.nico:2805/api/sessions?_format=json", constructJSON());
             dllink = PluginJSonUtils.getJson(ajax, "content_uri");
         }
         if (dllink == null) {
@@ -345,10 +336,10 @@ public class NicoVideoJp extends PluginForHost {
                 String flashvars = br.getRegex("id=\"watchAPIDataContainer\" style=\"display:none\">(.*?)</div>").getMatch(0);
                 if (flashvars != null) {
                     if (br.getURL().matches(TYPE_SO)) {
-                        br.postPage("http://flapi.nicovideo.jp/api/getflv", "v=" + getLinkId());
+                        br.postPage("https://flapi.nicovideo.jp/api/getflv", "v=" + getLinkId());
                     } else if (br.getURL().matches(TYPE_NM) || this.getDownloadLink().getDownloadURL().matches(TYPE_SM)) {
                         final String vid = new Regex(br.getURL(), "((sm|nm)\\d+)$").getMatch(0);
-                        br.postPage("http://flapi.nicovideo.jp/api/getflv", "v=" + vid);
+                        br.postPage("https://flapi.nicovideo.jp/api/getflv", "v=" + vid);
                     }
                     dllink = getDllink_account(flashvars != null ? flashvars : br.toString());
                 }
@@ -397,16 +388,16 @@ public class NicoVideoJp extends PluginForHost {
     }
 
     private String asdf(String input) {
-        String dllink = new Regex(input, "\\&url=(http.*?)\\&").getMatch(0);
+        String dllink = new Regex(input, "\\&url=(https?.*?)\\&").getMatch(0);
         if (dllink == null) {
-            dllink = new Regex(input, "(http://smile\\-[a-z]+\\d+\\.nicovideo\\.jp/smile\\?(?:v|m)=[0-9\\.]+[a-z]*)").getMatch(0);
+            dllink = new Regex(input, "(https?://smile\\-[a-z]+\\d+\\.nicovideo\\.jp/smile\\?(?:v|m)=[0-9\\.]+[a-z]*)").getMatch(0);
         }
         String decodedInput = input;
         while (dllink == null && new Regex(decodedInput, "%[a-fA-F0-9]{2}").matches()) {
             decodedInput = Encoding.urlDecode(decodedInput, false);
             dllink = new Regex(decodedInput, "\\&url=(http.*?)\\&").getMatch(0);
             if (dllink == null) {
-                dllink = new Regex(decodedInput, "(http://smile\\-[a-z]+\\d+\\.nicovideo\\.jp/smile\\?(?:v|m)=[0-9\\.]+[a-z]*)").getMatch(0);
+                dllink = new Regex(decodedInput, "(https?://smile\\-[a-z]+\\d+\\.nicovideo\\.jp/smile\\?(?:v|m)=[0-9\\.]+[a-z]*)").getMatch(0);
             }
         }
         return Encoding.urlDecode(dllink, false);
@@ -428,7 +419,7 @@ public class NicoVideoJp extends PluginForHost {
                     /* We trust these cookies --> Do not check them */
                     return null;
                 }
-                br.getPage("http://www.nicovideo.jp/");
+                br.getPage("https://www.nicovideo.jp/");
                 if (br.containsHTML("/logout\">Log out</a>")) {
                     /* Save new cookie timestamp */
                     br.setCookies(this.getHost(), cookies);
@@ -440,7 +431,7 @@ public class NicoVideoJp extends PluginForHost {
             for (int i = 0; i <= 2; i++) {
                 br = new Browser();
                 br.setFollowRedirects(true);
-                br.getPage("http://www.nicovideo.jp/");
+                br.getPage("https://www.nicovideo.jp/");
                 br.getPage("/login");
                 // dont want to follow redirect here, as it takes you to homepage..
                 br.setFollowRedirects(false);

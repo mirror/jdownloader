@@ -13,12 +13,13 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.Map;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -28,11 +29,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "5sing.kugou.com" }, urls = { "http://(www\\.)?5sing\\.kugou\\.com/(f|y)c/\\d+\\.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "5sing.kugou.com" }, urls = { "http://(www\\.)?5sing\\.kugou\\.com/(f|y)c/\\d+\\.html" })
 public class FiveSingCom extends PluginForHost {
-
     public FiveSingCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -79,7 +82,23 @@ public class FiveSingCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         src = Encoding.Base64Decode(src).replace("\\", "");
-        String dllink = new Regex(src, "\"file\":\"(http:[^<>\"]*?)\"").getMatch(0);
+        String dllink = new Regex(src, "\"file\":\"(https?:[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) {
+            Map<String, Object> map = JSonStorage.restoreFromString(src, TypeRef.HASHMAP);
+            final String songID = map.containsKey("songID") ? String.valueOf(map.get("songID")) : null;
+            final String songType = map.containsKey("songType") ? String.valueOf(map.get("songType")) : null;
+            if (StringUtils.isEmpty(songType) || StringUtils.isEmpty(songID)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final Browser brc = br.cloneBrowser();
+            brc.getPage("http://service.5sing.kugou.com/song/getsongurl?jsoncallback=jQuery" + System.currentTimeMillis() + "_" + System.currentTimeMillis() + "&songid=" + songID + "&songtype=" + songType + "&from=web&version=6.6.72&_=1539798427612");
+            map = JSonStorage.restoreFromString(new Regex(brc.toString(), "(\\{.+\\})").getMatch(0), TypeRef.HASHMAP);
+            map = (Map<String, Object>) map.get("data");
+            dllink = (String) map.get("lqurl");
+            if (dllink == null) {
+                dllink = (String) map.get("hqurl");
+            }
+        }
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -103,5 +122,4 @@ public class FiveSingCom extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }

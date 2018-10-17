@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -27,9 +26,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nicovideo.jp" }, urls = { "http://(www\\.)?nicovideo\\.jp/mylist/\\d+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nicovideo.jp" }, urls = { "https?://(www\\.)?nicovideo\\.jp/mylist/\\d+" })
 public class NicoVideoJpPlaylist extends PluginForDecrypt {
-
     public NicoVideoJpPlaylist(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -55,7 +53,7 @@ public class NicoVideoJpPlaylist extends PluginForDecrypt {
             return null;
         }
         for (String singleLink : videoids) {
-            decryptedLinks.add(createDownloadlink("http://www.nicovideo.jp/watch/" + singleLink));
+            decryptedLinks.add(createDownloadlink("https://www.nicovideo.jp/watch/" + singleLink));
         }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
@@ -69,5 +67,4 @@ public class NicoVideoJpPlaylist extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -29,9 +28,8 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datoid.cz" }, urls = { "http://(www\\.)?datoid\\.(cz|sk)/slozka/[A-Za-z0-9]+/[A-Za-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datoid.cz" }, urls = { "http://(?:www\\.)?datoid\\.(cz|sk)/slozka/[A-Za-z0-9]+/[A-Za-z0-9]+" })
 public class DatoidCzFolder extends PluginForDecrypt {
-
     public DatoidCzFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -79,7 +77,6 @@ public class DatoidCzFolder extends PluginForDecrypt {
                 if (!currentPage.equals("1")) {
                     br.getPage(parameter + "?current-page=" + currentPage);
                 }
-
                 final String[] links = br.getRegex("\"(/[^<>\"]*?)\">[\t\n\r ]+<div class=\"thumb").getColumn(0);
                 if (links == null || links.length == 0) {
                     logger.warning("Decrypter broken for link: " + parameter);

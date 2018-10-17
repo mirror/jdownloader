@@ -132,8 +132,7 @@ public class SuprafilesOrg extends antiDDoSForHost {
     /* don't touch the following! */
     private static AtomicInteger maxFree                            = new AtomicInteger(1);
     private static Object        LOCK                               = new Object();
-    private final String         rc2SiteKey                         = null;                                                                                                                                                                                                                                  // auto
-    // "6LcD1XMUAAAAABKRl043r3gTMs5EgbC_rev-gnwL";
+    private final String         rc2SiteKey                         = "6Ld9KXQUAAAAAEP4yjXDzWbjb6BuCQZgOSkXyZtb";                                                                                                                                                                                            // auto
 
     /**
      * DEV NOTES XfileSharingProBasic Version 2.7.6.7<br />

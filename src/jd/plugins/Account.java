@@ -213,7 +213,8 @@ public class Account extends Property {
      * @return
      */
     private static final String trim(final String string) {
-        return (string == null) ? null : StringUtils.removeBOM(string.trim());
+        // NOTE: don't use String.trim() because users might want to use spaces at the beginning/end for passwords!
+        return (string == null) ? null : StringUtils.removeBOM(string);
     }
 
     public void setAccountController(AccountController ac) {
