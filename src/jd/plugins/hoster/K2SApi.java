@@ -626,37 +626,82 @@ public abstract class K2SApi extends PluginForHost {
                 readConnection(con, ibr);
                 antiDDoS(ibr);
                 // only do captcha stuff on the login page.
-                if (url.endsWith("/login") && loginRequiresCaptcha(ibr)) {
+                final CAPTCHA loginCaptcha;
+                if (url.endsWith("/login") && (loginCaptcha = loginRequiresCaptcha(ibr)) != null) {
                     loginCaptchaFail++;
                     if (loginCaptchaFail > 1) {
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
                     // we can assume that the previous user:pass is wrong, prompt user for new one!
-                    Browser cbr = new Browser();
-                    postPageRaw(cbr, "/requestcaptcha", "", account);
-                    final String challenge = PluginJSonUtils.getJsonValue(cbr, "challenge");
-                    final String captcha_url = PluginJSonUtils.getJsonValue(cbr, "captcha_url");
-                    // Dependency
-                    if (inValidate(challenge) || inValidate(captcha_url)) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    // final dummy
-                    final DownloadLink dummyLink = new DownloadLink(null, "Account", getDomain(), br.getURL(), true);
-                    final String code = getCaptchaCode(captcha_url, dummyLink);
-                    if (inValidate(code)) {
-                        // captcha can't be blank! Why we don't return null I don't know!
-                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                    }
-                    String r = arg;
-                    if (!r.contains("captcha_challenge")) {
-                        r = arg.replaceFirst("\\}$", "") + ",\"captcha_challenge\":\"" + challenge + "\",\"captcha_response\":\"" + JSonUtils.escape(code) + "\"}";
+                    final Browser cbr = new Browser();
+                    final String newArg;
+                    if (CAPTCHA.REQUESTCAPTCHA.equals(loginCaptcha)) {
+                        postPageRaw(cbr, "/requestcaptcha", "", account);
+                        final String challenge = PluginJSonUtils.getJsonValue(cbr, "challenge");
+                        final String captcha_url = PluginJSonUtils.getJsonValue(cbr, "captcha_url");
+                        // Dependency
+                        if (inValidate(challenge)) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        } else if (inValidate(captcha_url)) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        // final dummy
+                        final DownloadLink dummyLink = new DownloadLink(null, "Account", getDomain(), "https://" + getDomain(), true);
+                        final String code = getCaptchaCode(captcha_url, dummyLink);
+                        if (inValidate(code)) {
+                            // captcha can't be blank! Why we don't return null I don't know!
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        }
+                        String tmp = arg;
+                        if (!tmp.contains("captcha_challenge")) {
+                            tmp = arg.replaceFirst("\\}$", "") + ",\"captcha_challenge\":\"" + challenge + "\",\"captcha_response\":\"" + JSonUtils.escape(code) + "\"}";
+                        } else {
+                            final String jchallenge = PluginJSonUtils.getJsonValue(tmp, "captcha_challenge");
+                            final String jresponse = PluginJSonUtils.getJsonValue(tmp, "captcha_response");
+                            tmp = tmp.replace(jchallenge, challenge);
+                            tmp = tmp.replace(jresponse, JSonUtils.escape(code));
+                        }
+                        newArg = tmp;
+                    } else if (CAPTCHA.REQUESTRECAPTCHA.equals(loginCaptcha)) {
+                        postPageRaw(cbr, "/requestrecaptcha", "", account);
+                        final String challenge = PluginJSonUtils.getJsonValue(cbr, "challenge");
+                        final String captcha_url = PluginJSonUtils.getJsonValue(cbr, "captcha_url");
+                        // Dependency
+                        if (inValidate(challenge)) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        } else if (inValidate(captcha_url)) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        cbr.getPage(captcha_url);
+                        final boolean dummyLink = getDownloadLink() == null;
+                        try {
+                            if (dummyLink) {
+                                setDownloadLink(new DownloadLink(null, "Account", getDomain(), cbr.toString(), true));
+                            }
+                            final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, cbr);
+                            final String recaptchaV2Response = rc2.getToken();
+                            if (recaptchaV2Response == null) {
+                                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                            }
+                            String tmp = arg;
+                            if (!tmp.contains("re_captcha_challenge")) {
+                                tmp = arg.replaceFirst("\\}$", "") + ",\"re_captcha_challenge\":\"" + challenge + "\",\"re_captcha_response\":\"" + JSonUtils.escape(recaptchaV2Response) + "\"}";
+                            } else {
+                                final String jchallenge = PluginJSonUtils.getJsonValue(tmp, "re_captcha_challenge");
+                                final String jresponse = PluginJSonUtils.getJsonValue(tmp, "re_captcha_response");
+                                tmp = tmp.replace(jchallenge, challenge);
+                                tmp = tmp.replace(jresponse, JSonUtils.escape(recaptchaV2Response));
+                            }
+                            newArg = tmp;
+                        } finally {
+                            if (dummyLink) {
+                                setDownloadLink(null);
+                            }
+                        }
                     } else {
-                        final String jchallenge = PluginJSonUtils.getJsonValue(r, "captcha_challenge");
-                        final String jresponse = PluginJSonUtils.getJsonValue(r, "captcha_response");
-                        r = r.replace(jchallenge, challenge);
-                        r = r.replace(jresponse, JSonUtils.escape(code));
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unsupported:" + loginCaptcha);
                     }
-                    postPageRaw(ibr, url, r, account);
+                    postPageRaw(ibr, url, newArg, account);
                     return;
                 }
                 if (sessionTokenInvalid(account, ibr)) {
@@ -741,13 +786,20 @@ public abstract class K2SApi extends PluginForHost {
         return con.getInputStream();
     }
 
-    private boolean loginRequiresCaptcha(final Browser ibr) {
+    private static enum CAPTCHA {
+        REQUESTCAPTCHA,
+        REQUESTRECAPTCHA
+    }
+
+    private CAPTCHA loginRequiresCaptcha(final Browser ibr) throws PluginException {
         final String status = PluginJSonUtils.getJsonValue(ibr, "status");
         final String errorCode = PluginJSonUtils.getJsonValue(ibr, "errorCode");
         if ("error".equalsIgnoreCase(status) && ("30".equalsIgnoreCase(errorCode))) {
-            return true;
+            return CAPTCHA.REQUESTCAPTCHA;
+        } else if ("error".equalsIgnoreCase(status) && ("33".equalsIgnoreCase(errorCode))) {
+            return CAPTCHA.REQUESTRECAPTCHA;
         } else {
-            return false;
+            return null;
         }
     }
 
@@ -772,7 +824,7 @@ public abstract class K2SApi extends PluginForHost {
                     logger.info("fetch new token");
                     // we don't want to pollute this.br
                     final Browser auth = prepBrowser(new Browser());
-                    postPageRaw(auth, "/login", "{\"username\":\"" + JSonUtils.escape(account.getUser()) + "\",\"password\":\"" + JSonUtils.escape(account.getPass()) + "\"}", account);
+                    postPageRaw(auth, "/login", "{\"username\":\"" + JSonUtils.escape(account.getUser()) + "\",\"password\":\"" + JSonUtils.escape(account.getPass() + "") + "\"}", account);
                     currentAuthToken = PluginJSonUtils.getJsonValue(auth, "auth_token");
                     if (StringUtils.isEmpty(currentAuthToken)) {
                         account.removeProperty(AUTHTOKEN);

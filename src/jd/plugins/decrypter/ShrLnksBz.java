@@ -126,7 +126,9 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
         parameter += "?lng=en";
         getPage(parameter);
         if (isOffline()) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
+            final DownloadLink link;
+            decryptedLinks.add(link = this.createOfflinelink(parameter));
+            link.setName("Link is Offline-" + link.getName());
             return decryptedLinks;
         }
         /* Very important! */

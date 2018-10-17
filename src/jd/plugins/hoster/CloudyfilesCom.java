@@ -124,7 +124,7 @@ public class CloudyfilesCom extends PluginForHost {
     /* don't touch the following! */
     private static AtomicInteger           maxFree                            = new AtomicInteger(1);
     private static Object                  LOCK                               = new Object();
-    private final String                   rc2SiteKey                         = null;                                                     // auto"6LdJzXMUAAAAAH0JpjTJFAXVh8NYOckK3Cgfye_o";
+    private final String                   rc2SiteKey                         = "6Le2KHQUAAAAAIyxnBZx23lp9rEAMr_wj0iix4eq";
 
     /**
      * DEV NOTES XfileSharingProBasic Version 2.7.3.4<br />
