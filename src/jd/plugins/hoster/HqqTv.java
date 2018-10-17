@@ -72,20 +72,22 @@ public class HqqTv extends antiDDoSForHost {
         String decode = decodeWise(jsWise);
         String[] data = new Regex(decode, "var vid=\"([^\"]*).*?var at=\"([^\"]*).*?var autoplayed=\"([^\"]*).*?var referer=\"([^\"]*).*var http_referer=\"([^\"]*).*var pass=\"([^\"]*).*var embed_from=\"([^\"]*).*var need_captcha=\"([^\"]*).*var hash_from=\"([^\"]*)").getRow(0);
         if (data == null || data.length == 0) {
-            data = new Regex(decode, "vid=([^&]*)&at=([^&]*)&autoplayed=([^&]*)&referer=([^&]*)&http_referer=([^&]*)&pass=([^&]*)&embed_from=([^&]*)&need_captcha=([^&]*)&hash_from=([^&]*)").getRow(0);
+            data = new Regex(decode, "vid=([^&]*)&at=([^&]*)&autoplayed=([^&]*)&referer=([^&]*)&http_referer=([^&]*)&pass=([^&]*)&embed_from=([^&]*)&need_captcha=[^&]*&hash_from=([^&]*)").getRow(0);
         }
         if (data == null || data.length == 0) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         Browser ajax = br.cloneBrowser();
         // ip
-        getPage(ajax, "//hqq.watch/player/ip.php?type=json");
-        String ip = PluginJSonUtils.getJsonValue(ajax, "ip");
-        final String ipBlacklist = PluginJSonUtils.getJsonValue(ajax, "ip_blacklist");
+        getPage(ajax, "//hqq.watch/player/ip.php?type=json&rand=" + System.currentTimeMillis() / 1000L);
+        final String ip = PluginJSonUtils.getJsonValue(ajax, "ip");
+        final String needCaptcha = PluginJSonUtils.getJsonValue(ajax, "need_captcha");
         String vid = data[0];
         String at = data[1];
         StringBuffer sb = new StringBuffer();
-        sb.append("/sec/player/embed_player.php?iss=");
+        sb.append("/sec/player/embed_player_");
+        sb.append(System.currentTimeMillis() / 1000L);
+        sb.append(".php?iss=");
         sb.append(ip);
         sb.append("&vid=");
         sb.append(vid);
@@ -102,13 +104,10 @@ public class HqqTv extends antiDDoSForHost {
         sb.append("&embed_from=");
         sb.append(data[6]);
         sb.append("&need_captcha=");
-        if (ipBlacklist != null && ipBlacklist.equals("1")) {
-            sb.append("1");
-        } else {
-            sb.append(data[7]);
-        }
+        sb.append(needCaptcha);
         sb.append("&hash_from=");
-        sb.append(data[8]);
+        sb.append(data[7]);
+        sb.append("&secured=0&gtoken=");
         // html
         getPage(sb.toString());
         //
