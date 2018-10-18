@@ -79,7 +79,7 @@ public class DesixnxxNet extends PluginForHost {
             final String[][] srcs = br.getRegex("<source src=(\"|\\')\\s*(https?://[^<>\"]*?)\\s*(\\1)[^<>]*type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatches();
             if (srcs != null) {
                 for (String src[] : srcs) {
-                    if (dllink == null || StringUtils.contains(src[1], "720p") || StringUtils.contains(src[1], "1080hap")) {
+                    if (dllink == null || StringUtils.contains(src[1], "720p") || StringUtils.contains(src[1], "1080p")) {
                         dllink = src[1];
                     }
                 }
