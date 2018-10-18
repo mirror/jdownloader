@@ -621,6 +621,7 @@ public class TheVideoMe extends antiDDoSForHost {
     private String findReCaptchaKey(final Browser br, final String keyName) {
         final Browser brc = br.cloneBrowser();
         try {
+            /* Check if we have html code; if not, we have to access the '/home' page in order to find the URL to their js file. */
             if (brc.getURL() == null || brc.toString().startsWith("{") || brc.toString().length() < 500) {
                 brc.getPage("https://" + this.getHost() + "/home");
             }
@@ -1183,6 +1184,7 @@ public class TheVideoMe extends antiDDoSForHost {
                     /* Avoid full login whenever possible to avoid reCaptchaV2 */
                     br.setCookies(this.getHost(), cookies);
                     this.setLoginHeader(this.br, logintoken);
+                    /* Do not trust cookies as login gets invalid after every IP change! */
                     // if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l) {
                     // /* We trust these cookies as they're not that old --> Do not check them */
                     // return;
