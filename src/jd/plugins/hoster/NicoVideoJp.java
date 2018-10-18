@@ -27,6 +27,7 @@ import jd.config.ConfigEntry;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -301,15 +302,30 @@ public class NicoVideoJp extends PluginForHost {
         String dllink = null;
         // really old shit (from free), not sure if this actually works.
         final String linkid_url = getLinkId();
-        br.getPage("https://ext.nicovideo.jp/api/getthreadkey?language_id=1&thread=" + linkid_url);
-        br.getPage("https://ext.nicovideo.jp/thumb_watch/" + linkid_url + "?&w=644&h=408&nli=1");
+        try {
+            br.getPage("http://ext.nicovideo.jp/api/getthreadkey?language_id=1&thread=" + linkid_url);
+        } catch (BrowserException e) {
+            logger.log(e);
+            br.getPage("http://ext.nicovideo.jp/api/getthreadkey?language_id=1&thread=" + linkid_url);
+        }
+        try {
+            br.getPage("http://ext.nicovideo.jp/thumb_watch/" + linkid_url + "?&w=644&h=408&nli=1");
+        } catch (BrowserException e) {
+            logger.log(e);
+            br.getPage("http://ext.nicovideo.jp/thumb_watch/" + linkid_url + "?&w=644&h=408&nli=1");
+        }
         final String playkey = br.getRegex("thumbPlayKey':\\s*'([^<>\"]*?)'").getMatch(0);
         final String accessFromHash = br.getRegex("accessFromHash':\\s*'([^<>\"]*?)'").getMatch(0);
         if (playkey == null || accessFromHash == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String accessPOST = "k=" + Encoding.urlEncode(playkey) + "&v=" + linkid_url + "&as3=1&accessFromDomain=&accessFromHash=" + Encoding.urlEncode(accessFromHash) + "&accessFromCount=0";
-        br.postPage("https://ext.nicovideo.jp/thumb_watch", accessPOST);
+        try {
+            br.postPage("http://ext.nicovideo.jp/thumb_watch", accessPOST);
+        } catch (final BrowserException e) {
+            logger.log(e);
+            br.postPage("http://ext.nicovideo.jp/thumb_watch", accessPOST);
+        }
         dllink = new Regex(Encoding.htmlDecode(br.toString()), "\\&url=(https?://.*?)\\&").getMatch(0);
         if (dllink == null) {
             dllink = new Regex(Encoding.htmlDecode(br.toString()), "(https?://smile-com\\d+\\.nicovideo\\.jp/smile\\?v=[0-9\\.]+)").getMatch(0);
@@ -336,10 +352,10 @@ public class NicoVideoJp extends PluginForHost {
                 String flashvars = br.getRegex("id=\"watchAPIDataContainer\" style=\"display:none\">(.*?)</div>").getMatch(0);
                 if (flashvars != null) {
                     if (br.getURL().matches(TYPE_SO)) {
-                        br.postPage("https://flapi.nicovideo.jp/api/getflv", "v=" + getLinkId());
+                        br.postPage("http://flapi.nicovideo.jp/api/getflv", "v=" + getLinkId());
                     } else if (br.getURL().matches(TYPE_NM) || this.getDownloadLink().getDownloadURL().matches(TYPE_SM)) {
                         final String vid = new Regex(br.getURL(), "((sm|nm)\\d+)$").getMatch(0);
-                        br.postPage("https://flapi.nicovideo.jp/api/getflv", "v=" + vid);
+                        br.postPage("http://flapi.nicovideo.jp/api/getflv", "v=" + vid);
                     }
                     dllink = getDllink_account(flashvars != null ? flashvars : br.toString());
                 }
