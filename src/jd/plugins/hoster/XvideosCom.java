@@ -18,6 +18,11 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -34,13 +39,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-
 //xvideos.com by pspzockerscene
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xvideos.com" }, urls = { "https?://(www\\.|\\w+\\.)?xvideos\\.com/(video[0-9]+/|embedframe/\\d+|[a-z0-9\\-]+/(upload|pornstar)/[a-z0-9\\-_]+/\\d+/(\\d+)?)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xvideos.com" }, urls = { "https?://(?:www\\.|\\w+\\.)?xvideos\\.com/(video\\d+/|embedframe/\\d+|[a-z0-9\\-]+/(upload|pornstar)/[a-z0-9\\-_]+/\\d+/(\\d+)?)" })
 public class XvideosCom extends PluginForHost {
     public XvideosCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -67,6 +67,19 @@ public class XvideosCom extends PluginForHost {
             return true;
         } else {
             return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
+        }
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        String linkid = new Regex(link.getPluginPatternMatcher(), "(?:video|embedframe/)(\\d+)").getMatch(0);
+        if (linkid == null) {
+            linkid = new Regex(link.getPluginPatternMatcher(), "(?:upload|pornstar)/[a-z0-9\\-_]+/(\\d+)").getMatch(0);
+        }
+        if (linkid != null) {
+            return linkid;
+        } else {
+            return super.getLinkID(link);
         }
     }
 
@@ -145,7 +158,10 @@ public class XvideosCom extends PluginForHost {
             filename = br.getRegex("<title>([^<>\"]*?)\\- XVIDEOS\\.COM</title>").getMatch(0);
         }
         if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            /* Fallback */
+            filename = this.getLinkID(link);
+        } else {
+            filename = this.getLinkID(link) + "_" + filename;
         }
         if (getPluginConfig().getBooleanProperty("Prefer HLS", true)) {
             final String hlsURL = getVideoHLS();

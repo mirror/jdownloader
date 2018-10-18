@@ -62,15 +62,9 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class XFileSharingProBasic extends antiDDoSForHost {
-    // DELETE THIS, after making plugin!
-    @Override
-    public Boolean siteTesterDisabled() {
-        return Boolean.TRUE;
-    }
-
+public class UsersdriveCom extends antiDDoSForHost {
     /* 1st domain = current domain! */
-    public static String[] domains = new String[] { "ForDevsToPlayWith.com" };
+    public static String[] domains = new String[] { "usersdrive.com" };
 
     public static String[] getAnnotationNames() {
         return new String[] { domains[0] };
@@ -169,7 +163,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     private String               fuid                               = null;
     private String               passCode                           = null;
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger totalMaxSimultanFreeDownload       = new AtomicInteger(20);
+    private static AtomicInteger totalMaxSimultanFreeDownload       = new AtomicInteger(1);
     /* don't touch the following! */
     private static AtomicInteger maxFree                            = new AtomicInteger(1);
     private static Object        LOCK                               = new Object();
@@ -186,7 +180,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * limit-info:<br />
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
      * ALL) it is usually impossible to get any filename/filesize/status information!<br />
-     * captchatype: null 4dignum solvemedia reCaptchaV2<br />
+     * captchatype: reCaptchaV2<br />
      * other:<br />
      */
     @Override
@@ -217,9 +211,9 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public XFileSharingProBasic(PluginWrapper wrapper) {
+    public UsersdriveCom(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium(COOKIE_HOST + "/premium.html");
+        this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     @SuppressWarnings({ "unused" })
@@ -343,6 +337,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     private String[] scanInfo(final String[] fileInfo) {
         final String sharebox0 = "copy\\(this\\);.+>(.+) - ([\\d\\.]+ (?:B|KB|MB|GB))</a></textarea>[\r\n\t ]+</div>";
         final String sharebox1 = "copy\\(this\\);.+\\](.+) - ([\\d\\.]+ (?:B|KB|MB|GB))\\[/URL\\]";
+        final String sharebox1_special = "\\[URL=https?://[^/]+/[a-z0-9]{12}\\.html\\]([^<>\"]+) \\-  \\d+\\[/URL\\]";
         /* standard traits from base page */
         if (inValidate(fileInfo[0])) {
             fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + getHostsPatternPart() + "/" + fuid + "/(.*?)</font>").getMatch(1);
@@ -374,6 +369,14 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         if (inValidate(fileInfo[0])) {
             /* 2017-04-11: Typically for XVideoSharing sites */
             fileInfo[0] = new Regex(correctedBR, Pattern.compile("<title>Watch ([^<>\"]+)</title>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        }
+        if (inValidate(fileInfo[0])) {
+            /* 2018-10-18: Special */
+            fileInfo[0] = new Regex(correctedBR, Pattern.compile(sharebox1_special, Pattern.CASE_INSENSITIVE)).getMatch(0);
+        }
+        if (inValidate(fileInfo[0])) {
+            /* 2018-10-18: Special */
+            fileInfo[0] = new Regex(correctedBR, Pattern.compile("class=\"name\">\\s*?<h4>([^<>\"]+)</h4>", Pattern.CASE_INSENSITIVE)).getMatch(0);
         }
         if (SUPPORTS_HTML_FILESIZE_CHECK) {
             if (inValidate(fileInfo[1])) {
@@ -422,6 +425,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<b>Filename\\s*:?\\s*</b></td><td>([^<>\"]*?)</td>").getMatch(0);
+        if (filename == null) {
+            /* 2018-10-18: Special */
+            filename = br.getRegex("<label>filename</label>\\s*?<input readonly value=\"([^<>\"]+)\"").getMatch(0);
+        }
         if (filename == null) {
             filename = fallbackFilename;
         }
@@ -504,7 +511,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 0, PROPERTY_DLLINK_FREE);
+        doFree(downloadLink, true, 1, PROPERTY_DLLINK_FREE);
     }
 
     @SuppressWarnings({ "unused" })
@@ -764,6 +771,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 if (!skipWaittime) {
                     waitTime(downloadLink, timeBefore);
                 }
+                /* 2018-10-18: Special */
+                dlForm.put("adblock_detected", "0");
                 submitForm(dlForm);
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, true);
@@ -841,7 +850,9 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         for (final Form aForm : forms) {
             final InputField op_field = aForm.getInputFieldByName("op");
             /* E.g. name="op" value="download_orig" */
-            if (aForm.containsHTML("btn_download") && op_field != null && op_field.getValue().contains("download_")) {
+            /* 2018-10-18: Special */
+            final boolean has_method_free = aForm.hasInputFieldByName("method_free");
+            if (has_method_free && op_field != null && op_field.getValue().contains("download2")) {
                 dlForm = aForm;
                 break;
             }
@@ -1463,13 +1474,13 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
             /* Expired premium or no expire date given --> It is usually a Free Account */
             account.setType(AccountType.FREE);
-            account.setMaxSimultanDownloads(-1);
+            account.setMaxSimultanDownloads(1);
             account.setConcurrentUsePossible(false);
         } else {
             /* Expire date is in the future --> It is a premium account */
             ai.setValidUntil(expire_milliseconds);
             account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(-1);
+            account.setMaxSimultanDownloads(1);
             account.setConcurrentUsePossible(true);
         }
         return ai;
@@ -1582,7 +1593,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         if (account.getType() == AccountType.FREE) {
             /* Perform linkcheck after logging in */
             requestFileInformation(downloadLink);
-            doFree(downloadLink, true, 0, PROPERTY_DLLINK_ACCOUNT_FREE);
+            doFree(downloadLink, true, 1, PROPERTY_DLLINK_ACCOUNT_FREE);
         } else {
             String dllink = checkDirectLink(downloadLink, PROPERTY_DLLINK_ACCOUNT_PREMIUM);
             if (dllink == null) {
@@ -1607,7 +1618,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 0);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 1);
             if (dl.getConnection().getContentType().contains("html")) {
                 checkResponseCodeErrors(dl.getConnection());
                 logger.warning("The final dllink seems not to be a file!");
