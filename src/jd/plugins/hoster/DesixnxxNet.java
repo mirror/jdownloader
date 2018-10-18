@@ -29,7 +29,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "desixnxx.net" }, urls = { "desixnxxdecrypted://(?:www\\.)?desixnxx\\.net/[a-z0-9\\-]{20,}/" })
+import org.appwork.utils.StringUtils;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "desixnxx.net" }, urls = { "desixnxxdecrypted://(?:www\\.)?desixnxx\\.net/[a-z0-9\\-]+/" })
 public class DesixnxxNet extends PluginForHost {
     public DesixnxxNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -74,10 +76,17 @@ public class DesixnxxNet extends PluginForHost {
             dllink = br.getRegex("(?:file|url):[\t\n\r ]*?(\"|\\')\\s*(https?[^<>\"]*?)\\s*(\\1)").getMatch(1);
         }
         if (dllink == null) {
-            dllink = br.getRegex("<source src=(\"|\\')\\s*(https?://[^<>\"]*?)\\s*(\\1)[^<>]*type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(1);
+            final String[][] srcs = br.getRegex("<source src=(\"|\\')\\s*(https?://[^<>\"]*?)\\s*(\\1)[^<>]*type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatches();
+            if (srcs != null) {
+                for (String src[] : srcs) {
+                    if (dllink == null || StringUtils.contains(src[1], "720p") || StringUtils.contains(src[1], "1080hap")) {
+                        dllink = src[1];
+                    }
+                }
+            }
         }
         if (dllink == null) {
-            dllink = br.getRegex("property=\"og:video\" content=\"(http[^<>\"]*?)\"").getMatch(0);
+            dllink = br.getRegex("property=\"og:video\" content=\"(https?[^<>\"]*?)\"").getMatch(0);
         }
         link.setFinalFileName(filename);
         if (dllink != null) {
@@ -85,7 +94,7 @@ public class DesixnxxNet extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
-                if (!con.getContentType().contains("html")) {
+                if (!con.getContentType().contains("html") && con.isOK()) {
                     link.setDownloadSize(con.getLongContentLength());
                     link.setProperty("directlink", dllink);
                 } else {
