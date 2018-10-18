@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.Locale;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
@@ -42,11 +43,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wdupload.com" }, urls = { "https?://(?:www\\.)?wdupload\\.com/file/[A-Za-z0-9]+/.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wdupload.com" }, urls = { "https?://(?:www\\.)?wdupload\\.com/file/[A-Za-z0-9\\-_]+/.+" })
 public class WduploadCom extends PluginForHost {
     public WduploadCom(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium("https://www.wdupload.com/premium");
+        this.enablePremium("https://www.wdupload.com/premium");
     }
 
     @Override
@@ -61,9 +62,9 @@ public class WduploadCom extends PluginForHost {
     private final boolean ACCOUNT_FREE_RESUME          = false;
     private final int     ACCOUNT_FREE_MAXCHUNKS       = 1;
     private final int     ACCOUNT_FREE_MAXDOWNLOADS    = 1;
-    private final boolean ACCOUNT_PREMIUM_RESUME       = false;
-    private final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
-    private final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 1;
+    private final boolean ACCOUNT_PREMIUM_RESUME       = true;
+    private final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
+    private final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = -1;
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -203,11 +204,28 @@ public class WduploadCom extends PluginForHost {
                     this.br.setCookies(this.getHost(), cookies);
                     return;
                 }
-                br.getPage("");
-                br.postPage("", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                if (br.getCookie(this.getHost(), "") == null) {
+                final boolean use_static_access_token = false;
+                final String access_token;
+                if (use_static_access_token) {
+                    /* 2018-10-19 */
+                    access_token = "br68ufmo5ej45ue1q10w68781069v666l2oh1j2ijt94";
+                } else {
+                    br.getPage("https://www." + this.getHost() + "/java/mycloud.js");
+                    access_token = br.getRegex("app:\\s*?\\'([^<>\"\\']+)\\'").getMatch(0);
+                }
+                if (StringUtils.isEmpty(access_token)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                br.getHeaders().put("Origin", "https://www." + this.getHost());
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.postPage("https://www.wdupload.com/api/0/signmein?useraccess=&access_token=" + access_token, "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&keep=1");
+                final String result = PluginJSonUtils.getJson(br, "result");
+                String userdata = PluginJSonUtils.getJson(br, "doz");
+                if (!"ok".equals(result) || StringUtils.isEmpty(userdata)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
+                userdata = URLEncode.encodeURIComponent(userdata);
+                br.setCookie(br.getHost(), "userdata", userdata);
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
@@ -226,34 +244,26 @@ public class WduploadCom extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        String space = br.getRegex("").getMatch(0);
-        if (space != null) {
-            ai.setUsedSpace(space.trim());
-        }
+        br.getPage("/me");
+        final String accounttype = br.getRegex("<label>Your Plan</label>\\s*?<span class=\"known_values\"><div [^>]+></div>([^<>]+)</span>").getMatch(0);
         ai.setUnlimitedTraffic();
-        if (account.getBooleanProperty("free", false)) {
+        /* E.g. Lifetime Free Account */
+        if (accounttype == null || accounttype.contains("Free")) {
             account.setType(AccountType.FREE);
             /* free accounts can still have captcha */
-            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
             account.setConcurrentUsePossible(false);
             ai.setStatus("Registered (free) user");
         } else {
-            final String expire = br.getRegex("").getMatch(0);
-            if (expire == null) {
-                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort oder nicht unterstützter Account Typ!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or unsupported account type!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-            } else {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
+            final String expire = br.getRegex("Premium expires on <span [^<>]+>(\\d{4}\\-\\d{2}\\-\\d{2})<").getMatch(0);
+            if (expire != null) {
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd", Locale.ENGLISH));
             }
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             account.setConcurrentUsePossible(true);
             ai.setStatus("Premium account");
         }
-        account.setValid(true);
         return ai;
     }
 
@@ -261,21 +271,35 @@ public class WduploadCom extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
-        br.getPage(link.getDownloadURL());
         if (account.getType() == AccountType.FREE) {
+            br.getPage(link.getPluginPatternMatcher());
             doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
         } else {
-            String dllink = this.checkDirectLink(link, "premium_directlink");
+            String dllink = this.checkDirectLink(link, "premium_directlink_2");
             if (dllink == null) {
-                dllink = br.getRegex("").getMatch(0);
+                br.setFollowRedirects(false);
+                br.getPage(link.getPluginPatternMatcher());
+                /* First check if user has direct download enabled */
+                dllink = br.getRedirectLocation();
+                /* Direct download disabled? We have to find the final downloadurl. */
+                if (StringUtils.isEmpty(dllink)) {
+                    dllink = br.getRegex("\"(https?://[^/]+/download\\.php[^<>\"]+)\"").getMatch(0);
+                }
+                if (StringUtils.isEmpty(dllink)) {
+                    dllink = br.getRegex("<p>Click here to download</p>\\s*?<a href=\"(https?://[^<>\"]+)\"").getMatch(0);
+                }
                 if (StringUtils.isEmpty(dllink)) {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
+            br.setFollowRedirects(true);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
             if (dl.getConnection().getContentType().contains("html")) {
-                if (dl.getConnection().getResponseCode() == 403) {
+                if (dl.getConnection().getResponseCode() == 401) {
+                    /* This sometimes happens for premiumonly content */
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 401", 60 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
                 } else if (dl.getConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);

@@ -42,7 +42,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "esoubory.cz" }, urls = { "https?://(?:www\\.)?esoubory\\.cz/soubor/[a-z0-9]+/([a-z0-9\\-]+/|[a-z0-9\\-]+\\.html)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "esoubory.cz" }, urls = { "https?://(?:www\\.)?esoubory\\.cz/[a-z]{2}/redir/[^<>\"]+\\.html" })
 public class EsouboryCz extends PluginForHost {
     public EsouboryCz(PluginWrapper wrapper) {
         super(wrapper);
@@ -80,11 +80,15 @@ public class EsouboryCz extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final Account aa = AccountController.getInstance().getValidAccount(this);
-        link.setName(new Regex(link.getDownloadURL(), "esoubory\\.cz/soubor/([a-z0-9]+)/").getMatch(0));
+        final String name_url = new Regex(link.getDownloadURL(), "/file/[^/]+/(.+)\\.html").getMatch(0);
+        if (name_url != null) {
+            link.setName(name_url);
+        }
         String filename;
         String filesize;
         if (aa != null) {
-            /* Prefer API */
+            /** 2018-10-18: Broken serverside! */
+            /* API */
             br.getPage(API_BASE + "/exists?token=" + getToken(aa) + "&url=" + Encoding.urlEncode(link.getDownloadURL()));
             if (!br.containsHTML("\"exists\":true")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -95,6 +99,7 @@ public class EsouboryCz extends PluginForHost {
             link.setDownloadSize(Long.parseLong(filesize));
             link.setFinalFileName(filename);
         } else {
+            /* API without account is not possible */
             br.getPage(link.getDownloadURL());
             if (br.getURL().contains("/search/")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
