@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
@@ -42,16 +41,17 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "simply-premium.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
 public class SimplyPremiumCom extends PluginForHost {
-    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
-    private static final String                            NICE_HOST          = "simply-premium.com";
-    private static final String                            NICE_HOSTproperty  = "simplypremiumcom";
-    private static final String                            API_BASE           = "https://www.simply-premium.com";
-    private static String                                  APIKEY             = null;
-    private static Object                                  LOCK               = new Object();
+    private static final String          NICE_HOST         = "simply-premium.com";
+    private static final String          NICE_HOSTproperty = "simplypremiumcom";
+    private static final String          API_BASE          = "https://www.simply-premium.com";
+    private static String                APIKEY            = null;
+    private static Object                LOCK              = new Object();
+    private static MultiHosterManagement mhm               = new MultiHosterManagement("simply-premium.com");
 
     public SimplyPremiumCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -124,17 +124,7 @@ public class SimplyPremiumCom extends PluginForHost {
             br.followConnection();
             downloadErrorhandling(account, link);
             logger.info(NICE_HOST + ": Unknown download error");
-            int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "timesfailed_unknowndlerror", 0);
-            link.getLinkStatus().setRetryCount(0);
-            if (timesFailed <= 2) {
-                timesFailed++;
-                link.setProperty(NICE_HOSTproperty + "timesfailed_unknowndlerror", timesFailed);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error");
-            } else {
-                link.setProperty(NICE_HOSTproperty + "timesfailed_unknowndlerror", Property.NULL);
-                logger.info(NICE_HOST + ": Unknown error - disabling current host!");
-                tempUnavailableHoster(account, link, 60 * 60 * 1000l);
-            }
+            mhm.handleErrorGeneric(account, link, "unknowndlerror", 10, 5 * 60 * 1000l);
         }
         dl.startDownload();
     }
@@ -163,21 +153,7 @@ public class SimplyPremiumCom extends PluginForHost {
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         this.br = newBrowser();
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null) {
-                Long lastUnavailable = unavailableMap.get(link.getHost());
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    final long wait = lastUnavailable - System.currentTimeMillis();
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(link.getHost());
-                    if (unavailableMap.size() == 0) {
-                        hostUnavailableMap.remove(account);
-                    }
-                }
-            }
-        }
+        mhm.runCheck(account, link);
         getapikey(account);
         showMessage(link, "Task 1: Checking link");
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
@@ -189,29 +165,19 @@ public class SimplyPremiumCom extends PluginForHost {
             dllink = getXML("download");
             if (dllink == null) {
                 logger.info(NICE_HOST + ": dllinknull");
-                int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "timesfailed_dllinknull", 0);
-                link.getLinkStatus().setRetryCount(0);
-                if (timesFailed <= 2) {
-                    timesFailed++;
-                    link.setProperty(NICE_HOSTproperty + "timesfailed_dllinknull", timesFailed);
-                    throw new PluginException(LinkStatus.ERROR_RETRY, "dllinknull");
-                } else {
-                    link.setProperty(NICE_HOSTproperty + "timesfailed_dllinknull", Property.NULL);
-                    logger.info(NICE_HOST + ": dllinknull - disabling current host!");
-                    tempUnavailableHoster(account, link, 60 * 60 * 1000l);
-                }
+                mhm.handleErrorGeneric(account, link, "dllinknull", 10, 5 * 60 * 1000l);
             }
         }
         showMessage(link, "Task 2: Download begins!");
         handleDL(account, link, dllink);
     }
 
-    private void downloadErrorhandling(final Account account, final DownloadLink link) throws PluginException {
+    private void downloadErrorhandling(final Account account, final DownloadLink link) throws PluginException, InterruptedException {
         if (br.containsHTML("<error>NOTFOUND</error>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("<error>hostererror</error>")) {
             logger.info(NICE_HOST + ": Host is unavailable at the moment -> Disabling it");
-            tempUnavailableHoster(account, link, 60 * 60 * 1000l);
+            mhm.handleErrorGeneric(account, link, "hostererror", 10, 5 * 60 * 1000l);
         } else if (br.containsHTML("<error>maxconnection</error>")) {
             logger.info(NICE_HOST + ": Too many simultan connections");
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 5 * 60 * 1000l);
@@ -393,22 +359,6 @@ public class SimplyPremiumCom extends PluginForHost {
         link.getLinkStatus().setStatusText(message);
     }
 
-    private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, final long timeout) throws PluginException {
-        if (downloadLink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
-        }
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap == null) {
-                unavailableMap = new HashMap<String, Long>();
-                hostUnavailableMap.put(account, unavailableMap);
-            }
-            /* wait 30 mins to retry this host */
-            unavailableMap.put(downloadLink.getHost(), (System.currentTimeMillis() + timeout));
-        }
-        throw new PluginException(LinkStatus.ERROR_RETRY);
-    }
-
     private String getXML(final String parameter) {
         return br.getRegex("<" + parameter + "( type=\"[^<>\"/]*?\")?>([^<>]*?)</" + parameter + ">").getMatch(1);
     }
@@ -448,18 +398,9 @@ public class SimplyPremiumCom extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
         if (acc == null) {
             /* no account, yes we can expect captcha */
-            return true;
-        }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-            /* free accounts also have captchas */
-            return true;
-        }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("nopremium"))) {
-            /* free accounts also have captchas */
             return true;
         }
         if (acc.getStringProperty("session_type") != null && !"premium".equalsIgnoreCase(acc.getStringProperty("session_type"))) {

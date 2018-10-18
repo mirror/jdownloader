@@ -19,8 +19,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.Locale;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
@@ -40,6 +38,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
@@ -154,6 +153,7 @@ public class TheVideoMe extends antiDDoSForHost {
         br.setFollowRedirects(true);
         setFUID(link);
         final String[] fileInfo = new String[3];
+        String description = null;
         if (ENABLE_API_AVAILABLECHECK) {
             /* 2018-10-15: New */
             getPage("https://" + this.getHost() + "/api/serve/video/" + this.fuid);
@@ -167,6 +167,7 @@ public class TheVideoMe extends antiDDoSForHost {
                 /* Fallback */
                 fileInfo[0] = this.fuid;
             }
+            description = PluginJSonUtils.getJson(this.br, "description");
         } else {
             getPage(link.getDownloadURL());
             if (new Regex(correctedBR, "(No such file|>\\s*File Not Found\\s*<|>The file was removed by|Reason for deletion:\n|>Video encoding error|>Video not found)").matches()) {
@@ -201,6 +202,9 @@ public class TheVideoMe extends antiDDoSForHost {
         link.setName(fileInfo[0].trim());
         if (fileInfo[1] != null && !fileInfo[1].equals("")) {
             link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
+        }
+        if (link.getComment() == null && !StringUtils.isEmpty(description)) {
+            link.setComment(description);
         }
         return AvailableStatus.TRUE;
     }
@@ -294,12 +298,12 @@ public class TheVideoMe extends antiDDoSForHost {
         }
         br.setFollowRedirects(false);
         passCode = downloadLink.getStringProperty("pass");
-        /* First, bring up saved final links */
         boolean is_saved_directlink = false;
         boolean is_correct_finallink = false;
         /* Required to get 'auth_code' via website-handling (without 'pairing'-mode). */
         String special_js_bullshit_code = getSpecialJsBullshit();
         String auth_code = null;
+        /* First, bring up saved final links */
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink != null) {
             is_saved_directlink = true;
@@ -392,6 +396,7 @@ public class TheVideoMe extends antiDDoSForHost {
                 /* Remove cookies & headers */
                 brv = new Browser();
                 brv.setFollowRedirects(true);
+                String reCaptchaV2Key = null;
                 do {
                     logger.info("Pairing: attempt: " + attempt);
                     brv.getHeaders().put("Accept", "application/json");
@@ -430,6 +435,19 @@ public class TheVideoMe extends antiDDoSForHost {
                         } else {
                             logger.info("Pairing: No authenticated - requires captcha --> 2nd attempt --> Something is not right");
                         }
+                        if (StringUtils.isEmpty(reCaptchaV2Key)) {
+                            /** 2018-10-17: Use static key for faster processing */
+                            final boolean useStaticKey = true;
+                            if (useStaticKey) {
+                                reCaptchaV2Key = "6Ld4TlsUAAAAAAeU5tInYtZNMEOTANb6LKxP94it";
+                            } else {
+                                reCaptchaV2Key = findReCaptchaKey(this.br, "GOOGLE_RECAPTCHA_PAIR");
+                            }
+                            if (StringUtils.isEmpty(reCaptchaV2Key)) {
+                                logger.warning("Failed to find reCaptchaV2 key");
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
+                        }
                         /* Use normal browser here --> This step is skippable! */
                         // getPage("/pair");
                         // final LinkedHashMap<String, Object> pairingJson = getJsonObject(br);
@@ -440,7 +458,7 @@ public class TheVideoMe extends antiDDoSForHost {
                          */
                         String ihash = JDHash.getSHA1(System.currentTimeMillis() + "");
                         ihash = ihash.substring(0, 24);
-                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, brv, "6Ld4TlsUAAAAAAeU5tInYtZNMEOTANb6LKxP94it").getToken();
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, brv, reCaptchaV2Key).getToken();
                         logger.info("Pairing: Captcha done, sending ...");
                         /* Use brv again here */
                         prepareJsonHeaders(brv);
@@ -486,21 +504,34 @@ public class TheVideoMe extends antiDDoSForHost {
          * TODO: 2018-10-17: Maybe add manual pairing handling here (open pairing page in Browser or at least display dialog and ask user to
          * do so)
          */
-        /* Check if embedded content is downloadable */
+        /* Check if embedded content / stream is downloadable */
         if (VIDEOHOSTER_2 && StringUtils.isEmpty(dllink)) {
             try {
                 logger.info("VIDEOHOSTER_2: Trying to get link via embed");
                 final String embed_access = "/embed/" + fuid;
-                /** TODO: There is a way to use this completely without HTML - find it! */
                 br.getHeaders().put("Referer", "https://" + br.getHost() + "/" + this.fuid);
                 getPage(embed_access);
-                if (br.containsHTML("while we validate your request")) {
+                LinkedHashMap<String, Object> entries = getJsonMap(this.br);
+                entries = (LinkedHashMap<String, Object>) entries.get("videoplayer");
+                final boolean requires_captcha = (Boolean) entries.get("captcha");
+                if (requires_captcha) {
                     /*
-                     * 2018-10-15: Captcha required, reCaptchaKey currently hardcoded (ATTENTION: This is a different key than used for the
-                     * 'pairing' handling!!)
+                     * 2018-10-15: Captcha required
                      */
                     logger.info("VIDEOHOSTER_2: Captcha required");
-                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6LczkHAUAAAAAO6frTIweoNAgvLg_RWmoe8JZJkU").getToken();
+                    /** 2018-10-17: Use static key for faster processing */
+                    final boolean useStaticKey = true;
+                    final String reCaptchaV2Key;
+                    if (useStaticKey) {
+                        reCaptchaV2Key = "6LczkHAUAAAAAO6frTIweoNAgvLg_RWmoe8JZJkU";
+                    } else {
+                        reCaptchaV2Key = findReCaptchaKey(this.br, "GOOGLE_RECAPTCHA_STREAM");
+                    }
+                    if (StringUtils.isEmpty(reCaptchaV2Key)) {
+                        logger.warning("Failed to find reCaptchaV2 key");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, reCaptchaV2Key).getToken();
                     logger.info("VIDEOHOSTER_2: Captcha done, sending ...");
                     prepareJsonHeaders(brv);
                     /* Let's add this header and hope that it will serve us better download conditions than without. */
@@ -509,6 +540,7 @@ public class TheVideoMe extends antiDDoSForHost {
                 } else {
                     /* Without captcha it works this way */
                     logger.info("VIDEOHOSTER_2: Captcha NOT required");
+                    prepareJsonHeaders(brv);
                     postPage(brv, "/api/serve/video/" + this.fuid, "");
                 }
                 /* 2018-10-15: special_js_bullshit_code is not required anymore */
@@ -582,13 +614,34 @@ public class TheVideoMe extends antiDDoSForHost {
         }
     }
 
+    /**
+     * Returns desired reCaptchaKey e.g. Pairing: "GOOGLE_RECAPTCHA_PAIR", Stream-Captcha: "GOOGLE_RECAPTCHA_STREAM", Login-Captcha:
+     * "GOOGLE_RECAPTCHA_AUTH"
+     */
+    private String findReCaptchaKey(final Browser br, final String keyName) {
+        final Browser brc = br.cloneBrowser();
+        try {
+            if (brc.getURL() == null || brc.toString().startsWith("{") || brc.toString().length() < 500) {
+                brc.getPage("https://" + this.getHost() + "/home");
+            }
+            final String jsURL = brc.getRegex("(/static/js/app\\.[a-z0-9]+\\.js)").getMatch(0);
+            if (jsURL == null) {
+                return null;
+            }
+            brc.getPage(jsURL);
+        } catch (final Throwable e) {
+            return null;
+        }
+        return PluginJSonUtils.getJson(brc, keyName);
+    }
+
     private Browser prepareJsonHeaders(final Browser br) {
         br.getHeaders().put("Accept", "application/json");
         br.getHeaders().put("Content-Type", "application/json;charset=utf-8");
         return br;
     }
 
-    private LinkedHashMap<String, Object> getJsonObject(final Browser br) {
+    private LinkedHashMap<String, Object> getJsonMap(final Browser br) {
         LinkedHashMap<String, Object> entries = null;
         try {
             final String json_source = br.getRegex("window\\.__INITIAL_STATE__=(\\{.*?\\});").getMatch(0);
@@ -886,7 +939,7 @@ public class TheVideoMe extends antiDDoSForHost {
      * This fixes filenames from all xfs modules: file hoster, audio/video streaming (including transcoded video), or blocked link checking
      * which is based on fuid.
      *
-     * @version 0.2
+     * @version 0.4
      * @author raztoki
      */
     private void fixFilename(final DownloadLink downloadLink) {
@@ -902,15 +955,15 @@ public class TheVideoMe extends antiDDoSForHost {
             orgExt = orgNameExt.substring(orgNameExt.lastIndexOf("."));
         }
         if (!inValidate(orgExt)) {
-            orgName = new Regex(orgNameExt, "(.+)" + orgExt).getMatch(0);
+            orgName = new Regex(orgNameExt, "(.+)" + Pattern.quote(orgExt)).getMatch(0);
         } else {
             orgName = orgNameExt;
         }
         // if (orgName.endsWith("...")) orgName = orgName.replaceFirst("\\.\\.\\.$", "");
-        String servNameExt = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
+        String servNameExt = dl.getConnection() != null && getFileNameFromHeader(dl.getConnection()) != null ? Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())) : null;
         if (!inValidate(servNameExt) && servNameExt.contains(".")) {
             servExt = servNameExt.substring(servNameExt.lastIndexOf("."));
-            servName = new Regex(servNameExt, "(.+)" + servExt).getMatch(0);
+            servName = new Regex(servNameExt, "(.+)" + Pattern.quote(servExt)).getMatch(0);
         } else {
             servName = servNameExt;
         }
@@ -1104,111 +1157,85 @@ public class TheVideoMe extends antiDDoSForHost {
             account.setValid(false);
             throw e;
         }
-        final String space[] = new Regex(correctedBR, ">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
-        if ((space != null && space.length != 0) && (space[0] != null && space[1] != null)) {
-            /* free users it's provided by default */
-            ai.setUsedSpace(space[0] + " " + space[1]);
-        } else if ((space != null && space.length != 0) && space[0] != null) {
-            /* premium users the Mb value isn't provided for some reason... */
-            ai.setUsedSpace(space[0] + "Mb");
-        }
-        account.setValid(true);
-        final String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
-        if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
-            availabletraffic.trim();
-            /* need to set 0 traffic left, as getSize returns positive result, even when negative value supplied. */
-            if (!availabletraffic.startsWith("-")) {
-                ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
-            } else {
-                ai.setTrafficLeft(0);
-            }
-        } else {
-            ai.setUnlimitedTraffic();
-        }
-        /* If the premium account is expired we'll simply accept it as a free account. */
-        final String expire = new Regex(correctedBR, "On (\\w+ \\d{1,2}, \\d{4}), your premium membership").getMatch(0);
-        long expire_milliseconds = 0;
-        if (expire != null) {
-            expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "MMM dd, yyyy", Locale.ENGLISH);
-        }
-        if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
-            maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
-            account.setType(AccountType.FREE);
-            account.setMaxSimultanDownloads(maxPrem.get());
-            account.setConcurrentUsePossible(false);
-            ai.setStatus("Registered (free) account");
-        } else {
-            ai.setValidUntil(expire_milliseconds);
-            maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-            account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(maxPrem.get());
-            account.setConcurrentUsePossible(true);
-            ai.setStatus("Premium account");
-        }
+        /* 2018-10-18: As long as we do not display any account data there is no need to access this page. */
+        // if (br.getURL() == null || !br.getURL().contains("")) {
+        // getPage(COOKIE_HOST + "/api/account");
+        // }
+        /* 2018-10-18: Seems like there only exists one type of account. */
+        account.setType(AccountType.FREE);
+        account.setMaxSimultanDownloads(maxPrem.get());
+        account.setConcurrentUsePossible(true);
+        account.setMaxSimultanDownloads(-1);
+        ai.setStatus("Registered (free) account");
         return ai;
     }
 
-    @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
         br = new Browser();
         synchronized (LOCK) {
             try {
-                /* Load cookies */
                 br.setCookiesExclusive(true);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            this.br.setCookie(COOKIE_HOST, key, value);
-                        }
+                br.setFollowRedirects(true);
+                final Cookies cookies = account.loadCookies("");
+                String logintoken = account.getStringProperty("logintoken", null);
+                boolean loggedInViaCookies = false;
+                if (cookies != null && logintoken != null) {
+                    /* Avoid full login whenever possible to avoid reCaptchaV2 */
+                    br.setCookies(this.getHost(), cookies);
+                    this.setLoginHeader(this.br, logintoken);
+                    // if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l) {
+                    // /* We trust these cookies as they're not that old --> Do not check them */
+                    // return;
+                    // }
+                    prepareJsonHeaders(this.br);
+                    getPage(COOKIE_HOST + "/api/account");
+                    loggedInViaCookies = br.containsHTML("\"username\"");
+                    if (loggedInViaCookies) {
+                        /* Save new cookie-timestamp */
+                        account.saveCookies(br.getCookies(this.getHost()), "");
                         return;
                     }
+                    /*
+                     * E.g. failure because of changed IP (new IP = new full login required):
+                     * {"code":401,"message":"invalid session, please log in to continue","error":{"domain":"global","reason":"required",
+                     * "message":"Login Required","locationType":"header"}}
+                     */
+                    /* Reset cookies & headers */
+                    br.clearCookies(br.getURL());
+                    this.setLoginHeader(this.br, null);
                 }
-                br.setFollowRedirects(true);
-                /** TODO: Fix me / reCaptchaV2 login */
                 getPage(COOKIE_HOST + "/auth/login");
-                final Form loginform = br.getFormbyProperty("name", "FL");
-                if (loginform == null) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                /** 2018-10-17: Use static key for faster processing */
+                final boolean useStaticKey = true;
+                final String reCaptchaV2Key;
+                if (useStaticKey) {
+                    reCaptchaV2Key = "6LfV5lkUAAAAAOWsT2bsMH4Qf7VFVnBUSpX4dcD7";
+                } else {
+                    reCaptchaV2Key = findReCaptchaKey(this.br, "GOOGLE_RECAPTCHA_AUTH");
                 }
-                loginform.put("login", Encoding.urlEncode(account.getUser()));
-                loginform.put("password", Encoding.urlEncode(account.getPass()));
-                submitForm(loginform);
-                if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfsts") == null) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłędny użytkownik/hasło lub kod Captcha wymagany do zalogowania!\r\nUpewnij się, że prawidłowo wprowadziłes hasło i nazwę użytkownika. Dodatkowo:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź hasło i nazwę użytkownika ręcznie bez użycia opcji Kopiuj i Wklej.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                if (StringUtils.isEmpty(reCaptchaV2Key)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                if (!br.getURL().contains("/?op=my_account")) {
-                    getPage("/?op=my_account");
+                final DownloadLink dlinkbefore = this.getDownloadLink();
+                if (dlinkbefore == null) {
+                    this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true));
                 }
-                // if (!new Regex(correctedBR, "Premium(?:-| )Account expire|>Renew premium<|<strong>Premium</strong>|").matches()) {
-                // account.setProperty("nopremium", true);
-                // } else {
-                // account.setProperty("nopremium", false);
-                // }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", fetchCookies(this.getHost()));
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, reCaptchaV2Key).getToken();
+                if (dlinkbefore != null) {
+                    this.setDownloadLink(dlinkbefore);
+                }
+                prepareJsonHeaders(this.br);
+                postPageRaw(this.br, "/api/auth/login", String.format("{\"username\":\"%s\",\"password\":\"%s\",\"g-recaptcha-response\":\"%s\",\"client_id\":\"\",\"client_secret\":\"\",\"grant_type\":\"password\",\"scope\":\"\"}", account.getUser(), account.getPass(), recaptchaV2Response));
+                logintoken = PluginJSonUtils.getJson(this.br, "token");
+                final String errorcode = PluginJSonUtils.getJson(this.br, "code");
+                if (errorcode != null || StringUtils.isEmpty(logintoken)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                setLoginHeader(this.br, logintoken);
+                account.saveCookies(br.getCookies(this.getHost()), "");
+                account.setProperty("logintoken", logintoken);
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                account.clearCookies("");
                 throw e;
             }
         }
@@ -1224,6 +1251,10 @@ public class TheVideoMe extends antiDDoSForHost {
             requestFileInformation(downloadLink);
             doFree(downloadLink, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "freelink2");
         } else {
+            /* 2018-10-18: Premium accounts do not exist anymore/at the moment */
+            if (true) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             String dllink = checkDirectLink(downloadLink, "premlink");
             if (dllink == null) {
                 br.setFollowRedirects(false);
@@ -1289,6 +1320,10 @@ public class TheVideoMe extends antiDDoSForHost {
             downloadLink.setProperty("premlink", dllink);
             dl.startDownload();
         }
+    }
+
+    private void setLoginHeader(final Browser br, final String token) {
+        br.getHeaders().put("Authorization", "Bearer " + token);
     }
 
     @Override

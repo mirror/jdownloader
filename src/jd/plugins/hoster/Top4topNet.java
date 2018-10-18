@@ -33,7 +33,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "top4top.net" }, urls = { "https?://(?:www\\.)?up\\.top4top\\.net/downloadf\\-[a-f0-9\\-]+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "top4top.net" }, urls = { "https?://(?:www\\.)?up\\.top4top\\.net/downloadf\\-[a-z0-9\\-]+\\.html" })
 public class Top4topNet extends PluginForHost {
     public Top4topNet(PluginWrapper wrapper) {
         super(wrapper);
