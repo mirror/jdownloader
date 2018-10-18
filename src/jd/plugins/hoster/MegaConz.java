@@ -9,9 +9,12 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.security.DigestInputStream;
+import java.security.DigestOutputStream;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.spec.RSAPrivateKeySpec;
@@ -1000,13 +1003,15 @@ public class MegaConz extends PluginForHost {
                     try {
                         FileStateManager.getInstance().requestFileState(outputFile, FILESTATE.WRITE_EXCLUSIVE, this);
                         fos = new FileOutputStream(outputFile);
+                        final DigestInputStream dis = new DigestInputStream(fis, MessageDigest.getInstance("SHA-256"));
+                        final DigestOutputStream dos = new DigestOutputStream(fos, MessageDigest.getInstance("SHA-256"));
                         try {
                             final Cipher cipher = Cipher.getInstance("AES/CTR/nopadding");
                             cipher.init(Cipher.ENCRYPT_MODE, skeySpec, ivSpec);
-                            final CipherOutputStream cos = new CipherOutputStream(new BufferedOutputStream(fos, 1024 * 1024), cipher);
+                            final CipherOutputStream cos = new CipherOutputStream(new BufferedOutputStream(dos, 1024 * 1024), cipher);
                             int read = 0;
                             final byte[] buffer = new byte[512 * 1024];
-                            while ((read = fis.read(buffer)) != -1) {
+                            while ((read = dis.read(buffer)) != -1) {
                                 if (read > 0) {
                                     progress.updateValues(progress.getCurrent() + read, total);
                                     cos.write(buffer, 0, read);
@@ -1014,6 +1019,8 @@ public class MegaConz extends PluginForHost {
                                 }
                             }
                             cos.close();
+                            logger.info("Decryption-Input-SHA256:" + HexFormatter.byteArrayToHex(dis.getMessageDigest().digest()));
+                            logger.info("Decryption-Output-SHA256:" + HexFormatter.byteArrayToHex(dos.getMessageDigest().digest()));
                         } finally {
                             fos.close();
                         }
