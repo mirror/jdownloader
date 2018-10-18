@@ -73,22 +73,27 @@ public class IvPasteCom extends PluginForDecrypt {
                 break;
             }
             if (i >= 5) {
+                logger.info(i + "/5:Unsupported captchatype: " + parameter);
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
             if (form.containsHTML("pluscaptcha\\.com/") || /* ads captcha */form.containsHTML("api\\.minteye\\.com/|api\\.adscaptcha\\.com/")) {
-                logger.info(i + "/3:Unsupported captchatype: " + parameter);
+                logger.info(i + "/5:Unsupported captchatype: " + parameter);
                 sleep(1000l, param);
-                br.getPage("http://ivpaste.com/p/" + ID);
+                br.getPage("https://ivpaste.com/p/" + ID);
             } else if (br.containsHTML("coinhive-captcha")) {
-                logger.info(i + "/3:Unsupported captchatype: " + parameter);
+                logger.info(i + "/5:Unsupported captchatype: " + parameter);
                 sleep(1000l, param);
-                br.getPage("http://ivpaste.com/p/" + ID);
+                br.getPage("https://ivpaste.com/p/" + ID);
             } else if (form.containsHTML("areyouahuman\\.com/")) {
                 final String areweahuman = new CaptchaHelperCrawlerPluginAreYouHuman(this, br).getToken();
                 form.put("session_secret", Encoding.urlEncode(areweahuman));
                 form.put("soy_humano_btn", "Submit");
                 br.submitForm(form);
             } else if (form.containsHTML("class=(\"|')g-recaptcha\\1") && form.containsHTML("google\\.com/recaptcha")) {
+                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+                form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                br.submitForm(form);
+            } else if (br.containsHTML("g-recaptcha")) {
                 final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
                 form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 br.submitForm(form);
@@ -108,7 +113,7 @@ public class IvPasteCom extends PluginForDecrypt {
                 String c = getCaptchaCode("recaptcha", cf, param);
                 rc.setCode(c);
                 if (br.containsHTML(RECAPTCHAFAILED)) {
-                    br.getPage("http://ivpaste.com/p/" + ID);
+                    br.getPage("https://ivpaste.com/p/" + ID);
                     continue;
                 }
             } else if (form.containsHTML("KeyCAPTCHA code")) {
@@ -141,7 +146,7 @@ public class IvPasteCom extends PluginForDecrypt {
         final String content = br.getRegex("<td nowrap align.*?pre>(.*?)</pre").getMatch(0);
         if (content == null) {
             logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String[] links = new Regex(content, "<a href=\"(.*?)\"").getColumn(0);
         if (links == null || links.length == 0) {
