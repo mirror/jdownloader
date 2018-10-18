@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -32,11 +31,9 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "freeshemaletube.com", "ballbustingtube.com", "freegrannytube.com", "crossdresserstube.com" }, urls = { "http://(?:www\\.)?freeshemaletube\\.com/video/\\d+", "http://(?:www\\.)?ballbustingtube\\.com/video/\\d+", "http://(?:www\\.)?freegrannytube\\.com/video/\\d+", "http://(?:www\\.)?crossdresserstube\\.com/video/\\d+" })
 public class FreeshemaletubeCom extends PluginForHost {
-
     public FreeshemaletubeCom(PluginWrapper wrapper) {
         super(wrapper);
     }
-
     /* Static_tos_porn_script V0.1 */
     /* Tags: Script, template */
 
@@ -44,7 +41,6 @@ public class FreeshemaletubeCom extends PluginForHost {
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
 
     @Override
@@ -62,9 +58,9 @@ public class FreeshemaletubeCom extends PluginForHost {
         if (br.getURL().contains("/error/video_missing") || br.containsHTML(">This video cannot be found|id=\"video_access_message\"") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
+        String filename = br.getRegex("class=\"content-title\">\\s*<h3>([^<>\"]*?)</h3>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("class=\"content-title\">\\s*<h3>([^<>\"]*?)</h3>").getMatch(0);
+            filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
         }
         if (filename == null) {
             /* Fallback to url-filename */
