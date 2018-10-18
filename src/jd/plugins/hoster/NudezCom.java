@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nudez.com" }, urls = { "https?://(?:[a-z]{2}\\.)?nudez\\.com/video/[a-z0-9\\-]+\\-\\d+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nudez.com" }, urls = { "https?://(?:(?:[a-z]{2}|www)\\.)?nudez\\.com/video/[a-z0-9\\-]+\\-\\d+\\.html" })
 public class NudezCom extends PluginForHost {
     public NudezCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -60,7 +60,7 @@ public class NudezCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("notification error|You must be friends with")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("notification error|You must be friends with") || !br.getURL().contains("/video/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String url_filename = new Regex(link.getDownloadURL(), "/video/([a-z0-9\\-]+)").getMatch(0);

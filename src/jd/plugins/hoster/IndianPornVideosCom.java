@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -31,7 +30,6 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "indianpornvideos.com" }, urls = { "https?://(www\\.)?indianpornvideos\\.com/(video/)?[A-Za-z0-9\\-_]+(\\.html)?" })
 public class IndianPornVideosCom extends PluginForHost {
-
     public IndianPornVideosCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -64,6 +62,10 @@ public class IndianPornVideosCom extends PluginForHost {
             dllink = br.getRegex("\"(https?://[^<>\"]+\\.mp4)\"").getMatch(0);
         }
         if (filename == null || dllink == null) {
+            if (!br.containsHTML("id=\"video_views_count\"")) {
+                /* Probably not a video-page e.g. '/about-us ' */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.htmlDecode(dllink);
