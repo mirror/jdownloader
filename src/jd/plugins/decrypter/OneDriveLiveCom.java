@@ -17,8 +17,10 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Random;
+import java.util.Set;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -32,12 +34,14 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "onedrive.live.com" }, urls = { "https?://(www\\.)?(onedrive\\.live\\.com/.+|skydrive\\.live\\.com/.+|(sdrv|1drv)\\.ms/[A-Za-z0-9&!=#\\.,-_]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "onedrive.live.com" }, urls = { "https?://([a-zA-Z0-9\\-]+\\.)?(onedrive\\.live\\.com/.+|skydrive\\.live\\.com/.+|(sdrv|1drv)\\.ms/[A-Za-z0-9&!=#\\.,-_]+)" })
 public class OneDriveLiveCom extends PluginForDecrypt {
     public OneDriveLiveCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -48,6 +52,7 @@ public class OneDriveLiveCom extends PluginForDecrypt {
     private static final String TYPE_SKYDRIVE_REDIRECT_RESID = "https?://(www\\.)?skydrive\\.live\\.com/redir\\?resid=[a-z0-9]+[A-Za-z0-9&!=#\\.,-_]+";
     private static final String TYPE_ONEDRIVE_VIEW_RESID     = "https?://(www\\.)?onedrive\\.live\\.com/view\\.aspx\\?resid=.+";
     private static final String TYPE_SKYDRIVE_REDIRECT       = "https?://(www\\.)?skydrive\\.live\\.com/redir\\.aspx\\?cid=[a-z0-9]+[A-Za-z0-9&!=#\\.,-_]+";
+    private static final String TYPE_SKYDRIVE_REDIRECT2      = "https?://cid-[0-9a-zA-Z]+\\.skydrive\\.live\\.com/(redir|self)\\.aspx.+";
     private static final String TYPE_SKYDRIVE_SHORT          = "https?://(www\\.)?(1|s)drv\\.ms/[A-Za-z0-9&!=#\\.,-_]+";
     private static final String TYPE_ONEDRIVE_ROOT           = "https?://onedrive\\.live\\.com/\\?cid=[a-z0-9]+";
     /* Constants */
@@ -85,7 +90,12 @@ public class OneDriveLiveCom extends PluginForDecrypt {
         final DownloadLink main = createDownloadlink("http://onedrivedecrypted.live.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
         try {
             FilePackage fp = null;
-            if (parameter.matches(TYPE_SKYDRIVE_REDIRECT)) {
+            if (parameter.matches(TYPE_SKYDRIVE_REDIRECT2)) {
+                br.getPage(parameter);
+                br.followRedirect(true);
+                cid = new Regex(br.getURL(), "cid=([A-Za-z0-9]*)").getMatch(0);
+                id = getLastID(br.getURL());
+            } else if (parameter.matches(TYPE_SKYDRIVE_REDIRECT)) {
                 cid = new Regex(parameter, "cid=([A-Za-z0-9]*)").getMatch(0);
                 id = new Regex(parameter, "(?:&|\\?)resid=([A-Za-z0-9]+\\!\\d+)").getMatch(0);
             } else if (parameter.matches(TYPE_ONEDRIVE_REDIRECT_RESID) || parameter.matches(TYPE_SKYDRIVE_REDIRECT_RESID) || parameter.matches(TYPE_ONEDRIVE_VIEW_RESID)) {
@@ -101,14 +111,14 @@ public class OneDriveLiveCom extends PluginForDecrypt {
                 br.getPage(parameter);
                 String redirect = br.getRedirectLocation();
                 if (redirect == null) {
-                    return null;
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 redirect = Encoding.htmlDecode(redirect);
                 if (!redirect.contains("live")) {
                     br.getPage(redirect);
                     redirect = br.getRedirectLocation();
                     if (redirect == null) {
-                        return null;
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
                 redirect = Encoding.htmlDecode(redirect);
@@ -157,6 +167,7 @@ public class OneDriveLiveCom extends PluginForDecrypt {
             int startIndex = 0;
             int nextStartIndex = 0;
             int lastSize = -1;
+            final Set<String> dups = new HashSet<String>();
             while (!isAbort()) {
                 if (decryptedLinks.size() == lastSize) {
                     break;
@@ -194,14 +205,16 @@ public class OneDriveLiveCom extends PluginForDecrypt {
                 if (totalItemType == ITEM_TYPE_FILE || totalItemType == ITEM_TYPE_PICTURE || totalItemType == ITEM_TYPE_VIDEO) {
                     /* Single file */
                     final DownloadLink link = parseFile(entries, startIndex, MAX_ENTRIES_PER_REQUEST);
-                    if (fp != null) {
-                        fp.add(link);
+                    if (dups.add(link.getLinkID())) {
+                        if (fp != null) {
+                            fp.add(link);
+                        }
+                        if (StringUtils.isNotEmpty(subFolderBase)) {
+                            link.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subFolderBase);
+                        }
+                        decryptedLinks.add(link);
+                        distribute(link);
                     }
-                    if (StringUtils.isNotEmpty(subFolderBase)) {
-                        link.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subFolderBase);
-                    }
-                    decryptedLinks.add(link);
-                    distribute(link);
                 } else {
                     entries = (LinkedHashMap<String, Object>) entries.get("folder");
                     ressourcelist = (ArrayList) entries.get("children");
@@ -257,29 +270,33 @@ public class OneDriveLiveCom extends PluginForDecrypt {
                                 /* Don't forget to add authKey if needed */
                                 folderlink += "&authkey=" + authkey;
                             }
-                            final DownloadLink dl = createDownloadlink(folderlink);
-                            final String name = (String) entry.get("name");
-                            if (StringUtils.isNotEmpty(name)) {
-                                final String path;
-                                if (StringUtils.isNotEmpty(subFolderBase)) {
-                                    path = subFolderBase + "/" + name;
-                                } else {
-                                    path = name;
+                            if (dups.add(folderlink)) {
+                                final DownloadLink dl = createDownloadlink(folderlink);
+                                final String name = (String) entry.get("name");
+                                if (StringUtils.isNotEmpty(name)) {
+                                    final String path;
+                                    if (StringUtils.isNotEmpty(subFolderBase)) {
+                                        path = subFolderBase + "/" + name;
+                                    } else {
+                                        path = name;
+                                    }
+                                    dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, path);
                                 }
-                                dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, path);
+                                decryptedLinks.add(dl);
                             }
-                            decryptedLinks.add(dl);
                         } else {
                             /* File --> Grab information & return to decrypter. All found links are usually ONLINE and downloadable! */
                             final DownloadLink link = parseFile(entry, startIndex, MAX_ENTRIES_PER_REQUEST);
-                            if (fp != null) {
-                                fp.add(link);
+                            if (dups.add(link.getLinkID())) {
+                                if (fp != null) {
+                                    fp.add(link);
+                                }
+                                if (StringUtils.isNotEmpty(subFolderBase)) {
+                                    link.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subFolderBase);
+                                }
+                                decryptedLinks.add(link);
+                                distribute(link);
                             }
-                            if (StringUtils.isNotEmpty(subFolderBase)) {
-                                link.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subFolderBase);
-                            }
-                            decryptedLinks.add(link);
-                            distribute(link);
                         }
                     }
                     // if (decryptedLinks.size() > 1 && SubConfiguration.getConfig("onedrive.live.com").getBooleanProperty(DOWNLOAD_ZIP,
@@ -377,7 +394,12 @@ public class OneDriveLiveCom extends PluginForDecrypt {
         /* Get last ID */
         int pos = parameter.lastIndexOf("&id=") + 4;
         final String parameter_part = parameter.substring(pos, parameter.length());
-        return new Regex(parameter_part, "([A-Z0-9]+\\!\\d+)").getMatch(0);
+        final String ret = new Regex(parameter_part, "([A-Z0-9]+(\\!|%21)\\d+)").getMatch(0);
+        if (ret != null) {
+            return ret.replace("%21", "!");
+        } else {
+            return ret;
+        }
     }
 
     public static String getLinktext(final Browser br) {
