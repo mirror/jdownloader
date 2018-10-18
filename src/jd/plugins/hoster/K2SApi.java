@@ -933,7 +933,10 @@ public abstract class K2SApi extends PluginForHost {
                 case 23:
                     // {"message":"file_id is folder","status":"error","code":406,"errorCode":23}
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, msg);
+                case 33:
+                    // CAPTCHA.REQUESTRECAPTCHA
                 case 30:
+                    // CAPTCHA.REQUESTCAPTCHA
                     // ERROR_CAPTCHA_REQUIRED = 30;
                     // this shouldn't happen in dl method.. beware website can contain captcha onlogin, api not of yet.
                     if (account != null) {
@@ -1039,7 +1042,9 @@ public abstract class K2SApi extends PluginForHost {
             } else if (code == 23) {
                 msg = "Das ist ein Ordner - du kannst keine Ordner als Datei herunterladen!";
             } else if (code == 30) {
-                msg = "Captchaeingabe benötigt!";
+                msg = "Captcha benötigt!";
+            } else if (code == 33) {
+                msg = "ReCaptcha benötigt!";
             } else if (code == 31) {
                 msg = "Ungültiges Captcha";
             } else if (code == 40) {
@@ -1082,7 +1087,7 @@ public abstract class K2SApi extends PluginForHost {
                 msg = "Não é possível fazer a descarga! Erro no Código genérico da Sub-rotina!";
             } else if (code == 23) {
                 msg = "Esta ligação (URL) é uma Pasta. Não pode descarregar a pasta como ficheiro!";
-            } else if (code == 30) {
+            } else if (code == 30 || code == 33) {
                 msg = "Inserir Captcha!";
             } else if (code == 31) {
                 msg = "Captcha inválido";
@@ -1126,7 +1131,7 @@ public abstract class K2SApi extends PluginForHost {
                 msg = "No es posible realizar la descarga en este momento. ¡Código de error genérico con subcódigo!";
             } else if (code == 23) {
                 msg = "Este enlace es un folder. ¡Usted no puede descargar este folder como archivo!";
-            } else if (code == 30) {
+            } else if (code == 30 || code == 33) {
                 msg = "Captcha requerida!";
             } else if (code == 31) {
                 msg = "Captcha inválido";
@@ -1170,7 +1175,7 @@ public abstract class K2SApi extends PluginForHost {
                 msg = "Pobieranie teraz niemo¿liwe! Ogólny Kod b³êdu z podkodem!";
             } else if (code == 23) {
                 msg = "Wskazany URL to Katalog, nie mo¿na pobraæ Katalogu jako pliku!";
-            } else if (code == 30) {
+            } else if (code == 30 || code == 33) {
                 msg = "wymagany kod Captcha!";
             } else if (code == 31) {
                 msg = "B³êdny kod Captcha";
@@ -1218,6 +1223,8 @@ public abstract class K2SApi extends PluginForHost {
                 msg = "This URL is a Folder, you can not download folder as a file!";
             } else if (code == 30) {
                 msg = "Captcha required!";
+            } else if (code == 33) {
+                msg = "Recaptcha required!";
             } else if (code == 31) {
                 msg = "Invalid Captcha";
             } else if (code == 40) {
