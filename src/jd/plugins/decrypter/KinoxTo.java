@@ -13,12 +13,13 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -32,11 +33,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kinox.to" }, urls = { "https?://(?:www\\.)?kinox\\.(?:to|tv|nu|me|pe)/Stream/[A-Za-z0-9\\-_]+\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kinox.to" }, urls = { "https?://(?:www\\.)?(?:kinox|kinos)\\.(?:to|tv|nu|me|pe)/Stream/[A-Za-z0-9\\-_]+\\.html" })
 public class KinoxTo extends antiDDoSForDecrypt {
-
     public KinoxTo(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -51,12 +49,11 @@ public class KinoxTo extends antiDDoSForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final String url_name = new Regex(parameter, "kinox\\.to/Stream/([A-Za-z0-9\\-_]+)\\.html").getMatch(0);
+        final String url_name = new Regex(parameter, "kino[xs]\\.to/Stream/([A-Za-z0-9\\-_]+)\\.html").getMatch(0);
         addr_id = this.br.getRegex("Addr=([^<>\"\\&]*?)&").getMatch(0);
         final String series_id = this.br.getRegex("SeriesID=(\\d+)").getMatch(0);
         String fpName = br.getRegex("<h1><span style=\"display: inline-block\">([^<>\"]*?)</span>").getMatch(0);
         fpName = Encoding.htmlDecode(fpName.trim());
-
         if (fpName == null) {
             fpName = url_name;
         }
@@ -91,7 +88,6 @@ public class KinoxTo extends antiDDoSForDecrypt {
             /* Crawl all Mirrors of a movie */
             decryptMirrors(decryptedLinks, br2, null, null);
         }
-
         return decryptedLinks;
     }
 
