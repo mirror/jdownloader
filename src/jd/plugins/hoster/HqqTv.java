@@ -121,13 +121,13 @@ public class HqqTv extends antiDDoSForHost {
             unescapedString.append(Encoding.htmlDecode(es));
         }
         String[] keyNames = new Regex(unescapedString.toString(), "link_(\\d+): ([^,]+), server_(\\d+): ([^,]+),").getRow(0);
-        if (keyNames == null || keyNames.length == 0) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
         jsWise = br.getRegex(";eval\\((function\\(w,i,s,e.+?)\\);\\s*</").getMatch(0);
         if (jsWise == null) {
             /* 2017-07-18 */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (keyNames == null || keyNames.length == 0) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         decode = decodeWise(jsWise);
         String linkl = new Regex(decode, "var " + keyNames[1] + " = \"([^\"]+)").getMatch(0);
