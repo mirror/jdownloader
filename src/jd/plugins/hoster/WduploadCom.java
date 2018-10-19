@@ -259,7 +259,7 @@ public class WduploadCom extends PluginForHost {
             final String trafficUsedStr = bandwidth.getMatch(0);
             String trafficMaxStr = bandwidth.getMatch(1);
             if (trafficMaxStr == null) {
-                /* Use static value (according to website 2018-10-19) */
+                /* Use static value as fallback (according to website 2018-10-19) */
                 trafficMaxStr = "35GB";
             }
             final String expire = br.getRegex("Premium expires on <span [^<>]+>(\\d{4}\\-\\d{2}\\-\\d{2})<").getMatch(0);
