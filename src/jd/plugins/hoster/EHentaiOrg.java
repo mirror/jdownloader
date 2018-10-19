@@ -39,6 +39,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -73,20 +74,21 @@ public class EHentaiOrg extends PluginForHost {
     // protocol: no https
     // other:
     /* Connection stuff */
-    private static final boolean        free_resume             = true;
+    private static final boolean        free_resume              = true;
     /* Limit chunks to 1 as we only download small files */
-    private static final int            free_maxchunks          = 1;
-    private static final int            free_maxdownloads       = -1;
-    private static final long           minimal_filesize        = 1000;
-    private String                      dllink                  = null;
-    private boolean                     server_issues           = false;
-    private final boolean               ENABLE_RANDOM_UA        = true;
-    private final String                PREFER_ORIGINAL_QUALITY = "PREFER_ORIGINAL_QUALITY";
-    private final String                ENABLE_FILENAME_FIX     = "ENABLE_FILENAME_FIX";
-    private static final String         TYPE_EXHENTAI           = "exhentai\\.org";
-    private final LinkedHashSet<String> dupe                    = new LinkedHashSet<String>();
-    private String                      uid_chapter             = null;
-    private String                      uid_page                = null;
+    private static final int            free_maxchunks           = 1;
+    private static final int            free_maxdownloads        = -1;
+    private static final long           minimal_filesize         = 1000;
+    private String                      dllink                   = null;
+    private boolean                     server_issues            = false;
+    private final boolean               ENABLE_RANDOM_UA         = true;
+    public static final String          PREFER_ORIGINAL_QUALITY  = "PREFER_ORIGINAL_QUALITY";
+    public static final String          ENABLE_FILENAME_FIX      = "ENABLE_FILENAME_FIX";
+    public static final String          PREFER_ORIGINAL_FILENAME = "PREFER_ORIGINAL_FILENAME";
+    private static final String         TYPE_EXHENTAI            = "exhentai\\.org";
+    private final LinkedHashSet<String> dupe                     = new LinkedHashSet<String>();
+    private String                      uid_chapter              = null;
+    private String                      uid_page                 = null;
 
     @Override
     public String getAGBLink() {
@@ -172,7 +174,7 @@ public class EHentaiOrg extends PluginForHost {
                 seconds = Integer.parseInt(tmpsec);
             }
             long expireS = ((years * 86400000 * 365) + (days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000)) + System.currentTimeMillis();
-            throw new PluginException(PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE, "Your IP address has been temporarily banned for excessive pageloads", expireS);
+            throw new AccountUnavailableException("Your IP address has been temporarily banned for excessive pageloads", expireS);
         }
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -191,6 +193,8 @@ public class EHentaiOrg extends PluginForHost {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        final String originalFileName = br.getRegex("<div>([^<>]*\\.(jpe?g|png|gif))\\s*::\\s*\\d+").getMatch(0);
+        final boolean preferOriginalFilename = getPluginConfig().getBooleanProperty(jd.plugins.hoster.EHentaiOrg.PREFER_ORIGINAL_FILENAME, jd.plugins.hoster.EHentaiOrg.default_PREFER_ORIGINAL_FILENAME);
         final String ext = getFileNameExtensionFromString(dllink, ".png");
         // package customiser altered, or user altered value, we need to update this value.
         if (downloadLink.getForcedFileName() != null) {
@@ -199,9 +203,13 @@ public class EHentaiOrg extends PluginForHost {
             // package customiser altered, or user altered value, we need to update this value.
             if (getPluginConfig().getBooleanProperty(ENABLE_FILENAME_FIX, default_ENABLE_FILENAME_FIX) && downloadLink.getForcedFileName() != null && !downloadLink.getForcedFileName().endsWith(ext)) {
                 downloadLink.setForcedFileName(namepart + ext);
-            } else {
-                // decrypter doesn't set file extension.
-                downloadLink.setFinalFileName(namepart + ext);
+            } else if (downloadLink.getFinalFileName() == null) {
+                if (StringUtils.isNotEmpty(originalFileName) && preferOriginalFilename) {
+                    downloadLink.setFinalFileName(originalFileName);
+                } else {
+                    // decrypter doesn't set file extension.
+                    downloadLink.setFinalFileName(namepart + ext);
+                }
             }
         }
         if (dllink_fullsize != null) {
@@ -223,6 +231,7 @@ public class EHentaiOrg extends PluginForHost {
                     try {
                         con = br2.openHeadConnection(dllink);
                     } catch (final BrowserException ebr) {
+                        logger.log(ebr);
                         // socket issues, lets try another mirror also.
                         final String[] failed = br.getRegex("onclick=\"return ([a-z]+)\\(\\'(\\d+-\\d+)\\'\\)\">Click here if the image fails loading</a>").getRow(0);
                         if (failed != null && failed.length == 2) {
@@ -347,8 +356,9 @@ public class EHentaiOrg extends PluginForHost {
         try {
             dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         } catch (final BrowserException ebr) {
+            logger.log(ebr);
             /* Whatever happens - its most likely a server problem for this host! */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l, ebr);
         }
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
@@ -535,12 +545,14 @@ public class EHentaiOrg extends PluginForHost {
         return free_maxdownloads;
     }
 
-    private final boolean default_PREFER_ORIGINAL_QUALITY = true;
-    private final boolean default_ENABLE_FILENAME_FIX     = true;
+    public static final boolean default_PREFER_ORIGINAL_QUALITY  = true;
+    public static final boolean default_PREFER_ORIGINAL_FILENAME = false;
+    public static final boolean default_ENABLE_FILENAME_FIX      = true;
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ENABLE_FILENAME_FIX, JDL.L("plugins.hoster.EHentaiOrg.EnableFileNameFix", "Plugin tries to fix file extension")).setDefaultValue(default_ENABLE_FILENAME_FIX));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_ORIGINAL_QUALITY, JDL.L("plugins.hoster.EHentaiOrg.DownloadZip", "Account only: Prefer original quality (bigger filesize, higher resolution)?")).setDefaultValue(default_PREFER_ORIGINAL_QUALITY));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_ORIGINAL_FILENAME, JDL.L("plugins.hoster.EHentaiOrg.PreferOrgFileName", "Prefer original file name?")).setDefaultValue(default_PREFER_ORIGINAL_FILENAME));
     }
 
     @Override
