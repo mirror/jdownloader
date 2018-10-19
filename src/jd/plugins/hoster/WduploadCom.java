@@ -218,7 +218,7 @@ public class WduploadCom extends PluginForHost {
                 }
                 br.getHeaders().put("Origin", "https://www." + this.getHost());
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.postPage("https://www.wdupload.com/api/0/signmein?useraccess=&access_token=" + access_token, "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&keep=1");
+                br.postPage("https://www." + this.getHost() + "/api/0/signmein?useraccess=&access_token=" + access_token, "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&keep=1");
                 final String result = PluginJSonUtils.getJson(br, "result");
                 String userdata = PluginJSonUtils.getJson(br, "doz");
                 if (!"ok".equals(result) || StringUtils.isEmpty(userdata)) {
@@ -246,18 +246,35 @@ public class WduploadCom extends PluginForHost {
         }
         br.getPage("/me");
         final String accounttype = br.getRegex("<label>Your Plan</label>\\s*?<span class=\"known_values\"><div [^>]+></div>([^<>]+)</span>").getMatch(0);
-        ai.setUnlimitedTraffic();
         /* E.g. Lifetime Free Account */
         if (accounttype == null || accounttype.contains("Free")) {
             account.setType(AccountType.FREE);
             /* free accounts can still have captcha */
             account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
             account.setConcurrentUsePossible(false);
+            ai.setUnlimitedTraffic();
             ai.setStatus("Registered (free) user");
         } else {
+            final Regex bandwidth = br.getRegex("<b>Bandwidth</b></p>\\s*?<h4 class=\"text\\-center\">(\\d+(?:\\.\\d+)? ?(?:KB|MB|GB)) of (\\d+(?:\\.\\d+)? ?(KB|MB|GB))</h4>");
+            final String trafficUsedStr = bandwidth.getMatch(0);
+            String trafficMaxStr = bandwidth.getMatch(1);
+            if (trafficMaxStr == null) {
+                /* Use static value (according to website 2018-10-19) */
+                trafficMaxStr = "35GB";
+            }
             final String expire = br.getRegex("Premium expires on <span [^<>]+>(\\d{4}\\-\\d{2}\\-\\d{2})<").getMatch(0);
             if (expire != null) {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd", Locale.ENGLISH));
+            }
+            final long trafficMax = SizeFormatter.getSize(trafficMaxStr);
+            if (trafficUsedStr != null) {
+                final long trafficUsed = SizeFormatter.getSize(trafficUsedStr);
+                ai.setTrafficLeft(trafficMax - trafficUsed);
+                ai.setTrafficMax(trafficMax);
+            } else {
+                /* Use hardcoded trafficMax value for both */
+                ai.setTrafficLeft(trafficMax);
+                ai.setTrafficMax(trafficMax);
             }
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
