@@ -18,6 +18,10 @@ package jd.plugins.hoster;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -33,11 +37,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sizedrive.com", "file4go.net", "file4go.com" }, urls = { "http://(?:www\\.)?(?:file4go|sizedrive)\\.(?:com|net|biz)/(?:r/|d/|download\\.php\\?id=)([a-f0-9]{20})", "regex://nullfied/ranoasdahahdom", "regex://nullfied/ranoasdahahdom" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file4go.net", "file4go.com", "sizedrive.com" }, urls = { "http://(?:www\\.)?(?:file4go|sizedrive)\\.(?:com|net|biz)/(?:r/|d/|download\\.php\\?id=)([a-f0-9]{20})", "regex://nullfied/ranoasdahahdom", "regex://nullfied/ranoasdahahdom" })
 public class File4GoCom extends antiDDoSForHost {
     public File4GoCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -61,8 +61,8 @@ public class File4GoCom extends antiDDoSForHost {
 
     @Override
     public String rewriteHost(String host) {
-        if (host == null || "file4go.com".equals(host) || "file4go.net".equals(host) || "file4go.com".equals(host)) {
-            return "sizedrive.com";
+        if (host == null || "sizedrive.com".equals(host) || "file4go.com".equals(host) || "file4go.net".equals(host)) {
+            return "file4go.biz";
         }
         return super.rewriteHost(host);
     }
@@ -80,7 +80,7 @@ public class File4GoCom extends antiDDoSForHost {
         // do not follow redirects, as they can lead to 404 which is faked based on country of origin ?
         getPage(link.getDownloadURL());
         redirectControl(br);
-        if (br.containsHTML("Arquivo Temporariamente Indisponivel|ARQUIVO DELATADO PELO USUARIO OU REMOVIDO POR <|ARQUIVO DELATADO POR <b>INATIVIDADE|O arquivo Não foi encotrado em nossos servidores")) {
+        if (br.containsHTML(">404 ARQUIVO N�O ENCOTRADO<|Arquivo Temporariamente Indisponivel|ARQUIVO DELATADO PELO USUARIO OU REMOVIDO POR <|ARQUIVO DELATADO POR <b>INATIVIDADE|O arquivo Não foi encotrado em nossos servidores")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex(">Nome:</b>\\s*(.*?)\\s*(?:</p>)?</span>").getMatch(0);
