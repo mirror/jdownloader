@@ -115,7 +115,7 @@ public class BoxCom extends antiDDoSForDecrypt {
         final String fpName = br.getRegex("\"currentFolderName\":\"([^\"]*?)\"").getMatch(0);
         final FilePackage fp = fpName != null ? FilePackage.getInstance() : null;
         if (fp != null) {
-            fp.setName(Encoding.htmlDecode(fpName));
+            fp.setName(Encoding.unicodeDecode(fpName));
         }
         do {
             // final String[] results = br.getRegex("<li class=\"tbl-list-item.*?</div>\\s*</li>").getColumn(-1);
@@ -136,7 +136,7 @@ public class BoxCom extends antiDDoSForDecrypt {
                         }
                         final DownloadLink dl = createDownloadlink(link);
                         dl.setLinkID("box.com://file/" + fuid);
-                        dl.setName(Encoding.htmlDecode(filename));
+                        dl.setName(Encoding.unicodeDecode(filename));
                         dl.setVerifiedFileSize(Long.parseLong(size));
                         dl.setAvailable(true);
                         decryptedLinks.add(dl);

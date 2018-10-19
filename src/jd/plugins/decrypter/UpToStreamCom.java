@@ -21,9 +21,6 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -36,6 +33,9 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uptostream.com" }, urls = { "https?://(?:www\\.)?uptostream\\.com/(?:iframe/)?[a-z0-9]{12}|https?://(?:www\\.)?uptobox\\.com/\\?op=user_public\\&hash=[a-f0-9]{16}\\&folder=\\d+" })
 public class UpToStreamCom extends PluginForDecrypt {
@@ -67,7 +67,7 @@ public class UpToStreamCom extends PluginForDecrypt {
                 /* 2018-10-18: default = "limit=10" */
                 br.getPage("https://uptobox.com/api/user/public?folder=" + folderID + "&hash=" + hash + "&orderBy=file_name&dir=asc&limit=100&offset=" + offset);
                 final String errormessage = PluginJSonUtils.getJson(br, "message");
-                if (!StringUtils.isEmpty(errormessage)) {
+                if (!StringUtils.isEmpty(errormessage) && !StringUtils.equalsIgnoreCase(errormessage, "Success")) {
                     decryptedLinks.add(this.createOfflinelink(parameter));
                     break;
                 }
