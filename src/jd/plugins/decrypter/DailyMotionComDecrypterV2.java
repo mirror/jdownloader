@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -34,7 +33,6 @@ import jd.plugins.hoster.DailyMotionComV2;
 //Decrypts embedded videos from dailymotion
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dailymotion.com" }, urls = { "https?://(?:www\\.)?dailymotion\\.com/.+" })
 public class DailyMotionComDecrypterV2 extends DailyMotionComDecrypter {
-
     public DailyMotionComDecrypterV2(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -45,24 +43,18 @@ public class DailyMotionComDecrypterV2 extends DailyMotionComDecrypter {
         super.decryptSingleVideo(ret);
         ArrayList<DownloadLink> mp4s = new ArrayList<DownloadLink>();
         ArrayList<DailyMotionVariant> variantInfos = new ArrayList<DailyMotionVariant>();
-
         DownloadLink variantLink = null;
         DailyMotionVariant bestVi = null;
-
         for (DownloadLink dl : ret) {
-
             String type = dl.getStringProperty("plain_ext");
             if (".mp4".equals(type)) {
-
                 mp4s.add(dl);
                 if ("hds".equals(dl.getStringProperty("qualityname"))) {
-
                     // hds is not possible yet
                     continue;
                 }
                 DailyMotionVariant vi;
                 variantInfos.add(vi = new DailyMotionVariant(dl));
-
                 if (bestVi == null || vi.getQrate() < bestVi.getQrate()) {
                     bestVi = vi;
                     variantLink = dl;
@@ -70,11 +62,10 @@ public class DailyMotionComDecrypterV2 extends DailyMotionComDecrypter {
             }
         }
         ret.removeAll(mp4s);
-
+        decryptedLinks.clear();
         if (variantLink != null) {
             ret.add(variantLink);
             Collections.sort(variantInfos, new Comparator<DailyMotionVariant>() {
-
                 @Override
                 public int compare(DailyMotionVariant o1, DailyMotionVariant o2) {
                     return Integer.compare(o2.getQrate(), o1.getQrate());
@@ -119,15 +110,12 @@ public class DailyMotionComDecrypterV2 extends DailyMotionComDecrypter {
             }
         }
         //
-
         decryptedLinks.addAll(ret);
-
     }
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> ret = super.decryptIt(param, progress);
-
         return ret;
     }
 }

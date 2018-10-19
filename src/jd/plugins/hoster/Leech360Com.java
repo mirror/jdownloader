@@ -311,11 +311,11 @@ public class Leech360Com extends PluginForHost {
         final String error_message = PluginJSonUtils.getJson(br, "error_message");
         if (StringUtils.containsIgnoreCase(error_message, "API only support for PREMIUM")) {
             loginWebsite(account, true);
-            if (br.containsHTML(">Free Member<")) {
-                account.setType(AccountType.FREE);
-                ai.setStatus("Registered (free) account");
-                return ai;
-            }
+            /* No additional check required as it's clear that this is a free account */
+            // if (br.containsHTML(">Free Member<")) {
+            account.setType(AccountType.FREE);
+            ai.setStatus("Registered (free) account");
+            return ai;
         }
         this.getAPISafe("https://" + account.getHoster() + "/api/get_userinfo?token=" + Encoding.urlEncode(this.currAPIToken));
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
