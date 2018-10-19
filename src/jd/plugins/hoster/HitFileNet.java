@@ -55,7 +55,7 @@ import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hitfile.net" }, urls = { "https?://(www\\.)?hitfile\\.net/(download/free/)?[A-Za-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hitfile.net" }, urls = { "https?://(www\\.)?hitfile\\.net/(download/free/)?(?!abuse|faq|files|impressum|linkchecker|premium|reseller|rules|rulesdownload)[A-Za-z0-9]+" })
 public class HitFileNet extends antiDDoSForHost {
     /* Settings */
     private static final String  SETTING_JAC                          = "SETTING_JAC";
@@ -588,7 +588,7 @@ public class HitFileNet extends antiDDoSForHost {
         br.setCookie(MAINPAGE, "user_lang", "en");
         br.setCookiesExclusive(true);
         getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("File was deleted or not found")) {
+        if (br.containsHTML("File was deleted or not found|>This document was not found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = br.getRegex("You download: \\&nbsp; <span class=\\'[a-z0-9\\- ]+\\'></span><span>([^<>\"]*?)</span>").getMatch(0);
