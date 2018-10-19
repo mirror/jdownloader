@@ -15,8 +15,13 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
+import java.util.Map;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.requests.GetRequest;
+import jd.http.requests.PostRequest;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -25,15 +30,17 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "box.com" }, urls = { "https?://(?:\\w+\\.)*box\\.(?:com|net)/s(?:hared)?/(?:[a-z0-9]{32}|[a-z0-9]{20})/file/\\d+" })
 public class BoxCom extends antiDDoSForHost {
-    private static final String TOS_LINK                = "https://www.box.net/static/html/terms.html";
-    private static final String fileLink                = "https?://(?:\\w+\\.)*box\\.com/s(?:hared)?/(?:[a-z0-9]{32}|[a-z0-9]{20})/file/\\d+";
-    private String              dllink                  = null;
-    private boolean             error_message_bandwidth = false;
+    private static final String TOS_LINK = "https://www.box.net/static/html/terms.html";
+    private static final String fileLink = "https?://(?:\\w+\\.)*box\\.com/s(?:hared)?/(?:[a-z0-9]{32}|[a-z0-9]{20})/file/\\d+";
+    private String              dllink   = null;
 
     public BoxCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -83,6 +90,10 @@ public class BoxCom extends antiDDoSForHost {
             final String fileid = dlIds.getMatch(1);
             final String rootFolder = new Regex(parameter.getPluginPatternMatcher(), "(.+)/file/\\d+").getMatch(0);
             br.getPage(rootFolder);
+            final String requestToken = br.getRegex("Box\\.config\\.requestToken\\s*=\\s*'(.*?)'").getMatch(0);
+            if (StringUtils.isEmpty(requestToken)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             br.getPage(parameter.getPluginPatternMatcher());
             if (isOffline(br)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -103,25 +114,56 @@ public class BoxCom extends antiDDoSForHost {
                 parameter.setDownloadSize(SizeFormatter.getSize(filesize));
             }
             parameter.setLinkID("box.com://file/" + fileid);
-            dllink = "https://www.box.com/index.php?rm=box_download_shared_file&shared_name=" + sharedname + "&file_id=f_" + fileid;
-            return AvailableStatus.TRUE;
+            final PostRequest tokens = br.createJSonPostRequest("https://app.box.com/app-api/enduserapp/elements/tokens", "{\"fileIDs\":[\"file_" + fileid + "\"]}");
+            tokens.getHeaders().put("Request-Token", requestToken);
+            tokens.getHeaders().put("X-Request-Token", requestToken);
+            tokens.getHeaders().put("X-Box-EndUser-API", "sharedName=" + sharedname);
+            tokens.getHeaders().put("X-Box-Client-Name", "enduserapp");
+            tokens.getHeaders().put("X-Box-Client-Version", "0.86.0");
+            Browser brc = br.cloneBrowser();
+            brc.getPage(tokens);
+            Map<String, Object> map = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+            final String read = (String) ((Map<String, Object>) map.get("file_" + fileid)).get("read");
+            if (StringUtils.isEmpty(read)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final GetRequest download_url = br.createGetRequest("https://api.box.com/2.0/files/" + fileid + "?fields=download_url");
+            download_url.getHeaders().put("Authorization", "Bearer " + read);
+            download_url.getHeaders().put("boxapi", "shared_link=https://app.box.com/s/" + sharedname);
+            download_url.getHeaders().put("X-Box-Client-Name", "box-content-preview");
+            download_url.getHeaders().put("X-Box-Client-Version", "1.54.0");
+            download_url.getHeaders().put("Origin", "https://app.box.com");
+            brc = br.cloneBrowser();
+            brc.getPage(download_url);
+            map = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+            dllink = (String) map.get("download_url");
+            if (StringUtils.isEmpty(dllink)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                return AvailableStatus.TRUE;
+            }
         }
-        return AvailableStatus.FALSE;
+        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        if (error_message_bandwidth) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "The uploader of this file doesn't have enough bandwidth left!", 20 * 60 * 1000l);
+        if (StringUtils.isEmpty(dllink)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 0);
         if (!dl.getConnection().isContentDisposition()) {
+            logger.info("The final downloadlink seems not to be a file");
+            try {
+                br.getHttpConnection().setAllowedResponseCodes(new int[] { br.getHttpConnection().getResponseCode() });
+                br.followConnection();
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (dl.getConnection().getResponseCode() == 500) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
             }
-            logger.info("The final downloadlink seems not to be a file");
-            br.followConnection();
             if (br.containsHTML("error_message_bandwidth")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "The uploader of this file doesn't have enough bandwidth left!", 3 * 60 * 60 * 1000l);
             }
