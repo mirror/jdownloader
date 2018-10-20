@@ -201,9 +201,15 @@ public class ImageFap extends PluginForHost {
                 if (br.containsHTML("(>The image you are trying to access does not exist|<title> \\(Picture 1\\) uploaded by  on ImageFap\\.com</title>)")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                String picture_name = br.getRegex("<title>(.*?) in gallery").getMatch(0);
+                String picture_name = downloadLink.getStringProperty("original_filename");
                 if (picture_name == null) {
-                    picture_name = br.getRegex("<title>(.*?) uploaded by").getMatch(0);
+                    picture_name = br.getRegex("<title>(.*?) in gallery").getMatch(0);
+                    if (picture_name == null) {
+                        picture_name = br.getRegex("<title>(.*?) uploaded by").getMatch(0);
+                        if (picture_name == null) {
+                            picture_name = br.getRegex("<title>(.*?) Porn Pic").getMatch(0);
+                        }
+                    }
                 }
                 String galleryName = getGalleryName(downloadLink);
                 String username = downloadLink.getStringProperty("directusername");
