@@ -82,6 +82,11 @@ public class HqqTv extends antiDDoSForHost {
         getPage(ajax, "//hqq.watch/player/ip.php?type=json&rand=" + System.currentTimeMillis() / 1000L);
         final String ip = PluginJSonUtils.getJsonValue(ajax, "ip");
         final String needCaptcha = PluginJSonUtils.getJsonValue(ajax, "need_captcha");
+        //
+        // doesn't work invisible recaptcha.
+        //
+        // final String sitekey = new Regex(decode, "grecaptcha.execute\\('([^']+)'").getMatch(0);
+        // final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, this.br, sitekey).getToken();
         String vid = data[0];
         String at = data[1];
         StringBuffer sb = new StringBuffer();
@@ -108,6 +113,7 @@ public class HqqTv extends antiDDoSForHost {
         sb.append("&hash_from=");
         sb.append(data[7]);
         sb.append("&secured=0&gtoken=");
+        // sb.append(recaptchaV2Response);
         // html
         getPage(sb.toString());
         //
