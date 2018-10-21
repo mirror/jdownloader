@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.math.BigDecimal;
@@ -32,14 +31,13 @@ import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hulkshare.com" }, urls = { "https?://(?:www\\.)?(?:hulkshare\\.com|hu\\.lk)/[A-Za-z0-9_\\-]+(?:/[^<>\"/]+)?" })
 public class HulkShareComFolder extends PluginForDecrypt {
-
     public HulkShareComFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String HULKSHAREDOWNLOADLINK = "http://(www\\.)?(hulkshare\\.com|hu\\/lk)/([a-z0-9]{12})";
-    private static final String TYPE_SECONDSINGLELINK = "http://(www\\.)?(hulkshare\\.com|hu\\.lk)/[a-z0-9\\-_]+/[^<>\"/]+";
-    private static final String TYPE_PLAYLIST         = "http://(www\\.)?(hulkshare\\.com|hu\\.lk)/playlist/\\d+(.+)?";
+    private static final String HULKSHAREDOWNLOADLINK = "https?://(www\\.)?(hulkshare\\.com|hu\\/lk)/([a-z0-9]{12})";
+    private static final String TYPE_SECONDSINGLELINK = "https?://(www\\.)?(hulkshare\\.com|hu\\.lk)/[a-z0-9\\-_]+/[^<>\"/]+";
+    private static final String TYPE_PLAYLIST         = "https?://(www\\.)?(hulkshare\\.com|hu\\.lk)/playlist/\\d+(.+)?";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -48,7 +46,6 @@ public class HulkShareComFolder extends PluginForDecrypt {
         if (fid != null) {
             parameter = "http://www.hulkshare.com/" + fid;
         } else if (!parameter.matches(HULKSHAREDOWNLOADLINK) && !parameter.matches(TYPE_PLAYLIST)) {
-
         }
         if (parameter.matches("https?://(?:www\\.)?(hulkshare\\.com|hu\\/lk)/(static|browse|images|terms|contact|audible|search|people|upload|featured|mobile|group|explore|sitemaps).*?")) {
             logger.info("Invalid link: " + parameter);
@@ -63,9 +60,7 @@ public class HulkShareComFolder extends PluginForDecrypt {
         // They can have huge pages, allow double of the normal load limit
         br.setLoadLimit(4194304);
         br.getPage(parameter);
-
         final String longLink = br.getRegex("longLink = \\'(http://(www\\.)?hulkshare\\.com/[a-z0-9]{12})\\'").getMatch(0);
-
         if ((new Regex(parameter, Pattern.compile(TYPE_SECONDSINGLELINK, Pattern.CASE_INSENSITIVE)).matches()) && longLink != null) {
             /* We have a single mp3 link */
             decryptedLinks.add(createDownloadlink(longLink.replace("hulkshare.com/", "hulksharedecrypted.com/")));
@@ -79,7 +74,6 @@ public class HulkShareComFolder extends PluginForDecrypt {
             parameter = "http://www." + this.getHost() + "/" + username;
             this.br.getPage(parameter);
         }
-
         if (br.getHttpConnection().getContentType().equals("text/javascript") || br.getHttpConnection().getContentType().equals("text/css") || this.br.getURL().contains("/404.php")) {
             logger.info("Invalid link: " + parameter);
             decryptedLinks.add(getOffline(parameter));
@@ -149,7 +143,6 @@ public class HulkShareComFolder extends PluginForDecrypt {
         final int max_loads = bd.setScale(0, BigDecimal.ROUND_UP).intValue();
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(new Regex(parameter, "hulkshare\\.com/(.+)").getMatch(0));
-
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         for (int i = 1; i <= max_loads; i++) {
             try {
@@ -227,5 +220,4 @@ public class HulkShareComFolder extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
