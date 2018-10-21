@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -27,6 +26,11 @@ import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -50,14 +54,8 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hulkshare.com" }, urls = { "http://(www\\.)?(hulksharedecrypted\\.com/playlistsong/\\d+|(((hulkshare\\.com|hu\\.lk)/dl/|hulksharedecrypted\\.com/)|old\\.hulkshare\\.com/dl/)[a-z0-9]{12})" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hulkshare.com" }, urls = { "https?://(www\\.)?(hulksharedecrypted\\.com/playlistsong/\\d+|(((hulkshare\\.com|hu\\.lk)/dl/|hulksharedecrypted\\.com/)|old\\.hulkshare\\.com/dl/)[a-z0-9]{12})" })
 public class HulkShareCom extends PluginForHost {
-
     private String              BRBEFORE            = "";
     private static final String PASSWORDTEXT        = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
     private static final String COOKIE_HOST         = "http://hulkshare.com";
@@ -65,8 +63,7 @@ public class HulkShareCom extends PluginForHost {
     private static final String MAINTENANCE         = ">This server is in maintenance mode";
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static Object       LOCK                = new Object();
-
-    private static final String TYPE_PLAYLISTSONG   = "http://(www\\.)?hulksharedecrypted\\.com/playlistsong/\\d+";
+    private static final String TYPE_PLAYLISTSONG   = "https?://(www\\.)?hulksharedecrypted\\.com/playlistsong/\\d+";
 
     public HulkShareCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -75,7 +72,7 @@ public class HulkShareCom extends PluginForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        if (link.getDownloadURL().matches("http://(www\\.)?(((hulkshare\\.com|hu\\.lk)/dl/|hulksharedecrypted\\.com/)|old\\.hulkshare\\.com/dl/)[a-z0-9]{12}")) {
+        if (link.getDownloadURL().matches("https?://(www\\.)?(((hulkshare\\.com|hu\\.lk)/dl/|hulksharedecrypted\\.com/)|old\\.hulkshare\\.com/dl/)[a-z0-9]{12}")) {
             link.setUrlDownload("http://www.hulkshare.com/" + new Regex(link.getDownloadURL(), "/([a-z0-9]{12})$").getMatch(0));
         } else if (link.getDownloadURL().contains("hulksharedecrypted.com/")) {
             link.setUrlDownload(link.getDownloadURL().replace("hulksharedecrypted.com/", "hulkshare.com/"));
@@ -147,7 +144,7 @@ public class HulkShareCom extends PluginForHost {
         }
         String filename = br.getRegex("fileName = \"([^<>]*?)\"").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("You have requested.*?http://.*?[a-z0-9]{12}/(.*?)</font>").getMatch(0);
+            filename = br.getRegex("You have requested.*?https?://.*?[a-z0-9]{12}/(.*?)</font>").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("fname\" value=\"(.*?)\"").getMatch(0);
                 if (filename == null) {
@@ -189,7 +186,6 @@ public class HulkShareCom extends PluginForHost {
         if (filesize == null) {
             filesize = br.getRegex("class=\"tsSize\">(.*?)<").getMatch(0);
         }
-
         if (filename == null) {
             logger.warning("The filename equals null, throwing \"file not found\" now...");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -377,7 +373,6 @@ public class HulkShareCom extends PluginForHost {
                 password = true;
                 logger.info("The downloadlink seems to be password protected.");
             }
-
             /* Captcha START */
             if (BRBEFORE.contains(";background:#ccc;text-align")) {
                 logger.info("Detected captcha method \"plaintext captchas\" for this host");
@@ -455,6 +450,9 @@ public class HulkShareCom extends PluginForHost {
         dllink = Encoding.htmlDecode(dllink);
         logger.info("Final downloadlink = " + dllink + " starting the download...");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+        if (dl.getConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         // Workaround for missing extensions for audio files
         if (dl.getConnection().getContentType().equals("audio/mpeg") && !downloadLink.getFinalFileName().endsWith(".mp3")) {
             downloadLink.setFinalFileName(downloadLink.getFinalFileName() + ".mp3");
@@ -650,7 +648,6 @@ public class HulkShareCom extends PluginForHost {
             }
         }
         return dllink;
-
     }
 
     @Override
@@ -837,5 +834,4 @@ public class HulkShareCom extends PluginForHost {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.SibSoft_XFileShare;
     }
-
 }
