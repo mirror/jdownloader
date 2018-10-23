@@ -11,6 +11,7 @@ AddContainerAction_delete_container_msg=Szeretné %s1 törlése után a linket(e
 AddContainerAction_delete_container_title=Törli a tároló fájljait?
 AddFilteredStuffAction_getTranslationForOnlyVisibleIfThereIsFilteredStuff=Csak akkor látható, ha ki van szűrve
 AudioCodec_aac_spatial=AAC Térbeli 6 csatornás
+AudioCodec_opus_spatial=Opus Spatial 6 csatornás
 AudioCodec_vorbis_spatial=Vorbis Térbeli 4 csatornás
 AuthExceptionGenericBan_toString=Hiányzó hitelesítés %s1
 AuthExceptionGenericBan_toString_plugin=%s2: hitelesítés hiányzik %s1
