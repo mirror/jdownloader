@@ -36,7 +36,7 @@ public class WduploadComFolder extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("file\\-remove\\-|>This link only for premium user")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("file-remove-|>This link only for premium|is empty...<")) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
