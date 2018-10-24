@@ -5,6 +5,9 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -20,10 +23,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@DecrypterPlugin(revision = "$Revision: 37916 $", interfaceVersion = 3, names = { "funimation.com" }, urls = { "http(?:s)://www.funimation.com/(?:shows/)[-0-9a-zA-Z]+/[-0-9a-zA-Z]+/.*" })
+@DecrypterPlugin(revision = "$Revision: 37916 $", interfaceVersion = 3, names = { "funimation.com" }, urls = { "http(?:s)://www.funimation.com/(?:shows/)[-0-9a-zA-Z]+/[-0-9a-zA-Z]+.*" })
 public class FunimationCom extends PluginForDecrypt {
     static private final String SHOWEXPERIENCE_API = "https://www.funimation.com/api/showexperience/";
     static private final String EXPERIENCE_API     = "https://www.funimation.com/api/experience/";
@@ -64,7 +64,7 @@ public class FunimationCom extends PluginForDecrypt {
         // Fog: Grab episode information
         final String video_id = br.getRegex("id: \'(\\d+)\'").getMatch(0);
         final String show_name = new Regex(cryptedLink.getCryptedUrl(), "http(?:s)://www.funimation.com/(?:shows/)([-0-9a-zA-Z]+)/").getMatch(0);
-        final String episode_name = new Regex(cryptedLink.getCryptedUrl(), "http(?:s)://www.funimation.com/(?:shows/)[-0-9a-zA-Z]+/([-0-9a-zA-Z]+)/").getMatch(0);
+        final String episode_name = new Regex(cryptedLink.getCryptedUrl(), "http(?:s)://www.funimation.com/(?:shows/)[-0-9a-zA-Z]+/([-0-9a-zA-Z]+).*").getMatch(0);
         final String episode_number = br.getRegex("episodeNum: (\\d+),").getMatch(0);
         final String season_number = br.getRegex("seasonNum: (\\d+),").getMatch(0);
         final String alpha = br.getRegex("alpha: \"(\\w+)\",").getMatch(0);
