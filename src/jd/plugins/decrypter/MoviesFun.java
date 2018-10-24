@@ -77,9 +77,18 @@ public class MoviesFun extends PluginForDecrypt {
         String json = brJSON.getPage(detailURL);
         HashMap<String, Object> jsonObject = new ObjectMapper().readValue(json, HashMap.class);
         String source = (String) jsonObject.get("src");
-        DownloadLink dlVideo = createDownloadlink(Encoding.htmlOnlyDecode(source.replaceAll("^[/]+", "https://")));
+        String url = Encoding.htmlOnlyDecode(source.replaceAll("^[/]+", "https://"));
+        url = injectTitleIntoURL(url, (fileNamePrefix));
+        DownloadLink dlVideo = createDownloadlink(url);
         dlVideo.setForcedFileName(fileNamePrefix + ".mp4");
         results.add(dlVideo);
         return results;
+    }
+
+    private String injectTitleIntoURL(String URL, String title) {
+        if (URL != null && title != null) {
+            URL = URL + ((URL.indexOf("?") < 1) ? "?" : "&") + "jdTitle=" + Encoding.urlEncode(title.trim());
+        }
+        return URL;
     }
 }

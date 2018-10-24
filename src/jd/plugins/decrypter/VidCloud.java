@@ -39,20 +39,35 @@ public class VidCloud extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         String page = br.getPage(parameter);
+        String title = extractTitleFromURL(parameter);
         String[][] playlistEmbeds = br.getRegex("playcdn\\.vidcloud\\.xyz/stream/[^\"]+").getMatches();
         for (String[] playlistEmbed : playlistEmbeds) {
             final Browser brPlaylist = br.cloneBrowser();
             brPlaylist.setFollowRedirects(true);
             playlistEmbed[0] = "https://" + playlistEmbed[0];
-            decryptedLinks.add(createDownloadlink(Encoding.htmlOnlyDecode(playlistEmbed[0])));
             brPlaylist.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             brPlaylist.getHeaders().put("Referer", parameter);
             String playlist = brPlaylist.getPage(playlistEmbed[0]);
-            String[][] playlistItems = new Regex(playlist, "https?://(?:[^\\.]+\\.)?vidcloud\\.xyz/[a-zA-Z0-9/\\.?=]+").getMatches();
+            String[][] playlistItems = new Regex(playlist, "NAME=\"([0-9]+)\"[\\r\\n\\t ]+(https?://(?:[^\\.]+\\.)?vidcloud\\.xyz/[a-zA-Z0-9/\\.?=]+)").getMatches();
             for (String[] playlistItem : playlistItems) {
-                decryptedLinks.add(createDownloadlink(Encoding.htmlOnlyDecode(playlistItem[0])));
+                String url = Encoding.htmlOnlyDecode(playlistItem[1]);
+                DownloadLink dl = createDownloadlink(url);
+                if (title != null) {
+                    String resolution = playlistItem[0];
+                    dl.setForcedFileName(title + " (" + resolution + "p).mp4");
+                }
+                decryptedLinks.add(dl);
             }
         }
         return decryptedLinks;
+    }
+
+    private String extractTitleFromURL(String url) {
+        String result = new Regex(url, "[&?]jdTitle=([^&$]+)").getMatch(0);
+        System.out.print(result);
+        if (result != null) {
+            result = Encoding.urlDecode(result, false);
+        }
+        return result;
     }
 }
