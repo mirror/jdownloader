@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -35,7 +34,6 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision: 35304 $", interfaceVersion = 3, names = { "fxpan.com" }, urls = { "https?://(?:www\\.)?fxpan\\.com/(?:file/\\d+|share/[a-z0-9]+)" })
 public class FxpanCom extends PluginForHost {
-
     public FxpanCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -49,7 +47,6 @@ public class FxpanCom extends PluginForHost {
     private final boolean FREE_RESUME       = false;
     private final int     FREE_MAXCHUNKS    = 1;
     private final int     FREE_MAXDOWNLOADS = -1;
-
     private String        fuid              = null;
 
     @SuppressWarnings("deprecation")
@@ -59,7 +56,7 @@ public class FxpanCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().matches("^(?i)https?://(www\\.)?fxpan\\.com/?$") || br.containsHTML("<title>文件已被锁定,暂时无法访问|>\\s*文件已经被删除\\s*<")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().matches("^(?i)https?://(www\\.)?fxpan\\.com/?$") || br.containsHTML("(<title>文件已被锁定,)?暂时无法访问|>\\s*文件已经被删除\\s*<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex(">([^<>]+)</h1>").getMatch(0);
@@ -182,5 +179,4 @@ public class FxpanCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
