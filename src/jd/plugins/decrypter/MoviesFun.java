@@ -33,7 +33,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 40000 $", interfaceVersion = 2, names = { "123moviesfun.org" }, urls = { "https?://([w0-9]+\\.)?123moviesfun\\.org/film/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "123moviesfun.org" }, urls = { "https?://([w0-9]+\\.)?123moviesfun\\.org/film/.+" })
 public class MoviesFun extends PluginForDecrypt {
     public MoviesFun(PluginWrapper wrapper) {
         super(wrapper);
