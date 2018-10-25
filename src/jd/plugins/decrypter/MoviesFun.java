@@ -42,7 +42,8 @@ public class MoviesFun extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        String page = br.getPage(parameter);
+        br.setFollowRedirects(true);
+        br.getPage(parameter);
         String fpName = br.getRegex("<meta (?:name|property)=\"og:title\" content=[\"'](?:Watch ?)([^<>\"]*?) online free in HD - 123movies.org[\"']/>").getMatch(0);
         //
         String mediaID = new Regex(parameter, "/film/[^/]+-([0-9]+)/,*").getMatch(0);
@@ -59,6 +60,7 @@ public class MoviesFun extends PluginForDecrypt {
     private ArrayList<DownloadLink> getLinks(Browser br, String mediaID) throws IOException {
         ArrayList<DownloadLink> results = new ArrayList<DownloadLink>();
         final Browser brHTML = br.cloneBrowser();
+        brHTML.setFollowRedirects(true);
         String json = brHTML.getPage("/ajax/movie_episodes/" + mediaID);
         HashMap<String, Object> jsonObject = new ObjectMapper().readValue(json, HashMap.class);
         String list = (String) jsonObject.get("html");
