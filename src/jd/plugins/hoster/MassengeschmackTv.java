@@ -107,16 +107,39 @@ public class MassengeschmackTv extends PluginForHost {
      */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        this.is_premiumonly_content = false;
-        /* URLs added until revision 39587 are not compatible anymore */
+        /* TODO: Improve this case because at the moment, such URLs are not downloadable at all! */
+        this.is_premiumonly_content = downloadLink.getBooleanProperty("premiumonly", false);
+        /* URLs added until revision 39587 are not compatible with the current revision anymore */
         if (!new Regex(downloadLink.getPluginPatternMatcher(), this.getSupportedLinks()).matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        /* TODO: Check for expiring direct-urls! */
         dllink = downloadLink.getPluginPatternMatcher();
         if (dllink.contains(".m3u8") || dllink.contains(".mp4")) {
             downloadLink.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         }
         this.br.setFollowRedirects(true);
+        if (!dllink.contains(".m3u8") && !this.is_premiumonly_content) {
+            URLConnectionAdapter con = null;
+            try {
+                con = br.openHeadConnection(dllink);
+                if (con.getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                if (!con.getContentType().contains("html")) {
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                    if (downloadLink.getFinalFileName() == null) {
+                        /* E.g. user added direct-URLs directly, without decrypter. */
+                        downloadLink.setFinalFileName(getFileNameFromHeader(con));
+                    }
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -215,7 +238,7 @@ public class MassengeschmackTv extends PluginForHost {
     public static String getFilenameFromFinalDownloadlink(final String dllink) {
         String filename_directlink = null;
         if (!StringUtils.isEmpty(dllink)) {
-            filename_directlink = new Regex(dllink, "/([^/]+\\.(?:flv|mp4|mkv|webm))$").getMatch(0);
+            filename_directlink = new Regex(dllink, "/([^/]+\\.(?:flv|mp4|mkv|webm|mov))$").getMatch(0);
         }
         /* Make sure that we actually get a filename ... */
         if (!StringUtils.isEmpty(filename_directlink) && filename_directlink.equals("best.mp4")) {
@@ -363,7 +386,7 @@ public class MassengeschmackTv extends PluginForHost {
             }
         } else {
             account.setType(AccountType.FREE);
-            ai.setStatus("Registered (free) account");
+            ai.setStatus("Kostenloser Account (Kein Abonnement aktiv)");
         }
         ai.setUnlimitedTraffic();
         return ai;
