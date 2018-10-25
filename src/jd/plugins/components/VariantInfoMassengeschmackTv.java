@@ -5,6 +5,8 @@ import javax.swing.Icon;
 import org.appwork.storage.Storable;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
 
 import jd.parser.Regex;
 
@@ -48,27 +50,19 @@ public class VariantInfoMassengeschmackTv implements Storable, LinkVariant {
         this.qualityName = qualityName;
     }
 
-    /** Returns quality name similar to website e.g. 'SD 432p 768x432 (434 MiB)' */
+    /** Returns quality name similar to website but WITHOUT the filesize e.g. 'SD 432p 768x432 (434 MiB)' */
     public String getVariantName() {
         String variantName = null;
         if (resolution != null) {
+            final String height = new Regex(resolution, "(\\d+)$").getMatch(0);
+            if (resolution.contains("x1080") || resolution.contains("x720")) {
+                variantName = "HD " + height + "p " + resolution;
+            } else {
+                variantName = "SD 432p " + resolution;
+            }
             variantName = this.qualityName + " " + this.resolution;
         } else {
-            variantName = this.qualityName;
-        }
-        if (this.filesize != null) {
-            variantName += " (" + this.filesize + ")";
-        }
-        return variantName;
-    }
-
-    /** Returns quality name without filesize e.g. 'SD 432p 768x432' */
-    public String getVariantNameWithoutFilesize() {
-        String variantName = null;
-        if (resolution != null) {
-            variantName = this.qualityName + " " + this.resolution;
-        } else {
-            variantName = this.qualityName;
+            variantName = "AUDIO";
         }
         return variantName;
     }
@@ -95,6 +89,7 @@ public class VariantInfoMassengeschmackTv implements Storable, LinkVariant {
 
     @Override
     public String _getUniqueId() {
+        /* TODO */
         if (this.qualityName == null) {
             /** TODO */
             return "WTF";
@@ -103,12 +98,8 @@ public class VariantInfoMassengeschmackTv implements Storable, LinkVariant {
         }
     }
 
-    public int _getQuality() {
-        final String xx_p = new Regex(this.qualityName, "(\\d+)").getMatch(0);
-        if (xx_p != null) {
-            return Integer.parseInt(xx_p);
-        }
-        return -1;
+    public String getQualityName() {
+        return this.qualityName;
     }
 
     @Override
@@ -118,7 +109,7 @@ public class VariantInfoMassengeschmackTv implements Storable, LinkVariant {
 
     @Override
     public Icon _getIcon(Object caller) {
-        return null;
+        return new AbstractIcon(IconKey.ICON_VIDEO, 16);
     }
 
     @Override

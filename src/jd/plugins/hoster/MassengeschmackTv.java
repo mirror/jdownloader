@@ -18,19 +18,13 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Locale;
 
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -39,7 +33,6 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.SubConfiguration;
-import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -56,8 +49,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.VariantInfoMassengeschmackTv;
+import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "massengeschmack.tv" }, urls = { "https?://(?:www\\.)?massengeschmack\\.tv/((?:play|clip)/|index_single\\.php\\?id=)[a-z0-9\\-]+|https?://(?:www\\.)?massengeschmack\\.tv/live/[a-z0-9\\-]+|https?://massengeschmack\\.tv/dl/.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "massengeschmack.tv" }, urls = { "https?://massengeschmack\\.tv/dl.+|https?://[^/]+\\.massengeschmack\\.tv/deliver.+" })
 public class MassengeschmackTv extends PluginForHost {
     public static final long trust_cookie_age = 300000l;
 
@@ -79,53 +73,30 @@ public class MassengeschmackTv extends PluginForHost {
         return -1;
     }
 
-    @SuppressWarnings("deprecation")
-    public void correctDownloadLink(final DownloadLink link) {
-        final String url_source = link.getDownloadURL();
-        final String mgtv_videoid = new Regex(url_source, "massengeschmack\\.tv/(?:(?:play|clip)/|index_single\\.php\\?id=)([a-z0-9\\-]+)").getMatch(0);
-        final String url_new = String.format("https://massengeschmack.tv/play/%s", mgtv_videoid);
-        link.setLinkID(mgtv_videoid);
-        link.setName(mgtv_videoid);
-        link.setUrlDownload(url_new);
-    }
-
-    private static final String  TYPE_MASSENGESCHMACK_GENERAL              = ".+massengeschmack\\.tv/play/[a-z0-9\\-]+";
-    private static final String  TYPE_MASSENGESCHMACK_LIVE                 = ".+massengeschmack\\.tv/live/[a-z0-9\\-]+";
-    private static final String  TYPE_MASSENGESCHMACK_DIRECT               = ".+massengeschmack\\.tv/dl/.+";
-    public static final String   HTML_MASSENGESCHMACK_OFFLINE              = ">Clip nicht gefunden|>Error 404<|>Die angeforderte Seite wurde nicht gefunden";
-    private static final String  HTML_MASSENGESCHMACK_CLIP_PREMIUMONLY     = ">Clip nicht kostenlos verfügbar";
+    public static final String  TYPE_MASSENGESCHMACK_GENERAL              = ".+massengeschmack\\.tv/play/[a-z0-9\\-]+";
+    public static final String  TYPE_MASSENGESCHMACK_LIVE                 = ".+massengeschmack\\.tv/live/[a-z0-9\\-]+";
+    public static final String  TYPE_MASSENGESCHMACK_DIRECT               = ".+massengeschmack\\.tv/dl/.+";
+    public static final String  HTML_MASSENGESCHMACK_OFFLINE              = ">Clip nicht gefunden|>Error 404<|>Die angeforderte Seite wurde nicht gefunden";
+    private static final String HTML_MASSENGESCHMACK_CLIP_PREMIUMONLY     = ">Clip nicht kostenlos verfügbar";
     /* API stuff */
-    private static final boolean VIDEOS_ENABLE_API                         = true;
-    public static final String   API_BASE_URL                              = "https://massengeschmack.tv/api/v1/";
-    public static final String   API_LIST_SUBSCRIPTIONS                    = "?action=listSubscriptions";
-    public static final String   API_GET_CLIP                              = "?action=getClip&identifier=%s";
-    public static final int      API_RESPONSECODE_ERROR_CONTENT_OFFLINE    = 400;
-    public static final int      API_RESPONSECODE_ERROR_LOGIN_WRONG        = 401;
-    public static final int      API_RESPONSECODE_ERROR_RATE_LIMIT_REACHED = 500;
-    private static final String  HOST_MASSENGESCHMACK                      = "massengeschmack.tv";
-    private static final String  PREFER_MP4                                = "PREFER_MP4";
-    private static final String  CUSTOM_DATE                               = "CUSTOM_DATE_2";
-    private static final String  CUSTOM_FILENAME                           = "CUSTOM_FILENAME";
-    private static final String  CUSTOM_PACKAGENAME                        = "CUSTOM_PACKAGENAME";
-    private static final String  FASTLINKCHECK                             = "FASTLINKCHECK";
-    private static final String  EMPTY_FILENAME_INFORMATION                = "-";
-    private static final String  default_EXT                               = ".mp4";
-    private static Object        LOCK                                      = new Object();
-    private String               dllink                                    = null;
-    private boolean              loggedin                                  = false;
-    private boolean              is_premiumonly_content                    = false;
-    private String               url_videoid                               = null;
-
-    @SuppressWarnings("deprecation")
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        return requestFileInformation(downloadLink, AccountController.getInstance().getValidAccount(this));
-    }
-
-    @Override
-    public boolean isProxyRotationEnabledForLinkChecker() {
-        return false;
-    }
+    public static final boolean VIDEOS_ENABLE_API                         = true;
+    public static final String  API_BASE_URL                              = "https://massengeschmack.tv/api/v1/";
+    public static final String  API_LIST_SUBSCRIPTIONS                    = "?action=listSubscriptions";
+    public static final String  API_GET_CLIP                              = "?action=getClip&identifier=%s";
+    public static final int     API_RESPONSECODE_ERROR_CONTENT_OFFLINE    = 400;
+    public static final int     API_RESPONSECODE_ERROR_LOGIN_WRONG        = 401;
+    public static final int     API_RESPONSECODE_ERROR_RATE_LIMIT_REACHED = 500;
+    private static final String HOST_MASSENGESCHMACK                      = "massengeschmack.tv";
+    private static final String PREFER_MP4                                = "PREFER_MP4";
+    private static final String CUSTOM_DATE                               = "CUSTOM_DATE_2";
+    private static final String CUSTOM_FILENAME                           = "CUSTOM_FILENAME_2018_10";
+    private static final String CUSTOM_PACKAGENAME                        = "CUSTOM_PACKAGENAME";
+    private static final String FASTLINKCHECK                             = "FASTLINKCHECK";
+    private static final String EMPTY_FILENAME_INFORMATION                = "-";
+    public static final String  default_EXT                               = ".mp4";
+    private static Object       LOCK                                      = new Object();
+    private String              dllink                                    = null;
+    private boolean             is_premiumonly_content                    = false;
 
     /**
      * Using API wherever possible:<br />
@@ -134,459 +105,137 @@ public class MassengeschmackTv extends PluginForHost {
      * https://massengeschmack.tv/dlr/<ClipID>/(best|mobile).mp4<br />
      * Example: https://massengeschmack.tv/dlr/sakura-1/best.mp4<br />
      */
-    @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
-    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
-        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.is_premiumonly_content = false;
-        this.dllink = null;
-        this.url_videoid = getUrlNameForMassengeschmackGeneral(link);
+        /* URLs added until revision 39587 are not compatible anymore */
+        if (!new Regex(downloadLink.getPluginPatternMatcher(), this.getSupportedLinks()).matches()) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        dllink = downloadLink.getPluginPatternMatcher();
+        if (dllink.contains(".m3u8") || dllink.contains(".mp4")) {
+            downloadLink.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+        }
         this.br.setFollowRedirects(true);
-        long filesize = -1;
-        long filesize_max = 0;
-        long filesize_temp = 0;
-        final String api_best_url = getBESTDllinkSpecialAPICall();
-        String dllink_temp = null;
-        String filesize_string = null;
-        String url_videoid_without_episodenumber = null;
-        String final_filename = null;
-        String episodenumber = null;
-        String channel = null;
-        String episodename = null;
-        String date = null;
-        String ext = null;
-        String description = null;
-        URLConnectionAdapter con = null;
-        if (account != null) {
-            try {
-                login(this.br, account, false);
-                loggedin = true;
-            } catch (final Throwable e) {
-            }
-        }
-        /* TODO */
-        // final VariantInfoMassengeschmackTv chosenVariant = getActiveVariantByLink(link);
-        ArrayList<VariantInfoMassengeschmackTv> variants = new ArrayList<VariantInfoMassengeschmackTv>();
-        VariantInfoMassengeschmackTv singleVariant = null;
-        final Browser br2 = this.br.cloneBrowser();
-        try {
-            if (link.getDownloadURL().matches(TYPE_MASSENGESCHMACK_GENERAL) && VIDEOS_ENABLE_API && loggedin) {
-                url_videoid_without_episodenumber = getVideoidWithoutEpisodenumber(url_videoid);
-                apiGetPage(this.br, String.format(API_BASE_URL + API_GET_CLIP, url_videoid));
-                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
-                final ArrayList<Object> files = (ArrayList) entries.get("files");
-                channel = (String) entries.get("pdesc");
-                episodename = (String) entries.get("title");
-                description = (String) entries.get("desc");
-                date = Long.toString(JavaScriptEngineFactory.toLong(entries.get("date"), -1));
-                for (final Object fileo : files) {
-                    entries = (LinkedHashMap<String, Object>) fileo;
-                    filesize_temp = JavaScriptEngineFactory.toLong(entries.get("size"), -1);
-                    dllink_temp = (String) entries.get("url");
-                    if (inValidate(dllink_temp) && filesize_temp != -1) {
-                        continue;
-                    }
-                    if (dllink_temp.startsWith("//")) {
-                        dllink_temp = "https:" + dllink_temp;
-                    }
-                    if (filesize_temp > filesize_max) {
-                        filesize_max = filesize_temp;
-                        /* Set filesize - that value will be used later! */
-                        filesize = filesize_max;
-                        /* We need the readable filesize below to ensure that filesize will be set! */
-                        filesize_string = (String) entries.get("size_readable");
-                        this.dllink = dllink_temp;
-                    }
-                }
-                /* Get downloadlink and videoextension */
-                if (!inValidate(this.dllink)) {
-                    /* Okay we already have a final downloadlink but let's try to get an even higher quality via api_best_url. */
-                    /*
-                     * This might sometimes get us the HD version even if it is not officially available for registered-/free users:
-                     * http://forum.massengeschmack.tv/showthread.php?17604-Api&p=439951#post439951
-                     */
-                    con = this.br.openHeadConnection(api_best_url);
-                    if (con.isOK() && !con.getContentType().contains("html")) {
-                        filesize = con.getLongContentLength();
-                        this.dllink = api_best_url;
-                    }
-                    try {
-                        con.disconnect();
-                    } catch (final Throwable e) {
-                    }
-                }
-                if (inValidate(this.dllink) && account.getType() == AccountType.FREE) {
-                    /*
-                     * Rare special case: User has a free account, video is NOT downloadable for freeusers but is watchable. In this case we
-                     * cannot get any downloadlinks via API --> Website handling needed! This could also be used as a fallback for API
-                     * failures but it is not intended to be that ;)
-                     */
-                    try {
-                        this.br.getPage("http://massengeschmack.tv/play/" + this.url_videoid);
-                        getStreamDllinkMassengeschmackWebsite();
-                    } catch (final Throwable e) {
-                    }
-                }
-                /* Errorhandling for worst case - no filename information available at all! */
-                if (inValidate(channel) && inValidate(episodename) && date.equals("-1")) {
-                    /* Oops we have no filename information at all --> Fallback to finallink-filename or url-filename. */
-                    final_filename = getFilenameLastChance(ext);
-                } else {
-                    if (!inValidate(episodename)) {
-                        episodenumber = new Regex(episodename, "Folge (\\d+)").getMatch(0);
-                        if (inValidate(episodenumber)) {
-                            episodenumber = getEpisodenumberFromVideoid();
-                        }
-                        /* Fix episodename - remove episodenumber inside episodename */
-                        if (!inValidate(episodenumber)) {
-                            /* Clean episodename! */
-                            final String realepisodename = new Regex(episodename, "Folge \\d+: \"([^<>\"]*?)\"").getMatch(0);
-                            if (!inValidate(realepisodename)) {
-                                episodename = realepisodename;
-                            } else {
-                                episodename = episodename.replace("Folge " + episodenumber, "");
-                            }
-                        }
-                    }
-                }
-                if (!inValidate(dllink)) {
-                    ext = getFileNameExtensionFromString(dllink, default_EXT);
-                } else {
-                    is_premiumonly_content = true;
-                    ext = default_EXT;
-                }
-                if (!inValidate(episodename)) {
-                    episodename = Encoding.htmlDecode(episodename).trim();
-                    link.setProperty("directepisodename", episodename);
-                }
-                link.setProperty("directdate", date);
-                if (!inValidate(channel)) {
-                    /* Fix channel */
-                    if (!channel.toLowerCase().contains(url_videoid_without_episodenumber.toLowerCase())) {
-                        channel = url_videoid_without_episodenumber;
-                    }
-                    channel = Encoding.htmlDecode(channel).trim();
-                    link.setProperty("directchannel", channel);
-                }
-                link.setProperty("directepisodenumber", episodenumber);
-                link.setProperty("directtype", ext);
-                final_filename = getMassengeschmack_other_FormattedFilename(link, null);
-            } else if (link.getDownloadURL().matches(TYPE_MASSENGESCHMACK_GENERAL) || link.getDownloadURL().matches(TYPE_MASSENGESCHMACK_LIVE)) {
-                br.getPage(link.getDownloadURL());
-                if (br.containsHTML(HTML_MASSENGESCHMACK_OFFLINE) || this.br.getHttpConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else if (this.br.getHttpConnection().getResponseCode() == 403) {
-                    link.getLinkStatus().setStatusText("No free downloadable version available");
-                    link.setName(new Regex(link.getDownloadURL(), "([a-z0-9\\-]+)$").getMatch(0));
-                    this.is_premiumonly_content = true;
-                    return AvailableStatus.TRUE;
-                }
-                if (link.getDownloadURL().matches(TYPE_MASSENGESCHMACK_LIVE)) {
-                    /* Get m3u8 main playlist */
-                    dllink = br.getRegex("\"(https?://dl\\.massengeschmack\\.tv/live/[^<>\"]*?adaptive\\.m3u8)\"").getMatch(0);
-                    episodename = this.br.getRegex("class=\"active\"><span>([^<>\"]*?)</span></li>").getMatch(0);
-                    if (episodename == null) {
-                        /* Fallback to url */
-                        episodename = new Regex(link.getDownloadURL(), "([a-z0-9\\-]+)$").getMatch(0);
-                    }
-                    episodenumber = new Regex(episodename, "(\\d+)$").getMatch(0);
-                    if (episodenumber != null) {
-                        /* Remove episodenumber from episodename! */
-                        episodename = episodename.substring(0, episodename.length() - episodenumber.length());
-                    }
-                    /* Get date without time */
-                    date = br.getRegex("<p class=\"muted\">(\\d{2}\\.\\d{2}\\.\\d{2} \\d{2}:\\d{2})[^<>\"]+<").getMatch(0);
-                } else {
-                    /* 2016-04-14: Prefer stream urls over download as the .webm qualities are usually higher */
-                    getStreamDllinkMassengeschmackWebsite();
-                    /*
-                     * Only use official download URL if stream downloadurl is either null or is NOT .webm (because then download-quality is
-                     * usually higher than stream quality).
-                     */
-                    final String[] downloadlink_info = this.br.getRegex("(massengeschmack\\.tv/dl/.*?</small></em></a></li>)").getColumn(0);
-                    if (!StringUtils.isEmpty(dllink)) {
-                        singleVariant = new VariantInfoMassengeschmackTv(dllink, "stream");
-                    } else if (downloadlink_info != null && downloadlink_info.length > 0 && inValidate(dllink)) {
-                        /* Try to get official download url (usually there is none available for free users). */
-                        String directurl_download = null;
-                        for (final String dlinfo : downloadlink_info) {
-                            /* E.g. <strong>HD 720p</strong> <em><small>1280x720 (875 MiB)</small> */
-                            final Regex qualityRegex = new Regex(dlinfo, "<strong>([^<>]+)</strong> <em><small>(\\d+x\\d+)[^<>]*?</small>");
-                            final String variantQualityName = qualityRegex.getMatch(0);
-                            final String variantQualityResolution = qualityRegex.getMatch(1);
-                            dllink_temp = new Regex(dlinfo, "(/dl/[^<>\"]*?\\.mp4[^<>\"/]*?)\"").getMatch(0);
-                            filesize_string = new Regex(dlinfo, "\\((\\d+(?:,\\d+)? (?:MiB|GiB))\\)").getMatch(0);
-                            if (!StringUtils.isEmpty(filesize_string)) {
-                                filesize_string = filesize_string.replace(",", ".");
-                                filesize_temp = SizeFormatter.getSize(filesize_string);
-                            }
-                            if (filesize_temp > filesize_max) {
-                                filesize_max = filesize_temp;
-                                directurl_download = dllink_temp;
-                            }
-                            if (!inValidate(directurl_download)) {
-                                filesize = filesize_max;
-                                dllink = directurl_download;
-                                if (!dllink.startsWith("http")) {
-                                    dllink = "http://" + HOST_MASSENGESCHMACK + dllink;
-                                }
-                            }
-                            /* Only add as a variant if all required information is available! */
-                            if (!inValidate(directurl_download) && !StringUtils.isEmpty(variantQualityName)) {
-                                final VariantInfoMassengeschmackTv currentVariant;
-                                if (!StringUtils.isEmpty(filesize_string)) {
-                                    currentVariant = new VariantInfoMassengeschmackTv(dllink, variantQualityName, filesize);
-                                } else {
-                                    currentVariant = new VariantInfoMassengeschmackTv(dllink, variantQualityName);
-                                }
-                                if (!StringUtils.isEmpty(variantQualityResolution)) {
-                                    currentVariant.setResolution(variantQualityResolution);
-                                }
-                                variants.add(currentVariant);
-                            }
-                        }
-                    }
-                    if (!inValidate(this.dllink)) {
-                        /* Okay we already have a final downloadlink but let's try to get an even higher quality via api_best_url. */
-                        /*
-                         * This might sometimes get us the HD version even if it is not officially available for registered-/free users:
-                         * http://forum.massengeschmack.tv/showthread.php?17604-Api&p=439951#post439951
-                         */
-                        con = br2.openHeadConnection(api_best_url);
-                        if (con.isOK() && !con.getContentType().contains("html")) {
-                            filesize = con.getLongContentLength();
-                            this.dllink = api_best_url;
-                            singleVariant = new VariantInfoMassengeschmackTv(this.dllink, "stream_best");
-                        }
-                        try {
-                            con.disconnect();
-                        } catch (final Throwable e) {
-                        }
-                    }
-                    channel = br.getRegex("href=\"/mag\\-cover\\.php[^\"]+\">([^<>\"]*?)<").getMatch(0);
-                    date = br.getRegex("<small><a[^>]+></a>([^<>\"]+)</small>").getMatch(0);
-                    description = this.br.getRegex("</h4>[\t\n\r ]+<p>([^<]+)</").getMatch(0);
-                    episodename = br.getRegex("<li class=\"active\"><span>([^<>\"]+)<").getMatch(0);
-                    episodenumber = this.br.getRegex("class=\"active\"><span>Folge (\\d+)</span></li>").getMatch(0);
-                    if (inValidate(episodenumber) && !inValidate(episodename)) {
-                        episodenumber = new Regex(episodename, "Folge (\\d+)").getMatch(0);
-                    }
-                    if (inValidate(episodenumber)) {
-                        episodenumber = getEpisodenumberFromVideoid();
-                    }
-                    if (!inValidate(episodename) && !inValidate(episodenumber)) {
-                        /* Remove episodenumber from episodename so that the name we create later looks better. */
-                        final String episodetext = String.format("Folge %s", episodenumber);
-                        final String episodetext2 = String.format("Folge %s: ", episodenumber);
-                        episodename = episodename.replace(episodetext2, "");
-                        episodename = episodename.replace(episodetext, "");
-                    }
-                    if (!inValidate(channel) && !inValidate(episodename)) {
-                        /*
-                         * Remove channelname inside episodename to get better filenames - this may actually inValidate the episodename
-                         * completely if it only consists of the channelname but that is fine.
-                         */
-                        final String possible_channeltext_inside_episodename = String.format("%s - ", channel);
-                        episodename = episodename.replace(possible_channeltext_inside_episodename, "");
-                    }
-                }
-                if (ext == null) {
-                    ext = getFileNameExtensionFromString(dllink, default_EXT);
-                    if (ext == null) {
-                        ext = default_EXT;
-                    }
-                }
-                if (ext.equals(".m3u8")) {
-                    /* HLS is usually .mp4 */
-                    ext = default_EXT;
-                }
-                if (inValidate(channel) && inValidate(episodename) && inValidate(episodenumber)) {
-                    /* Oops we have no filename information at all --> Fallback to finallink-filename or url-filename. */
-                    final_filename = getFilenameLastChance(ext);
-                } else {
-                    /* Everything seems to be fine --> Use user-defined filename */
-                    if (!inValidate(episodename)) {
-                        episodename = Encoding.htmlDecode(episodename).trim();
-                        link.setProperty("directepisodename", episodename);
-                    }
-                    if (!inValidate(date)) {
-                        date = date.trim();
-                        link.setProperty("directdate", date);
-                    }
-                    if (!inValidate(channel)) {
-                        channel = Encoding.htmlDecode(channel).trim();
-                        link.setProperty("directchannel", channel);
-                    }
-                    if (!inValidate(episodenumber)) {
-                        link.setProperty("directepisodenumber", episodenumber);
-                    }
-                    link.setProperty("directtype", ext);
-                    final_filename = getMassengeschmack_other_FormattedFilename(link, null);
-                }
-            } else if (link.getDownloadURL().matches(TYPE_MASSENGESCHMACK_DIRECT)) {
-                /* Most times such links will be premium only but there are also free downloadable direct urls! */
-                final_filename = new Regex(link.getDownloadURL(), "/([^/]+)$").getMatch(0);
-                if (final_filename == null) {
-                    /* This should never happen! */
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                dllink = link.getDownloadURL();
-            } else {
-                link.getLinkStatus().setStatusText("Unknown linkformat");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (!inValidate(description) && inValidate(link.getComment())) {
-                description = Encoding.htmlDecode(description);
-                link.setComment(description);
-            }
-            boolean lookForFilesize = false;
-            if (singleVariant != null) {
-                variants.add(singleVariant);
-                lookForFilesize = true;
-            }
-            if (!variants.isEmpty()) {
-                if (variants.size() > 1) {
-                    sortVariants(variants);
-                }
-                link.setVariantSupport(true);
-                link.setVariants(variants);
-                /* Set best quality */
-                MassengeschmackTv.setVariant(link, variants.get(variants.size() - 1));
-            } else {
-                /* Old handling without variants */
-                link.setFinalFileName(final_filename);
-            }
-            if (lookForFilesize) {
-                if (filesize < 0 && filesize_string != null) {
-                    filesize = SizeFormatter.getSize(filesize_string);
-                }
-                if (filesize < 0 && !inValidate(dllink) && !dllink.contains(".m3u8")) {
-                    con = br2.openHeadConnection(dllink);
-                    final long responsecode = con.getResponseCode();
-                    if (con.isOK() && !con.getContentType().contains("html")) {
-                        filesize = con.getLongContentLength();
-                    } else if (responsecode == API_RESPONSECODE_ERROR_LOGIN_WRONG || responsecode == 403) {
-                        this.is_premiumonly_content = true;
-                    } else {
-                        /* 404 and/or html --> Probably offline */
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
-                }
-                if (filesize > 0) {
-                    link.setDownloadSize(filesize);
-                }
-            }
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
-        }
         return AvailableStatus.TRUE;
     }
 
-    /* Variant stuff */
-    public static void setVariant(final DownloadLink link, final VariantInfoMassengeschmackTv v) {
-        final String filesize = v.getFilesize();
-        link.setVariant(v);
-        link.setLinkID(link.getPluginPatternMatcher() + "." + v._getUniqueId());
-        if (filesize != null) {
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
-        }
-        final String fileName = getMassengeschmack_other_FormattedFilename(link, v);
-        link.setFinalFileName(fileName);
-    }
-
     @Override
-    public void setActiveVariantByLink(DownloadLink downloadLink, LinkVariant variant) {
-        if (variant != null && variant instanceof VariantInfoMassengeschmackTv) {
-            MassengeschmackTv.setVariant(downloadLink, (VariantInfoMassengeschmackTv) variant);
-        } else if (variant != null) {
-            super.setActiveVariantByLink(downloadLink, variant);
-        }
+    public boolean isProxyRotationEnabledForLinkChecker() {
+        return false;
     }
 
-    @Override
-    public List<? extends LinkVariant> getVariantsByLink(DownloadLink downloadLink) {
-        if (downloadLink.isGenericVariantSupport()) {
-            return super.getVariantsByLink(downloadLink);
+    // /* Variant stuff */
+    // public static void setVariant(final DownloadLink link, final DailyMotionVariant v) {
+    // link.setVariant(v);
+    // link.setLinkID(link.getPluginPatternMatcher() + "." + v._getUniqueId());
+    // }
+    //
+    // /* Test */
+    // public static void setVariant(final DownloadLink link, final VariantInfoMassengeschmackTv v) {
+    // final String filesize = v.getFilesize();
+    // link.setVariant(v);
+    // link.setLinkID(link.getPluginPatternMatcher() + "." + v._getUniqueId());
+    // if (filesize != null) {
+    // link.setDownloadSize(SizeFormatter.getSize(filesize));
+    // }
+    // final String fileName = getMassengeschmack_other_FormattedFilename(link, v);
+    // link.setFinalFileName(fileName);
+    // }
+    //
+    // @Override
+    // public void setActiveVariantByLink(DownloadLink downloadLink, LinkVariant variant) {
+    // if (variant != null && variant instanceof VariantInfoMassengeschmackTv) {
+    // MassengeschmackTv.setVariant(downloadLink, (VariantInfoMassengeschmackTv) variant);
+    // } else if (variant != null) {
+    // super.setActiveVariantByLink(downloadLink, variant);
+    // }
+    // }
+    //
+    // @Override
+    // public List<? extends LinkVariant> getVariantsByLink(DownloadLink downloadLink) {
+    // if (downloadLink.isGenericVariantSupport()) {
+    // return super.getVariantsByLink(downloadLink);
+    // }
+    // return downloadLink.getVariants(VariantInfoMassengeschmackTv.class);
+    // }
+    //
+    // @Override
+    // public LinkVariant getActiveVariantByLink(DownloadLink downloadLink) {
+    // if (downloadLink.isGenericVariantSupport()) {
+    // return super.getActiveVariantByLink(downloadLink);
+    // }
+    // return downloadLink.getVariant(VariantInfoMassengeschmackTv.class);
+    // }
+    //
+    // /**
+    // * @param variantInfos
+    // */
+    // public static void sortVariants(final List<VariantInfoMassengeschmackTv> variantInfos) {
+    // if (variantInfos != null) {
+    // for (final VariantInfoMassengeschmackTv v : variantInfos) {
+    // v.setUrl(null);
+    // }
+    // if (variantInfos.size() > 1) {
+    // Collections.sort(variantInfos, new Comparator<VariantInfoMassengeschmackTv>() {
+    // public int compare(long x, long y) {
+    // return (x < y) ? -1 : ((x == y) ? 0 : 1);
+    // }
+    //
+    // @Override
+    // public int compare(VariantInfoMassengeschmackTv o1, VariantInfoMassengeschmackTv o2) {
+    // return compare(o2.getFilesizeLong(), o1.getFilesizeLong());
+    // }
+    // });
+    // }
+    // }
+    // }
+    public static String getFilenameLastChance(final String dllink, final String url_videoid) {
+        String ext = getFileNameExtensionFromString(dllink);
+        if (ext == null) {
+            /* This should never happen */
+            ext = ".mp4";
         }
-        return downloadLink.getVariants(VariantInfoMassengeschmackTv.class);
-    }
-
-    @Override
-    public LinkVariant getActiveVariantByLink(DownloadLink downloadLink) {
-        if (downloadLink.isGenericVariantSupport()) {
-            return super.getActiveVariantByLink(downloadLink);
-        }
-        return downloadLink.getVariant(VariantInfoMassengeschmackTv.class);
-    }
-
-    /**
-     * @param variantInfos
-     */
-    private void sortVariants(final List<VariantInfoMassengeschmackTv> variantInfos) {
-        if (variantInfos != null) {
-            for (final VariantInfoMassengeschmackTv v : variantInfos) {
-                v.setUrl(null);
-            }
-            if (variantInfos.size() > 1) {
-                Collections.sort(variantInfos, new Comparator<VariantInfoMassengeschmackTv>() {
-                    public int compare(long x, long y) {
-                        return (x < y) ? -1 : ((x == y) ? 0 : 1);
-                    }
-
-                    @Override
-                    public int compare(VariantInfoMassengeschmackTv o1, VariantInfoMassengeschmackTv o2) {
-                        return compare(o2.getFilesizeLong(), o1.getFilesizeLong());
-                    }
-                });
-            }
-        }
-    }
-
-    private String getFilenameLastChance(final String ext) {
-        String filename = getFilenameFromDownloadlink();
-        if (inValidate(filename)) {
+        String filename = getFilenameFromFinalDownloadlink(dllink);
+        if (StringUtils.isEmpty(filename)) {
             /* Okay finally fallback to url-filename */
-            filename = this.url_videoid + ext;
+            filename = url_videoid + ext;
         }
         return filename;
     }
 
-    private String getEpisodenumberFromVideoid() {
-        if (inValidate(this.url_videoid)) {
+    public static String getEpisodenumberFromVideoid(final String url_videoid) {
+        if (StringUtils.isEmpty(url_videoid)) {
             return null;
         }
-        final String episodenumber = new Regex(this.url_videoid, "(\\d+)$").getMatch(0);
+        final String episodenumber = new Regex(url_videoid, "(\\d+)$").getMatch(0);
         return episodenumber;
     }
 
-    private String getFilenameFromDownloadlink() {
+    public static String getFilenameFromFinalDownloadlink(final String dllink) {
         String filename_directlink = null;
-        if (!inValidate(dllink)) {
-            filename_directlink = new Regex(this.dllink, "/([^/]+\\.(?:flv|mp4|mkv|webm))$").getMatch(0);
+        if (!StringUtils.isEmpty(dllink)) {
+            filename_directlink = new Regex(dllink, "/([^/]+\\.(?:flv|mp4|mkv|webm))$").getMatch(0);
         }
         /* Make sure that we actually get a filename ... */
-        if (!inValidate(filename_directlink) && filename_directlink.equals("best.mp4")) {
+        if (!StringUtils.isEmpty(filename_directlink) && filename_directlink.equals("best.mp4")) {
             filename_directlink = null;
         }
         return filename_directlink;
     }
 
     @SuppressWarnings({ "unchecked" })
-    private void getStreamDllinkMassengeschmackWebsite() {
+    public static String getStreamDllinkMassengeschmackWebsite(final Browser br) {
         /* First try hls/mp4. */
-        if (inValidate(dllink)) {
-            dllink = br.getRegex("type=\"application/x\\-mpegurl\" src=\"(http://[^<>\"]*?\\.m3u8)\"").getMatch(0);
-        }
+        String dllink = br.getRegex("type=\"application/x\\-mpegurl\" src=\"(http://[^<>\"]*?\\.m3u8)\"").getMatch(0);
         /*
          * 2016-04-14: This must be their new way of storing streams in HTML - works for massengeschmack.tv- and fernsehkritik.tv episodes.
          */
-        final String stream_json = this.br.getRegex("MEDIA[\t\n\r ]*?=[\t\n\r ]*?(\\[.*?\\])").getMatch(0);
-        if (inValidate(dllink)) {
+        final String stream_json = br.getRegex("MEDIA[\t\n\r ]*?=[\t\n\r ]*?(\\[.*?\\])").getMatch(0);
+        if (StringUtils.isEmpty(dllink)) {
             String dllink_mp4 = null;
             String dllink_webm = null;
-            if (!inValidate(stream_json)) {
+            if (!StringUtils.isEmpty(stream_json)) {
                 try {
                     String dllink_temp = null;
                     HashMap<String, Object> entries = null;
@@ -594,12 +243,12 @@ public class MassengeschmackTv extends PluginForHost {
                     for (final Object videoo : videoressourcelist) {
                         entries = (HashMap<String, Object>) videoo;
                         dllink_temp = (String) entries.get("src");
-                        if (!inValidate(dllink_temp) && inValidate(dllink_webm) && dllink_temp.contains(".webm")) {
+                        if (!StringUtils.isEmpty(dllink_temp) && StringUtils.isEmpty(dllink_webm) && dllink_temp.contains(".webm")) {
                             dllink_webm = dllink_temp;
-                        } else if (!inValidate(dllink_temp) && inValidate(dllink_mp4) && dllink_temp.contains(".mp4")) {
+                        } else if (!StringUtils.isEmpty(dllink_temp) && StringUtils.isEmpty(dllink_mp4) && dllink_temp.contains(".mp4")) {
                             dllink_mp4 = dllink_temp;
                         } else {
-                            logger.info("Skipping unknown quality or we already have that one: " + dllink_temp);
+                            // logger.info("Skipping unknown quality or we already have that one: " + dllink_temp);
                         }
                     }
                 } catch (final Throwable e) {
@@ -609,50 +258,53 @@ public class MassengeschmackTv extends PluginForHost {
              * 2016-04-14: This is probably old: Sometimes different http qualities are available - prefer webm, highest quality, slightly
              * better than mp4.
              */
-            if (inValidate(dllink_webm)) {
+            if (StringUtils.isEmpty(dllink_webm)) {
                 dllink_webm = br.getRegex("type=\"video/webm\" src=\"(http://[^<>\"]*?\\.webm)\"").getMatch(0);
             }
             /* No luck? Try mp4. */
-            if (inValidate(dllink_mp4)) {
+            if (StringUtils.isEmpty(dllink_mp4)) {
                 dllink_mp4 = br.getRegex("type=\"video/mp4\" src=\"(http://[^<>\"]*?\\.mp4)\"").getMatch(0);
             }
             /* No luck? Try wider RegEx. */
-            if (inValidate(dllink_mp4)) {
+            if (StringUtils.isEmpty(dllink_mp4)) {
                 dllink_mp4 = br.getRegex("(/dl/[^<>\"]*?\\.mp4[^<>\"/]*?)\"").getMatch(0);
             }
             /* Nothing there? Try to download stream! */
-            if (inValidate(dllink_mp4)) {
+            if (StringUtils.isEmpty(dllink_mp4)) {
                 final String base = br.getRegex("var base = \\'(http://[^<>\"]*?)\\';").getMatch(0);
                 final String link = br.getRegex("playlist = \\[\\{url: base \\+ \\'([^<>\"]*?)\\'").getMatch(0);
                 if (base != null && link != null) {
                     dllink_mp4 = base + link;
                 }
             }
-            setSelectedFormat(dllink_mp4, dllink_webm);
+            dllink = getSelectedFormat(dllink_mp4, dllink_webm);
             /* Fix DLLINK if needed */
-            if (!inValidate(dllink) && !dllink.startsWith("http")) {
+            if (!StringUtils.isEmpty(dllink) && !dllink.startsWith("http")) {
                 dllink = "http://" + HOST_MASSENGESCHMACK + dllink;
             }
         }
+        return dllink;
     }
 
-    private void setSelectedFormat(final String dllink_mp4, final String dllink_webm) {
+    public static String getSelectedFormat(final String dllink_mp4, final String dllink_webm) {
+        String dllink = null;
         /* Finally decide which format we want to have in case we have a choice. */
-        if (inValidate(this.dllink) && this.preferMP4()) {
-            this.dllink = dllink_mp4;
+        if (preferMP4()) {
+            dllink = dllink_mp4;
         }
         /* No luck? We don't care which format the user selected! */
-        if (inValidate(this.dllink)) {
-            this.dllink = dllink_webm;
+        if (StringUtils.isEmpty(dllink)) {
+            dllink = dllink_webm;
         }
-        if (inValidate(this.dllink)) {
+        if (StringUtils.isEmpty(dllink)) {
             /* Last chance */
-            this.dllink = dllink_mp4;
+            dllink = dllink_mp4;
         }
+        return dllink;
     }
 
     /** https://massengeschmack.tv/dlr/[url_videoid]/[best|mobile|hd].mp4 */
-    private String getBESTDllinkSpecialAPICall() {
+    public static String getBESTDllinkSpecialAPICall(final String url_videoid) {
         /*
          * Function/API Call of which we definitly know that we will get the highest quality (kind of like an API).
          */
@@ -719,7 +371,7 @@ public class MassengeschmackTv extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link, null);
+        requestFileInformation(link);
         if (inValidate(dllink)) {
             /* 2018-07-19: Keep it simple: No downloadlink --> Probably premiumonly content! */
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
@@ -730,6 +382,7 @@ public class MassengeschmackTv extends PluginForHost {
             /* More chunks work but download will stop at random point! */
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
             if (dl.getConnection().getContentType().contains("html")) {
+                handleKnownServerResponsecodes(dl.getConnection().getResponseCode());
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unbekannter Serverfehler", 30 * 60 * 1000l);
@@ -740,7 +393,8 @@ public class MassengeschmackTv extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link, account);
+        requestFileInformation(link);
+        login(this.br, account, false);
         /*
          * This may not necessarily mean that it is only for premium. Sometimes a free account might be enough to download such content e.g.
          * https://massengeschmack.tv/play/fktv148
@@ -761,23 +415,35 @@ public class MassengeschmackTv extends PluginForHost {
         } else {
             /* http download */
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            }
+            handleKnownServerResponsecodes(dl.getConnection().getResponseCode());
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unbekannter Serverfehler", 30 * 60 * 1000l);
             }
             dl.startDownload();
+        }
+    }
+
+    private void handleKnownServerResponsecodes(final long responsecode) throws PluginException {
+        switch ((int) responsecode) {
+        case 403:
+            /* Premiumonly */
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        case 404:
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        default:
+            break;
         }
     }
 
     public void downloadHLS(final DownloadLink link) throws Exception {
         /* hls download */
         this.br.getPage(dllink);
+        if (br.getHttpConnection().getResponseCode() == 403) {
+            /* Premiumonly */
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        }
         final String url_base = this.br.getBaseURL();
         final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
         if (hlsbest == null) {
@@ -841,9 +507,9 @@ public class MassengeschmackTv extends PluginForHost {
         }
     }
 
-    private boolean preferMP4() {
-        /* Important: Check plugin config for both domains!! */
-        return SubConfiguration.getConfig(this.getHost()).getBooleanProperty(PREFER_MP4, defaultPREFER_MP4) || SubConfiguration.getConfig(HOST_MASSENGESCHMACK).getBooleanProperty(PREFER_MP4, defaultPREFER_MP4);
+    public static boolean preferMP4() {
+        final PluginForHost hosterPlugin = JDUtilities.getPluginForHost("massengeschmack.tv");
+        return hosterPlugin.getPluginConfig().getBooleanProperty(PREFER_MP4, defaultPREFER_MP4);
     }
 
     public static void apiGetPage(final Browser br, final String url) throws PluginException, IOException {
@@ -929,9 +595,8 @@ public class MassengeschmackTv extends PluginForHost {
         return br;
     }
 
-    @SuppressWarnings("deprecation")
-    public static String getUrlNameForMassengeschmackGeneral(final DownloadLink dl) {
-        return new Regex(dl.getDownloadURL(), "([A-Za-z0-9\\-_]+)$").getMatch(0);
+    public static String getUrlNameForMassengeschmackGeneral(final String addedURL) {
+        return new Regex(addedURL, "([A-Za-z0-9\\-_]+)$").getMatch(0);
     }
 
     @Override
@@ -947,7 +612,7 @@ public class MassengeschmackTv extends PluginForHost {
     }
 
     /* In case the channel (url_videoid_without_episodenumber) is different from what the website shows we have to manually fix this. */
-    private String getVideoidWithoutEpisodenumber(String url_videoid) {
+    public static String getVideoidWithoutEpisodenumber(String url_videoid) {
         if (url_videoid == null) {
             return null;
         }
@@ -969,7 +634,7 @@ public class MassengeschmackTv extends PluginForHost {
         } else {
             /* url_name_without_episodenumber should already be okay - simply remove '-' and that's it. */
             url_videoid = url_videoid.replace("-", "");
-            if (!inValidate(url_episodenumber)) {
+            if (!StringUtils.isEmpty(url_episodenumber)) {
                 url_videoid = url_videoid.substring(0, url_videoid.length() - url_episodenumber.length());
             }
         }
@@ -993,7 +658,7 @@ public class MassengeschmackTv extends PluginForHost {
         String qualityName;
         String ext;
         if (variant != null) {
-            qualityName = variant.getVariantNameWithoutFilesize();
+            qualityName = variant.getVariantName();
             if (qualityName == null) {
                 /* This should never happen */
                 qualityName = EMPTY_FILENAME_INFORMATION;
@@ -1084,7 +749,7 @@ public class MassengeschmackTv extends PluginForHost {
         return "JDownloader's Massengeschmack Plugin kann Videos von massengeschmack.tv herunterladen. Hier kann man eigene Dateinamen definieren und (als Massengeschmack Abonnent) die herunterzuladenden Videoformate wählen.";
     }
 
-    private final static String  defaultCustomFilename             = "*date**quality*_*channel*_Folge *episodenumber* - *episodename**ext*";
+    private final static String  defaultCustomFilename             = "*date*_*quality*_*channel*_Folge *episodenumber* - *episodename**ext*";
     private final static String  defaultCustomPackagename          = "Fernsehkritik.tv Folge *episodenumber* vom *date*";
     private final static String  defaultCustomDate                 = "yyyy-MM-dd";
     private static final String  default_empty_tag_separation_mark = "-";
@@ -1095,6 +760,11 @@ public class MassengeschmackTv extends PluginForHost {
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Allgemeine Einstellungen:"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_MP4, "Für den kostenlosen massengeschmack.tv Download:\r\nBevorzuge .mp4 Download statt .webm?\r\nBedenke, dass mp4 eine minimal bessere Audio-Bitrate- aber dafür eine niedrigere Video-Bitrate hat!?").setDefaultValue(defaultPREFER_MP4));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "LOAD_1080p", "Lade 1080p?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "LOAD_720p", "Lade 720p?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "LOAD_432p", "Lade 432p?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "LOAD_AUDIO_m4a", "Lade m4a Audio?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "LOAD_AUDIO_mp3", "Lade mp3 Audio?").setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK, "Aktiviere schnellen Linkcheck (Dateigröße erst bei Download sichtbar)?").setDefaultValue(defaultFASTLINKCHECK));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Lege eigene Datei-/Paketnamen fest:"));

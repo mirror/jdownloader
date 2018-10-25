@@ -47,7 +47,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to", "pornfile.cz" }, urls = { "https?://(?:www\\.)?(?:uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)/(?!soubory/)[\\!a-zA-Z0-9]+/[^\\?\\s]+", "https?://(?:www\\.)?(?:pornfile\\.cz|pornfile\\.ulozto\\.net)/[\\!a-zA-Z0-9]+/[^\\?\\s]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to", "ulozto.net", "pornfile.cz" }, urls = { "https?://(?:www\\.)?(?:uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)/(?!soubory/)[\\!a-zA-Z0-9]+/[^\\?\\s]+", "https?://(?:www\\.)?ulozto\\.net/(?!soubory/)[\\!a-zA-Z0-9]+/[^\\?\\s]+", "https?://(?:www\\.)?(?:pornfile\\.cz|pornfile\\.ulozto\\.net)/[\\!a-zA-Z0-9]+/[^\\?\\s]+" })
 public class UlozTo extends PluginForHost {
     private boolean              passwordProtected            = false;
     private static final String  REPEAT_CAPTCHA               = "REPEAT_CAPTCHA";
@@ -82,6 +82,14 @@ public class UlozTo extends PluginForHost {
         } else {
             return new String[] { "pornfile.cz", "pornfile.ulozto.net" };
         }
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if ("ulozto.sk".equalsIgnoreCase(host) || "ulozto.cz".equalsIgnoreCase(host) || "ulozto.net".equalsIgnoreCase(host)) {
+            return "uloz.to";
+        }
+        return super.rewriteHost(host);
     }
 
     @Override

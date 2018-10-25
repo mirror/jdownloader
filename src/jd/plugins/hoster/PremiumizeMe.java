@@ -28,6 +28,28 @@ import java.util.zip.GZIPOutputStream;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.swing.components.ExtTextField;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.Base64OutputStream;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetConfigPanel;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
+import org.jdownloader.plugins.config.AccountConfigInterface;
+import org.jdownloader.plugins.config.AccountJsonConfig;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.translate._JDT;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -51,29 +73,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.config.handler.KeyHandler;
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.swing.components.ExtTextField;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.net.Base64OutputStream;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetConfigPanel;
-import org.jdownloader.plugins.components.usenet.UsenetServer;
-import org.jdownloader.plugins.config.AccountConfigInterface;
-import org.jdownloader.plugins.config.AccountJsonConfig;
-import org.jdownloader.plugins.config.Order;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.translate._JDT;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumize.me" }, urls = { "https?://[A-Za-z0-9\\-]+\\.energycdn\\.com/dl/.+" })
 public class PremiumizeMe extends UseNet {
@@ -103,12 +102,12 @@ public class PremiumizeMe extends UseNet {
 
             @Override
             protected boolean showKeyHandler(KeyHandler<?> keyHandler) {
-                return "ssldownloadsenabled".equals(keyHandler.getKey()) || "freeaccountsallowed".equals(keyHandler.getKey());
+                return "ssldownloadsenabled".equals(keyHandler.getKey());
             }
 
             @Override
             protected boolean useCustomUI(KeyHandler<?> keyHandler) {
-                return !"ssldownloadsenabled".equals(keyHandler.getKey()) && !"freeaccountsallowed".equals(keyHandler.getKey());
+                return !"ssldownloadsenabled".equals(keyHandler.getKey());
             }
 
             @Override
@@ -129,10 +128,6 @@ public class PremiumizeMe extends UseNet {
             public String getSSLDownloadsEnabled_label() {
                 return _JDT.T.lit_ssl_enabled();
             }
-
-            public String getFreeAccountsAllowed_label() {
-                return "Allow free accounts? Only use when you know what you're doing!";
-            }
         }
 
         public static final PremiumizeMeConfigInterface.Translation TRANSLATION = new Translation();
@@ -142,12 +137,6 @@ public class PremiumizeMe extends UseNet {
         boolean isSSLDownloadsEnabled();
 
         void setSSLDownloadsEnabled(boolean b);
-
-        @DefaultBooleanValue(false)
-        @Order(20)
-        boolean isFreeAccountsAllowed();
-
-        void setFreeAccountsAllowed(boolean b);
     };
 
     @Override
@@ -403,17 +392,7 @@ public class PremiumizeMe extends UseNet {
             br.followConnection();
             sendErrorLog(link, account);
             handleAPIErrors(br, account, link);
-            int timesFailed = link.getIntegerProperty("timesfailed" + FAIL_STRING + "_unknown2", 1);
-            if (timesFailed <= 3) {
-                timesFailed++;
-                link.setProperty("timesfailed" + FAIL_STRING + "_unknown2", timesFailed);
-                logger.info("Unknown error2 - retrying");
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error");
-            } else {
-                link.setProperty("timesfailed" + FAIL_STRING + "_unknown2", Property.NULL);
-                logger.info("Unknown error2 - disabling current host!");
-                mhm.putError(account, link, 60 * 60 * 1000l, "error2");
-            }
+            mhm.handleErrorGeneric(account, link, "dl_error_unknown_2", 10, 5 * 60 * 1000l);
         }
     }
 
@@ -435,31 +414,13 @@ public class PremiumizeMe extends UseNet {
             final String url = link.getDefaultPlugin().buildExternalDownloadURL(link, this);
             br.getPage(getProtocol() + "api.premiumize.me/pm-api/v1.php?method=directdownloadlink&params[login]=" + Encoding.urlEncode(account.getUser()) + "&params[pass]=" + Encoding.urlEncode(account.getPass()) + "&params[link]=" + Encoding.urlEncode(url));
             if (br.containsHTML(">403 Forbidden<")) {
-                int timesFailed = link.getIntegerProperty("timesfailed" + FAIL_STRING, 0);
-                if (timesFailed <= 2) {
-                    timesFailed++;
-                    link.setProperty("timesfailed" + FAIL_STRING, timesFailed);
-                    throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
-                } else {
-                    link.setProperty("timesfailed" + FAIL_STRING, Property.NULL);
-                    mhm.putError(account, link, 60 * 60 * 1000l, "Server error");
-                }
+                mhm.handleErrorGeneric(account, link, "dl_error_403", 10, 5 * 60 * 1000l);
             }
             handleAPIErrors(br, account, link);
             String dllink = br.getRegex("location\":\"(https?[^\"]+)").getMatch(0);
             if (dllink == null) {
                 sendErrorLog(link, account);
-                int timesFailed = link.getIntegerProperty("timesfailed" + FAIL_STRING + "_unknown", 0);
-                if (timesFailed <= 2) {
-                    timesFailed++;
-                    link.setProperty("timesfailed" + FAIL_STRING + "_unknown", timesFailed);
-                    logger.info("Unknown error - retrying");
-                    throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown Error");
-                } else {
-                    link.setProperty("timesfailed" + FAIL_STRING + "_unknown", Property.NULL);
-                    logger.info("Unknown error - disabling current host!");
-                    mhm.putError(account, link, 60 * 60 * 1000l, "Unknown Error");
-                }
+                mhm.handleErrorGeneric(account, link, "dl_error_unknown_1", 10, 5 * 60 * 1000l);
             }
             dllink = dllink.replaceAll("\\\\/", "/");
             showMessage(link, "Task 2: Download begins!");
@@ -498,7 +459,7 @@ public class PremiumizeMe extends UseNet {
         final String fairUse = PluginJSonUtils.getJson(br, "fairuse_left");
         if (fairUse != null) {
             final double d = Double.parseDouble(fairUse);
-            status = status + ": FairUsage " + (100 - ((int) (d * 100.0))) + "%";
+            status = status + ": Fair usage " + (100 - ((int) (d * 100.0))) + "%";
             // 7 day rolling average
             // AVERAGE = way to display percentage value. prevent controlling
             // from using figure. Just a GUI display for the user.
@@ -538,18 +499,13 @@ public class PremiumizeMe extends UseNet {
             final String[] hosts = new Regex(HostsJSON, "\"([a-zA-Z0-9\\.\\-]+)\"").getColumn(0);
             final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
             supportedHosts.add("usenet");
-            /* 2018-01-15: Why does this get added manually?? */
-            supportedHosts.add("daofile.com");
             ai.setMultiHostSupport(this, supportedHosts);
             ai.setProperty("connection_settings", response.get("connection_settings"));
         } else {
             /*
              * Free/unknown account-type --> Users cannot download anything with such an account.
              */
-            if (!((PremiumizeMeConfigInterface) AccountJsonConfig.get(account)).isFreeAccountsAllowed()) {
-                ai.setExpired(true);
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, _GUI.T.PremiumAccountTableModel_getStringValue_status_unsupported_account_type_free(), PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
+            ai.setExpired(true);
             account.setType(AccountType.FREE);
             ai.setTrafficLeft(0);
         }
@@ -557,11 +513,7 @@ public class PremiumizeMe extends UseNet {
     }
 
     private static String getProtocol() {
-        if (Application.getJavaVersion() < Application.JAVA17) {
-            return "http://";
-        } else {
-            return "https://";
-        }
+        return "https://";
     }
 
     private void login(final Account account) throws Exception {
