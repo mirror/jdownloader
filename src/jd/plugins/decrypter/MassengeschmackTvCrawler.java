@@ -65,6 +65,8 @@ public class MassengeschmackTvCrawler extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = correctAddedURL(param.toString());
+        /* Given filesize is buggy sometimes --> Only display realistic filesizes e.g. massengeschmack.tv/clip/fktv1 */
+        final long minimum_filesize = 500000;
         boolean is_premiumonly_content = false;
         String dllink = null;
         final String url_videoid = MassengeschmackTv.getUrlNameForMassengeschmackGeneral(parameter);
@@ -167,7 +169,12 @@ public class MassengeschmackTvCrawler extends PluginForDecrypt {
                             quality = "AUDIO_mp3";
                         }
                     }
-                    final VariantInfoMassengeschmackTv currVariant = new VariantInfoMassengeschmackTv(dllink_temp, quality, filesize_temp);
+                    final VariantInfoMassengeschmackTv currVariant;
+                    if (filesize_temp >= minimum_filesize) {
+                        currVariant = new VariantInfoMassengeschmackTv(dllink_temp, quality, filesize_temp);
+                    } else {
+                        currVariant = new VariantInfoMassengeschmackTv(dllink_temp, quality);
+                    }
                     if (!StringUtils.isEmpty(resolution)) {
                         currVariant.setResolution(resolution);
                     }
@@ -299,8 +306,7 @@ public class MassengeschmackTvCrawler extends PluginForDecrypt {
                                     }
                                 }
                                 final VariantInfoMassengeschmackTv currVariant;
-                                /* Given filesize is buggy sometimes --> Display as unknown then e.g. massengeschmack.tv/clip/fktv1 */
-                                if (!StringUtils.isEmpty(filesize_string) && filesize_temp > 500000) {
+                                if (!StringUtils.isEmpty(filesize_string) && filesize_temp >= minimum_filesize) {
                                     currVariant = new VariantInfoMassengeschmackTv(dllink_temp, quality, filesize_temp);
                                 } else {
                                     currVariant = new VariantInfoMassengeschmackTv(dllink_temp, quality);
@@ -369,33 +375,31 @@ public class MassengeschmackTvCrawler extends PluginForDecrypt {
             } else {
                 throw new DecrypterException();
             }
-            if (filesize < 0 && filesize_string != null && !StringUtils.isEmpty(dllink)) {
-                if (filesize < 0 && filesize_string != null) {
-                    filesize = SizeFormatter.getSize(filesize_string);
-                }
-                if (filesize < 0 && !StringUtils.isEmpty(dllink) && !dllink.contains(".m3u8")) {
-                    con = br2.openHeadConnection(dllink);
-                    final long responsecode = con.getResponseCode();
-                    if (con.isOK() && !con.getContentType().contains("html")) {
-                        filesize = con.getLongContentLength();
-                    } else if (responsecode == MassengeschmackTv.API_RESPONSECODE_ERROR_LOGIN_WRONG || responsecode == 403) {
-                        is_premiumonly_content = true;
-                    } else {
-                        /* 404 and/or html --> Probably offline */
-                        decryptedLinks.add(this.createDownloadlink(parameter));
-                        return decryptedLinks;
-                    }
-                }
-            }
         } finally {
             try {
                 con.disconnect();
             } catch (Throwable e) {
             }
         }
+        if (!StringUtils.isEmpty(channel)) {
+            channel = Encoding.htmlDecode(channel).trim();
+            /* Fix channel */
+            if (!StringUtils.isEmpty(channel)) {
+                if (!channel.toLowerCase().contains(url_videoid_without_episodenumber.toLowerCase())) {
+                    channel = url_videoid_without_episodenumber;
+                }
+            }
+        }
+        boolean premiumonly_forced = false;
         if (variants.isEmpty()) {
             /* There is only one variant (e.g. free download or hls download) */
-            /* TODO: Find quality-string via URL */
+            if (dllink == null) {
+                /* No downloadlink found --> Content is probably not available for freeusers at all */
+                dllink = "https://massengeschmack.tv/dl/" + System.currentTimeMillis();
+                premiumonly_forced = true;
+            } else {
+                /* TODO: Find quality-string via URL */
+            }
             String quality = "unknown_TODO_FIXME";
             final VariantInfoMassengeschmackTv singleQualityVariant;
             if (!StringUtils.isEmpty(filesize_string)) {
@@ -416,6 +420,9 @@ public class MassengeschmackTvCrawler extends PluginForDecrypt {
         for (final VariantInfoMassengeschmackTv variant : variants) {
             final DownloadLink dl = this.createDownloadlink(variant.getUrl());
             setDownloadLinkProperties(dl, variant, date, channel, episodename, episodenumber, url_videoid_without_episodenumber, url_videoid, description);
+            if (premiumonly_forced) {
+                dl.setProperty("premiumonly", true);
+            }
             all_found_downloadlinks.put(variant.getQualityName(), dl);
         }
         final HashMap<String, DownloadLink> finalSelectedQualityMap = handleQualitySelection(all_found_downloadlinks, all_selected_qualities, false, false, true);
@@ -427,7 +434,16 @@ public class MassengeschmackTvCrawler extends PluginForDecrypt {
             decryptedLinks.add(dl);
         }
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(url_videoid);
+        String fpName;
+        if (!StringUtils.isEmpty(channel)) {
+            fpName = channel;
+            if (!StringUtils.isEmpty(episodenumber)) {
+                fpName += " " + episodenumber;
+            }
+        } else {
+            fpName = url_videoid;
+        }
+        fp.setName(fpName);
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
@@ -442,13 +458,6 @@ public class MassengeschmackTvCrawler extends PluginForDecrypt {
             dl.setProperty("directdate", date);
         }
         if (!StringUtils.isEmpty(channel)) {
-            channel = Encoding.htmlDecode(channel).trim();
-            /* Fix channel */
-            if (!StringUtils.isEmpty(channel)) {
-                if (!channel.toLowerCase().contains(url_videoid_without_episodenumber.toLowerCase())) {
-                    channel = url_videoid_without_episodenumber;
-                }
-            }
             dl.setProperty("directchannel", channel);
         }
         if (!StringUtils.isEmpty(episodenumber)) {
@@ -464,6 +473,7 @@ public class MassengeschmackTvCrawler extends PluginForDecrypt {
         dl.setLinkID(url_videoid + "_" + qualityName);
         if (filesizeCurrent > 0) {
             dl.setDownloadSize(filesizeCurrent);
+            dl.setAvailable(true);
         }
         String filename_temp = MassengeschmackTv.getMassengeschmack_other_FormattedFilename(dl, variant);
         if (filename_temp == null) {
@@ -471,7 +481,6 @@ public class MassengeschmackTvCrawler extends PluginForDecrypt {
             filename_temp = MassengeschmackTv.getFilenameLastChance(variant.getUrl(), url_videoid);
         }
         dl.setFinalFileName(filename_temp);
-        dl.setAvailable(true);
     }
 
     private HashMap<String, DownloadLink> handleQualitySelection(final HashMap<String, DownloadLink> all_found_downloadlinks, final List<String> all_selected_qualities, final boolean grab_best, final boolean grab_best_out_of_user_selection, final boolean grab_unknown) {
