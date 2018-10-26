@@ -8,7 +8,7 @@ import org.appwork.resources.IconRef;
 
 public enum JDIconRef implements IconRef {
     updatericon("updatericon");
-    private String path;
+    private final String path;
 
     /**
      *
@@ -31,7 +31,7 @@ public enum JDIconRef implements IconRef {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.appwork.resources.IconRef#image(int)
      */
     @Override
@@ -41,7 +41,7 @@ public enum JDIconRef implements IconRef {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.appwork.resources.IconRef#path()
      */
     @Override
