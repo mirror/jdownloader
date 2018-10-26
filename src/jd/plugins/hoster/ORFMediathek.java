@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.List;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -32,17 +33,25 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hds.HDSDownloader;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hds.HDSContainer;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "orf.at" }, urls = { "https?://tvthek\\.orf\\.atdecrypted\\d+" })
 public class ORFMediathek extends PluginForHost {
     private static final String NEW_URLFORMAT = "https?://tvthek\\.orf\\.atdecrypted\\d+";
     private static final String TYPE_AUDIO    = "https?://ooe\\.orf\\.at/radio/stories/\\d+/";
-    private static final String Q_SUBTITLES   = "Q_SUBTITLES";
-    private static final String Q_BEST        = "Q_BEST_2";
-    private static final String Q_LOW         = "Q_LOW";
-    private static final String Q_MEDIUM      = "Q_MEDIUM";
-    private static final String Q_HIGH        = "Q_HIGH";
-    private static final String Q_VERYHIGH    = "Q_VERYHIGH";
-    private static final String HTTP_STREAM   = "HTTP_STREAM";
+    public static final String  Q_SUBTITLES   = "Q_SUBTITLES";
+    public static final String  Q_BEST        = "Q_BEST_2";
+    public static final String  Q_LOW         = "Q_LOW";
+    public static final String  Q_MEDIUM      = "Q_MEDIUM";
+    public static final String  Q_HIGH        = "Q_HIGH";
+    public static final String  Q_VERYHIGH    = "Q_VERYHIGH";
+    public static final String  HTTP_STREAM   = "HTTP_STREAM";
+    public static final String  HLS_STREAM    = "HLS_STREAM";
+    public static final String  HDS_STREAM    = "HDS_STREAM";
 
     public ORFMediathek(PluginWrapper wrapper) {
         super(wrapper);
@@ -116,7 +125,7 @@ public class ORFMediathek extends PluginForHost {
         } else {
             link.setFinalFileName(link.getStringProperty("directName", null));
         }
-        if ("http".equals(link.getStringProperty("streamingType", "rtmp"))) {
+        if ("http".equals(link.getStringProperty("streamingType", "rtmp")) && StringUtils.equalsIgnoreCase("progressive", link.getStringProperty("delivery"))) {
             final Browser br2 = br.cloneBrowser();
             // In case the link redirects to the finallink
             br2.setFollowRedirects(true);
@@ -166,7 +175,31 @@ public class ORFMediathek extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Nur von 20-06 Uhr verfügbar!", 30 * 60 * 1000l);
             }
         }
-        if (dllink.startsWith("rtmp")) {
+        if ("hls".equals(downloadLink.getStringProperty("delivery"))) {
+            checkFFmpeg(downloadLink, "Download a HLS Stream");
+            final HlsContainer best = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(br, dllink));
+            if (best == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl = new HLSDownloader(downloadLink, br, best.getDownloadurl());
+            dl.startDownload();
+        } else if ("hds".equals(downloadLink.getStringProperty("delivery"))) {
+            br.getPage(dllink);
+            br.followRedirect();
+            final List<HDSContainer> all = HDSContainer.getHDSQualities(br);
+            if (all == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final HDSContainer hit = HDSContainer.findBestVideoByResolution(all);
+            if (hit == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            hit.write(downloadLink);
+            final HDSDownloader dl = new HDSDownloader(downloadLink, br, hit.getFragmentURL());
+            this.dl = dl;
+            dl.setEstimatedDuration(hit.getDuration());
+            dl.startDownload();
+        } else if (dllink.startsWith("rtmp")) {
             downloadLink.setProperty("FLVFIXER", true);
             dl = new RTMPDownload(this, downloadLink, dllink);
             setupRTMPConnection(dllink, dl);
@@ -215,6 +248,8 @@ public class ORFMediathek extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HIGH, JDL.L("plugins.hoster.orf.loadhigh", "Load high version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_VERYHIGH, JDL.L("plugins.hoster.orf.loadveryhigh", "Load very high version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), HTTP_STREAM, JDL.L("plugins.hoster.orf.loadhttp", "Load http streams ONLY")).setDefaultValue(true).setEnabled(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), HTTP_STREAM, JDL.L("plugins.hoster.orf.loadhttp", "Load http streams ONLY")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), HLS_STREAM, JDL.L("plugins.hoster.orf.loadhttp", "Load hls streams ONLY")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), HDS_STREAM, JDL.L("plugins.hoster.orf.loadhttp", "Load hds streams ONLY")).setDefaultValue(true));
     }
 }
