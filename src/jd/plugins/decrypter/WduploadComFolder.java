@@ -24,6 +24,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wdupload.com" }, urls = { "https?://(?:www\\.)?wdupload\\.com/folder/.+" })
@@ -36,15 +38,19 @@ public class WduploadComFolder extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("file-remove-|>This link only for premium|is empty...<")) {
+        if (br.containsHTML(">This link only for premium")) {
+            final DownloadLink link = createOfflinelink(parameter);
+            link.setName("PremiumOnly:" + link.getName());
+            decryptedLinks.add(link);
+            return decryptedLinks;
+        } else if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("file-remove-|is empty...<")) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String fpName = br.getRegex("<h2>Folder :([^<>\"]+): \\d+ Files </h2>").getMatch(0);
+        final String fpName = br.getRegex("<h2>Folder :([^<>\"]+): \\d+ Files </h2>").getMatch(0);
         final String[] links = br.getRegex("(https?://(?:www\\.)?wdupload\\.com/file/[^<>\"]+)\"").getColumn(0);
         if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         for (final String singleLink : links) {
             decryptedLinks.add(createDownloadlink(singleLink));
