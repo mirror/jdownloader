@@ -5,12 +5,6 @@ import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.Locale;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.http.Cookies;
 import jd.http.requests.PostRequest;
@@ -23,6 +17,12 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision: 39245 $", interfaceVersion = 3, names = { "proleech.link" }, urls = { "https?://proleech\\.link/download/[a-zA-Z0-9]+(/.*)?" })
 public class ProLeechLink extends antiDDoSForHost {
@@ -193,7 +193,8 @@ public class ProLeechLink extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadURL, true, 0);
-            if (!dl.getConnection().isContentDisposition()) {
+            final boolean isOkay = dl.getConnection().isOK() && (dl.getConnection().isContentDisposition() || StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "application/force-download"));
+            if (!isOkay) {
                 try {
                     br.followConnection();
                 } catch (final IOException e) {
@@ -219,7 +220,8 @@ public class ProLeechLink extends antiDDoSForHost {
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         login(account, null);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), true, 0);
-        if (!dl.getConnection().isContentDisposition()) {
+        final boolean isOkay = dl.getConnection().isOK() && (dl.getConnection().isContentDisposition() || StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "application/force-download"));
+        if (!isOkay) {
             try {
                 br.followConnection();
             } catch (final IOException e) {

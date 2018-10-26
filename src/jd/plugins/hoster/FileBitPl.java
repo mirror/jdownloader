@@ -432,6 +432,7 @@ public class FileBitPl extends PluginForHost {
             br.setCookies(account.getHoster(), cookies);
             br.getPage("http://" + account.getHoster() + "/");
             if (isLoggedinHTMLWebsite()) {
+                account.saveCookies(br.getCookies(account.getHoster()), "");
                 return;
             }
             /* Perform full login */
