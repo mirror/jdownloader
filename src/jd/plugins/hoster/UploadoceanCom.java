@@ -25,6 +25,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -46,12 +52,6 @@ import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadocean.com" }, urls = { "https?://(www\\.)?uploadocean\\.com/(?:embed\\-)?[a-z0-9]{12}" })
 public class UploadoceanCom extends antiDDoSForHost {
@@ -237,7 +237,7 @@ public class UploadoceanCom extends antiDDoSForHost {
             link.setMD5Hash(fileInfo[2].trim());
         }
         fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
-        link.setName(fileInfo[0].trim());
+        link.setName(Encoding.deepHtmlDecode(fileInfo[0].trim()));
         if (fileInfo[1] == null && SUPPORTS_AVAILABLECHECK_ALT) {
             /* Do alt availablecheck here but don't check availibility because we already know that the file must be online! */
             logger.info("Filesize not available, trying altAvailablecheck");
@@ -279,6 +279,9 @@ public class UploadoceanCom extends antiDDoSForHost {
         }
         if (fileInfo[0] == null) {
             fileInfo[0] = new Regex(correctedBR, "class=\"dfilename\">([^<>\"]*?)<").getMatch(0);
+        }
+        if (fileInfo[0] == null) {
+            fileInfo[0] = new Regex(correctedBR, "<title>(?:Download)?([^<>]+)</title>").getMatch(0);
         }
         if (ENABLE_HTML_FILESIZE_CHECK) {
             if (fileInfo[1] == null) {
