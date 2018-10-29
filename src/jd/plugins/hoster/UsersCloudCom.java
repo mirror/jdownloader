@@ -26,6 +26,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -50,11 +55,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "userscloud.com" }, urls = { "https?://(www\\.)?userscloud\\.com/(embed\\-)?[a-z0-9]{12}" })
 public class UsersCloudCom extends PluginForHost {
@@ -287,7 +287,8 @@ public class UsersCloudCom extends PluginForHost {
             }
         }
         if (fileInfo[1] == null) {
-            fileInfo[1] = new Regex(correctedBR, "File\\s*size\\s*:\\s*([0-9\\.,]+\\s*(KB|MB|GB|B))").getMatch(0);
+            // fileInfo[1] = new Regex(correctedBR, "File\\s*size\\s*:\\s*([0-9\\.,]+\\s*(KB|MB|GB|B))").getMatch(0);
+            fileInfo[1] = br.getRegex("File size:<b>\\s* ([0-9\\.,]+ (KB|MB|GB|B))").getMatch(0); // Don't use correctedBR here!
         }
         if (fileInfo[1] == null) {
             fileInfo[1] = new Regex(correctedBR, "ribbon\">([^<>]+)<").getMatch(0);
