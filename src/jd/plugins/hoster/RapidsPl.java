@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -32,9 +31,7 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
@@ -50,14 +47,11 @@ import jd.plugins.components.MultiHosterManagement;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapids.pl" }, urls = { "" })
 public class RapidsPl extends PluginForHost {
-
     private static MultiHosterManagement                     mhm                     = new MultiHosterManagement("rapids.pl");
     private static final String                              NOCHUNKS                = "NOCHUNKS";
-
     private static final String                              NICE_HOST               = "rapids.pl";
     private static final String                              NICE_HOSTproperty       = NICE_HOST.replaceAll("(\\.|\\-)", "");
     private static final String                              COOKIE_HOST             = "http://" + NICE_HOST;
-
     private static WeakHashMap<Account, Map<String, Object>> SUPPORTED_HOST_SETTINGS = new WeakHashMap<Account, Map<String, Object>>();
 
     public RapidsPl(PluginWrapper wrapper) {
@@ -134,7 +128,7 @@ public class RapidsPl extends PluginForHost {
         return ac;
     }
 
-    public Map<String, Object> callAPI(final Account account, final DownloadLink downloadLink, final String methodName, Object[]... parameters) throws PluginException, IOException {
+    public Map<String, Object> callAPI(final Account account, final DownloadLink downloadLink, final String methodName, Object[]... parameters) throws PluginException, IOException, InterruptedException {
         final String apiKey;
         if (account != null) {
             apiKey = account.getStringProperty("apikey", null);
@@ -171,10 +165,13 @@ public class RapidsPl extends PluginForHost {
                     }
                 } else if ("jx1003".equals(code)) {
                     // Missing required parameters
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Parameter missing");
                 } else if ("jx1004".equals(code)) {
                     // Invalid download type
+                    mhm.handleErrorGeneric(account, downloadLink, "error_invalid_download_type", 10);
                 } else if ("jx1005".equals(code)) {
                     // Link was not found
+                    mhm.handleErrorGeneric(account, downloadLink, "error_invalid_offline", 10);
                 } else if ("jx1006".equals(code)) {
                     // Service is not supported
                     if (account != null && downloadLink != null) {
@@ -191,18 +188,22 @@ public class RapidsPl extends PluginForHost {
                     }
                 } else if ("jx1008".equals(code)) {
                     // Link was not recognized
+                    mhm.handleErrorGeneric(account, downloadLink, "link_was_not_recognized", 10);
                 } else if ("jx1009".equals(code)) {
-                    // Insufficient amount transfer
+                    /* Not enough traffic left */
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 } else if ("jx1010".equals(code)) {
-                    // Download available after account recharging
+                    // Download available after account recharging --> Not enough traffic left(?)
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 } else if ("jx1011".equals(code)) {
                     // Server error
+                    mhm.handleErrorGeneric(account, downloadLink, "server_error", 10);
                 }
                 if (code != null) {
                     // catch all errors
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Code:" + code + "|Message:" + message);
+                    mhm.handleErrorGeneric(account, downloadLink, "error_unknown", 20);
                 }
-            } catch (PluginException e) {
+            } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     dumpAccountInfos(account);
                 }
@@ -233,12 +234,12 @@ public class RapidsPl extends PluginForHost {
         return super.getMaxSimultanDownload(link, account);
     }
 
-    private void dumpAccountInfos(Account account) {
+    private void dumpAccountInfos(final Account account) {
         synchronized (SUPPORTED_HOST_SETTINGS) {
             SUPPORTED_HOST_SETTINGS.remove(account);
         }
         account.removeProperty("apikey");
-        account.setProperty("cookies", Property.NULL);
+        account.clearCookies("");
     }
 
     @Override
@@ -367,49 +368,25 @@ public class RapidsPl extends PluginForHost {
         return true;
     }
 
-    @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
-                /** Load cookies */
                 br.setCookiesExclusive(true);
                 newBrowser();
-                final Object ret = account.getProperty("cookies", null);
+                final Cookies cookies = account.loadCookies("");
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) {
                     acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
                 }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid() && account.getStringProperty("apikey", null) != null) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            this.br.setCookie(COOKIE_HOST, key, value);
-                        }
-                        return;
-                    }
+                if (cookies != null && !force) {
+                    br.setCookies(account.getHoster(), cookies);
+                    return;
                 }
                 br.setFollowRedirects(true);
-                final String lang = System.getProperty("user.language");
                 br.postPage("https://rapids.pl/konto/loguj", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (br.getCookie(COOKIE_HOST, "remember_me") == null) {
-                    if ("de".equalsIgnoreCase(lang)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                /** Save cookies */
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(COOKIE_HOST);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
-
                 br.getPage("/profil/api");
                 // 64-bit key (changed 08.08.2016)
                 String apikey = br.getRegex("<strong>Klucz:\\s*([a-z0-9]{64})\\s*<").getMatch(0);
@@ -422,6 +399,7 @@ public class RapidsPl extends PluginForHost {
                 } else {
                     account.setProperty("apikey", apikey);
                 }
+                account.saveCookies(br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
                 dumpAccountInfos(account);
                 throw e;
@@ -439,5 +417,4 @@ public class RapidsPl extends PluginForHost {
             link.removeProperty(RapidsPl.NOCHUNKS);
         }
     }
-
 }

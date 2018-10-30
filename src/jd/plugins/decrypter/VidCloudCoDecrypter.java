@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 
 import org.appwork.utils.Regex;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -27,16 +28,19 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.VidcloudCo.VidcloudConfigInterface;
 
-@DecrypterPlugin(revision = "$Revision: 40000 $", interfaceVersion = 2, names = { "vidcloud.xyz" }, urls = { "https?://(play\\.)?vidcloud\\.xyz/(watch|stream).+" })
-public class VidCloud extends PluginForDecrypt {
-    public VidCloud(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision: 40000 $", interfaceVersion = 2, names = { "vidcloud.xyz" }, urls = { "https?://(?:play\\.)?vidcloud\\.xyz/(watch|stream).+" })
+public class VidCloudCoDecrypter extends PluginForDecrypt {
+    public VidCloudCoDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        final String parameter = param.toString();
+        final VidcloudConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.VidcloudCo.VidcloudConfigInterface.class);
+        final boolean fastlinkcheck = cfg.isFastLinkcheckEnabled();
         br.setFollowRedirects(true);
         String page = br.getPage(parameter);
         String title = extractTitleFromURL(parameter);
@@ -51,11 +55,15 @@ public class VidCloud extends PluginForDecrypt {
             String[][] playlistItems = new Regex(playlist, "NAME=\"([0-9]+)\"[\\r\\n\\t ]+(https?://(?:[^\\.]+\\.)?vidcloud\\.xyz/[a-zA-Z0-9/\\.?=]+)").getMatches();
             for (String[] playlistItem : playlistItems) {
                 String url = Encoding.htmlOnlyDecode(playlistItem[1]);
-                DownloadLink dl = createDownloadlink(url);
+                final DownloadLink dl = createDownloadlink(url);
                 if (title != null) {
                     String resolution = playlistItem[0];
                     dl.setForcedFileName(title + " (" + resolution + "p).mp4");
                 }
+                dl.setContentUrl(parameter);
+                // if (fastlinkcheck) {
+                // dl.setAvailable(true);
+                // }
                 decryptedLinks.add(dl);
             }
         }
@@ -64,7 +72,6 @@ public class VidCloud extends PluginForDecrypt {
 
     private String extractTitleFromURL(String url) {
         String result = new Regex(url, "[&?]jdTitle=([^&$]+)").getMatch(0);
-        System.out.print(result);
         if (result != null) {
             result = Encoding.urlDecode(result, false);
         }
