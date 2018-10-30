@@ -18,6 +18,12 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -36,12 +42,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wdupload.com" }, urls = { "https?://(?:www\\.)?wdupload\\.com/file/[A-Za-z0-9\\-_]+(/.+)?" })
 public class WduploadCom extends PluginForHost {
@@ -192,16 +192,16 @@ public class WduploadCom extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    private static Object LOCK = new Object();
+    public static Object LOCK = new Object();
 
-    private void login(final Account account, final boolean force) throws Exception {
+    public static void login(final Browser br, final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force) {
-                    this.br.setCookies(this.getHost(), cookies);
+                    br.setCookies(account.getHoster(), cookies);
                     return;
                 }
                 final boolean use_static_access_token = false;
@@ -210,15 +210,15 @@ public class WduploadCom extends PluginForHost {
                     /* 2018-10-19 */
                     access_token = "br68ufmo5ej45ue1q10w68781069v666l2oh1j2ijt94";
                 } else {
-                    br.getPage("https://www." + this.getHost() + "/java/mycloud.js");
+                    br.getPage("https://www." + account.getHoster() + "/java/mycloud.js");
                     access_token = br.getRegex("app:\\s*?\\'([^<>\"\\']+)\\'").getMatch(0);
                 }
                 if (StringUtils.isEmpty(access_token)) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                br.getHeaders().put("Origin", "https://www." + this.getHost());
+                br.getHeaders().put("Origin", "https://www." + account.getHoster());
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.postPage("https://www." + this.getHost() + "/api/0/signmein?useraccess=&access_token=" + access_token, "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&keep=1");
+                br.postPage("https://www." + account.getHoster() + "/api/0/signmein?useraccess=&access_token=" + access_token, "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&keep=1");
                 final String result = PluginJSonUtils.getJson(br, "result");
                 String userdata = PluginJSonUtils.getJson(br, "doz");
                 if (!"ok".equals(result) || StringUtils.isEmpty(userdata)) {
@@ -226,7 +226,7 @@ public class WduploadCom extends PluginForHost {
                 }
                 userdata = URLEncode.encodeURIComponent(userdata);
                 br.setCookie(br.getHost(), "userdata", userdata);
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                account.saveCookies(br.getCookies(account.getHoster()), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;
@@ -239,7 +239,7 @@ public class WduploadCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         try {
-            login(account, true);
+            login(this.br, account, true);
         } catch (PluginException e) {
             account.setValid(false);
             throw e;
@@ -287,7 +287,7 @@ public class WduploadCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        login(account, false);
+        login(this.br, account, false);
         if (account.getType() == AccountType.FREE) {
             br.getPage(link.getPluginPatternMatcher());
             doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");

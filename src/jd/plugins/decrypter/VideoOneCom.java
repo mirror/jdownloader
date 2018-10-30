@@ -23,10 +23,8 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "video-one.com" }, urls = { "https?://(www\\.)?video\\-one\\.com/([a-z]+/)?pornvideo/[a-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "video-one.com" }, urls = { "https?://(?:www\\.)?video\\-one\\.com/(?:[a-z]+/)?pornvideo/[a-z0-9]+" })
 public class VideoOneCom extends PornEmbedParser {
     public VideoOneCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -37,8 +35,15 @@ public class VideoOneCom extends PornEmbedParser {
         final String parameter = param.toString();
         br.getPage(parameter);
         String filename = new Regex(parameter, "https?://(?:www\\.)?video\\-one\\.com/(?:[a-z]+/)?pornvideo/([a-z0-9]+)").getMatch(0);
-        if (br.containsHTML("<source src='//[^']+m3u8'")) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); // Needs hoster plugin to process this.
+        final boolean isOffline = jd.plugins.hoster.VideoOneCom.isOffline(this.br);
+        if (br.containsHTML("<source src=\\'[^']+m3u8\\'") || isOffline) {
+            /* --> To hosterplugin */
+            final DownloadLink dl = this.createDownloadlink(parameter);
+            if (isOffline) {
+                dl.setAvailable(false);
+            }
+            decryptedLinks.add(dl);
+            return decryptedLinks;
         }
         br.getPage("https://m.8-d.com/prein");
         final Regex th = br.getRegex("\\&t=(\\d+)\\&h=([a-z0-9]+)\"");

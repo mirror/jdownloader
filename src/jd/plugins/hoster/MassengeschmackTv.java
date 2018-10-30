@@ -28,6 +28,7 @@ import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.jdownloader.translate._JDT;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -782,13 +783,17 @@ public class MassengeschmackTv extends PluginForHost {
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Allgemeine Einstellungen:"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK, _JDT.T.lit_enable_fast_linkcheck()).setDefaultValue(defaultFASTLINKCHECK));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Format-Einstellungen:"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_MP4, "Für den kostenlosen massengeschmack.tv Download:\r\nBevorzuge .mp4 Download statt .webm?\r\nBedenke, dass mp4 eine minimal bessere Audio-Bitrate- aber dafür eine niedrigere Video-Bitrate hat!?").setDefaultValue(defaultPREFER_MP4));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "LOAD_BEST", _JDT.T.lit_add_only_the_best_video_quality()).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "LOAD_BEST_OF_SELECTION", _JDT.T.lit_add_only_the_best_video_quality_within_user_selected_formats()).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "LOAD_UNKNOWN", _JDT.T.lit_add_unknown_formats()).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "LOAD_1080p", "Lade 1080p?").setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "LOAD_720p", "Lade 720p?").setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "LOAD_432p", "Lade 432p?").setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "LOAD_AUDIO_m4a", "Lade m4a Audio?").setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "LOAD_AUDIO_mp3", "Lade mp3 Audio?").setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK, "Aktiviere schnellen Linkcheck (Dateigröße erst bei Download sichtbar)?").setDefaultValue(defaultFASTLINKCHECK));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Lege eigene Datei-/Paketnamen fest:"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_DATE, "Definiere das Datumsformat:").setDefaultValue(defaultCustomDate));
