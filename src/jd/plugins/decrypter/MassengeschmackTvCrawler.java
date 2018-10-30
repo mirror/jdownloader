@@ -293,10 +293,14 @@ public class MassengeschmackTvCrawler extends PluginForDecrypt {
                                     /* Video */
                                     final String variantQualityP = new Regex(variantQualityName, "(\\d+p)").getMatch(0);
                                     videoResolution = new Regex(variantQualityInfo, "(\\d+x\\d+)").getMatch(0);
-                                    if (StringUtils.isEmpty(variantQualityP) || StringUtils.isEmpty(videoResolution)) {
+                                    if (StringUtils.isEmpty(videoResolution)) {
                                         continue;
                                     }
-                                    quality = variantQualityP;
+                                    if (!StringUtils.isEmpty(variantQualityP)) {
+                                        quality = variantQualityP;
+                                    } else {
+                                        quality = "unknown_" + videoResolution;
+                                    }
                                 } else {
                                     /* Audio */
                                     if (dllink_temp.endsWith(".m4a")) {
@@ -425,7 +429,10 @@ public class MassengeschmackTvCrawler extends PluginForDecrypt {
             }
             all_found_downloadlinks.put(variant.getQualityName(), dl);
         }
-        final HashMap<String, DownloadLink> finalSelectedQualityMap = handleQualitySelection(all_found_downloadlinks, all_selected_qualities, false, false, true);
+        final boolean loadBEST = cfg.getBooleanProperty("LOAD_BEST", false);
+        final boolean loadBESTWithinSelection = cfg.getBooleanProperty("LOAD_BEST_OF_SELECTION", false);
+        final boolean loadUnknownQualities = cfg.getBooleanProperty("LOAD_UNKNOWN", false);
+        final HashMap<String, DownloadLink> finalSelectedQualityMap = handleQualitySelection(all_found_downloadlinks, all_selected_qualities, loadBEST, loadBESTWithinSelection, loadUnknownQualities);
         /* Finally add selected URLs */
         final Iterator<Entry<String, DownloadLink>> it = finalSelectedQualityMap.entrySet().iterator();
         while (it.hasNext()) {
@@ -488,11 +495,12 @@ public class MassengeschmackTvCrawler extends PluginForDecrypt {
         final Iterator<Entry<String, DownloadLink>> iterator_all_found_downloadlinks = all_found_downloadlinks.entrySet().iterator();
         if (grab_best) {
             for (final String possibleQuality : this.all_known_qualities) {
-                if (all_found_downloadlinks.containsKey("LOAD_" + possibleQuality)) {
+                if (all_found_downloadlinks.containsKey(possibleQuality)) {
                     all_selected_downloadlinks.put(possibleQuality, all_found_downloadlinks.get(possibleQuality));
                     break;
                 }
             }
+            /* TODO: Maybe add audio qualities too if selected && used chose BEST-only */
             if (all_selected_downloadlinks.isEmpty()) {
                 logger.info("Possible issue: Best selection found nothing --> Adding ALL");
                 while (iterator_all_found_downloadlinks.hasNext()) {
