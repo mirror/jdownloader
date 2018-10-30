@@ -17,10 +17,14 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.translate._JDT;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -122,6 +126,27 @@ public class VidcloudCo extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
+    }
+
+    @Override
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        return VidcloudConfigInterface.class;
+    }
+
+    public static interface VidcloudConfigInterface extends PluginConfigInterface {
+        public static class TRANSLATION {
+            public String getFastLinkcheckEnabled_label() {
+                return _JDT.T.lit_enable_fast_linkcheck();
+            }
+        }
+
+        public static final TRANSLATION TRANSLATION = new TRANSLATION();
+
+        @DefaultBooleanValue(false)
+        @Order(9)
+        boolean isFastLinkcheckEnabled();
+
+        void setFastLinkcheckEnabled(boolean b);
     }
 
     @Override
