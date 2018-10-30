@@ -135,11 +135,6 @@ public class VidEarnDecrypter extends antiDDoSForDecrypt {
                 mainlink.setName(videoTitle + ".mp4");
                 mainlink.setAvailable(true);
             }
-            if (!br.containsHTML("id=\"video\\-player\"|playerMainConfig")) {
-                /* Check here to prevent faulty offline URLs. */
-                mainlink.setAvailable(false);
-                mainlink.setProperty("offline", true);
-            }
             mainlink._setFilePackage(fp);
             decryptedLinks.add(mainlink);
             distribute(mainlink);

@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -26,7 +27,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornxs.com" }, urls = { "http://(?:www\\.)?pornxsdecrypted\\.com/.+|https?://pornxs\\.com/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornxs.com" }, urls = { "https?://(?:www\\.)?pornxsdecrypted\\.com/.+|https?://pornxs\\.com/\\d+" })
 public class VidearnCom extends antiDDoSForHost {
     public VidearnCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -69,20 +70,24 @@ public class VidearnCom extends antiDDoSForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
-        /* Check offline via decrypter */
-        if (downloadLink.getBooleanProperty("offline", false)) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        getPage(downloadLink.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        getPage(downloadLink.getPluginPatternMatcher());
+        if (isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
         if (filename == null) {
+            if (!br.containsHTML("class=\"video__movie\"")) {
+                /* Not a video e.g. https://pornxs.com/2257 */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setName(Encoding.htmlDecode(filename.trim()) + ".mp4");
         return AvailableStatus.TRUE;
+    }
+
+    public static boolean isOffline(final Browser br) {
+        return br.getHttpConnection().getResponseCode() == 404;
     }
 
     @Override
