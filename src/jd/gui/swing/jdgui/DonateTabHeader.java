@@ -47,7 +47,7 @@ public class DonateTabHeader extends TabHeader implements PromotionTabHeader {
             flashFlag.set(!now.matchesID(CFG_GUI.CFG.getDonationNotifyID()));
             if (isFlashing()) {
                 final Timer blinker = new Timer(1500, new ActionListener() {
-                    private int        i               = 0;
+                    private long       i               = 0;
                     private final Icon iconTransparent = IconIO.getTransparentIcon(IconIO.toBufferedImage(icon), 0.5f);
 
                     @Override
