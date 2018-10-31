@@ -9,14 +9,14 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.swing.Icon;
 import javax.swing.Timer;
 
-import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
-import jd.gui.swing.jdgui.interfaces.View;
-import jd.gui.swing.jdgui.maintab.TabHeader;
-
 import org.appwork.utils.images.IconIO;
 import org.jdownloader.donate.DONATE_EVENT;
 import org.jdownloader.gui.mainmenu.DonateAction;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
+
+import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
+import jd.gui.swing.jdgui.interfaces.View;
+import jd.gui.swing.jdgui.maintab.TabHeader;
 
 public class DonateTabHeader extends TabHeader implements PromotionTabHeader {
     /**
@@ -41,7 +41,7 @@ public class DonateTabHeader extends TabHeader implements PromotionTabHeader {
 
     private void updateEvent() {
         final DONATE_EVENT now = DONATE_EVENT.getNow();
-        if (event.getAndSet(now) != null) {
+        if (event.getAndSet(now) != now) {
             final Icon icon = now.getIcon();
             labelIcon.setIcon(icon);
             flashFlag.set(!now.matchesID(CFG_GUI.CFG.getDonationNotifyID()));
