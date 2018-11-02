@@ -13,10 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -28,11 +29,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pcwelt.de" }, urls = { "http://(www\\.)?pcwelt\\.de/downloads/[^<>\"]+\\-\\d+\\.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pcwelt.de" }, urls = { "https?://(www\\.)?pcwelt\\.de/downloads/[^<>\"]+\\-\\d+\\.html" })
 public class PcWeltDe extends PluginForHost {
-
     public PcWeltDe(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -86,12 +84,12 @@ public class PcWeltDe extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         final String undefined_downloadlink = br.getRegex("itemprop=\"url\"(?: rel=\"nofollow\")? href=\"(http[^<>\"]*?)\"").getMatch(0);
-        String dllink = br.getRegex("\"(https?://(www\\.)?download\\.pcwelt\\.de/[^<>\"]+)\"").getMatch(0);
+        String dllink = br.getRegex("href=\"(http[^<>\"]+?download\\.pcwelt\\.de[^<>\"]+)\"").getMatch(0);
         if (dllink == null) {
-            dllink = this.br.getRegex("(download_file\\&#x3F;bid\\&#x3D;\\d+)\"").getMatch(0);
-            if (dllink != null) {
-                dllink = "http://www.pcwelt.de/" + Encoding.htmlDecode(dllink);
-            }
+            dllink = br.getRegex("(http[^<>\"]+?pcwelt.de[^<>\"]+?download_file[^<>\"]+?)\"").getMatch(0);
+        }
+        if (dllink != null) {
+            dllink = Encoding.htmlDecode(dllink);
         }
         if (dllink == null && undefined_downloadlink != null) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Nicht downloadbar: externe Downloadquelle");
@@ -120,5 +118,4 @@ public class PcWeltDe extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
