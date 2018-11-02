@@ -54,8 +54,9 @@ public class PeekVidsCom extends PluginForHost {
     // Tags:
     // protocol: no https
     // other:
-    private String            dllink = null;
-    private static AtomicLong time   = new AtomicLong();
+    private String            dllink   = null;
+    private long              filesize = 0;
+    private static AtomicLong time     = new AtomicLong();
 
     @Override
     public String getAGBLink() {
@@ -139,7 +140,7 @@ public class PeekVidsCom extends PluginForHost {
                     }
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                String filename = br.getRegex("itemprop=\"name\" content=\"([^<>\"]*?)\"").getMatch(0);
+                String filename = br.getRegex("<title>\\s*([^<>]+?)( - PeekVids)?\\s*</title>").getMatch(0);
                 String flashvars = br.getRegex("flashvars=\"(.*?)\"").getMatch(0);
                 if (flashvars == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -151,6 +152,9 @@ public class PeekVidsCom extends PluginForHost {
                     if (dllink != null) {
                         counter++;
                         if (checkDirectLink()) {
+                            if (filesize > 0) {
+                                downloadLink.setDownloadSize(filesize);
+                            }
                             break;
                         }
                     }
@@ -189,6 +193,7 @@ public class PeekVidsCom extends PluginForHost {
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     return false;
                 }
+                filesize = con.getLongContentLength();
             } catch (final Exception e) {
                 if (e instanceof BrowserException) {
                     if (e.getCause() != null && e.getCause().toString().contains("Could not generate DH keypair")) {
