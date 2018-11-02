@@ -50,7 +50,7 @@ public class GogoanimeCom extends antiDDoSForDecrypt {
         String[] a = new String[getAnnotationNames().length];
         int i = 0;
         for (final String domain : getAnnotationNames()) {
-            a[i] = "http://(?:\\w+\\.)?" + Pattern.quote(domain) + "/(?:embed/[a-f0-9]+|embed(\\.php)?\\?.*?vid(?:eo)?=.+|gogo/\\?.*?file=.+|(?!flowplayer)(?:[a-z\\-]+\\-(drama|movie|episode)/)?[a-z0-9\\-_\\-]+(?:/[\\d\\-_\\-]+)?)";
+            a[i] = "http://(?:\\w+\\.)?" + Pattern.quote(domain) + "/(?:embed/[a-f0-9]+|embed(\\.php)?\\?.*?vid(?:eo)?=.+|gogo/\\?.*?file=.+|(?!flowplayer)(?:[a-z\\-]+\\-(drama|movie|episode)/)?[a-z0-9\\-_\\-?=]+(?:/[\\d\\-_\\-]+)?)";
             i++;
         }
         return a;
@@ -154,9 +154,9 @@ public class GogoanimeCom extends antiDDoSForDecrypt {
             // On index pages, grab everything resembling listed episodes and paging links
             if (br.containsHTML("<div id=\"videos\">")) {
                 int videoListStart = br.toString().indexOf("<div id=\"videos\">");
-                int videoListEnd = br.toString().indexOf("<div id=\"comments\">", videoListStart);
+                int videoListEnd = br.toString().indexOf("<div id=\"comments\">", videoListStart + 1);
                 if (videoListEnd < 0) {
-                    videoListEnd = br.toString().indexOf("<div id=\"footer\">", videoListStart);
+                    videoListEnd = br.toString().indexOf("<div id=\"footer\">", videoListStart + 1);
                 }
                 if (videoListEnd > videoListStart) {
                     String videoListSearchText = br.toString().substring(videoListStart, videoListEnd);
