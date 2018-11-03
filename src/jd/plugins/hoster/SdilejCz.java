@@ -20,6 +20,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -38,9 +40,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sdilej.cz" }, urls = { "https?://(www\\.)?sdilej\\.cz/\\d+/.{1}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sdilej.cz" }, urls = { "https?://(www\\.)?sdilej\\.cz/\\d+/[a-z0-9-\\.]+" })
 public class SdilejCz extends PluginForHost {
     /** Former czshare.com */
     private static AtomicInteger SIMULTANEOUS_PREMIUM = new AtomicInteger(-1);
@@ -96,8 +96,8 @@ public class SdilejCz extends PluginForHost {
         if (br.getURL().contains("/error.php?co=4") || br.containsHTML("Omluvte, prosím, výpadek databáze\\. Na opravě pracujeme")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename = br.getRegex("<div class=\"left-col\">[\t\n\r ]+<h1>([^<>\"]*?)<span>&nbsp;</span>").getMatch(0);
-        final String filesize = br.getRegex("Velikost: (.*?)<").getMatch(0);
+        final String filename = br.getRegex("<h1[^<>]+>([^<>\"]*?)<").getMatch(0);
+        final String filesize = br.getRegex("Velikost:</b> (.*?)<").getMatch(0);
         if (filename == null || filesize == null || "0 B".equals(filesize)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -133,46 +133,49 @@ public class SdilejCz extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         handleErrors();
-        if (!br.containsHTML("Stáhnout FREE(</span>)?</a><a href=\"/download\\.php\\?id=")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.CZShareCom.nofreeslots", "No free slots available"), 60 * 1000);
-        }
-        br.setFollowRedirects(true);
-        String freeLink = br.getRegex("allowTransparency=\"true\"></iframe><a href=\"(/.*?)\"").getMatch(0);
-        if (freeLink == null) {
-            freeLink = br.getRegex("\"(/download\\.php\\?id=\\d+.*?code=.*?)\"").getMatch(0);
-        }
-        if (freeLink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        br.getPage("http://sdilej.cz" + Encoding.htmlDecode(freeLink));
-        handleErrors();
-        String file = br.getRegex("name=\"file\" value=\"(.*?)\"").getMatch(0);
-        String size = br.getRegex("name=\"size\" value=\"(\\d+)\"").getMatch(0);
-        String server = br.getRegex("name=\"server\" value=\"(.*?)\"").getMatch(0);
-        if (!br.containsHTML(CAPTCHATEXT) || file == null || size == null || server == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        String code = getCaptchaCode("http://sdilej.cz/captcha.php", downloadLink);
-        br.postPage("http://sdilej.cz/download.php", "id=" + new Regex(downloadLink.getDownloadURL(), "sdilej\\.cz/(\\d+)/.*?").getMatch(0) + "&file=" + file + "&size=" + size + "&server=" + server + "&captchastring2=" + Encoding.urlEncode(code) + "&freedown=Ov%C4%9B%C5%99it+a+st%C3%A1hnout");
-        if (br.containsHTML("Chyba 6 / Error 6")) {
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000);
-        }
-        if (br.containsHTML(">Zadaný ověřovací kód nesouhlasí") || br.containsHTML(CAPTCHATEXT)) {
-            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        }
-        String dllink = br.getRegex("<p class=\"button2\" id=\"downloadbtn\" style=\"display:none\">[\t\n\r ]+<a href=\"(https?://[^<>\"]*?)\"").getMatch(0);
+        String dllink = br.getRegex("<a href=\"([^<>\"]+?)\"[^<>]+?>Stáhnout FREE<").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("\"(https?://www\\d+\\.sdilej\\.cz/download\\.php\\?id=[^<>\"]*?)\"").getMatch(0);
+            if (!br.containsHTML("Stáhnout FREE(</span>)?</a><a href=\"/download\\.php\\?id=")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.CZShareCom.nofreeslots", "No free slots available"), 60 * 1000);
+            }
+            br.setFollowRedirects(true);
+            String freeLink = br.getRegex("allowTransparency=\"true\"></iframe><a href=\"(/.*?)\"").getMatch(0);
+            if (freeLink == null) {
+                freeLink = br.getRegex("\"(/download\\.php\\?id=\\d+.*?code=.*?)\"").getMatch(0);
+            }
+            if (freeLink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.getPage("http://sdilej.cz" + Encoding.htmlDecode(freeLink));
+            handleErrors();
+            String file = br.getRegex("name=\"file\" value=\"(.*?)\"").getMatch(0);
+            String size = br.getRegex("name=\"size\" value=\"(\\d+)\"").getMatch(0);
+            String server = br.getRegex("name=\"server\" value=\"(.*?)\"").getMatch(0);
+            if (!br.containsHTML(CAPTCHATEXT) || file == null || size == null || server == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            String code = getCaptchaCode("http://sdilej.cz/captcha.php", downloadLink);
+            br.postPage("http://sdilej.cz/download.php", "id=" + new Regex(downloadLink.getDownloadURL(), "sdilej\\.cz/(\\d+)/.*?").getMatch(0) + "&file=" + file + "&size=" + size + "&server=" + server + "&captchastring2=" + Encoding.urlEncode(code) + "&freedown=Ov%C4%9B%C5%99it+a+st%C3%A1hnout");
+            if (br.containsHTML("Chyba 6 / Error 6")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000);
+            }
+            if (br.containsHTML(">Zadaný ověřovací kód nesouhlasí") || br.containsHTML(CAPTCHATEXT)) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
+            dllink = br.getRegex("<p class=\"button2\" id=\"downloadbtn\" style=\"display:none\">[\t\n\r ]+<a href=\"(https?://[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("\"(https?://www\\d+\\.sdilej\\.cz/download\\.php\\?id=[^<>\"]*?)\"").getMatch(0);
+            }
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            /** Waittime can be skipped */
+            // int wait = 50;
+            // final String waittime =
+            // br.getRegex("countdown_number = (\\d+);").getMatch(0);
+            // if (waittime != null) wait = Integer.parseInt(waittime);
+            // sleep(wait * 1001l, downloadLink);
         }
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        /** Waittime can be skipped */
-        // int wait = 50;
-        // final String waittime =
-        // br.getRegex("countdown_number = (\\d+);").getMatch(0);
-        // if (waittime != null) wait = Integer.parseInt(waittime);
-        // sleep(wait * 1001l, downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getContentType().contains("unknown")) {
             if (dl.getConnection().getResponseCode() == 403) {
