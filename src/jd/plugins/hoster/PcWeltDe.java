@@ -46,7 +46,7 @@ public class PcWeltDe extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (!br.getURL().contains("/downloads/") || br.getHttpConnection().getResponseCode() == 404) {
+        if (!br.getURL().contains("/downloads/") || br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML(">Direkt zum Download<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<h1 class=\"headline\">(.*?)</h1>").getMatch(0);
