@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -31,7 +30,6 @@ import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "libgen.org" }, urls = { "https?://(www\\.)?(libgen\\.org|gen\\.lib\\.rus\\.ec|libgen\\.io)/book/index\\.php\\?md5=[a-f0-9]{32}" })
 public class LibGen extends PluginForDecrypt {
-
     @Override
     public String[] siteSupportedNames() {
         return new String[] { "gen.lib.rus.ec", "libgen.io" };
@@ -58,18 +56,20 @@ public class LibGen extends PluginForDecrypt {
         if (fpName != null) {
             fpName = Encoding.htmlDecode(fpName).trim();
         }
-
         String[] links = br.getRegex("<url\\d+>(https?://[^<]+)</url\\d+>").getColumn(0);
         // Hmm maybe just try to get all mirrors
         if (links == null || links.length == 0) {
-            links = br.getRegex("<td align='center' width='11,1%'><a href='((?:http|/)[^<>\"]*?)'").getColumn(0);
+            // links = br.getRegex("<td align='center' width='11,1%'><a href='((?:http|/)[^<>\"]*?)'").getColumn(0);
+            links = br.getRegex("<td colspan=2><b><a href='([^<>\"]*?)'>").getColumn(0);
         }
         if (links == null || links.length == 0) {
             return null;
         }
-        for (final String dl : links) {
-            final String link = Request.getLocation(dl, br.getRequest());
-            decryptedLinks.add(createDownloadlink(link));
+        for (final String link : links) {
+            // final String link = Request.getLocation(dl, br.getRequest());
+            br.getPage(link);
+            String dlink = br.getRegex("<a href=\"([^<>\"]*?)\">GET<").getMatch(0);
+            decryptedLinks.add(createDownloadlink(dlink));
         }
         final String cover_url = br.getRegex("(\\'|\")((?:https?:)?(?://libgen\\.(?:in|net))?/covers/\\d+/.*?\\.(?:jpg|jpeg|png|gif))\\1").getMatch(1);
         if (cover_url != null) {
@@ -81,7 +81,6 @@ public class LibGen extends PluginForDecrypt {
             }
             decryptedLinks.add(dl);
         }
-
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName);
@@ -94,5 +93,4 @@ public class LibGen extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
