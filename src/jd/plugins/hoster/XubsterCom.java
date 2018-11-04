@@ -1297,7 +1297,7 @@ public class XubsterCom extends antiDDoSForHost {
             /* Expire date is in the future --> It is a premium account */
             ai.setValidUntil(expire_milliseconds);
             account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(1);
+            account.setMaxSimultanDownloads(5);
             account.setConcurrentUsePossible(true);
         }
         return ai;
