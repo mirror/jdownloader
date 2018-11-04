@@ -129,7 +129,7 @@ public class PeekVidsCom extends PluginForHost {
                     captcha.put("secimginp", Encoding.urlEncode(code));
                     br.submitForm(captcha);
                 }
-                if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 410 || br.containsHTML("Video not found<|class=\"play\\-error\"|>This video was deleted<")) {
+                if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 410 || br.containsHTML("Video not found<|class=\"play\\-error\"|This video was (deleted|removed)")) {
                     // filename can be present with offline links, so lets set it!
                     String filename = br.getRegex("<h2>((?!Related Videos).*?)</h2>").getMatch(0);
                     if (filename != null) {
