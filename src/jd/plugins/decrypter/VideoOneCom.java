@@ -36,9 +36,16 @@ public class VideoOneCom extends PornEmbedParser {
         br.getPage(parameter);
         String filename = new Regex(parameter, "https?://(?:www\\.)?video\\-one\\.com/(?:[a-z]+/)?pornvideo/([a-z0-9]+)").getMatch(0);
         final boolean isOffline = jd.plugins.hoster.VideoOneCom.isOffline(this.br);
+        if (br.containsHTML("embedframe")) {
+            String xvl = br.getRegex("src=\"(https://www.xvideos.com/embedframe/\\d+)\"").getMatch(0);
+            if (xvl != null) {
+                decryptedLinks.add(createDownloadlink(xvl));
+                return decryptedLinks;
+            }
+        }
         if (br.containsHTML("<source src=\\'[^']+m3u8\\'") || isOffline) {
             /* --> To hosterplugin */
-            final DownloadLink dl = this.createDownloadlink(parameter);
+            final DownloadLink dl = createDownloadlink(parameter);
             if (isOffline) {
                 dl.setAvailable(false);
             }
