@@ -26,7 +26,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "perfectgirls.net" }, urls = { "http://([a-z]+\\.)?perfectgirlsdecrypted\\.net/gal/\\d+/.{0,1}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "perfectgirls.net" }, urls = { "http://([a-z]+\\.)?perfectgirlsdecrypted\\.net/(?:gal/)?\\d+/.{0,1}" })
 public class PerfectGirlsNet extends PluginForHost {
     public PerfectGirlsNet(PluginWrapper wrapper) {
         super(wrapper);
