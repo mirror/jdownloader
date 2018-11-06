@@ -58,7 +58,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
@@ -352,62 +352,69 @@ public class RapidGatorNet extends antiDDoSForHost {
             // wasn't needed for raz, but psp said something about a redirect)
             br.followConnection();
             final long timeBeforeCaptchaInput = System.currentTimeMillis();
-            if (br.containsHTML("(api\\.recaptcha\\.net/|google\\.com/recaptcha/api/)")) {
-                final Recaptcha rc = new Recaptcha(br, this);
-                for (int i = 0; i <= 5; i++) {
-                    rc.parse();
-                    rc.load();
-                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final String c = getCaptchaCode("recaptcha", cf, downloadLink);
-                    checkForExpiredCaptcha(timeBeforeCaptchaInput);
-                    rc.getForm().put("DownloadCaptchaForm%5Bcaptcha%5D", "");
-                    rc.setCode(c);
-                    if (br.containsHTML("(>Please fix the following input errors|>The verification code is incorrect|api\\.recaptcha\\.net/|google\\.com/recaptcha/api/)")) {
-                        continue;
-                    }
-                    break;
+            Form captcha = null;
+            if (br.containsHTML("data-sitekey")) {
+                captcha = br.getFormbyProperty("id", "captchaform");
+                if (captcha == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-            } else {
-                if (br.containsHTML("//api\\.solvemedia\\.com/papi|//api-secure\\.solvemedia\\.com/papi|//api\\.adscapchta\\.com/")) {
-                    final Form captcha = br.getFormbyProperty("id", "captchaform");
-                    if (captcha == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
+                final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br);
+                final String recaptchaV2Response = rc2.getToken();
+                if (recaptchaV2Response == null) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+                captcha.put("DownloadCaptchaForm[verifyCode]", recaptchaV2Response);
+            } else if (br.containsHTML("//api\\.solvemedia\\.com/papi|//api-secure\\.solvemedia\\.com/papi")) {
+                captcha = br.getFormbyProperty("id", "captchaform");
+                if (captcha == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
                     captcha.put("DownloadCaptchaForm[captcha]", "");
-                    String code = null, challenge = null;
-                    final Browser capt = br.cloneBrowser();
-                    if (br.containsHTML("//api\\.solvemedia\\.com/papi|//api-secure\\.solvemedia\\.com/papi")) {
-                        final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new SolveMedia(br);
-                        final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
-                        code = getCaptchaCode(cf, downloadLink);
-                        checkForExpiredCaptcha(timeBeforeCaptchaInput);
-                        final String chid = sm.getChallenge(code);
-                        // if (chid == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                        captcha.put("adcopy_challenge", chid);
-                        captcha.put("adcopy_response", Encoding.urlEncode(code));
-                    } else if (br.containsHTML("//api\\.adscapchta\\.com/")) {
-                        final String captchaAdress = captcha.getRegex("<iframe src=\'(https?://api\\.adscaptcha\\.com/NoScript\\.aspx\\?CaptchaId=\\d+&PublicKey=[^\'<>]+)").getMatch(0);
-                        final String captchaType = new Regex(captchaAdress, "CaptchaId=(\\d+)&").getMatch(0);
-                        if (captchaAdress == null || captchaType == null) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                        if (!"3017".equals(captchaType)) {
-                            logger.warning("ADSCaptcha: Captcha type not supported!");
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                        getPage(capt, captchaAdress);
-                        challenge = capt.getRegex("<img src=\"(https?://api\\.adscaptcha\\.com//Challenge\\.aspx\\?cid=[^\"]+)").getMatch(0);
-                        code = capt.getRegex("class=\"code\">([0-9a-f\\-]+)<").getMatch(0);
-                        if (challenge == null || code == null) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                        challenge = getCaptchaCode(challenge, downloadLink);
-                        checkForExpiredCaptcha(timeBeforeCaptchaInput);
-                        captcha.put("adscaptcha_response_field", challenge);
-                        captcha.put("adscaptcha_challenge_field", Encoding.urlEncode(code));
-                    }
-                    submitForm(captcha);
                 }
+                final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new SolveMedia(br);
+                final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                final String code = getCaptchaCode(cf, downloadLink);
+                checkForExpiredCaptcha(timeBeforeCaptchaInput);
+                final String chid = sm.getChallenge(code);
+                // if (chid == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                captcha.put("adcopy_challenge", chid);
+                captcha.put("adcopy_response", Encoding.urlEncode(code));
+            } else if (br.containsHTML("//api\\.adscapchta\\.com/")) {
+                captcha = br.getFormbyProperty("id", "captchaform");
+                if (captcha == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
+                    captcha.put("DownloadCaptchaForm[captcha]", "");
+                }
+                final String captchaAdress = captcha.getRegex("<iframe src=\'(https?://api\\.adscaptcha\\.com/NoScript\\.aspx\\?CaptchaId=\\d+&PublicKey=[^\'<>]+)").getMatch(0);
+                final String captchaType = new Regex(captchaAdress, "CaptchaId=(\\d+)&").getMatch(0);
+                if (captchaAdress == null || captchaType == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                if (!"3017".equals(captchaType)) {
+                    logger.warning("ADSCaptcha: Captcha type not supported!");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final Browser adsCaptcha = br.cloneBrowser();
+                getPage(adsCaptcha, captchaAdress);
+                String challenge = adsCaptcha.getRegex("<img src=\"(https?://api\\.adscaptcha\\.com//Challenge\\.aspx\\?cid=[^\"]+)").getMatch(0);
+                if (StringUtils.isEmpty(challenge)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final String code = adsCaptcha.getRegex("class=\"code\">([0-9a-f\\-]+)<").getMatch(0);
+                if (StringUtils.isEmpty(code)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                challenge = getCaptchaCode(challenge, downloadLink);
+                if (StringUtils.isEmpty(challenge)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                checkForExpiredCaptcha(timeBeforeCaptchaInput);
+                captcha.put("adscaptcha_response_field", challenge);
+                captcha.put("adscaptcha_challenge_field", Encoding.urlEncode(code));
+            }
+            if (captcha != null) {
+                submitForm(captcha);
             }
             final String redirect = br.getRedirectLocation();
             // Set-Cookie: failed_on_captcha=1; path=/ response if the captcha expired.
@@ -419,10 +426,7 @@ public class RapidGatorNet extends antiDDoSForHost {
             }
             String dllink = br.getRegex("'(https?://[A-Za-z0-9\\-_]+\\.rapidgator\\.net//\\?r=download/index&session_id=[A-Za-z0-9]+)'").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("'(https?://[A-Za-z0-9\\-_]+\\.rapidgator\\.net//\\?r=download/index&session_id=[A-Za-z0-9]+)'").getMatch(0);
-            }
-            // Old regex
-            if (dllink == null) {
+                // Old regex
                 dllink = br.getRegex("location\\.href = '(https?://.*?)'").getMatch(0);
             }
             if (dllink == null) {
