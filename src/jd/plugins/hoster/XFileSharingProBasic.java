@@ -175,7 +175,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     private static Object        LOCK                               = new Object();
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 2.7.7.8<br />
+     * DEV NOTES XfileSharingProBasic Version 2.7.7.9<br />
      ****************************
      * NOTES from raztoki <br/>
      * - no need to set setfollowredirect true. <br />
@@ -184,8 +184,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      ****************************
      * mods: Search code for String "Special"<br />
      * limit-info:<br />
-     * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
-     * ALL) it is usually impossible to get any filename/filesize/status information!<br />
      * captchatype: null 4dignum solvemedia reCaptchaV2<br />
      * other:<br />
      */
@@ -208,6 +206,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             super.prepBrowser(prepBr, host);
             /* define custom browser headers and language settings */
             prepBr.setCookie(COOKIE_HOST, "lang", "english");
+            prepBr.setAllowedResponseCodes(new int[500]);
         }
         return prepBr;
     }
@@ -231,11 +230,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         correctDownloadLink(link);
         getPage(link.getPluginPatternMatcher());
         setFUID(link);
-        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
+        if (br.getHttpConnection().getResponseCode() == 404 || new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         altbr = br.cloneBrowser();
-        if (new Regex(correctedBR, HTML_MAINTENANCE_MODE).matches()) {
+        if (websiteIsUnderMaintenance()) {
             /* In maintenance mode this sometimes is a way to find filenames! */
             if (SUPPORTS_AVAILABLECHECK_ABUSE) {
                 fileInfo[0] = this.getFnameViaAbuseLink(altbr, link, fileInfo[0]);
@@ -468,6 +467,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             logger.info("AltAvailablecheck: Failed to find filesize");
         }
         return filesize;
+    }
+
+    private boolean websiteIsUnderMaintenance() {
+        return br.getHttpConnection().getResponseCode() == 500 || new Regex(correctedBR, HTML_MAINTENANCE_MODE).matches();
     }
 
     /**
@@ -1358,7 +1361,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         } else if (correctedBR.contains(">Expired download session")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Expired download session'", 10 * 60 * 1000l);
         }
-        if (new Regex(correctedBR, HTML_MAINTENANCE_MODE).matches()) {
+        if (websiteIsUnderMaintenance()) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, USERTEXT_MAINTENANCE, 2 * 60 * 60 * 1000l);
         }
         checkResponseCodeErrors(br.getHttpConnection());

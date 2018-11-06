@@ -662,9 +662,11 @@ public class MassengeschmackTv extends PluginForHost {
                 url_videoid = url_videoid.substring(0, url_videoid.length() - url_episodenumber.length());
             }
         }
-        /* Should start uppercase */
-        final String first_char_uppercase = url_videoid.substring(0, 1).toUpperCase();
-        url_videoid = first_char_uppercase + url_videoid.substring(1);
+        if (url_videoid.length() > 1) {
+            /* Should start uppercase */
+            final String first_char_uppercase = url_videoid.substring(0, 1).toUpperCase();
+            url_videoid = first_char_uppercase + url_videoid.substring(1);
+        }
         return url_videoid;
     }
 

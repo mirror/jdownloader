@@ -173,6 +173,12 @@ public class GeneralMultiuploadDecrypter extends antiDDoSForDecrypt {
             }
             // exoshare have just advertising crapola for dead/offline links
             if ("exoshare.com".equals(getHost())) {
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
+            }
+            /* 2018-11-06: Uploadmirrors.com is just buggy */
+            if ("uploadmirrors.com".equals(getHost())) {
+                decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
             throw new DecrypterException("Decrypter broken for link: " + parameter);

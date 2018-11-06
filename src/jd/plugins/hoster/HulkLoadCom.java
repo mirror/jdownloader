@@ -198,7 +198,7 @@ public class HulkLoadCom extends PluginForHost {
         // required for native cloudflare support, without the need to repeat requests.
         try {
             /* not available in old stable */
-            prepBr.setAllowedResponseCodes(new int[] { 503 });
+            prepBr.setAllowedResponseCodes(new int[] { 406, 503 });
         } catch (Throwable e) {
         }
         return prepBr;
@@ -239,7 +239,7 @@ public class HulkLoadCom extends PluginForHost {
         if (cbr.containsHTML("(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|<li>The file (expired|deleted by (its owner|administration)))")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (cbr.containsHTML(MAINTENANCE)) {
+        if (cbr.getHttpConnection().getResponseCode() == 406 || cbr.containsHTML(MAINTENANCE)) {
             downloadLink.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
             return AvailableStatus.TRUE;
         }
@@ -617,9 +617,9 @@ public class HulkLoadCom extends PluginForHost {
         // monitor this
         if (cbr.containsHTML("(class=\"err\">You have reached the download(-| )limit[^<]+for last[^<]+)")) {
             /*
-             * Indication of when you've reached the max download limit for that given session! Usually shows how long the session was recorded from x
-             * time (hours|days) which can trigger false positive below wait handling. As its only indication of what's previous happened, as in past
-             * tense and not a wait time going forward... unknown wait time!
+             * Indication of when you've reached the max download limit for that given session! Usually shows how long the session was
+             * recorded from x time (hours|days) which can trigger false positive below wait handling. As its only indication of what's
+             * previous happened, as in past tense and not a wait time going forward... unknown wait time!
              */
             if (account != null) {
                 logger.warning("Your account ( " + account.getUser() + " @ " + acctype + " ) has been temporarily disabled for going over the download session limit. JDownloader parses HTML for error messages, if you believe this is not a valid response please confirm issue within your browser. If you can download within your browser please contact JDownloader Development Team, if you can not download in your browser please take the issue up with " + this.getHost());
@@ -725,7 +725,7 @@ public class HulkLoadCom extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, msg);
         }
-        if (cbr.containsHTML(MAINTENANCE)) {
+        if (cbr.getHttpConnection().getResponseCode() == 406 || cbr.containsHTML(MAINTENANCE)) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
         }
     }
@@ -1541,8 +1541,8 @@ public class HulkLoadCom extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree which
-     * allows the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
+     * which allows the next singleton download to start, or at least try.
      *
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
@@ -1568,8 +1568,8 @@ public class HulkLoadCom extends PluginForHost {
     }
 
     /**
-     * ControlSimHost, On error it will set the upper mark for 'max sim dl per host'. This will be the new 'static' setting used going forward.
-     * Thus prevents new downloads starting when not possible and is self aware and requires no coder interaction.
+     * ControlSimHost, On error it will set the upper mark for 'max sim dl per host'. This will be the new 'static' setting used going
+     * forward. Thus prevents new downloads starting when not possible and is self aware and requires no coder interaction.
      *
      * @param account
      *
@@ -1607,8 +1607,8 @@ public class HulkLoadCom extends PluginForHost {
 
     /**
      * This matches dllink against an array of used 'host' servers. Use this when site have multiple download servers and they allow x
-     * connections to ip/host server. Currently JD allows a global connection controller and doesn't allow for handling of different hosts/IP
-     * setup. This will help with those situations by allowing more connection when possible.
+     * connections to ip/host server. Currently JD allows a global connection controller and doesn't allow for handling of different
+     * hosts/IP setup. This will help with those situations by allowing more connection when possible.
      *
      * @param Account
      *            Account that's been used, can be null
@@ -1679,9 +1679,9 @@ public class HulkLoadCom extends PluginForHost {
             } else {
                 // New download started, check finallink host against hostMap values && max(Free|Prem)SimDlHost!
                 /*
-                 * max(Free|Prem)SimDlHost prevents more downloads from starting on a given host! At least until one of the previous downloads finishes.
-                 * This is best practice otherwise you have to use some crude system of waits, but you have no control over to reset the count. Highly
-                 * dependent on how fast or slow the users connections is.
+                 * max(Free|Prem)SimDlHost prevents more downloads from starting on a given host! At least until one of the previous
+                 * downloads finishes. This is best practice otherwise you have to use some crude system of waits, but you have no control
+                 * over to reset the count. Highly dependent on how fast or slow the users connections is.
                  */
                 if (isHashedHashedKey(account, usedHost)) {
                     Integer usedSlots = getHashedHashedValue(account);
