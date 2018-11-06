@@ -55,7 +55,7 @@ public class AnySexCom extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         }
-        dllink = br.getRegex("video_url\\s*:\\s*\\'(https?://[^<>\"]*?)\\'").getMatch(0);
+        dllink = br.getRegex("video_source_2\" src=\"(https?://[^<>\"]*?)\"").getMatch(0);
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
