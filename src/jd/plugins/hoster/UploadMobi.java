@@ -13,10 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -31,11 +32,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "upload.mobi" }, urls = { "http://(?:www\\.)?upload\\.mobi/\\d+/[A-Za-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "upload.mobi" }, urls = { "https?://(?:www\\.)?upload\\.mobi/\\d+/[A-Za-z0-9]+" })
 public class UploadMobi extends PluginForHost {
-
     public UploadMobi(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -53,6 +51,7 @@ public class UploadMobi extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("File does not exist|The probable cause is a DMCA removal request")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -136,5 +135,4 @@ public class UploadMobi extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
