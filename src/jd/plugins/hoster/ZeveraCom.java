@@ -44,13 +44,14 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zevera.com" }, urls = { "" })
-public class ZeveraCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zevera.com" }, urls = { "https?://[^/]+\\.zeveracdn\\.com/dl/.+|zeveradecrypted://" })
+public class ZeveraCom extends UseNet {
     private static final String          NICE_HOST                 = "zevera.com";
     private static final String          NICE_HOSTproperty         = NICE_HOST.replaceAll("(\\.|\\-)", "");
     /* Connection limits */
@@ -60,15 +61,18 @@ public class ZeveraCom extends PluginForHost {
     private static Object                LOCK                      = new Object();
     private static MultiHosterManagement mhm                       = new MultiHosterManagement("zevera.com");
 
+    @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        if (isDirectURL(link.getDownloadLink())) {
+            final String new_url = link.getPluginPatternMatcher().replaceAll("[a-z0-9]+decrypted://", "https://");
+            link.setPluginPatternMatcher(new_url);
+        }
+    }
+
     public ZeveraCom(PluginWrapper wrapper) {
         super(wrapper);
         this.setAccountwithoutUsername(true);
         this.enablePremium("https://www." + this.getHost() + "/premium");
-    }
-
-    @Override
-    public AccountBuilderInterface getAccountFactory(InputChangedCallbackInterface callback) {
-        return new ZeveraComAccountFactory(callback);
     }
 
     @Override
@@ -86,17 +90,61 @@ public class ZeveraCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws PluginException {
-        return AvailableStatus.UNCHECKABLE;
+    public AccountBuilderInterface getAccountFactory(InputChangedCallbackInterface callback) {
+        return new ZeveraComAccountFactory(callback);
+    }
+
+    @Override
+    public boolean isSpeedLimited(DownloadLink link, Account account) {
+        return false;
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        if (isUsenetLink(link)) {
+            return super.requestFileInformation(link);
+        } else {
+            return requestFileInformationDirectURL(this.br, link);
+        }
+    }
+
+    public static AvailableStatus requestFileInformationDirectURL(final Browser br, final DownloadLink link) throws Exception {
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openHeadConnection(link.getPluginPatternMatcher());
+            if (!con.getContentType().contains("html") && con.isOK()) {
+                if (link.getFinalFileName() == null) {
+                    link.setFinalFileName(Encoding.urlDecode(Plugin.getFileNameFromHeader(con), false));
+                }
+                link.setVerifiedFileSize(con.getLongContentLength());
+                return AvailableStatus.TRUE;
+            } else if (con.getResponseCode() == 404) {
+                /* Usually 404 when offline */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                /* E.g. 403 because of bad fair use status */
+                return AvailableStatus.UNCHECKABLE;
+            }
+        } finally {
+            try {
+                /* make sure we close connection */
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
     }
 
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
-        if (account == null) {
-            /* without account its not possible to download the link */
-            return false;
+        if (isDirectURL(downloadLink) && account == null) {
+            // generated links do not require an account
+            return true;
         }
-        return true;
+        return account != null;
+    }
+
+    public boolean isDirectURL(final DownloadLink downloadLink) {
+        return StringUtils.equals(getHost(), downloadLink.getHost());
     }
 
     @Override
@@ -105,9 +153,11 @@ public class ZeveraCom extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
-        /* handle premium should never be called */
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        if (!isDirectURL(link)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        handleDL_DIRECT(null, link);
     }
 
     @Override
@@ -117,30 +167,24 @@ public class ZeveraCom extends PluginForHost {
 
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        this.br = prepBR(this.br);
-        mhm.runCheck(account, link);
-        login(this.br, account, false, client_id);
-        String dllink = getDllink(this.br, account, link, client_id, this);
-        if (StringUtils.isEmpty(dllink)) {
-            mhm.handleErrorGeneric(account, link, "dllinknull", 2, 5 * 60 * 1000l);
+        if (isUsenetLink(link)) {
+            super.handleMultiHost(link, account);
+            return;
+        } else if (isDirectURL(link)) {
+            handleDL_DIRECT(account, link);
+        } else {
+            this.br = prepBR(this.br);
+            mhm.runCheck(account, link);
+            ZeveraCom.login(this.br, account, false, client_id);
+            String dllink = ZeveraCom.getDllink(this.br, account, link, client_id, this);
+            if (StringUtils.isEmpty(dllink)) {
+                mhm.handleErrorGeneric(account, link, "dllinknull", 2, 5 * 60 * 1000l);
+            }
+            handleDL_MOCH(account, link, dllink);
         }
-        handleDL(account, link, dllink);
     }
 
-    public static String getDllink(final Browser br, final Account account, final DownloadLink link, final String client_id, final PluginForHost hostPlugin) throws IOException, PluginException {
-        String dllink = checkDirectLink(br, link, NICE_HOSTproperty + "directlink");
-        if (dllink == null) {
-            /* TODO: Check if the cache function is useful for us */
-            // br.getPage("https://www." + account.getHoster() + "/api/cache/check?client_id=" + client_id + "&pin=" +
-            // Encoding.urlEncode(account.getPass()) + "&items%5B%5D=" +
-            // Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, hostPlugin)));
-            br.getPage("https://www." + account.getHoster() + "/api/transfer/directdl?client_id=" + client_id + "&pin=" + Encoding.urlEncode(account.getPass()) + "&src=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, hostPlugin)));
-            dllink = PluginJSonUtils.getJsonValue(br, "location");
-        }
-        return dllink;
-    }
-
-    private void handleDL(final Account account, final DownloadLink link, final String dllink) throws Exception {
+    private void handleDL_MOCH(final Account account, final DownloadLink link, final String dllink) throws Exception {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -159,6 +203,37 @@ public class ZeveraCom extends PluginForHost {
             link.setProperty(NICE_HOSTproperty + "directlink", Property.NULL);
             throw e;
         }
+    }
+
+    /** Account is not required */
+    private void handleDL_DIRECT(final Account account, final DownloadLink link) throws Exception {
+        try {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+            final String contenttype = dl.getConnection().getContentType();
+            if (contenttype.contains("html")) {
+                br.followConnection();
+                // updatestatuscode();
+                // handleAPIErrors(this.br);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
+            }
+            this.dl.startDownload();
+        } catch (final Exception e) {
+            link.setProperty(NICE_HOSTproperty + "directlink", Property.NULL);
+            throw e;
+        }
+    }
+
+    public static String getDllink(final Browser br, final Account account, final DownloadLink link, final String client_id, final PluginForHost hostPlugin) throws IOException, PluginException {
+        String dllink = checkDirectLink(br, link, NICE_HOSTproperty + "directlink");
+        if (dllink == null) {
+            /* TODO: Check if the cache function is useful for us */
+            // br.getPage("https://www." + account.getHoster() + "/api/cache/check?client_id=" + client_id + "&pin=" +
+            // Encoding.urlEncode(account.getPass()) + "&items%5B%5D=" +
+            // Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, hostPlugin)));
+            br.getPage("https://www." + account.getHoster() + "/api/transfer/directdl?client_id=" + client_id + "&pin=" + Encoding.urlEncode(account.getPass()) + "&src=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, hostPlugin)));
+            dllink = PluginJSonUtils.getJsonValue(br, "location");
+        }
+        return dllink;
     }
 
     public static String checkDirectLink(final Browser br, final DownloadLink downloadLink, final String property) {
@@ -193,9 +268,9 @@ public class ZeveraCom extends PluginForHost {
         return ai;
     }
 
-    public static AccountInfo fetchAccountInfoAPI(final PluginForHost hostPlugin, final Browser br, final String clientID, final Account account) throws Exception {
+    public static AccountInfo fetchAccountInfoAPI(final PluginForHost hostPlugin, final Browser br, final String client_id, final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        login(br, account, true, clientID);
+        login(br, account, true, client_id);
         final String fair_use_used_str = PluginJSonUtils.getJson(br, "limit_used");
         final String premium_until_str = PluginJSonUtils.getJson(br, "premium_until");
         if (StringUtils.equalsIgnoreCase("false", premium_until_str)) {
@@ -227,12 +302,15 @@ public class ZeveraCom extends PluginForHost {
                 ai.setTrafficLeft(0);
             }
         }
-        br.getPage("/api/services/list?client_id=" + clientID + "&pin=" + Encoding.urlEncode(account.getPass()));
+        br.getPage("/api/services/list?client_id=" + client_id + "&pin=" + Encoding.urlEncode(account.getPass()));
         final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         // final ArrayList<String> supportedHosts = new ArrayList<String>();
         final ArrayList<String> directdl = (ArrayList<String>) entries.get("directdl");
         final ArrayList<String> cache = (ArrayList<String>) entries.get("cache");
         final HashSet<String> list = new HashSet<String>();
+        if (account.getHoster().equalsIgnoreCase("premiumize.me")) {
+            list.add("usenet");
+        }
         if (directdl != null) {
             list.addAll(directdl);
         }

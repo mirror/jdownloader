@@ -24,9 +24,9 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PremiumizeBrowseNode;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "premiumize.me" }, urls = { "https?://(?:(?:www|beta)\\.)?premiumize\\.me/files(?:\\?folder_id=[a-zA-Z0-9\\-_]+(?:\\&file_id=[a-zA-Z0-9\\-_]+)?(?:\\&folderpath=[a-zA-Z0-9_/\\+\\=\\-%]+)?|\\?file_id=[a-zA-Z0-9\\-_]+(?:\\&folder_id=[a-zA-Z0-9\\-_]+)?)" })
-public class PremiumizeMe extends PluginForDecrypt {
-    public PremiumizeMe(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "premiumize.me", "zevera.com" }, urls = { "https?://(?:(?:www|beta)\\.)?premiumize\\.me/(?:files\\?folder_id=|file\\?id=)[a-zA-Z0-9_/\\+\\=\\-%]+", "https?://(?:(?:www|beta)\\.)?zevera\\.com/(?:files\\?folder_id=|file\\?id=)[a-zA-Z0-9_/\\+\\=\\-%]+" })
+public class PremiumizeMeZeveraFolder extends PluginForDecrypt {
+    public PremiumizeMeZeveraFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -41,6 +41,9 @@ public class PremiumizeMe extends PluginForDecrypt {
         setBrowserExclusive();
         final Account account = accs.get(0);
         final ArrayList<PremiumizeBrowseNode> nodes = getNodes(br, account, parameter.getCryptedUrl());
+        if (nodes == null) {
+            return null;
+        }
         /* Find path from previous craw process if available. */
         String folderPath = new Regex(parameter.getCryptedUrl(), "folderpath=(.+)").getMatch(0);
         if (folderPath != null) {
@@ -71,9 +74,11 @@ public class PremiumizeMe extends PluginForDecrypt {
             currentPath = "";
         }
         /* If given, user only wants to have one specific file. */
-        final String targetFileID = new Regex(url_source, "file_id=([a-zA-Z0-9\\-_]+)").getMatch(0);
+        /** TODO: This does not work anymore */
+        final String targetFileID = new Regex(url_source, "/file\\?id=([a-zA-Z0-9\\-_]+)").getMatch(0);
         final boolean addPath = StringUtils.isNotEmpty(currentPath);
         final Map<String, FilePackage> filePackages = new HashMap<String, FilePackage>();
+        final String host = Browser.getHost(url_source);
         for (final PremiumizeBrowseNode node : premiumizeNodes) {
             final String itemName = node.getName();
             final String parentName = node._getParentName();
@@ -90,12 +95,14 @@ public class PremiumizeMe extends PluginForDecrypt {
                 } else {
                     path_for_next_crawl_level = currentPath + "/" + itemName;
                 }
-                final String folderURL = createFolderURL(nodeCloudID) + "&folderpath=" + Encoding.Base64Encode(path_for_next_crawl_level);
-                final DownloadLink folder = new DownloadLink(null, null, "premiumize.me", folderURL, true);
+                final String folderURL = createFolderURL(host, nodeCloudID) + "&folderpath=" + Encoding.Base64Encode(path_for_next_crawl_level);
+                final DownloadLink folder = new DownloadLink(null, null, host, folderURL, true);
                 ret.add(folder);
             } else {
                 /* File */
-                final DownloadLink link = new DownloadLink(null, null, "premiumize.me", node.getUrl(), true);
+                final String hostname = host.split("\\.")[0];
+                final String url_for_hostplugin = node.getUrl().replaceAll("https?://", hostname + "decrypted://");
+                final DownloadLink link = new DownloadLink(null, null, host, url_for_hostplugin, true);
                 setPremiumizeBrowserNodeInfoOnDownloadlink(link, node);
                 final FilePackage filePackage = getFilePackage(filePackages, node);
                 if (filePackage != null) {
@@ -117,8 +124,8 @@ public class PremiumizeMe extends PluginForDecrypt {
         return ret;
     }
 
-    private static String createFolderURL(final String cloudID) {
-        return String.format("https://www.premiumize.me/files?folder_id=%s", cloudID);
+    private static String createFolderURL(final String host, final String cloudID) {
+        return String.format("https://www." + host + "/files?folder_id=%s", cloudID);
     }
 
     /* Sets info from PremiumizeBrowseNode --> On DownloadLink */
@@ -128,7 +135,7 @@ public class PremiumizeMe extends PluginForDecrypt {
         }
         link.setFinalFileName(node.getName());
         link.setAvailable(true);
-        link.setLinkID("premiumizecloud://" + node.getID());
+        link.setLinkID(link.getHost() + "://" + node.getID());
     }
 
     public static ArrayList<PremiumizeBrowseNode> getNodes(final Browser br, final Account account, final String url) throws IOException {
@@ -140,14 +147,15 @@ public class PremiumizeMe extends PluginForDecrypt {
              */
             cloudID = "0";
         }
-        accessCloudItem(br, account, cloudID);
+        accessCloudItem(br, account, url);
         final Map<String, Object> responseMap = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP, null);
         final String status = (String) responseMap.get("status");
+        final ArrayList<PremiumizeBrowseNode> browseNodes = new ArrayList<PremiumizeBrowseNode>();
         if (StringUtils.equals("success", status)) {
+            /* Folder */
             final ArrayList<Object> folderContents = (ArrayList<Object>) responseMap.get("content");
             final String folderName = (String) responseMap.get("name");
             final String parentID = (String) responseMap.get("parent_id");
-            final ArrayList<PremiumizeBrowseNode> browseNodes = new ArrayList<PremiumizeBrowseNode>();
             for (final Object jsonObject : folderContents) {
                 final Map<String, Object> folderObject = (Map<String, Object>) jsonObject;
                 PremiumizeBrowseNode node = JSonStorage.restoreFromString(JSonStorage.toString(folderObject), new TypeRef<PremiumizeBrowseNode>() {
@@ -159,13 +167,28 @@ public class PremiumizeMe extends PluginForDecrypt {
                 }
             }
             return browseNodes;
+        } else if (status == null || (status != null && !status.equals("error"))) {
+            /* Single file */
+            PremiumizeBrowseNode node = JSonStorage.restoreFromString(JSonStorage.toString(responseMap), new TypeRef<PremiumizeBrowseNode>() {
+            }, null);
+            if (node != null) {
+                browseNodes.add(node);
+                return browseNodes;
+            }
         }
-        /* E.g. {"status":"error","message":"Nicht dein Ordner"} */
+        /* Error e.g. {"status":"error","message":"Nicht dein Ordner"} */
         return null;
     }
 
-    public static String accessCloudItem(final Browser br, final Account account, final String itemID) throws IOException {
-        br.getPage("https://www.premiumize.me/api/folder/list?customer_id=" + Encoding.urlEncode(account.getUser()) + "&pin=" + Encoding.urlEncode(account.getPass()) + "&id=" + itemID);
+    public static String accessCloudItem(final Browser br, final Account account, final String url_source) throws IOException {
+        final String itemID = jd.plugins.hoster.PremiumizeMe.getCloudID(url_source);
+        if (url_source.contains("folder_id")) {
+            /* Folder */
+            br.getPage("https://www." + account.getHoster() + "/api/folder/list?customer_id=" + Encoding.urlEncode(account.getUser()) + "&pin=" + Encoding.urlEncode(account.getPass()) + "&id=" + itemID);
+        } else {
+            /* Single file */
+            br.getPage("https://www." + account.getHoster() + "/api/item/details?customer_id=" + Encoding.urlEncode(account.getUser()) + "&pin=" + Encoding.urlEncode(account.getPass()) + "&id=" + itemID);
+        }
         return br.toString();
     }
 }

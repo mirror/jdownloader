@@ -240,7 +240,7 @@ public class MassengeschmackTvCrawler extends PluginForDecrypt {
                 is_premiumonly_content = false;
                 br.getPage(parameter);
                 if (br.containsHTML(MassengeschmackTv.HTML_MASSENGESCHMACK_OFFLINE) || this.br.getHttpConnection().getResponseCode() == 404) {
-                    decryptedLinks.add(this.createDownloadlink(parameter));
+                    decryptedLinks.add(this.createOfflinelink(parameter));
                     return decryptedLinks;
                 } else if (this.br.getHttpConnection().getResponseCode() == 403) {
                     is_premiumonly_content = true;
