@@ -22,6 +22,10 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.mozilla.javascript.ConsString;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -36,10 +40,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.mozilla.javascript.ConsString;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgsrc.ru" }, urls = { "https?://decryptedimgsrc\\.ru/[^/]+/\\d+\\.html(\\?pwd=[a-z0-9]{32})?" })
 public class ImgSrcRu extends PluginForHost {
@@ -144,6 +144,31 @@ public class ImgSrcRu extends PluginForHost {
     }
 
     private void getDllink() {
+        Object result = null;
+        String js = br.getRegex(".+<script(?: type=(\"|')text/javascript\\1)?>.*?\\s*((?:var|let) [a-z]=[^<]+.*?)</script>.+").getMatch(1);
+        String elementName = new Regex(js, "(?:var|let) [a-z]=(\"|')(.+?)\\1").getMatch(1);
+        String imageTag = br.getRegex("<[^>]+'" + Pattern.quote(elementName) + "'[^>]*>").getMatch(-1);
+        String varSrc = new Regex(imageTag, "src=(\"|')(.+?)\\1").getMatch(1);
+        StringBuilder sb = new StringBuilder();
+        sb.append("var element = {src: elementSrc, href: ''}, document={getElementById:function(e){return element}};");
+        sb.append("String.fromCodePoint = function (cp) {return String.fromCharCode(cp);};");
+        sb.append(js);
+        sb.append("var result=element.href === '' ? element.src : element.href;");
+        try {
+            final ScriptEngineManager mgr = JavaScriptEngineFactory.getScriptEngineManager(this);
+            final ScriptEngine engine = mgr.getEngineByName("javascript");
+            engine.put("elementSrc", varSrc);
+            engine.eval(sb.toString());
+            result = engine.get("result");
+        } catch (final Throwable e) {
+            logger.log(e);
+        }
+        if (result != null && result instanceof ConsString) {
+            ddlink = result.toString();
+        }
+    }
+
+    private void getDllink_old2() {
         try {
             boolean done = false;
             String js = br.getRegex(".+<script(?: type=(\"|')text/javascript\\1)?>.*?\\s*((?:var|let) [a-z]=[^<]+.*?)</script>.+").getMatch(1);
