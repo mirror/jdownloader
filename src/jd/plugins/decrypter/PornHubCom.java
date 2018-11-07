@@ -87,7 +87,7 @@ public class PornHubCom extends PluginForDecrypt {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
-        if (br.containsHTML("class=\"g-recaptcha\" data-sitekey=")) {
+        if (br.containsHTML("class=\"g-recaptcha\"") && br.containsHTML("/captcha/validate\\?token=")) {
             final Form form = br.getFormByInputFieldKeyValue("captchaType", "1");
             logger.info("Detected captcha method \"reCaptchaV2\" for this host");
             final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
