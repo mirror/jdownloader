@@ -46,6 +46,22 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
     }
 
     protected TYPE getType(String source) {
+        if (source != null) {
+            final String[] divs = getDIVs(source);
+            if (divs != null) {
+                for (final String div : divs) {
+                    if (new Regex(div, "class\\s*=\\s*('|\")(?:.*?\\s+)?g-recaptcha(\\1|\\s+)").matches()) {
+                        final String siteKey = new Regex(div, "data-sitekey\\s*=\\s*('|\")\\s*(" + apiKeyRegex + ")\\s*\\1").getMatch(1);
+                        if (siteKey != null && StringUtils.equals(siteKey, getSiteKey())) {
+                            final boolean isInvisible = new Regex(div, "data-size\\s*=\\s*('|\")\\s*(invisible)\\s*\\1").matches();
+                            if (isInvisible) {
+                                return TYPE.INVISIBLE;
+                            }
+                        }
+                    }
+                }
+            }
+        }
         return TYPE.NORMAL;
     }
 
@@ -158,6 +174,10 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
 
     private final static String apiKeyRegex = "[\\w-]+";
 
+    protected String[] getDIVs(String source) {
+        return new Regex(source, "<\\s*(div|button)(?:[^>]*>.*?</\\1>|[^>]*\\s*/\\s*>)").getColumn(-1);
+    }
+
     /**
      * will auto find api key, based on google default &lt;div&gt;, @Override to make customised finder.
      *
@@ -174,11 +194,11 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
         }
         {
             // lets look for defaults
-            final String[] divs = new Regex(source, "<\\s*(div|button)(?:[^>]*>.*?</\\1>|[^>]*\\s*/\\s*>)").getColumn(-1);
+            final String[] divs = getDIVs(source);
             if (divs != null) {
                 for (final String div : divs) {
-                    if (new Regex(div, "class=('|\")(?:.*?\\s+)?g-recaptcha(\\1|\\s+)").matches()) {
-                        siteKey = new Regex(div, "data-sitekey=('|\")\\s*(" + apiKeyRegex + ")\\s*\\1").getMatch(1);
+                    if (new Regex(div, "class\\s*=\\s*('|\")(?:.*?\\s+)?g-recaptcha(\\1|\\s+)").matches()) {
+                        siteKey = new Regex(div, "data-sitekey\\s*=\\s*('|\")\\s*(" + apiKeyRegex + ")\\s*\\1").getMatch(1);
                         if (siteKey != null) {
                             return siteKey;
                         }
