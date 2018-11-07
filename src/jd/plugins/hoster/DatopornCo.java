@@ -846,8 +846,8 @@ public class DatopornCo extends antiDDoSForHost {
     @SuppressWarnings({ "unused", "unchecked", "rawtypes" })
     private String getDllink() {
         String dllink = br.getRedirectLocation();
-        if (dllink == null) { // 20180824 m3u8
-            dllink = new Regex(correctedBR, "player.updateSrc\\(\\{src: \"([^<>\"]+)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = new Regex(correctedBR, "player[^<>\"]*?src: \"([^<>\"]+)\"").getMatch(0);
             logger.info("dllink: " + dllink);
         }
         if (dllink == null) {
