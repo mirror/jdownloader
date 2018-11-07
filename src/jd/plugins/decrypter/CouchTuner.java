@@ -45,6 +45,9 @@ public class CouchTuner extends PluginForDecrypt {
         if (links == null || links.length == 0) {
             links = br.getRegex("<a[\r\\n ]+href=\"([^\"]+)\" rel=\"bookmark\">").getMatches();
         }
+        if (links == null || links.length == 0) {
+            links = br.getRegex("<iframe[^>]+src=\"([^\"]+)\"[^>]*>").getMatches();
+        }
         for (String[] link : links) {
             decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link[0])));
         }
