@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -46,12 +45,11 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.utils.recaptcha.api2.Recaptcha2Helper;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filezog.com" }, urls = { "https?://(www\\.)?filezog\\.com/[A-Za-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filezog.com" }, urls = { "https?://(www\\.)?filezog\\.com/[A-Za-z0-9]+" })
 public class FilezogCom extends PluginForHost {
-
     public FilezogCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(mainpage + "/upgrade." + type);
@@ -64,7 +62,6 @@ public class FilezogCom extends PluginForHost {
     // protocol: no https
     // captchatype: null
     // other:
-
     @Override
     public String getAGBLink() {
         return mainpage + "/terms." + type;
@@ -92,7 +89,6 @@ public class FilezogCom extends PluginForHost {
     private static final String  errortext_ERROR_SERVER                       = "Server error";
     private static final String  errortext_ERROR_PREMIUMONLY                  = "This file can only be downloaded by premium (or registered) users";
     private static final String  errortext_ERROR_SIMULTANDLSLIMIT             = "Max. simultan downloads limit reached, wait to start more downloads from this host";
-
     /* Connection stuff */
     private static final boolean free_RESUME                                  = false;
     private static final int     free_MAXCHUNKS                               = 1;
@@ -103,7 +99,6 @@ public class FilezogCom extends PluginForHost {
     private static final boolean account_PREMIUM_RESUME                       = false;
     private static final int     account_PREMIUM_MAXCHUNKS                    = 1;
     private static final int     account_PREMIUM_MAXDOWNLOADS                 = 1;
-
     private static AtomicInteger MAXPREM                                      = new AtomicInteger(1);
 
     @SuppressWarnings("deprecation")
@@ -218,17 +213,12 @@ public class FilezogCom extends PluginForHost {
                     if (br.containsHTML("data\\-sitekey=")) {
                         captcha = true;
                         success = false;
-                        Recaptcha2Helper rchelp = new Recaptcha2Helper();
-                        rchelp.init(this.br);
-                        final File outputFile = rchelp.loadImageFile();
-                        final String code = getCaptchaCode("recaptcha", outputFile, downloadLink);
-                        success = rchelp.sendResponse(code);
-                        if (!success) {
-                            logger.info("reCaptcha V2: Wrong user-input!");
-                            continue;
+                        final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br);
+                        final String recaptchaV2Response = rc2.getToken();
+                        if (recaptchaV2Response == null) {
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                         }
-                        final String responseToken = rchelp.getResponseToken();
-                        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, "submit=Submit&submitted=1&d=1&capcode=false&g-recaptcha-response=" + responseToken, resume, maxchunks);
+                        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, "submit=Submit&submitted=1&d=1&capcode=false&g-recaptcha-response=" + recaptchaV2Response, resume, maxchunks);
                     } else if (rcID != null) {
                         captcha = true;
                         success = false;
@@ -604,5 +594,4 @@ public class FilezogCom extends PluginForHost {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.MFScripts_YetiShare;
     }
-
 }
