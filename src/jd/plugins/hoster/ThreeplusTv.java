@@ -118,7 +118,7 @@ public class ThreeplusTv extends PluginForHost {
         }
         final String[] qualities = { "hd1080p", "hd720p", "hd720", "mediumlarge", "medium", "small" };
         for (final String possibleQuality : qualities) {
-            dllink = this.br.getRegex("src\\s*:\\s*\\'(https?[^<>\"\\']+format=progressive[^<>\"\\']*?)\\',\\s*type\\s*:\\s*\\'video(?:/|\\\\x2F)mp4\\',\\s*quality\\s*:\\s*\\'" + possibleQuality + "\\'").getMatch(0);
+            dllink = this.br.getRegex("src\\s*:\\s*\\'(https?[^<>\"\\']+format=progressive[^<>\"\\']*?)\\',\\s*type\\s*:\\s*\\'video[^']*mp4\\',\\s*quality\\s*:\\s*\\'" + possibleQuality + "\\'").getMatch(0);
             if (dllink != null) {
                 break;
             }
@@ -168,7 +168,7 @@ public class ThreeplusTv extends PluginForHost {
     }
 
     private String getsdnPlayoutId() {
-        String ret = this.br.getRegex("sdnPlayoutId\\s*?(?:=|:)\\s*?(?:\"|\\')([0-9a-f\\-\\\\x]{10,})(?:\"|\\')").getMatch(0);
+        String ret = this.br.getRegex("sdnPlayoutId\\s*?(?:=|:)\\s*?(?:\"|\\')([0-9a-f\\-\\\\x\\\\u]{10,})(?:\"|\\')").getMatch(0);
         if (ret == null) {
             /* 2017-02-02: E.g. for '/videos/' urls. */
             ret = this.br.getRegex("class=\"views\\-field\\-field\\-threeq\\-value\">\\s*?<div class=\"field\\-content\\s*?\">([0-9a-f\\-\\\\x]{10,})<").getMatch(0);
