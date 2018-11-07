@@ -15,6 +15,11 @@ import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.logging.LogController;
 
 public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
+    public static enum TYPE {
+        NORMAL,
+        INVISIBLE
+    }
+
     protected final T       plugin;
     protected LogInterface  logger;
     protected final Browser br;
@@ -25,7 +30,7 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
         return getSecureToken(br != null ? br.toString() : null);
     }
 
-    public String getSecureToken(final String source) {
+    protected String getSecureToken(final String source) {
         if (secureToken == null) {
             // from fallback url
             secureToken = new Regex(source, "&stoken=([^\"]+)").getMatch(0);
@@ -34,6 +39,14 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
             }
         }
         return secureToken;
+    }
+
+    public TYPE getType() {
+        return getType(br != null ? br.toString() : null);
+    }
+
+    protected TYPE getType(String source) {
+        return TYPE.NORMAL;
     }
 
     public void setSecureToken(String secureToken) {
@@ -152,7 +165,7 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
      * @since JD2
      * @return
      */
-    public String getSiteKey(final String source) {
+    protected String getSiteKey(final String source) {
         if (siteKey != null) {
             return siteKey;
         }

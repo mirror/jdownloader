@@ -59,6 +59,19 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
         }
 
         private String stoken;
+        private String type;
+
+        public String getType() {
+            if (type == null) {
+                return AbstractCaptchaHelperRecaptchaV2.TYPE.NORMAL.name();
+            } else {
+                return type;
+            }
+        }
+
+        public void setType(String type) {
+            this.type = type;
+        }
 
         public String getStoken() {
             return stoken;
@@ -136,6 +149,7 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
             ret.setStoken(getSecureToken());
             ret.setBoundToDomain(isBoundToDomain());
             ret.setSameOrigin(isSameOrigin());
+            ret.setType(getType());
             return ret;
         } else {
             final BasicCaptchaChallenge basic = createBasicCaptchaChallenge(true);
@@ -189,6 +203,10 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
             throw new WTFException("Bad SiteKey");
         }
     }
+
+    public String getType() {
+        return AbstractCaptchaHelperRecaptchaV2.TYPE.NORMAL.name();
+    };
 
     public boolean isBoundToDomain() {
         return true;
@@ -596,6 +614,7 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
             html = html.replace("%%%siteUrl%%%", StringUtils.valueOrEmpty(getSiteUrl()));
             html = html.replace("%%%siteDomain%%%", getSiteDomain());
             html = html.replace("%%%sitekey%%%", getSiteKey());
+            html = html.replace("%%%sitekeyType%%%", getType());
             html = html.replace("%%%unsupportedBrowser%%%", (isSafari || isEdge) ? "block" : "none");
             if (isBoundToDomain()) {
                 html = html.replace("%%%display%%%", "none");

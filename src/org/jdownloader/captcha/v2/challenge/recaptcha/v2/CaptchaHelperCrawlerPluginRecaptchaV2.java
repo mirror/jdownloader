@@ -130,6 +130,16 @@ public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelper
             public String getSiteUrl() {
                 return CaptchaHelperCrawlerPluginRecaptchaV2.this.getSiteUrl();
             }
+
+            @Override
+            public String getType() {
+                final TYPE type = CaptchaHelperCrawlerPluginRecaptchaV2.this.getType();
+                if (type != null) {
+                    return type.name();
+                } else {
+                    return TYPE.NORMAL.name();
+                }
+            }
         };
     }
 }

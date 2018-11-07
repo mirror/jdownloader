@@ -52,6 +52,16 @@ public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRec
             public String getSiteUrl() {
                 return CaptchaHelperHostPluginRecaptchaV2.this.getSiteUrl();
             }
+
+            @Override
+            public String getType() {
+                final TYPE type = CaptchaHelperHostPluginRecaptchaV2.this.getType();
+                if (type != null) {
+                    return type.name();
+                } else {
+                    return TYPE.NORMAL.name();
+                }
+            }
         };
     }
 
