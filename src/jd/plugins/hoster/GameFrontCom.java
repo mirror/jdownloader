@@ -13,10 +13,11 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -29,17 +30,15 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gamefront.online" }, urls = { "https?://(www\\.)?(filefront\\.com|gamefront\\.com/files|gamefront\\.online/files)/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gamefront.online" }, urls = { "https?://(www\\.)?(filefront\\.com|gamefront\\.com/files|gamefront\\.online/files)/\\d+" })
 public class GameFrontCom extends PluginForHost {
-
     public GameFrontCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("(?:filefront\\.com/|gamefront\\.com/files/)", "gamefront.online/files/"));
+        link.setUrlDownload(link.getDownloadURL().replace("http:", "https:"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("(?:gamefront\\.com/files/)", "gamefront.online/files/"));
     }
 
     @Override
@@ -59,12 +58,13 @@ public class GameFrontCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
-
         final String agent = UserAgents.stringUserAgent();
         br.getHeaders().put("User-Agent", agent);
-
         for (int i = 0; i <= 3; i++) {
             final URLConnectionAdapter con = br.openGetConnection(downloadLink.getDownloadURL());
+            if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             if (con.getResponseCode() == 502) {
                 continue;
             }
@@ -123,14 +123,12 @@ public class GameFrontCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.setFollowRedirects(true);
-
         // if (downloadLink.getBooleanProperty("specialstuff", false)) {
         // br.getHeaders().put("Accept", "*/*");
         // br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         // br.postPage("http://www.gamefront.com/files/service/request",
         // "token=iicJfwAa6vKSUZA%2BU0OqkjHqyTItn8RdRHUCAqeD%2FgtbGsw6vFV9piu7ordQeZSJxiOlJUxQIi5PIl1PpDHvoRATQa2VYXcT7CyftiNYFuE21taC4FkYYKa6i005wTgcgfCI2C2oKTc%2Fxtijzz4ya3SEXYMHpvlrlvLmY0gI2VgNbWBQXPLaKzb6hVkGDS1W");
         // }
-
         br.getPage("/files/service/thankyou?id=" + fileID);
         String finallink = br.getRegex("If it does not, <a href=\"(http://.*?)\"").getMatch(0);
         if (finallink == null) {
@@ -161,7 +159,6 @@ public class GameFrontCom extends PluginForHost {
             }
         }
         dl.startDownload();
-
     }
 
     @Override
