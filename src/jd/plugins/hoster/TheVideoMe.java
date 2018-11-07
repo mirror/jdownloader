@@ -170,7 +170,7 @@ public class TheVideoMe extends antiDDoSForHost {
             description = PluginJSonUtils.getJson(this.br, "description");
         } else {
             getPage(link.getDownloadURL());
-            if (new Regex(correctedBR, "(No such file|>\\s*File Not Found\\s*<|>The file was removed by|Reason for deletion:\n|>Video encoding error|>Video not found)").matches()) {
+            if (new Regex(correctedBR, "(No such file|>\\s*File Not Found\\s*<|>The file was removed by|Reason for deletion:\n|>Video encoding error|>Video not found|>404 Not Found<)").matches()) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (new Regex(correctedBR, MAINTENANCE).matches()) {
