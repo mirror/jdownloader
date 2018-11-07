@@ -23,8 +23,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -43,15 +41,17 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapideo.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
 public class RapideoPl extends PluginForHost {
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static final String                            NOCHUNKS           = "NOCHUNKS";
-    private static final String                            MAINPAGE           = "http://rapideo.pl";
+    private static final String                            MAINPAGE           = "https://rapideo.pl";
     private static final String                            NICE_HOST          = MAINPAGE.replaceAll("(https://|http://)", "");
     private static final String                            NICE_HOSTproperty  = MAINPAGE.replaceAll("(https://|http://|\\.|\\-)", "");
     private static final String[][]                        HOSTS              = { { "unibytes", "unibytes.com" }, { "uptobox", "uptobox.com" }, { "fileshark", "fileshark.pl" }, { "megaszafa", "megaszafa.com" }, { "divxstage", "divxstage.eu" }, { "oboom", "oboom.com" }, { "rapidu", "rapidu.net" }, { "ddlstorage", "ddlstorage.com" }, { "uploadable", "uploadable.ch" }, { "uloz", "uloz.to" }, { "cloudstor", "cloudstor.es" }, { "1fichier", "1fichier.com" }, { "datafile", "datafile.com" }, { "hugefiles", "hugefiles.net" }, { "zippyshare", "zippyshare.com" }, { "fastshare", "fastshare.cz" }, { "lunaticfiles", "lunaticfiles.com" }, { "fileparadox", "fileparadox.in" }, { "filesmonster", "filesmonster.com" }, { "hd3d", "hd3d.cc" }, { "lumfile", "lumfile.com" }, { "catshare", "catshare.net" }, { "hitfile", "hitfile.net" }, { "uploaded", "uploaded.to" }, { "4shared", "4shared.com" },
-            { "turbobit", "turbobit.net" }, { "2shared", "2shared.com" }, { "freakshare", "freakshare.com" }, { "rapidgator", "rapidgator.net" }, { "mediafire", "mediafire.com" }, { "filefactory", "filefactory.com" }, { "filevelocity", "filevelocity.com" }, { "sendspace", "sendspace.com" }, { "cloudnator", "cloudnator.com" }, { "uptobox", "uptobox.com" }, { "filereactor", "filereactor.com" }, { "ifile", "filecloud.io" }, { "share-online", "share-online.biz" }, { "glumbouploads", "glumbouploads.com" } };
+        { "turbobit", "turbobit.net" }, { "2shared", "2shared.com" }, { "freakshare", "freakshare.com" }, { "rapidgator", "rapidgator.net" }, { "mediafire", "mediafire.com" }, { "filefactory", "filefactory.com" }, { "filevelocity", "filevelocity.com" }, { "sendspace", "sendspace.com" }, { "cloudnator", "cloudnator.com" }, { "uptobox", "uptobox.com" }, { "filereactor", "filereactor.com" }, { "ifile", "filecloud.io" }, { "share-online", "share-online.biz" }, { "glumbouploads", "glumbouploads.com" } };
 
     public RapideoPl(PluginWrapper wrapper) {
         super(wrapper);
@@ -87,7 +87,7 @@ public class RapideoPl extends PluginForHost {
             }
         }
         /* API used in their browser addons */
-        br.postPage("http://enc.rapideo.pl/", "site=newrd&output=json&loc=1&info=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + md5HEX(account.getPass()));
+        br.postPage("https://enc.rapideo.pl/", "site=newrd&output=json&loc=1&info=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + md5HEX(account.getPass()));
         final String traffic_left = br.getRegex("\"balance\":(\\d+)").getMatch(0);
         ac.setTrafficLeft(Long.parseLong(traffic_left) * 1024);
         // now let's get a list of all supported hosts:
