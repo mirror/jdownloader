@@ -22,6 +22,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -43,9 +45,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.TimeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "scribd.com" }, urls = { "https?://(?:www\\.)?(?:(?:de|ru|es)\\.)?scribd\\.com/(doc|document)/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "scribd.com" }, urls = { "https?://(?:www\\.)?(?:(?:de|ru|es)\\.)?scribd\\.com/(doc|document|embeds)/\\d+" })
 public class ScribdCom extends PluginForHost {
     private final String        formats            = "formats";
     /** The list of server values displayed to the user */
@@ -65,10 +65,20 @@ public class ScribdCom extends PluginForHost {
         this.setStartIntervall(5 * 1000l);
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        final String linkPart = new Regex(link.getDownloadURL(), "(scribd\\.com/(?:doc|document)/\\d+)").getMatch(0);
+    public void correctDownloadLink(final DownloadLink link) {
+        final String linkid = getLinkID(link);
         /* Forced https */
-        link.setUrlDownload("https://www." + linkPart.toLowerCase());
+        link.setPluginPatternMatcher("https://de.scribd.com/document/" + linkid);
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = new Regex(link.getPluginPatternMatcher(), "(\\d+)$").getMatch(0);
+        if (linkid != null) {
+            return linkid;
+        } else {
+            return super.getLinkID(link);
+        }
     }
 
     @SuppressWarnings("deprecation")
@@ -80,7 +90,7 @@ public class ScribdCom extends PluginForHost {
         try {
             int counter400 = 0;
             do {
-                br.getPage(downloadLink.getDownloadURL());
+                br.getPage(downloadLink.getPluginPatternMatcher());
                 counter400++;
             } while (counter400 <= 5 && br.getHttpConnection().getResponseCode() == 400);
             for (int i = 0; i <= 5; i++) {
@@ -230,7 +240,7 @@ public class ScribdCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        sleep(10000, downloadLink, PREMIUMONLY);
+        /* Account required */
         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
 

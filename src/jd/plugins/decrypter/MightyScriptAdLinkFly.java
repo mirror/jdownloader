@@ -49,7 +49,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
-    private static final String[]     domains           = { "itiurl.co", "shortli.net", "cutearn.ca", "icutit.ca", "cut-one.com", "cll.press", "link-zero.com", "linktor.io", "cash4url.com", "cashat.net", "shortit.ca", "123short.com", "skip-url.me", "msms4.com", "empireshort.com", "loadurl.com", "shortmony.me", "geistlink.com", "cutt.us.com", "arabdollar.com", "shortenow.com", "kingurl.net", "best3link.com", "solo-link.com", "best5link.com", "lkky.co", "win4cut.com", "coinlink.co", "adlink.guru", "short.es", "tmearn.com", "ibly.co", "urle.co", "mitly.us", "zlshorte.net", "igram.im", "gram.im", "bit-url.com", "adbilty.me", "linclik.com", "oke.io", "vivads.net", "pnd.tl", "met.bz", "urlcloud.us",
+    private static final String[]     domains                   = { "shrtz.me", "ctkings.com", "linksad.net", "paylink.pro", "123link.pro", "donia2link.com", "cutpaid.com", "shortadz.org", "itiurl.co", "shortli.net", "cutearn.ca", "icutit.ca", "cut-one.com", "cll.press", "link-zero.com", "linktor.io", "cash4url.com", "cashat.net", "shortit.ca", "123short.com", "skip-url.me", "msms4.com", "empireshort.com", "loadurl.com", "shortmony.me", "geistlink.com", "cutt.us.com", "arabdollar.com", "shortenow.com", "kingurl.net", "best3link.com", "solo-link.com", "best5link.com", "lkky.co", "win4cut.com", "coinlink.co", "adlink.guru", "short.es", "tmearn.com", "ibly.co", "urle.co", "mitly.us", "zlshorte.net", "igram.im", "gram.im", "bit-url.com", "adbilty.me", "linclik.com", "oke.io", "vivads.net", "pnd.tl", "met.bz", "urlcloud.us",
             /** cut-urls.com domains */
             "cut-urls.com", "curs.io", "cuon.io",
             /** wicr.me domains */
@@ -59,7 +59,7 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
             /** adshort.co domains */
             "adshort.co", "adsrt.com", "adshort.me", "adshort.im" };
     /** List of services for which waittime is NOT skippable. */
-    private static final List<String> waittime_enforced = Arrays.asList(new String[] { "adbilty.me", "tmearn.com" });
+    private static final List<String> domains_waittime_enforced = Arrays.asList(new String[] { "adbilty.me", "tmearn.com" });
 
     /**
      * returns the annotation pattern array
@@ -294,7 +294,7 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
         if (StringUtils.isEmpty(source_host)) {
             return false;
         }
-        if (waittime_enforced.contains(source_host)) {
+        if (domains_waittime_enforced.contains(source_host)) {
             /* Waittime is enforced for this host */
             return false;
         }
