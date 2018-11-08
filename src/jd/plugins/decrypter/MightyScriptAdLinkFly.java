@@ -49,7 +49,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
-    private static final String[]     domains           = { "itiurl.co", "shortli.net", "cutearn.ca", "icutit.ca", "cut-one.com", "cll.press", "link-zero.com", "linktor.io", "cash4url.com", "cashat.net", "shortit.ca", "123short.com", "skip-url.me", "msms4.com", "empireshort.com", "loadurl.com", "shortmony.me", "geistlink.com", "cutt.us.com", "arabdollar.com", "shortenow.com", "kingurl.net", "best3link.com", "solo-link.com", "best5link.com", "lkky.co", "win4cut.com", "coinlink.co", "adlink.guru", "short.es", "tmearn.com", "ibly.co", "brlink.in", "urle.co", "mitly.us", "zlshorte.net", "igram.im", "gram.im", "bit-url.com", "adbilty.me", "linclik.com", "oke.io", "vivads.net", "pnd.tl", "met.bz", "urlcloud.us",
+    private static final String[]     domains           = { "itiurl.co", "shortli.net", "cutearn.ca", "icutit.ca", "cut-one.com", "cll.press", "link-zero.com", "linktor.io", "cash4url.com", "cashat.net", "shortit.ca", "123short.com", "skip-url.me", "msms4.com", "empireshort.com", "loadurl.com", "shortmony.me", "geistlink.com", "cutt.us.com", "arabdollar.com", "shortenow.com", "kingurl.net", "best3link.com", "solo-link.com", "best5link.com", "lkky.co", "win4cut.com", "coinlink.co", "adlink.guru", "short.es", "tmearn.com", "ibly.co", "urle.co", "mitly.us", "zlshorte.net", "igram.im", "gram.im", "bit-url.com", "adbilty.me", "linclik.com", "oke.io", "vivads.net", "pnd.tl", "met.bz", "urlcloud.us",
             /** cut-urls.com domains */
             "cut-urls.com", "curs.io", "cuon.io",
             /** wicr.me domains */
@@ -193,20 +193,24 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                     // captchaType = getCaptchaType();
                     if (captchaType == CaptchaType.reCaptchaV2 || captchaType == CaptchaType.reCaptchaV2_invisible) {
                         requiresCaptchaWhichCanFail = false;
-                        final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br) {
+                        final String key;
+                        if (captchaType == CaptchaType.reCaptchaV2) {
+                            key = getAppVarsResult("reCAPTCHA_site_key");
+                        } else {
+                            key = getAppVarsResult("invisible_reCAPTCHA_site_key");
+                        }
+                        if (StringUtils.isEmpty(key)) {
+                            logger.warning("Failed to find reCaptchaV2 key");
+                            return null;
+                        }
+                        final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, key) {
                             @Override
-                            public String getSiteKey() {
-                                final String key;
-                                if (captchaType == CaptchaType.reCaptchaV2) {
-                                    key = getAppVarsResult("reCAPTCHA_site_key");
+                            public TYPE getType() {
+                                if (captchaType == CaptchaType.reCaptchaV2_invisible) {
+                                    return TYPE.INVISIBLE;
                                 } else {
-                                    key = getAppVarsResult("invisible_reCAPTCHA_site_key");
+                                    return TYPE.NORMAL;
                                 }
-                                if (!StringUtils.isEmpty(key)) {
-                                    return key;
-                                }
-                                /* Use/TRY general function */
-                                return super.getSiteKey(br.toString());
                             }
                         }.getToken();
                         form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));

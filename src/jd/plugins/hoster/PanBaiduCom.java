@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -27,9 +29,11 @@ import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.CaptchaException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -131,7 +135,7 @@ public class PanBaiduCom extends PluginForHost {
             String sign;
             String tsamp;
             /* Needed to get the pcsett cookie on http://.pcs.baidu.com/ to avoid "hotlinking forbidden" errormessage later */
-            getPage(this.br, "http://pcs.baidu.com/rest/2.0/pcs/file?method=plantcookie&type=ett");
+            getPage(this.br, "https://pcs.baidu.com/rest/2.0/pcs/file?method=plantcookie&type=ett");
             final String original_url = downloadLink.getStringProperty("mainLink", null);
             final String shareid = downloadLink.getStringProperty("origurl_shareid", null);
             final String uk = downloadLink.getStringProperty("origurl_uk", null);
@@ -142,10 +146,10 @@ public class PanBaiduCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (link_password_cookie != null) {
-                br.setCookie("http://pan.baidu.com/", "BDCLND", link_password_cookie);
+                br.setCookie("https://pan.baidu.com/", "BDCLND", link_password_cookie);
             }
             /* Access mainpage before or we might get random 403- and 404's !!! */
-            this.br.getPage("http://" + this.getHost() + "/");
+            this.br.getPage("https://" + this.getHost() + "/");
             br.setFollowRedirects(true);
             getPage(this.br, original_url);
             /* Re-check here for offline because if we always used the directlink before, we cannot know if the link is still online. */
@@ -153,9 +157,9 @@ public class PanBaiduCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             /* Experimental code */
-            String i_frame = br.getRegex("<iframe src=\"(http://pan\\.baidu\\.com/share/link\\?shareid=\\d+\\&uk=\\d+\\&t=[A-Za-z0-9]+)\"").getMatch(0);
+            String i_frame = br.getRegex("<iframe src=\"(https?://pan\\.baidu\\.com/share/link\\?shareid=\\d+\\&uk=\\d+\\&t=[A-Za-z0-9]+)\"").getMatch(0);
             if (i_frame == null) {
-                i_frame = br.getRegex("<iframe src=\"(http://pan\\.baidu\\.com/share/link\\?shareid=\\d+\\&uk=\\d+\\&t=[A-Za-z0-9]+)\"").getMatch(0);
+                i_frame = br.getRegex("<iframe src=\"(https?://pan\\.baidu\\.com/share/link\\?shareid=\\d+\\&uk=\\d+\\&t=[A-Za-z0-9]+)\"").getMatch(0);
             }
             if (i_frame != null) {
                 logger.info("Found i_frame - accessing it!");
@@ -165,7 +169,7 @@ public class PanBaiduCom extends PluginForHost {
             }
             /* Fallback handling if the password cookie didn't work */
             if (link_password != null && br.getURL().matches(TYPE_FOLDER_LINK_NORMAL_PASSWORD_PROTECTED)) {
-                postPage(this.br, "http://pan.baidu.com/share/verify?" + "vcode=&shareid=" + shareid + "&uk=" + uk + "&t=" + System.currentTimeMillis(), "&pwd=" + Encoding.urlEncode(link_password));
+                postPage(this.br, "https://pan.baidu.com/share/verify?" + "vcode=&shareid=" + shareid + "&uk=" + uk + "&t=" + System.currentTimeMillis(), "&pwd=" + Encoding.urlEncode(link_password));
                 if (!br.containsHTML("\"errno\":0")) {
                     // Wrong password -> Impossible
                     logger.warning("pan.baidu.com: Couldn't download password protected link even though the password is given...");
@@ -192,11 +196,11 @@ public class PanBaiduCom extends PluginForHost {
             }
             Browser br2 = prepAjax(br.cloneBrowser());
             try {
-                getPage(br2, "http://pan.baidu.com/share/autoincre?channel=chunlei&clienttype=0&web=1&type=1&shareid=" + shareid + "&uk=" + uk + "&sign=" + sign + "&timestamp=" + tsamp + "&bdstoken=null");
+                getPage(br2, "https://pan.baidu.com/share/autoincre?channel=chunlei&clienttype=0&web=1&type=1&shareid=" + shareid + "&uk=" + uk + "&sign=" + sign + "&timestamp=" + tsamp + "&bdstoken=null");
             } catch (final Throwable e) {
             }
             /* Last revision without API & csflg handling: 26909 */
-            final String postLink = "http://pan.baidu.com/api/sharedownload?sign=" + sign + "&timestamp=" + tsamp + "&bdstoken=&channel=chunlei&clienttype=0&web=1&app_id=" + APPID;
+            final String postLink = "https://pan.baidu.com/api/sharedownload?sign=" + sign + "&timestamp=" + tsamp + "&bdstoken=&channel=chunlei&clienttype=0&web=1&app_id=" + APPID;
             String postData = "encrypt=0&product=share&uk=" + uk + "&primaryid=" + shareid + "&fid_list=%5B" + fsid + "%5D";
             final String specialCookie = br.getCookie("http://pan.baidu.com/", "BDCLND");
             if (link_password_cookie != null) {
@@ -210,7 +214,7 @@ public class PanBaiduCom extends PluginForHost {
             if (br2.containsHTML("\"errno\":\\-20")) {
                 final int repeat = 3;
                 for (int i = 1; i <= repeat; i++) {
-                    getPage(br2, "http://pan.baidu.com/api/getcaptcha?prod=share&bdstoken=&channel=chunlei&clienttype=0&web=1&app_id=" + APPID);
+                    getPage(br2, "https://pan.baidu.com/api/getcaptcha?prod=share&bdstoken=&channel=chunlei&clienttype=0&web=1&app_id=" + APPID);
                     String captchaLink = PluginJSonUtils.getJsonValue(br2, "vcode_img");
                     final String vcode_str = new Regex(captchaLink, "([A-Z0-9]+)$").getMatch(0);
                     if (captchaLink == null || vcode_str == null) {
@@ -264,7 +268,8 @@ public class PanBaiduCom extends PluginForHost {
             }
             DLLINK = PluginJSonUtils.getJsonValue(br2, "dlink");
             if (DLLINK == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                /* 2018-11-08: Same behavior in browser: No downloadlink after captcha --> Account required */
+                throw new AccountRequiredException();
             }
         }
         br.setFollowRedirects(true);
@@ -444,31 +449,95 @@ public class PanBaiduCom extends PluginForHost {
                         account.saveCookies(this.br.getCookies(this.getHost()), "");
                         return;
                     }
-                    /* Perform full login! */
+                    /* Not logged in? Perform full login! */
                 }
-                br.setFollowRedirects(false);
-                final String getdata = "tpl=pp&callback=bdPass.api.login._needCodestringCheckCallback&index=0&logincheck=&time=0&username=" + Encoding.urlEncode(account.getUser());
-                this.br.getPage("https://passport.baidu.com/v2/api/?logincheck&" + getdata);
-                /* Get captcha if required. */
-                String captchaCode = "";
-                final String codestring = PluginJSonUtils.getJson(this.br, "codestring");
-                if (codestring != null && !codestring.equalsIgnoreCase("null")) {
-                    final String captchaurl = "https://passport.baidu.com/cgi-bin/genimage?" + codestring;
-                    final DownloadLink dummyLink = new DownloadLink(this, "Account", this.getHost(), "http://" + this.getHost(), true);
-                    captchaCode = getCaptchaCode(captchaurl, dummyLink);
-                }
-                this.br.getPage("https://passport.baidu.com/v2/api/?getapi&class=login&tpl=pp&tangram=false");
-                final String logintoken = this.br.getRegex("login_token=\\'([^<>\"\\']+)\\'").getMatch(0);
-                if (logintoken == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                final String loginpost = "token=" + Encoding.urlEncode(logintoken) + "&ppui_logintime=1600000&charset=utf-8&codestring=&isPhone=false&index=0&u=&safeflg=0&staticpage=" + Encoding.urlEncode("http://www.baidu.com/cache/user/html/jump.html") + "&loginType=1&tpl=pp&callback=parent.bd__pcbs__qvljue&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&verifycode=" + Encoding.urlEncode(captchaCode) + "&mem_pass=on&apiver=v3";
-                br.postPage("https://passport.baidu.com/v2/api/?login", loginpost);
-                if (!isLoggedInHtml()) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort oder login Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                final boolean loginV3_qrcode = false;
+                if (loginV3_qrcode) {
+                    br.setFollowRedirects(true);
+                    br.getPage("https://passport.baidu.com/v2/?login");
+                    br.getPage("https://passport.baidu.com/v2/api/getqrcode?lp=pc&qrloginfrom=pc&gid=TODO_FIXME&callback=tangram_guid_" + System.currentTimeMillis() + "&apiver=v3&tt=" + System.currentTimeMillis() + "&tpl=pp&_=" + System.currentTimeMillis());
+                    // final String url_qrcode = PluginJSonUtils.getJson(br, "imgurl");
+                    final String sign = PluginJSonUtils.getJson(br, "sign");
+                    if (StringUtils.isEmpty(sign)) {
+                        logger.warning("Failed to find sign");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    br.getHeaders().put("User-Agent", "Mozilla/5.0 (Linux; Android 4.4.2; Nexus 4 Build/KOT49H) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/34.0.1847.114 Mobile Safari/537.36");
+                    String vcodestr = null;
+                    String traceid = null;
+                    String userid = null;
+                    for (int i = 0; i <= 3; i++) {
+                        br.getPage("https://wappass.baidu.com/wp/?qrlogin&t=" + System.currentTimeMillis() + "&error=0&sign=" + sign + "&cmd=login&lp=pc&tpl=pp&uaonly=&client_id=&adapter=3&client=&qrloginfrom=pc&traceid=");
+                        final Form loginform = br.getForm(0);
+                        if (loginform == null) {
+                            logger.warning("Failed to find loginform");
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        if (loginform.getAction() == null) {
+                            loginform.setAction("https://wappass.baidu.com/wp/api/login?tt=" + System.currentTimeMillis());
+                        }
+                        loginform.put("username", account.getUser());
+                        loginform.put("password", "TODO_pw_hash");
+                        /* Although we're using a mobile User-Agent, this is the correct value */
+                        loginform.put("isphone", "0");
+                        loginform.put("countrycode", "");
+                        loginform.put("mobilenum", "");
+                        loginform.put("logLoginType", "wap_loginTouch");
+                        loginform.put("vcodefrom", "login");
+                        /* TODO */
+                        // loginform.put("servertime", "TODO");
+                        // loginform.put("gid", "TODO");
+                        // loginform.put("dv", "TODO");
+                        // loginform.put("tk", "TODO");
+                        // loginform.put("traceid", "TODO");
+                        if (!true) {
+                            /* Captcha required */
+                            /*
+                             * E.g. https://wappass.baidu.com/cgi-bin/genimage?njGd206e2ff64fae257027915cfde0154149520de06930213c3&v=
+                             * 1541637709658
+                             */
+                            final String captchaurl = "https://wappass.baidu.com/cgi-bin/genimage?" + vcodestr + "&v=TODO";
+                            final DownloadLink dummyLink = new DownloadLink(this, "Account", this.getHost(), "http://" + this.getHost(), true);
+                            final String captchaCode = getCaptchaCode(captchaurl, dummyLink);
+                            loginform.put("vericode", captchaCode);
+                        }
+                        br.submitForm(loginform);
+                        /* Required in form for the next loop (e.g. captcha required/wrong) */
+                        vcodestr = PluginJSonUtils.getJson(br, "codeString");
+                        traceid = PluginJSonUtils.getJson(br, "traceid");
+                        userid = PluginJSonUtils.getJson(br, "userid");
+                        /* E.g. +57123*****89 */
+                        final String phonenumber_censored = PluginJSonUtils.getJson(br, "phone");
+                        if (!StringUtils.isEmpty(userid)) {
+                            break;
+                        }
+                    }
+                    if (userid == null) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                    logger.info("First login stage complete");
+                    /* Okay we're one step further but not yet fully logged in ... */
+                } else {
+                    br.setFollowRedirects(false);
+                    final String getdata = "tpl=pp&callback=bdPass.api.login._needCodestringCheckCallback&index=0&logincheck=&time=0&username=" + Encoding.urlEncode(account.getUser());
+                    this.br.getPage("https://passport.baidu.com/v2/api/?logincheck&" + getdata);
+                    /* Get captcha if required. */
+                    String captchaCode = "";
+                    final String codestring = PluginJSonUtils.getJson(this.br, "codestring");
+                    if (codestring != null && !codestring.equalsIgnoreCase("null")) {
+                        final String captchaurl = "https://passport.baidu.com/cgi-bin/genimage?" + codestring;
+                        final DownloadLink dummyLink = new DownloadLink(this, "Account", this.getHost(), "https://" + this.getHost(), true);
+                        captchaCode = getCaptchaCode(captchaurl, dummyLink);
+                    }
+                    this.br.getPage("https://passport.baidu.com/v2/api/?getapi&class=login&tpl=pp&tangram=false");
+                    final String logintoken = this.br.getRegex("login_token=\\'([^<>\"\\']+)\\'").getMatch(0);
+                    if (logintoken == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    final String loginpost = "token=" + Encoding.urlEncode(logintoken) + "&ppui_logintime=1600000&charset=utf-8&codestring=&isPhone=false&index=0&u=&safeflg=0&staticpage=" + Encoding.urlEncode("http://www.baidu.com/cache/user/html/jump.html") + "&loginType=1&tpl=pp&callback=parent.bd__pcbs__qvljue&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&verifycode=" + Encoding.urlEncode(captchaCode) + "&mem_pass=on&apiver=v3";
+                    br.postPage("https://passport.baidu.com/v2/api/?login", loginpost);
+                    if (!isLoggedInHtml()) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
