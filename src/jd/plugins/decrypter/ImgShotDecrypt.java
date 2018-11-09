@@ -19,6 +19,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -28,9 +31,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ImgShotDecrypt extends antiDDoSForDecrypt {
@@ -83,6 +83,13 @@ public class ImgShotDecrypt extends antiDDoSForDecrypt {
         decryptedLinks.add(link = createDownloadlink("directhttp://" + finallink));
         if ("img.yt".equals(getHost())) {
             final String title = br.getRegex("title=(\"|')(.*?)\\1").getMatch(1);
+            if (StringUtils.isNotEmpty(title)) {
+                final String extension = Plugin.getFileNameExtensionFromURL(finallink);
+                link.setForcedFileName(title + extension);
+            }
+        }
+        if ("acidimg.cc".equals(getHost())) {
+            final String title = br.getRegex("<title>(?:ACiDiMG / )?(.*?)</title>").getMatch(0);
             if (StringUtils.isNotEmpty(title)) {
                 final String extension = Plugin.getFileNameExtensionFromURL(finallink);
                 link.setForcedFileName(title + extension);
