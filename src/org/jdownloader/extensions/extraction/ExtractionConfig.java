@@ -243,4 +243,11 @@ public interface ExtractionConfig extends ExtensionConfigInterface {
     IO_MODE getIOModeForCrcHashing();
 
     void setIOModeForCrcHashing(IO_MODE mode);
+
+    @AboutConfig
+    @DefaultEnumValue("NONE")
+    @DescriptionForConfigEntry("FULL=Flush Meta/Data to disk, DATA=Flush Data only to disk, NONE=OS handles flush")
+    public FLUSH_MODE getFlushMode();
+
+    void setFlushMode(FLUSH_MODE mode);
 }

@@ -46,6 +46,7 @@ import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
 import org.jdownloader.extensions.extraction.ExtractionControllerException;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
+import org.jdownloader.extensions.extraction.FLUSH_MODE;
 import org.jdownloader.extensions.extraction.Item;
 import org.jdownloader.extensions.extraction.MissingArchiveFile;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFactory;
@@ -119,6 +120,10 @@ class SplitUtil {
         CPUPriority priority = config.getCPUPriority();
         if (priority == null || CPUPriority.HIGH.equals(priority)) {
             priority = null;
+        }
+        FLUSH_MODE flushMode = config.getFlushMode();
+        if (flushMode == null) {
+            flushMode = FLUSH_MODE.NONE;
         }
         final Archive archive = controller.getArchive();
         long size = -skipBytesFirstPart;
@@ -272,17 +277,25 @@ class SplitUtil {
                     }
                 }
             });
-            try {
+            if (fos != null) {
                 try {
-                    if (fos != null) {
-                        fos.getChannel().force(true);
-                    }
-                } finally {
-                    if (fos != null) {
+                    try {
+                        switch (flushMode) {
+                        case FULL:
+                            fos.getChannel().force(true);
+                            break;
+                        case DATA:
+                            fos.getChannel().force(false);
+                            break;
+                        default:
+                            break;
+                        }
+                    } finally {
                         fos.close();
                     }
+                } catch (Throwable e) {
+                    controller.getLogger().log(e);
                 }
-            } catch (Throwable e) {
             }
         }
         return true;
