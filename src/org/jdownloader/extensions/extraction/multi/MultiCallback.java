@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package org.jdownloader.extensions.extraction.multi;
 
 import java.io.File;
@@ -32,6 +31,7 @@ import org.jdownloader.extensions.extraction.CPUPriority;
 import org.jdownloader.extensions.extraction.ExtractionConfig;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
+import org.jdownloader.extensions.extraction.FLUSH_MODE;
 
 /**
  * Gets the decrypted bytes and writes it into the file.
@@ -49,6 +49,7 @@ class MultiCallback implements ISequentialOutStream, FileBytesCacheFlusher {
     private final AtomicBoolean        fileOpen          = new AtomicBoolean(true);
     private volatile IOException       ioException       = null;
     private final ExtractionController con;
+    private final FLUSH_MODE           flushMode;
 
     MultiCallback(File file, ExtractionController con, ExtractionConfig config) throws IOException {
         final CPUPriority priority = config.getCPUPriority();
@@ -56,6 +57,12 @@ class MultiCallback implements ISequentialOutStream, FileBytesCacheFlusher {
             this.priority = null;
         } else {
             this.priority = priority;
+        }
+        final FLUSH_MODE flushMode = config.getFlushMode();
+        if (flushMode == null) {
+            this.flushMode = FLUSH_MODE.NONE;
+        } else {
+            this.flushMode = flushMode;
         }
         this.con = con;
         this.file = file;
@@ -122,7 +129,16 @@ class MultiCallback implements ISequentialOutStream, FileBytesCacheFlusher {
             try {
                 if (fos != null) {
                     try {
-                        fos.getChannel().force(true);
+                        switch (flushMode) {
+                        case FULL:
+                            fos.getChannel().force(true);
+                            break;
+                        case DATA:
+                            fos.getChannel().force(false);
+                            break;
+                        default:
+                            break;
+                        }
                     } finally {
                         fos.close();
                     }

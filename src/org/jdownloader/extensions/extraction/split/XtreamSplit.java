@@ -48,6 +48,7 @@ import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
 import org.jdownloader.extensions.extraction.ExtractionControllerException;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
+import org.jdownloader.extensions.extraction.FLUSH_MODE;
 import org.jdownloader.extensions.extraction.IExtraction;
 import org.jdownloader.extensions.extraction.Item;
 import org.jdownloader.extensions.extraction.content.PackedFile;
@@ -81,6 +82,10 @@ public class XtreamSplit extends IExtraction {
     public void extract(ExtractionController ctrl) {
         final Archive archive = getExtractionController().getArchive();
         final FileBytesCache cache = getExtractionController().getFileBytesCache();
+        FLUSH_MODE flushMode = getExtractionController().getExtension().getSettings().getFlushMode();
+        if (flushMode == null) {
+            flushMode = FLUSH_MODE.NONE;
+        }
         RandomAccessFile fos = null;
         FileBytesCacheFlusher flusher = null;
         final AtomicBoolean fileOpen = new AtomicBoolean(false);
@@ -270,17 +275,25 @@ public class XtreamSplit extends IExtraction {
                     }
                 }
             });
-            try {
+            if (fos != null) {
                 try {
-                    if (fos != null) {
-                        fos.getChannel().force(true);
-                    }
-                } finally {
-                    if (fos != null) {
+                    try {
+                        switch (flushMode) {
+                        case FULL:
+                            fos.getChannel().force(true);
+                            break;
+                        case DATA:
+                            fos.getChannel().force(false);
+                            break;
+                        default:
+                            break;
+                        }
+                    } finally {
                         fos.close();
                     }
+                } catch (Throwable e) {
+                    getExtractionController().getLogger().log(e);
                 }
-            } catch (Throwable e) {
             }
         }
     }
