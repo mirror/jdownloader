@@ -87,7 +87,7 @@ public class GameFrontCom extends PluginForHost {
             } else if (br.getRedirectLocation().matches(".*?gamefront\\.online/\\d+/.+")) {
                 downloadLink.setUrlDownload(br.getRedirectLocation());
                 br.getPage(downloadLink.getDownloadURL());
-            } else if (br.getRedirectLocation().endsWith("/files/")) {
+            } else if (br.getRedirectLocation().endsWith("/files/") || br.getRedirectLocation().endsWith("/files2/")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
