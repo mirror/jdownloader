@@ -19,6 +19,7 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import org.appwork.utils.Regex;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.antiDDoSForHost;
@@ -27,6 +28,7 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -82,11 +84,13 @@ public class HqqTv extends antiDDoSForHost {
         getPage(ajax, "//hqq.watch/player/ip.php?type=json&rand=" + System.currentTimeMillis() / 1000L);
         final String ip = PluginJSonUtils.getJsonValue(ajax, "ip");
         final String needCaptcha = PluginJSonUtils.getJsonValue(ajax, "need_captcha");
-        //
-        // doesn't work invisible recaptcha.
-        //
-        // final String sitekey = new Regex(decode, "grecaptcha.execute\\('([^']+)'").getMatch(0);
-        // final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, this.br, sitekey).getToken();
+        final String sitekey = new Regex(decode, "grecaptcha.execute\\('([^']+)'").getMatch(0);
+        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, this.br, sitekey) {
+            @Override
+            public TYPE getType() {
+                return TYPE.INVISIBLE;
+            }
+        }.getToken();
         String vid = data[0];
         String at = data[1];
         StringBuffer sb = new StringBuffer();
@@ -113,9 +117,11 @@ public class HqqTv extends antiDDoSForHost {
         sb.append("&hash_from=");
         sb.append(data[7]);
         sb.append("&secured=0&gtoken=");
-        // sb.append(recaptchaV2Response);
+        sb.append(recaptchaV2Response);
         // html
         getPage(sb.toString());
+        final Form myForm = br.getFormbyProperty("id", "my_form");
+        submitForm(myForm); // duplicate URL parameters.
         //
         final String filename = br.getRegex("title\":\\s*\"([^\"]+)").getMatch(0);
         if (filename != null) {
