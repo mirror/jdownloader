@@ -595,8 +595,9 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends antiDDoS
                 finallink = br.getRegex("<a target=\"_blank\" href=\"(.*?)\" id=\"downloadlink\"").getMatch(0);
             } else if (parameter.contains("clictune.com/")) {
                 // cloudflare
+                br.setFollowRedirects(true);
                 getPage(parameter);
-                finallink = br.getRegex("/redirect(?:\\.php|/)\\?url=(http[^<>\"]+)").getMatch(0);
+                finallink = br.getRegex("redirect/\\?url=(http[^<>\"]+)\">Click here to access the link").getMatch(0);
                 if (finallink != null) {
                     finallink = Encoding.urlDecode(finallink, true);
                 }
