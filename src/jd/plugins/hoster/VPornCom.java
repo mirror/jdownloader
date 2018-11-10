@@ -19,6 +19,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -38,8 +40,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vporn.com" }, urls = { "https?://(www\\.)?vporn\\.com/(embed|(?!favorite|submitted|(all)?subscriptions|user)[a-z0-9\\-_]+/[a-z0-9\\-_]+)/\\d+" })
 public class VPornCom extends PluginForHost {
@@ -99,7 +99,7 @@ public class VPornCom extends PluginForHost {
         }
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().equals("http://www.vporn.com/") || br.containsHTML("This video (is|has been) deleted|>404 not found")) {
+        if (br.getURL().equals("http://www.vporn.com/") || br.containsHTML("This video (is|has been) deleted|>404 not found") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("videoname = '([^']*?)'").getMatch(0);
