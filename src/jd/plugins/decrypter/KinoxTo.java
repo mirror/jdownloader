@@ -33,7 +33,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kinox.to" }, urls = { "https?://(?:www\\.)?(?:kinox|kinos)\\.(?:to|tv|nu|me|pe)/Stream/[A-Za-z0-9\\-_]+\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kinox.to" }, urls = { "https?://(?:www\\.)?(?:kinox|kinos)\\.(?:am|cloud|fun|fyi|gratis|io|lol|me|mobi|nu|pe|sg|sh|si|sx|to|tv|wtf)/Stream/[A-Za-z0-9\\-_]+\\.html" })
 public class KinoxTo extends antiDDoSForDecrypt {
     public KinoxTo(PluginWrapper wrapper) {
         super(wrapper);
@@ -49,7 +49,7 @@ public class KinoxTo extends antiDDoSForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final String url_name = new Regex(parameter, "kino[xs]\\.to/Stream/([A-Za-z0-9\\-_]+)\\.html").getMatch(0);
+        final String url_name = new Regex(parameter, "kino[xs]\\.[a-zA-Z]+/Stream/([A-Za-z0-9\\-_]+)\\.html").getMatch(0);
         addr_id = this.br.getRegex("Addr=([^<>\"\\&]*?)&").getMatch(0);
         final String series_id = this.br.getRegex("SeriesID=(\\d+)").getMatch(0);
         String fpName = br.getRegex("<h1><span style=\"display: inline-block\">([^<>\"]*?)</span>").getMatch(0);
