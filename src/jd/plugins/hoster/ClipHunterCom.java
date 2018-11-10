@@ -22,6 +22,8 @@ import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -35,8 +37,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cliphunter.com" }, urls = { "http://cliphunterdecrypted\\.com/\\d+" })
 public class ClipHunterCom extends PluginForHost {
@@ -182,10 +182,14 @@ public class ClipHunterCom extends PluginForHost {
                 videoinfo = (LinkedHashMap<String, Object>) videoQualityEntry.getValue();
                 ext = (String) videoinfo.get("fmt");
                 final String url = (String) videoinfo.get("url");
+                System.out.println("url: " + url);
                 tmpUrl = decryptUrl(decryptAlgo, url);
-                System.out.println("tmpUrl: " + tmpUrl);
+                // System.out.println("tmpUrl: " + tmpUrl);
+                if (tmpUrl == null) {
+                    tmpUrl = url;
+                }
                 currentSr = new Regex(videoname, "(_[A-Za-z0-9]+\\.(?:mp4|flv))$").getMatch(0);
-                // System.out.println("currentSr: " + currentSr);
+                System.out.println("currentSr: " + currentSr);
                 if (currentSr == null || tmpUrl == null) {
                     continue;
                 }
