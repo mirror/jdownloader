@@ -39,6 +39,7 @@ public class OpenloadTVStream extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.setFollowRedirects(true);
         String page = br.getPage(parameter);
         String fpName = br.getRegex("<title>([^<]+) \\| Just Watch").getMatch(0);
         String itemName = new Regex(parameter, "/(?:tvshows|movies|episodes)/([^/]+)").getMatch(0);
