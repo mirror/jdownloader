@@ -30,14 +30,13 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gamefront.online" }, urls = { "https?://(www\\.)?(filefront\\.com|gamefront\\.com/files|gamefront\\.online/files)/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gamefront.online" }, urls = { "https://(filefront\\.com|gamefront\\.com/files|gamefront\\.online/files)/\\d+" })
 public class GameFrontCom extends PluginForHost {
     public GameFrontCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("http:", "https:"));
         link.setUrlDownload(link.getDownloadURL().replaceAll("(?:gamefront\\.com/files/)", "gamefront.online/files/"));
     }
 
