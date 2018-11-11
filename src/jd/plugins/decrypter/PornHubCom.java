@@ -193,7 +193,7 @@ public class PornHubCom extends PluginForDecrypt {
                 fp = FilePackage.getInstance();
                 fp.setName(user + " - Upload Videos");
             }
-        } else if (parameter.matches("(?i).*/users/[^/]*/?")) {
+        } else if (parameter.matches("(?i).*/users/[^/]*/?(videos/?)?")) {
             jd.plugins.hoster.PornHubCom.getPage(br, new Regex(parameter, "(.*/users/[^/]*)").getMatch(0) + "/videos/public");
             final String user = getUser(br);
             if (user != null) {
