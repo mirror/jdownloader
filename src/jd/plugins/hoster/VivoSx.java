@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -30,11 +29,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vivo.sx" }, urls = { "https?://(www\\.)?vivo\\.sx/[a-z0-9]{10}" })
 public class VivoSx extends PluginForHost {
-
     public VivoSx(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -81,11 +78,12 @@ public class VivoSx extends PluginForHost {
             dllink = br.getRegex("(https?://[^<>\"]+/get/[^<>\"]+)").getMatch(0);
             if (dllink == null) {
                 /* 2016-10-24 */
-                dllink = br.getRegex("Core\\.InitializeStream\\s*\\('([^']+)'").getMatch(0);
+                // dllink = br.getRegex("Core\\.InitializeStream\\s*\\('([^']+)'").getMatch(0);
+                dllink = br.getRegex("data-stream=\"([^\"]+)\"").getMatch(0); // 2018-11-11
                 if (dllink != null) {
                     dllink = Encoding.Base64Decode(dllink);
-                    dllink = PluginJSonUtils.unescape(dllink);
-                    dllink = new Regex(dllink, "(https?://[^<>\"]+/get/[^<>\"]+)").getMatch(0);
+                    // dllink = PluginJSonUtils.unescape(dllink);
+                    // dllink = new Regex(dllink, "(https?://[^<>\"]+/get/[^<>\"]+)").getMatch(0);
                 }
             }
             if (dllink == null) {
@@ -154,5 +152,4 @@ public class VivoSx extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }
