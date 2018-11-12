@@ -57,7 +57,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cloudyfiles.me" }, urls = { "https?://(?:www\\.)?c(?:loudy)?files\\.(?:com|co|org|me|net)/(?:embed\\-)?[a-z0-9]{12}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cloudyfiles.me" }, urls = { "https?://(?:www\\.)?(?:c(?:loudy)?files\\.(?:com|co|org|me|net)|businessnewslive2018.online)/(?:embed\\-)?[a-z0-9]{12}" })
 public class CloudyfilesCom extends PluginForHost {
     /* Some HTML code to identify different (error) states */
     private static final String            HTML_PASSWORDPROTECTED             = "<br><b>Passwor(d|t):</b> <input";
@@ -65,11 +65,11 @@ public class CloudyfilesCom extends PluginForHost {
     /* Here comes our XFS-configuration */
     private final boolean                  SUPPORTS_HTTPS                     = false;
     /* primary website url, take note of redirects */
-    private final String                   primaryDomain                      = "cfiles.net";
+    private final String                   primaryDomain                      = "businessnewslive2018.online";
     private final String                   COOKIE_HOST                        = (SUPPORTS_HTTPS ? "https://" : "http://") + primaryDomain;
     private final String                   NICE_HOSTproperty                  = primaryDomain.replaceAll("(\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                            = "(c(?:loudy)?files\\.(?:co|com|org|me|net))";
+    private static final String            DOMAINS                            = "(c(?:loudy)?files\\.(?:co|com|org|me|net)|businessnewslive2018.online)";
     /* Errormessages inside URLs */
     private static final String            URL_ERROR_PREMIUMONLY              = "/?op=login&redirect=";
     /* All kinds of XFS-plugin-configuration settings - be sure to configure this correctly when developing new XFS plugins! */
@@ -152,7 +152,7 @@ public class CloudyfilesCom extends PluginForHost {
 
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "cloudyfiles.co", "cloudyfiles.com", "cloudyfiles.org", "cloudyfiles.me", "cfiles.net" };
+        return new String[] { "cloudyfiles.co", "cloudyfiles.com", "cloudyfiles.org", "cloudyfiles.me", "cfiles.net", "businessnewslive2018.online" };
     }
 
     @Override
