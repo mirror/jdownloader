@@ -15,6 +15,10 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -30,10 +34,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "public.upera.co" }, urls = { "https?://(?:www\\.)?public\\.upera\\.co/[A-Za-z0-9]+" })
 public class PublicUperaCo extends antiDDoSForHost {
@@ -194,7 +194,7 @@ public class PublicUperaCo extends antiDDoSForHost {
                 form.put("password", Encoding.urlEncode(account.getPass()));
                 br.submitForm(form);
                 br.followRedirect();
-                if (br.getCookie(this.getHost(), "ci_session") == null || br.getCookie(getHost(), "upera_user") == null || StringUtils.equalsIgnoreCase(br.getCookie(getHost(), "upera_user"), "deleted")) {
+                if (br.getCookie(this.getHost(), "upera_cs_upera") == null || br.getCookie(getHost(), "upera_user") == null || StringUtils.equalsIgnoreCase(br.getCookie(getHost(), "upera_user"), "deleted")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -231,11 +231,14 @@ public class PublicUperaCo extends antiDDoSForHost {
             // if (expire == null) {
             // if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
             // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-            // "\r\nUngültiger Benutzername/Passwort oder nicht unterstützter Account Typ!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!",
+            // "\r\nUngültiger Benutzername/Passwort oder nicht unterstützter Account Typ!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass
+            // dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es
+            // erneut!",
             // PluginException.VALUE_ID_PREMIUM_DISABLE);
             // } else {
             // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-            // "\r\nInvalid username/password or unsupported account type!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!",
+            // "\r\nInvalid username/password or unsupported account type!\r\nQuick help:\r\nYou're sure that the username and password you
+            // entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!",
             // PluginException.VALUE_ID_PREMIUM_DISABLE);
             // }
             // } else {
