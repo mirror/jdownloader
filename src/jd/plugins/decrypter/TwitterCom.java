@@ -18,6 +18,9 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -34,9 +37,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twitter.com", "t.co" }, urls = { "https?://(?:www\\.|mobile\\.)?twitter\\.com/[A-Za-z0-9_\\-]+/status/\\d+|https?://(?:www\\.|mobile\\.)?twitter\\.com/(?!i/)[A-Za-z0-9_\\-]{2,}(?:/media)?|https://twitter\\.com/i/cards/tfw/v1/\\d+|https?://(?:www\\.)?twitter\\.com/i/videos/tweet/\\d+", "https?://t\\.co/[a-zA-Z0-9]+" })
 public class TwitterCom extends PornEmbedParser {
     public TwitterCom(PluginWrapper wrapper) {
@@ -47,6 +47,7 @@ public class TwitterCom extends PornEmbedParser {
     private static final String TYPE_USER_ALL  = "https?://(?:www\\.)?twitter\\.com/[A-Za-z0-9_\\-]+(?:/media)?";
     private static final String TYPE_USER_POST = "https?://(?:www\\.)?twitter\\.com.*?status/\\d+.*?";
     private static final String TYPE_REDIRECT  = "https?://t\\.co/[a-zA-Z0-9]+";
+    private String              username       = null;
 
     protected DownloadLink createDownloadlink(final String link, final String tweetid) {
         final DownloadLink ret = super.createDownloadlink(link);
@@ -60,13 +61,13 @@ public class TwitterCom extends PornEmbedParser {
         br.setAllowedResponseCodes(new int[] { 429 });
         final String parameter = param.toString().replaceAll("https?://(www\\.|mobile\\.)?twitter\\.com/", "https://twitter.com/");
         final String urlfilename = getUrlFname(parameter);
-        final String user = new Regex(parameter, "https?://[^/]+/([A-Za-z0-9_\\-]+)").getMatch(0);
+        username = new Regex(parameter, "https?://[^/]+/([A-Za-z0-9_\\-]+)").getMatch(0);
         final FilePackage fp;
-        if ("i".equals(user)) {
+        if ("i".equals(username)) {
             fp = null;
         } else {
             fp = FilePackage.getInstance();
-            fp.setName(user);
+            fp.setName(username);
         }
         String tweet_id = null;
         if (parameter.matches(TYPE_REDIRECT)) {
@@ -138,9 +139,33 @@ public class TwitterCom extends PornEmbedParser {
                 decryptedLinks.add(dl);
             }
         } else if (parameter.matches(jd.plugins.hoster.TwitterCom.TYPE_VIDEO_EMBED)) {
-            final LinkedHashMap<String, Object> entries = getPlayerData(br);
-            final String sourcetype = (String) entries.get("source_type");
-            if (sourcetype.equals("consumer") || sourcetype.equals("gif") || sourcetype.equals("amplify")) {
+            LinkedHashMap<String, Object> entries = getPlayerData(br);
+            String sourcetype = null;
+            if (entries != null) {
+                sourcetype = (String) entries.get("source_type");
+            }
+            // if (entries == null) {
+            // /* 2018-11-13: Probably offline */
+            // // decryptedLinks.add(this.createOfflinelink(parameter));
+            // // return decryptedLinks;
+            // tweet_id = new Regex(parameter, "/tweet/(\\d+)$").getMatch(0);
+            // if (tweet_id == null) {
+            // return null;
+            // }
+            // br.getHeaders().put("Authorization", "Bearer
+            // AAAAAAAAAAAAAAAAAAAAAIK1zgAAAAAA2tUWuhGZ2JceoId5GwYWU5GspY4%3DUq7gzFoCZs1QfwGoVdvSac3IniczZEYXIcDyumCauIXpcAPorE");
+            // br.getPage("https://api.twitter.com/1.1/videos/tweet/config/" + tweet_id + ".json");
+            // if (br.containsHTML("<div id=\"message\">")) {
+            // /* E.g. <div id="message">Das Medium konnte nicht abgespielt werden. */
+            // decryptedLinks.add(this.createOfflinelink(parameter));
+            // return decryptedLinks;
+            // }
+            // entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            // entries = (LinkedHashMap<String, Object>) entries.get("track");
+            // }
+            /* TODO: Fix recognization of embedded content */
+            // if (sourcetype.equals("consumer") || sourcetype.equals("gif") || sourcetype.equals("amplify")) {
+            if (true) {
                 /* Video uploaded by user, hosted on Twitter --> Download via Twitter hosterplugin */
                 decryptedLinks.add(this.createDownloadlink(parameter));
             } else {
@@ -202,9 +227,9 @@ public class TwitterCom extends PornEmbedParser {
             /* All posts / reposts / media of a user */
             final String twitter_reload_url_format;
             if (parameter.endsWith("/media")) {
-                twitter_reload_url_format = "https://twitter.com/i/profiles/show/" + user + "/media_timeline?include_available_features=1&include_entities=1&max_position=%s&reset_error_state=false";
+                twitter_reload_url_format = "https://twitter.com/i/profiles/show/" + username + "/media_timeline?include_available_features=1&include_entities=1&max_position=%s&reset_error_state=false";
             } else {
-                twitter_reload_url_format = "https://twitter.com/i/profiles/show/" + user + "/timeline/tweets?include_available_features=1&include_entities=1&max_position=%s&reset_error_state=false";
+                twitter_reload_url_format = "https://twitter.com/i/profiles/show/" + username + "/timeline/tweets?include_available_features=1&include_entities=1&max_position=%s&reset_error_state=false";
             }
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             /* 2016-11-30: Seems like twitter limits their website to a max "load more" calls of 40. */
@@ -340,6 +365,16 @@ public class TwitterCom extends PornEmbedParser {
         return decryptedLinks;
     }
 
+    @Override
+    public DownloadLink createDownloadlink(final String url) {
+        final DownloadLink dl = super.createDownloadlink(url);
+        if (this.username != null && !"i".equalsIgnoreCase(this.username)) {
+            /* This can e.g. be used via packagizer */
+            dl.setProperty("username", this.username);
+        }
+        return dl;
+    }
+
     public static LinkedHashMap<String, Object> getPlayerData(final Browser br) {
         LinkedHashMap<String, Object> entries = null;
         try {
@@ -369,7 +404,7 @@ public class TwitterCom extends PornEmbedParser {
     private String getUrlFname(final String parameter) {
         String urlfilename;
         if (parameter.matches(TYPE_USER_ALL)) {
-            urlfilename = new Regex(parameter, "twitter\\.com/([A-Za-z0-9_\\-]+)/media").getMatch(0);
+            urlfilename = new Regex(parameter, "twitter\\.com/([^/]+)").getMatch(0);
         } else {
             urlfilename = new Regex(parameter, "twitter\\.com/status/(\\d+)").getMatch(0);
         }
