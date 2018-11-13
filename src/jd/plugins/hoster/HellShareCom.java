@@ -16,13 +16,11 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -38,7 +36,6 @@ import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.FilePackage;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -46,7 +43,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hellspy.cz" }, urls = { "https?://(download\\.|www\\.)?(sk|cz|en)?hellshare\\.(com|sk|hu|de|cz|pl)/[a-z0-9\\-/]+/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hellshare.cz" }, urls = { "https?://(download\\.|www\\.)?(sk|cz|en)?hellshare\\.(com|sk|hu|de|cz|pl)/[a-z0-9\\-/]+/\\d+" })
 public class HellShareCom extends PluginForHost {
     /*
      * Sister sites: hellshare.cz, (and their other domains), hellspy.cz (and their other domains), using same dataservers but slightly
@@ -88,14 +85,14 @@ public class HellShareCom extends PluginForHost {
     public void correctDownloadLink(final DownloadLink link) throws Exception {
         final String numbers = new Regex(link.getPluginPatternMatcher(), "hellshare\\.com/(\\d+)").getMatch(0);
         if (numbers == null) {
-            link.setPluginPatternMatcher(link.getPluginPatternMatcher().replaceAll("https?.*?//.*?/", "https://www.hellspy.cz/"));
+            link.setPluginPatternMatcher(link.getPluginPatternMatcher().replaceAll("https?.*?//.*?/", "https://www.hellshare.cz/"));
         }
     }
 
     @Override
     public String rewriteHost(String host) {
         if (host == null || "hellshare.com".equals(host)) {
-            return "hellspy.cz";
+            return "hellshare.cz";
         }
         return super.rewriteHost(host);
     }
@@ -107,59 +104,10 @@ public class HellShareCom extends PluginForHost {
         return prepBr;
     }
 
-    @Override
-    public ArrayList<DownloadLink> getDownloadLinks(final String data, final FilePackage fp) {
-        if (!new Regex(data, "[^<>\"]*pa?r?t?.?[0-9]+-rar").matches()) {
-            return super.getDownloadLinks(data, fp);
-        } else {
-            ArrayList<DownloadLink> links = null;
-            PluginForHost plugin = null;
-            try {
-                plugin = this.getLazyP().getPrototype(null);
-            } catch (UpdateRequiredClassNotFoundException e1) {
-                e1.printStackTrace();
-            }
-            setBrowserExclusive();
-            br.setCustomCharset("utf-8");
-            br.getHeaders().put("Accept-Language", "en-gb;q=0.9, en;q=0.8");
-            br.setFollowRedirects(true);
-            try {
-                this.br.getPage(data);
-            } catch (final Exception e) {
-                if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 502) {
-                    return links;
-                }
-            }
-            if (br.containsHTML(">Soubor nenalezen<") || br.getHttpConnection().getResponseCode() == 404) {
-                return links;
-            }
-            final String[][] hits = br.getRegex("<tr>\\s*<th>\\s*([^<>\\\"]*)\\s*</th>.*?" + "snippet-relatedDownloadControl-[0-9]+-download\">\\s*" + "<a href=\"([^<>\"]*pa?r?t?.?[0-9]+-rar[^<>\"]*-download)\".*?" + "</td>\\s*<th>([^<>\"]*)</th>\\s*</tr>").getMatches();
-            links = new ArrayList<DownloadLink>(hits.length);
-            for (String[] p1 : hits) {
-                String url = "http://www.hellspy.cz" + p1[1];
-                if (isValidURL(url)) {
-                    final DownloadLink link = new DownloadLink(plugin, null, getHost(), url, true); // setDownloadSize
-                    link.setArchiveID("");
-                    link.setFinalFileName(p1[0]);
-                    link.setDownloadSize(SizeFormatter.getSize(p1[2]));
-                    links.add(link);
-                }
-            }
-            if (links != null && fp != null && fp != FilePackage.getDefaultFilePackage()) {
-                fp.addLinks(links);
-            }
-            return links;
-        }
-    }
-
     /** TODO: Improve overall errorhandling. */
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        /* 2018-11-12: For multi-part-URLs */
-        if (new Regex(link.getPluginPatternMatcher(), "[^<>\"]*pa?r?t?.?[0-9]+-rar").matches()) {
-            return AvailableStatus.TRUE;
-        }
         setBrowserExclusive();
         prepBrowser(br);
         /* To prefer english page UPDATE: English does not work anymore */
