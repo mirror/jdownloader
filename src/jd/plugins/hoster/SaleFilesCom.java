@@ -27,6 +27,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -51,12 +57,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "salefiles.com" }, urls = { "https?://(www\\.)?salefiles\\.com/(?:embed\\-)?[a-z0-9]{12}" })
 public class SaleFilesCom extends PluginForHost {
@@ -125,7 +125,7 @@ public class SaleFilesCom extends PluginForHost {
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
      * ALL) it is usually impossible to get any filename/filesize/status information!<br />
      * protocol: no https<br />
-     * captchatype: recaptcha<br />
+     * captchatype: recaptchaV2<br />
      * other:<br />
      */
     @SuppressWarnings({ "deprecation", "unused" })
@@ -170,6 +170,9 @@ public class SaleFilesCom extends PluginForHost {
         setFUID(link);
         getPage(link.getDownloadURL());
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (correctedBR.contains("name=\"fname\" value=\"\"")) {
+            /* 2018-11-13: Special */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         altbr = this.br.cloneBrowser();
@@ -334,7 +337,7 @@ public class SaleFilesCom extends PluginForHost {
     private String getFilesizeViaAvailablecheckAlt(final Browser br, final DownloadLink dl) {
         String filesize = null;
         try {
-            postPage(br, COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(dl.getDownloadURL()), false);
+            postPage(br, COOKIE_HOST + "/?op=check_files", "op=check_files&process=Check+URLs&list=" + Encoding.urlEncode(dl.getDownloadURL()), false);
             filesize = br.getRegex(">" + dl.getDownloadURL() + "</td><td style=\"color:green;\">Found</td><td>([^<>\"]*?)</td>").getMatch(0);
         } catch (final Throwable e) {
         }

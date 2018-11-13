@@ -144,6 +144,17 @@ public class TwitterCom extends PluginForHost {
                 }
             }
             br.getHeaders().put("Authorization", "Bearer " + authorization_token);
+            br.getHeaders().put("Accept", "*/*");
+            br.getHeaders().put("Origin", "https://twitter.com");
+            br.getHeaders().put("Referer", "https://" + this.getHost() + "/i/videos/tweet/" + tweet_id);
+            br.getHeaders().put("x-csrf-token", "undefined");
+            br.postPage("https://api.twitter.com/1.1/guest/activate.json", "");
+            /** TODO: Save guest_token throughout session so we do not generate them so frequently */
+            final String guest_token = PluginJSonUtils.getJson(br, "guest_token");
+            if (guest_token != null) {
+                br.getHeaders().put("x-guest-token", guest_token);
+            }
+            /* Without guest_token in header we might often get blocked here with this response: HTTP/1.1 429 Too Many Requests */
             br.getPage("https://api.twitter.com/1.1/videos/tweet/config/" + tweet_id + ".json");
             if (br.containsHTML("<div id=\"message\">")) {
                 /* E.g. <div id="message">Das Medium konnte nicht abgespielt werden. */
