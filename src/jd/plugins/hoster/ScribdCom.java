@@ -68,7 +68,7 @@ public class ScribdCom extends PluginForHost {
     public void correctDownloadLink(final DownloadLink link) {
         final String linkid = getLinkID(link);
         /* Forced https */
-        link.setPluginPatternMatcher("https://de.scribd.com/document/" + linkid);
+        link.setPluginPatternMatcher("https://www.scribd.com/document/" + linkid);
     }
 
     @Override

@@ -17,6 +17,12 @@ package jd.plugins.hoster;
 
 import java.util.LinkedHashMap;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -33,12 +39,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.hls.HlsContainer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twitter.com" }, urls = { "https?://[a-z0-9]+\\.twimg\\.com/media/[^/]+|https?://amp\\.twimg\\.com/prod/[^<>\"]*?/vmap/[^<>\"]*?\\.vmap|https?://amp\\.twimg\\.com/v/.+|https?://(?:www\\.)?twitter\\.com/i/videos/tweet/\\d+" })
 public class TwitterCom extends PluginForHost {
@@ -119,15 +119,38 @@ public class TwitterCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         } else if (link.getDownloadURL().matches(TYPE_VIDEO_EMBED)) {
-            this.br.getPage(link.getDownloadURL());
-            if (this.br.getHttpConnection().getResponseCode() == 403) {
-                account_required = true;
-                return AvailableStatus.TRUE;
-            } else if (this.br.getHttpConnection().getResponseCode() == 404) {
+            final String tweet_id = new Regex(link.getPluginPatternMatcher(), "/tweet/(\\d+)$").getMatch(0);
+            /* 2018-11-13: Using static token */
+            final boolean use_static_token = true;
+            final String authorization_token;
+            if (use_static_token) {
+                authorization_token = "AAAAAAAAAAAAAAAAAAAAAIK1zgAAAAAA2tUWuhGZ2JceoId5GwYWU5GspY4%3DUq7gzFoCZs1QfwGoVdvSac3IniczZEYXIcDyumCauIXpcAPorE";
+            } else {
+                br.getPage(link.getPluginPatternMatcher());
+                if (this.br.getHttpConnection().getResponseCode() == 403) {
+                    account_required = true;
+                    return AvailableStatus.TRUE;
+                } else if (this.br.getHttpConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                final String jsURL = br.getRegex("<script src=\"(https?://[^\"]+/TwitterVideoPlayerIframe[^\"]+\\.js)\">").getMatch(0);
+                if (jsURL == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                br.getPage(jsURL);
+                authorization_token = br.getRegex("Authorization:\"Bearer ([^\"]+)\"").getMatch(0);
+                if (authorization_token == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+            br.getHeaders().put("Authorization", "Bearer " + authorization_token);
+            br.getPage("https://api.twitter.com/1.1/videos/tweet/config/" + tweet_id + ".json");
+            if (br.containsHTML("<div id=\"message\">")) {
+                /* E.g. <div id="message">Das Medium konnte nicht abgespielt werden. */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            this.br.getRequest().setHtmlCode(Encoding.htmlDecode(this.br.toString()));
-            dllink = PluginJSonUtils.getJson(this.br, "video_url");
+            // this.br.getRequest().setHtmlCode(Encoding.htmlDecode(this.br.toString()));
+            dllink = PluginJSonUtils.getJson(this.br, "playbackUrl");
             if (StringUtils.isEmpty(dllink)) {
                 final LinkedHashMap<String, Object> entries = jd.plugins.decrypter.TwitterCom.getPlayerData(br);
                 final LinkedHashMap<String, Object> videoInfo = (LinkedHashMap<String, Object>) entries.get("videoInfo");
@@ -300,22 +323,28 @@ public class TwitterCom extends PluginForHost {
             try {
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null && !force) {
+                if (cookies != null) {
+                    /*
+                     * Re-use cookies whenever possible as frequent logins will cause accounts to get blocked and owners will get warnings
+                     * via E-Mail
+                     */
                     br.setCookies(account.getHoster(), cookies);
-                    return;
+                    // br.getHeaders().put("Referer", "https://twitter.com/");
+                    br.getPage("https://" + account.getHoster() + "/");
+                    final String auth_cookie = br.getCookie(MAINPAGE, "auth_token");
+                    if (auth_cookie != null && !"deleted".equalsIgnoreCase(auth_cookie)) {
+                        /* Set new cookie timestamp */
+                        br.setCookies(account.getHoster(), cookies);
+                        return;
+                    }
+                    /* Force full login */
                 }
                 br.setFollowRedirects(false);
                 // br.postPage("https://api.twitter.com/1.1/guest/activate.json", "");
-                br.getPage("https://twitter.com/login");
+                br.getPage("https://" + account.getHoster() + "/login");
                 final String authenticytoken = br.getRegex("type=\"hidden\" value=\"([^<>\"]*?)\" name=\"authenticity_token\"").getMatch(0);
                 if (authenticytoken == null) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 final String postData = "session%5Busername_or_email%5D=" + Encoding.urlEncode(account.getUser()) + "&session%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()) + "&return_to_ssl=true&authenticity_token=" + Encoding.urlEncode(authenticytoken) + "&scribe_log=&redirect_after_login=&authenticity_token=" + Encoding.urlEncode(authenticytoken) + "&remember_me=1&ui_metrics=" + Encoding.urlEncode("{\"rf\":{\"\":208,\"\":-17,\"\":-29,\"\":-18},\"s\":\"\"}");
                 br.postPage("/sessions", postData);
@@ -327,7 +356,6 @@ public class TwitterCom extends PluginForHost {
                     }
                 }
                 account.saveCookies(br.getCookies(MAINPAGE), "");
-                account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 2 * 60 * 60 * 1000l);// temp till 86068 is fixed
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
