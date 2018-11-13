@@ -13,12 +13,9 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -29,7 +26,7 @@ import jd.plugins.PluginForHost;
 /**
  * @author typek_pb
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mojevideo.sk" }, urls = { "http://[\\w\\.]*?mojevideo\\.sk/video/[a-z0-9]+/[_a-z]+.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mojevideo.sk" }, urls = { "https?://[\\w\\.]*?mojevideo\\.sk/video/[a-z0-9]+/[_a-z]+.html" })
 public class MojeVideoSk extends PluginForHost {
     private String dlink = null;
 
@@ -50,7 +47,9 @@ public class MojeVideoSk extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
-        if (dlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dlink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             dl.getConnection().disconnect();
@@ -63,19 +62,22 @@ public class MojeVideoSk extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         br.getPage(link.getDownloadURL());
         String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
-        if (null == filename || filename.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
-        StringBuilder linkSB = new StringBuilder("http://fs2.mojevideo.sk/videos/");
-        String dlinkPart = new Regex(Encoding.htmlDecode(br.toString()), "var rvid=(.*?);").getMatch(0);
-        if (null == dlinkPart || dlinkPart.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (null == filename || filename.trim().length() == 0) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        StringBuilder linkSB = new StringBuilder("https://cache01.mojevideo.sk/securevideos69/");
+        String dlinkPart = br.getRegex("rvid=(\\d+)").getMatch(0);
+        if (null == dlinkPart || dlinkPart.trim().length() == 0) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         linkSB.append(dlinkPart);
-        linkSB.append(".flv");
-
+        linkSB.append(".mp4");
         dlink = linkSB.toString();
-        if (dlink == null || dlink.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
+        if (dlink == null || dlink.trim().length() == 0) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         filename = filename.trim();
-        link.setFinalFileName(filename + ".flv");
+        link.setFinalFileName(filename + ".mp4");
         br.setFollowRedirects(true);
         try {
             if (!br.openGetConnection(dlink).getContentType().contains("html")) {
@@ -84,7 +86,9 @@ public class MojeVideoSk extends PluginForHost {
                 return AvailableStatus.TRUE;
             }
         } finally {
-            if (br.getHttpConnection() != null) br.getHttpConnection().disconnect();
+            if (br.getHttpConnection() != null) {
+                br.getHttpConnection().disconnect();
+            }
         }
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
@@ -100,5 +104,4 @@ public class MojeVideoSk extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
-
 }
