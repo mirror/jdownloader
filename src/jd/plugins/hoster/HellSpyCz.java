@@ -13,17 +13,17 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -31,6 +31,7 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -38,16 +39,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hellspy.cz" }, urls = { "https?://(www\\.|porn\\.)?hellspy\\.(cz|com|sk)/(soutez/|sutaz/)?[a-z0-9\\-]+/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hellspy.cz" }, urls = { "https?://(?:www\\.|porn\\.)?hellspy\\.(?:cz|com|sk)/(?:soutez/|sutaz/)?[a-z0-9\\-]+/.+" })
 public class HellSpyCz extends PluginForHost {
-
     /*
      * Sister sites: hellshare.cz, (and their other domains), hellspy.cz (and their other domains), using same dataservers but slightly
      * different script
      */
-
     /* Connection stuff */
     private static final boolean FREE_RESUME                  = true;
     private static final int     FREE_MAXCHUNKS               = -5;
@@ -58,32 +55,43 @@ public class HellSpyCz extends PluginForHost {
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = -5;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-
-    private static final String  COOKIE_HOST                  = "http://hellspy.cz";
+    private static final String  COOKIE_HOST                  = "https://www.hellspy.cz";
     private static final boolean ALL_PREMIUMONLY              = true;
     private static final String  HTML_IS_STREAM               = "section\\-videodetail\"";
     private static Object        LOCK                         = new Object();
 
     public HellSpyCz(final PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www.en.hellshare.com/register");
+        this.enablePremium("https://www.hellspy.cz/registrace/");
         /* Especially for premium - don't make too many requests in a short time or we'll get 503 responses. */
         this.setStartIntervall(2000l);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.en.hellshare.com/terms";
+        return "https://www.hellspy.cz/";
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) throws Exception {
-        final String linkpart = new Regex(link.getDownloadURL(), "hellspy.(cz|com|sk)/(.+)").getMatch(1);
-        link.setUrlDownload("http://www.hellspy.cz/" + linkpart);
+        final String linkpart = new Regex(link.getPluginPatternMatcher(), "hellspy\\.[a-z0-9]+/(.+)").getMatch(1);
+        link.setPluginPatternMatcher("https://www.hellspy.cz/" + linkpart);
     }
 
-    @SuppressWarnings("deprecation")
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        String linkid_main = new Regex(link.getPluginPatternMatcher(), "hellspy\\.[a-z0-9]+/[^/]+/(\\d+)").getMatch(0);
+        if (linkid_main != null) {
+            final String linkid_archive = new Regex(link.getPluginPatternMatcher(), "relatedDownloadControl\\-(\\d+)").getMatch(0);
+            if (linkid_archive != null) {
+                linkid_main += "_" + linkid_archive;
+            }
+            return linkid_main;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         String filename = null;
@@ -94,16 +102,12 @@ public class HellSpyCz extends PluginForHost {
         br.getHeaders().put("Accept-Language", "en-gb;q=0.9, en;q=0.8");
         br.setFollowRedirects(true);
         this.br.setDebug(true);
-        try {
-            br.getPage(link.getDownloadURL());
-        } catch (final BrowserException e) {
-            if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 502) {
-                link.getLinkStatus().setStatusText("We are sorry, but HellSpy is unavailable in your country");
-                return AvailableStatus.UNCHECKABLE;
-            }
-        }
-        if (br.containsHTML(">Soubor nenalezen<") || br.getHttpConnection().getResponseCode() == 404) {
+        br.getPage(link.getPluginPatternMatcher());
+        if (isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (new Regex(link.getPluginPatternMatcher(), "[^<>\"]*pa?r?t?.?[0-9]+-rar").matches()) {
+            /* 2018-11-12: For multi-part-URLs */
+            return AvailableStatus.TRUE;
         }
         filename = br.getRegex("<h1 title=\"([^<>\"]*?)\"").getMatch(0);
         if (br.containsHTML(HTML_IS_STREAM)) {
@@ -131,6 +135,13 @@ public class HellSpyCz extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    public static boolean isOffline(final Browser br) {
+        if (br.containsHTML(">Soubor nenalezen<") || br.getHttpConnection().getResponseCode() == 404) {
+            return true;
+        }
+        return false;
+    }
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return FREE_MAXDOWNLOADS;
@@ -146,8 +157,8 @@ public class HellSpyCz extends PluginForHost {
         int maxchunks = FREE_MAXCHUNKS;
         String dllink = null;
         requestFileInformation(downloadLink);
-        if (br.getHttpConnection().getResponseCode() == 502) {
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "We are sorry, but HellShare is unavailable in your country", 4 * 60 * 60 * 1000l);
+        if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 502) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "We are sorry, but Hellspy is unavailable in your country", 4 * 60 * 60 * 1000l);
         }
         dllink = checkDirectLink(downloadLink, "free_directlink");
         if (dllink == null) {
@@ -160,14 +171,7 @@ public class HellSpyCz extends PluginForHost {
             }
         }
         if (dllink == null && ALL_PREMIUMONLY) {
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) {
-                    throw (PluginException) e;
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+            throw new AccountRequiredException();
         }
         br.setFollowRedirects(true);
         br.setReadTimeout(120 * 1000);
@@ -247,7 +251,6 @@ public class HellSpyCz extends PluginForHost {
             }
             dllink = dllink.replaceAll("\\\\", "");
         }
-
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, ACCOUNT_PREMIUM_RESUME, maxchunks);
         if (dl.getConnection().getResponseCode() == 503) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
@@ -300,7 +303,6 @@ public class HellSpyCz extends PluginForHost {
         if (traffic_left == null) {
             traffic_left = br.getRegex("<strong>Kreditů: </strong>([^<>\"]*?) \\&ndash; <a").getMatch(0);
         }
-
         if (traffic_left == null) {
             ai.setStatus("Invalid/Unknown");
             account.setValid(false);
@@ -375,7 +377,6 @@ public class HellSpyCz extends PluginForHost {
                 throw e;
             }
         }
-
     }
 
     private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
