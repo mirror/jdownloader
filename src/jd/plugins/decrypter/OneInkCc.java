@@ -41,6 +41,10 @@ public class OneInkCc extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
+        final String redirect = br.getRegex("function SkipAd\\(\\) \\{\\s*?window\\.location\\.href = \"(https?://1ink\\.info/[^\"]+)\"").getMatch(0);
+        if (redirect != null) {
+            br.getPage(redirect);
+        }
         final String[] keys = new String[] { "token", "uri", "key", "pub", "r", "pubkey", "codec", "api" };
         final Form passForm = new Form();
         passForm.setMethod(MethodType.POST);
@@ -54,6 +58,14 @@ public class OneInkCc extends PluginForDecrypt {
             }
         }
         if (foundValueNum < 3) {
+            if (br.containsHTML("/api/captchafront")) {
+                /*
+                 * 2018-11-13: Broken/offline URL with infinite captcha loop (for valid URLs, we will find values for some of the keys[] and
+                 * can skip this captcha!)
+                 */
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
+            }
             return null;
         }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
