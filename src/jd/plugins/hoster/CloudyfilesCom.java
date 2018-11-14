@@ -190,7 +190,7 @@ public class CloudyfilesCom extends PluginForHost {
         setFUID(link);
         getPage(link.getDownloadURL());
         Boolean notFound = false;
-        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
+        if (new Regex(correctedBR, "(No such file|File Not Found|>The file was removed by|Reason for deletion:\n|>The file expired|>invalid license_key<)").matches()) {
             if (!br.containsHTML("hidden\"\\s*>\\s*File Not Found\\s*</font>") && !br.containsHTML("hidden\"\\s*>\\s*No such file\\s*</font>") && !br.containsHTML("hidden\"\\s*>\\s*The file was removed by\\s*</font>")) {
                 // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 notFound = true;

@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.LinkedHashMap;
@@ -37,11 +36,9 @@ import jd.plugins.components.PluginJSonUtils;
  * @author raztoki
  *
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "animegg.org" }, urls = { "http://(www\\.)?animegg\\.org/(?:embed/\\d+|[\\w\\-]+episode-\\d+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "animegg.org" }, urls = { "https?://(www\\.)?animegg\\.org/(?:embed/\\d+|[\\w\\-]+episode-\\d+)" })
 public class AnimeggOrg extends antiDDoSForHost {
-
     // raztoki embed video player template.
-
     private String dllink = null;
 
     public AnimeggOrg(PluginWrapper wrapper) {
@@ -73,6 +70,7 @@ public class AnimeggOrg extends antiDDoSForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         final String link = downloadLink.getDownloadURL();
+        br.setFollowRedirects(true);
         getPage(link);
         // not yet available. We can only say offline!
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<img src=\"\\.\\./images/animegg-unavailable.jpg\" style=\"width: 100%\">")) {
