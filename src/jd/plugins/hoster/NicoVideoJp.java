@@ -21,6 +21,8 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -35,6 +37,7 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -43,8 +46,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nicovideo.jp" }, urls = { "https?://(www\\.)?nicovideo\\.jp/watch/(sm|so|nm)?\\d+" })
 public class NicoVideoJp extends PluginForHost {
@@ -135,15 +136,16 @@ public class NicoVideoJp extends PluginForHost {
         String date = null;
         if (loggedin) {
             // newest
-            final String player = br.getRegex("data-api-data=\"(\\{.*?\\})\" hidden").getMatch(0);
+            String player = getHtmlJson();
             if (player != null) {
-                // html5 json (works 20170811)
+                // html5 json (works 2018-11-14), older json see rev: 39974
                 final String json = Encoding.htmlOnlyDecode(player);
                 entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
-                filename = (String) JavaScriptEngineFactory.walkJson(entries, "video/title");
-                channel = (String) JavaScriptEngineFactory.walkJson(entries, "owner/nickname");
+                channel = (String) JavaScriptEngineFactory.walkJson(entries, "uploaderInfo/nickname");
                 // originalPostedDateTime can be null
-                date = (String) JavaScriptEngineFactory.walkJson(entries, "video/postedDateTime");
+                date = (String) JavaScriptEngineFactory.walkJson(entries, "videoDetail/postedAt");
+                entries = (LinkedHashMap<String, Object>) entries.get("flashvars");
+                filename = (String) entries.get("videoTitle");
             } else {
                 // older flv crap, (works 20170811)
                 filename = br.getRegex("class=\"originalVideoTitle\">([^<>\"]+)<").getMatch(0);
@@ -180,6 +182,10 @@ public class NicoVideoJp extends PluginForHost {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.nicovideojp.only4registered", ONLYREGISTEREDUSERTEXT));
         }
         return AvailableStatus.TRUE;
+    }
+
+    private String getHtmlJson() {
+        return br.getRegex("id=\"watchAPIDataContainer\" style=\"display:none\">(.*?)</div>").getMatch(0);
     }
 
     @Override
@@ -331,8 +337,9 @@ public class NicoVideoJp extends PluginForHost {
             dllink = new Regex(Encoding.htmlDecode(br.toString()), "(https?://smile-com\\d+\\.nicovideo\\.jp/smile\\?v=[0-9\\.]+)").getMatch(0);
         }
         if (dllink == null) {
-            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /* 2018-11-14 */
+            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match! - Content is probably premiumonly");
+            throw new AccountRequiredException();
         }
         return dllink;
     }
@@ -349,22 +356,23 @@ public class NicoVideoJp extends PluginForHost {
             dllink = (String) JavaScriptEngineFactory.walkJson(entries, "video/smileInfo/url");
             if (dllink == null || "".equals(dllink)) {
                 // really old shit (from premium), (works 20170811)
-                String flashvars = br.getRegex("id=\"watchAPIDataContainer\" style=\"display:none\">(.*?)</div>").getMatch(0);
+                final String flashvars = getHtmlJson();
                 if (flashvars != null) {
                     if (br.getURL().matches(TYPE_SO)) {
                         br.postPage("http://flapi.nicovideo.jp/api/getflv", "v=" + getLinkId());
-                    } else if (br.getURL().matches(TYPE_NM) || this.getDownloadLink().getDownloadURL().matches(TYPE_SM)) {
+                    } else if (br.getURL().matches(TYPE_NM) || this.getDownloadLink().getPluginPatternMatcher().matches(TYPE_SM)) {
+                        /* 2018-11-14: Works */
                         final String vid = new Regex(br.getURL(), "((sm|nm)\\d+)$").getMatch(0);
                         br.postPage("http://flapi.nicovideo.jp/api/getflv", "v=" + vid);
                     }
-                    dllink = getDllink_account(flashvars != null ? flashvars : br.toString());
+                    dllink = getDllink_account_old(flashvars != null ? flashvars : br.toString());
                 }
             }
         }
         return dllink;
     }
 
-    private String getDllink_account(final String flashvars) {
+    private String getDllink_account_old(final String flashvars) {
         final String singleDecode = Encoding.htmlDecode(flashvars);
         String dllink = PluginJSonUtils.getJsonValue(singleDecode, "flvInfo");
         dllink = dllink != null ? asdf(dllink) : asdf(singleDecode);
@@ -398,8 +406,8 @@ public class NicoVideoJp extends PluginForHost {
 
     /* Checks if a video is watch-/downloadable, works for logged in- and unregistered users. */
     private void checkWatchableGeneral() throws PluginException {
-        if (this.br.containsHTML(">Unable to play video|>You can view this video by join")) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        if (this.br.containsHTML(">Unable to play video|>You can view this video by join") || br.containsHTML("class=\"login\\-box\\-title\"")) {
+            throw new AccountRequiredException();
         }
     }
 
