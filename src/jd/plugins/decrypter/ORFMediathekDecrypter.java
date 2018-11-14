@@ -26,6 +26,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -39,10 +43,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 // http://tvthek,orf.at/live/... --> HDS
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tvthek.orf.at" }, urls = { "https?://(?:www\\.)?tvthek\\.orf\\.at/(?:index\\.php/)?(?:programs?|topic|profile)/.+" })
@@ -345,10 +345,11 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                                     if (fp != null) {
                                         subtitle_downloadlink._setFilePackage(fp);
                                     }
-                                    list = map.get("sub" + fmt);
+                                    final String subtitle_list_key = "sub" + fmt;
+                                    list = map.get(subtitle_list_key);
                                     if (list == null) {
                                         list = new ArrayList<DownloadLink>();
-                                        map.put(fmt, list);
+                                        map.put(subtitle_list_key, list);
                                     }
                                     list.add(subtitle_downloadlink);
                                     vIdTemp = fileName;
@@ -357,25 +358,18 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                         }
                     }
                     if (BEST) {
-                        List<DownloadLink> list = map.get("VERYHIGH");
-                        if (list != null) {
-                            ret.addAll(list);
-                        } else if ((list = map.get("HIGH")) != null) {
-                            ret.addAll(list);
-                        } else if ((list = map.get("MEDIUM")) != null) {
-                            ret.addAll(list);
-                        } else if ((list = map.get("LOW")) != null) {
-                            ret.addAll(list);
-                        }
-                        list = map.get("sub" + "VERYHIGH");
-                        if (list != null) {
-                            ret.addAll(list);
-                        } else if ((list = map.get("sub" + "HIGH")) != null) {
-                            ret.addAll(list);
-                        } else if ((list = map.get("sub" + "MEDIUM")) != null) {
-                            ret.addAll(list);
-                        } else if ((list = map.get("sub" + "LOW")) != null) {
-                            ret.addAll(list);
+                        final String[] qualities = { "VERYHIGH", "HIGH", "MEDIUM", "LOW" };
+                        for (final String qual : qualities) {
+                            List<DownloadLink> list = map.get(qual);
+                            if (list != null) {
+                                ret.addAll(list);
+                                /* Add subtitle */
+                                list = map.get("sub" + qual);
+                                if (list != null) {
+                                    ret.addAll(list);
+                                }
+                                break;
+                            }
                         }
                     } else {
                         for (final List<DownloadLink> links : map.values()) {

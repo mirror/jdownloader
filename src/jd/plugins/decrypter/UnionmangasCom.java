@@ -17,6 +17,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -26,9 +28,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "unionmangas.com" }, urls = { "https?://(?:www\\.)?unionmangas\\.(?:com|net|cc|site)/(?:leitor/[^/]+/[a-z0-9\\.]+[^/\\s]*|manga/[a-z0-9\\-\\.]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "unionmangas.com" }, urls = { "https?://(?:www\\.)?unionmangas\\.(?:com|net|cc|site|top)/(?:leitor/[^/]+/[a-z0-9\\.]+[^/\\s]*|manga/[a-z0-9\\-\\.]+)" })
 public class UnionmangasCom extends antiDDoSForDecrypt {
     public UnionmangasCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -47,7 +47,7 @@ public class UnionmangasCom extends antiDDoSForDecrypt {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
-            final Regex urlinfo = new Regex(parameter, "unionmangas\\.(?:com|net|cc|site)/leitor/([^/]+)/([a-z0-9\\-\\.]+)");
+            final Regex urlinfo = new Regex(parameter, "unionmangas\\.[a-z0-9]+/leitor/([^/]+)/([a-z0-9\\-\\.]+)");
             final String chapter_str = urlinfo.getMatch(1);
             url_name = urlinfo.getMatch(0);
             url_fpname = Encoding.urlDecode(url_name + "_chapter_" + chapter_str, false);
@@ -72,7 +72,7 @@ public class UnionmangasCom extends antiDDoSForDecrypt {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
-            final String[] chapterUrls = br.getRegex("\"(https?://unionmangas\\.(?:com|net|cc|site)/leitor/[^\"\\']+)\"").getColumn(0);
+            final String[] chapterUrls = br.getRegex("\"(https?://unionmangas\\.[a-z0-9]+/leitor/[^\"\\']+)\"").getColumn(0);
             for (final String chapterUrl : chapterUrls) {
                 decryptedLinks.add(this.createDownloadlink(chapterUrl));
             }

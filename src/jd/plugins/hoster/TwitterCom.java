@@ -72,6 +72,7 @@ public class TwitterCom extends PluginForHost {
     private boolean              account_required          = false;
     private boolean              server_issues             = false;
     private String               tweetid                   = null;
+    private static String        guest_token               = null;
 
     private void setconstants(final DownloadLink dl) {
         dllink = null;
@@ -147,10 +148,14 @@ public class TwitterCom extends PluginForHost {
             br.getHeaders().put("Accept", "*/*");
             br.getHeaders().put("Origin", "https://twitter.com");
             br.getHeaders().put("Referer", "https://" + this.getHost() + "/i/videos/tweet/" + tweet_id);
-            br.getHeaders().put("x-csrf-token", "undefined");
-            br.postPage("https://api.twitter.com/1.1/guest/activate.json", "");
-            /** TODO: Save guest_token throughout session so we do not generate them so frequently */
-            final String guest_token = PluginJSonUtils.getJson(br, "guest_token");
+            if (guest_token == null) {
+                synchronized (LOCK) {
+                    br.getHeaders().put("x-csrf-token", "undefined");
+                    br.postPage("https://api.twitter.com/1.1/guest/activate.json", "");
+                    /** TODO: Save guest_token throughout session so we do not generate them so frequently */
+                    guest_token = PluginJSonUtils.getJson(br, "guest_token");
+                }
+            }
             if (guest_token != null) {
                 br.getHeaders().put("x-guest-token", guest_token);
             }
@@ -326,7 +331,7 @@ public class TwitterCom extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    private static final String MAINPAGE = "http://twitter.com";
+    private static final String MAINPAGE = "https://twitter.com";
     private static Object       LOCK     = new Object();
 
     public static void login(final Browser br, final Account account, final boolean force) throws Exception {
