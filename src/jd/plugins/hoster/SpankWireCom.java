@@ -172,6 +172,9 @@ public class SpankWireCom extends PluginForHost {
         for (final String quality : qualities) {
             dllink_plain = br.getRegex("cdnPath" + quality + "[^<>\"]*?(\"|\')([^<>\"\\']*?)(\"|\')").getMatch(1);
             if (dllink_plain == null) {
+                dllink_plain = br.getRegex("<a href=\"(https?://[^\"\\']+" + quality + "P[^\"\\']+)\"").getMatch(0);
+            }
+            if (dllink_plain == null) {
                 count_notfound++;
                 continue;
             }
@@ -203,6 +206,10 @@ public class SpankWireCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             dllink = PluginJSonUtils.getJsonValue(qualityUrls, "src");
+        }
+        if (dllink == null) {
+            /* Fallback - grab any URL */
+            dllink = br.getRegex("<a href=\"(https?://[^\"\\']+\\.mp4[^\"\\']+)\"").getMatch(0);
         }
         return dllink;
     }

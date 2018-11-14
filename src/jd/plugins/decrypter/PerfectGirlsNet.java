@@ -23,7 +23,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "perfectgirls.net" }, urls = { "http://([a-z]+\\.)?(perfectgirls\\.net/\\d+/|(www|wwr|ipad|m)\\.perfectgirls\\.net/gal/\\d+/.{0,1})" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "perfectgirls.net", "perfektdamen.co" }, urls = { "http://([a-z]+\\.)?(perfectgirls\\.net/\\d+/|(www|wwr|ipad|m)\\.perfectgirls\\.net/gal/\\d+/.{0,1})", "https?://(?:www\\.)?perfektdamen\\.co/gal/\\d+/.+" })
 public class PerfectGirlsNet extends PornEmbedParser {
     public PerfectGirlsNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -31,7 +31,7 @@ public class PerfectGirlsNet extends PornEmbedParser {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString().replaceAll("(ipad|m)\\.perfectgirls\\.net/", "perfectgirls.net/");
+        final String parameter = param.toString().replaceAll("(ipad|m)\\.perfectgirls\\.net/", "perfectgirls.net/").replace("perfektdamen.co/", "perfectgirls.net/");
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("No htmlCode read")) {
@@ -39,7 +39,7 @@ public class PerfectGirlsNet extends PornEmbedParser {
             return decryptedLinks;
         }
         String filename = br.getRegex("<title>([^<>\"]*?) ::: PERFECT GIRLS</title>").getMatch(0);
-        if (!br.containsHTML("<source src=[^<>]+cdn.perfectgirls.net")) {
+        if (!br.containsHTML("<source src=[^<>]+cdn\\.perfectgirls\\.net")) {
             decryptedLinks.addAll(findEmbedUrls(filename));
             if (!decryptedLinks.isEmpty()) {
                 return decryptedLinks;

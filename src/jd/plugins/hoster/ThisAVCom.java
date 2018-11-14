@@ -43,16 +43,26 @@ public class ThisAVCom extends PluginForHost {
     }
 
     @Override
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = new Regex(link.getPluginPatternMatcher(), "(\\d+)$").getMatch(0);
+        if (linkid != null) {
+            return linkid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("error404")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String title = br.getRegex("<title>([^<>\"]*?) - ").getMatch(0);
         if (title == null) {
-            title = new Regex(link.getPluginPatternMatcher(), "([^<>\"/]+)\\.html").getMatch(0);
+            title = getLinkID(link);
         }
         if (title == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
