@@ -146,17 +146,21 @@ public class PornTubeCom extends PluginForHost {
     }
 
     public static String getMediaid(final Browser br) throws IOException {
-        final Regex info = br.getRegex("\\.ready\\(function\\(\\) \\{embedPlayer\\((\\d+), \\d+, \\[(.*?)\\],");
+        return getMediaid(br, br.toString());
+    }
+
+    public static String getMediaid(final Browser br, final String source) throws IOException {
+        final Regex info = new Regex(source, "\\.ready\\(function\\(\\) \\{embedPlayer\\((\\d+), \\d+, \\[(.*?)\\],");
         String mediaID = info.getMatch(0);
         if (mediaID == null) {
-            mediaID = br.getRegex("\\$\\.ajax\\(url, opts\\);[\t\n\r ]+\\}[\t\n\r ]+\\}\\)\\((\\d+),").getMatch(0);
+            mediaID = new Regex(source, "\\$\\.ajax\\(url, opts\\);[\t\n\r ]+\\}[\t\n\r ]+\\}\\)\\((\\d+),").getMatch(0);
         }
         if (mediaID == null) {
-            mediaID = br.getRegex("id=\"download\\d+p\" data\\-id=\"(\\d+)\"").getMatch(0);
+            mediaID = new Regex(source, "id=\"download\\d+p\" data\\-id=\"(\\d+)\"").getMatch(0);
         }
         if (mediaID == null) {
             // just like 4tube/porntube/fux....<script id="playerembed" src...
-            final String embed = br.getRegex("/js/player/(?:embed|web)/\\d+(?:\\.js)?").getMatch(-1);
+            final String embed = new Regex(source, "/js/player/(?:embed|web)/\\d+(?:\\.js)?").getMatch(-1);
             if (embed != null) {
                 br.getPage(embed);
                 mediaID = br.getRegex("\\((\\d+)\\s*,\\s*\\d+\\s*,\\s*\\[([0-9,]+)\\]\\);").getMatch(0); // $.ajax(url,opts);}})(

@@ -19,6 +19,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -27,7 +28,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fux.com" }, urls = { "https?://(www\\.)?fux\\.com/(videos?|embed)/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fux.com" }, urls = { "https?://(?:www\\.)?fux\\.com/(?:videos?|embed)/\\d+" })
 public class FuxCom extends PluginForHost {
     public FuxCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -51,19 +52,38 @@ public class FuxCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = new Regex(link.getPluginPatternMatcher(), "(\\d+)$").getMatch(0);
+        if (linkid != null) {
+            return linkid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getHeaders().put("Accept-Language", "en-AU,en;q=0.8");
-        br.getPage(downloadLink.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         if (br.getURL().matches(".+/videos?\\?error=\\d+") || br.containsHTML("<title>Fux - Error - Page not found</title>|<h2>Page<br />not found</h2>|We can't find that page you're looking for|<h3>Oops!</h3>|class='videoNotAvailable'")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
+        String filename = br.getRegex("property=\"og:title\" content=\"([^\"]+)\"").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>(.*?) - FUX</title>").getMatch(0);
+            /* Fallback */
+            filename = getLinkID(link);
         }
-        final String mediaID = jd.plugins.hoster.PornTubeCom.getMediaid(this.br);
+        final String source;
+        final String b64 = br.getRegex("window\\.INITIALSTATE = \\'([^\"\\']+)\\'").getMatch(0);
+        if (b64 != null) {
+            /* 2018-11-14: New */
+            source = Encoding.htmlDecode(Encoding.Base64Decode(b64));
+        } else {
+            source = br.toString();
+        }
+        final String mediaID = new Regex(source, "\"mediaId\":([0-9]{2,})").getMatch(0);
         String availablequalities = br.getRegex("\\((\\d+)\\s*,\\s*\\d+\\s*,\\s*\\[([0-9,]+)\\]\\);").getMatch(0);
         if (availablequalities != null) {
             availablequalities = availablequalities.replace(",", "+");
@@ -91,11 +111,11 @@ public class FuxCom extends PluginForHost {
         dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename.trim());
         if (dllink.contains(".m4v")) {
-            downloadLink.setFinalFileName(filename + ".m4v");
+            link.setFinalFileName(filename + ".m4v");
         } else if (dllink.contains(".mp4")) {
-            downloadLink.setFinalFileName(filename + ".mp4");
+            link.setFinalFileName(filename + ".mp4");
         } else {
-            downloadLink.setFinalFileName(filename + ".flv");
+            link.setFinalFileName(filename + ".flv");
         }
         // In case the link redirects to the finallink
         br.setFollowRedirects(true);
@@ -103,8 +123,8 @@ public class FuxCom extends PluginForHost {
         try {
             con = br.openGetConnection(dllink.trim());
             if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-                downloadLink.setProperty("DDLink", br.getURL());
+                link.setDownloadSize(con.getLongContentLength());
+                link.setProperty("DDLink", br.getURL());
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
