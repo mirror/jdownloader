@@ -59,7 +59,7 @@ public class AnimeggOrg extends antiDDoSForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (!dl.getConnection().isContentDisposition()) {
+        if (!dl.getConnection().isContentDisposition() && !dl.getConnection().getContentType().contains("video")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -125,13 +125,13 @@ public class AnimeggOrg extends antiDDoSForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            return AvailableStatus.TRUE;
         } finally {
             try {
                 con.disconnect();
             } catch (Throwable e) {
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override

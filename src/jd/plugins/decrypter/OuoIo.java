@@ -39,7 +39,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
  * @author psp
  * @tags: similar to MightyScriptAdLinkFly
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ouo.io", "cpmlink.net", "uskip.me" }, urls = { "https?://(?:www\\.)?ouo\\.(?:io|press)/(:?s/[A-Za-z0-9]{4,}\\?s=(?:http|ftp).+|[A-Za-z0-9]{4,})", "https?://cpmlink\\.net/[A-Za-z0-9]+", "https?://uskip\\.me/[A-Za-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ouo.io", "ouo.press", "cpmlink.net", "uskip.me" }, urls = { "https?://(?:www\\.)?ouo\\.(?:io|press)/(:?s/[A-Za-z0-9]{4,}\\?s=(?:http|ftp).+|[A-Za-z0-9]{4,})", "https?://cpmlink\\.net/[A-Za-z0-9]+", "https?://uskip\\.me/[A-Za-z0-9]+" })
 public class OuoIo extends antiDDoSForDecrypt {
     public OuoIo(PluginWrapper wrapper) {
         super(wrapper);

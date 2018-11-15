@@ -164,6 +164,9 @@ public class TwitterCom extends PluginForHost {
             if (br.containsHTML("<div id=\"message\">")) {
                 /* E.g. <div id="message">Das Medium konnte nicht abgespielt werden. */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (br.getHttpConnection().getResponseCode() == 403) {
+                /* 403 is typically 'rights missing' but in this case it means that the content is offline. */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             // this.br.getRequest().setHtmlCode(Encoding.htmlDecode(this.br.toString()));
             dllink = PluginJSonUtils.getJson(this.br, "playbackUrl");

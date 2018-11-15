@@ -97,7 +97,6 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String nicehost = new Regex(data, "https?://(?:www\\.)?([^/]+)").getMatch(0);
         final String decryptedhost = "http://" + nicehost + "decrypted";
-        String id_episode = null;
         String date_formatted = null;
         final String date = PluginJSonUtils.getJsonValue(this.br, "date");
         if (date != null) {
@@ -122,8 +121,8 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                 entries = (LinkedHashMap<String, Object>) entries.get("playlist");
                 String fpName = "";
                 title = (String) entries.get("title");
-                id_episode = Long.toString(JavaScriptEngineFactory.toLong(entries.get("id"), 0));
-                if (id_episode.equals("0")) {
+                final String id_playlist = Long.toString(JavaScriptEngineFactory.toLong(entries.get("id"), 0));
+                if (id_playlist.equals("0")) {
                     return null;
                 }
                 ArrayList<Object> video = (ArrayList) entries.get("videos");
@@ -134,7 +133,7 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                 if (date_formatted != null) {
                     fpName = date_formatted + "_";
                 }
-                fpName += title + "_" + id_episode;
+                fpName += title + "_" + id_playlist;
                 String extension = ".mp4";
                 if (br.getRegex("new MediaCollection\\(\"audio\",").matches()) {
                     extension = ".mp3";
@@ -202,7 +201,7 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                         long filesize = 0;
                         final String selector = protocol + delivery;
                         String fileName = titlethis + "@" + selector;
-                        fileName += "_" + id_episode + "_" + id_individual_video;
+                        fileName += "_" + id_playlist + "_" + id_individual_video;
                         fileName += "@" + humanReadableQualityIdentifier(fmt.toUpperCase(Locale.ENGLISH).trim());
                         fileName = fileName.replaceAll("\"", "");
                         fileName = fileName.replaceAll(":\\s|\\s\\|\\s", " - ").trim();
@@ -292,7 +291,7 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                         final String final_filename_video = final_filename_without_extension + extension;
                         final DownloadLink link = createDownloadlink(decryptedhost + System.currentTimeMillis() + new Random().nextInt(1000000000));
                         final String server_filename = getFileNameFromURL(new URL(url_directlink_video));
-                        String linkid_video = id_episode + fmt + protocol + delivery;
+                        String linkid_video = id_playlist + id_individual_video + fmt + protocol + delivery;
                         if (server_filename != null) {
                             /* Server filename should always be available! */
                             linkid_video += server_filename;
