@@ -24,11 +24,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.plugins.components.containers.VimeoContainer;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -39,7 +34,6 @@ import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
-import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -53,6 +47,11 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.plugins.components.containers.VimeoContainer;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vimeo.com" }, urls = { "https?://(?:www\\.)?vimeo\\.com/(\\d+(?:/[a-f0-9]+)?|(?:[a-z]{2}/)?channels/[a-z0-9\\-_]+/\\d+|[A-Za-z0-9\\-_]+/videos|ondemand/[A-Za-z0-9\\-_]+|groups/[A-Za-z0-9\\-_]+(?:/videos/\\d+)?)|https?://player\\.vimeo.com/(?:video|external)/\\d+.+" })
 public class VimeoComDecrypter extends PluginForDecrypt {
@@ -619,12 +618,10 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         if (StringUtils.isNotEmpty(lastUsedPass) && !passwords.contains(lastUsedPass)) {
             passwords.add(lastUsedPass);
         }
-        final String videourl = "https://player.vimeo.com/video/" + videoID;
+        final String videourl = br.getURL();
         retry: for (int i = 0; i < 3; i++) {
             final Form pwForm = getPasswordForm(br);
-            pwForm.setAction("https://player.vimeo.com/video/" + videoID + "/check-password");
-            /* 2016-06-09: Seems like token is no longer needed! */
-            // pwForm.put("token", getXsrft(br));
+            pwForm.put("token", getXsrft(br));
             final String password;
             if (passwords.size() > 0) {
                 i -= 1;
@@ -662,12 +659,10 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         throw new DecrypterException(DecrypterException.PASSWORD);
     }
 
-    private Form getPasswordForm(final Browser br) {
-        Form pwForm = br.getFormbyProperty("id", "pw_form");
+    private Form getPasswordForm(final Browser br) throws PluginException {
+        final Form pwForm = br.getFormbyProperty("id", "pw_form");
         if (pwForm == null) {
-            pwForm = new Form();
-            pwForm.setMethod(MethodType.POST);
-            pwForm.setAction(br.getURL());
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         return pwForm;
     }
