@@ -175,7 +175,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     private static Object        LOCK                               = new Object();
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 2.7.7.9<br />
+     * DEV NOTES XfileSharingProBasic Version 2.7.8.0<br />
      ****************************
      * NOTES from raztoki <br/>
      * - no need to set setfollowredirect true. <br />
@@ -980,7 +980,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     @SuppressWarnings({ "unused", "unchecked", "rawtypes" })
     private String getDllink() {
         String dllink = br.getRedirectLocation();
-        if (dllink == null) {
+        if (dllink == null || new Regex(dllink, this.getSupportedLinks()).matches()) {
             dllink = new Regex(correctedBR, "(\"|')(" + String.format(dllinkRegexFile, getHostsPatternPart()) + ")\\1").getMatch(1);
             /* Use wider and wider RegEx */
             if (dllink == null) {

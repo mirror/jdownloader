@@ -21,20 +21,20 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ShorteSt extends antiDDoSForDecrypt {
@@ -80,22 +80,31 @@ public class ShorteSt extends antiDDoSForDecrypt {
             }
             return decryptedLinks;
         }
+        if (br.containsHTML("g-recaptcha\"")) {
+            final Form captchaForm = br.getForm(0);
+            if (captchaForm == null) {
+                return null;
+            }
+            final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+            captchaForm.put("g-recaptcha-response", recaptchaV2Response);
+            br.submitForm(captchaForm);
+        }
         final String timer = PluginJSonUtils.getJsonValue(br, "seconds");
         final String cb = PluginJSonUtils.getJsonValue(br, "callbackUrl");
         final String sid = PluginJSonUtils.getJsonValue(br, "sessionId");
-        int t = 5;
-        if (timer != null) {
-            t = Integer.parseInt(timer);
-        }
-        sleep(t * 1001, param);
         if (cb == null || sid == null) {
             final String destinationURL = br.getRegex("destinationUrl\\s*:\\s*'(https?://.*?)'").getMatch(0);
             if (destinationURL != null) {
                 decryptedLinks.add(createDownloadlink(destinationURL.replaceAll(" ", "%20")));
                 return decryptedLinks;
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            return null;
         }
+        int t = 5;
+        if (timer != null) {
+            t = Integer.parseInt(timer);
+        }
+        sleep(t * 1001, param);
         final Browser br2 = br.cloneBrowser();
         br2.getHeaders().put("Accept", "application/json, text/javascript");
         br2.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");

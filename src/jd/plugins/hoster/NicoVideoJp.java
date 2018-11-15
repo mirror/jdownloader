@@ -323,7 +323,9 @@ public class NicoVideoJp extends PluginForHost {
         final String playkey = br.getRegex("thumbPlayKey':\\s*'([^<>\"]*?)'").getMatch(0);
         final String accessFromHash = br.getRegex("accessFromHash':\\s*'([^<>\"]*?)'").getMatch(0);
         if (playkey == null || accessFromHash == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /* 2018-11-15 */
+            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match! - Content is probably premiumonly");
+            throw new AccountRequiredException();
         }
         String accessPOST = "k=" + Encoding.urlEncode(playkey) + "&v=" + linkid_url + "&as3=1&accessFromDomain=&accessFromHash=" + Encoding.urlEncode(accessFromHash) + "&accessFromCount=0";
         try {
