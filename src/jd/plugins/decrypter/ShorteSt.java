@@ -80,6 +80,7 @@ public class ShorteSt extends antiDDoSForDecrypt {
             }
             return decryptedLinks;
         }
+        br.setFollowRedirects(true);
         if (br.containsHTML("g-recaptcha\"")) {
             final Form captchaForm = br.getForm(0);
             if (captchaForm == null) {

@@ -47,7 +47,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nicovideo.jp" }, urls = { "https?://(www\\.)?nicovideo\\.jp/watch/(sm|so|nm)?\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nicovideo.jp" }, urls = { "https?://(?:www\\.)?nicovideo\\.jp/watch/(sm|so|nm)?\\d+" })
 public class NicoVideoJp extends PluginForHost {
     private static final String  MAINPAGE                    = "https://www.nicovideo.jp/";
     private static final String  ONLYREGISTEREDUSERTEXT      = "Only downloadable for registered users";
@@ -81,6 +81,16 @@ public class NicoVideoJp extends PluginForHost {
         super(wrapper);
         this.enablePremium("https://secure.nicovideo.jp/secure/register");
         setConfigElements();
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = new Regex(link.getPluginPatternMatcher(), "/([^/]+)$").getMatch(0);
+        if (linkid != null) {
+            return linkid;
+        } else {
+            return super.getLinkID(link);
+        }
     }
 
     @Override
@@ -131,21 +141,24 @@ public class NicoVideoJp extends PluginForHost {
             link.setName(linkid_url);
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String channel;
-        String filename;
+        String channel = null;
+        String filename = null;
         String date = null;
         if (loggedin) {
             // newest
             String player = getHtmlJson();
             if (player != null) {
                 // html5 json (works 2018-11-14), older json see rev: 39974
-                final String json = Encoding.htmlOnlyDecode(player);
-                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
-                channel = (String) JavaScriptEngineFactory.walkJson(entries, "uploaderInfo/nickname");
-                // originalPostedDateTime can be null
-                date = (String) JavaScriptEngineFactory.walkJson(entries, "videoDetail/postedAt");
-                entries = (LinkedHashMap<String, Object>) entries.get("flashvars");
-                filename = (String) entries.get("videoTitle");
+                try {
+                    final String json = Encoding.htmlOnlyDecode(player);
+                    entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+                    channel = (String) JavaScriptEngineFactory.walkJson(entries, "uploaderInfo/nickname");
+                    // originalPostedDateTime can be null
+                    date = (String) JavaScriptEngineFactory.walkJson(entries, "videoDetail/postedAt");
+                    entries = (LinkedHashMap<String, Object>) entries.get("flashvars");
+                    filename = (String) entries.get("videoTitle");
+                } catch (final Throwable e) {
+                }
             } else {
                 // older flv crap, (works 20170811)
                 filename = br.getRegex("class=\"originalVideoTitle\">([^<>\"]+)<").getMatch(0);
@@ -161,6 +174,15 @@ public class NicoVideoJp extends PluginForHost {
                 filename = br.getRegex("<h1 itemprop=\"name\">([^<>\"]*?)</h1>").getMatch(0);
             }
             channel = br.getRegex("Uploader: <strong itemprop=\"name\">([^<>\"]*?)</strong>").getMatch(0);
+        }
+        if (filename == null) {
+            /* 2018-11-16: RegEx for loggedin- and loggedoff- state */
+            filename = br.getRegex("<title>([^<>\"]+) \\- Niconico Video</title>").getMatch(0);
+        }
+        filename = null;
+        if (filename == null) {
+            /* Last chance fallback */
+            filename = getLinkID(link);
         }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -185,7 +207,11 @@ public class NicoVideoJp extends PluginForHost {
     }
 
     private String getHtmlJson() {
-        return br.getRegex("id=\"watchAPIDataContainer\" style=\"display:none\">(.*?)</div>").getMatch(0);
+        String json = br.getRegex("id=\"watchAPIDataContainer\" style=\"display:none\">(.*?)</div>").getMatch(0);
+        if (json == null) {
+            json = br.getRegex("data\\-api\\-data=\"([^\"]+)\"").getMatch(0);
+        }
+        return json;
     }
 
     @Override
@@ -255,7 +281,11 @@ public class NicoVideoJp extends PluginForHost {
         } else {
             /* Check if the user allows lower quality .flv files. */
             if (this.getPluginConfig().getBooleanProperty(AVOID_ECONOMY_MODE, false)) {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Site is currently in economy mode", economy_active_wait_minutes * 60 * 1000l);
+                /*
+                 * 2018-11-15: According to user, this mode differs from link to link so we use ERROR_TEMPORARILY_UNAVAILABLE instead of
+                 * ERROR_HOSTER_TEMPORARILY_UNAVAILABLE from now on
+                 */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Site is currently in economy mode", economy_active_wait_minutes * 60 * 1000l);
             }
             link.setProperty("extension", ".flv");
         }
@@ -278,6 +308,9 @@ public class NicoVideoJp extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Now downloadable: This is a private video");
         }
         String dllink = getDllinkAccount();
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         int maxChunks = ACCOUNT_FREE_MAXCHUNKS;
         if (link.getBooleanProperty(NOCHUNKS, false) && getPluginConfig().getBooleanProperty(NOCHUNKS, true)) {
             maxChunks = 1;
@@ -501,7 +534,7 @@ public class NicoVideoJp extends PluginForHost {
     @SuppressWarnings("deprecation")
     private String getFormattedFilename(final DownloadLink downloadLink) throws ParseException {
         final String extension = downloadLink.getStringProperty("extension", default_extension);
-        final String videoid = new Regex(downloadLink.getDownloadURL(), "/watch/(.+)").getMatch(0);
+        final String videoid = this.getLID(downloadLink);
         String videoName = downloadLink.getStringProperty("plainfilename", null);
         final SubConfiguration cfg = SubConfiguration.getConfig("nicovideo.jp");
         String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME, defaultCustomFilename);

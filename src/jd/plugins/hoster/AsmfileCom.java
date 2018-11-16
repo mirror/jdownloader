@@ -202,6 +202,9 @@ public class AsmfileCom extends antiDDoSForHost {
         setFUID(link);
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (correctedBR.contains("( bytes)")) {
+            /* 2018-11-16: Special: Empty filename & size --> Offline */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         altbr = br.cloneBrowser();
         if (new Regex(correctedBR, HTML_MAINTENANCE_MODE).matches()) {
