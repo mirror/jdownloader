@@ -16,20 +16,18 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
@@ -105,7 +103,7 @@ public class HellSpyCz extends PluginForHost {
         br.getPage(link.getPluginPatternMatcher());
         if (isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (new Regex(link.getPluginPatternMatcher(), "[^<>\"]*pa?r?t?.?[0-9]+-rar").matches()) {
+        } else if (isPartFile(link.getPluginPatternMatcher())) {
             /* 2018-11-12: For multi-part-URLs */
             return AvailableStatus.TRUE;
         }
@@ -135,6 +133,10 @@ public class HellSpyCz extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    public static boolean isPartFile(final String url) {
+        return new Regex(url, "[^<>\"]*pa?r?t?.?[0-9]+-rar").matches();
+    }
+
     public static boolean isOffline(final Browser br) {
         if (br.containsHTML(">Soubor nenalezen<") || br.getHttpConnection().getResponseCode() == 404) {
             return true;
@@ -157,7 +159,7 @@ public class HellSpyCz extends PluginForHost {
         int maxchunks = FREE_MAXCHUNKS;
         String dllink = null;
         requestFileInformation(downloadLink);
-        if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 502) {
+        if (this.isGEOBlocked()) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "We are sorry, but Hellspy is unavailable in your country", 4 * 60 * 60 * 1000l);
         }
         dllink = checkDirectLink(downloadLink, "free_directlink");
@@ -215,29 +217,44 @@ public class HellSpyCz extends PluginForHost {
         return dllink;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
-    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         int maxchunks = ACCOUNT_PREMIUM_MAXCHUNKS;
-        String dllink = null;
-        requestFileInformation(downloadLink);
-        if (br.getHttpConnection().getResponseCode() == 502) {
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "We are sorry, but HellSpy is unavailable in your country", 4 * 60 * 60 * 1000l);
-        }
-        login(account, false);
-        br.getPage(downloadLink.getDownloadURL());
-        dllink = checkDirectLink(downloadLink, "account_premium_directlink");
+        String dllink = checkDirectLink(link, "account_premium_directlink");
         if (dllink == null) {
+            requestFileInformation(link);
+            if (isGEOBlocked()) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "We are sorry, but HellSpy is unavailable in your country", 4 * 60 * 60 * 1000l);
+            }
+            login(account, false);
+            br.getPage(link.getPluginPatternMatcher());
             if (br.containsHTML(HTML_IS_STREAM)) {
                 dllink = getStreamDirectlink();
                 /* No chunklimit for streams */
                 maxchunks = 0;
             } else {
-                final String filedownloadbutton = br.getURL() + "?download=1&iframe_view=popup+download_iframe_detail_popup";
-                URLConnectionAdapter con = openConnection(this.br, filedownloadbutton);
+                final String url;
+                if (br.getURL() != null) {
+                    url = br.getURL();
+                } else {
+                    /* E.g. part downloads */
+                    url = link.getPluginPatternMatcher();
+                }
+                String filedownloadbutton;
+                if (url.contains("?")) {
+                    filedownloadbutton = url + "&";
+                } else {
+                    filedownloadbutton = url + "?";
+                }
+                if (isPartFile(link.getPluginPatternMatcher())) {
+                    filedownloadbutton += "download=1&iframe_view=popup+download_iframe_related_popup";
+                } else {
+                    filedownloadbutton += "download=1&iframe_view=popup+download_iframe_detail_popup";
+                }
+                final URLConnectionAdapter con = openConnection(this.br, filedownloadbutton);
                 if (con.getContentType().contains("html")) {
                     br.followConnection();
-                    dllink = br.getRegex("launchFullDownload\\(\\'(http[^<>\"]*?)\\'\\);\"").getMatch(0);
+                    dllink = br.getRegex("launchFullDownload\\(\\'(https?[^<>\"\\']+)\\'\\);\"").getMatch(0);
                 } else {
                     dllink = filedownloadbutton;
                 }
@@ -251,7 +268,7 @@ public class HellSpyCz extends PluginForHost {
             }
             dllink = dllink.replaceAll("\\\\", "");
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, ACCOUNT_PREMIUM_RESUME, maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, maxchunks);
         if (dl.getConnection().getResponseCode() == 503) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
         }
@@ -265,8 +282,12 @@ public class HellSpyCz extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty("account_premium_directlink", dllink);
+        link.setProperty("account_premium_directlink", dllink);
         dl.startDownload();
+    }
+
+    private boolean isGEOBlocked() {
+        return br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 502;
     }
 
     private String getStreamDirectlink() throws PluginException, IOException {
@@ -287,7 +308,6 @@ public class HellSpyCz extends PluginForHost {
     }
 
     /** TODO: Maybe add support for time-accounts */
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
@@ -295,7 +315,6 @@ public class HellSpyCz extends PluginForHost {
             login(account, true);
         } catch (final PluginException e) {
             ai.setStatus("Login failed");
-            account.setValid(false);
             throw e;
         }
         br.getPage("/ucet/");
@@ -305,43 +324,29 @@ public class HellSpyCz extends PluginForHost {
         }
         if (traffic_left == null) {
             ai.setStatus("Invalid/Unknown");
-            account.setValid(false);
             return ai;
         }
         ai.setTrafficLeft(SizeFormatter.getSize(traffic_left));
         ai.setValidUntil(-1);
         ai.setStatus("Account with credits");
-        account.setProperty("free", false);
         return ai;
     }
 
-    @SuppressWarnings("unchecked")
     public void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 /* Load cookies */
                 br.setCookiesExclusive(true);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            this.br.setCookie(COOKIE_HOST, key, value);
-                        }
-                        return;
-                    }
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null && !force) {
+                    br.setCookies(this.getHost(), cookies);
+                    return;
                 }
                 setBrowserExclusive();
                 br.setFollowRedirects(true);
                 br.setDebug(true);
-                br.getPage("http://www.hellspy.cz/?do=loginBox-loginpopup");
-                String login_action = br.getRegex("\"(http://(?:www\\.)?hell\\-share\\.com/user/login/\\?do=apiLoginForm-submit[^<>\"]*?)\"").getMatch(0);
+                br.getPage("http://www." + account.getHoster() + "/?do=loginBox-loginpopup");
+                String login_action = br.getRegex("\"(http://(?:www\\.)?[^/]+/user/login/\\?do=apiLoginForm-submit[^<>\"]*?)\"").getMatch(0);
                 if (login_action == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -363,17 +368,9 @@ public class HellSpyCz extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                /* Save cookies */
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(COOKIE_HOST);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.saveCookies(br.getCookies(br.getHost()), "");
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                account.clearCookies("");
                 throw e;
             }
         }
@@ -399,8 +396,8 @@ public class HellSpyCz extends PluginForHost {
             /* no account, yes we can expect captcha */
             return true;
         }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-            /* free accounts also have captchas */
+        if (acc.getType() == AccountType.FREE) {
+            /* free accounts can also have captchas */
             return true;
         }
         return false;

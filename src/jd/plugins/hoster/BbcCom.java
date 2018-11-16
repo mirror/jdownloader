@@ -45,6 +45,16 @@ public class BbcCom extends PluginForHost {
         return "http://www.bbc.com/terms/";
     }
 
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = new Regex(link.getPluginPatternMatcher(), "/([^/]+)$").getMatch(0);
+        if (linkid != null) {
+            return linkid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
     private String rtmp_host       = null;
     private String rtmp_app        = null;
     private String rtmp_playpath   = null;
@@ -62,13 +72,13 @@ public class BbcCom extends PluginForHost {
         final String vpid = new Regex(link.getDownloadURL(), "bbcdecrypted/(.+)").getMatch(0);
         title = link.getStringProperty("decrypterfilename");
         /* HLS - try that first as it will give us higher bitrates */
-        this.br.getPage("http://open.live.bbc.co.uk/mediaselector/5/select/version/2.0/mediaset/iptv-all/vpid/" + vpid);
+        this.br.getPage("https://open.live.bbc.co.uk/mediaselector/5/select/version/2.0/mediaset/iptv-all/vpid/" + vpid);
         if (!this.br.getHttpConnection().isOK()) {
             /* RTMP #1 */
             /* 403 or 404 == geoblocked|offline|needsRTMP */
             /* Fallback e.g. vpids: p01dvmbh, b06s1fj9 */
             /* Possible "device" strings: "pc", "iptv-all", "journalism-pc" */
-            this.br.getPage("http://open.live.bbc.co.uk/mediaselector/5/select/version/2.0/mediaset/pc/vpid/" + vpid);
+            this.br.getPage("https://open.live.bbc.co.uk/mediaselector/5/select/version/2.0/mediaset/pc/vpid/" + vpid);
         }
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -111,6 +121,10 @@ public class BbcCom extends PluginForHost {
                 /* Every protocol can have multiple 'mirrors' or even sub-protocols (http --> dash, hls, hds, directhttp) */
                 for (final String connection : connections) {
                     transferformat = new Regex(connection, "transferFormat=\"([a-z]+)\"").getMatch(0);
+                    if (transferformat == null) {
+                        /* 2018-11-16: E.g. very old content (usually rtmp-only, flash-player also required via browser!) */
+                        transferformat = new Regex(connection, "protocol=\"([A-Za-z]+)\"").getMatch(0);
+                    }
                     if (transferformat == null || (transferformat != null && transferformat.matches("hds|dash"))) {
                         /* Skip unsupported protocols */
                         continue;
@@ -153,7 +167,7 @@ public class BbcCom extends PluginForHost {
              * 2017-03-24: Example html in this case: <?xml version="1.0" encoding="UTF-8"?><mediaSelection
              * xmlns="http://bbc.co.uk/2008/mp/mediaselection"><error id="geolocation"/></mediaSelection>
              */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "GEO-Blocked");
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "GEO-Blocked or account required");
         }
         final String quality_string;
         if (hls_master != null) {

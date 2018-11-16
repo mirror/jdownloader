@@ -15,22 +15,25 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.LinkedHashMap;
+import java.util.Locale;
+
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bbc.com" }, urls = { "https?://(?:www\\.)?(bbc\\.com|bbc\\.co\\.uk)/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bbc.com" }, urls = { "https?://(?:www\\.)?(?:bbc\\.com|bbc\\.co\\.uk)/.+" })
 public class BbcComDecrypter extends PluginForDecrypt {
     public BbcComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -68,12 +71,22 @@ public class BbcComDecrypter extends PluginForDecrypt {
             jsons = this.br.getRegex("_exposedData=(\\{.+),").getColumn(0);
         }
         if (jsons == null || jsons.length == 0) {
-            /* Type 4 + 5 (4 OR 5) */
+            /* Type 4 OR 5 */
             jsons = this.br.getRegex("mediator\\.bind\\((\\{.*?\\}),\\s*?document\\.").getColumn(0);
             if (jsons == null || jsons.length == 0) {
                 /* 2017-12-05 */
                 jsons = this.br.getRegex("\\(\"tviplayer\"\\),(\\{.*?\\})\\);").getColumn(0);
             }
+        }
+        if (jsons == null || jsons.length == 0) {
+            /* Type 6 */
+            /* 2018-11-15 */
+            jsons = this.br.getRegex("window\\.mediatorDefer=page\\(document\\.getElementById\\(\"tviplayer\"\\),(\\{.*?\\}\\}\\})\\);").getColumn(0);
+        }
+        if (jsons == null || jsons.length == 0) {
+            /* Type 7 - Radio */
+            /* 2018-11-15 */
+            jsons = this.br.getRegex("window\\.__PRELOADED_STATE__ = (\\{.*?\\});").getColumn(0);
         }
         if (jsons == null) {
             logger.info("Failed to find any playable content");
@@ -89,6 +102,8 @@ public class BbcComDecrypter extends PluginForDecrypt {
             final Object o_story = entries.get("story");
             final Object o_player = entries.get("player");
             final Object o_episode = entries.get("episode");
+            final Object o_appStoreState = entries.get("appStoreState");
+            final Object o_programmes = entries.get("programmes");
             String title = null;
             String subtitle = null;
             String description = null;
@@ -127,6 +142,27 @@ public class BbcComDecrypter extends PluginForDecrypt {
                 episodeType = (String) entries.get("type");
                 date = (String) entries.get("release_date_time");
                 description = (String) JavaScriptEngineFactory.walkJson(entries, "synopses/large");
+            } else if (o_appStoreState != null) {
+                /* Type 6 */
+                entries = (LinkedHashMap<String, Object>) o_appStoreState;
+                vpid = (String) JavaScriptEngineFactory.walkJson(entries, "versions/{0}/id");
+                date = (String) JavaScriptEngineFactory.walkJson(entries, "versions/{0}/firstBroadcast");
+                entries = (LinkedHashMap<String, Object>) entries.get("episode");
+                title = (String) entries.get("title");
+                subtitle = (String) entries.get("subtitle");
+                tv_brand = (String) JavaScriptEngineFactory.walkJson(entries, "masterBrand/id");
+                episodeType = (String) entries.get("type");
+                // date = (String) entries.get("release_date_time");
+                description = (String) JavaScriptEngineFactory.walkJson(entries, "synopses/large");
+            } else if (o_programmes != null) {
+                /* Type 7 - Audio */
+                entries = (LinkedHashMap<String, Object>) o_programmes;
+                entries = (LinkedHashMap<String, Object>) entries.get("current");
+                vpid = (String) entries.get("id");
+                title = (String) JavaScriptEngineFactory.walkJson(entries, "titles/primary");
+                description = (String) JavaScriptEngineFactory.walkJson(entries, "titles/secondary");
+                tv_brand = (String) JavaScriptEngineFactory.walkJson(entries, "network/id");
+                date = (String) JavaScriptEngineFactory.walkJson(entries, "availability/from");
             } else {
                 /* Type 1 */
                 Object sourcemapo = JavaScriptEngineFactory.walkJson(entries, "settings/playlistObject");
@@ -150,9 +186,7 @@ public class BbcComDecrypter extends PluginForDecrypt {
             if (inValidate(tv_brand)) {
                 tv_brand = "bbc";
             }
-            if (date != null) {
-                date_formatted = new Regex(date, "(\\d{4}\\-\\d{2}\\-\\d{2})").getMatch(0);
-            }
+            date_formatted = formatDate(date);
             String filename_plain = "";
             if (date_formatted != null) {
                 filename_plain = date_formatted + "_";
@@ -189,6 +223,40 @@ public class BbcComDecrypter extends PluginForDecrypt {
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
+    }
+
+    public static String formatDate(final String input) {
+        if (input == null) {
+            return null;
+        }
+        String dateformat = null;
+        if (input.matches("\\d{4}\\-\\d{2}\\-\\d{2}")) {
+            dateformat = "yyyy-MM-dd";
+            // date_formatted = new Regex(date, "(\\d{4}\\-\\d{2}\\-\\d{2})").getMatch(0);
+        } else if (input.matches("\\d{1,2}/\\d{1,2}/\\d{4}")) {
+            dateformat = "dd/MM/yyyy";
+            // final Regex dateRegex = new Regex(input, "(\\d{1,2})/(\\d{1,2})/(\\d{4})");
+            // date_formatted = dateRegex.getMatch(2) + "_" + dateRegex.getMatch(1) + "_" + dateRegex.getMatch(0);
+        } else if (input.matches("\\d{1,2} [A-Z][a-z]+ \\d{4}")) {
+            dateformat = "dd MMM yyyy";
+            // final Regex dateRegex = new Regex(date, "(\\d{1,2})/(\\d{1,2})/(\\d{4})");
+            // date_formatted = dateRegex.getMatch(2) + "_" + dateRegex.getMatch(1) + "_" + dateRegex.getMatch(0);
+        }
+        if (dateformat == null) {
+            return input;
+        }
+        final long date = TimeFormatter.getMilliSeconds(input, dateformat, Locale.ENGLISH);
+        String formattedDate = null;
+        final String targetFormat = "yyyy-MM-dd";
+        Date theDate = new Date(date);
+        try {
+            final SimpleDateFormat formatter = new SimpleDateFormat(targetFormat);
+            formattedDate = formatter.format(theDate);
+        } catch (Exception e) {
+            /* prevent input error killing plugin */
+            formattedDate = input;
+        }
+        return formattedDate;
     }
 
     /**
