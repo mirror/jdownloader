@@ -434,7 +434,7 @@ public class SuperdownComBr extends antiDDoSForHost {
                     }
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br) {
                         @Override
-                        public String getSiteKey(String source) {
+                        protected String getSiteKey(String source) {
                             final String siteKey = new Regex(source, "var key\\s*=\\s*\"([\\w-]+)\";").getMatch(0);
                             return StringUtils.isEmpty(siteKey) ? super.getSiteKey(source) : siteKey;
                         };
