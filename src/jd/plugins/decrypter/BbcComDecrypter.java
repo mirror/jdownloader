@@ -232,15 +232,10 @@ public class BbcComDecrypter extends PluginForDecrypt {
         String dateformat = null;
         if (input.matches("\\d{4}\\-\\d{2}\\-\\d{2}")) {
             dateformat = "yyyy-MM-dd";
-            // date_formatted = new Regex(date, "(\\d{4}\\-\\d{2}\\-\\d{2})").getMatch(0);
         } else if (input.matches("\\d{1,2}/\\d{1,2}/\\d{4}")) {
             dateformat = "dd/MM/yyyy";
-            // final Regex dateRegex = new Regex(input, "(\\d{1,2})/(\\d{1,2})/(\\d{4})");
-            // date_formatted = dateRegex.getMatch(2) + "_" + dateRegex.getMatch(1) + "_" + dateRegex.getMatch(0);
         } else if (input.matches("\\d{1,2} [A-Z][a-z]+ \\d{4}")) {
             dateformat = "dd MMM yyyy";
-            // final Regex dateRegex = new Regex(date, "(\\d{1,2})/(\\d{1,2})/(\\d{4})");
-            // date_formatted = dateRegex.getMatch(2) + "_" + dateRegex.getMatch(1) + "_" + dateRegex.getMatch(0);
         }
         if (dateformat == null) {
             return input;
