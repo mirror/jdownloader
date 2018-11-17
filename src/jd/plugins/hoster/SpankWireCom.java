@@ -136,6 +136,9 @@ public class SpankWireCom extends PluginForHost {
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         final URLConnectionAdapter con = br2.openHeadConnection(dllink);
+        if (con.getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (!con.getContentType().contains("html")) {
             downloadLink.setDownloadSize(con.getLongContentLength());
         } else { // Sometimes we get 401 here
@@ -209,7 +212,7 @@ public class SpankWireCom extends PluginForHost {
         }
         if (dllink == null) {
             /* Fallback - grab any URL */
-            dllink = br.getRegex("<a href=\"(https?://[^\"\\']+\\.mp4[^\"\\']+)\"").getMatch(0);
+            dllink = br.getRegex("<a href=\"(https?://[^\"]+\\.(mp4|avi|flv)[^\"]+)\"").getMatch(0);
         }
         return dllink;
     }
