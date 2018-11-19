@@ -112,6 +112,9 @@ public class NexusmodsCom extends antiDDoSForHost {
                 dllink = br.getRegex("\"(https?://(?:www\\.)?nexusmods\\.com/[^<>\"]*Libs/Common/Managers/Downloads\\?Download[^<>\"]+)\"").getMatch(0);
                 if (dllink == null) {
                     dllink = br.getRegex("id\\s*=\\s*\"dl_link\"\\s*value\\s*=\\s*\"(https?://(?:[a-z0-9]*\\.)?(?:nexusmods|nexus-cdn)\\.com/[^<>\"]*?)\"").getMatch(0);
+                    if (dllink == null) {
+                        dllink = br.getRegex("data-link\\s*=\\s*\"(https?://(?:premium-files|fs-[a-z0-9]+)\\.(?:nexusmods|nexus-cdn)\\.com/[^<>\"]*?)\"").getMatch(0);
+                    }
                 }
             }
         }
