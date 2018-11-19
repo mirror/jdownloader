@@ -18,13 +18,6 @@ package jd.plugins.hoster;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.Regex;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -35,6 +28,13 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.Regex;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision: 35559 $", interfaceVersion = 3, names = { "hqq.tv" }, urls = { "https?://(?:www\\.)?hqq\\.(?:tv|watch)/.+|https?://waaw\\.tv/watch_video\\.php\\?v=[A-Za-z0-9]+" })
 public class HqqTv extends antiDDoSForHost {
@@ -121,6 +121,9 @@ public class HqqTv extends antiDDoSForHost {
         // html
         getPage(sb.toString());
         final Form myForm = br.getFormbyProperty("id", "my_form");
+        if (myForm == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         submitForm(myForm); // duplicate URL parameters.
         //
         final String filename = br.getRegex("title\":\\s*\"([^\"]+)").getMatch(0);
