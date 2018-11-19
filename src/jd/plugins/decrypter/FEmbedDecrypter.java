@@ -33,7 +33,7 @@ public class FEmbedDecrypter extends PluginForDecrypt {
         if (name != null) {
             name = new String(HexFormatter.hexToByteArray(name), "UTF-8");
         }
-        final PostRequest postRequest = new PostRequest("https://www.fembed.com/api/sources/" + file_id);
+        final PostRequest postRequest = new PostRequest("https://www.fembed.com/api/source/" + file_id);
         final Map<String, Object> response = JSonStorage.restoreFromString(br.getPage(postRequest), TypeRef.HASHMAP);
         if (!Boolean.TRUE.equals(response.get("success"))) {
             final DownloadLink link = createDownloadlink(parameter.getCryptedUrl().replaceAll("https?://", "decryptedforFEmbedHosterPlugin://"));
