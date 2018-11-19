@@ -240,7 +240,15 @@ public class AbstractFFmpegBinary {
                 if (stderrThread.isAlive()) {
                     stderrThread.join(500);
                 }
-                return new String[] { stdout.toString("UTF-8"), stderr.toString("UTF-8") };
+                final String lastStdout;
+                synchronized (stdout) {
+                    lastStdout = stdout.toString("UTF-8");
+                }
+                final String lastStderr;
+                synchronized (stderr) {
+                    lastStderr = stderr.toString("UTF-8");
+                }
+                return new String[] { lastStdout, lastStderr };
             } else {
                 logger.info("ExitCode2: " + process.waitFor());
                 processExitedFlag.set(true);
@@ -253,7 +261,15 @@ public class AbstractFFmpegBinary {
                 if (stderrThread.isAlive()) {
                     stderrThread.join(500);
                 }
-                return new String[] { stdout.toString("UTF-8"), stderr.toString("UTF-8") };
+                final String lastStdout;
+                synchronized (stdout) {
+                    lastStdout = stdout.toString("UTF-8");
+                }
+                final String lastStderr;
+                synchronized (stderr) {
+                    lastStderr = stderr.toString("UTF-8");
+                }
+                return new String[] { lastStdout, lastStderr };
             }
         } finally {
             processExitedFlag.set(true);
