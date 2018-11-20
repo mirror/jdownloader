@@ -36,6 +36,13 @@ public class SpankWireCom extends PluginForHost {
         super(wrapper);
     }
 
+    public void correctDownloadLink(DownloadLink downloadLink) {
+        String ArticleId = new Regex(downloadLink.getDownloadURL(), "ArticleId=(\\d+)").getMatch(0);
+        if (ArticleId != null) { // Can't find video from EmbedPlayer
+            downloadLink.setUrlDownload("https://www.spankwire.com/v/video" + ArticleId);
+        }
+    }
+
     @Override
     public String getAGBLink() {
         return "http://www.spankwire.com/Terms.aspx";
