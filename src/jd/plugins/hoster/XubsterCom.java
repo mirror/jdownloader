@@ -124,7 +124,7 @@ public class XubsterCom extends antiDDoSForHost {
     private String               fuid                               = null;
     private String               passCode                           = null;
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger totalMaxSimultanFreeDownload       = new AtomicInteger(20);
+    private static AtomicInteger totalMaxSimultanFreeDownload       = new AtomicInteger(1);
     /* don't touch the following! */
     private static AtomicInteger maxFree                            = new AtomicInteger(1);
     private static Object        LOCK                               = new Object();
@@ -1297,7 +1297,7 @@ public class XubsterCom extends antiDDoSForHost {
             /* Expire date is in the future --> It is a premium account */
             ai.setValidUntil(expire_milliseconds);
             account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(5);
+            account.setMaxSimultanDownloads(20);
             account.setConcurrentUsePossible(true);
         }
         return ai;
