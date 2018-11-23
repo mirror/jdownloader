@@ -195,7 +195,7 @@ public class HentaiFoundryCom extends PluginForHost {
                 }
                 br.setFollowRedirects(true);
                 br.getPage("https://www.hentai-foundry.com/?enterAgree=1&size=0");
-                final String csrftoken = br.getRegex("value=\"([a-z0-9]+)\" name=\"YII_CSRF_TOKEN\"").getMatch(0);
+                final String csrftoken = br.getRegex("value=\"([^\"]+)\" name=\"YII_CSRF_TOKEN\"").getMatch(0);
                 if (csrftoken == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
