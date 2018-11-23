@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -30,13 +29,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gaskrank.tv" }, urls = { "http://(?:www\\.)?gaskrank\\.tv/tv/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+\\.htm" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gaskrank.tv" }, urls = { "https?://(?:www\\.)?gaskrank\\.tv/tv/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+\\.htm" })
 public class GaskrankTv extends PluginForHost {
-
     public GaskrankTv(PluginWrapper wrapper) {
         super(wrapper);
     }
-
     /* DEV NOTES */
     // Tags:
     // protocol: no https
@@ -46,7 +43,6 @@ public class GaskrankTv extends PluginForHost {
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
     private boolean              server_issues     = false;
 
