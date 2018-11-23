@@ -13,10 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -29,11 +30,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filetolink.com" }, urls = { "http://(www\\.)?filetolink\\.com/(d/\\?h=[a-z0-9]{32}\\&t=\\d{10}\\&f=[a-z0-9]{8}|[a-z0-9]+)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filetolink.com" }, urls = { "http://(www\\.)?filetolink\\.com/(d/\\?h=[a-z0-9]{32}\\&t=\\d{10}\\&f=[a-z0-9]{8}|[a-z0-9]+)" })
 public class FileToLinkCom extends PluginForHost {
-
     public FileToLinkCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -50,8 +48,7 @@ public class FileToLinkCom extends PluginForHost {
 
     private static final String LOGINNEEDED         = "This file was uploaded by an unregistered user of";
     private static final String LOGINNEEDEDUSERTEXT = "Login needed to download this file";
-
-    private String              DLLINK              = null;
+    private String              dllink              = null;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
@@ -59,12 +56,11 @@ public class FileToLinkCom extends PluginForHost {
         downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "filetolink\\.com/(.+)").getMatch(0));
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(downloadLink.getDownloadURL());
             if (!con.getContentType().contains("html")) {
-                DLLINK = downloadLink.getDownloadURL();
+                dllink = downloadLink.getDownloadURL();
                 downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
                 downloadLink.setDownloadSize(con.getLongContentLength());
                 downloadLink.setAvailable(true);
@@ -78,7 +74,6 @@ public class FileToLinkCom extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
-
         if (br.containsHTML(">Sorry, this file does not exist\\.<|Removed due to abuse") || br.getURL().contains("filetolink.com/d/notfound.html") || br.getURL().equals("http://www.filetolink.com/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -103,20 +98,19 @@ public class FileToLinkCom extends PluginForHost {
             downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         return AvailableStatus.TRUE;
-
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         boolean facebook = false;
-        if (DLLINK == null) {
+        if (dllink == null) {
             if (br.containsHTML(LOGINNEEDED)) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, LOGINNEEDEDUSERTEXT);
             }
-            String DLLINK = br.getRegex("<META HTTP\\-EQUIV=\"Refresh\" CONTENT=\"0\\; URL=(/download/\\?h=[0-9a-z]+\\&t=\\d+\\&f=[0-9a-z]+)\"/>\\'").getMatch(0);
-            if (DLLINK != null) {
-                DLLINK = new Regex(br.getURL(), "(https?://.*\\.com)/.*").getMatch(0) + DLLINK;
+            dllink = br.getRegex("<META HTTP\\-EQUIV=\"Refresh\" CONTENT=\"0\\; URL=(/download/\\?h=[0-9a-z]+\\&t=\\d+\\&f=[0-9a-z]+)\"/>\\'").getMatch(0);
+            if (dllink != null) {
+                dllink = new Regex(br.getURL(), "(https?://.*\\.com)/.*").getMatch(0) + dllink;
             } else {
                 facebook = true;
                 // Maybe facebook login required, let's skip that shit
@@ -124,10 +118,10 @@ public class FileToLinkCom extends PluginForHost {
                 if (noFB.getMatches().length < 2) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                DLLINK = "http://www.filetolink.com/download/?h=" + noFB.getMatch(1) + "&t=" + noFB.getMatch(2) + "&f=" + noFB.getMatch(3);
+                dllink = "http://www.filetolink.com/download/?h=" + noFB.getMatch(1) + "&t=" + noFB.getMatch(2) + "&f=" + noFB.getMatch(3);
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             // Also not downloadable via browser with useless Facebook App
             // (tested)
