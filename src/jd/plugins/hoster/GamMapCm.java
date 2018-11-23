@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.HashMap;
@@ -29,7 +28,6 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -37,9 +35,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gamemaps.com" }, urls = { "http://(?:www\\.)?gamemaps\\.com/(?:details/|mirrors/|mirrors/mirror/(?:\\d+/)?)\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gamemaps.com" }, urls = { "https?://(?:www\\.)?gamemaps\\.com/(?:details/|mirrors/|mirrors/mirror/(?:\\d+/)?)\\d+" })
 public class GamMapCm extends antiDDoSForHost {
-
     private String         fuid      = null;
     private String         ddlink    = null;
     private final String   cacheLink = "cacheLink";
@@ -74,7 +71,7 @@ public class GamMapCm extends antiDDoSForHost {
     }
 
     private String getFUID(DownloadLink link) {
-        final String fuid = new Regex(link.getDownloadURL(), "http://(?:www\\.)?gamemaps\\.com/(?:details/|mirrors/|mirrors/mirror/(?:\\d+/)?)(\\d+)").getMatch(0);
+        final String fuid = new Regex(link.getDownloadURL(), "https?://(?:www\\.)?gamemaps\\.com/(?:details/|mirrors/|mirrors/mirror/(?:\\d+/)?)(\\d+)").getMatch(0);
         return fuid;
     }
 
@@ -103,15 +100,18 @@ public class GamMapCm extends antiDDoSForHost {
         }
         String filename = br.getRegex(">File: <span class=\"content\">(.*?)</span>").getMatch(0);
         if (filename == null) {
+            filename = br.getRegex("blocktitle\">\\s*<span>(.*?)</span>").getMatch(0);
+        }
+        if (filename == null) {
             // down the bottom you get filename with extension
             filename = br.getRegex("<span class=\"tag nohover\">(.*?)</span>").getMatch(0);
+        }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filesize = br.getRegex(">Size: <span class=\"content\">(.*?)</span>").getMatch(0);
         if (filesize == null) {
             filesize = br.getRegex("<div class=\"filesize\">(.*?)</div>").getMatch(0);
-        }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         downloadLink.setName(filename.trim());
         if (filesize != null) {
@@ -172,14 +172,13 @@ public class GamMapCm extends antiDDoSForHost {
             }
             getPage(ddlink);
             // no longer meta refresh, but form with delay over javascript > form submit > downloading....(javascript)
-            final Form f = br.getFormbyKey("ad_verif");
-            submitForm(f);
+            // final Form f = br.getFormbyKey("ad_verif");
+            // submitForm(f);
             ddlink = br.getRegex("<meta http-equiv=\"refresh\"[^\r\n]+url=([^\"]+)").getMatch(0);
             if (ddlink == null) {
                 // link will be in the format of /mirrors/download/uid/mirrorid > redirects via standard 302 location header
                 ddlink = br.getRegex("/mirrors/download/" + fuid + "/\\d+").getMatch(0);
             }
-
             if (ddlink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -232,5 +231,4 @@ public class GamMapCm extends antiDDoSForHost {
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), "servers", servers, JDL.L("plugins.host.GamMapCm.servers", "Prefer downloads from this location:")).setDefaultValue(0));
     }
-
 }
