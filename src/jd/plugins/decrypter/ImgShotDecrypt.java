@@ -95,6 +95,12 @@ public class ImgShotDecrypt extends antiDDoSForDecrypt {
                 link.setForcedFileName(title + extension);
             }
         }
+        if ("imgadult.com".equals(getHost())) {
+            final String title = br.getRegex("<title>(.*?) \\|").getMatch(0);
+            if (StringUtils.isNotEmpty(title)) {
+                link.setForcedFileName(title);
+            }
+        }
         return decryptedLinks;
     }
 
