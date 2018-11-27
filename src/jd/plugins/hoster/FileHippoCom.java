@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -26,8 +28,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filehippo.com" }, urls = { "https?://(?:www\\.)?filehippo\\.com(?:/(?:es|en|pl|jp|de))?/download_[^<>/\"]+(?:(?:/tech)?/\\d+/)?" })
 public class FileHippoCom extends PluginForHost {
@@ -71,7 +71,7 @@ public class FileHippoCom extends PluginForHost {
         br.setCookie("https://filehippo.com/", "FH_PreferredCulture", "en-US");
         final String url_name = new Regex(link.getDownloadURL(), "filehippo\\.com/(.+)").getMatch(0);
         br.getPage(link.getDownloadURL());
-        if (this.br.getURL().equals("http://www.filehippo.com/")) {
+        if (br.getURL().equals("http://www.filehippo.com/") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (br.containsHTML(FILENOTFOUND) || link.getDownloadURL().contains("/history")) {
