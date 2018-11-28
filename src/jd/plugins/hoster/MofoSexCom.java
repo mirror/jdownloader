@@ -15,6 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -25,8 +27,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 /**
  * DEV NOTES:<br/>
@@ -64,19 +64,22 @@ public class MofoSexCom extends antiDDoSForHost {
             final String linkid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
             /* Offline links should get good filenames too */
             downloadLink.setName(linkid);
-            getPage("http://www.mofosex.com/embed?videoid=" + linkid);
+            getPage("https://www.mofosex.com/embed?videoid=" + linkid);
             if (br.containsHTML("This video is no longer available")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             String real_url = br.getRegex("link_url=(http%3A%2F%2F(www\\.)?mofosex\\.com%2Fvideos%2F[^<>\"/]*?\\.html)\\&amp;").getMatch(0);
             if (real_url == null) {
-                real_url = br.getRegex("class=\"footer\".*?href=\"([^<>\"]*?)\"").getMatch(0);
+                real_url = br.getRegex("class=\"footer\".*?href=\"([^<>\"]*?)\"").getMatch(0); // <---
             }
             if (real_url == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (real_url.startsWith("/")) {
-                real_url = "http://" + this.br.getHost() + real_url;
+            if (real_url.startsWith("//")) {
+                real_url = "https:" + real_url;
+            }
+            if (real_url.startsWith("/[a-z]")) {
+                real_url = "http://" + br.getHost() + real_url;
             }
             real_url = Encoding.htmlDecode(real_url);
             downloadLink.setUrlDownload(real_url);
