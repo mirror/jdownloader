@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -32,7 +31,6 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgwallet.com" }, urls = { "https?://(?:www\\.)?imgwallet\\.com/img\\-[a-z0-9]+\\.html" })
 public class ImgwalletCom extends PluginForHost {
-
     public ImgwalletCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -61,18 +59,19 @@ public class ImgwalletCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final String postURL = this.br.getURL();
+        final String postURL = br.getURL();
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
-            if (this.br.containsHTML("id=\"redirect\\-wait\"")) {
+            if (br.containsHTML("id=\"redirect\\-wait\"")) {
                 // br.getHeaders().put("Referer", "http://www.imgwallet.com/url.php?i=5");
-                this.br.postPage(postURL, "cti=1&ref=-&rc=0&bt=0&bw=gecko");
+                br.postPage(postURL, "cti=1&ref=-&rc=0&bt=0&bw=gecko");
                 /* Make sure that Referer is correct. */
                 br.getHeaders().put("Referer", postURL);
-                this.br.getPage(postURL);
+                br.getPage(postURL);
             }
-            // dllink = jd.plugins.decrypter.ImgShotDecrypt.getFinallink(this.br, downloadLink.getDownloadURL());
-            dllink = br.getRegex("<a href=\\'(https://imgwallet.com/images/big/[^\\']+)\\'").getMatch(0);
+            // dllink = jd.plugins.decrypter.ImgShotDecrypt.getFinallink(br, downloadLink.getDownloadURL());
+            // dllink = br.getRegex("<a href=\\'(https://imgwallet.com/images/big/[^\\']+)\\'").getMatch(0);
+            dllink = br.getRegex("'(https://imgwallet.com/images/big/[^']+)'").getMatch(0);
         }
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -132,5 +131,4 @@ public class ImgwalletCom extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }
