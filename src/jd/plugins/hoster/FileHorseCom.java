@@ -13,10 +13,12 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -30,12 +32,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filehorse.com" }, urls = { "http://(www\\.)?(mac\\.)?filehorse\\.com/download\\-[a-z0-9\\-]+/(\\d+/)?" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filehorse.com" }, urls = { "https?://(www\\.)?(mac\\.)?filehorse\\.com/download\\-[a-z0-9\\-]+/(\\d+/)?" })
 public class FileHorseCom extends PluginForHost {
-
     public FileHorseCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -88,6 +86,9 @@ public class FileHorseCom extends PluginForHost {
             dllink = br.getRegex("\"(https?://(www\\.)?filehorse\\.com/download/file/[^<>\"]*?)\"").getMatch(0);
         }
         if (dllink == null) {
+            dllink = br.getRegex("If it doesn't\\s*<a href=\"(https?://[^<>\"]*?)\"").getMatch(0);
+        }
+        if (dllink == null) {
             Form d = br.getFormBySubmitvalue(Encoding.urlEncode("Download Now"));
             // NEW, recaptchav2
             if (d != null && d.containsHTML("google\\.com/recaptcha/")) {
@@ -133,5 +134,4 @@ public class FileHorseCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
