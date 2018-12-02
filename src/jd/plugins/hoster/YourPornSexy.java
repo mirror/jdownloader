@@ -32,7 +32,8 @@ public class YourPornSexy extends PluginForHost {
         }
     }
 
-    private String dllink = null;
+    private String dllink   = null;
+    private String authorid = null;
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
@@ -42,31 +43,57 @@ public class YourPornSexy extends PluginForHost {
         if (title == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        link.setFinalFileName(title.trim() + ".mp4");
         String fid = new Regex(link.getLinkID(), "//([a-z0-9]+)").getMatch(0);
-        String authorid = br.getRegex("data-authorid='([^']+)'").getMatch(0);
+        authorid = br.getRegex("data-authorid='([^']+)'").getMatch(0);
         String json = br.getRegex("data-vnfo='([^']+)'").getMatch(0);
         String vnfo = PluginJSonUtils.getJsonValue(json, fid);
+        if (vnfo == null && json != null) {
+            String ids[] = new Regex(json, "\"([a-z0-9]*?)\"").getColumn(0);
+            for (final String id : ids) {
+                vnfo = PluginJSonUtils.getJsonValue(json, id);
+                // logger.info("id: " + id + ", vnfo: " + vnfo);
+                getDllink(link, vnfo, id);
+                if (dllink != null) {
+                    break;
+                }
+            }
+        } else {
+            // logger.info("vnfo: " + vnfo);
+            getDllink(link, vnfo, fid);
+        }
+        if (dllink == null) {
+            logger.info("authorid: " + authorid + ", json: " + json);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        return AvailableStatus.TRUE;
+    }
+
+    private String getDllink(final DownloadLink link, final String vnfo, final String id) throws Exception {
         // -> vnfo: /cdn/c7/01Uyjzhs_RNzj8vcmiwHFA/1542522740/653bsds8d0gb1es6od71k4c0fdp/85mbqe8fk1m6eba8o9cd1ah94ep.mp4
         final String items[][] = new Regex(vnfo, "/cdn/([^/]+)/([^/]+)/([^/]+)/([^/]+)").getMatches();
         if (items != null && items.length > 0 && authorid != null) {
             for (final String item[] : items) {
-                dllink = "https://" + item[0] + ".trafficdeposit.com/bvideo/" + item[1] + "/" + item[2] + "/" + authorid + "/" + fid + ".mp4";
+                dllink = "https://" + item[0] + ".trafficdeposit.com/bvideo/" + item[1] + "/" + item[2] + "/" + authorid + "/" + id + ".mp4";
+                // logger.info("dllink: " + dllink);
             }
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setFinalFileName(title.trim() + ".mp4");
         if (link.getVerifiedFileSize() == -1) {
             final URLConnectionAdapter con = br.cloneBrowser().openHeadConnection(dllink);
             try {
                 if (con.isOK() && StringUtils.containsIgnoreCase(con.getContentType(), "video")) {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    dllink = null;
                 }
             } finally {
                 con.disconnect();
             }
         }
-        return AvailableStatus.TRUE;
+        return dllink;
     }
 
     @Override
