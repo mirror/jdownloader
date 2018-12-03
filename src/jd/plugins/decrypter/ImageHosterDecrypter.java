@@ -263,7 +263,8 @@ public class ImageHosterDecrypter extends antiDDoSForDecrypt {
             String fuid = new Regex(parameter, "([\\d+]+)/?$").getMatch(0);
             br.getPage(parameter);
             finallink = br.getRegex("<a href=\"([^\"]+)\">Link to full-size").getMatch(0);
-            finalfilename = fuid + " " + br.getRegex("<title>([^<>]+)</title>").getMatch(0) + ".jpg";
+            String ext = new Regex(finallink, "(\\.[a-z0-9]+$)").getMatch(0);
+            finalfilename = fuid + " " + br.getRegex("<title>([^<>]+)</title>").getMatch(0) + ext;
         }
         if (finallink == null) {
             logger.warning("Imagehoster-Decrypter broken for link: " + parameter);
