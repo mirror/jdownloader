@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -31,7 +30,6 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "freefuckvidz.com" }, urls = { "http://(www\\.)?freefuckvidz\\.com/free\\-porn/\\d+" })
 public class FreeFuckVidzCom extends PluginForHost {
-
     public FreeFuckVidzCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -47,6 +45,7 @@ public class FreeFuckVidzCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setCookiesExclusive(true);
         br.setFollowRedirects(true);
         this.br.setAllowedResponseCodes(410);
         br.getPage(downloadLink.getDownloadURL());
@@ -60,7 +59,7 @@ public class FreeFuckVidzCom extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         }
-        final String[] qualities = { "720p", "480p", "360p", "med", "low", "trailer" };
+        final String[] qualities = { "720p", "480p", "360p", "240p", "med", "low", "trailer" };
         for (final String quality : qualities) {
             getLink(quality);
             if (dllink != null) {
@@ -95,7 +94,7 @@ public class FreeFuckVidzCom extends PluginForHost {
     }
 
     private void getLink(String quality) {
-        dllink = br.getRegex("\"" + quality + "\":\"(http://[^<>\"]*?)\"").getMatch(0);
+        dllink = br.getRegex("\"" + quality + "\",url:\"(http[^<>\"]*?)\"").getMatch(0);
     }
 
     @Override
