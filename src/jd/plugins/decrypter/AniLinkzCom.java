@@ -34,11 +34,10 @@ import jd.plugins.FilePackage;
 /**
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anilinkz.com" }, urls = { "http://(?:www\\.)?anilinkz\\.(?:com|tv|io|to)/[^<>\"/]+(/[^<>\"/]+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anilinkz.com" }, urls = { "https?://(?:www\\.)?anilinkz\\.(?:com|tv|io|to)/[^<>\"/]+(/[^<>\"/]+)?" })
 @SuppressWarnings("deprecation")
 public class AniLinkzCom extends antiDDoSForDecrypt {
-
-    private final String            invalid_links  = "http://(?:www\\.)?anilinkz\\.(?:com|tv|io|to)/(search|affiliates|get|img|dsa|forums|files|category|\\?page=|faqs|.*?-list|.*?-info|\\?random).*?";
+    private final String            invalid_links  = "https?://(?:www\\.)?anilinkz\\.(?:com|tv|io|to)/(search|affiliates|get|img|dsa|forums|files|category|\\?page=|faqs|.*?-list|.*?-info|\\?random).*?";
     private String                  parameter      = null;
     private String                  fpName         = null;
     private String                  escapeAll      = null;
@@ -198,7 +197,7 @@ public class AniLinkzCom extends antiDDoSForDecrypt {
                 // seems they might not be using escape function.. any longer...
                 escapeAll = br2.toString();
             }
-            if (inValidate(escapeAll) || new Regex(escapeAll, "(/img/\\w+dead\\.jpg|http://www\\./media)").matches()) {
+            if (inValidate(escapeAll) || new Regex(escapeAll, "(/img/\\w+dead\\.jpg|https?://www\\./media)").matches()) {
                 // escapeAll == null / not online yet... || offline results within escapeAll
                 if (br.containsHTML("This page will be updated as soon as|becomes available\\. Stay tuned for ")) {
                     logger.info("Not been release yet... : " + br2.getURL());
