@@ -70,6 +70,9 @@ public class Mangafox extends PluginForDecrypt {
                 }
             }
         }
+        if (numberOfPages == 0) {
+            return null;
+        }
         final DecimalFormat df_page = numberOfPages > 999 ? new DecimalFormat("0000") : numberOfPages > 99 ? new DecimalFormat("000") : new DecimalFormat("00");
         // We load each page and retrieve the URL of the picture
         final FilePackage fp = FilePackage.getInstance();
