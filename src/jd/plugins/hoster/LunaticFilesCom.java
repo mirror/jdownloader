@@ -23,12 +23,6 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -52,6 +46,12 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "lunaticfiles.com" }, urls = { "https?://(?:www\\.)?lunaticfiles\\.com/(?:vidembed\\-)?[a-z0-9]{12}" })
 public class LunaticFilesCom extends PluginForHost {
     private String               correctedBR                  = "";
@@ -67,7 +67,6 @@ public class LunaticFilesCom extends PluginForHost {
     private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
     private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     private static final boolean VIDEOHOSTER                  = false;
-    private static final boolean SUPPORTSHTTPS                = true;
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
     // don't touch the following!
@@ -87,9 +86,7 @@ public class LunaticFilesCom extends PluginForHost {
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         // link cleanup, but respect users protocol choosing.
-        if (!SUPPORTSHTTPS) {
-            link.setUrlDownload(link.getDownloadURL().replaceFirst("https://", "http://"));
-        }
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("http://", "https://"));
         // strip video hosting url's to reduce possible duped links.
         link.setUrlDownload(link.getDownloadURL().replace("/vidembed-", "/"));
         // output the hostmask as we wish based on COOKIE_HOST url!

@@ -13,7 +13,6 @@ import org.jdownloader.extensions.extraction.FileSignatures;
 import org.jdownloader.extensions.extraction.Signature;
 
 public class SignatureCheckingOutStream implements ISequentialOutStream {
-
     private final AtomicBoolean                 passwordfound;
     private final FileSignatures                filesignatures;
     private final ReusableByteArrayOutputStream buffer;
@@ -92,7 +91,7 @@ public class SignatureCheckingOutStream implements ISequentialOutStream {
     }
 
     public void setSignatureLength(String itemName, long itemSize) {
-        if (new Regex(itemName, ".+\\.iso").matches()) {
+        if (new Regex(itemName, ".+\\.(iso|udf)").matches()) {
             signatureMinLength = 37000;
         } else if (new Regex(itemName, ".+\\.mp3").matches()) {
             signatureMinLength = 512;
@@ -102,5 +101,4 @@ public class SignatureCheckingOutStream implements ISequentialOutStream {
         this.itemName = itemName;
         this.itemSize = itemSize;
     }
-
 }

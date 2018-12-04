@@ -1,8 +1,5 @@
 package jd.plugins.hoster;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
@@ -12,6 +9,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourporn.sexy" }, urls = { "https?://(www\\.)?yourporn\\.sexy/post/[a-fA-F0-9]{13}\\.html" })
 public class YourPornSexy extends PluginForHost {
@@ -98,7 +98,7 @@ public class YourPornSexy extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 5;
+        return 10;
     }
 
     @Override

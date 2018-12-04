@@ -1011,7 +1011,13 @@ public class LinkCrawler {
             authLoop: for (AuthenticationFactory authenticationFactory : authenticationFactories) {
                 if (connection != null) {
                     connection.setAllowedResponseCodes(new int[] { connection.getResponseCode() });
-                    br.followConnection();
+                    try {
+                        br.followConnection();
+                    } catch (IOException e) {
+                        if (br.getLogger() != null) {
+                            br.getLogger().log(e);
+                        }
+                    }
                 }
                 br.setCustomAuthenticationFactory(authenticationFactory);
                 connection = br.openRequestConnection(request);
@@ -1030,7 +1036,10 @@ public class LinkCrawler {
             if (location != null) {
                 try {
                     br.followConnection();
-                } catch (Throwable e) {
+                } catch (IOException e) {
+                    if (br.getLogger() != null) {
+                        br.getLogger().log(e);
+                    }
                 }
                 if (loopAvoid.add(location) == false) {
                     return openCrawlDeeperConnection(source, br, connection, round);

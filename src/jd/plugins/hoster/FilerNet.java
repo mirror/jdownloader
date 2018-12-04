@@ -28,6 +28,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -37,6 +38,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
@@ -44,6 +46,7 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPlugin
 public class FilerNet extends PluginForHost {
     private static Object       LOCK                                         = new Object();
     private int                 statusCode                                   = 0;
+    private String              statusMessage                                = null;
     private String              fuid                                         = null;
     private String              recapID                                      = null;
     private static final int    STATUSCODE_APIDISABLED                       = 400;
@@ -153,7 +156,7 @@ public class FilerNet extends PluginForHost {
         String dllink = checkDirectLink(downloadLink, DIRECT_API);
         if (dllink == null) {
             callAPI(null, "http://filer.net/get/" + fuid + ".json");
-            handleFreeErrorsAPI();
+            handleErrorsAPI(account);
             if (statusCode == 203) {
                 // they can repeat this twice
                 int i = 0;
@@ -166,7 +169,7 @@ public class FilerNet extends PluginForHost {
                     sleep(wait * 1001l + 1000l, downloadLink);
                     callAPI(null, "http://filer.net/get/" + fuid + ".json?token=" + token);
                     // they can make you wait again...
-                    handleFreeErrorsAPI();
+                    handleErrorsAPI(account);
                 } while (statusCode == 203 && ++i <= 2);
             }
             if (statusCode == 202) {
@@ -389,8 +392,11 @@ public class FilerNet extends PluginForHost {
             br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(account.getUser() + ":" + account.getPass()));
             callAPI(account, "http://filer.net/api/dl/" + fuid + ".json");
             if (statusCode == 504) {
-                logger.info("No traffic available!");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Traffic limit reached", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                if (StringUtils.isEmpty(statusMessage)) {
+                    throw new AccountUnavailableException("Traffic limit reached", 60 * 60 * 1000l);
+                } else {
+                    throw new AccountUnavailableException(statusMessage, 60 * 60 * 1000l);
+                }
             } else if (statusCode == STATUSCODE_UNKNOWNERROR) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, ERRORMESSAGE_UNKNOWNERRORTEXT);
             }
@@ -502,20 +508,31 @@ public class FilerNet extends PluginForHost {
         }
     }
 
-    private void handleFreeErrorsAPI() throws PluginException {
+    private void handleErrorsAPI(Account account) throws PluginException {
         if (statusCode == 501) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available, wait or buy premium!", 2 * 60 * 1000l);
         } else if (statusCode == 502) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Max free simultan-downloads-limit reached, please finish running downloads before starting new ones!", 1 * 60 * 1000l);
+        } else if (statusCode == 504) {
+            if (account == null || AccountType.FREE.equals(account.getType())) {
+                throw new AccountRequiredException(statusMessage);
+            } else {
+                if (StringUtils.isEmpty(statusMessage)) {
+                    throw new AccountUnavailableException("Traffic limit reached", 60 * 60 * 1000l);
+                } else {
+                    throw new AccountUnavailableException(statusMessage, 60 * 60 * 1000l);
+                }
+            }
         }
         // 203 503 wait
-        int wait = getWait();
+        final int wait = getWait();
         if (statusCode == 503) {
             // Waittime too small->Don't reconnect
             if (wait < 61) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads...", wait * 1001l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l);
             }
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l);
         }
     }
 
@@ -536,6 +553,7 @@ public class FilerNet extends PluginForHost {
 
     private void updateStatuscode() {
         final String code = PluginJSonUtils.getJson(br, "code");
+        statusMessage = PluginJSonUtils.getJson(br, "status");
         if ("hour download limit reached".equals(code)) {
             statusCode = 503;
         } else if ("user download slots filled".equals(code)) {
