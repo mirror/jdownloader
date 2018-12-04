@@ -20,6 +20,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -37,9 +40,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "inclouddrive.com" }, urls = { "https?://(www\\.)?inclouddrive\\.com/(link_download/\\?token=[A-Za-z0-9=_]+|(?:#/)?((?:file_download|link)/[0-9a-zA-Z=_-]+(?:/[^/]+)?|file/[0-9a-zA-Z=_-]+/[^/]+))" })
 public class InCloudDriveCom extends PluginForHost {
@@ -201,6 +201,10 @@ public class InCloudDriveCom extends PluginForHost {
             br.getPage(Encoding.urlDecode(dlserver, false) + "download.php?accesstoken=" + token);
             dllink = br.getRedirectLocation();
             if (dllink == null || !dllink.startsWith("http")) {
+                if (br.getHttpConnection().getResponseCode() == 401) {
+                    /* 2018-12-03: Has been this way for some weeks now, host seems to be broken serverside ... */
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 401");
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             // dllink = Encoding.htmlDecode(dllink);

@@ -28,9 +28,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangafox.me" }, urls = { "https?://[\\w\\.]*?(?:mangafox\\.(com|me|mobi|la)|fanfox\\.net)/manga/.*?/(v\\d+/c[\\d\\.]+|c[\\d\\.]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangafox.me" }, urls = { "https?://[\\w\\.]*?(?:mangafox\\.(com|me|mobi|la)|fanfox\\.net)/manga/.*?/(v[A-Za-z0-9]+/c[\\d\\.]+|c[\\d\\.]+)" })
 public class Mangafox extends PluginForDecrypt {
-
     public Mangafox(PluginWrapper wrapper) {
         super(wrapper);
         Browser.setRequestIntervalLimitGlobal("fanfox.net", 500);
@@ -44,52 +43,65 @@ public class Mangafox extends PluginForDecrypt {
         if (url.endsWith("/")) {
             url = url.substring(0, url.length() - 1);
         }
+        /* Access URL of first picture */
         br.getPage(url + "/1.html");
-        if (br.containsHTML("cannot be found|not available yet")) {
-            logger.warning("Invalid link or release not yet available, check in your browser: " + parameter);
+        if (jd.plugins.hoster.Mangafox.isOffline(br)) {
+            decryptedLinks.add(this.createOfflinelink(url));
             return decryptedLinks;
         }
-        if (!br.containsHTML("onclick=\"return enlarge\\(\\)\"")) {
-            logger.warning("Invalid link: " + parameter);
-            return decryptedLinks;
-        }
-        // We get the title
         String title = br.getRegex("<title>(.*?) \\- Read (.*?) Online \\- Page 1</title>").getMatch(0);
         if (title == null) {
             logger.warning("Decrypter broken for: " + parameter);
             return null;
         }
         title = Encoding.htmlDecode(title.trim());
-        int numberOfPages = Integer.parseInt(br.getRegex("of (\\d+)").getMatch(0));
+        int numberOfPages = 0;
+        final String maxPage = br.getRegex("of (\\d+)").getMatch(0);
+        if (maxPage != null) {
+            numberOfPages = Integer.parseInt(maxPage);
+        }
+        if (numberOfPages == 0) {
+            /* 2018-12-04: New */
+            final String[] pages = this.br.getRegex("data\\-page=\"(\\d+)\"").getColumn(0);
+            for (final String page_temp_str : pages) {
+                final short page_temp = Short.parseShort(page_temp_str);
+                if (page_temp > numberOfPages) {
+                    numberOfPages = page_temp;
+                }
+            }
+        }
         final DecimalFormat df_page = numberOfPages > 999 ? new DecimalFormat("0000") : numberOfPages > 99 ? new DecimalFormat("000") : new DecimalFormat("00");
         // We load each page and retrieve the URL of the picture
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
-        int skippedPics = 0;
+        // int skippedPics = 0;
         br.addAllowedResponseCodes(503);
         for (int i = 1; i <= numberOfPages; i++) {
-            if (i != 1) {
-                br.getPage(i + ".html");
-                if (br.getRequest().getHttpConnection().getResponseCode() == 503) {
-                    sleep(2000, parameter);
-                    br.getPage(i + ".html");
-                }
-            }
+            // if (i != 1) {
+            // br.getPage(i + ".html");
+            // if (br.getRequest().getHttpConnection().getResponseCode() == 503) {
+            // sleep(2000, parameter);
+            // br.getPage(i + ".html");
+            // }
+            // }
             if (isAbort()) {
                 break;
             }
-            final String[] unformattedSource = br.getRegex("onclick=\"return enlarge\\(\\);?\">\\s*<img src=\"(https?://[^\"]+(\\.[a-z]+)+(?:\\?token=(?:[a-f0-9]{32}|[a-f0-9]{40})&ttl=\\d+)?)\"").getRow(0);
-            if (unformattedSource == null || unformattedSource.length == 0) {
-                skippedPics++;
-                if (skippedPics > 5) {
-                    logger.info("Too many links were skipped, stopping...");
-                    break;
-                }
-                continue;
-            }
-            String source = unformattedSource[0];
-            String extension = unformattedSource[1];
-            final DownloadLink link = createDownloadlink("directhttp://" + source);
+            // final String[] unformattedSource = br.getRegex("onclick=\"return enlarge\\(\\);?\">\\s*<img
+            // src=\"(https?://[^\"]+(\\.[a-z]+)+(?:\\?token=(?:[a-f0-9]{32}|[a-f0-9]{40})&ttl=\\d+)?)\"").getRow(0);
+            // if (unformattedSource == null || unformattedSource.length == 0) {
+            // skippedPics++;
+            // if (skippedPics > 5) {
+            // logger.info("Too many links were skipped, stopping...");
+            // break;
+            // }
+            // continue;
+            // }
+            // String source = unformattedSource[0];
+            // String extension = unformattedSource[1];
+            final String extension = ".jpg";
+            final String contentURL = url + "/" + i + ".html";
+            final DownloadLink link = createDownloadlink(contentURL);
             link.setFinalFileName(title + " – page " + df_page.format(i) + extension);
             link.setAvailable(true);
             fp.add(link);
