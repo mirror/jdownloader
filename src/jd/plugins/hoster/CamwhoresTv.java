@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -33,8 +35,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "camwhores.tv" }, urls = { "https?://(?:www\\.)?camwhoresdecrypted\\.tv/.+|https?://(?:www\\.)?camwhores(tv)?\\.(?:tv|video|biz|sc|io|adult|cc|co|org)/embed/\\d+" })
 public class CamwhoresTv extends PluginForHost {
@@ -110,7 +110,7 @@ public class CamwhoresTv extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         is_private_video = this.br.containsHTML("This video is a private");
-        String filename = getTitle(this.br, link.getDownloadURL());
+        String filename = getTitle(this.br, link.getPluginPatternMatcher());
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
@@ -294,11 +294,14 @@ public class CamwhoresTv extends PluginForHost {
     }
 
     public static String getTitle(final Browser br, final String url) {
-        String title = br.getRegex("<title>([^<>\"]*?)( / Embed Player)?</title>").getMatch(0);
-        if (title == null) {
-            title = new Regex(url, "/videos/\\d+/(.+)").getMatch(0);
-        }
-        return title;
+        // String title = br.getRegex("<title>(?:Watch Free )?([^<>\"]*?)( / Embed Player| Webcam Porn Video \\-
+        // CamWhores\\.TV)?</title>").getMatch(0);
+        // if (title == null) {
+        // /* Fallback to URL-title */
+        // title = new Regex(url, "/videos/\\d+/(.+)").getMatch(0);
+        // }
+        /* 2018-12-04: Website does not contain better titles than URL --> Always use title we find in our URLs */
+        return new Regex(url, "/videos/\\d+/([^/]+)").getMatch(0);
     }
 
     public static boolean isOffline(final Browser br) {
