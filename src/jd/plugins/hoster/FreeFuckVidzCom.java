@@ -34,7 +34,10 @@ public class FreeFuckVidzCom extends PluginForHost {
         super(wrapper);
     }
 
-    private String dllink = null;
+    private String        dllink                         = null;
+    private boolean       free_limit_reached             = false;
+    /* 2018-12-04: Disabled as this will cause 'limit reached' 401 errors! */
+    private final boolean availablestatus_check_filesize = false;
 
     @Override
     public String getAGBLink() {
@@ -44,6 +47,8 @@ public class FreeFuckVidzCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        dllink = null;
+        free_limit_reached = false;
         this.setBrowserExclusive();
         br.setCookiesExclusive(true);
         br.setFollowRedirects(true);
@@ -66,31 +71,37 @@ public class FreeFuckVidzCom extends PluginForHost {
                 break;
             }
         }
-        if (filename == null || dllink == null) {
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = Encoding.htmlDecode(dllink);
         filename = filename.trim();
-        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
+        final String ext = ".mp4";
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
-        Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br2.openGetConnection(dllink);
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            return AvailableStatus.TRUE;
-        } finally {
+        if (dllink != null && availablestatus_check_filesize) {
+            dllink = Encoding.htmlDecode(dllink);
+            Browser br2 = br.cloneBrowser();
+            // In case the link redirects to the finallink
+            br2.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (Throwable e) {
+                con = br2.openGetConnection(dllink);
+                if (con.getResponseCode() == 401) {
+                    free_limit_reached = true;
+                    return AvailableStatus.TRUE;
+                }
+                if (!con.getContentType().contains("html")) {
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     private void getLink(String quality) {
@@ -100,8 +111,17 @@ public class FreeFuckVidzCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (free_limit_reached) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+        } else if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 401) {
+                free_limit_reached = true;
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+            }
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

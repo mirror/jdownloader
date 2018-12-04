@@ -233,23 +233,23 @@ public class HellSpyCz extends PluginForHost {
                 /* No chunklimit for streams */
                 maxchunks = 0;
             } else {
-                final String url;
-                if (br.getURL() != null) {
-                    url = br.getURL();
-                } else {
-                    /* E.g. part downloads */
-                    url = link.getPluginPatternMatcher();
-                }
-                String filedownloadbutton;
-                if (url.contains("?")) {
-                    filedownloadbutton = url + "&";
-                } else {
-                    filedownloadbutton = url + "?";
-                }
+                final String filedownloadbutton;
                 if (isPartFile(link.getPluginPatternMatcher())) {
-                    filedownloadbutton += "download=1&iframe_view=popup+download_iframe_related_popup";
+                    final Regex urlRegex = new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/[^/]+/(\\d+).+relatedDownloadControl\\-(\\d+).*?\\-uri=([^=\\&]+)");
+                    final String idOfPart = urlRegex.getMatch(1);
+                    final String urlStringOfPart = urlRegex.getMatch(2);
+                    if (idOfPart == null || urlStringOfPart == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    filedownloadbutton = String.format("https://www.%s/%s/%s?download=1&iframe_view=popup+download_iframe_related_popup", this.getHost(), urlStringOfPart, idOfPart);
                 } else {
-                    filedownloadbutton += "download=1&iframe_view=popup+download_iframe_detail_popup";
+                    final Regex urlRegex = new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/([^/]+)/(\\d+)");
+                    final String urlStringOfMainPart = urlRegex.getMatch(0);
+                    final String idOfMainPart = urlRegex.getMatch(1);
+                    if (urlStringOfMainPart == null || idOfMainPart == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    filedownloadbutton = String.format("https://www.%s/%s/%s?download=1&iframe_view=popup+download_iframe_related_popup", this.getHost(), urlStringOfMainPart, idOfMainPart);
                 }
                 final URLConnectionAdapter con = openConnection(this.br, filedownloadbutton);
                 if (con.getContentType().contains("html")) {
