@@ -70,8 +70,8 @@ public class MonkifilesCom extends antiDDoSForHost {
     }
 
     /* Basic constants */
-    private final String                   mainpage                                     = "http://speed4up.com";
-    private final String                   domains                                      = "(speed4up\\.com)";
+    private final String                   mainpage                                     = "https://monkifiles.com";
+    private final String                   domains                                      = "(monkifiles\\.com)";
     private final String                   type                                         = "html";
     private static final int               wait_BETWEEN_DOWNLOADS_LIMIT_MINUTES_DEFAULT = 10;
     private static final int               additional_WAIT_SECONDS                      = 3;
@@ -564,11 +564,11 @@ public class MonkifilesCom extends antiDDoSForHost {
                         }
                     }
                 } else {
-                    getPage(this.getProtocol() + this.getHost() + "/login." + type);
-                    final String loginpostpage = loginstart + this.getHost() + "/ajax/_account_login.ajax.php";
+                    getPage(this.getProtocol() + this.getHost() + "/");
+                    final String loginpostpage = mainpage + "/ajax/_account_login.ajax.php";
                     br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-                    postPage(loginpostpage, "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                    postPageRaw(loginpostpage, "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                     if (!br.containsHTML("\"login_status\":\"success\"")) {
                         if ("de".equalsIgnoreCase(lang)) {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
