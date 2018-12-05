@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -32,7 +31,6 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xshare.com" }, urls = { "http://(www\\.)?xshare\\.com/video/[A-Za-z0-9\\-]+" })
 public class XShareCom extends PluginForHost {
-
     public XShareCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -84,7 +82,7 @@ public class XShareCom extends PluginForHost {
         }
         if (dllink == null) {
             br.getPage("http://xshare.com/playlist_flow_player_flv.php?vid=" + videoid);
-            dllink = br.getRegex("url=\"(http://[^<>\"]*?)\" type=\"video/").getMatch(0);
+            dllink = br.getRegex("url=\"([^<>\"]*?)\" type=\"video/").getMatch(0);
         }
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
