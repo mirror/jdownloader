@@ -19,6 +19,8 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Random;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser.BrowserException;
@@ -30,8 +32,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagefap.com" }, urls = { "https?://(www\\.)?imagefap\\.com/(gallery\\.php\\?p?gid=.+|gallery/.+|pictures/\\d+/.*|photo/\\d+|organizer/\\d+|(usergallery|showfavorites)\\.php\\?userid=\\d+(&folderid=-?\\d+)?)" })
 public class MgfpCm extends PluginForDecrypt {
@@ -166,7 +166,7 @@ public class MgfpCm extends PluginForDecrypt {
                     br.getPage(br.getRedirectLocation());
                 }
             }
-            if (br.getURL().contains("imagefap.com/404.php") || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Could not find gallery<")) {
+            if (br.getRedirectLocation().contains("imagefap.com/404.php") || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Could not find gallery<")) {
                 final DownloadLink link = createDownloadlink("https://imagefap.com/imagedecrypted/" + new Random().nextInt(1000000));
                 link.setFinalFileName(new Regex(parameter, "imagefap\\.com/(.+)").getMatch(0));
                 link.setAvailable(false);
