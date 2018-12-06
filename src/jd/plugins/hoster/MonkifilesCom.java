@@ -640,6 +640,12 @@ public class MonkifilesCom extends antiDDoSForHost {
         if (account.getType() == AccountType.FREE) {
             handleDownload(link, null, account_FREE_RESUME, account_FREE_MAXCHUNKS, "free_acc_directlink");
         } else {
+            br.setFollowRedirects(false);
+            br.getPage(link.getDownloadURL());
+            String dllink = br.getRedirectLocation();
+            if (dllink != null && dllink.contains("download_token")) {
+                link.setProperty("premium_acc_directlink", dllink);
+            }
             handleDownload(link, null, account_PREMIUM_RESUME, account_PREMIUM_MAXCHUNKS, "premium_acc_directlink");
         }
     }
