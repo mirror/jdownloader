@@ -13,12 +13,12 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -27,15 +27,12 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "frprn.com" }, urls = { "https?://(?:www\\.)?frprn\\.(?:com|xxx|es)/videos/\\d+/" })
-public class FrprnCom extends PluginForHost {
-
+public class FrprnCom extends antiDDoSForHost {
     public FrprnCom(PluginWrapper wrapper) {
         super(wrapper);
     }
-
     /* DEV NOTES */
     // Tags:
     // protocol: no https
@@ -47,7 +44,6 @@ public class FrprnCom extends PluginForHost {
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
     private boolean              server_issues     = false;
 
@@ -58,12 +54,12 @@ public class FrprnCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         dllink = null;
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -151,6 +147,16 @@ public class FrprnCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    @Override
+    protected void getPage(String page) throws Exception {
+        getPage(br, page);
+    }
+
+    @Override
+    protected void getPage(final Browser br, String page) throws Exception {
+        super.getPage(br, page);
     }
 
     @Override
