@@ -166,12 +166,16 @@ public class MgfpCm extends PluginForDecrypt {
                     br.getPage(br.getRedirectLocation());
                 }
             }
-            if (br.getRedirectLocation().contains("imagefap.com/404.php") || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Could not find gallery<")) {
+            if (br.getURL().contains("imagefap.com/404.php") || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Could not find gallery<")) {
                 final DownloadLink link = createDownloadlink("https://imagefap.com/imagedecrypted/" + new Random().nextInt(1000000));
                 link.setFinalFileName(new Regex(parameter, "imagefap\\.com/(.+)").getMatch(0));
                 link.setAvailable(false);
                 link.setProperty("offline", true);
                 decryptedLinks.add(link);
+                return decryptedLinks;
+            }
+            if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("imagefap.com/404.php")) {
+                decryptedLinks.add(createOfflinelink(parameter));
                 return decryptedLinks;
             }
             // First find all the information we need (name of the gallery, name of
