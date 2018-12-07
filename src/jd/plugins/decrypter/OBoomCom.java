@@ -13,8 +13,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "oboom.com" }, urls = { "https?://(www\\.)?oboom\\.com/(#share/[a-f0-9\\-]+|#?folder/[A-Z0-9]+)" }) public class OBoomCom extends antiDDoSForDecrypt {
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "oboom.com" }, urls = { "https?://(www\\.)?oboom\\.com/(#share/[a-f0-9\\-]+|#?folder/[A-Z0-9]+)" })
+public class OBoomCom extends antiDDoSForDecrypt {
     private final String APPID  = "43340D9C23";
     private final String wwwURL = "https://www.oboom.com/1.0/";
     private final String apiURL = "https://api.oboom.com/1/";
@@ -27,8 +27,8 @@ import jd.plugins.components.PluginJSonUtils;
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         getPage(wwwURL + "guestsession?source=" + APPID);
-        final String uid = new Regex(parameter.toString(), "(share|folder)/([A-Z0-9\\-]+)").getMatch(1);
-        String guestSession = br.getRegex("200,.*?\"(.*?)\"").getMatch(0);
+        final String uid = new Regex(parameter.getCryptedUrl(), "(share|folder)/([A-Z0-9\\-]+)").getMatch(1);
+        final String guestSession = br.getRegex("Session\\s*?:\\s*?\"([^\"]+)").getMatch(0);
         if (guestSession == null || uid == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -49,11 +49,9 @@ import jd.plugins.components.PluginJSonUtils;
             }
         } else if (parameter.toString().contains("folder/")) {
             getPage(apiURL + "ls?item=" + uid + "&token=" + guestSession);
-            if (br.getHttpConnection().getResponseCode() == 404) {
-                final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            if (br.getHttpConnection().getResponseCode() == 404 || br.toString().startsWith("[404")) {
+                final DownloadLink offline = this.createOfflinelink(parameter.getCryptedUrl());
                 offline.setFinalFileName(uid);
-                offline.setAvailable(false);
-                offline.setProperty("offline", true);
                 decryptedLinks.add(offline);
                 return decryptedLinks;
             }
@@ -96,6 +94,13 @@ import jd.plugins.components.PluginJSonUtils;
                     }
                 }
             }
+            if (decryptedLinks.size() == 0) {
+                logger.info("Empty folder");
+                final DownloadLink offline = this.createOfflinelink(parameter.getCryptedUrl());
+                offline.setFinalFileName(uid);
+                decryptedLinks.add(offline);
+                return decryptedLinks;
+            }
         }
         if (name != null) {
             FilePackage fp = FilePackage.getInstance();
@@ -104,5 +109,4 @@ import jd.plugins.components.PluginJSonUtils;
         }
         return decryptedLinks;
     }
-
 }

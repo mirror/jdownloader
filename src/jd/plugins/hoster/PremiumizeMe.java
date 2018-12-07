@@ -15,7 +15,6 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,10 +25,8 @@ import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetConfigPanel;
@@ -138,7 +135,7 @@ public class PremiumizeMe extends UseNet {
 
     @Override
     public AccountBuilderInterface getAccountFactory(InputChangedCallbackInterface callback) {
-        return new PremiumizeMeAccountFactory(callback);
+        return new PremiumizeAccountFactory(callback);
     }
 
     @Override
@@ -288,13 +285,12 @@ public class PremiumizeMe extends UseNet {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    public static class PremiumizeMeAccountFactory extends MigPanel implements AccountBuilderInterface {
+    public static class PremiumizeAccountFactory extends MigPanel implements AccountBuilderInterface {
         /**
          *
          */
         private static final long serialVersionUID = 1L;
-        private final String      IDHELP           = "Enter your account id (9 digits)";
-        private final String      PINHELP          = "Enter your pin";
+        private final String      PINHELP          = "Enter your Apikey";
 
         private String getPassword() {
             if (this.pass == null) {
@@ -319,31 +315,14 @@ public class PremiumizeMe extends UseNet {
             return changed;
         }
 
-        private String getUsername() {
-            if (IDHELP.equals(this.name.getText())) {
-                return null;
-            }
-            return this.name.getText();
-        }
-
-        private final ExtTextField     name;
         private final ExtPasswordField pass;
         private static String          EMPTYPW = "                 ";
-        private final JLabel           idLabel;
 
-        public PremiumizeMeAccountFactory(final InputChangedCallbackInterface callback) {
+        public PremiumizeAccountFactory(final InputChangedCallbackInterface callback) {
             super("ins 0, wrap 2", "[][grow,fill]", "");
-            add(new JLabel(_GUI.T.premiumize_add_account_click_here()));
-            add(new JLink(getProtocol() + "www.premiumize.me/account"));
-            add(idLabel = new JLabel(_GUI.T.premiumize_add_account_idlabel()));
-            add(this.name = new ExtTextField() {
-                @Override
-                public void onChanged() {
-                    callback.onChangedInput(this);
-                }
-            });
-            name.setHelpText(IDHELP);
-            add(new JLabel("PIN:"));
+            add(new JLabel("Click here to find your API-Key / PIN:"));
+            add(new JLink("https://www.premiumize.me/account"));
+            add(new JLabel("API-Key / PIN:"));
             add(this.pass = new ExtPasswordField() {
                 @Override
                 public void onChanged() {
@@ -361,25 +340,25 @@ public class PremiumizeMe extends UseNet {
         @Override
         public void setAccount(Account defaultAccount) {
             if (defaultAccount != null) {
-                name.setText(defaultAccount.getUser());
+                // name.setText(defaultAccount.getUser());
                 pass.setText(defaultAccount.getPass());
             }
         }
 
         @Override
         public boolean validateInputs() {
-            final String userName = getUsername();
-            if (userName == null || !userName.trim().matches("^\\d{9}$")) {
-                idLabel.setForeground(Color.RED);
-                return false;
-            }
-            idLabel.setForeground(Color.BLACK);
+            // final String userName = getUsername();
+            // if (userName == null || !userName.trim().matches("^\\d{9}$")) {
+            // idLabel.setForeground(Color.RED);
+            // return false;
+            // }
+            // idLabel.setForeground(Color.BLACK);
             return getPassword() != null;
         }
 
         @Override
         public Account getAccount() {
-            return new Account(getUsername(), getPassword());
+            return new Account(null, getPassword());
         }
     }
 }

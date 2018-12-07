@@ -40,7 +40,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
 //xvideos.com by pspzockerscene
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xvideos.com" }, urls = { "https?://(?:www\\.|\\w+\\.)?xvideos\\.com/(video\\d+/|embedframe/\\d+|[a-z0-9\\-]+/(upload|pornstar)/[a-z0-9\\-_]+/\\d+/(\\d+)?)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xvideos.com" }, urls = { "https?://(?:www\\.|\\w+\\.)?xvideos\\.com/(video\\d+/|embedframe/\\d+|[a-z0-9\\-]+/(upload|pornstar|model)/[a-z0-9\\-_]+/\\d+/(\\d+)?)" })
 public class XvideosCom extends PluginForHost {
     public XvideosCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -74,7 +74,7 @@ public class XvideosCom extends PluginForHost {
     public String getLinkID(final DownloadLink link) {
         String linkid = new Regex(link.getPluginPatternMatcher(), "(?:video|embedframe/)(\\d+)").getMatch(0);
         if (linkid == null) {
-            linkid = new Regex(link.getPluginPatternMatcher(), "(?:upload|pornstar)/[a-z0-9\\-_]+/(\\d+)").getMatch(0);
+            linkid = new Regex(link.getPluginPatternMatcher(), "[^/]+/[a-z0-9\\-_]+/(\\d+)$").getMatch(0);
         }
         if (linkid != null) {
             return linkid;
