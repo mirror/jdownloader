@@ -22,6 +22,9 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Random;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -32,11 +35,10 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cloud.mail.ru" }, urls = { "https?://(?:www\\.)?cloud\\.mail\\.ru((?:/|%2F)public(?:/|%2F)[a-z0-9]+(?:/|%2F)[^<>\"]+|(?:/|%2F)(?:files(?:/|%2F))?[A-Z0-9]{32})" })
 public class CloudMailRuDecrypter extends PluginForDecrypt {
@@ -157,9 +159,9 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
                 /* Cut that */
                 weblink = new Regex(weblink, "([^<>\"]*?)/[^<>\"/]+").getMatch(0);
                 final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
-                if (filesize == 0 || item_name == null) {
+                if (item_name == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 String unique_id;
                 if (id.contains(item_name)) {
