@@ -22,11 +22,13 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -52,6 +54,10 @@ public class BbcComDecrypter extends PluginForDecrypt {
             /* Content is online but not streamable at the moment */
             decryptedLinks.add(this.createOfflinelink(parameter, "This programme is not currently available on BBC iPlayer"));
             return decryptedLinks;
+        }
+        String url_name = null;
+        if (decryptedLinks.size() == 0 && parameter.matches(".+/video/[^/]+/.+")) {
+            url_name = new Regex(parameter, "/video/[^/]+/(.+)").getMatch(0);
         }
         String fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         String[] jsons = this.br.getRegex("data\\-playable=\"(.*?)\">").getColumn(0);
@@ -87,6 +93,11 @@ public class BbcComDecrypter extends PluginForDecrypt {
             /* Type 7 - Radio */
             /* 2018-11-15 */
             jsons = this.br.getRegex("window\\.__PRELOADED_STATE__ = (\\{.*?\\});").getColumn(0);
+        }
+        if (jsons == null || jsons.length == 0) {
+            /* Type 8 */
+            /* 2018-12-07 */
+            jsons = this.br.getRegex("<script id=\"initial\\-data\" type=\"text/plain\" data\\-json=\\'([^<>\"\\']+)\\'").getColumn(0);
         }
         if (jsons == null) {
             logger.info("Failed to find any playable content");
@@ -163,6 +174,10 @@ public class BbcComDecrypter extends PluginForDecrypt {
                 description = (String) JavaScriptEngineFactory.walkJson(entries, "titles/secondary");
                 tv_brand = (String) JavaScriptEngineFactory.walkJson(entries, "network/id");
                 date = (String) JavaScriptEngineFactory.walkJson(entries, "availability/from");
+            } else if (entries.containsKey("initData")) {
+                /* Type 8 */
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "initData/items/{0}/smpData/items/{0}");
+                vpid = (String) entries.get("versionID");
             } else {
                 /* Type 1 */
                 Object sourcemapo = JavaScriptEngineFactory.walkJson(entries, "settings/playlistObject");
@@ -180,26 +195,32 @@ public class BbcComDecrypter extends PluginForDecrypt {
                 entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "items/{0}");
                 vpid = (String) entries.get("vpid");
             }
-            if (inValidate(title) || inValidate(vpid)) {
+            if (inValidate(title)) {
+                /* Last chance */
+                title = url_name;
+            }
+            if (inValidate(vpid)) {
                 continue;
             }
-            if (inValidate(tv_brand)) {
-                tv_brand = "bbc";
+            final DownloadLink dl = generateDownloadlink(vpid);
+            String filename_plain = null;
+            if (!inValidate(title)) {
+                filename_plain = "";
+                if (inValidate(tv_brand)) {
+                    tv_brand = "bbc";
+                }
+                date_formatted = formatDate(date);
+                if (date_formatted != null) {
+                    filename_plain = date_formatted + "_";
+                }
+                filename_plain += tv_brand + "_";
+                filename_plain += title + "_";
+                if (subtitle != null) {
+                    filename_plain += " - " + subtitle;
+                }
+                dl.setName(filename_plain + ".mp4");
+                dl.setProperty("decrypterfilename", filename_plain);
             }
-            date_formatted = formatDate(date);
-            String filename_plain = "";
-            if (date_formatted != null) {
-                filename_plain = date_formatted + "_";
-            }
-            filename_plain += tv_brand + "_";
-            filename_plain += title + "_";
-            if (subtitle != null) {
-                filename_plain += " - " + subtitle;
-            }
-            final DownloadLink dl = createDownloadlink("http://bbcdecrypted/" + vpid);
-            dl.setLinkID(vpid);
-            dl.setName(filename_plain + ".mp4");
-            dl.setProperty("decrypterfilename", filename_plain);
             dl.setContentUrl(parameter);
             if (!inValidate(description)) {
                 dl.setComment(description);
@@ -223,6 +244,13 @@ public class BbcComDecrypter extends PluginForDecrypt {
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
+    }
+
+    private DownloadLink generateDownloadlink(final String videoid) {
+        final DownloadLink dl = createDownloadlink("http://bbcdecrypted/" + videoid);
+        dl.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+        dl.setLinkID(videoid);
+        return dl;
     }
 
     public static String formatDate(final String input) {
