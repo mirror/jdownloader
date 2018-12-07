@@ -486,11 +486,6 @@ public class FileBoomMe extends K2SApi {
     }
 
     @Override
-    protected boolean useRUA() {
-        return false;
-    }
-
-    @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         if (account.getUser() == null || !account.getUser().contains("@")) {

@@ -45,7 +45,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-import jd.plugins.components.UserAgents;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.simplejson.JSonUtils;
@@ -181,10 +180,6 @@ public abstract class K2SApi extends PluginForHost {
         return getPluginConfig().getBooleanProperty(getUseAPIPropertyID(), isUseAPIDefaultEnabled());
     }
 
-    protected boolean useRUA() {
-        return true;
-    }
-
     protected String getApiUrl() {
         return getProtocol() + getDomain() + "/api/v2";
     }
@@ -245,12 +240,7 @@ public abstract class K2SApi extends PluginForHost {
                 }
             }
         }
-        if (useRUA()) {
-            if (agent.get() == null) {
-                agent.set(UserAgents.stringUserAgent());
-            }
-            prepBr.getHeaders().put("User-Agent", agent.get());
-        }
+        prepBr.getHeaders().put("User-Agent", "JDownloader." + getVersion());
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         prepBr.getHeaders().put("Accept-Charset", null);
         // prepBr.getHeaders().put("Cache-Control", null);
@@ -556,7 +546,8 @@ public abstract class K2SApi extends PluginForHost {
         final String custom_referer = this.getPluginConfig().getStringProperty(CUSTOM_REFERER, null);
         if (!inValidate(custom_referer)) {
             /* Specified Referer + User-Agent gives us 150 KB/s in free mode vs ~50 KB/s without that. */
-            br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:47.0) Gecko/20100101 Firefox/47.0");
+            // br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:47.0) Gecko/20100101 Firefox/47.0");
+            br.getHeaders().put("User-Agent", "JDownloader." + getVersion());
             br.getHeaders().put("Referer", custom_referer);
         }
         return br;
