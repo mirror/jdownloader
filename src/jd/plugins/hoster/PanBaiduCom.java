@@ -72,6 +72,7 @@ public class PanBaiduCom extends PluginForHost {
     private static AtomicInteger totalMaxSimultanFreeDownload               = new AtomicInteger(FREE_MAXDOWNLOADS);
     // don't touch the following!
     private static AtomicInteger maxFree                                    = new AtomicInteger(1);
+    private boolean              accountOnly                                = true;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
@@ -192,7 +193,7 @@ public class PanBaiduCom extends PluginForHost {
                 tsamp = br.getRegex("\"timestamp\":(\\d+)").getMatch(0);
             }
             if (sign == null || tsamp == null) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "File only downloadable via account or only via the pan.baidu.com App/Downloadmanager");
+                throw new AccountRequiredException();
             }
             Browser br2 = prepAjax(br.cloneBrowser());
             try {
@@ -267,9 +268,11 @@ public class PanBaiduCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error_dllink", 5 * 60 * 1000l);
             }
             DLLINK = PluginJSonUtils.getJsonValue(br2, "dlink");
-            if (DLLINK == null) {
-                /* 2018-11-08: Same behavior in browser: No downloadlink after captcha --> Account required */
+            if (DLLINK == null && accountOnly) {
+                /* DLLINK null and not logged in but download is only possible via account */
                 throw new AccountRequiredException();
+            } else if (DLLINK == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         br.setFollowRedirects(true);
@@ -282,7 +285,9 @@ public class PanBaiduCom extends PluginForHost {
         br.getHeaders().put("Accept-Encoding", "identity");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, FREE_RESUME, maxchunks);
         if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getResponseCode() == 403) {
-            if (dl.getConnection().getResponseCode() == 403) {
+            if (dl.getConnection().getResponseCode() == 403 && accountOnly) {
+                throw new AccountRequiredException();
+            } else if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);

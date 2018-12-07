@@ -13,13 +13,17 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -41,14 +45,8 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "birdload.com" }, urls = { "https?://(?:www\\.)?birdload\\.com/[A-Za-z0-9]+" })
 public class BirdloadCom extends PluginForHost {
-
     public BirdloadCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(mainpage + "/upgrade." + type);
@@ -63,21 +61,20 @@ public class BirdloadCom extends PluginForHost {
      * captchatype: null<br />
      * other: alternative linkcheck#2: statistics URL: host.tld/<fid>~s<br />
      */
-
     @Override
     public String getAGBLink() {
         return mainpage + "/terms." + type;
     }
 
     /* Basic constants */
-    private final String                   mainpage                                     = "http://birdload.com";
+    private final String                   mainpage                                     = "https://birdload.com";
     private final String                   domains                                      = "(birdload\\.com)";
     private final String                   type                                         = "html";
     private static final int               wait_BETWEEN_DOWNLOADS_LIMIT_MINUTES_DEFAULT = 10;
     private static final int               additional_WAIT_SECONDS                      = 3;
     private static final int               directlinkfound_WAIT_SECONDS                 = 10;
-    private static final boolean           supportshttps                                = false;
-    private static final boolean           supportshttps_FORCED                         = false;
+    private static final boolean           supportshttps                                = true;
+    private static final boolean           supportshttps_FORCED                         = true;
     /* In case there is no information when accessing the main link */
     private static final boolean           available_CHECK_OVER_INFO_PAGE               = true;
     private static final boolean           useOldLoginMethod                            = false;
@@ -94,7 +91,6 @@ public class BirdloadCom extends PluginForHost {
     private static final String            errortext_ERROR_SERVER                       = "Server error";
     private static final String            errortext_ERROR_PREMIUMONLY                  = "This file can only be downloaded by premium (or registered) users";
     private static final String            errortext_ERROR_SIMULTANDLSLIMIT             = "Max. simultan downloads limit reached, wait to start more downloads from this host";
-
     /* Connection stuff */
     private static final boolean           free_RESUME                                  = true;
     private static final int               free_MAXCHUNKS                               = 1;
@@ -105,7 +101,6 @@ public class BirdloadCom extends PluginForHost {
     private static final boolean           account_PREMIUM_RESUME                       = true;
     private static final int               account_PREMIUM_MAXCHUNKS                    = 1;
     private static final int               account_PREMIUM_MAXDOWNLOADS                 = 1;
-
     private static AtomicReference<String> agent                                        = new AtomicReference<String>(null);
 
     @SuppressWarnings("deprecation")
@@ -467,7 +462,7 @@ public class BirdloadCom extends PluginForHost {
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
      * @author raztoki
-     * */
+     */
     private boolean inValidate(final String s) {
         if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
             return true;
@@ -651,5 +646,4 @@ public class BirdloadCom extends PluginForHost {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.MFScripts_YetiShare;
     }
-
 }

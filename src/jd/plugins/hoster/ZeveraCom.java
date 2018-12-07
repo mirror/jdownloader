@@ -194,7 +194,6 @@ public class ZeveraCom extends UseNet {
             final String contenttype = dl.getConnection().getContentType();
             if (contenttype.contains("html")) {
                 br.followConnection();
-                updatestatuscode();
                 handleAPIErrors(this.br);
                 mhm.handleErrorGeneric(account, link, "unknowndlerror", 2, 5 * 60 * 1000l);
             }
@@ -212,7 +211,6 @@ public class ZeveraCom extends UseNet {
             final String contenttype = dl.getConnection().getContentType();
             if (contenttype.contains("html")) {
                 br.followConnection();
-                // updatestatuscode();
                 // handleAPIErrors(this.br);
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
             }
@@ -271,6 +269,7 @@ public class ZeveraCom extends UseNet {
     public static AccountInfo fetchAccountInfoAPI(final PluginForHost hostPlugin, final Browser br, final String client_id, final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(br, account, true, client_id);
+        /* 2018-12-07: Rare serverside issue returns bad values e.g.: "limit_used":9.3966473825276e-5 */
         final String fair_use_used_str = PluginJSonUtils.getJson(br, "limit_used");
         final String premium_until_str = PluginJSonUtils.getJson(br, "premium_until");
         if (StringUtils.equalsIgnoreCase("false", premium_until_str)) {
@@ -283,16 +282,21 @@ public class ZeveraCom extends UseNet {
                 if (!StringUtils.isEmpty(fair_use_used_str)) {
                     final double d = Double.parseDouble(fair_use_used_str);
                     final int fairUsagePercent = (int) (d * 100.0);
-                    ai.setStatus("Premium | Fair usage:" + fairUsagePercent + "%");
-                    if (fairUsagePercent >= 100) {
+                    if (fairUsagePercent > 200) {
+                        /* Workaround for serverside issue returning e.g. 800% */
+                        ai.setUnlimitedTraffic();
+                        ai.setStatus("Premium | Fair usage: unknown");
+                    } else if (fairUsagePercent >= 100) {
                         /* Fair use limit reached --> No traffic left, no downloads possible at the moment */
                         ai.setTrafficLeft(0);
+                        ai.setStatus("Premium | Fair usage: " + fairUsagePercent + "% (limit reached)");
                     } else {
                         ai.setUnlimitedTraffic();
+                        ai.setStatus("Premium | Fair usage:" + fairUsagePercent + "%");
                     }
                 } else {
                     /* This should never happen */
-                    ai.setStatus("Premium | Fair usage unknown");
+                    ai.setStatus("Premium | Fair usage: unknown");
                     ai.setUnlimitedTraffic();
                 }
                 ai.setValidUntil(premium_until);
@@ -336,7 +340,7 @@ public class ZeveraCom extends UseNet {
         br.getPage("https://www." + account.getHoster() + "/api/account/info?client_id=" + clientID + "&pin=" + Encoding.urlEncode(account.getPass()));
         final String status = PluginJSonUtils.getJson(br, "status");
         if (!"success".equalsIgnoreCase(status)) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Apikey invalid! Make sure you entered your current Apikey which can be found here: " + account.getHoster() + "/account", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "API-Key / PIN invalid! Make sure you entered your current API-Key / PIN which can be found here: " + account.getHoster() + "/account", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
     }
 
@@ -345,7 +349,7 @@ public class ZeveraCom extends UseNet {
          *
          */
         private static final long serialVersionUID = 1L;
-        private final String      PINHELP          = "Enter your Apikey";
+        private final String      PINHELP          = "Enter your API-Key / PIN";
 
         private String getPassword() {
             if (this.pass == null) {
@@ -375,9 +379,9 @@ public class ZeveraCom extends UseNet {
 
         public ZeveraComAccountFactory(final InputChangedCallbackInterface callback) {
             super("ins 0, wrap 2", "[][grow,fill]", "");
-            add(new JLabel("Click here to find your Apikey:"));
+            add(new JLabel("Click here to find your API-Key / PIN:"));
             add(new JLink("https://www.zevera.com/account"));
-            add(new JLabel("Apikey:"));
+            add(new JLabel("API-Key / PIN:"));
             add(this.pass = new ExtPasswordField() {
                 @Override
                 public void onChanged() {
@@ -415,10 +419,6 @@ public class ZeveraCom extends UseNet {
         public Account getAccount() {
             return new Account(null, getPassword());
         }
-    }
-
-    /** Keep this for possible future API implementation */
-    private void updatestatuscode() {
     }
 
     /** Keep this for possible future API implementation */

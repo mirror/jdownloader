@@ -13,8 +13,10 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -25,12 +27,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploader.jp" }, urls = { "http://(www\\.)?ux\\.getuploader\\.com/[a-z0-9\\-_]+/download/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploader.jp" }, urls = { "https?://(www\\.)?ux\\.getuploader\\.com/[a-z0-9\\-_]+/download/\\d+" })
 public class UploaderJp extends antiDDoSForHost {
-
     public UploaderJp(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -66,6 +64,10 @@ public class UploaderJp extends antiDDoSForHost {
         }
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
+        final String md5 = br.getRegex("MD5</label>\\s*?<input[^<>]+value=\"([a-f0-9]{32})\"").getMatch(0);
+        if (md5 != null) {
+            link.setMD5Hash(md5);
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -97,10 +99,6 @@ public class UploaderJp extends antiDDoSForHost {
             // standard download
             submitForm(form);
         }
-        final String md5 = br.getRegex("MD5\\s*\\|?\\s*([a-f0-9]{32})").getMatch(0);
-        if (md5 != null) {
-            downloadLink.setMD5Hash(md5);
-        }
         String dllink = br.getRegex("\"(https?://d(?:ownload|l)\\d+\\.getuploader\\.com/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -131,5 +129,4 @@ public class UploaderJp extends antiDDoSForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }
