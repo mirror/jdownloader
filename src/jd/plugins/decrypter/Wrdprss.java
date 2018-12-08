@@ -79,6 +79,17 @@ public class Wrdprss extends antiDDoSForDecrypt {
         if (password != null) {
             link_passwds.add(password.trim());
         }
+        if (parameter.matches(".+watchseries-online.be.+")) {
+            if (br.getRedirectLocation() != null) {
+                br.followRedirect();
+            }
+            final String BaseURL = new Regex(br.getBaseURL(), "(https?://[^/]+)/").getMatch(0);
+            final String[] lnks = br.getRegex("href=\"([^\"]+)\">Play<").getColumn(0);
+            for (final String link : lnks) {
+                decryptedLinks.add(createDownloadlink(BaseURL + link));
+            }
+            return decryptedLinks;
+        }
         /* Alle Parts suchen */
         final String[] links = br.getRegex(Pattern.compile("href=.*?((?:(?:https?|ftp):)?//[^\"']{2,}|(&#x[a-f0-9]{2};)+)", Pattern.CASE_INSENSITIVE)).getColumn(0);
         final HashSet<String> dupe = new HashSet<String>();
