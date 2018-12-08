@@ -25,6 +25,12 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -45,12 +51,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uptobox.com" }, urls = { "https?://(?:www\\.)?uptobox\\.com/[a-z0-9]{12}" })
 public class UpToBoxCom extends antiDDoSForHost {
@@ -178,6 +178,9 @@ public class UpToBoxCom extends antiDDoSForHost {
                     filename = new Regex(correctedBR, "Download File:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
                     if (filename == null) {
                         filename = new Regex(correctedBR, ">([^\r\n]+) \\(\\d+(\\.\\d+)? [A-Z]{2,}\\)<").getMatch(0);
+                        if (filename == null) {
+                            filename = new Regex(correctedBR, "<title>(.*?)</title>").getMatch(0);
+                        }
                     }
                 }
             }
@@ -194,7 +197,7 @@ public class UpToBoxCom extends antiDDoSForHost {
             filesize = new Regex(correctedBR, "para_title\">.*?\\(([\\d\\.]+ ?(KB|MB|GB|B))\\)<").getMatch(0);
         }
         if (filesize == null) {
-            filesize = new Regex(correctedBR, "\\(([\\d\\.]+ ?(KB|MB|GB))\\)").getMatch(0);
+            filesize = new Regex(correctedBR, "\\(([\\d\\.]+ ?(K|M|G)?B)\\)").getMatch(0);
         }
         if (filesize == null) {
             filesize = new Regex(correctedBR, "([\\d\\.]+ ?(KB|MB|GB))").getMatch(0);
