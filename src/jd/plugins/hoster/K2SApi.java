@@ -547,9 +547,9 @@ public abstract class K2SApi extends PluginForHost {
         if (!inValidate(custom_referer)) {
             /* Specified Referer + User-Agent gives us 150 KB/s in free mode vs ~50 KB/s without that. */
             // br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:47.0) Gecko/20100101 Firefox/47.0");
-            br.getHeaders().put("User-Agent", "JDownloader." + getVersion());
             br.getHeaders().put("Referer", custom_referer);
         }
+        br.getHeaders().put("User-Agent", "JDownloader." + getVersion());
         return br;
     }
 
