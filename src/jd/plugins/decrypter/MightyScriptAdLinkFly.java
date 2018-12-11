@@ -341,8 +341,8 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
         final String captchaTypeStr = getAppVarsResult("captcha_type");
         if (StringUtils.isEmpty(captchaTypeStr)) {
             /* 2018-12-11: Special case e.g. linkdrop.net */
-            final String reCaptchaV1Key = getAppVarsResult("reCAPTCHA_site_key");
-            if (reCaptchaV1Key != null) {
+            final String reCaptchaV2Key = getAppVarsResult("reCAPTCHA_site_key");
+            if (reCaptchaV2Key != null) {
                 return CaptchaType.reCaptchaV2;
             }
             /* No captcha or plugin broken */
