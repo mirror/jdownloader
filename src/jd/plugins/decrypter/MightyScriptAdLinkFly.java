@@ -59,7 +59,7 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
             /** adshort.co domains */
             "adshort.co", "adsrt.com", "adshort.me", "adshort.im" };
     /** List of services for which waittime is NOT skippable. */
-    private static final List<String> domains_waittime_enforced = Arrays.asList(new String[] { "adbilty.me", "tmearn.com" });
+    private static final List<String> domains_waittime_enforced = Arrays.asList(new String[] { "adbilty.me", "tmearn.com", "linkdrop.net" });
 
     /**
      * returns the annotation pattern array
@@ -113,10 +113,21 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
 
     private String appVars = null;
 
+    private String correctURL(final String input) {
+        final String output;
+        if (input.contains("linkdrop.net")) {
+            /* 2018-12-11: Their https is broken */
+            output = input.replace("https://", "http://");
+        } else {
+            output = input;
+        }
+        return output;
+    }
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         br = new Browser();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        final String parameter = correctURL(param.toString());
         final String source_host = Browser.getHost(parameter);
         br.setFollowRedirects(false);
         getPage(parameter);
@@ -266,6 +277,7 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                 br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+                br.getHeaders().put("Origin", "https://" + br.getHost());
                 if (!skipWait) {
                     String waitStr = br.getRegex(">Please Wait (\\d+)s<").getMatch(0);
                     int wait = 10;

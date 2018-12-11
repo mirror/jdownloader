@@ -6,6 +6,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Hash;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.requests.PostRequest;
@@ -19,14 +27,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Hash;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linkifier.com" }, urls = { "" })
 public class LinkifierCom extends PluginForHost {
@@ -174,7 +174,11 @@ public class LinkifierCom extends PluginForHost {
                         logger.log(e);
                     }
                     String errorMessage = new Regex(br.getRequest().getUrl(), "\\!%20Error%20Code:([^\\&]+)").getMatch(0);
-                    String ErrDesc = UrlQuery.parse(br.getRequest().getUrl()).getDecoded("ErrDesc");
+                    String errDesc = "Unknown error";
+                    try {
+                        errDesc = UrlQuery.parse(br.getRequest().getUrl()).getDecoded("ErrDesc");
+                    } catch (final Throwable e) {
+                    }
                     if (dl.getConnection().getResponseCode() == 500 && br.containsHTML("<title>[^<]*Error[^<]*</title>")) {
                         // throw new PluginException(LinkStatus.ERROR_RETRY, ErrDesc == null ? "Server Error" : ErrDesc,
                         // PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
@@ -198,9 +202,10 @@ public class LinkifierCom extends PluginForHost {
                             waitTime = 30;
                             break;
                         default:
-                            throw new PluginException(LinkStatus.ERROR_FATAL, ErrDesc == null ? "Server Error" : ErrDesc);
+                            waitTime = 3;
+                            break;
                         }
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, ErrDesc == null ? "Server Error" : ErrDesc, waitTime * 60 * 1000l + 1);
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errDesc == null ? "Server Error" : errDesc, waitTime * 60 * 1000l + 1);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }

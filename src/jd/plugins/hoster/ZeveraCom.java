@@ -306,6 +306,7 @@ public class ZeveraCom extends UseNet {
                 ai.setTrafficLeft(0);
             }
         }
+        account.setMaxSimultanDownloads(-1);
         br.getPage("/api/services/list?client_id=" + client_id + "&pin=" + Encoding.urlEncode(account.getPass()));
         final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         // final ArrayList<String> supportedHosts = new ArrayList<String>();
