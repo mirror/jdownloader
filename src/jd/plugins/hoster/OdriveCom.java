@@ -16,8 +16,11 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -31,9 +34,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "odrive.com" }, urls = { "https?://(?:www\\.)?odrive\\.com/s/[a-f0-9\\-]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "odrive.com" }, urls = { "http://odrivedecrypted/.+" })
 public class OdriveCom extends PluginForHost {
     public OdriveCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -54,30 +56,25 @@ public class OdriveCom extends PluginForHost {
         }
     }
 
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
+    public static Browser prepBR(final Browser br) {
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
         br.getHeaders().put("x-requested-with", "XMLHttpRequest");
         br.setAllowedResponseCodes(new int[400]);
-        // br.getPage("https://www.odrive.com/rest/weblink/get_metadata?weblinkUri=%2F" + this.getLinkID(link));
-        /*
-         * 2018-11-08: Folders and password protected urls are unsupported so far - it would easily be possible to add support but I was not
-         * able to share whole folders
-         */
-        br.getPage("https://www.odrive.com/rest/weblink/list_folder?weblinkUri=%2F" + this.getLinkID(link) + "&password=");
-        if (br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404) {
+        return br;
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        prepBR(this.br);
+        final String folderid = link.getStringProperty("folderid");
+        if (folderid == null) {
+            /* This should never happen */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = PluginJSonUtils.getJson(br, "name");
-        final String filesize = PluginJSonUtils.getJson(br, "size");
-        if (StringUtils.isEmpty(filename)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        link.setFinalFileName(filename);
-        /* Filesize is not always given */
-        if (filesize != null && filesize.matches("\\d+")) {
-            link.setDownloadSize(Long.parseLong(filesize));
+        br.getPage("https://www.odrive.com/rest/weblink/list_folder?weblinkUri=%2F" + folderid + "&password=");
+        if (jd.plugins.decrypter.OdriveCom.isOffline(br)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         return AvailableStatus.TRUE;
     }
@@ -87,7 +84,24 @@ public class OdriveCom extends PluginForHost {
         requestFileInformation(downloadLink);
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
-            dllink = PluginJSonUtils.getJson(br, "downloadUrl");
+            /* The hard way - find original json item which contains our downloadurl. */
+            final String targetFilename = downloadLink.getStringProperty("directfilename", null);
+            if (targetFilename == null) {
+                /* No way to find correct downloadurl --> This should never happen */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            entries = (LinkedHashMap<String, Object>) entries.get("data");
+            final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("items");
+            for (final Object fileO : ressourcelist) {
+                entries = (LinkedHashMap<String, Object>) fileO;
+                final String filenameTemp = (String) entries.get("name");
+                if (filenameTemp != null && filenameTemp.equals(targetFilename)) {
+                    logger.info("Found item");
+                    dllink = (String) entries.get("downloadUrl");
+                    break;
+                }
+            }
         }
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

@@ -22,6 +22,9 @@ import java.util.LinkedHashMap;
 import java.util.Random;
 import java.util.Set;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -38,9 +41,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "onedrive.live.com" }, urls = { "https?://([a-zA-Z0-9\\-]+\\.)?(onedrive\\.live\\.com/.+|skydrive\\.live\\.com/.+|(sdrv|1drv)\\.ms/[A-Za-z0-9&!=#\\.,-_]+)" })
 public class OneDriveLiveCom extends PluginForDecrypt {
     public OneDriveLiveCom(PluginWrapper wrapper) {
@@ -48,9 +48,9 @@ public class OneDriveLiveCom extends PluginForDecrypt {
     }
 
     private static final String TYPE_DRIVE_ALL               = "https?://(www\\.)?(onedrive\\.live\\.com/(redir)?\\?[A-Za-z0-9\\&\\!=#\\.,]+|skydrive\\.live\\.com/(\\?cid=[a-z0-9]+[A-Za-z0-9&!=#\\.,-_]+|redir\\.aspx\\?cid=[a-z0-9]+[A-Za-z0-9&!=#\\.,-_]+|redir\\?resid=[A-Za-z0-9&!=#\\.,-_]+))";
-    private static final String TYPE_ONEDRIVE_REDIRECT_RESID = "https?://(www\\.)?onedrive\\.live\\.com/redir\\?resid=[a-z0-9]+[A-Za-z0-9&!=#\\.,-_]+";
-    private static final String TYPE_SKYDRIVE_REDIRECT_RESID = "https?://(www\\.)?skydrive\\.live\\.com/redir\\?resid=[a-z0-9]+[A-Za-z0-9&!=#\\.,-_]+";
-    private static final String TYPE_ONEDRIVE_VIEW_RESID     = "https?://(www\\.)?onedrive\\.live\\.com/view\\.aspx\\?resid=.+";
+    private static final String TYPE_ONEDRIVE_REDIRECT_RESID = ".+/redir\\?resid=[A-Za-z0-9]+\\!\\d+.*?";
+    private static final String TYPE_SKYDRIVE_REDIRECT_RESID = ".+/redir\\?resid=[a-z0-9]+[A-Za-z0-9&!=#\\.,-_]+";
+    private static final String TYPE_ONEDRIVE_VIEW_RESID     = ".+/view\\.aspx\\?resid=.+";
     private static final String TYPE_SKYDRIVE_REDIRECT       = "https?://(www\\.)?skydrive\\.live\\.com/redir\\.aspx\\?cid=[a-z0-9]+[A-Za-z0-9&!=#\\.,-_]+";
     private static final String TYPE_SKYDRIVE_REDIRECT2      = "https?://cid-[0-9a-zA-Z]+\\.skydrive\\.live\\.com/(redir|self)\\.aspx.+";
     private static final String TYPE_SKYDRIVE_SHORT          = "https?://(www\\.)?(1|s)drv\\.ms/[A-Za-z0-9&!=#\\.,-_]+";
@@ -110,7 +110,10 @@ public class OneDriveLiveCom extends PluginForDecrypt {
             } else if (parameter.matches(TYPE_SKYDRIVE_SHORT)) {
                 br.getPage(parameter);
                 String redirect = br.getRedirectLocation();
-                if (redirect == null) {
+                if (br.getHttpConnection().getResponseCode() == 404) {
+                    decryptedLinks.add(this.createOfflinelink(parameter));
+                    return decryptedLinks;
+                } else if (redirect == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 redirect = Encoding.htmlDecode(redirect);
@@ -216,15 +219,22 @@ public class OneDriveLiveCom extends PluginForDecrypt {
                         distribute(link);
                     }
                 } else {
-                    entries = (LinkedHashMap<String, Object>) entries.get("folder");
-                    ressourcelist = (ArrayList) entries.get("children");
+                    if (ressourcelist == null && entries.containsKey("folder")) {
+                        entries = (LinkedHashMap<String, Object>) entries.get("folder");
+                        ressourcelist = (ArrayList) entries.get("children");
+                    }
                     if (fp == null) {
                         /* This should NEVER happen */
                         fp = FilePackage.getInstance();
                         fp.setName("onedrive.live.com content of user " + cid + " - folder - " + id);
                     }
                     /* Folder, maybe with subfolders */
-                    final long totalCount = JavaScriptEngineFactory.toLong(entries.get("totalCount"), 0);
+                    final long totalCount;
+                    if (entries.containsKey("")) {
+                        totalCount = JavaScriptEngineFactory.toLong(entries.get("totalCount"), 0);
+                    } else {
+                        totalCount = ressourcelist.size();
+                    }
                     final long childCount = JavaScriptEngineFactory.toLong(entries.get("childCount"), 0);
                     if (br.containsHTML("\"code\":154")) {
                         if (fp != null) {
@@ -256,13 +266,18 @@ public class OneDriveLiveCom extends PluginForDecrypt {
                     main.setProperty("plain_authkey", authkey);
                     for (final Object ressource : ressourcelist) {
                         final LinkedHashMap<String, Object> entry = (LinkedHashMap<String, Object>) ressource;
+                        final boolean isPlaceholder = entry.containsKey("isPlaceholder") ? ((Boolean) entry.get("isPlaceholder")).booleanValue() : false;
                         final long type = ((Number) entry.get("itemType")).longValue();
                         final String item_id = (String) entry.get("id");
                         final String creatorCid = (String) entry.get("creatorCid");
+                        if (isPlaceholder) {
+                            /* Skip 'dummy' items */
+                            continue;
+                        }
                         if (type == ITEM_TYPE_FOLDER) {
                             /* Folder --> Goes back into decrypter */
                             if (item_id == null || creatorCid == null) {
-                                logger.warning("Decrypter broken for link: " + parameter);
+                                /* Fatal failure */
                                 return null;
                             }
                             String folderlink = "https://onedrive.live.com/?cid=" + creatorCid + "&id=" + item_id;
