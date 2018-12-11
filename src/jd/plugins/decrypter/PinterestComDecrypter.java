@@ -22,6 +22,11 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -40,11 +45,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
-
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pinterest.com" }, urls = { "https?://(?:(?:www|[a-z]{2})\\.)?pinterest\\.(?:com|de|fr)/(pin/[A-Za-z0-9\\-_]+/|[^/]+/[^/]+/(?:[^/]+/)?)" })
 public class PinterestComDecrypter extends PluginForDecrypt {
@@ -395,6 +395,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
     }
 
     private void crawlBoardPINs(final Browser ajax, LinkedHashMap<String, Object> json_root, String json_source_for_crawl_process, final CryptedLink param) throws Exception {
+        final long max_pins_per_page_new = 20;
         numberof_pins_decrypted_via_current_function = 0;
         /* Find- and set PackageName */
         String fpName = br.getRegex("class=\"boardName\">([^<>]*?)<").getMatch(0);
@@ -423,12 +424,9 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             return;
         }
         final long number_of_decrypted_pins_in_sections = decryptedLinks.size();
-        long numberof_pins = Long.parseLong(numberof_pins_str.replace(".", ""));
+        long numberof_pins = numberof_pins_str != null ? Long.parseLong(numberof_pins_str.replace(".", "")) : 0;
         if (numberof_pins == 0 && number_of_decrypted_pins_in_sections == 0) {
             decryptedLinks.add(getOffline(parameter));
-            return;
-        } else if (numberof_pins == 0 && number_of_decrypted_pins_in_sections > 0) {
-            /* Do not add offline url in this case as we have found some PINs inside sections before */
             return;
         }
         if (number_of_decrypted_pins_in_sections > 0 && numberof_pins > number_of_decrypted_pins_in_sections) {
@@ -494,7 +492,13 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                                 logger.info("Failed to find nextbookmark for first round --> Cannot grab more items --> Stopping");
                                 break;
                             }
-                            getpage = "/resource/BoardFeedResource/get/?" + Encoding.urlEncode(source_url) + "%2F&data=%7B%22options%22%3A%7B%22board_id%22%3A%22" + board_id + "%22%2C%22page_size%22%3A" + max_entries_per_page_free + "%2C%22add_vase%22%3Atrue%2C%22bookmarks%22%3A%5B%22" + Encoding.urlEncode(nextbookmark) + "%3D%3D%22%5D%2C%22field_set_key%22%3A%22unauth_react%22%7D%2C%22context%22%3A%7B%7D%7D" + module + "&_=" + System.currentTimeMillis();
+                            /* 2018-12-11: New */
+                            if (i == 1) {
+                                /* First ajax request --> No "nextbookmark" value required */
+                                getpage = "/resource/BoardRelatedPixieFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22isPrefetch%22%3Afalse%2C%22board_id%22%3A%22" + board_id + "%22%2C%22add_vase%22%3Atrue%2C%22field_set_key%22%3A%22unauth_react%22%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis();
+                            } else {
+                                getpage = "/resource/BoardRelatedPixieFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22bookmarks%22%3A%5B%22" + Encoding.urlEncode(nextbookmark) + "%22%5D%2C%22isPrefetch%22%3Afalse%2C%22board_id%22%3A%22" + board_id + "%22%2C%22add_vase%22%3Atrue%2C%22field_set_key%22%3A%22unauth_react%22%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis();
+                            }
                         }
                         int failcounter_http_5034 = 0;
                         /* 2016-11-03: Added retries on HTTP/1.1 503 first byte timeout | HTTP/1.1 504 GATEWAY_TIMEOUT */
@@ -518,7 +522,11 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                     json_root = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json_source_for_crawl_process);
                     LinkedHashMap<String, Object> entries = null;
                     ArrayList<Object> resource_data_list = (ArrayList) json_root.get("resource_data_cache");
+                    final LinkedHashMap<String, Object> resource_response = (LinkedHashMap<String, Object>) json_root.get("resource_response");
                     ArrayList<Object> pin_list = null;
+                    if (resource_response != null) {
+                        pin_list = (ArrayList) resource_response.get("data");
+                    }
                     if (resource_data_list == null) {
                         /*
                          * Not logged in ? Sometimes needed json is already given in html code! It has minor differences compared to the
@@ -532,85 +540,75 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                             }
                         }
                     }
-                    // new website response (tested without login) -raztoki20160405
-                    final LinkedHashMap<String, Object> test = (LinkedHashMap<String, Object>) json_root.get("_dv");
-                    // every entry of _dv has what we need + its own cover which we wont bother about.
-                    if (test != null && !test.isEmpty()) {
-                        for (final Map.Entry<String, Object> entry : test.entrySet()) {
-                            if (Long.parseLong(entry.getKey()) == Long.parseLong(board_id)) {
-                                // _did within resource_data_list == ids within _dv
-                                continue;
-                            }
-                            final LinkedHashMap<String, Object> single_pinterest_data = (LinkedHashMap<String, Object>) entry.getValue();
-                            proccessLinkedHashMap(single_pinterest_data, board_id, source_url);
-                        }
-                        nextbookmark = (String) JavaScriptEngineFactory.walkJson(resource_data_list, "{1}/resource/options/bookmarks/{0}");
-                        logger.info("Decrypted " + dupeList.size() + " of " + numberof_pins + " pins");
-                    } else {
-                        // json
-                        /* Find correct list of PINs */
-                        if (resource_data_list != null) {
-                            for (Object o : resource_data_list) {
-                                entries = (LinkedHashMap<String, Object>) o;
-                                o = entries.get("data");
-                                if (o != null && o instanceof ArrayList) {
-                                    resource_data_list = (ArrayList) o;
-                                    if (numberof_pins >= max_entries_per_page_free && resource_data_list.size() != max_entries_per_page_free) {
-                                        /*
-                                         * If we have more pins then pins per page we should at lest have as much as
-                                         * max_entries_per_page_free pins (on the first page)!
-                                         */
-                                        continue;
-                                    }
-                                    pin_list = resource_data_list;
-                                    break;
+                    /* Find correct list of PINs */
+                    if (pin_list == null && resource_data_list != null) {
+                        for (Object o : resource_data_list) {
+                            entries = (LinkedHashMap<String, Object>) o;
+                            o = entries.get("data");
+                            if (o != null && o instanceof ArrayList) {
+                                resource_data_list = (ArrayList) o;
+                                if (numberof_pins >= max_pins_per_page_new && resource_data_list.size() != max_pins_per_page_new) {
+                                    /*
+                                     * If we have more pins then pins per page we should at lest have as much as max_entries_per_page_free
+                                     * pins (on the first page)!
+                                     */
+                                    continue;
                                 }
+                                pin_list = resource_data_list;
+                                break;
                             }
                         }
-                        if (pin_list == null) {
-                            /* Final fallback - RegEx the pin-array --> Json parser */
-                            String pin_list_json_source;
-                            if (i == 0) {
-                                /* RegEx json from jsom html from first page */
-                                pin_list_json_source = new Regex(json_source_for_crawl_process, "\"board_feed\"\\s*?:\\s*?(\\[.+),\\s*?\"children\"").getMatch(0);
-                                if (pin_list_json_source == null) {
-                                    pin_list_json_source = new Regex(json_source_for_crawl_process, "\"board_feed\"\\s*?:\\s*?(\\[.+),\\s*?\"options\"").getMatch(0);
-                                }
-                            } else {
-                                /* RegEx json from ajax response > 1 page */
-                                pin_list_json_source = new Regex(json_source_for_crawl_process, "\"resource_response\".*?\"data\"\\s*?:\\s*?(\\[.+),\\s*?\"error\"").getMatch(0);
-                            }
-                            if (pin_list_json_source != null) {
-                                pin_list = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(pin_list_json_source);
-                            }
-                        }
-                        if (pin_list != null) {
-                            for (final Object pint : pin_list) {
-                                final LinkedHashMap<String, Object> single_pinterest_data = (LinkedHashMap<String, Object>) pint;
-                                proccessLinkedHashMap(single_pinterest_data, board_id, source_url);
+                    }
+                    if (pin_list == null) {
+                        /* Final fallback - RegEx the pin-array --> Json parser */
+                        String pin_list_json_source;
+                        if (i == 0) {
+                            /* RegEx json from jsom html from first page */
+                            pin_list_json_source = new Regex(json_source_for_crawl_process, "\"board_feed\"\\s*?:\\s*?(\\[.+),\\s*?\"children\"").getMatch(0);
+                            if (pin_list_json_source == null) {
+                                pin_list_json_source = new Regex(json_source_for_crawl_process, "\"board_feed\"\\s*?:\\s*?(\\[.+),\\s*?\"options\"").getMatch(0);
                             }
                         } else {
-                            processPinsKamikaze(json_root, board_id, source_url);
+                            /* RegEx json from ajax response > 1 page */
+                            pin_list_json_source = new Regex(json_source_for_crawl_process, "\"resource_response\".*?\"data\"\\s*?:\\s*?(\\[.+),\\s*?\"error\"").getMatch(0);
                         }
-                        if (decryptedLinks.size() == 0 && i == 0) {
-                            logger.info("Found nothing on first run");
-                            continue;
-                        } else if (decryptedLinks.size() == 0 && i > 2) {
-                            /* Multiple cycles but no results --> End?! */
-                            logger.info("No PINs found --> We've probably reached the end");
-                            break;
+                        if (pin_list_json_source != null) {
+                            pin_list = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(pin_list_json_source);
                         }
-                        nextbookmark = (String) JavaScriptEngineFactory.walkJson(entries, "resource/options/bookmarks/{0}");
-                        if (nextbookmark == null || nextbookmark.equalsIgnoreCase("-end-")) {
-                            /* Fallback to RegEx */
-                            nextbookmark = new Regex(json_source_for_crawl_process, "\"bookmarks\"\\s*?:\\s*?\"([^\"]{6,})\"").getMatch(0);
-                        }
-                        logger.info("Decrypted " + numberof_pins_decrypted_via_current_function + " of " + numberof_pins + " pins");
                     }
+                    if (pin_list != null) {
+                        for (final Object pint : pin_list) {
+                            final LinkedHashMap<String, Object> single_pinterest_data = (LinkedHashMap<String, Object>) pint;
+                            proccessLinkedHashMap(single_pinterest_data, board_id, source_url);
+                        }
+                    } else {
+                        processPinsKamikaze(json_root, board_id, source_url);
+                    }
+                    if (decryptedLinks.size() == 0 && i == 0) {
+                        logger.info("Found nothing on first run");
+                        continue;
+                    } else if (decryptedLinks.size() == 0 && i > 2) {
+                        /* Multiple cycles but no results --> End?! */
+                        logger.info("No PINs found --> We've probably reached the end");
+                        break;
+                    }
+                    nextbookmark = (String) JavaScriptEngineFactory.walkJson(entries, "resource/options/bookmarks/{0}");
+                    if (nextbookmark == null || nextbookmark.equalsIgnoreCase("-end-")) {
+                        /* Fallback to RegEx */
+                        nextbookmark = new Regex(json_source_for_crawl_process, "\"bookmarks\"\\s*?:\\s*?\"([^\"]{6,})\"").getMatch(0);
+                        if (nextbookmark == null) {
+                            nextbookmark = new Regex(json_source_for_crawl_process, "\"bookmarks\"\\s*?:\\[\"([^\"]{6,})\"").getMatch(0);
+                        }
+                        if (nextbookmark == null) {
+                            /* 2018-12-11: New for /BoardRelatedPixieFeedResource/ */
+                            nextbookmark = new Regex(json_source_for_crawl_process, "\"bookmark\"\\s*?:\\[\"([^\"]{6,})\"").getMatch(0);
+                        }
+                    }
+                    logger.info("Decrypted " + numberof_pins_decrypted_via_current_function + " of " + numberof_pins + " pins (total number may be inaccurate)");
                 } finally {
                     i++;
                 }
-            } while (numberof_pins_decrypted_via_current_function < numberof_pins);
+            } while (numberof_pins_decrypted_via_current_function >= max_pins_per_page_new);
         } else {
             decryptSite();
             if (numberof_pins > max_entries_per_page_free) {
@@ -725,12 +723,16 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         return output;
     }
 
-    private String getBoardID(final String json_source) {
+    private String getBoardID(String json_source) {
         /* This board_id RegEx will usually only work when loggedOFF */
+        json_source = json_source.replaceAll("\\\\", "");
         String board_id = PluginJSonUtils.getJsonValue(json_source, "board_id");
         if (board_id == null) {
             /* For LoggedIN and loggedOFF */
             board_id = this.br.getRegex("(\\d+)_board_thumbnail").getMatch(0);
+            if (board_id == null) {
+                board_id = new Regex(json_source, "\"board_id=\"(\\d+)\"").getMatch(0);
+            }
         }
         return board_id;
     }
