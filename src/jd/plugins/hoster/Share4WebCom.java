@@ -13,15 +13,18 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
+import jd.config.Property;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -29,11 +32,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share4web.com" }, urls = { "http://(www\\.)?share4web\\.com/get/[\\w\\.\\-]{32}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share4web.com" }, urls = { "http://(www\\.)?share4web\\.com/get/[\\w\\.\\-]{32}" })
 public class Share4WebCom extends PluginForHost {
-
     public Share4WebCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -51,7 +51,9 @@ public class Share4WebCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.setCookie("http://www.share4web.com/", "lang", "en");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">File not found or removed|Page Not Found|File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">File not found or removed|Page Not Found|File not found")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (br.containsHTML(SECURITYCAPTCHA)) {
             link.getLinkStatus().setStatusText("Can't check status, security captcha...");
             return AvailableStatus.UNCHECKABLE;
@@ -59,7 +61,9 @@ public class Share4WebCom extends PluginForHost {
         final Regex fileInfo = br.getRegex("<small>Download file:</small><br/>([^<>\"]*?)<small>\\(([^<>\"]*?)\\)</small>");
         String filename = fileInfo.getMatch(0);
         String filesize = fileInfo.getMatch(1);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         // Server sends filename with .exe ending, prevent it by setting final
         // filename here
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
@@ -68,58 +72,80 @@ public class Share4WebCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (br.containsHTML(SECURITYCAPTCHA)) {
-            final Form captchaForm = br.getForm(0);
-            if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            final String code = getCaptchaCode("http://www." + this.getHost() + "/captcha/?rnd=", downloadLink);
-            captchaForm.put("captcha", code);
-            br.submitForm(captchaForm);
-            if (br.containsHTML(SECURITYCAPTCHA)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        }
-        br.setFollowRedirects(false);
-        br.postPage(downloadLink.getDownloadURL() + "/timer", "step=timer&referer=&reg=select&ad=");
-        if (br.containsHTML("(>Somebody else is already downloading using your IP-address|Try to download file later)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 5 * 60 * 1000l);
-        String dllink = br.getRedirectLocation();
+        String dllink = checkDirectLink(downloadLink, "directurl");
+        boolean isStoredDirecturl = true;
         if (dllink == null) {
-            // Strange "Mirror" link
-            dllink = br.getRegex("</div><div style=\"text\\-align:center;\"><br/><a href=\"(http://[^<>\"]*?)\"").getMatch(0);
-            if (dllink == null) {
-                // "Normal" Downloadlink
-                dllink = br.getRegex("\"(http://[a-z0-9]+\\.share4web\\.com/getf/[^<>\"]*?)\"").getMatch(0);
-                if (dllink == null) {
-                    dllink = br.getRegex("href=\"/get/[^\"<>]*?(/timer/free\\?step=[^\"<>]*?)&referer=").getMatch(0);
-                    dllink = downloadLink.getDownloadURL() + dllink;
-
-                    /* workaround for old stable bug */
-                    dllink = dllink.replaceAll("\\/\\/", "/");
-                    dllink = dllink.replaceAll("http:\\/", "http://");
-
-                    br.getPage(dllink);
-                    // some coutries (Poland, Germany) are redirected by one more page
-                    // with possibility of SMS-payment
-                    dllink = br.getRegex("id=\"noThanxDiv\"><a href=\"(/get/[^\"<>]*?/timer/link\\?step=[^\"<>]*?)&referer=\"").getMatch(0);
-                    if (dllink != null) {
-                        dllink = downloadLink.getDownloadURL() + dllink;
-
-                        /* workaround for old stable bug */
-                        dllink = dllink.replaceAll("\\/\\/", "/");
-                        dllink = dllink.replaceAll("http:\\/", "http://");
-
-                        br.getPage(dllink);
-                    }
-                    dllink = br.getRegex("\"(http://st\\d+\\.share4web\\.com/getf/[^\"<>]+)").getMatch(0);
-                }
+            if (br.containsHTML("Somebody else is already downloading using your IP")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
             }
+            /* 2018-12-12: No captcha anymore (?) */
+            // if (br.containsHTML(SECURITYCAPTCHA)) {
+            // final Form captchaForm = br.getForm(0);
+            // if (captchaForm == null) {
+            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            // }
+            // final String code = getCaptchaCode("http://www." + this.getHost() + "/captcha/?rnd=", downloadLink);
+            // captchaForm.put("captcha", code);
+            // br.submitForm(captchaForm);
+            // if (br.containsHTML(SECURITYCAPTCHA)) {
+            // throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            // }
+            // }
+            br.setFollowRedirects(true);
+            final String nextStep = br.getRegex("(/get/[^\"]+)\"").getMatch(0);
+            if (nextStep == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.getPage(nextStep);
+            dllink = br.getRegex("\"(http://[a-z0-9]+\\.share4web\\.com/getf/[^<>\"]*?)\"").getMatch(0);
+            // final String waitStr = br.getRegex("var nn = (\\d+);").getMatch(0);
+            // if (waitStr == null) {
+            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            // }
+            // this.sleep(Integer.parseInt(waitStr) * 1001l, downloadLink);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            isStoredDirecturl = false;
         }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (isStoredDirecturl) {
+                downloadLink.setProperty("directurl", Property.NULL);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Bad downloadurl");
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        downloadLink.setProperty("directurl", dllink);
         dl.startDownload();
+    }
+
+    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
+        String dllink = downloadLink.getStringProperty(property);
+        if (dllink != null) {
+            URLConnectionAdapter con = null;
+            try {
+                final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(true);
+                con = br2.openHeadConnection(dllink);
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                    downloadLink.setProperty(property, Property.NULL);
+                    dllink = null;
+                }
+            } catch (final Exception e) {
+                downloadLink.setProperty(property, Property.NULL);
+                dllink = null;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+        }
+        return dllink;
     }
 
     @Override
@@ -135,9 +161,8 @@ public class Share4WebCom extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-
-/* NO OVERRIDE!! We need to stay 0.9*compatible */
-public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-return true;
-}
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        return true;
+    }
 }
