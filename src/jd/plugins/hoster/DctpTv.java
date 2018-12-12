@@ -13,10 +13,15 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -28,12 +33,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dctp.tv" }, urls = { "https?://(?:www\\.)?dctp\\.tv/filme/[a-z0-9_\\-]+/" })
 public class DctpTv extends PluginForHost {
-
     public DctpTv(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -44,87 +45,96 @@ public class DctpTv extends PluginForHost {
     }
 
     /* Tags: spiegel.tv, dctp.tv */
-    private static final boolean rtmpe_supported = false;
-    private static final boolean prefer_hls      = true;
-    private static final String  app             = "dctp/";
+    private static final boolean          rtmpe_supported = false;
+    private static final boolean          prefer_hls      = true;
+    private static final String           app             = "dctp/";
+    private LinkedHashMap<String, Object> entries         = null;
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("class=\\'error\\'>Der gewünschte Film ist \\(zur Zeit\\) nicht") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("property=\"media:title\" content=\"([^<>\"]*?)\"></span>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<meta name=\\'DC\\.title\\' content=\\'([^<>\"]*?)\\'").getMatch(0);
-        }
-        final String date = this.br.getRegex("name=\\'DC\\.date\\.created\\' content=\\'(\\d{4}\\-\\d{2}\\-\\d{2})\\'").getMatch(0);
+        final String json = br.getRegex("window\\.__PRELOADED_STATE__ = (\\{.*?\\});").getMatch(0);
+        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
+        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "ivms/media_items/{0}");
+        final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("");
+        String filename = (String) entries.get("title");
+        final String date = (String) entries.get("airdate");
         if (filename == null || date == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        filename = date + "_dctpTV_" + Encoding.htmlDecode(filename.trim()) + ".flv";
+        filename = date + "_dctpTV_" + Encoding.htmlDecode(filename.trim()) + ".mp4";
         link.setFinalFileName(filename);
+        final String description = (String) entries.get("description");
+        if (link.getComment() == null) {
+            link.setComment(description);
+        }
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final String rtmpurl;
-        if (rtmpe_supported) {
-            rtmpurl = "rtmpe://dctpfs.fplive.net/" + app;
-        } else {
-            rtmpurl = "rtmp://dctpfs.fplive.net/" + app;
-        }
-        try {
-            dl = new RTMPDownload(this, downloadLink, rtmpurl);
-        } catch (final NoClassDefFoundError e) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "RTMPDownload class missing");
-        }
-        /* Setup rtmp connection */
-        jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-        final String heigth = br.getRegex("height = (\\d+);").getMatch(0);
+        final boolean is_wide = ((Boolean) entries.get("is_wide")).booleanValue();
         String scalefactor;
-        if (heigth != null && heigth.equals("180")) {
+        if (is_wide) {
             scalefactor = "16x9";
         } else {
             scalefactor = "4x3";
         }
-
-        String uuid = br.getRegex("name=\\'DC\\.identifier\\' content=\\'([^<>\"]+)\\'").getMatch(0);
-        if (uuid == null) {
-            uuid = br.getRegex("id=\\'uuid\\'>([^<>\"]*?)<").getMatch(0);
-        }
-        if (uuid == null) {
+        final String uuid = (String) entries.get("uuid");
+        if (StringUtils.isEmpty(uuid)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-
-        final String hls_playpath_path = this.br.getRegex("(/[^<>\"\\']+/playlist\\.m3u8)").getMatch(0);
         final String playpath = String.format("mp4:%s_dctp_0500_%s.m4v", uuid, scalefactor);
-        String hls_stream_server = null;
-        try {
-            this.br.getPage("http://www.dctp.tv/elastic_streaming_client/get_streaming_server/");
-            /* 2017-02-21: Usually '54.83.19.217' */
-            hls_stream_server = PluginJSonUtils.getJsonValue(this.br, "server");
-        } catch (final Throwable e) {
+        final boolean hlsUseNewWay = true;
+        String url_hls_master = null;
+        if (hlsUseNewWay) {
+            url_hls_master = String.format("https://cdn-segments.dctp.tv/%s_dctp_%s.m4v/playlist.m3u8", uuid, "720p");
+        } else {
+            final String hls_playpath_path = this.br.getRegex("(/[^<>\"\\']+/playlist\\.m3u8)").getMatch(0);
+            String hls_stream_server = null;
+            try {
+                this.br.getPage("http://www.dctp.tv/elastic_streaming_client/get_streaming_server/");
+                /* 2017-02-21: Usually '54.83.19.217' */
+                hls_stream_server = PluginJSonUtils.getJsonValue(this.br, "server");
+            } catch (final Throwable e) {
+            }
+            if (hls_stream_server != null && !hls_stream_server.equals("") && hls_playpath_path != null) {
+                final boolean build_custom_url = true;
+                if (build_custom_url) {
+                    url_hls_master = String.format("http://%s/vods3/_definst/mp4:dctp_completed_media/%s_dctp_0500_%s.m4v/playlist.m3u8", hls_stream_server, uuid, scalefactor);
+                } else {
+                    url_hls_master = String.format("http://%s%s", playpath, hls_playpath_path);
+                }
+                if (url_hls_master == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                br.getPage(url_hls_master);
+                final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
+                final String url_hls = hlsbest.getDownloadurl();
+                if (url_hls == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                checkFFmpeg(downloadLink, "Download a HLS Stream");
+                dl = new HLSDownloader(downloadLink, br, url_hls);
+                dl.startDownload();
+            }
         }
-        if (hls_stream_server != null && !hls_stream_server.equals("") && hls_playpath_path != null && prefer_hls) {
-            final boolean build_custom_url = true;
-            final String url_hls_master;
-            if (build_custom_url) {
-                url_hls_master = String.format("http://%s/vods3/_definst/mp4:dctp_completed_media/%s_dctp_0500_%s.m4v/playlist.m3u8", hls_stream_server, uuid, scalefactor);
+        if (url_hls_master != null && prefer_hls) {
+            final String url_hls;
+            if (hlsUseNewWay) {
+                url_hls = url_hls_master;
             } else {
-                url_hls_master = String.format("http://%s%s", playpath, hls_playpath_path);
+                br.getPage(url_hls_master);
+                final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
+                url_hls = hlsbest.getDownloadurl();
             }
-            if (url_hls_master == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            br.getPage(url_hls_master);
-            final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
-            final String url_hls = hlsbest.getDownloadurl();
             if (url_hls == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -132,6 +142,19 @@ public class DctpTv extends PluginForHost {
             dl = new HLSDownloader(downloadLink, br, url_hls);
             dl.startDownload();
         } else {
+            final String rtmpurl;
+            if (rtmpe_supported) {
+                rtmpurl = "rtmpe://dctpfs.fplive.net/" + app;
+            } else {
+                rtmpurl = "rtmp://dctpfs.fplive.net/" + app;
+            }
+            try {
+                dl = new RTMPDownload(this, downloadLink, rtmpurl);
+            } catch (final NoClassDefFoundError e) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "RTMPDownload class missing");
+            }
+            /* Setup rtmp connection */
+            jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
             rtmp.setPlayPath(playpath);
             // rtmp.setTcUrl("rtmp://mf.dctpvod.c.nmdn.net/dctpvod/");
             rtmp.setPageUrl(br.getURL());
@@ -139,7 +162,6 @@ public class DctpTv extends PluginForHost {
             rtmp.setFlashVer("WIN 19,0,0,185");
             rtmp.setSwfVfy("http://svm-prod-dctptv-static.s3.amazonaws.com/dctptv-relaunch2012-88.swf");
             rtmp.setUrl(rtmpurl);
-
             rtmp.setResume(true);
             ((RTMPDownload) dl).startDownload();
         }
@@ -179,5 +201,4 @@ public class DctpTv extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

@@ -18,18 +18,6 @@ package jd.plugins.hoster;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 
-import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.parser.Regex;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.FilePackage;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.components.MediathekHelper;
-
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -41,6 +29,18 @@ import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.parser.Regex;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.FilePackage;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.components.MediathekHelper;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tvnow.de" }, urls = { "https?://(?:www\\.)?(?:nowtv|tvnow)\\.(?:de|ch)/[a-z0-9\\-]+/[a-z0-9\\-]+/.+" })
 public class TvnowDe extends PluginForHost {
@@ -62,14 +62,15 @@ public class TvnowDe extends PluginForHost {
         return br;
     }
 
-    @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
         /* First lets get our source url and remove the unneeded '/player' part which is usually at the end of our url. */
         final String url_source = link.getPluginPatternMatcher();
         String urlNew;
+        final String url_part;
         if (link.getPluginPatternMatcher().matches(TYPE_GENERAL_ALRIGHT)) {
-            final String url_part = new Regex(url_source, "https?://[^/]+/(.+)").getMatch(0);
+            url_part = new Regex(url_source, "https?://[^/]+/(.+)").getMatch(0);
             urlNew = "https://www." + CURRENT_DOMAIN + "/" + url_part;
+            link.setLinkID(url_part);
         } else {
             /* We have no supported url --> Fix eventually existing issues */
             /* First let's remove rubbish we don't need ... */
@@ -89,9 +90,11 @@ public class TvnowDe extends PluginForHost {
             final String name_series = sourceregex.getMatch(1);
             /* Find the name of the series which is usually at the end of our URL. */
             final String name_episode = new Regex(urlNew, "/([^/]+)$").getMatch(0);
-            urlNew = "https://www." + CURRENT_DOMAIN + "/" + name_tvstation + "/" + name_series + "/" + name_episode;
+            url_part = name_series + "/" + name_episode;
+            urlNew = "https://www." + CURRENT_DOMAIN + "/" + name_tvstation + "/" + url_part;
+            link.setLinkID(url_part);
         }
-        link.setUrlDownload(urlNew);
+        link.setPluginPatternMatcher(urlNew);
     }
 
     /**
@@ -110,8 +113,6 @@ public class TvnowDe extends PluginForHost {
         correctDownloadLink(downloadLink);
         prepBR(this.br);
         final String urlpart = getURLPart(downloadLink);
-        /* urlpart is the same throughout different TV stations so it is a reliable way to detect duplicate urls. */
-        downloadLink.setLinkID(urlpart);
         // ?fields=*,format,files,manifest,breakpoints,paymentPaytypes,trailers,packages,isDrm
         /*
          * Explanation of possible but left-out parameters: "breakpoints" = timecodes when ads are delivered, "paymentPaytypes" = how can
@@ -289,9 +290,42 @@ public class TvnowDe extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
-    private String getURLPart(final DownloadLink dl) {
-        return new Regex(dl.getDownloadURL(), "/([a-z0-9\\-]+/[a-z0-9\\-]+)$").getMatch(0);
+    private String getURLPart(final DownloadLink dl) throws PluginException {
+        /* OLD, rev 39908 */
+        // return new Regex(dl.getDownloadURL(), "/([a-z0-9\\-]+/[a-z0-9\\-]+)$").getMatch(0);
+        /* 2018-12-12: New */
+        final Regex urlInfo = new Regex(dl.getPluginPatternMatcher(), "https?://[^/]+/[^/]+/([^/]*?)/([^/]+/)?(.+)");
+        /* Find relevant information */
+        String showname = dl.getStringProperty("url_showname", null);
+        String episodename = dl.getStringProperty("url_episodetitle", null);
+        /* Cleanup for API requests if values haven't been set in crawler before */
+        if (StringUtils.isEmpty(showname)) {
+            showname = urlInfo.getMatch(0);
+            showname = cleanupShowTitle(showname);
+        }
+        if (StringUtils.isEmpty(episodename)) {
+            episodename = urlInfo.getMatch(2);
+            episodename = episodename.replaceAll("^episode\\-\\d+\\-", "");
+            /* This part is tricky - we have to filter-out stuff which does not belong to their intern title ... */
+            /* Examples: which shall NOT be modified: "super-8-kamera-von-1965", "folge-w-05" */
+            if (!episodename.matches(".*?(folge|teil|w)\\-\\d+$") && !episodename.matches(".+\\d{4}\\-\\d{2}-\\d{2}-\\d{2}-\\d{2}-\\d{2}$") && !episodename.matches(".+\\-[12]\\d{3}")) {
+                episodename = episodename.replaceAll("\\-\\d+$", "");
+            }
+        }
+        if (StringUtils.isEmpty(showname) || StringUtils.isEmpty(episodename)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String urlpart = showname + "/" + episodename;
+        return urlpart;
+    }
+
+    /** Removes parts of the show-title which are not allowed for API requests e.g. the show-ID. */
+    public static String cleanupShowTitle(String showname) {
+        if (showname == null) {
+            return null;
+        }
+        showname = showname.replaceAll("\\-\\d+$", "");
+        return showname;
     }
 
     @Override
