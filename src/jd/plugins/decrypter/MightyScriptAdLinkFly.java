@@ -49,7 +49,8 @@ import jd.plugins.components.SiteType.SiteTemplate;
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
-    private static final String[]     domains                   = { "linkat4all.com", "buyitonline.store", "linkdrop.net", "shrtz.me", "ctkings.com", "linksad.net", "paylink.pro", "123link.pro", "donia2link.com", "cutpaid.com", "shortadz.org", "itiurl.co", "shortli.net", "cutearn.ca", "icutit.ca", "cut-one.com", "cll.press", "link-zero.com", "linktor.io", "cash4url.com", "cashat.net", "shortit.ca", "123short.com", "skip-url.me", "msms4.com", "empireshort.com", "loadurl.com", "shortmony.me", "geistlink.com", "cutt.us.com", "arabdollar.com", "shortenow.com", "kingurl.net", "best3link.com", "solo-link.com", "best5link.com", "lkky.co", "win4cut.com", "coinlink.co", "adlink.guru", "short.es", "tmearn.com", "ibly.co", "urle.co", "mitly.us", "zlshorte.net", "igram.im", "gram.im", "bit-url.com", "adbilty.me", "linclik.com", "oke.io", "vivads.net", "pnd.tl", "met.bz", "urlcloud.us",
+    private static final String[]     domains                   = { "topklink.com", "shorts-link.com", "rawabbet.com", "easy4earn.com", "linkat4all.com", "buyitonline.store", "linkdrop.net", "shrtz.me", "ctkings.com", "linksad.net", "paylink.pro", "123link.pro", "donia2link.com", "cutpaid.com", "shortadz.org", "itiurl.co", "shortli.net", "cutearn.ca", "icutit.ca", "cut-one.com", "cll.press", "link-zero.com", "linktor.io", "cash4url.com", "cashat.net", "shortit.ca", "123short.com", "skip-url.me", "msms4.com", "empireshort.com", "loadurl.com", "shortmony.me", "geistlink.com", "cutt.us.com", "arabdollar.com", "shortenow.com", "kingurl.net", "best3link.com", "solo-link.com", "best5link.com", "lkky.co", "win4cut.com", "coinlink.co", "adlink.guru", "short.es", "tmearn.com", "ibly.co", "urle.co", "mitly.us", "zlshorte.net", "igram.im", "gram.im", "bit-url.com", "adbilty.me", "linclik.com",
+            "oke.io", "vivads.net", "pnd.tl", "met.bz", "urlcloud.us",
             /** cut-urls.com domains */
             "cut-urls.com", "curs.io", "cuon.io",
             /** wicr.me domains */
@@ -59,7 +60,7 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
             /** adshort.co domains */
             "adshort.co", "adsrt.com", "adshort.me", "adshort.im" };
     /** List of services for which waittime is NOT skippable. */
-    private static final List<String> domains_waittime_enforced = Arrays.asList(new String[] { "adbilty.me", "tmearn.com", "linkdrop.net" });
+    private static final List<String> domains_waittime_enforced = Arrays.asList(new String[] { "adbilty.me", "tmearn.com", "linkdrop.net", "rawabbet.com" });
 
     /**
      * returns the annotation pattern array
@@ -280,9 +281,17 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                 br.getHeaders().put("Origin", "https://" + br.getHost());
                 if (!skipWait) {
                     String waitStr = br.getRegex(">Please Wait (\\d+)s<").getMatch(0);
+                    if (waitStr == null) {
+                        /* 2018-12-12: E.g. rawabbet.com */
+                        waitStr = br.getRegex("class=\"timer\">\\s*?(\\d+)\\s*?<").getMatch(0);
+                    }
                     int wait = 10;
                     if (waitStr != null) {
+                        logger.info("Found waittime in html: " + waitStr);
                         wait = Integer.parseInt(waitStr) * +1;
+                    } else {
+                        logger.warning("Failed to find waittime in html");
+                        return null;
                     }
                     this.sleep(wait * 1000, param);
                 }
