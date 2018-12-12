@@ -282,11 +282,7 @@ public class ZeveraCom extends UseNet {
                 if (!StringUtils.isEmpty(fair_use_used_str)) {
                     final double d = Double.parseDouble(fair_use_used_str);
                     final int fairUsagePercent = (int) (d * 100.0);
-                    if (fairUsagePercent > 200) {
-                        /* Workaround for serverside issue returning e.g. 800% */
-                        ai.setUnlimitedTraffic();
-                        ai.setStatus("Premium | Fair usage: unknown");
-                    } else if (fairUsagePercent >= 100) {
+                    if (fairUsagePercent >= 100) {
                         /* Fair use limit reached --> No traffic left, no downloads possible at the moment */
                         ai.setTrafficLeft(0);
                         ai.setStatus("Premium | Fair usage: " + fairUsagePercent + "% (limit reached)");
