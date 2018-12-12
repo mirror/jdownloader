@@ -495,8 +495,14 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                 final String trafficDay = infos.get("traffic_1d");
                 final String trafficDayData[] = trafficDay.split(";");
                 final long usedDay = Long.parseLong(trafficDayData[0].trim());
-                final long freeDay = maxDay - usedDay;
-                logger.info("Real daily traffic left: " + freeDay + ", account: " + account.getStringProperty("group", null));
+                final long pending;
+                if (infos.containsKey("traffic_pending") && infos.get("traffic_pending").matches("^\\d+$")) {
+                    pending = Long.parseLong(infos.get("traffic_pending"));
+                } else {
+                    pending = 0;
+                }
+                final long freeDay = maxDay - usedDay - pending;
+                logger.info("Daily traffic left: " + freeDay + "|Daily:" + usedDay + "|Pending:" + pending + "|Account: " + account.getStringProperty("group", null));
                 ai.setTrafficMax(maxDay);
                 if (freeDay > 1024 * 1024) {
                     ai.setTrafficLeft(freeDay);
@@ -1058,7 +1064,11 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                     br.setFollowRedirects(true);
                     final String page;
                     try {
-                        page = apiGetPage(userProtocolApi() + "://api.share-online.biz/cgi-bin?q=userdetails&aux=traffic&username=" + URLEncode.encodeURIComponent(account.getUser()) + "&password=" + URLEncode.encodeURIComponent(account.getPass()));
+                        if (userTrafficWorkaround()) {
+                            page = apiGetPage(userProtocolApi() + "://api.share-online.biz/cgi-bin?q=userdetails&aux=traffic&username=" + URLEncode.encodeURIComponent(account.getUser()) + "&password=" + URLEncode.encodeURIComponent(account.getPass()));
+                        } else {
+                            page = apiGetPage(userProtocolApi() + "://api.share-online.biz/cgi-bin?q=userdetails&aux=traffic&traffic=pending&username=" + URLEncode.encodeURIComponent(account.getUser()) + "&password=" + URLEncode.encodeURIComponent(account.getPass()));
+                        }
                     } finally {
                         br.setFollowRedirects(follow);
                     }
