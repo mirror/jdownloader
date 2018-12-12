@@ -30,7 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 40072 $", interfaceVersion = 2, names = { "openloadtvstream.me" }, urls = { "https?://(www\\.)?openloadtvstream\\.me/(tvshows|movies|episodes)/.+" })
+@DecrypterPlugin(revision = "$Revision: 40169 $", interfaceVersion = 2, names = { "openloadtvstream.me" }, urls = { "https?://(www\\.)?openloadtvstream\\.me/(tvshows|movies|episodes)/.+" })
 public class OpenloadTVStream extends PluginForDecrypt {
     public OpenloadTVStream(PluginWrapper wrapper) {
         super(wrapper);
@@ -54,7 +54,7 @@ public class OpenloadTVStream extends PluginForDecrypt {
                 }
             }
         } else {
-            String[][] sources = br.getRegex("data-type=\"([a-zA-Z0-9]+)\" data-post=\"([0-9]+)\" data-nume=\"([0-9]+)\"").getMatches();
+            String[][] sources = br.getRegex("data-type=[\"']([a-zA-Z0-9]+)[\"'] data-post=[\"']([0-9]+)[\"'] data-nume=[\"']([0-9]+)[\"']").getMatches();
             for (String[] source : sources) {
                 final PostRequest post = new PostRequest(br.getURL("/wp-admin/admin-ajax.php"));
                 post.addVariable("action", "doo_player_ajax");
