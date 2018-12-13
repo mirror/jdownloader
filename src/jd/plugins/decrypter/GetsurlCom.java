@@ -69,6 +69,7 @@ public class GetsurlCom extends PluginForDecrypt {
             return null;
         }
         br.setFollowRedirects(false);
+        this.sleep(6000, param);
         br.getPage(finallink);
         finallink = br.getRedirectLocation();
         if (finallink == null) {
