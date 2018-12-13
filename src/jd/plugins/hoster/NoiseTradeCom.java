@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -43,23 +42,21 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "noisetrade.com" }, urls = { "http://noisetradedecrypted\\.com/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "noisetrade.com" }, urls = { "http://noisetradedecrypted\\.com/\\d+" })
 public class NoiseTradeCom extends PluginForHost {
-
     @SuppressWarnings("deprecation")
     public NoiseTradeCom(final PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
-        this.enablePremium("http://noisetrade.com/account/signupchoose");
+        this.enablePremium("https://noisetrade.com/account/signupchoose");
     }
 
     private static final String CUSTOM_FILENAME = "CUSTOM_FILENAME";
-
     private String              DLLINK          = null;
 
     @Override
     public String getAGBLink() {
-        return "http://noisetrade.com/info/legal/";
+        return "https://noisetrade.com/info/legal/";
     }
 
     @SuppressWarnings("deprecation")
@@ -76,7 +73,6 @@ public class NoiseTradeCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("noisetrade.com/info/error")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-
         final String ext = link.getStringProperty("type", null);
         DLLINK = link.getStringProperty("directlink", null);
         if (DLLINK == null && !ext.equals(".mp3")) {
@@ -97,9 +93,9 @@ public class NoiseTradeCom extends PluginForHost {
             final String widgetID = br.getRegex("var widgetID = \\'([^<>\"\\']*?)\\'").getMatch(0);
             String confirm_url;
             if (ext.equals(".zip")) {
-                confirm_url = "http://noisetrade.com/modal/popupauthenticateddownload/" + widgetID;
+                confirm_url = "https://noisetrade.com/modal/popupauthenticateddownload/" + widgetID;
             } else {
-                confirm_url = "http://books.noisetrade.com/modal/popupauthenticateddownloadbook/" + widgetID;
+                confirm_url = "https://books.noisetrade.com/modal/popupauthenticateddownloadbook/" + widgetID;
             }
             br.postPage(confirm_url, "WIDGETID=" + widgetID + "&button_download=Confirm+%26+Download");
             DLLINK = br.getRegex("\"(https?://[^<>\"]*?)\">click here</a>").getMatch(0);
@@ -110,7 +106,6 @@ public class NoiseTradeCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-
         URLConnectionAdapter con = null;
         try {
             try {
@@ -130,7 +125,6 @@ public class NoiseTradeCom extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
-
         link.setFinalFileName(getFormattedFilename(link));
         return AvailableStatus.TRUE;
     }
@@ -165,7 +159,7 @@ public class NoiseTradeCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private static final String MAINPAGE = "http://noisetrade.com";
+    private static final String MAINPAGE = "https://noisetrade.com";
     private static Object       LOCK     = new Object();
 
     @SuppressWarnings("unchecked")
@@ -192,7 +186,7 @@ public class NoiseTradeCom extends PluginForHost {
                 }
                 br.setFollowRedirects(true);
                 // br.getPage("http://noisetrade.com/account/signin");
-                br.postPage("http://noisetrade.com/account/signin", "button_fan_signin=Sign+In&fan_email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                br.postPage("https://noisetrade.com/account/signin", "button_fan_signin=Sign+In&fan_email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (br.getCookie(MAINPAGE, ".ASPXAUTH") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -273,7 +267,6 @@ public class NoiseTradeCom extends PluginForHost {
         final String title = downloadLink.getStringProperty("directtitle", "-");
         final String artist = downloadLink.getStringProperty("directartist", null);
         final String album = downloadLink.getStringProperty("directalbum", null);
-
         /* Date: Maybe add this in the future, if requested by a user. */
         // final long date = getLongProperty(downloadLink, "originaldate", 0l);
         // String formattedDate = null;
@@ -298,13 +291,10 @@ public class NoiseTradeCom extends PluginForHost {
         // /* prevent user error killing plugin */
         // time = "0000";
         // }
-
         String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME, defaultCustomFilename);
-
         if (!formattedFilename.contains("album") && !formattedFilename.contains("*username*") && !formattedFilename.contains("*title*") && !formattedFilename.contains("*artist*") && !formattedFilename.contains("*ext*")) {
             formattedFilename = defaultCustomFilename;
         }
-
         formattedFilename = formattedFilename.replace("*ext*", ext);
         formattedFilename = formattedFilename.replace("*username*", username);
         formattedFilename = formattedFilename.replace("*album*", album);
@@ -348,18 +338,17 @@ public class NoiseTradeCom extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-        {
-            put("SETTING_TAGS", "Explanation of the available tags:\r\n*username* = Name of the user/author who posted the content\r\n*title* = Title of the media\r\n*artist* = Artist of the song\r\n*album* = Name of the album\r\n*ext* = Extension of the file, usually '.mp3'");
-            put("LABEL_FILENAME", "Define custom filename:");
-        }
-    };
-
+                                                  {
+                                                      put("SETTING_TAGS", "Explanation of the available tags:\r\n*username* = Name of the user/author who posted the content\r\n*title* = Title of the media\r\n*artist* = Artist of the song\r\n*album* = Name of the album\r\n*ext* = Extension of the file, usually '.mp3'");
+                                                      put("LABEL_FILENAME", "Define custom filename:");
+                                                  }
+                                              };
     private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
-        {
-            put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers/Authors, der die Inhalte hochgeladen hat\r\n*title* = Titel des Songs\r\n*artist* = Name des Urhebers\r\n*album* = Name des Albums\r\n*ext* = Dateiendung, meistens '.mp3'");
-            put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens an:");
-        }
-    };
+                                                  {
+                                                      put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers/Authors, der die Inhalte hochgeladen hat\r\n*title* = Titel des Songs\r\n*artist* = Name des Urhebers\r\n*album* = Name des Albums\r\n*ext* = Dateiendung, meistens '.mp3'");
+                                                      put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens an:");
+                                                  }
+                                              };
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
