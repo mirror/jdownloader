@@ -103,6 +103,9 @@ public class HellSpyCz extends PluginForHost {
         br.getPage(link.getPluginPatternMatcher());
         if (isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!br.containsHTML("lass=\"left section section\\-filedetail\"")) {
+            /* No downloadable content --> Offline */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (isPartFile(link.getPluginPatternMatcher())) {
             /* 2018-11-12: For multi-part-URLs */
             return AvailableStatus.TRUE;
