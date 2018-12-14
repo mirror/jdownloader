@@ -23,10 +23,7 @@ import java.util.jar.JarInputStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jd.SecondLevelLaunch;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.WarnLevel;
-
+import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.uio.CloseReason;
@@ -34,6 +31,7 @@ import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.Exceptions;
+import org.appwork.utils.IO;
 import org.appwork.utils.io.J7FileList;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
@@ -53,6 +51,10 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.UpdateController;
+
+import jd.SecondLevelLaunch;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.WarnLevel;
 
 public class ExtensionController implements MenuExtenderHandler {
     private static final String              TMP_INVALIDEXTENSIONS = "invalidextensions";
@@ -245,7 +247,11 @@ public class ExtensionController implements MenuExtenderHandler {
         } else {
             ret = loadUnpacked();
         }
-        JSonStorage.saveTo(getCache(), ret);
+        try {
+            IO.secureWrite(getCache(), JSonStorage.serializeToJsonByteArray(ret));
+        } catch (IOException e) {
+            throw new WTFException(e);
+        }
         validateCache();
         return ret;
     }

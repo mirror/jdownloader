@@ -13,13 +13,13 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.gui.swing.jdgui.views.settings.panels;
 
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.FileFilter;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -30,19 +30,15 @@ import javax.swing.Icon;
 import javax.swing.JList;
 import javax.swing.ListCellRenderer;
 
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.views.settings.components.Checkbox;
-import jd.gui.swing.jdgui.views.settings.components.ComboBox;
-import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
-import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
-import jd.gui.swing.jdgui.views.settings.panels.urlordertable.UrlOrderTable;
-
+import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.StorageException;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.uio.ComboBoxDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
+import org.appwork.utils.IO;
+import org.appwork.utils.IO.SYNC;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.AbstractDialog;
@@ -75,12 +71,16 @@ import org.jdownloader.translate.JdownloaderTranslation;
 import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.SmartRlyRestartRequest;
 
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.views.settings.components.Checkbox;
+import jd.gui.swing.jdgui.views.settings.components.ComboBox;
+import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
+import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
+import jd.gui.swing.jdgui.views.settings.panels.urlordertable.UrlOrderTable;
+
 public class GUISettings extends AbstractConfigPanel implements StateUpdateListener {
-
     private static final long                     serialVersionUID = 1L;
-
     private SettingsButton                        lng;
-
     private SettingsButton                        resetDialogs;
     private SettingsButton                        contextMenuManagerDownloadList;
     private SettingsButton                        contextMenuManagerLinkgrabber;
@@ -88,15 +88,10 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
     private SettingsButton                        mainMenuManager;
     private SettingsButton                        trayMenuManager;
     private SettingsButton                        resetDialogPosition;
-
     private ComboBox<FrameState>                  focus;
-
     private ComboBox<NewLinksInLinkgrabberAction> linkgrabberfocus;
-
     private boolean                               setting;
-
     private SettingsButton                        downloadBottomManager;
-
     private SettingsButton                        linkgrabberBottomManager;
 
     public String getTitle() {
@@ -105,7 +100,6 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
 
     public GUISettings() {
         super();
-
         lng = new SettingsButton(new AppAction() {
             {
                 String value = TranslationFactory.getDesiredLanguage();
@@ -127,20 +121,16 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
                     }
                 }
                 setName(_GUI.T.change_language(set));
-
             }
 
             @Override
             public void actionPerformed(ActionEvent e) {
-
                 final AtomicReference<List<String>> languages = new AtomicReference<List<String>>();
                 ProgressDialog p = new ProgressDialog(new ProgressGetter() {
-
                     @Override
                     public void run() throws Exception {
                         List<String> list = TranslationFactory.listAvailableTranslations(JdownloaderTranslation.class, GuiTranslation.class);
                         Collections.sort(list, new Comparator<String>() {
-
                             @Override
                             public int compare(String o1, String o2) {
                                 Locale lc1 = TranslationFactory.stringToLocale(o1);
@@ -160,7 +150,6 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
                             }
                         });
                         languages.set(list);
-
                     }
 
                     @Override
@@ -178,14 +167,11 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
                         return null;
                     }
                 }, org.appwork.uio.UIOManager.BUTTONS_HIDE_CANCEL, _GUI.T.lit_please_wait(), "", null);
-
                 UIOManager.I().show(null, p);
-
                 ComboBoxDialog comboDialog = new ComboBoxDialog(0, _GUI.T.languages_dialog_title(), _GUI.T.languages_dialog_title(), languages.get().toArray(new String[] {}), languages.get().indexOf(TranslationFactory.getDesiredLanguage()), new AbstractIcon(IconKey.ICON_LANGUAGE, 32), _GUI.T.languages_dialog_change_and_restart(), null, null) {
                     @Override
                     protected ListCellRenderer getRenderer(final ListCellRenderer orgRenderer) {
                         return new ListCellRenderer() {
-
                             @Override
                             public Component getListCellRendererComponent(JList list, Object v, int index, boolean isSelected, boolean cellHasFocus) {
                                 if (v instanceof String) {
@@ -208,12 +194,9 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
                                         }
                                     }
                                     return orgRenderer.getListCellRendererComponent(list, set, index, isSelected, cellHasFocus);
-
                                 }
                                 return orgRenderer.getListCellRendererComponent(list, v, index, isSelected, cellHasFocus);
-
                             }
-
                         };
                     }
 
@@ -222,28 +205,25 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
                         return false;
                     }
                 };
-
                 int index = UIOManager.I().show(ComboBoxDialogInterface.class, comboDialog).getSelectedIndex();
                 if (index >= 0) {
                     String newLng = languages.get().get(index);
-
                     if (!newLng.equals(TranslationFactory.getDesiredLanguage())) {
-
                         try {
                             Dialog.getInstance().showConfirmDialog(0, _GUI.T.GUISettings_save_language_changed_restart_required_title(), _GUI.T.GUISettings_save_language_changed_restart_required_msg(), NewTheme.getInstance().getIcon("language", 32), null, null);
-                            JSonStorage.saveTo(Application.getResource("cfg/language.json"), newLng);
+                            try {
+                                IO.secureWrite(Application.getResource("cfg/language.json"), JSonStorage.serializeToJsonByteArray(newLng), SYNC.NONE);
+                            } catch (IOException e1) {
+                                throw new WTFException(e1);
+                            }
                             RestartController.getInstance().asyncRestart(new SmartRlyRestartRequest(true));
                         } catch (DialogClosedException e2) {
-
                         } catch (DialogCanceledException e2) {
-
                         }
                     }
-
                 }
             }
         });
-
         // lng = new ComboBox<String>(TranslationFactory.getDesiredLanguage()) {
         //
         // @Override
@@ -305,11 +285,9 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
         //
         // }
         // });
-
         resetDialogs = new SettingsButton(new AppAction() {
             {
                 setName(_GUI.T.GUISettings_GUISettings_resetdialogs_());
-
             }
 
             @Override
@@ -318,7 +296,6 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
                     AbstractDialog.resetDialogInformations();
                     CFG_TRAY_CONFIG.ON_CLOSE_ACTION.setValue(CFG_TRAY_CONFIG.ON_CLOSE_ACTION.getDefaultValue());
                     Dialog.getInstance().showMessageDialog(_GUI.T.GUISettings_actionPerformed_reset_done());
-
                 } catch (StorageException e1) {
                     e1.printStackTrace();
                 }
@@ -332,53 +309,41 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
 
             @Override
             public void actionPerformed(ActionEvent e) {
-
                 if (Application.getResource("cfg/").listFiles(new FileFilter() {
-
                     @Override
                     public boolean accept(File pathname) {
                         if (pathname.getName().startsWith("org.appwork.utils.swing.locator.")) {
                             pathname.deleteOnExit();
                             return true;
-
                         }
                         if (pathname.getName().startsWith("org.appwork.utils.swing.dimensor.")) {
                             pathname.deleteOnExit();
                             return true;
-
                         }
                         if (pathname.getName().startsWith("RememberRelativeLocator")) {
                             pathname.deleteOnExit();
                             return true;
-
                         }
                         if (pathname.getName().startsWith("RememberAbsoluteLocator-")) {
                             pathname.deleteOnExit();
                             return true;
-
                         }
                         if (pathname.getName().startsWith("RememberAbsoluteLocator-")) {
                             pathname.deleteOnExit();
                             return true;
-
                         }
                         if (pathname.getName().startsWith("gui.windows.dimensionsandlocations")) {
                             pathname.deleteOnExit();
                             return true;
-
                         }
                         if (pathname.getName().startsWith("RememberLastDimensor-")) {
                             pathname.deleteOnExit();
                             return true;
-
                         }
-
                         if (pathname.getName().startsWith("CaptchaDialogDimensions")) {
                             pathname.deleteOnExit();
                             return true;
-
                         }
-
                         return false;
                     }
                 }).length > 0) {
@@ -386,153 +351,118 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
                         Dialog.getInstance().showConfirmDialog(0, _GUI.T.jd_gui_swing_jdgui_settings_ConfigPanel_restartquestion_title(), _GUI.T.jd_gui_swing_jdgui_settings_ConfigPanel_restartquestion(), NewTheme.getInstance().getIcon("desktop", 32), null, null);
                         RestartController.getInstance().asyncRestart(new SmartRlyRestartRequest(true));
                     } catch (DialogClosedException e2) {
-
                     } catch (DialogCanceledException e2) {
-
                     }
                 }
-
             }
         });
         contextMenuManagerDownloadList = new SettingsButton(new AppAction() {
             {
                 setName(_GUI.T.gui_config_menumanager_downloadlist());
-
             }
 
             @Override
             public void actionPerformed(ActionEvent e) {
                 new EDTRunner() {
-
                     @Override
                     protected void runInEDT() {
                         JDGui.getInstance().requestPanel(JDGui.Panels.DOWNLOADLIST);
-
                         MenuManagerDownloadTableContext.getInstance().openGui();
                     }
                 };
-
             }
         });
-
         contextMenuManagerLinkgrabber = new SettingsButton(new AppAction() {
             {
                 setName(_GUI.T.gui_config_menumanager_linkgrabber());
-
             }
 
             @Override
             public void actionPerformed(ActionEvent e) {
                 new EDTRunner() {
-
                     @Override
                     protected void runInEDT() {
                         JDGui.getInstance().requestPanel(JDGui.Panels.LINKGRABBER);
-
                         MenuManagerLinkgrabberTableContext.getInstance().openGui();
                     }
                 };
-
             }
         });
         toolbarManager = new SettingsButton(new AppAction() {
             {
                 setName(_GUI.T.gui_config_menumanager_toolbar());
-
             }
 
             @Override
             public void actionPerformed(ActionEvent e) {
                 new EDTRunner() {
-
                     @Override
                     protected void runInEDT() {
-
                         MenuManagerMainToolbar.getInstance().openGui();
                     }
                 };
-
             }
         });
-
         mainMenuManager = new SettingsButton(new AppAction() {
             {
                 setName(_GUI.T.gui_config_menumanager_mainmenu());
-
             }
 
             @Override
             public void actionPerformed(ActionEvent e) {
                 new EDTRunner() {
-
                     @Override
                     protected void runInEDT() {
                         MenuManagerMainmenu.getInstance().openGui();
                     }
                 };
-
             }
         });
-
         trayMenuManager = new SettingsButton(new AppAction() {
             {
                 setName(_GUI.T.gui_config_menumanager_traymenu());
-
             }
 
             @Override
             public void actionPerformed(ActionEvent e) {
                 new EDTRunner() {
-
                     @Override
                     protected void runInEDT() {
                         MenuManagerTrayIcon.getInstance().openGui();
                     }
                 };
-
             }
         });
-
         downloadBottomManager = new SettingsButton(new AppAction() {
             {
                 setName(_GUI.T.gui_config_menumanager_downloadBottom());
-
             }
 
             @Override
             public void actionPerformed(ActionEvent e) {
                 new EDTRunner() {
-
                     @Override
                     protected void runInEDT() {
-
                         MenuManagerDownloadTabBottomBar.getInstance().openGui();
                     }
                 };
-
             }
         });
-
         linkgrabberBottomManager = new SettingsButton(new AppAction() {
             {
                 setName(_GUI.T.gui_config_menumanager_linkgrabberBottom());
-
             }
 
             @Override
             public void actionPerformed(ActionEvent e) {
                 new EDTRunner() {
-
                     @Override
                     protected void runInEDT() {
-
                         MenuManagerLinkgrabberTabBottombar.getInstance().openGui();
                     }
                 };
-
             }
         });
-
         this.addHeader(getTitle(), new AbstractIcon(IconKey.ICON_GUI, 32));
         this.addDescription(_GUI.T.GUISettings_GUISettings_description());
         // this.addHeader(getTitle(),
@@ -542,12 +472,9 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
         this.addPair("", null, resetDialogPosition);
         this.addHeader(_GUI.T.GUISettings_GUISettings_object_urls(), NewTheme.I().getIcon(IconKey.ICON_URL, 32));
         this.addDescription(_GUI.T.GUISettings_GUISettings_object_urls_description());
-
         UrlOrderContainer container = new UrlOrderContainer(new UrlOrderTable());
         addPair("", null, container);
-
         this.addHeader(_GUI.T.gui_config_menumanager_header(), new AbstractIcon(IconKey.ICON_MENU, 32));
-
         this.addDescription(_GUI.T.gui_config_menumanager_desc());
         this.addPair("", null, contextMenuManagerDownloadList);
         this.addPair("", null, contextMenuManagerLinkgrabber);
@@ -556,7 +483,6 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
         this.addPair("", null, trayMenuManager);
         this.addPair("", null, downloadBottomManager);
         this.addPair("", null, linkgrabberBottomManager);
-
         this.addHeader(_GUI.T.GUISettings_GUISettings_object_frames(), new AbstractIcon(IconKey.ICON_DESKTOP, 32));
         this.addDescription(_GUI.T.GUISettings_GUISettings_object_frames_description());
         // this.addHeader(_GUI.T.GUISettings_GUISettings_object_accessability(), new AbstractIcon(IconKey.ICON_barrierfreesettings", 32));
@@ -568,22 +494,17 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
         // TO_BACK,
         // TO_FRONT_FOCUSED;
         focus = new ComboBox<FrameState>(new FrameState[] { FrameState.OS_DEFAULT, FrameState.TO_BACK, FrameState.TO_FRONT, FrameState.TO_FRONT_FOCUSED }, new String[] { _GUI.T.GUISettings_GUISettings_framestate_os_default(System.getProperty("os.name")), _GUI.T.GUISettings_GUISettings_framestate_back(), _GUI.T.GUISettings_GUISettings_framestate_front(), _GUI.T.GUISettings_GUISettings_framestate_focus() }) {
-
         };
         focus.addStateUpdateListener(this);
         addPair(_GUI.T.GUISettings_GUISettings_dialog_focus(), null, focus);
-
         linkgrabberfocus = new ComboBox<NewLinksInLinkgrabberAction>(new NewLinksInLinkgrabberAction[] { NewLinksInLinkgrabberAction.NOTHING, NewLinksInLinkgrabberAction.SWITCH, NewLinksInLinkgrabberAction.TO_FRONT, NewLinksInLinkgrabberAction.FOCUS }, new String[] { _GUI.T.GUISettings_GUISettings_newlinks_nothing(), _GUI.T.GUISettings_GUISettings_newlinks_switch(), _GUI.T.GUISettings_GUISettings_newlinks_front(), _GUI.T.GUISettings_GUISettings_newlinks_focus() });
         linkgrabberfocus.addStateUpdateListener(this);
         addPair(_GUI.T.GUISettings_GUISettings_dialog_linkgrabber_on_new_links(), null, linkgrabberfocus);
-
     }
 
     protected void loadLanguages() {
-
         List<String> list = TranslationFactory.listAvailableTranslations(JdownloaderTranslation.class, GuiTranslation.class);
         Collections.sort(list, new Comparator<String>() {
-
             @Override
             public int compare(String o1, String o2) {
                 Locale lc1 = TranslationFactory.stringToLocale(o1);
@@ -604,14 +525,12 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
         });
         final String[] languages = list.toArray(new String[] {});
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 // lng.setModel(new DefaultComboBoxModel(languages));
                 // lng.setSelectedItem(TranslationFactory.getDesiredLanguage());
             }
         };
-
     }
 
     @Override
@@ -633,11 +552,9 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
             focus.setSelectedItem(CFG_GUI.CFG.getNewDialogFrameState());
             NewLinksInLinkgrabberAction newvalue = CFG_GUI.CFG.getNewLinksActionV2();
             linkgrabberfocus.setSelectedItem(newvalue);
-
         } finally {
             setting = false;
         }
-
     }
 
     @Override

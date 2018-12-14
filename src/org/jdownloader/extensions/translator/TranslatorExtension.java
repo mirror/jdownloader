@@ -88,7 +88,7 @@ import jd.gui.swing.jdgui.JDGui;
  * @author thomas
  *
  */
-public class TranslatorExtension extends AbstractExtension<TranslatorConfig, TranslatorTranslation>implements MenuExtenderHandler {
+public class TranslatorExtension extends AbstractExtension<TranslatorConfig, TranslatorTranslation> implements MenuExtenderHandler {
     /**
      * Extension GUI
      */
@@ -116,7 +116,6 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
     public TranslatorExtension() {
         // Name. The translation Extension itself does not need translation. All
         // translators should be able to read english
-
         setTitle(T.Translator());
         eventSender = new TranslatorExtensionEventSender();
         if (!Application.isHeadless()) {
@@ -128,7 +127,6 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
 
                 @Override
                 public void onShutdown(final ShutdownRequest shutdownRequest) {
-
                     if (!getSettings().isRememberLoginsEnabled()) {
                         try {
                             doLogout();
@@ -151,7 +149,6 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
             });
         }
         // init extension GUI
-
     }
 
     public TranslatorExtensionEventSender getEventSender() {
@@ -191,39 +188,31 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
         List<String> ids = TranslationFactory.listAvailableTranslations(JdownloaderTranslation.class, GuiTranslation.class);
         // create a list of TLocale instances
         translations = new ArrayList<TLocale>();
-
         for (String id : ids) {
             translations.add(new TLocale(id));
         }
         // sort the list.
         Collections.sort(translations, new Comparator<TLocale>() {
-
             public int compare(TLocale o1, TLocale o2) {
                 return o1.toString().compareTo(o2.toString());
             }
         });
-
         logger.finer("Started " + getClass().getSimpleName());
         timer = new Thread("TranslatorSyncher") {
             public void run() {
-
                 while (true) {
                     try {
                         Thread.sleep(10 * 60 * 1000);
-
                         if (getGUI().isShown()) {
                             if (loggedIn) {
                                 getGUI().stopEditing(false);
                                 refresh();
                             }
-
                         }
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
-
                 }
-
             }
         };
         timer.start();
@@ -244,17 +233,14 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
         OptionalContainer opt = new OptionalContainer(false);
         opt.add(GuiToggleAction.class);
         return opt;
-
     }
 
     private MenuItemData updateMainMenu(MenuContainerRoot mr) {
-
         ExtensionsMenuContainer container = new ExtensionsMenuContainer();
         ExtensionsMenuWindowContainer windows = new ExtensionsMenuWindowContainer();
         container.add(windows);
         windows.add(GuiToggleAction.class);
         return container;
-
     }
 
     protected void refresh() throws InterruptedException {
@@ -316,7 +302,6 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
             return gui;
         }
         return new EDTHelper<TranslatorGui>() {
-
             @Override
             public TranslatorGui edtRun() {
                 if (gui != null) {
@@ -347,17 +332,13 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
             }
             TLocale oldLoaded = loaded;
             loaded = locale;
-
             getSettings().setLastLoaded(locale.getId());
-
             java.util.List<TranslateEntry> tmp = new ArrayList<TranslateEntry>();
             if (updateSVN) {
                 Subversion s = new Subversion("svn://svn.jdownloader.org/jdownloader/trunk/translations/translations/", getSettings().getSVNUser(), getSettings().getSVNPassword());
                 try {
-
                     try {
                         long rev = s.getRevisionNoException(Application.getResource("translations/custom"));
-
                         long newRev = s.update(Application.getResource("translations/custom"), SVNRevision.HEAD, null);
                         if (doRevisionCheck && oldLoaded != null && oldLoaded.equals(loaded) && rev == newRev) {
                             // NO Updates
@@ -368,13 +349,11 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
                             logger.log(e);
                             s.cleanUp(Application.getResource("translations/custom"), true);
                             long rev = s.getRevisionNoException(Application.getResource("translations/custom"));
-
                             long newRev = s.update(Application.getResource("translations/custom"), SVNRevision.HEAD, null);
                             if (doRevisionCheck && oldLoaded != null && oldLoaded.equals(loaded) && rev == newRev) {
                                 // NO Updates
                                 return;
                             }
-
                         } catch (SVNException e2) {
                             logger.log(e2);
                             Files.deleteRecursiv(Application.getResource("translations/custom"));
@@ -394,7 +373,6 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
             for (LazyExtension le : ExtensionController.getInstance().getExtensions()) {
                 try {
                     le.init();
-
                     if (le._getExtension().getTranslation() == null) {
                         continue;
                     }
@@ -413,18 +391,14 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
             load(tmp, locale, ExtTableTranslation.class);
             load(tmp, locale, LogSenderTranslation.class);
             load(tmp, locale, GuiTranslation.class);
-
             LanguageFileSetup guiInterface = TranslationFactory.create(LanguageFileSetup.class);
-
             fontname = guiInterface.config_fontname();
             //
             if (fontname.equalsIgnoreCase("default")) {
-
                 fontname = new SyntheticaHelper(LAFOptions.getInstance().getCfg()).getDefaultFont();
                 if (fontname == null) {
                     fontname = "Tahoma";
                 }
-
             }
             load(tmp, locale, TrayiconTranslation.class);
             load(tmp, locale, JdownloaderTranslation.class);
@@ -434,24 +408,19 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
             load(tmp, locale, UpnpTranslation.class);
             // there should be no more entries. all of them should have been
             // mapped to an INterface
-
             this.translationEntries = tmp;
             //
-
         }
         getEventSender().fireEvent(new TranslatorExtensionEvent(this, org.jdownloader.extensions.translator.TranslatorExtensionEvent.Type.LOADED_TRANSLATION));
     }
 
     private <T extends TranslateInterface> T load(java.util.List<TranslateEntry> tmp, TLocale locale, Class<T> class1) {
         logger.info("Load Translation " + locale + " " + class1);
-
         TranslateInterface t = (TranslateInterface) Proxy.newProxyInstance(class1.getClassLoader(), new Class[] { class1 }, new TranslationHandler(class1, locale.getId()));
-
         for (Method m : t._getHandler().getMethods()) {
             tmp.add(new TranslateEntry(t, m));
         }
         return (T) t;
-
     }
 
     /**
@@ -480,7 +449,6 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
 
     private void setLoggedIn(boolean loggedIn) {
         synchronized (this) {
-
             this.loggedIn = loggedIn;
         }
         getEventSender().fireEvent(new TranslatorExtensionEvent(this, TranslatorExtensionEvent.Type.LOGIN_STATUS_CHANGED));
@@ -511,28 +479,22 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
         loaded = null;
         translationEntries = null;
         setLoggedIn(false);
-
     }
 
     public boolean validateSvnLogin(String svnUser, String svnPass) throws InterruptedException {
-
         setLoggedIn(false);
         logger.info("Login: " + svnUser + " : getSHA256 pass: " + Hash.getSHA256(svnPass));
         if (svnUser.length() >= 3 && svnPass.length() > 3) {
             String url = "svn://svn.jdownloader.org/jdownloader";
-
             Subversion s = null;
             try {
-
                 s = new Subversion(url, svnUser, svnPass);
                 setLoggedIn(true);
                 // if (getSettings().getLastLoaded() != null) {
-
                 TLocale pre = getTLocaleByID(getSettings().getLastLoaded());
                 if (pre == null) {
                     pre = new TLocale(TranslationFactory.getDesiredLocale().toString());
                 }
-
                 load(pre, false, true);
                 // }
                 return true;
@@ -553,9 +515,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
         } else {
             Dialog.getInstance().showMessageDialog("SVN Test Error", "Username and/or password seem malformed. Test failed.");
         }
-
         return false;
-
     }
 
     @Override
@@ -576,14 +536,11 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
     }
 
     public void requestSvnLogin() throws InterruptedException {
-
         while (true) {
-
             final LoginDialog d = new LoginDialog(0, "Translation Server Login", "To modify existing translations, or to create a new one, you need a JDownloader Translator Account.", null);
             d.setUsernameDefault(getSettings().getSVNUser());
             d.setPasswordDefault(getSettings().getSVNPassword());
             d.setRememberDefault(getSettings().isRememberLoginsEnabled());
-
             LoginData response;
             try {
                 response = Dialog.getInstance().showDialog(d);
@@ -598,21 +555,16 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
                 getSettings().setSVNUser(response.getUsername());
                 getSettings().setSVNPassword(response.getPassword());
                 getSettings().setRememberLoginsEnabled(response.isSave());
-
                 return;
             }
         }
-
     }
 
     public void setDefault(java.util.List<TranslateEntry> selection) {
-
         for (TranslateEntry te : selection) {
             te.setTranslation(te.getDirect());
         }
-
         getEventSender().fireEvent(new TranslatorExtensionEvent(this, org.jdownloader.extensions.translator.TranslatorExtensionEvent.Type.REFRESH_DATA));
-
     }
 
     public void setTranslation(java.util.List<TranslateEntry> selection, TLocale sel) {
@@ -626,14 +578,12 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
                 failed++;
                 continue;
             }
-
             te.setTranslation(translation);
         }
         if (failed > 0) {
             Dialog.getInstance().showErrorDialog("The " + sel + " Translation is not complete. Not all requested entries could be cloned");
         }
         getEventSender().fireEvent(new TranslatorExtensionEvent(this, org.jdownloader.extensions.translator.TranslatorExtensionEvent.Type.REFRESH_DATA));
-
     }
 
     public void reset(TranslateEntry te) {
@@ -641,16 +591,13 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
     }
 
     public double getPercent() {
-
         return (getOK() * 10000 / getTranslationEntries().size()) / 100.0;
     }
 
     public int getOK() {
-
         int ok = 0;
         for (TranslateEntry te : getTranslationEntries()) {
             if (te.isMissing() || te.isParameterInvalid()) {
-
             } else {
                 ok++;
             }
@@ -659,9 +606,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
     }
 
     public SVNCommitPacket save() throws IOException, SVNException, InterruptedException {
-
         if (saveCount > 0 && System.currentTimeMillis() - lastSave < 20 * 60 * 1000) {
-
             JDGui.help("Upload Changes", "Please do not upload your changes too often.\r\nSave your changes locally first, and upload them when you stop translating or maybe once per hour.", new AbstractIcon(IconKey.ICON_WARNING, 32));
             try {
                 Dialog.I().showConfirmDialog(0, "Sure?", "Are you sure that you want to upload the changes?\r\n Your latest commit has been " + ((System.currentTimeMillis() - lastSave) / 1000) + " seconds ago!");
@@ -677,7 +622,6 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
 
     public boolean hasChanges() {
         synchronized (this) {
-
             if (loaded == null || getTranslationEntries() == null || getTranslationEntries().size() == 0) {
                 return false;
             }
@@ -688,7 +632,6 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
                 set.add(te.getInterface()._getHandler());
                 map.put(te.getMethod(), te);
             }
-
             for (TranslationHandler h : set) {
                 for (Method m : h.getMethods()) {
                     TranslateEntry te = map.get(m);
@@ -696,7 +639,6 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
                         return true;
                     }
                 }
-
             }
             return false;
         }
@@ -710,18 +652,14 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
             }
             TLocale localLoaded = loaded;
             TranslationInfo info = JSonStorage.restoreFromFile(Application.getResource("translations/custom/" + localLoaded.getId() + ".json"), new TranslationInfo());
-
             int more = getTranslationEntries().size() - info.getTotal();
-
             double p = getPercent();
             if (more > 0) {
                 p = ((getOK() + more) * 10000 / getTranslationEntries().size()) / 100.0;
             }
             if (p < info.getComplete()) {
-
                 try {
                     Dialog.getInstance().showConfirmDialog(0, "Are you sure? The Old Version was " + info.getComplete() + "% completed. Your Version has only " + getPercent() + "%. Continue anyway?");
-
                 } catch (DialogNoAnswerException e) {
                     return;
                 }
@@ -732,19 +670,15 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
                 set.add(te.getInterface()._getHandler());
                 map.put(te.getMethod(), te);
             }
-
             for (TranslationHandler h : set) {
                 TranslateResource res = h.getResource(localLoaded.getId());
-
                 final TranslateData data = new TranslateData();
-
                 for (Method m : h.getMethods()) {
                     TranslateEntry te = map.get(m);
                     if (te.isOK() || te.isDefault()) {
                         data.put(te.getKey(), te.getTranslation());
                     }
                 }
-
                 String file = TranslationUtils.serialize(data);
                 URL url = res.getUrl();
                 File newFile = null;
@@ -758,7 +692,6 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
                 System.out.println("NO URL");
                 DynamicResourcePath rPath = h.getInterfaceClass().getAnnotation(DynamicResourcePath.class);
                 if (rPath != null) {
-
                     try {
                         newFile = Application.getResource("translations/custom/" + rPath.value().newInstance().getPath() + "." + localLoaded.getId() + ".lng");
                     } catch (InstantiationException e) {
@@ -774,12 +707,9 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
                 FileCreationManager.getInstance().delete(newFile, null);
                 FileCreationManager.getInstance().mkdir(newFile.getParentFile());
                 IO.writeStringToFile(newFile, file);
-
                 logger.info("Updated " + file);
-
             }
-            JSonStorage.saveTo(Application.getResource("translations/custom/" + localLoaded.getId() + ".json"), getInfo());
-
+            IO.secureWrite(Application.getResource("translations/custom/" + localLoaded.getId() + ".json"), JSonStorage.serializeToJsonByteArray(getInfo()));
         }
         try {
             load(loaded, false, false);
@@ -799,7 +729,6 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
     public SVNCommitPacket upload() throws SVNException {
         synchronized (this) {
             return new LocaleRunnable<SVNCommitPacket, SVNException>() {
-
                 @Override
                 protected SVNCommitPacket run() throws SVNException {
                     Subversion s = new Subversion("svn://svn.jdownloader.org/jdownloader/trunk/translations/translations/", getSettings().getSVNUser(), getSettings().getSVNPassword());
@@ -826,31 +755,24 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
                                 continue;
                             }
                             logger.info("Commit: " + file);
-
                         }
                         logger.finer("Transfer Package");
                         s.getCommitClient().doCommit(packet, true, false, "Updated " + loaded.getLocale().getDisplayName() + " Translation", null);
-
                         return packet;
                     } finally {
                         s.dispose();
                     }
                 }
-
             }.runEnglish();
-
         }
-
     }
 
     public void revert() throws SVNException, InterruptedException, IOException {
         synchronized (this) {
-
             Subversion s = new Subversion("svn://svn.jdownloader.org/jdownloader/trunk/translations/translations/", getSettings().getSVNUser(), getSettings().getSVNPassword());
             try {
                 try {
                     s.revert(Application.getResource("translations/custom"));
-
                     s.update(Application.getResource("translations/custom"), SVNRevision.HEAD, null);
                 } catch (SVNException e) {
                     logger.log(e);
@@ -864,5 +786,4 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
         }
         load(loaded, false, true);
     }
-
 }
