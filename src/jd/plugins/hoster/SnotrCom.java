@@ -13,16 +13,17 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import java.util.List;
+
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -30,14 +31,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "snotr.com" }, urls = { "http://(www\\.)?snotr\\.com/video/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "snotr.com" }, urls = { "https?://(www\\.)?snotr\\.com/video/\\d+" })
 public class SnotrCom extends PluginForHost {
-
     public SnotrCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String dllink = null;
+    private String       dllink       = null;
+    private HlsContainer hlsContainer = null;
 
     @Override
     public String getAGBLink() {
@@ -45,50 +46,54 @@ public class SnotrCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">This video does not exist<")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">This video does not exist<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        dllink = "http://videos.snotr.com/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0) + ".flv";
-        if (filename == null || dllink == null) {
+        if (filename == null) {
+            filename = br.getRegex("<title>([^<>\"]*?)( - Snotr)?</title>").getMatch(0);
+        }
+        String hlsURL = br.getRegex("<source src=\"([^<>\"]*?)\"").getMatch(0);
+        if (hlsURL == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dllink = Encoding.htmlDecode(dllink);
-        filename = filename.trim();
-        final String ext = getFileNameExtensionFromString(dllink, ".flv");
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br2.openGetConnection(dllink);
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
+        } else {
+            br.getPage(hlsURL);
+            final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(br));
+            if (hlsbest == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
+                if (Thread.currentThread() instanceof SingleDownloadController) {
+                    hlsContainer = hlsbest;
+                }
+                final List<M3U8Playlist> playLists = M3U8Playlist.loadM3U8(hlsbest.getDownloadurl(), br);
+                long estimatedSize = -1;
+                for (M3U8Playlist playList : playLists) {
+                    if (hlsbest.getBandwidth() > 0) {
+                        playList.setAverageBandwidth(hlsbest.getBandwidth());
+                        estimatedSize += playList.getEstimatedSize();
+                    }
+                }
+                if (estimatedSize > 0) {
+                    downloadLink.setDownloadSize(estimatedSize);
+                }
+                filename = filename.trim() + ".mp4";
+                downloadLink.setFinalFileName(Encoding.htmlDecode(filename));
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        final String m3u8 = hlsContainer.getDownloadurl();
+        checkFFmpeg(downloadLink, "Download a HLS Stream");
+        sleep(2000, downloadLink);
+        dl = new HLSDownloader(downloadLink, br, m3u8);
         dl.startDownload();
     }
 
