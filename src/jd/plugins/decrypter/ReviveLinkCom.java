@@ -28,9 +28,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "revivelink.com" }, urls = { "http://(www\\.)?revivelink.com/\\??[A-Z0-9]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "revivelink.com" }, urls = { "https?://(www\\.)?revivelink.com/\\??[A-Z0-9]+" })
 public class ReviveLinkCom extends PluginForDecrypt {
-
     public ReviveLinkCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -45,18 +44,14 @@ public class ReviveLinkCom extends PluginForDecrypt {
             logger.info("Link offline: " + strParameter);
             return decryptedLinks;
         }
-
         // Get the package name
         String strName = "";
-
         br.setFollowRedirects(false);
         br.getPage(strParameter);
-
         if (br.containsHTML("(An error has occurred|The article cannot be found|404 Not Found)") || br.getHttpConnection().getResponseCode() == 404) {
             logger.info("Link offline: " + strParameter);
             return decryptedLinks;
         }
-
         if (br.containsHTML("class=\"QapTcha\"")) {
             final String fid = new Regex(strParameter, "([A-Z0-9]+)$").getMatch(0);
             final String pass = generatePass();
@@ -68,20 +63,17 @@ public class ReviveLinkCom extends PluginForDecrypt {
             }
             br.getPage("http://revivelink.com/slinks.php?R=" + fid + "&" + Encoding.urlEncode(pass) + "=");
         }
-
         final String[] links = br.getRegex("<a href=\"(.*?)\"").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + strParameter);
             return null;
         }
-
         // Added links
         for (String alink : links) {
             if (!alink.contains("revievelink.com/")) {
                 decryptedLinks.add(createDownloadlink(alink));
             }
         }
-
         // Add all link in a package
         final FilePackage fp = FilePackage.getInstance();
         if (strName != "") {
@@ -95,7 +87,6 @@ public class ReviveLinkCom extends PluginForDecrypt {
         int nb = 32;
         final String chars = "azertyupqsdfghjkmwxcvbn23456789AZERTYUPQSDFGHJKMWXCVBN_-#@";
         String pass = "";
-
         for (int i = 0; i < nb; i++) {
             long wpos = Math.round(Math.random() * (chars.length() - 1));
             int lool = (int) wpos;
@@ -108,5 +99,4 @@ public class ReviveLinkCom extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
