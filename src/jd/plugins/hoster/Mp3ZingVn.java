@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 /**
  * @author noone2407
  */
@@ -21,24 +20,25 @@ package jd.plugins.hoster;
 
 import java.util.LinkedHashMap;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import jd.plugins.components.PluginJSonUtils;
 
 /**
  * @author noone2407
  * @author raztoki
  *
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mp3.zing.vn" }, urls = { "http://mp3\\.zing\\.vn/bai-hat/(\\S+)\\.html$" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mp3.zing.vn" }, urls = { "https?://mp3\\.zing\\.vn/bai-hat/(\\S+)\\.html$" })
 public class Mp3ZingVn extends PluginForHost {
-
     private String dllink = null;
 
     public Mp3ZingVn(PluginWrapper wrapper) {
@@ -59,13 +59,13 @@ public class Mp3ZingVn extends PluginForHost {
         if (isOffline()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<s class=\"fn-name\">(.*?)<\\/s>").getMatch(0);
+        String filename = br.getRegex("<title>(.*?)( \\| Zing MP3)?</title>").getMatch(0);
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setFinalFileName(filename.replaceFirst("\\.{3}$", "").replace(":", "-") + ".mp3");
         final String datacode = br.getRegex("<a\\s+(?:[^>]*?\\s+)?data-code=\"(.*?)\"").getMatch(0);
-        final String json_source = br.getPage("http://mp3.zing.vn/xhr/song/get-download?panel=.fn-tab-panel-service&code=" + datacode + "&group=.fn-tab-panel");
+        final String json_source = br.getPage("https://mp3.zing.vn/xhr/media/get-url-download?type=audio&panel=.fn-tab-panel-service&code=" + datacode + "&group=.fn-tab-panel");
         if (isOffline()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -75,15 +75,21 @@ public class Mp3ZingVn extends PluginForHost {
             // Unable to download this song because the request from the copyright owner.
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String datalink = (String) JavaScriptEngineFactory.walkJson(entries, "data/128/link");
-        final Integer datasize = (Integer) JavaScriptEngineFactory.walkJson(entries, "data/128/size");
-        final Boolean vip = (Boolean) JavaScriptEngineFactory.walkJson(entries, "data/128/vip");
-        dllink = datalink;
-        downloadLink.setDownloadSize(datasize);
-        if (Boolean.TRUE.equals(vip)) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        if (br.containsHTML("Không thể download bài hát này vì yêu cầu từ nhà sở hữu bản quyền.")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-
+        // final String datalink = (String) JavaScriptEngineFactory.walkJson(entries, "data/128/link");
+        // final Integer datasize = (Integer) JavaScriptEngineFactory.walkJson(entries, "data/128/size");
+        // final Boolean vip = (Boolean) JavaScriptEngineFactory.walkJson(entries, "data/128/vip");
+        final String free_json = new Regex(json_source, "\"128\":(\\{.*?\\})").getMatch(0);
+        final String size = PluginJSonUtils.getJsonValue(free_json, "size");
+        final String link = PluginJSonUtils.getJsonValue(free_json, "link");
+        // logger.info("free_json: " + free_json + " " + size + " " + link);
+        dllink = link;
+        if (size == null || dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        downloadLink.setDownloadSize(Long.valueOf(size));
         return AvailableStatus.TRUE;
     }
 
@@ -91,7 +97,7 @@ public class Mp3ZingVn extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getContentType().contains("json")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -99,7 +105,7 @@ public class Mp3ZingVn extends PluginForHost {
     }
 
     private boolean isOffline() {
-        return br.containsHTML("title-404") || this.br.getHttpConnection().getResponseCode() == 404;
+        return br.containsHTML("title-404|vip_required") || br.getHttpConnection().getResponseCode() == 404;
     }
 
     @Override
@@ -109,5 +115,4 @@ public class Mp3ZingVn extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
