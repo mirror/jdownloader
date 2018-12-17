@@ -32,7 +32,9 @@ import javax.crypto.Cipher;
 import javax.crypto.CipherOutputStream;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import jd.PluginWrapper;
@@ -67,10 +69,15 @@ import jd.utils.locale.JDL;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.JVMVersion;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.parser.UrlQuery;
+import org.bouncycastle.crypto.PBEParametersGenerator;
+import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator;
+import org.bouncycastle.crypto.params.KeyParameter;
 import org.jdownloader.controlling.FileStateManager;
 import org.jdownloader.controlling.FileStateManager.FILESTATE;
 import org.jdownloader.controlling.UniqueAlltimeID;
@@ -240,17 +247,53 @@ public class MegaConz extends PluginForHost {
                         return sid;
                     }
                 }
-                final long[] password_aes_aLong = prepare_key_aLong(String_to_aLong(password));
+                long[] password_aes_aLong = null;
                 if (response == null || !response.containsKey("privk")) {
                     /* fresh login */
                     final String lowerCaseEmail = email.toLowerCase(Locale.ENGLISH);
-                    final String uh = calcuate_login_hash_uh(lowerCaseEmail, password_aes_aLong);
+                    response = apiRequest(null, null, null, "us0"/* preLogIn */, new Object[] { "user"/* email */, lowerCaseEmail });
+                    final Number v = (Number) response.get("v");
+                    final String uh;
+                    if (v.intValue() == 1) {
+                        password_aes_aLong = prepare_key_aLong(new long[] { 0x93C467E3, 0x7DB0C7A4, 0xD1BE3F81, 0x0152CB56 }, String_to_aLong(password));
+                        uh = calcuate_login_hash_uh(lowerCaseEmail, password_aes_aLong);
+                    } else if (v.intValue() == 2) {
+                        final String saltString = (String) response.get("s");
+                        if (StringUtils.isEmpty(saltString)) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        final byte[] pbkdf2Data;
+                        final byte[] saltBytes = aLong_to_aByte(Base64_to_aLong(saltString));
+                        if (JVMVersion.isMinimum(JVMVersion.JAVA18)) {
+                            // java >=1.8
+                            final SecretKeyFactory skf = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA512");
+                            final PBEKeySpec spec = new PBEKeySpec(password.toCharArray(), saltBytes, 100000, 256);
+                            pbkdf2Data = skf.generateSecret(spec).getEncoded();
+                        } else {
+                            // bouncy castle
+                            final PBEParametersGenerator generator = new PKCS5S2ParametersGenerator(new SHA512Digest());
+                            generator.init(PBEParametersGenerator.PKCS5PasswordToUTF8Bytes(password.toCharArray()), saltBytes, 100000);
+                            KeyParameter params = (KeyParameter) generator.generateDerivedParameters(256);
+                            pbkdf2Data = params.getKey();
+                        }
+                        final byte[] uhBytes = new byte[16];
+                        System.arraycopy(pbkdf2Data, 16, uhBytes, 0, 16);
+                        uh = aLong_to_Base64(aByte_to_aLong(uhBytes));
+                        final byte[] passwordBytes = new byte[16];
+                        System.arraycopy(pbkdf2Data, 0, passwordBytes, 0, 16);
+                        password_aes_aLong = aByte_to_aLong(passwordBytes);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                     response = apiRequest(null, null, null, "us"/* logIn */, new Object[] { "user"/* email */, lowerCaseEmail }, new Object[] { "uh"/* emailHash */, uh });
                 }
                 if (response != null && (response.containsKey("k") && response.containsKey("privk") && response.containsKey("csid"))) {
                     try {
                         final String k = (String) response.get("k");
                         final String privk = (String) response.get("privk");
+                        if (password_aes_aLong == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
                         final long[] masterKey_aLong = decrypt_aLong(password_aes_aLong, Base64_to_aLong(k));
                         final long[] rsa_private_key_aLong = decrypt_aLong(masterKey_aLong, Base64_to_aLong(privk));
                         byte[] rsa_private_key_aBytes = aLong_to_aByte(rsa_private_key_aLong);
@@ -403,8 +446,8 @@ public class MegaConz extends PluginForHost {
         return aLong;
     }
 
-    public static long[] prepare_key_aLong(long[] aLong) throws Exception {
-        long[] result_aLong = { 0x93C467E3, 0x7DB0C7A4, 0xD1BE3F81, 0x0152CB56 };
+    public static long[] prepare_key_aLong(long[] salt, long[] aLong) throws Exception {
+        long[] result_aLong = salt.clone();
         for (int round = 0; round < 0x10000; round++) {
             for (int j = 0; j < aLong.length; j += 4) {
                 final long[] loop_aLong = { 0, 0, 0, 0 };
