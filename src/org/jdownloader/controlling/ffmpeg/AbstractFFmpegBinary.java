@@ -784,7 +784,9 @@ public class AbstractFFmpegBinary {
     }
 
     public String runCommand(FFMpegProgress progress, ArrayList<String> commandLine) throws IOException, InterruptedException, FFMpegException {
+        logger.info("runCommand(ProcessBuilderFactory):" + commandLine);
         final ProcessBuilder pb = ProcessBuilderFactory.create(commandLine);
+        logger.info("runCommand(ProcessBuilder):" + pb.command());
         final Process process = pb.start();
         final AccessibleByteArrayOutputStream stdout = new AccessibleByteArrayOutputStream();
         final AccessibleByteArrayOutputStream stderr = new AccessibleByteArrayOutputStream();

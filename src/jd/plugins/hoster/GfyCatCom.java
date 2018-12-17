@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -31,11 +30,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gfycat.com" }, urls = { "https?://(www\\.)?gfycat\\.com/[A-Za-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gfycat.com" }, urls = { "https?://(www\\.)?gfycat\\.com/[A-Za-z0-9]+" })
 public class GfyCatCom extends PluginForHost {
-
     public GfyCatCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -56,13 +55,14 @@ public class GfyCatCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         this.br.getHeaders().put("User-Agent", "JDownloader");
-        br.getPage("https://gfycat.com/cajax/get/" + getFID(link));
-        if (br.containsHTML("\"error\"") || br.getHttpConnection().getResponseCode() == 404 || !br.getHttpConnection().getContentType().contains("json")) {
+        br.getPage(link.getPluginPatternMatcher());
+        final String json = br.getRegex("___INITIAL_STATE__\\s*=\\s*(.*?)\\s*</script").getMatch(0);
+        if (StringUtils.isEmpty(json) || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String username = PluginJSonUtils.getJsonValue(br, "userName");
-        final String filename = PluginJSonUtils.getJsonValue(br, "gfyName");
-        final String filesize = PluginJSonUtils.getJsonValue(br, "webmSize");
+        final String username = PluginJSonUtils.getJsonValue(json, "userName");
+        final String filename = PluginJSonUtils.getJsonValue(json, "gfyName");
+        final String filesize = PluginJSonUtils.getJsonValue(json, "webmSize");
         if (username == null || filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -76,7 +76,8 @@ public class GfyCatCom extends PluginForHost {
         requestFileInformation(downloadLink);
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
-            dllink = PluginJSonUtils.getJsonValue(br, "webmUrl");
+            final String json = br.getRegex("___INITIAL_STATE__\\s*=\\s*(.*?)</script").getMatch(0);
+            dllink = PluginJSonUtils.getJsonValue(json, "webmUrl");
         }
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -158,5 +159,4 @@ public class GfyCatCom extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }

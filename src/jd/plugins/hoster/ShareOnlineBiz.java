@@ -90,7 +90,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
     private final String                                            TRAFFIC_WORKAROUND                      = "TRAFFIC_WORKAROUND";
     private final String                                            PREFER_HTTPS                            = "PREFER_HTTPS";
     private final String                                            TRAFFIC_LIMIT                           = "TRAFFIC_LIMIT";
-    private final String[]                                          trafficLimits                           = new String[] { "100", "99", "98", "97", "96", "95", "90" };
+    private final String[]                                          trafficLimits                           = new String[] { "100", "99", "98", "97", "96", "95", "90", "80", "70", "60", "50", "40", "30", "20", "10" };
 
     public ShareOnlineBiz(PluginWrapper wrapper) {
         super(wrapper);
