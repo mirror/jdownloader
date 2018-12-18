@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -27,9 +26,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "moddb.com" }, urls = { "http://(www\\.)?moddb\\.com/(games|mods|engines|groups)/.*?/(addons|downloads)/[0-9a-z-]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "moddb.com" }, urls = { "https?://(www\\.)?moddb\\.com/(games|mods|engines|groups)/.*?/(addons|downloads)/[0-9a-z-]+" })
 public class ModDbComDecrypter extends PluginForDecrypt {
-
     public ModDbComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -82,5 +80,4 @@ public class ModDbComDecrypter extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
