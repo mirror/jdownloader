@@ -13,10 +13,11 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -30,20 +31,16 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 //Links come from a decrypter plugin
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "moddb.com" }, urls = { "http://(www\\.)?moddbdecrypted\\.com/(games|mods|engines|groups)/.*?/(addons|downloads)/[0-9a-z-]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "moddb.com" }, urls = { "https?://(www\\.)?moddbdecrypted\\.com/(games|mods|engines|groups)/.*?/(addons|downloads)/[0-9a-z-]+" })
 public class ModDbCom extends PluginForHost {
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("moddbdecrypted.com/", "moddb.com/"));
     }
 
     private final String   moddbservers  = "moddbservers";
-
     /* The list of server values displayed to the user */
     private final String[] servers       = new String[] { "fdcservers.net(WORLDWIDE)", "moddb.com #4(TEXAS, US)", "moddb.com #5(COLORADO, US)", "moddb.com #6(COLORADO, US)", "Mod DB #8 (CALIFORNIA, US)", "Mod DB #10 (NETHERLANDS, EU)", "Mod DB #11 (NETHERLANDS, EU)", "Mod DB #13 (NETHERLANDS, EU)" };
-
     private String         FDCCDNREGEX1  = "Mirror provided by FDCCDN.*?<a href=\"(.*?)\"";
     private String         FDCCDNREGEX2  = "http://www\\.fdcservers\\.net.*?<a href=\"(.*?)\"";
     private String         SERVER4REGEX  = "Mirror provided by Mod DB #4.*?<a href=\"(.*?)\"";
@@ -223,7 +220,7 @@ public class ModDbCom extends PluginForHost {
             logger.info("no final downloadlink (dllink) has been found, the plugin must be defect!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = "http://www.moddb.com" + dllink;
+        dllink = "https://www.moddb.com" + dllink;
         br.setFollowRedirects(false);
         br.getPage(dllink);
         dllink = br.getRedirectLocation();
@@ -240,7 +237,6 @@ public class ModDbCom extends PluginForHost {
             maxchunks = 0;
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
-
         if (dl.getConnection().getContentType().contains("html")) {
             logger.info("invalid final downloadlink (dllink) ?!");
             br.followConnection();
@@ -261,7 +257,7 @@ public class ModDbCom extends PluginForHost {
             }
         }
         if (mirrorid != null) {
-            br.getPage("http://www.moddb.com/downloads/start/" + mirrorid + "/all");
+            br.getPage("https://www.moddb.com/downloads/start/" + mirrorid + "/all");
         } else {
             String standardmirrorpage = br.getRegex("attr\\(\"href\", \"(.*?)\\&amp;").getMatch(0);
             if (standardmirrorpage != null) {
@@ -307,5 +303,4 @@ public class ModDbCom extends PluginForHost {
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), moddbservers, servers, JDL.L("plugins.hoster.L4dMapsCom.servers", "Use this server:")).setDefaultValue(0));
     }
-
 }
