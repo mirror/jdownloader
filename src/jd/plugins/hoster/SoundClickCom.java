@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -30,9 +29,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundclick.com" }, urls = { "http://(www\\.)?soundclick\\.com/bands/page_songInfo\\.cfm\\?bandID=\\d+\\&songID=\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundclick.com" }, urls = { "https?://(www\\.)?soundclick\\.com/(bands/page_songInfo|html5/v4/player)\\.cfm\\?(bandID=\\d+\\&)?(songID|albumID)=\\d+" })
 public class SoundClickCom extends PluginForHost {
-
     public SoundClickCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -54,22 +52,16 @@ public class SoundClickCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("&content=music")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String songName = br.getRegex("\"name\":\"([^<>\"]*?)\"").getMatch(0);
-        if (songName == null) {
-            songName = br.getRegex("<div style=\"padding-bottom:10px; font-size:14px; font-weight:bold;\">([^<>\"]*?)</div>").getMatch(0);
-        }
-        final String artist = br.getRegex("<a href=\"/bands/default\\.cfm\\?bandID=\\d+\">([^<>\"]*?)</a>").getMatch(0);
-        if (songName == null || artist == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
         br.getPage("http://www.soundclick.com/util/passkey.cfm?flash=true");
         final String controlID = br.getRegex("<controlID>([^<>\"]*?)</controlID>").getMatch(0);
         if (controlID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.getPage("http://www.soundclick.com/util/xmlsong.cfm?songid=" + getid(downloadLink) + "&passkey=" + controlID + "&q=hi&ext=0");
+        final String songName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+        final String artist = br.getRegex("<artist>([^<>\"]*?)</artist>").getMatch(0);
         dllink = br.getRegex("<cdnFilename>(http[^<>\"]*?)</cdnFilename>").getMatch(0);
-        if (dllink == null) {
+        if (songName == null || artist == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.htmlDecode(dllink);
