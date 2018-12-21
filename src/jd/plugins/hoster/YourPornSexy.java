@@ -1,5 +1,8 @@
 package jd.plugins.hoster;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
@@ -9,9 +12,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourporn.sexy" }, urls = { "https?://(www\\.)?yourporn\\.sexy/post/[a-fA-F0-9]{13}\\.html" })
 public class YourPornSexy extends PluginForHost {
@@ -74,7 +74,7 @@ public class YourPornSexy extends PluginForHost {
         final String items[][] = new Regex(vnfo, "/cdn/([^/]+)/([^/]+)/([^/]+)/([^/]+)").getMatches();
         if (items != null && items.length > 0 && authorid != null) {
             for (final String item[] : items) {
-                dllink = "https://" + item[0] + ".trafficdeposit.com/bvideo/" + item[1] + "/" + item[2] + "/" + authorid + "/" + id + ".mp4";
+                dllink = "https://" + item[0] + ".trafficdeposit.com/bvideo/" + item[2] + "/" + item[3] + "/" + authorid + "/" + id + ".mp4";
                 // logger.info("dllink: " + dllink);
             }
         } else {
