@@ -180,9 +180,9 @@ public class SpankWireCom extends PluginForHost {
         String dllink = null;
         String dllink_plain = null;
         for (final String quality : qualities) {
-            dllink_plain = br.getRegex("cdnPath" + quality + "[^<>\"]*?(\"|\')([^<>\"\\']*?)(\"|\')").getMatch(1);
+            dllink_plain = br.getRegex("cdnPath" + quality + "[^<>\"]*?(\"|\')([^<>\"\\']*?)(\"|\')").getMatch(1); // No "cdnPath"
             if (dllink_plain == null) {
-                dllink_plain = br.getRegex("<a href=\"(https?://[^\"\\']+" + quality + "P[^\"\\']+)\"").getMatch(0);
+                dllink_plain = br.getRegex("<a href=\"(https?://[^\"\\']+" + quality + "p[^\"\\']+)\"").getMatch(0); // <===
             }
             if (dllink_plain == null) {
                 count_notfound++;
@@ -219,7 +219,7 @@ public class SpankWireCom extends PluginForHost {
         }
         if (dllink == null) {
             /* Fallback - grab any URL */
-            dllink = br.getRegex("<a href=\"(https?://[^\"]+\\.(mp4|avi|flv)[^\"]+)\"").getMatch(0);
+            dllink = br.getRegex("<a href=\"(https?://[^\"]+\\.(mp4|avi|flv|wmv)[^\"]+)\"").getMatch(0);
         }
         return dllink;
     }
