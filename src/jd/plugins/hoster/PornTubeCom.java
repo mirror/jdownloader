@@ -71,7 +71,7 @@ public class PornTubeCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(page-not-found\\.jpg\"|<title>Error 404 \\- Page not Found \\| PornTube\\.com</title>|alt=\"Page not Found\"|>\\s*This video is no longer available\\s*<)") || br.getURL().contains("error=")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(page-not-found\\.jpg\"|<title>Error 404 \\- Page not Found \\| PornTube\\.com</title>|alt=\"Page not Found\"|>\\s*This video is no longer available\\s*<|Porn Videos Found<)") || br.getURL().contains("error=")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String initialState = br.getRegex("window.INITIALSTATE = '([^']+)'").getMatch(0);
