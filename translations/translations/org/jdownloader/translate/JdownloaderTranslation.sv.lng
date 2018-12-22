@@ -11,6 +11,7 @@ AddContainerAction_delete_container_msg=Vil du ta bort %s1 efter att länkarna h
 AddContainerAction_delete_container_title=Radera filer?
 AddFilteredStuffAction_getTranslationForOnlyVisibleIfThereIsFilteredStuff=Visas endast om det finns filtrerade länkar.
 AudioCodec_aac_spatial=AAC Spatial 6 Channel
+AudioCodec_opus_spatial=Opus Spatial 6 Channel
 AudioCodec_vorbis_spatial=Vorbis Spatial 4 Channel
 AuthExceptionGenericBan_toString=Autentisering saknas för %s1
 AuthExceptionGenericBan_toString_plugin=%s2: autentisering saknas för %s1
