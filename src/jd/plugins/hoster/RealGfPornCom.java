@@ -107,7 +107,7 @@ public class RealGfPornCom extends PluginForHost {
         requestFileInformation(downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getResponseCode() == 401 || dl.getConnection().getResponseCode() == 403) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 401 / 403", 30 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 401 / 403", 3 * 60 * 1000l);
         }
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
