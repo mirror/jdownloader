@@ -677,6 +677,9 @@ public class OneFichierCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
+                if (dllink.contains("login.pl")) { // jdlog://4209376935451/
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "login.pl?exp=1", 3 * 60 * 1000l);
+                }
             }
             try {
                 errorIpBlockedHandling(br);
