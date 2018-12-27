@@ -185,7 +185,12 @@ public class EsouboryCz extends PluginForHost {
         account.setConcurrentUsePossible(true);
         account.setMaxSimultanDownloads(-1);
         prepBr();
+        br.setAllowedResponseCodes(400);
         br.getPage(API_BASE + "/accountinfo?token=" + getToken(account));
+        if (br.containsHTML("\"last_login\":null")) {
+            account.setProperty("token", null);
+            br.getPage(API_BASE + "/accountinfo?token=" + getToken(account));
+        }
         String trafficLeftMB = PluginJSonUtils.getJson(br, "credit");
         if (!StringUtils.isEmpty(trafficLeftMB)) {
             if (trafficLeftMB.matches("\\d+")) {
