@@ -80,7 +80,7 @@ public class Dz4upCom extends antiDDoSForHost {
     private static final boolean           requiresWWW                                  = true;
     /* In case there is no information when accessing the main link */
     private static final boolean           available_CHECK_OVER_INFO_PAGE               = true;
-    private static final boolean           useOldLoginMethod                            = false;
+    private static final boolean           useOldLoginMethod                            = true;
     private static final boolean           enable_RANDOM_UA                             = false;
     private static final boolean           enable_embed                                 = false;
     private static final boolean           enable_regex_stream_url                      = true;
@@ -542,7 +542,7 @@ public class Dz4upCom extends antiDDoSForHost {
                 final String loginstart = new Regex(br.getURL(), "(https?://(www\\.)?)").getMatch(0);
                 if (useOldLoginMethod) {
                     postPage(this.getProtocol() + this.getHost() + "/login." + type, "submit=Login&submitme=1&loginUsername=" + Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()));
-                    if (br.containsHTML(">Your username and password are invalid<") || !br.containsHTML("/logout\\.html\">")) {
+                    if (br.containsHTML(">Your username and password are invalid<") || !br.containsHTML("/logout\\.html\"")) {
                         if ("de".equalsIgnoreCase(lang)) {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                         } else {
