@@ -32,7 +32,7 @@ import jd.plugins.FilePackage;
  *
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "scnlog.eu" }, urls = { "https?://(?:www\\.)?scnlog\\.(#?:eu|me)/(?:[a-z0-9_\\-]+/){2,}" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "scnlog.eu" }, urls = { "https?://(?:www\\.)?scnlog\\.(#?:eu|me|life)/(?:[a-z0-9_\\-]+/){2,}" })
 public class ScnlogEu extends antiDDoSForDecrypt {
     public ScnlogEu(PluginWrapper wrapper) {
         super(wrapper);
