@@ -20,9 +20,9 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
@@ -34,6 +34,8 @@ import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -54,13 +56,20 @@ public class HerouploadUs extends antiDDoSForHost {
         this.enablePremium(mainpage + "/upgrade." + type);
     }
 
+    @Override
+    public String rewriteHost(String host) {
+        if (host == null || "heroupload.com".equals(host)) {
+            return "heroupload.us";
+        }
+        return super.rewriteHost(host);
+    }
+
     /**
      * For sites which use this script: http://www.yetishare.com/<br />
-     * YetiShareBasic Version 1.1.4-psp<br />
+     * YetiShareBasic Version 1.1.6-psp<br />
      * mods:<br />
-     * limit-info: 2018-01-27: Premium untested, set FREE account limits<br />
-     * protocol: no https<br />
-     * captchatype: reCaptchaV2<br />
+     * limit-info:<br />
+     * captchatype: null<br />
      * other: alternative linkcheck#2: statistics URL: host.tld/<fid>~s<br />
      */
     @Override
@@ -69,7 +78,7 @@ public class HerouploadUs extends antiDDoSForHost {
     }
 
     /* Basic constants */
-    private final String                   mainpage                                     = "http://www.heroupload.us";
+    private final String                   mainpage                                     = "http://heroupload.us";
     private final String                   domains                                      = "(heroupload\\.us)";
     private final String                   type                                         = "html";
     private static final int               wait_BETWEEN_DOWNLOADS_LIMIT_MINUTES_DEFAULT = 10;
@@ -120,14 +129,6 @@ public class HerouploadUs extends antiDDoSForHost {
             protocol = urlinfo.getMatch(0);
         }
         link.setUrlDownload(String.format("%s://%s/%s", protocol, this.getHost(), fid));
-    }
-
-    @Override
-    public String rewriteHost(String host) {
-        if (host == null || "heroupload.com".equals(host)) {
-            return "heroupload.us";
-        }
-        return super.rewriteHost(host);
     }
 
     @SuppressWarnings("deprecation")
@@ -191,11 +192,13 @@ public class HerouploadUs extends antiDDoSForHost {
                 filesize = br.getRegex("(\\d+(?:,\\d+)?(\\.\\d+)? (?:KB|MB|GB))").getMatch(0);
             }
         }
-        if (filename == null || filesize == null) {
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setName(Encoding.htmlDecode(filename).trim());
-        link.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize.replace(",", "")).trim()));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize.replace(",", "")).trim()));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -256,14 +259,23 @@ public class HerouploadUs extends antiDDoSForHost {
                 if (continue_link == null || i > 1) {
                     continue_link = getContinueLink();
                 }
-                if (i == 1 && continue_link == null) {
-                    logger.info("No continue_link available, plugin broken");
+                Form continue_form = null;
+                if (!StringUtils.isEmpty(continue_link)) {
+                    continue_form = new Form();
+                    continue_form.setMethod(MethodType.GET);
+                    continue_form.setAction(continue_link);
+                    continue_form.put("submit", "Submit");
+                    continue_form.put("submitted", "1");
+                    continue_form.put("d", "1");
+                }
+                if (i == 1 && continue_form == null) {
+                    logger.info("No continue_form available, plugin broken");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } else if (continue_link == null) {
-                    logger.info("No continue_link available, stepping out of pre-download loop");
+                } else if (continue_form == null) {
+                    logger.info("No continue_form available, stepping out of pre-download loop");
                     break;
                 } else {
-                    logger.info("Found continue_link, continuing...");
+                    logger.info("Found continue_form, continuing...");
                 }
                 final String rcID = br.getRegex("recaptcha/api/noscript\\?k=([^<>\"]*?)\"").getMatch(0);
                 if (isDownloadlink(continue_link)) {
@@ -271,23 +283,20 @@ public class HerouploadUs extends antiDDoSForHost {
                      * If we already found a downloadlink let's try to download it because html can still contain captcha html --> We don't
                      * need a captcha in this case for sure! E.g. host '3rbup.com'.
                      */
+                    waitTime(link, timeBeforeCaptchaInput, skipWaittime);
                     dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, resume, maxchunks);
                 } else if (br.containsHTML("data\\-sitekey=|g\\-recaptcha\\'")) {
                     captcha = true;
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                     success = true;
                     waitTime(link, timeBeforeCaptchaInput, skipWaittime);
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, "submit=Submit&submitted=1&d=1&capcode=false&g-recaptcha-response=" + recaptchaV2Response, resume, maxchunks);
+                    continue_form.put("capcode", "false");
+                    continue_form.put("g-recaptcha-response", recaptchaV2Response);
+                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_form, resume, maxchunks);
                 } else if (rcID != null) {
                     captcha = true;
                     success = false;
-                    final Recaptcha rc = new Recaptcha(this.br, this);
-                    rc.setId(rcID);
-                    rc.load();
-                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final String c = getCaptchaCode("recaptcha", cf, link);
-                    waitTime(link, timeBeforeCaptchaInput, skipWaittime);
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, "submit=continue&submitted=1&d=1&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c, resume, maxchunks);
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Website uses reCaptchaV1 which has been shut down by Google. Contact website owner!");
                 } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                     captcha = true;
                     success = false;
@@ -308,11 +317,13 @@ public class HerouploadUs extends antiDDoSForHost {
                     final String code = getCaptchaCode("solvemedia", cf, link);
                     final String chid = sm.getChallenge(code);
                     waitTime(link, timeBeforeCaptchaInput, skipWaittime);
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, "submit=continue&submitted=1&d=1&adcopy_challenge=" + Encoding.urlEncode(chid) + "&adcopy_response=" + Encoding.urlEncode(code), resume, maxchunks);
+                    continue_form.put("adcopy_challenge", Encoding.urlEncode(chid));
+                    continue_form.put("adcopy_response", Encoding.urlEncode(code));
+                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_form, resume, maxchunks);
                 } else {
                     success = true;
                     waitTime(link, timeBeforeCaptchaInput, skipWaittime);
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, resume, maxchunks);
+                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_form, resume, maxchunks);
                 }
                 checkResponseCodeErrors(dl.getConnection());
                 if (dl.getConnection().isContentDisposition()) {
@@ -382,6 +393,9 @@ public class HerouploadUs extends antiDDoSForHost {
     }
 
     private boolean isDownloadlink(final String url) {
+        if (StringUtils.isEmpty(url)) {
+            return false;
+        }
         final boolean isdownloadlink = url.contains("download_token=");
         return isdownloadlink;
     }
