@@ -28,9 +28,11 @@ import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -42,7 +44,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "esoubory.cz" }, urls = { "https?://(?:www\\.)?esoubory\\.cz/[a-z]{2}/redir/[^<>\"]+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "esoubory.cz" }, urls = { "https?://(?:www\\.)?esoubory\\.cz/[a-z]{2}/redir/[^<>\"]+\\.html|https?://(?:www\\.)?esoubory\\.cz/[a-z]{2}/(?:file|soubor)/[a-f0-9]{8}/[a-z0-9\\-]+/?" })
 public class EsouboryCz extends PluginForHost {
     public EsouboryCz(PluginWrapper wrapper) {
         super(wrapper);
@@ -55,15 +57,17 @@ public class EsouboryCz extends PluginForHost {
         return "http://www.esoubory.cz/";
     }
 
-    private static final String                            API_BASE           = "https://www.esoubory.cz/api";
-    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
+    private static final String                            API_BASE                       = "https://www.esoubory.cz/api";
+    /* 2018-12-27: API for selfhosted content is broken */
+    private static final boolean                           USE_API_FOR_SELFHOSTED_CONTENT = false;
+    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap             = new HashMap<Account, HashMap<String, Long>>();
 
     private void prepBr() {
         br.getHeaders().put("User-Agent", "JDownloader");
     }
 
     @Override
-    public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
+    public boolean canHandle(final DownloadLink downloadLink, final Account account) throws Exception {
         return true;
     }
 
@@ -86,7 +90,7 @@ public class EsouboryCz extends PluginForHost {
         }
         String filename;
         String filesize;
-        if (aa != null) {
+        if (aa != null && USE_API_FOR_SELFHOSTED_CONTENT) {
             /** 2018-10-18: Broken serverside! */
             /* API */
             br.getPage(API_BASE + "/exists?token=" + getToken(aa) + "&url=" + Encoding.urlEncode(link.getDownloadURL()));
@@ -99,7 +103,7 @@ public class EsouboryCz extends PluginForHost {
             link.setDownloadSize(Long.parseLong(filesize));
             link.setFinalFileName(filename);
         } else {
-            /* API without account is not possible */
+            /* API disabled and/or API usage without account is not possible */
             br.getPage(link.getDownloadURL());
             if (br.getURL().contains("/search/")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -108,10 +112,17 @@ public class EsouboryCz extends PluginForHost {
             final Regex linkinfo = br.getRegex("<h1>\\s*([^<>]*?)\\((\\d+(,\\d+)? (K|M|G)B)\\)\\s*</h1>");
             filename = linkinfo.getMatch(0);
             filesize = linkinfo.getMatch(1);
+            String fileextension = br.getRegex("<span class=\"fa fa\\-file\"></span>([^<>\"]+)</span>").getMatch(0);
             if (filename == null || filesize == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             filename = Encoding.htmlDecode(filename).trim();
+            if (fileextension != null) {
+                fileextension = fileextension.trim();
+                if (!filename.endsWith(fileextension)) {
+                    filename += fileextension;
+                }
+            }
             filesize = filesize.replace(",", ".");
             link.setDownloadSize(SizeFormatter.getSize(filesize));
             /* Do not set the final filename here as we'll have the API when downloading via account anyways! */
@@ -127,7 +138,7 @@ public class EsouboryCz extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 0;
+        return -1;
     }
 
     @Override
@@ -139,19 +150,64 @@ public class EsouboryCz extends PluginForHost {
     private void handleDL(final DownloadLink link, final Account account) throws Exception {
         String finallink = checkDirectLink(link, "esouborydirectlink");
         if (finallink == null) {
-            br.getPage(API_BASE + "/filelink?token=" + getToken(account) + "&url=" + Encoding.urlEncode(link.getDownloadURL()));
-            if (br.containsHTML("\"error\":\"not\\-enough\\-credits\"")) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            if (new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).matches() && !USE_API_FOR_SELFHOSTED_CONTENT) {
+                /* 2018-12-27: API Support broken for selfhosted content! */
+                loginWebsite(account);
+                br.setFollowRedirects(true);
+                /* Downloadlink has to be accessed otherwise we're not able to download via 'finallink' below! */
+                br.getPage(link.getPluginPatternMatcher());
+                finallink = "https://www.esoubory.cz/en/redir/" + new Regex(link.getPluginPatternMatcher(), "([^/]+/[^/]+)(?:\\.html)?$").getMatch(0) + ".html";
+                // br.setFollowRedirects(false);
+                // final String continue_url = "https://www.esoubory.cz/en/redir/" + new Regex(link.getPluginPatternMatcher(),
+                // "([^/]+/[^/]+)(?:\\.html)?$").getMatch(0) + ".html";
+                // br.getPage(continue_url);
+                // finallink = br.getRedirectLocation();
+            } else {
+                /* 2018-12-27: This might not work for selfhosted content as that part of their API is broken! */
+                br.getPage(API_BASE + "/filelink?token=" + getToken(account) + "&url=" + Encoding.urlEncode(link.getDownloadURL()));
+                if (br.containsHTML("\"error\":\"not\\-enough\\-credits\"")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                }
+                finallink = PluginJSonUtils.getJson(br, "link");
             }
-            finallink = PluginJSonUtils.getJson(br, "link");
-            link.setProperty("esouborydirectlink", finallink);
+            if (StringUtils.isEmpty(finallink)) {
+                logger.warning("Failed to find final downloadlink");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, finallink, true, -2);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        link.setProperty("esouborydirectlink", finallink);
         dl.startDownload();
+    }
+
+    /** 2018-12-27: Required for some parts of the plugin for which the API fails. */
+    private void loginWebsite(final Account account) throws IOException, PluginException {
+        br.setFollowRedirects(true);
+        final Cookies cookies = account.loadCookies("");
+        if (cookies != null) {
+            br.setCookies(this.getHost(), cookies);
+            br.getPage("https://www." + account.getHoster() + "/en/");
+            if (br.containsHTML("/account/logout/")) {
+                /* Cookie login successful */
+                return;
+            }
+            /* Full login required */
+            br.clearCookies(br.getHost());
+        }
+        br.getPage("https://www." + account.getHoster() + "/en/account/login/");
+        final Form loginform = br.getFormbyProperty("name", "FormLogin_form");
+        loginform.put("email", account.getUser());
+        loginform.put("password", account.getPass());
+        loginform.put("remember", "1");
+        br.submitForm(loginform);
+        if (br.getCookie(br.getHost(), "authautologin") == null) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        account.saveCookies(br.getCookies(account.getHoster()), "");
     }
 
     @Override
