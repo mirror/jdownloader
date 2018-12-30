@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
@@ -51,7 +50,6 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.fc2.com" }, urls = { "http://(?:video\\.fc2\\.com|xiaojiadianvideo\\.asia|jinniumovie\\.be)/((?:[a-z]{2}/)?(?:a/)?flv2\\.swf\\?i=|(?:[a-z]{2}/)?(?:a/)?content/)\\w+" })
 public class VideoFCTwoCom extends PluginForHost {
-
     public VideoFCTwoCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://fc2.com");
@@ -129,7 +127,7 @@ public class VideoFCTwoCom extends PluginForHost {
                 br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
                 // Thread.sleep(4000l);
                 br.postPage("https://secure.id.fc2.com/index.php?mode=login&switch_language=en", "email=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&image.x=" + (int) (200 * Math.random() + 1) + "&image.y=" + (int) (47 * Math.random() + 1) + "&keep_login=1&done=");
-                String loginDone = br.getRegex("(http://id\\.fc2\\.com/.*?\\?.*?login=done.*?)").getMatch(0);
+                String loginDone = br.getRegex("(http[^<>]+login=done)").getMatch(0);
                 if (loginDone == null) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
@@ -242,7 +240,6 @@ public class VideoFCTwoCom extends PluginForHost {
             if (accounts != null && accounts.size() != 0) {
                 // lets sort, premium over non premium
                 Collections.sort(accounts, new Comparator<Account>() {
-
                     @Override
                     public int compare(final Account o1, final Account o2) {
                         final int io1 = o1.getBooleanProperty("free", false) ? 0 : 1;
@@ -282,7 +279,6 @@ public class VideoFCTwoCom extends PluginForHost {
         if (filename == null || filename.isEmpty() || filename.matches("[\\s\\p{Z}]+")) {
             filename = br.getRegex("title=\".*?◎([^\"]+)").getMatch(0);
         }
-
         if (dllink.endsWith("/")) {
             dllink = dllink.substring(0, dllink.length() - 1);
         }
@@ -297,7 +293,6 @@ public class VideoFCTwoCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-
         /* get url */
         downloadLink.setProperty("ONLYFORPREMIUM", false);
         final String from = br.getRegex("\\&from=(\\d+)\\&").getMatch(0);
@@ -348,7 +343,6 @@ public class VideoFCTwoCom extends PluginForHost {
                 aError = AvailableStatus.UNCHECKABLE;
             }
         }
-
         // prevent NPE
         if (filename != null) {
             filename = filename.replaceAll("\\p{Z}", " ");
@@ -363,9 +357,7 @@ public class VideoFCTwoCom extends PluginForHost {
         if (aError != null) {
             return aError;
         }
-
         br.getHeaders().put("Referer", null);
-
         finalURL = br.getRegex("filepath=(https?://.*?)$").getMatch(0);
         prepareFinalLink();
         if (finalURL == null) {
@@ -458,5 +450,4 @@ public class VideoFCTwoCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
