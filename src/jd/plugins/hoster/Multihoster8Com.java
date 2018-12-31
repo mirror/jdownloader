@@ -40,7 +40,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision: 36397 $", interfaceVersion = 3, names = { "multihoster8.com" }, urls = { "" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "multihoster8.com" }, urls = { "" })
 public class Multihoster8Com extends PluginForHost {
     private static final String          API_BASE            = "https://www.multihoster8.com/api";
     private static final String          NICE_HOST           = "multihoster8.com";
