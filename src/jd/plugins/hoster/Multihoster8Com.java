@@ -162,6 +162,10 @@ public class Multihoster8Com extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         br.setFollowRedirects(true);
         br.getPage(API_BASE + "/login?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+        int status = Integer.parseInt(PluginJSonUtils.getJson(br, "status"));
+        if (status == 401) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
         final String is_premium = PluginJSonUtils.getJson(br, "is_premium");
         if (!"true".equalsIgnoreCase(is_premium)) {
             account.setType(AccountType.FREE);
