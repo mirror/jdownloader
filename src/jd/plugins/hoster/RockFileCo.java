@@ -310,6 +310,9 @@ public class RockFileCo extends antiDDoSForHost {
         /* First, bring up saved final links */
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         /* Second, check for streaming/direct links on the first page */
+        if (br.getURL().contains("op=checkfiles")) {
+            getPage(downloadLink.getDownloadURL());
+        }
         if (dllink == null) {
             dllink = getDllink();
         }
@@ -403,7 +406,7 @@ public class RockFileCo extends antiDDoSForHost {
                         }
                     }
                     /* Captcha START */
-                    if (correctedBR.contains("capCode") && !correctedBR.contains("/recaptcha/api/")) {
+                    if (correctedBR.contains("capCode") && !correctedBR.contains("/recaptcha/api/") && !correctedBR.contains("/captchas/")) {
                         logger.info("Detected captcha method \"plaintext captchas\" for this host");
                         /* Captcha method by ManiacMansion */
                         final String[][] letters = new Regex(br, "position:absolute;padding\\-left:(\\d+)px;padding\\-top:\\d+px;\\'>(&#\\d+;)</span>").getMatches();
