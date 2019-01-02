@@ -144,7 +144,9 @@ public class EPornerCom extends PluginForHost {
                 }
             }
         }
-        downloadLink.setDownloadSize(filesize);
+        if (filesize > 0) {
+            downloadLink.setDownloadSize(filesize);
+        }
         return AvailableStatus.TRUE;
     }
 
