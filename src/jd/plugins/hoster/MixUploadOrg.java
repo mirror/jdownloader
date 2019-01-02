@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -32,9 +31,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mixupload.org" }, urls = { "http://(www\\.)?mixupload\\.(org|com)/((es|de)/)?track/[^<>\"/]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mixupload.org" }, urls = { "https?://(www\\.)?mixupload\\.(org|com)/((es|de)/)?track/[^<>\"/]+" })
 public class MixUploadOrg extends PluginForHost {
-
     public MixUploadOrg(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -173,5 +171,4 @@ public class MixUploadOrg extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }
