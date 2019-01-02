@@ -13,10 +13,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "metacafe.com" }, urls = { "http://(www\\.)?metacafedecrypted\\.com/watch/(sy\\-)?\\d+/.{1}" })
 public class MetacafeCom extends PluginForHost {
-
     private String dllink = null;
 
     public MetacafeCom(PluginWrapper wrapper) {
@@ -56,16 +56,16 @@ public class MetacafeCom extends PluginForHost {
         this.setBrowserExclusive();
         prepBR(this.br);
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-            br.getPage(link.getDownloadURL());
+        br.getPage(link.getDownloadURL());
         if (jd.plugins.decrypter.MetaCafeComDecrypter.isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (br.getURL().contains("metacafe.com/family_filter/")) {
             br.postPage("http://www.metacafe.com/f/index.php?inputType=filter&controllerGroup=user", "filters=0");
         }
-        String fileName = br.getRegex("name=\"title\" content=\"(.*?) \\- Video\"").getMatch(0);
+        String fileName = br.getRegex("og:title\" content=\"(.*?)\"").getMatch(0);
         if (fileName == null) {
-            fileName = br.getRegex("<h1 id=\"ItemTitle\" >(.*?)</h1>").getMatch(0);
+            fileName = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
         }
         if (fileName == null) {
             fileName = url_filename;
@@ -75,16 +75,13 @@ public class MetacafeCom extends PluginForHost {
             link.setFinalFileName(fileName.trim() + ".mp4");
         }
         if (!link.getDownloadURL().contains("metacafe.com/watch/sy-")) {
-            dllink = br.getRegex("\"sources\":\\[\\{\"src\":\"(http[^<>\"]+)\"").getMatch(0);
-            if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            // dllink = URLDecoder.decode(dllink, "utf-8");
-            dllink = dllink.replace("\\", "");
-            // dllink = new Regex(dllink, ":\"(.*?)\"").getMatch(0) + "?__gda__=" + new Regex(dllink, "key\":\"(.*?)\"").getMatch(0);
+            String sources = br.getRegex("\"sources\":(\\[\\{\"src\":\"[^<>]+\\}\\])").getMatch(0);
+            dllink = PluginJSonUtils.getJsonValue(sources, "src");
+            // dllink = br.getRegex("\"sources\":\\[\\{\"src\":\"(http[^<>\"]+)\"").getMatch(0);
             if (dllink == null || dllink.contains("null")) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            // dllink = dllink.replace("\\", "");
             if (!dllink.contains(".m3u8")) {
                 try {
                     if (!br.openGetConnection(dllink).getContentType().contains("html")) {
@@ -135,12 +132,9 @@ public class MetacafeCom extends PluginForHost {
 
     @Override
     public void reset() {
-
     }
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-
     }
-
 }
