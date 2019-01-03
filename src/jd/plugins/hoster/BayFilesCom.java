@@ -18,6 +18,10 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -30,10 +34,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bayfiles.com" }, urls = { "https?://(?:www\\.)?bayfiles\\.(?:com|net)/[a-z0-9]+(?:/.+)?" })
 public class BayFilesCom extends PluginForHost {
@@ -55,7 +55,7 @@ public class BayFilesCom extends PluginForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        return getHost() + "://" + new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/([a-z0-9]+)").getMatch(0);
+        return new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/([a-z0-9]+)").getMatch(0);
     }
 
     @Override
