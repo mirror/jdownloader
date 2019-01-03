@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -31,11 +30,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tookapic.com" }, urls = { "https?://stock\\.tookapic\\.com/photos/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tookapic.com" }, urls = { "https?://(?:stock\\.)?tookapic\\.com/photos/\\d+" })
 public class TookapicCom extends PluginForHost {
-
     public TookapicCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -59,7 +55,6 @@ public class TookapicCom extends PluginForHost {
     //
     // /* don't touch the following! */
     // private static AtomicInteger maxPrem = new AtomicInteger(1);
-
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -70,7 +65,8 @@ public class TookapicCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("property=\"og:title\" content=\"([^<<\"]*?)\"").getMatch(0);
+        // String filename = br.getRegex("property=\"og:title\" content=\"([^<<\"]*?)\"").getMatch(0);
+        String filename = br.getRegex("<title>([^<<\"]*?)( - Tookapic)?</title>").getMatch(0);
         if (filename == null) {
             filename = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
         }
@@ -78,12 +74,12 @@ public class TookapicCom extends PluginForHost {
         if (filesize == null) {
             filesize = br.getRegex("File size\\s*<[^<>]*>\\s*<[^<>]*>\\s*(\\d+(\\.\\d+)? [A-Z]B)").getMatch(0);
         }
-        if (filename == null || filesize == null) {
+        if (filename == null) {
             logger.info("filename: " + filename + ", filesize: " + filesize);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".jpg");
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        // link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
@@ -96,7 +92,9 @@ public class TookapicCom extends PluginForHost {
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
-            dllink = br.getRegex("download data\\-download class=\"[^\"]+\" href=\"(http[^<>\"]*?)\"").getMatch(0);
+            // dllink = br.getRegex("download data\\-download class=\"[^\"]+\" href=\"(http[^<>\"]*?)\"").getMatch(0);
+            // dllink = br.getRegex("zoom-in\" data-src=\"(http[^<>\\|]*?)\\|").getMatch(0);
+            dllink = br.getRegex("zoom-in\" data-src=\"http[^<>\\|]*?\\|(http[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -148,5 +146,4 @@ public class TookapicCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
