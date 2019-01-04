@@ -60,7 +60,10 @@ public class MySpassDe extends PluginForHost {
         br.setFollowRedirects(true);
         final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)/?$").getMatch(0);
         downloadLink.setLinkID(fid);
-        br.getPage("http://www.myspass.de/myspass/includes/apps/video/getvideometadataxml.php?id=" + fid + "&0." + System.currentTimeMillis());
+        // br.getPage("http://www.myspass.de/myspass/includes/apps/video/getvideometadataxml.php?id=" + fid + "&0." +
+        // System.currentTimeMillis());
+        /* 2018-12-29: New */
+        br.getPage("https://www.myspass.de/includes/apps/video/getvideometadataxml.php?id=" + fid);
         if (br.containsHTML("<url_flv><\\!\\[CDATA\\[\\]\\]></url_flv>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
