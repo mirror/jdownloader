@@ -497,6 +497,14 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                             logger.warning("board_id = null --> Failed to grab more than the first batch of items");
                             break;
                         }
+                        if (nextbookmark != null) {
+                            /*
+                             * This is a static value and yes, it really is something like a bookmark. If the process stops at a specified
+                             * value we can easily find the original request via browser. Like pagination just unnecessarily more
+                             * complicated.
+                             */
+                            logger.info("Current 'nextbookmark' value: " + nextbookmark);
+                        }
                         /* not required. */
                         final String module = ""; // "&module_path=App%3ENags%3EUnauthBanner%3EUnauthHomePage%3ESignupForm%3EUserRegister(wall_class%3DdarkWall%2C+container%3Dinspired_banner%2C+show_personalize_field%3Dfalse%2C+next%3Dnull%2C+force_disable_autofocus%3Dnull%2C+is_login_form%3Dnull%2C+show_business_signup%3Dnull%2C+auto_follow%3Dnull%2C+register%3Dtrue)";
                         final String getpage;
@@ -529,7 +537,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                                     logger.info("Failed to find nextbookmark --> Cannot grab more items --> Stopping");
                                     break;
                                 }
-                                getpage = "/resource/BoardFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "%25D1%2581%25D0%25BA%25D0%25B5%25D1%2582%25D1%2587%25D0%25B1%25D1%2583%25D0%25BA%2F&data=%7B%22options%22%3A%7B%22board_id%22%3A%22" + board_id + "%22%2C%22page_size%22%3A" + max_pins_per_board_pagination + "%2C%22add_vase%22%3Atrue%2C%22bookmarks%22%3A%5B%22" + Encoding.urlEncode(nextbookmark) + "%3D%3D%22%5D%2C%22field_set_key%22%3A%22unauth_react%22%2C%22rank_with_query%22%3Anull%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis();
+                                getpage = "/resource/BoardFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22board_id%22%3A%22" + board_id + "%22%2C%22page_size%22%3A" + max_pins_per_board_pagination + "%2C%22add_vase%22%3Atrue%2C%22bookmarks%22%3A%5B%22" + Encoding.urlEncode(nextbookmark) + "%22%5D%2C%22field_set_key%22%3A%22unauth_react%22%2C%22pin_count%22%3A" + total_pin_count + "%2C%22rank_with_query%22%3Anull%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis();
                             }
                         }
                         /*
