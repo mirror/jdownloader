@@ -29,7 +29,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "urlgalleries.net" }, urls = { "https?://(www\\.)?[a-z0-9_]+\\.urlgalleries\\.net/blog_gallery\\.php\\?id=\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "urlgalleries.net" }, urls = { "https?://(www\\.)?[a-z0-9_]+\\.urlgalleries\\.net/porn-gallery-\\d+/.*" })
 public class RlGalleriesNt extends PluginForDecrypt {
     private static String agent = null;
 
@@ -57,32 +57,30 @@ public class RlGalleriesNt extends PluginForDecrypt {
         }
         String fpName = br.getRegex("border='0' /></a></div>(?:\\s*<h\\d+[^>]*>\\s*)?(.*?)(?:\\s*</h\\d+>\\s*)?</td></tr><tr>").getMatch(0);
         if (fpName == null) {
-            fpName = br.getRegex("<h\\d+[^<]*>\\s*([^<]*?)\\s*porn galleries\\s*</h\\d+").getMatch(0);
-        }
-        String[] links = br.getRegex("'(/image(?:_new)?\\.php\\?cn=\\d+&uid=[A-Za-z0-9]+&where=.*?)'").getColumn(0);
-        if (links == null || links.length == 0) {
-            links = br.getRegex("'(/porn-picture-[^'\"]*\\.(jpe?g|png|gif))'").getColumn(0);
-            if (links == null || links.length == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
+            fpName = br.getRegex("<title>([^<]*?)</title>").getMatch(0);
         }
         FilePackage fp = FilePackage.getInstance();
         if (fpName != null) {
             fp.setName(fpName.trim());
         }
+        String[][] items = br.getRegex("href='(/porn-picture[^']+)'[^<>]+><[^<>]+title=\"([^\"]+)\"").getMatches();
+        if (items == null || items.length == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         int counter = 1;
         final Browser brc = br.cloneBrowser();
         final HashSet<String> dups = new HashSet<String>();
-        for (final String aLink : links) {
+        for (final String item[] : items) {
             if (isAbort()) {
                 logger.info("Decryption process aborted by user, stopping...");
                 break;
             }
+            String aLink = item[0];
             if (!dups.add(aLink)) {
                 continue;
             }
-            logger.info("Decrypting link " + counter + " of " + links.length);
+            logger.info("Decrypting link " + counter + " of " + items.length);
             sleep(new Random().nextInt(3) + 1000, param);
             try {
                 brc.getPage(aLink);
@@ -103,6 +101,7 @@ public class RlGalleriesNt extends PluginForDecrypt {
                 fp.add(lol);
             }
             decryptedLinks.add(lol);
+            lol.setFinalFileName(item[1]);
             distribute(lol);
             logger.info(finallink);
             counter++;
