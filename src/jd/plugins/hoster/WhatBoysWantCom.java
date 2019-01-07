@@ -97,7 +97,10 @@ public class WhatBoysWantCom extends PluginForHost {
             if (br.getURL().contains("/error404")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            filename = fid;
+            filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+            if (filename == null) {
+                filename = fid;
+            }
             if (link.getDownloadURL().matches(TYPE_MOVIE)) {
                 filename += default_EXT_video;
             } else {
