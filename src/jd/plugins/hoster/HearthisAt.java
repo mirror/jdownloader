@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -30,13 +29,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hearthis.at" }, urls = { "https?://(?:www\\.)?hearthis\\.at/[^/]+/[^/]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hearthis.at" }, urls = { "https?://(?:www\\.)?hearthis\\.at/[^/]+/[A-Za-z0-9-]+/?" })
 public class HearthisAt extends PluginForHost {
-
     public HearthisAt(PluginWrapper wrapper) {
         super(wrapper);
     }
-
     /* DEV NOTES */
     // Tags:
     // protocol: no https
@@ -46,7 +43,6 @@ public class HearthisAt extends PluginForHost {
     private boolean          free_resume       = false;
     private int              free_maxchunks    = 1;
     private static final int free_maxdownloads = -1;
-
     private String           dllink            = null;
 
     @Override
@@ -64,12 +60,21 @@ public class HearthisAt extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || !this.br.containsHTML("track\\-detail track_") || this.br.getURL().contains("/search/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("data\\-playlist\\-title=\"([^<>\"]*?)\"").getMatch(0);
+        // String filename = br.getRegex("data-playlist-title=\"([^<>\"]*?)\"").getMatch(0); // Always get "pause" (1st match)
+        String filename = br.getRegex("<title>([^<>]*?) \\|[^<>]+</title>").getMatch(0);
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String downloadlink_stream = br.getRegex("data\\-mp3=\"(http[^<>\"]*?)\"").getMatch(0);
-        this.br.setFollowRedirects(false);
+        // final String downloadlink_stream = br.getRegex("data-mp3=\"(http[^<>\"]*?)\"").getMatch(0); // Always get dummy link (1st)
+        String downloadlink_stream = null;
+        String[] mp3Links = br.getRegex("data-mp3=\"(http[^<>\"]*?)\"").getColumn(0);
+        for (String mp3Link : mp3Links) {
+            if (!mp3Link.contains("/untitled/")) {
+                downloadlink_stream = mp3Link;
+                break;
+            }
+        }
+        br.setFollowRedirects(false);
         /* 2016-05-12: It seems like the download function is only available for registered users! */
         this.br.getPage(downloadLink.getDownloadURL() + "/download/");
         dllink = this.br.getRedirectLocation();
@@ -88,6 +93,7 @@ public class HearthisAt extends PluginForHost {
             free_resume = true;
             free_maxchunks = 0;
             dllink = downloadlink_stream;
+            logger.info("\n\n-> Failed to get download link -> Checking stream link: " + dllink + "\n");
         }
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
