@@ -84,7 +84,8 @@ public class PeekVidsCom extends PluginForHost {
                     Thread.sleep(((15 - passedTime) + new Random().nextInt(5)) * 1000l);
                 }
                 String ext = null;
-                final String[] qualities = { "1080p", "720p", "480p", "360p", "240p" };
+                // final String[] qualities = { "1080p", "720p", "480p", "360p", "240p" };
+                final String[] qualities = { "1080", "720", "480", "360", "240" };
                 dllink = null;
                 final String uid = new Regex(downloadLink.getDownloadURL(), this.getSupportedLinks()).getMatch(0);
                 if (uid != null) {
@@ -141,14 +142,16 @@ public class PeekVidsCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 String filename = br.getRegex("<title>\\s*([^<>]+?)( - PeekVids)?\\s*</title>").getMatch(0);
-                String flashvars = br.getRegex("flashvars=\"(.*?)\"").getMatch(0);
+                // String flashvars = br.getRegex("flashvars=\"(.*?)\"").getMatch(0);
+                String flashvars = br.getRegex("(<video.*?</video>)").getMatch(0);
                 if (flashvars == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 flashvars = Encoding.htmlDecode(flashvars);
                 int counter = 0;
                 for (final String quality : qualities) {
-                    dllink = new Regex(flashvars, "\\[" + quality + "\\]=(http[^<>\"]*?)\\&").getMatch(0);
+                    // dllink = new Regex(flashvars, "\\[" + quality + "\\]=(http[^<>\"]*?)\\&").getMatch(0);
+                    dllink = new Regex(flashvars, "data-src" + quality + "=\"(http[^<>\"]*?)\"").getMatch(0);
                     if (dllink != null) {
                         counter++;
                         if (checkDirectLink()) {
