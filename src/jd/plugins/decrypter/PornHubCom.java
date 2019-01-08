@@ -244,13 +244,17 @@ public class PornHubCom extends PluginForDecrypt {
                 if (parameter.contains("/pornstar/") || parameter.contains("/model/")) {
                     publicVideosHTMLSnippet = br.getRegex("(class=\"videoUList[^\"]*?\".*?</section>)").getMatch(0);
                 } else {
-                    publicVideosHTMLSnippet = br.getRegex("(>public Videos<.+?(>Load More<|</section>))").getMatch(0);
+                    // publicVideosHTMLSnippet = br.getRegex("(>public Videos<.+?(>Load More<|</section>))").getMatch(0);
+                    publicVideosHTMLSnippet = br.getRegex("(class=\"videoUList[^\"]*?\".*?</section>)").getMatch(0);
                 }
             } else {
                 /* Pagination result --> Ideal as a source as it only contains the content we need */
                 publicVideosHTMLSnippet = br.toString();
             }
-            // logger.info("publicVideos: " + publicVideos); // For debugging
+            if (publicVideosHTMLSnippet == null) {
+                throw new DecrypterException("Decrypter broken for link: " + parameter);
+            }
+            logger.info("publicVideos: " + publicVideosHTMLSnippet); // For debugging
             final String[] viewkeys = new Regex(publicVideosHTMLSnippet, "_vkey=\"([a-z0-9]+)\"").getColumn(0);
             if (viewkeys == null || viewkeys.length == 0) {
                 break;
