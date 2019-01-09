@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -28,8 +30,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornziz.com", "vidxporn.com", "xnhub.com" }, urls = { "https?://(?:www\\.)?pornziz\\.com/video/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.)?vidxporn\\.com/video/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.)?xnhub\\.com/(?:video/[a-z0-9\\-]+\\-\\d+\\.html|embed/\\d+)" })
 public class UnknownPornScript8 extends PluginForHost {
@@ -73,7 +73,15 @@ public class UnknownPornScript8 extends PluginForHost {
             filename = filename_url;
         }
         dllink = br.getRegex("<source src=\"(https?[^<>\"]+)\"").getMatch(0);
+        if (dllink == null) {
+            String iframe = br.getRegex("<iframe[^<>]+src=\"([^<>\"]+)\"[^<>]+allowfullscreen").getMatch(0);
+            if (iframe != null) {
+                br.getPage(iframe);
+                dllink = br.getRegex("<source src=\"(https?[^<>\"]+)\"").getMatch(0);
+            }
+        }
         if (filename == null || dllink == null) {
+            logger.info("filename: " + filename + ", dllink: " + dllink);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.htmlDecode(dllink);
