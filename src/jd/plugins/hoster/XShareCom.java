@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xshare.com" }, urls = { "http://(www\\.)?xshare\\.com/video/[A-Za-z0-9\\-]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xshare.com" }, urls = { "https?://(www\\.)?xshare\\.com/video/[A-Za-z0-9\\-]+" })
 public class XShareCom extends PluginForHost {
     public XShareCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -39,7 +39,7 @@ public class XShareCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://xshare.com/terms.php";
+        return "https://xshare.com/terms.php";
     }
 
     @SuppressWarnings("deprecation")
@@ -74,14 +74,14 @@ public class XShareCom extends PluginForHost {
         if (dllink == null) {
             final String[] quals = { "video-hd", "video-high" };
             for (final String qual : quals) {
-                dllink = br.getRegex("id=\"" + qual + "\" href=\"(http://[^<>\"]*?/mp4/[^<>\"]*?\\.mp4[^<>\"]*?)\"").getMatch(0);
+                dllink = br.getRegex("id=\"" + qual + "\" href=\"(https?://[^<>\"]*?/mp4/[^<>\"]*?\\.mp4[^<>\"]*?)\"").getMatch(0);
                 if (dllink != null) {
                     break;
                 }
             }
         }
         if (dllink == null) {
-            br.getPage("http://xshare.com/playlist_flow_player_flv.php?vid=" + videoid);
+            br.getPage("https://xshare.com/playlist_flow_player_flv.php?vid=" + videoid);
             dllink = br.getRegex("url=\"([^<>\"]*?)\" type=\"video/").getMatch(0);
         }
         if (dllink == null) {
