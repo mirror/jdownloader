@@ -3,6 +3,8 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Random;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Request;
@@ -12,8 +14,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.components.DecrypterArrayList;
 import jd.utils.JDUtilities;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 public abstract class PornEmbedParser extends antiDDoSForDecrypt {
     public PornEmbedParser(PluginWrapper wrapper) {
@@ -391,7 +391,7 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             }
         }
         // youporn.com handling 3 2018-01-07
-        externID = br.getRegex("ypncdn\\.com/[^/]+/[^/]+/(\\d+)/").getMatch(0);
+        externID = br.getRegex("ypncdn\\.com/[\\d]+/[\\d]+/(\\d+)/").getMatch(0);
         if (externID != null) {
             decryptedLinks.add("//www.youporn.com/watch/" + externID + "/" + System.currentTimeMillis());
             if (!processAll) {
