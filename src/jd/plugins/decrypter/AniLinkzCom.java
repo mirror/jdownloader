@@ -34,10 +34,10 @@ import jd.plugins.FilePackage;
 /**
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anilinkz.com" }, urls = { "https?://(?:www\\.)?anilinkz\\.(?:com|tv|io|to)/[^<>\"/]+(/[^<>\"/]+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anilinkz.com" }, urls = { "https?://(?:www\\.)?(?:anilinkz|aniwatcher)\\.(?:com|tv|io|to)/[^<>\"/]+(/[^<>\"/]+)?" })
 @SuppressWarnings("deprecation")
 public class AniLinkzCom extends antiDDoSForDecrypt {
-    private final String            invalid_links  = "https?://(?:www\\.)?anilinkz\\.(?:com|tv|io|to)/(search|affiliates|get|img|dsa|forums|files|category|\\?page=|faqs|.*?-list|.*?-info|\\?random).*?";
+    private final String            invalid_links  = "https?://(?:www\\.)?(?:anilinkz|aniwatcher)\\.(?:com|tv|io|to)/(search|affiliates|get|img|dsa|forums|files|category|\\?page=|faqs|.*?-list|.*?-info|\\?random).*?";
     private String                  parameter      = null;
     private String                  fpName         = null;
     private String                  escapeAll      = null;
@@ -69,7 +69,7 @@ public class AniLinkzCom extends antiDDoSForDecrypt {
         escapeAll = null;
         spart = -1;
         spart_count = 0;
-        parameter = param.toString().replaceFirst("anilinkz\\..*?/", "anilinkz.to/");
+        parameter = param.toString().replaceFirst("anilinkz\\..*?/", "aniwatcher.com/");
         if (parameter.matches(invalid_links)) {
             logger.info("Link invalid: " + parameter);
             return decryptedLinks;
@@ -139,7 +139,7 @@ public class AniLinkzCom extends antiDDoSForDecrypt {
             }
         } else {
             // set filepackage
-            fpName = br.getRegex("<h2>(.*?)</h2>").getMatch(0);
+            fpName = br.getRegex("<h2[^<>]*>(.*?)</h2>").getMatch(0);
             if (fpName == null) {
                 logger.warning("filepackage == null: " + parameter);
                 logger.warning("Please report issue to JDownloader Development team!");
@@ -230,7 +230,7 @@ public class AniLinkzCom extends antiDDoSForDecrypt {
             } else {
                 // error
             }
-        } else if (inValidate(link) && new Regex(escapeAll, "(anilinkz\\.(?:com|tv|io|to)/get/|chia-anime\\.com/|myvideo\\.de/)").matches()) {
+        } else if (inValidate(link) && new Regex(escapeAll, "(aniwatcher\\.(?:com|tv|io|to)/get/|chia-anime\\.com/|myvideo\\.de/)").matches()) {
             String[] aLinks = new Regex(escapeAll, "((?:https?:)?[^\"]+/get/[^\"]+)").getColumn(0);
             // chia-anime can't be redirected back into dedicated plugin
             if ((aLinks == null || aLinks.length == 0) && escapeAll.contains("chia-anime.com")) {
