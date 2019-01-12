@@ -11,6 +11,7 @@ AddContainerAction_delete_container_msg=Chcete odstranit %s1 po přidání odkaz
 AddContainerAction_delete_container_title=Odstranit soubory kontejnerů?
 AddFilteredStuffAction_getTranslationForOnlyVisibleIfThereIsFilteredStuff=Viditelné pouze pokud je tu něco vyfiltrovaného
 AudioCodec_aac_spatial=Prostorové 6kanálové audio AAC
+AudioCodec_opus_spatial=Opus Spatial 6 Channel
 AudioCodec_vorbis_spatial=Prostorové 4kanálové audio Vorbis
 AuthExceptionGenericBan_toString=Chybí ověření pro %s1
 AuthExceptionGenericBan_toString_plugin=%s2: Chybí ověření pro %s1
