@@ -59,13 +59,14 @@ public class FileHorseCom extends PluginForHost {
             filesize = br.getRegex(">File size / license:</p><p>(\\d+(\\.\\d+)? [A-Za-z]{1,5})").getMatch(0);
         }
         if (filesize == null) {
-            filesize = br.getRegex(">Download Now</span></a><p>\\(([^<>\"]*?)\\) Safe").getMatch(0);
+            filesize = br.getRegex("Download</span></a><p>\\(([^<>\"]*?)\\) Safe").getMatch(0);
         }
         final String pagepiece = br.getRegex("<div id=\"sidebar\">(.*?)<\\!\\-\\- AddThis Button BEGIN \\-\\->").getMatch(0);
         if (filesize == null && pagepiece != null) {
             filesize = new Regex(pagepiece, "(\\d+(\\.{1,2})? (B|b|MB|KB|GB))").getMatch(0);
         }
         if (filename == null || filesize == null) {
+            logger.info("filename: " + filename + ", filesize: " + filesize);
             if (!br.containsHTML("\"main_down_link\"")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
