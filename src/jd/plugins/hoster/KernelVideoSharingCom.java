@@ -329,7 +329,7 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
             dllink = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(\"|')video/(?:mp4|flv)\\2").getMatch(0);
         }
         if (inValidate(dllink, plugin)) { // tryboobs.com
-            dllink = br.getRegex("<video src=\"(https?://[^<>\"]*?)\" controls poster=").getMatch(0);
+            dllink = br.getRegex("<video src=\"(https?://[^<>\"]*?)\" controls").getMatch(0);
         }
         if (inValidate(dllink, plugin)) {
             dllink = br.getRegex("property=\"og:video\" content=\"(http[^<>\"]*?)\"").getMatch(0);
@@ -653,6 +653,9 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
     public static String regexFilenameGeneral(final Browser br) {
         /* Works e.g. for hdzog.com */
         String filename = br.getRegex("var video_title\\s*?=\\s*?\"([^<>]*?)\";").getMatch(0);
+        if (StringUtils.isEmpty(filename)) { // tryboobs.com
+            filename = br.getRegex("data-title=\"(.*?)\"").getMatch(0);
+        }
         if (StringUtils.isEmpty(filename)) {
             /* Newer KVS e.g. tubecup.com */
             filename = br.getRegex("title[\t\n\r ]*?:[\t\n\r ]*?\"([^<>\"]*?)\"").getMatch(0);
