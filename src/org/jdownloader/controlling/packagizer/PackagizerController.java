@@ -23,9 +23,6 @@ import jd.controlling.linkcrawler.PackageInfo;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
-import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter;
-import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter.OnlineStatus;
-import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter.OnlineStatusMatchtype;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -51,17 +48,12 @@ import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.FileCreationEvent;
 import org.jdownloader.controlling.FileCreationListener;
 import org.jdownloader.controlling.FileCreationManager;
-import org.jdownloader.controlling.Priority;
-import org.jdownloader.controlling.filter.RegexFilter;
-import org.jdownloader.controlling.filter.RegexFilter.MatchType;
 import org.jdownloader.controlling.packagizer.PackagizerControllerListener.STATE;
 import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.extraction.BooleanStatus;
 import org.jdownloader.extensions.extraction.ExtractionController;
-import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchive;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFile;
-import org.jdownloader.jd1import.JD1Importer;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
@@ -182,7 +174,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                 LogController.CL(false).log(e);
             }
             final int sizeLoaded = list != null ? list.size() : 0;
-            list = addDefaultRules(importJD1(list));
+            list = addDefaultRules(list);
             final int sizeNow = list != null ? list.size() : 0;
             if (sizeLoaded != sizeNow) {
                 save(list);
@@ -262,61 +254,6 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
             subFolderByPluginRule.init();
         }
         return ret;
-    }
-
-    private ArrayList<PackagizerRule> importJD1(ArrayList<PackagizerRule> list) {
-        if (config != null && config.isTryJD1ImportEnabled()) {
-            final JD1Importer jd1Importer = new JD1Importer();
-            if (jd1Importer.isAvailable()) {
-                config.setTryJD1ImportEnabled(false);
-                try {
-                    final Map<String, Object> data = jd1Importer.getHashMap("JD Package Customizer");
-                    if (data != null) {
-                        final ArrayList<HashMap<String, Object>> settings = JSonStorage.convert(data.get("SETTINGS"), new TypeRef<ArrayList<HashMap<String, Object>>>() {
-                        });
-                        if (settings != null) {
-                            if (list == null) {
-                                list = new ArrayList<PackagizerRule>();
-                            }
-                            for (HashMap<String, Object> map : settings) {
-                                final PackagizerRule rule = new PackagizerRule();
-                                final String regex = (String) map.get("regex");
-                                final String password = (String) map.get("password");
-                                final String name = (String) map.get("name");
-                                final boolean extract = Boolean.TRUE.equals(map.get("extract"));
-                                final boolean enabled = Boolean.TRUE.equals(map.get("enabled"));
-                                final boolean useSubDirectory = Boolean.TRUE.equals(map.get("useSubDirectory"));
-                                final int priority = ((Number) map.get("priority")).intValue();
-                                String downloadDir = (String) map.get("downloadDir");
-                                if (downloadDir == null) {
-                                    downloadDir = "";
-                                }
-                                if (useSubDirectory) {
-                                    downloadDir += File.separator + PACKAGETAG;
-                                }
-                                rule.setName(name);
-                                rule.setAutoExtractionEnabled(extract);
-                                rule.setEnabled(enabled);
-                                rule.setOnlineStatusFilter(new OnlineStatusFilter(OnlineStatusMatchtype.IS, true, OnlineStatus.ONLINE));
-                                if (StringUtils.isNotEmpty(downloadDir)) {
-                                    rule.setDownloadDestination(downloadDir);
-                                }
-                                if (StringUtils.isNotEmpty(password)) {
-                                    ExtractionExtension.getInstance().addPassword(password);
-                                }
-                                rule.setPriority(Priority.getPriority(priority));
-                                rule.setFilenameFilter(new RegexFilter(true, MatchType.EQUALS, regex, true));
-                                list.add(rule);
-                            }
-                            save(list);
-                        }
-                    }
-                } catch (final Throwable e) {
-                    LogController.CL(false).log(e);
-                }
-            }
-        }
-        return list;
     }
 
     public PackagizerController(boolean testInstance) {

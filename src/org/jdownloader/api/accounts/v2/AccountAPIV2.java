@@ -16,7 +16,7 @@ public interface AccountAPIV2 extends RemoteAPIInterface {
     @APIParameterNames({ "premiumHoster", "username", "password" })
     public void addAccount(String premiumHoster, String username, String password);
 
-    @AllowNonStorableObjects
+    @AllowNonStorableObjects(clazz = { AccountAPIStorableV2.class, AccountQuery.class })
     @APIParameterNames({ "query" })
     public List<AccountAPIStorableV2> listAccounts(AccountQuery query);
 
