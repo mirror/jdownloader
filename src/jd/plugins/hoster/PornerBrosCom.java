@@ -15,7 +15,12 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -73,7 +78,7 @@ public class PornerBrosCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -116,36 +121,61 @@ public class PornerBrosCom extends PluginForHost {
             }
         }
         if (dllink == null) {
+            /* 2019-01-14: Same for: porntube.com, pornerbros.com */
+            String initialState = br.getRegex("window.INITIALSTATE = '([^']+)'").getMatch(0);
+            String mediaID = null;
+            String availablequalities = null;
             final String[] qualities = { "1080", "720", "480", "360", "240" };
-            String availablequalities = br.getRegex("\\}\\)\\(\\d+, \\d+, \\[([0-9,]+)\\]\\);").getMatch(0);
-            String mediaID = br.getRegex("id=\"download\\d+p\" data\\-id=\"(\\d+)\"").getMatch(0);
-            if (mediaID == null) {
-                mediaID = br.getRegex("data-id=\"(\\d+)\"").getMatch(0);
-            }
-            if (mediaID == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (availablequalities != null) {
-                availablequalities = availablequalities.replace(",", "+");
-            } else {
-                availablequalities = "";
-                /* fallback - first try to find possible qualities */
-                for (final String quality : qualities) {
-                    if (this.br.containsHTML(">" + quality + "p") && !this.br.containsHTML(quality + "p • N//A")) {
-                        if (!availablequalities.equals("")) {
-                            availablequalities += "+";
+            if (initialState == null) {
+                mediaID = br.getRegex("id=\"download\\d+p\" data\\-id=\"(\\d+)\"").getMatch(0);
+                if (mediaID == null) {
+                    mediaID = br.getRegex("data-id=\"(\\d+)\"").getMatch(0);
+                }
+                availablequalities = br.getRegex("\\}\\)\\(\\d+, \\d+, \\[([0-9,]+)\\]\\);").getMatch(0);
+                if (availablequalities != null) {
+                    availablequalities = availablequalities.replace(",", "+");
+                } else {
+                    availablequalities = "";
+                    /* fallback - first try to find possible qualities */
+                    for (final String quality : qualities) {
+                        if (this.br.containsHTML(">" + quality + "p") && !this.br.containsHTML(quality + "p • N//A")) {
+                            if (!availablequalities.equals("")) {
+                                availablequalities += "+";
+                            }
+                            availablequalities += quality;
                         }
-                        availablequalities += quality;
+                    }
+                    /*
+                     * We failed completely - fallback to the basic qualities only. 480p does NOT belong to the basic qualities. NEVER use
+                     * values if which you do not know whther the video is available in them or not! If you do that, corresponding final
+                     * URLs will end up in 404.
+                     */
+                    if (availablequalities.equals("")) {
+                        availablequalities = "360+240";
                     }
                 }
-                /*
-                 * We failed completely - fallback to the basic qualities only. 480p does NOT belong to the basic qualities. NEVER use
-                 * values if which you do not know whther the video is available in them or not! If you do that, corresponding final URLs
-                 * will end up in 404.
-                 */
-                if (availablequalities.equals("")) {
-                    availablequalities = "360+240";
+            } else {
+                String json = Encoding.htmlDecode(Encoding.Base64Decode(initialState));
+                Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+                // filename = (String) JavaScriptEngineFactory.walkJson(entries, "page/video/title");
+                mediaID = String.valueOf(JavaScriptEngineFactory.walkJson(entries, "page/video/mediaId"));
+                List<Map<String, Object>> encodings = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "page/video/encodings");
+                List<Integer> enc = new ArrayList<Integer>();
+                for (Map<String, Object> encoding : encodings) {
+                    enc.add((Integer) encoding.get("height"));
                 }
+                Collections.sort(enc, Collections.reverseOrder());
+                StringBuilder sb = new StringBuilder();
+                for (int h : enc) {
+                    sb.append(String.valueOf(h));
+                    sb.append("+");
+                }
+                sb.delete(sb.length() - 1, sb.length());
+                availablequalities = sb.toString();
+            }
+            if (mediaID == null || filename == null) {
+                logger.info("mediaID: " + mediaID + ", filename: " + filename);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             this.br.getHeaders().put("Origin", "http://www.pornerbros.com");
             final boolean newWay = true;
