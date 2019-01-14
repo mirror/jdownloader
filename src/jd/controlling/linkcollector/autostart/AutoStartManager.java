@@ -6,6 +6,7 @@ import java.util.WeakHashMap;
 
 import jd.controlling.linkcollector.LinkCollectingInformation;
 import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
 import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
 import jd.controlling.linkcollector.LinkCollectorCrawler;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -142,10 +143,7 @@ public class AutoStartManager implements GenericConfigEventListener<Boolean> {
             resetFlag = resetMap.get(linkCrawler);
         }
         if (Boolean.TRUE.equals(resetFlag)) {
-            delayer.resetAndStart();
-            if (eventSender.hasListener()) {
-                eventSender.fireEvent(new AutoStartManagerEvent(this, AutoStartManagerEvent.Type.RESET));
-            }
+            resetAndStart(false);
         }
     }
 
@@ -153,16 +151,23 @@ public class AutoStartManager implements GenericConfigEventListener<Boolean> {
         if (globalAutoStart || globalAutoConfirm || link.isAutoConfirmEnabled() || link.isAutoStartEnabled() || link.isForcedAutoStartEnabled()) {
             final LinkCollectingInformation collectingInfo = link.getCollectingInfo();
             if (collectingInfo != null) {
+                final JobLinkCrawler linkCrawler = collectingInfo.getLinkCrawler();
                 synchronized (resetMap) {
-                    resetMap.put(collectingInfo.getLinkCrawler(), Boolean.TRUE);
-                }
-                if (collectingInfo.getLinkCrawler().isCollecting() && delayer.getMaximumDelay() == -1) {
-                    return;
-                }
-                synchronized (resetMap) {
-                    resetMap.remove(collectingInfo.getLinkCrawler());
+                    resetMap.put(linkCrawler, Boolean.TRUE);
+                    if (delayer.getMaximumDelay() == -1 && collectingInfo.getLinkCrawler().isCollecting()) {
+                        resetAndStart(true);
+                        return;
+                    } else {
+                        resetMap.remove(linkCrawler);
+                    }
                 }
             }
+            resetAndStart(false);
+        }
+    }
+
+    protected void resetAndStart(final boolean onlyWhenActive) {
+        if (!onlyWhenActive || delayer.isDelayerActive()) {
             delayer.resetAndStart();
             if (eventSender.hasListener()) {
                 eventSender.fireEvent(new AutoStartManagerEvent(this, AutoStartManagerEvent.Type.RESET));
