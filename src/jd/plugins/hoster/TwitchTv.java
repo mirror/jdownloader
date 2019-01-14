@@ -515,7 +515,7 @@ public class TwitchTv extends PluginForHost {
         }
         final DecimalFormat df = new DecimalFormat(partnumberformat);
         final String date = downloadLink.getStringProperty("originaldate", null);
-        final String channelName = downloadLink.getStringProperty("channel", null);
+        final String channelName = downloadLink.getStringProperty("channel", "");
         final int partNumber = downloadLink.getIntegerProperty("partnumber", -1);
         final String quality = downloadLink.getStringProperty("quality", "");
         final int videoQuality = downloadLink.getIntegerProperty("videoQuality", -1);
