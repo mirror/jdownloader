@@ -17,8 +17,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -28,7 +26,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploader.jp" }, urls = { "https?://ux\\.getuploader\\.com/.+" })
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploader.jp" }, urls = { "https?://u[a-z0-9]\\.getuploader\\.com/.+" })
 public class UploaderJpFolder extends antiDDoSForDecrypt {
     public UploaderJpFolder(PluginWrapper wrapper) {
         super(wrapper);
@@ -37,7 +37,7 @@ public class UploaderJpFolder extends antiDDoSForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        if (parameter.contains("/download")) {
+        if (parameter.matches("https?://[^/]+/[^/]+/download/\\d+.*")) {
             decryptedLinks.add(createDownloadlink(parameter));
         } else {
             getPage(parameter);

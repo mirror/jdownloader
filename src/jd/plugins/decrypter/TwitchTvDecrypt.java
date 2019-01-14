@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -43,8 +44,11 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twitch.tv" }, urls = { "https?://((www\\.|[a-z]{2}\\.|secure\\.)?(twitchtv\\.com|twitch\\.tv)/(?!directory)(?:[^<>/\"]+/(?:(b|c|v)/\\d+|videos(\\?page=\\d+)?|video/\\d+)|videos/\\d+)|(www\\.|secure\\.)?twitch\\.tv/archive/archive_popout\\?id=\\d+)" })
 public class TwitchTvDecrypt extends PluginForDecrypt {
@@ -170,9 +174,10 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
             if (br.getURL().matches(videoSingleWeb)) {
                 // no longer get videoname from html, it requires api call.
                 Browser ajax = ajaxGetPage("https://api.twitch.tv/kraken/videos/" + (new Regex(parameter, "/b/\\d+$").matches() ? "a" : "c") + vid + "?on_site=1&");
-                filename = PluginJSonUtils.getJsonValue(ajax, "title");
-                channelName = PluginJSonUtils.getJsonValue(ajax, "display_name");
-                date = PluginJSonUtils.getJsonValue(ajax, "recorded_at");
+                final Map<String, Object> ajaxMap = JSonStorage.restoreFromString(ajax.toString(), TypeRef.HASHMAP);
+                filename = (String) ajaxMap.get("title");
+                channelName = (String) JavaScriptEngineFactory.walkJson(ajaxMap, "channel/display_name");
+                date = (String) ajaxMap.get("recorded_at");
                 final String vdne = "Video does not exist";
                 if (ajax != null && vdne.equals(PluginJSonUtils.getJsonValue(ajax, "message"))) {
                     decryptedLinks.add(createOfflinelink(parameter, vid + " - " + vdne, vdne));
@@ -281,20 +286,22 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
                     decryptedLinks.add(createOfflinelink(parameter, vid + " - " + message, message));
                     return decryptedLinks;
                 }
-                filename = PluginJSonUtils.getJsonValue(ajax, "title");
-                channelName = PluginJSonUtils.getJsonValue(ajax, "display_name");
-                date = PluginJSonUtils.getJsonValue(ajax, "recorded_at");
+                Map<String, Object> ajaxMap = JSonStorage.restoreFromString(ajax.toString(), TypeRef.HASHMAP);
+                filename = (String) ajaxMap.get("title");
+                channelName = (String) JavaScriptEngineFactory.walkJson(ajaxMap, "channel/display_name");
+                date = (String) ajaxMap.get("recorded_at");
                 if (filename == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 filename = Encoding.htmlDecode(filename.trim());
                 filename = filename.replaceAll("[\r\n#]+", "");
                 ajax = this.ajaxGetPagePlayer("https://api.twitch.tv/api/vods/" + vid + "/access_token?as3=t" + (token != null ? "&oauth_token=" + token : ""));
+                ajaxMap = JSonStorage.restoreFromString(ajax.toString(), TypeRef.HASHMAP);
                 // {"token":"{\"user_id\":null,\"vod_id\":3707868,\"expires\":1421924057,\"chansub\":{\"restricted_bitrates\":[]},\"privileged\":false}","sig":"a73d0354f84e8122d78b14f47552e0f83217a89e"}
-                final String auth = PluginJSonUtils.getJsonValue(ajax, "sig");
+                final String auth = (String) ajaxMap.get("sig");
                 // final String expire = PluginJSonUtils.getJson(ajax, "expires");
-                final String privileged = PluginJSonUtils.getJsonValue(ajax, "privileged");
-                final String tokenString = PluginJSonUtils.getJsonValue(ajax, "token");
+                final String privileged = (String) ajaxMap.get("privileged");
+                final String tokenString = (String) ajaxMap.get("token");
                 // auth required
                 // http://usher.twitch.tv/vod/3707868?nauth=%7B%22user_id%22%3Anull%2C%22vod_id%22%3A3707868%2C%22expires%22%3A1421885482%2C%22chansub%22%3A%7B%22restricted_bitrates%22%3A%5B%5D%7D%2C%22privileged%22%3Afalse%7D&nauthsig=d4ecb4772b28b224accbbc4711dff1c786725ce9
                 final String a = Encoding.urlEncode(tokenString);
