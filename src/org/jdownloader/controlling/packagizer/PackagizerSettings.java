@@ -8,7 +8,6 @@ import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultJsonObject;
 
 public interface PackagizerSettings extends ConfigInterface {
-
     @DefaultJsonObject("[]")
     @AboutConfig
     ArrayList<PackagizerRule> getRuleList();
@@ -20,11 +19,4 @@ public interface PackagizerSettings extends ConfigInterface {
     boolean isPackagizerEnabled();
 
     void setPackagizerEnabled(boolean b);
-
-    @AboutConfig
-    @DefaultBooleanValue(true)
-    boolean isTryJD1ImportEnabled();
-
-    void setTryJD1ImportEnabled(boolean b);
-
 }

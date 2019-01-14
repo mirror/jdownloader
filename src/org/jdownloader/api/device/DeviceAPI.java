@@ -11,7 +11,7 @@ import org.jdownloader.myjdownloader.client.json.DirectConnectionInfos;
 public interface DeviceAPI extends RemoteAPIInterface {
     public boolean ping();
 
-    @AllowNonStorableObjects
+    @AllowNonStorableObjects(clazz = { DirectConnectionInfos.class })
     @APIParameterNames({ "request" })
     public DirectConnectionInfos getDirectConnectionInfos(RemoteAPIRequest request);
 

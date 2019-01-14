@@ -22,10 +22,10 @@ public interface SystemAPI extends RemoteAPIInterface {
 
     public void exitJD() throws InterruptedException;;
 
-    @AllowNonStorableObjects
+    @AllowNonStorableObjects(clazz = { SystemInformationStorable.class })
     public SystemInformationStorable getSystemInfos();
 
-    @AllowNonStorableObjects
+    @AllowNonStorableObjects(clazz = { StorageInformationStorable.class })
     @APIParameterNames({ "path" })
     public List<StorageInformationStorable> getStorageInfos(final String path);
 }
