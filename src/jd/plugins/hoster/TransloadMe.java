@@ -20,6 +20,10 @@ import java.util.Arrays;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -39,10 +43,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "transload.me" }, urls = { "" })
 public class TransloadMe extends PluginForHost {
@@ -292,7 +292,11 @@ public class TransloadMe extends PluginForHost {
 
     private void throwZeroBalance() throws PluginException {
         synchronized (LOCK) {
-            final AccountInfo ai = currAcc.getAccountInfo();
+            AccountInfo ai = currAcc.getAccountInfo();
+            if (ai == null) {
+                /* E.g. account gets added for the first time AND no balance left. */
+                ai = new AccountInfo();
+            }
             ai.setTrafficLeft(0);
             ai.setProperty("multiHostSupport", Property.NULL);
             currAcc.setAccountInfo(ai);

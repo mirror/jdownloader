@@ -74,6 +74,7 @@ public class PornTubeCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(page-not-found\\.jpg\"|<title>Error 404 \\- Page not Found \\| PornTube\\.com</title>|alt=\"Page not Found\"|>\\s*This video is no longer available\\s*<|Porn Videos Found<)") || br.getURL().contains("error=")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        /* 2019-01-14: Same for: porntube.com, pornerbros.com */
         String initialState = br.getRegex("window.INITIALSTATE = '([^']+)'").getMatch(0);
         String filename = null;
         String mediaID = null;

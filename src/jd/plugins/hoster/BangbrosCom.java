@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Random;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -37,8 +39,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bangbros.com" }, urls = { "bangbrosdecrypted://.+" })
 public class BangbrosCom extends PluginForHost {
@@ -131,13 +131,17 @@ public class BangbrosCom extends PluginForHost {
 
     private String getDllink(final DownloadLink dl) throws IOException, PluginException {
         final String mainlink = this.getMainlink(dl);
-        final String dllink;
+        String dllink;
         if (mainlink.matches(jd.plugins.decrypter.BangbrosCom.type_userinput_video_couldbe_trailer)) {
             br.getPage(mainlink);
             if (jd.plugins.decrypter.BangbrosCom.isOffline(this.br, mainlink)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             dllink = br.getRegex("var\\s*?videoLink\\s*?=\\s*?\\'(http[^<>\"\\']+)\\';").getMatch(0);
+            if (dllink == null) {
+                /* 2019-01-14: New */
+                dllink = br.getRegex("<source src=\"(?:https?:)?(//[^<>\"]+/trailerx/[^<>\"]+)\" type=\\'video/mp4\\' />").getMatch(0);
+            }
         } else {
             dllink = dl.getDownloadURL();
         }

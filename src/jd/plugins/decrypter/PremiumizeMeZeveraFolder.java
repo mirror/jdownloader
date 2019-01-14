@@ -34,7 +34,7 @@ public class PremiumizeMeZeveraFolder extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         final ArrayList<Account> accs = AccountController.getInstance().getValidAccounts(getHost());
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        if (accs.size() == 0) {
+        if (accs == null || accs.size() == 0) {
             logger.info("Cannot add cloud URLs without account");
             return ret;
         }

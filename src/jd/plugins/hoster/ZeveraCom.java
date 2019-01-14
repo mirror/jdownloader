@@ -50,7 +50,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zevera.com" }, urls = { "https?://[^/]+\\.zeveracdn\\.com/dl/.+|zeveradecrypted://" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zevera.com" }, urls = { "https?://[^/]+\\.zeveracdn\\.com/dl/.+|zeveradecrypted://.+" })
 public class ZeveraCom extends UseNet {
     private static final String          NICE_HOST                 = "zevera.com";
     private static final String          NICE_HOSTproperty         = NICE_HOST.replaceAll("(\\.|\\-)", "");
@@ -288,7 +288,7 @@ public class ZeveraCom extends UseNet {
                         ai.setStatus("Premium | Fair usage: " + fairUsagePercent + "% (limit reached)");
                     } else {
                         ai.setUnlimitedTraffic();
-                        ai.setStatus("Premium | Fair usage:" + fairUsagePercent + "%");
+                        ai.setStatus("Premium | Fair usage: " + fairUsagePercent + "%");
                     }
                 } else {
                     /* This should never happen */

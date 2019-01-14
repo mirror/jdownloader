@@ -58,7 +58,7 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
             /** cutwin.com domains */
             "cutwin.com", "cutwin.us",
             /** adshort.co domains */
-            "adshort.co", "adsrt.com", "adshort.me", "adshort.im" };
+            "adshort.co", "adsrt.com", "adsrt.me", "adshort.me", "adshort.im" };
     /** List of services for which waittime is NOT skippable. */
     private static final List<String> domains_waittime_enforced = Arrays.asList(new String[] { "adbilty.me", "tmearn.com", "linkdrop.net", "rawabbet.com" });
 
