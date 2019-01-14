@@ -53,6 +53,7 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -817,16 +818,24 @@ public class MegaConz extends PluginForHost {
                 if (dl.getConnection().getResponseCode() == 509 || StringUtils.containsIgnoreCase(dl.getConnection().getResponseMessage(), "Bandwidth Limit Exceeded")) {
                     dl.getConnection().disconnect();
                     final String timeLeftString = dl.getConnection().getHeaderField("X-MEGA-Time-Left");
+                    final long minTimeLeft = 30 * 60 * 1000l;
                     final long timeLeft;
                     if (timeLeftString != null && timeLeftString.matches("^\\d+$")) {
-                        timeLeft = Math.max(60 * 1000l, Long.parseLong(timeLeftString) * 1000l);
+                        timeLeft = Long.parseLong(timeLeftString) * 1000l;
                     } else {
                         timeLeft = 60 * 60 * 1000l;
                     }
-                    if (account != null) {
-                        throw new AccountUnavailableException("Bandwidth Limit Exceeded", timeLeft);
+                    if (timeLeft == 0) {
+                        // I guess that 0 means not possible even after waiting. For example filesize larger than available/possible quota
+                        if (account != null && Account.AccountType.PREMIUM.equals(account.getType())) {
+                            throw new AccountUnavailableException("Bandwidth Limit Exceeded", 24 * 60 * 60 * 1000l);
+                        } else {
+                            throw new AccountRequiredException("File larger than available quota");
+                        }
+                    } else if (account != null) {
+                        throw new AccountUnavailableException("Bandwidth Limit Exceeded", Math.max(minTimeLeft, timeLeft));
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Bandwidth Limit Exceeded", timeLeft);
+                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Bandwidth Limit Exceeded", Math.max(minTimeLeft, timeLeft));
                     }
                 }
                 if (StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "html")) {
