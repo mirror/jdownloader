@@ -86,7 +86,7 @@ public class MirStkCm extends antiDDoSForDecrypt {
         // Easier to set redirects on and off than to define every provider. It also creates less maintenance if provider changes things up.
         br.setFollowRedirects(true);
         getPage(parameter);
-        if (br.containsHTML(">(File )?Not Found</")) {
+        if (br.containsHTML(">(File )?Not Found</|>404 ERROR<")) {
             logger.warning("Invalid URL, either removed or never existed :" + parameter);
             return decryptedLinks;
         }
