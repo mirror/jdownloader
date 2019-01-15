@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -30,9 +29,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidmoviez.com" }, urls = { "https?://(www\\.)?(?:rapidmoviez\\.com|rmz\\.rezavn|rmz\\.cr|rapidmoviez\\.eu)/release/[a-z0-9\\-]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidmoviez.com" }, urls = { "https?://(www\\.)?(?:rapidmoviez\\.(?:com|eu|cr)|rmz\\.rezavn|rmz\\.cr)/release/[a-z0-9\\-]+" })
 public class RpdMvzCm extends antiDDoSForDecrypt {
-
     public RpdMvzCm(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -51,17 +49,13 @@ public class RpdMvzCm extends antiDDoSForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         // no https
         final String parameter = param.toString().replace("https://", "http://").replace("rapidmoviez.com/", "rmz.cr/").replace("rmz.rezavn.com/)", "rmz.cr/");
-
         getPage(parameter);
-
         if (br.containsHTML("<title>404 Page Not Found</title>")) {
             logger.info("Incorrect URL: " + parameter);
             return decryptedLinks;
         }
-
         final String fpName = br.getRegex("<h2>(.*?)<br />").getMatch(0);
         String filter = br.getRegex("<div class=\"fullsize\">Download</div>(.*?)<h5><").getMatch(0);
-
         final String links[] = HTMLParser.getHttpLinks(filter, "");
         if (links != null) {
             for (final String link : links) {
@@ -69,28 +63,23 @@ public class RpdMvzCm extends antiDDoSForDecrypt {
             }
         }
         if (decryptedLinks.isEmpty()) {
-
             String js = br.getRegex("<script[^\r\n]+src=\"(/j/\\d+[^\"]+\\.js)").getMatch(0);
             if (js == null) {
                 logger.warning("Can not find 'js', Please report this to JDownloader Development Team : " + parameter);
                 return null;
             }
-
             br.getHeaders().put("Accept", "*/*");
             getPage(js);
-
             filter = br.getRegex("\\(([\\d,]+)\\)").getMatch(0);
             if (filter == null) {
                 logger.warning("Can not find 'filter', Please report this to JDownloader Development Team : " + parameter);
                 return null;
             }
             String[] charset = filter.split(",");
-
             StringBuilder builder = new StringBuilder(charset.length);
             for (String chR : charset) {
                 builder.append(Character.toChars(Integer.parseInt(chR)));
             }
-
             String[] results = new Regex(builder.toString(), "(txt \\+= 'http.*?txt \\+= \"\\\\n\";)").getColumn(0);
             if (results != null && results.length != 0) {
                 for (String result : results) {
@@ -109,12 +98,10 @@ public class RpdMvzCm extends antiDDoSForDecrypt {
                 return null;
             }
         }
-
         if (decryptedLinks.isEmpty()) {
             logger.warning("'decrptedLinks' isEmpty!, Please report this to JDownloader Development Team : " + parameter);
             return null;
         }
-
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName.trim());
@@ -128,5 +115,4 @@ public class RpdMvzCm extends antiDDoSForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
