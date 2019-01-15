@@ -33,6 +33,7 @@ import org.appwork.utils.net.usenet.SimpleUseNet;
 import org.appwork.utils.net.usenet.UUInputStream;
 import org.appwork.utils.net.usenet.UnrecognizedCommandException;
 import org.appwork.utils.net.usenet.YEncInputStream;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.components.usenet.SimpleUseNetDownloadInterface;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetConfigPanel;
@@ -43,7 +44,7 @@ import org.jdownloader.plugins.config.AccountConfigInterface;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "usenet" }, urls = { "usenet://.+" })
-public class UseNet extends PluginForHost {
+public class UseNet extends antiDDoSForHost {
     public UseNet(PluginWrapper wrapper) {
         super(wrapper);
     }

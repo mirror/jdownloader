@@ -104,7 +104,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
         return prepBr;
     }
 
-    private void loadAntiDDoSCookies(Browser prepBr, final String host) {
+    protected void loadAntiDDoSCookies(Browser prepBr, final String host) {
         synchronized (antiDDoSCookies) {
             if (!antiDDoSCookies.isEmpty()) {
                 for (final Map.Entry<String, Cookies> cookieEntry : antiDDoSCookies.entrySet()) {
