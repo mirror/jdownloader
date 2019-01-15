@@ -884,6 +884,15 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
         }
+        // 2019-01-15 share-videos.se
+        externID = br.getRegex("(embed\\.share\\-videos\\.se/auto/embed/\\d+\\?uid=\\d+)").getMatch(0);
+        if (externID != null) {
+            externID = "https://" + externID;
+            decryptedLinks.add(externID);
+            if (!processAll) {
+                return decryptedLinks;
+            }
+        }
         /************************************************************************************************************/
         // filename needed for all IDs below
         /************************************************************************************************************/
