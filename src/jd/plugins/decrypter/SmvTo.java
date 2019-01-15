@@ -23,7 +23,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "smv.to" }, urls = { "https?://(?:www\\\\.)?smv\\\\.to/detail/[A-Za-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "smv.to" }, urls = { "https?://(?:www\\.)?smv\\.to/detail/[A-Za-z0-9]+" })
 public class SmvTo extends PornEmbedParser {
     public SmvTo(PluginWrapper wrapper) {
         super(wrapper);

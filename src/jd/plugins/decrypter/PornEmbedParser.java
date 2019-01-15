@@ -289,7 +289,7 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             }
         }
         // pornhub handling number #1
-        externID = br.getRegex("\"((?:https?:)?//(?:www\\.)?pornhub\\.com/embed/[a-z0-9]+)\"").getMatch(0);
+        externID = br.getRegex("\"((?:https?:)?//(?:[a-z0-9]+\\.)?pornhub\\.com/embed/[a-z0-9]+)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(externID);
             if (!processAll) {
@@ -888,6 +888,14 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
         externID = br.getRegex("(embed\\.share\\-videos\\.se/auto/embed/\\d+\\?uid=\\d+)").getMatch(0);
         if (externID != null) {
             externID = "https://" + externID;
+            decryptedLinks.add(externID);
+            if (!processAll) {
+                return decryptedLinks;
+            }
+        }
+        // 2019-01-15 asianclub.tv
+        externID = br.getRegex("(https?://asianclub\\.tv/v/[A-Za-z0-9\\-]+)").getMatch(0);
+        if (externID != null) {
             decryptedLinks.add(externID);
             if (!processAll) {
                 return decryptedLinks;
