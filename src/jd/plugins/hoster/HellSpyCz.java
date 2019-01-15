@@ -101,9 +101,11 @@ public class HellSpyCz extends PluginForHost {
         br.setFollowRedirects(true);
         this.br.setDebug(true);
         br.getPage(link.getPluginPatternMatcher());
+        final boolean isFile = br.containsHTML("lass=\"left section section\\-filedetail\"");
+        final boolean isVideoStream = br.containsHTML("class=\"snippet--playerSn\"|do=play");
         if (isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (!br.containsHTML("lass=\"left section section\\-filedetail\"")) {
+        } else if (!isFile && !isVideoStream) {
             /* No downloadable content --> Offline */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (isPartFile(link.getPluginPatternMatcher())) {
@@ -140,6 +142,10 @@ public class HellSpyCz extends PluginForHost {
         return new Regex(url, "[^<>\"]*pa?r?t?.?[0-9]+-rar").matches();
     }
 
+    private boolean isVideoStream() {
+        return br.containsHTML("class=\\\"snippet--playerSn\\\"|do=play|section-videodetail");
+    }
+
     public static boolean isOffline(final Browser br) {
         if (br.containsHTML(">Soubor nenalezen<") || br.getHttpConnection().getResponseCode() == 404) {
             return true;
@@ -167,7 +173,7 @@ public class HellSpyCz extends PluginForHost {
         }
         dllink = checkDirectLink(downloadLink, "free_directlink");
         if (dllink == null) {
-            if (br.containsHTML(HTML_IS_STREAM)) {
+            if (isVideoStream()) {
                 dllink = getStreamDirectlink();
                 /* No chunklimit for streams */
                 maxchunks = 0;
@@ -302,7 +308,7 @@ public class HellSpyCz extends PluginForHost {
         play_url = Encoding.htmlDecode(play_url);
         this.br.getPage(play_url);
         this.br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
-        String dllink = br.getRegex("url: \"(http://stream\\d+\\.helldata\\.com[^<>\"]*?)\"").getMatch(0);
+        String dllink = br.getRegex("url: \"(https?://[^\"\\']+\\.mp4[^\"\\']*?)\"").getMatch(0);
         if (dllink == null) {
             logger.warning("Stream-finallink is null");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

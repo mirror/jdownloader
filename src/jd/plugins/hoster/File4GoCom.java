@@ -49,7 +49,7 @@ public class File4GoCom extends antiDDoSForHost {
         return MAINPAGE;
     }
 
-    private static final String MAINPAGE = "http://www.file4go.biz";
+    private static final String MAINPAGE = "http://www.file4go.com";
     private static Object       LOCK     = new Object();
 
     @Override
@@ -61,8 +61,8 @@ public class File4GoCom extends antiDDoSForHost {
 
     @Override
     public String rewriteHost(String host) {
-        if (host == null || "sizedrive.com".equals(host) || "file4go.com".equals(host) || "file4go.net".equals(host)) {
-            return "file4go.biz";
+        if (host == null || "sizedrive.com".equals(host) || "file4go.com".equals(host) || "file4go.net".equals(host) || "file4go.biz".equals(host)) {
+            return "file4go.com";
         }
         return super.rewriteHost(host);
     }

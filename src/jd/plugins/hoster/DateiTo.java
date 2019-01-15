@@ -23,6 +23,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -38,10 +42,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datei.to" }, urls = { "https?://(www\\.)?datei\\.to/(datei/[A-Za-z0-9]+\\.html|\\?[A-Za-z0-9]+)" })
 public class DateiTo extends PluginForHost {
@@ -68,7 +68,7 @@ public class DateiTo extends PluginForHost {
     /* Switches to enable/disable API */
     private static final boolean LOGIN_API_GENERAL             = true;
     private static final boolean FREE_DOWNLOAD_API             = false;                             // rc2 not yet supported
-    private static final boolean ACCOUNT_FREE_DOWNLOAD_API     = false;                              // rc2 not yet supported
+    private static final boolean ACCOUNT_FREE_DOWNLOAD_API     = false;                             // rc2 not yet supported
     private static final boolean ACCOUNT_PREMIUM_DOWNLOAD_API  = true;
     private static final String  NOCHUNKS                      = "NOCHUNKS";
 
@@ -293,24 +293,34 @@ public class DateiTo extends PluginForHost {
             if (waittime == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            this.sleep(Integer.parseInt(waittime) * 1001l, downloadLink);
-            for (int i = 1; i <= 5; i++) {
-                br.postPage("http://datei.to/response/download", "Step=2&ID=" + dlid);
-                final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6LdbVEIUAAAAAIU24dCbs2FiNpy8hA907xADfsBW");
-                final String recaptchaV2Response = rc2.getToken();
-                if (recaptchaV2Response == null) {
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            /* Direct jump to step 3 means captcha is not required (free DLs without captchas are possible sometimes) */
+            final boolean skipCaptcha = br.containsHTML("callback\\s*?:\\s*?\\'loadDownload\\(\"3\"");
+            if (!skipCaptcha) {
+                this.sleep(Integer.parseInt(waittime) * 1001l, downloadLink);
+                for (int i = 1; i <= 5; i++) {
+                    br.postPage("http://datei.to/response/download", "Step=2&ID=" + dlid);
+                    final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6LdbVEIUAAAAAIU24dCbs2FiNpy8hA907xADfsBW");
+                    final String recaptchaV2Response = rc2.getToken();
+                    if (recaptchaV2Response == null) {
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
+                    br.postPage("http://datei.to/response/recaptcha", "modul=checkDLC&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response) + "&ID=" + dlid);
+                    if (br.containsHTML("Eingabe war leider falsch")) {
+                        continue;
+                    }
+                    break;
                 }
-                br.postPage("http://datei.to/response/recaptcha", "modul=checkDLC&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response) + "&ID=" + dlid);
                 if (br.containsHTML("Eingabe war leider falsch")) {
-                    continue;
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                } else if (br.containsHTML("Das Download\\-Ticket ist abgelaufen")) {
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Downloadticket expired");
                 }
-                break;
-            }
-            if (br.containsHTML("Eingabe war leider falsch")) {
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            } else if (br.containsHTML("Das Download\\-Ticket ist abgelaufen")) {
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Downloadticket expired");
+            } else {
+                /* 2019-01-15: Waittime skippable */
+                final boolean allow_waittime_skip_if_captcha_not_required = true;
+                if (!allow_waittime_skip_if_captcha_not_required) {
+                    this.sleep(Integer.parseInt(waittime) * 1001l, downloadLink);
+                }
             }
             br.postPage("http://datei.to/response/download", "Step=3&ID=" + dlid);
             if (br.containsHTML(">Du lädst bereits eine Datei herunter")) {

@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.net.httpconnection.HTTPConnection;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -38,9 +41,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.net.httpconnection.HTTPConnection;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porn.com" }, urls = { "https?://(www\\.)?porn\\.com/videos/(embed/)?[a-z0-9\\-]*?\\-\\d+" })
 public class PornCom extends antiDDoSForHost {
@@ -123,7 +123,7 @@ public class PornCom extends antiDDoSForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = Encoding.htmlDecode(dllink).replace("\\", "");
+        dllink = dllink.replace("\\", "");
         if (q == null) {
             final String ext = getFileNameExtensionFromString(dllink, ".mp4");
             if (vq == null) {

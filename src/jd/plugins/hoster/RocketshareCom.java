@@ -125,7 +125,7 @@ public class RocketshareCom extends PluginForHost {
                         }
                     }
                     if (!foundObject) {
-                        /* This should never happen */
+                        /* This should never happen - so let's set such URLs offline. */
                         dlink.setAvailable(false);
                     } else {
                         final boolean available = ((Boolean) entries.get("available")).booleanValue();
@@ -179,11 +179,8 @@ public class RocketshareCom extends PluginForHost {
             }
             if (captchaRequired) {
                 /* GUEST an FREE(-account) mode */
-                /* TODO: GUEST- and FREE mode are not yet working properly */
-                if (true) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                final boolean useHardcodedReCaptchaSiteKey = true;
+                /* 2019-01-15: TODO: GUEST- and FREE mode are not yet working properly */
+                final boolean useHardcodedReCaptchaSiteKey = false;
                 final String reCaptchaSiteKey;
                 if (useHardcodedReCaptchaSiteKey) {
                     /* 2019-01-14 */
@@ -198,7 +195,7 @@ public class RocketshareCom extends PluginForHost {
                 }
                 token = "\"" + new CaptchaHelperHostPluginRecaptchaV2(this, br, reCaptchaSiteKey).getToken() + "\"";
             }
-            final PostRequest downloadReq = br.createJSonPostRequest(API_BASE + "/download/initialize/" + getLinkID(downloadLink), "{\"mode\": \"" + mode + "\",\"token\": " + token + "}");
+            PostRequest downloadReq = br.createJSonPostRequest(API_BASE + "/download/initialize/" + getLinkID(downloadLink), "{\"mode\": \"" + mode + "\",\"token\": " + token + "}");
             br.openRequestConnection(downloadReq);
             br.loadConnection(null);
             /* Premium users may get 1 second of waittime when they try to download an URL for the first time! */
@@ -259,6 +256,9 @@ public class RocketshareCom extends PluginForHost {
                 /* E.g. "ERROR_INVALID_MODE", "ERROR_LOGGED_IN_GUEST", "ERROR_NOT_LOGGED_IN_FREE" or any other unhandled error-string */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            // if (error_string.equalsIgnoreCase("ERROR_WAIT_REQUIRED")) {
+            // /* TODO: Waittime is handled before this gets executed but we should maybe still check for it here just in case */
+            // }
         }
     }
 
