@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.List;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -30,10 +33,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "share-videos.se" }, urls = { "https?://(?:www\\.)?share\\-videos\\.se/auto/video/\\d+\\?uid=\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "share-videos.se" }, urls = { "https?://(?:(?:www\\.)?share\\-videos\\.se/auto/video/\\d+\\?uid=\\d+|embed\\.share\\-videos\\.se/auto/embed/\\d+\\?uid=\\d+)" })
 public class ShareVideosSe extends PluginForHost {
     public ShareVideosSe(PluginWrapper wrapper) {
         super(wrapper);
@@ -55,6 +55,13 @@ public class ShareVideosSe extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://share-videos.se/";
+    }
+
+    public void correctDownloadLink(final DownloadLink link) {
+        final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), "(\\d+\\?uid=\\d+)");
+        final String fid = urlinfo.getMatch(0);
+        link.setLinkID(fid);
+        link.setPluginPatternMatcher("https://share-videos.se/auto/video/" + fid);
     }
 
     @SuppressWarnings("deprecation")
