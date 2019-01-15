@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -23,18 +22,11 @@ import java.util.LinkedHashMap;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.http.Browser;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
@@ -49,6 +41,14 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zevera.com" }, urls = { "https?://[^/]+\\.zeveracdn\\.com/dl/.+|zeveradecrypted://.+" })
 public class ZeveraCom extends UseNet {
@@ -80,8 +80,9 @@ public class ZeveraCom extends UseNet {
         return "https://www." + this.getHost() + "/legal";
     }
 
-    public static Browser prepBR(final Browser br) {
+    protected Browser prepBR(final Browser br) {
         br.setCookiesExclusive(true);
+        prepBrowser(br, getHost());
         br.getHeaders().put("User-Agent", "JDownloader");
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
@@ -108,10 +109,10 @@ public class ZeveraCom extends UseNet {
         }
     }
 
-    public static AvailableStatus requestFileInformationDirectURL(final Browser br, final DownloadLink link) throws Exception {
+    protected AvailableStatus requestFileInformationDirectURL(final Browser br, final DownloadLink link) throws Exception {
         URLConnectionAdapter con = null;
         try {
-            con = br.openHeadConnection(link.getPluginPatternMatcher());
+            con = openAntiDDoSRequestConnection(br, br.createHeadRequest(link.getPluginPatternMatcher()));
             if (!con.getContentType().contains("html") && con.isOK()) {
                 if (link.getFinalFileName() == null) {
                     link.setFinalFileName(Encoding.urlDecode(Plugin.getFileNameFromHeader(con), false));
@@ -139,8 +140,9 @@ public class ZeveraCom extends UseNet {
         if (isDirectURL(downloadLink) && account == null) {
             // generated links do not require an account
             return true;
+        } else {
+            return account != null;
         }
-        return account != null;
     }
 
     public boolean isDirectURL(final DownloadLink downloadLink) {
@@ -156,8 +158,9 @@ public class ZeveraCom extends UseNet {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         if (!isDirectURL(link)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            handleDL_DIRECT(null, link);
         }
-        handleDL_DIRECT(null, link);
     }
 
     @Override
@@ -175,8 +178,8 @@ public class ZeveraCom extends UseNet {
         } else {
             this.br = prepBR(this.br);
             mhm.runCheck(account, link);
-            ZeveraCom.login(this.br, account, false, client_id);
-            String dllink = ZeveraCom.getDllink(this.br, account, link, client_id, this);
+            login(this.br, account, false, client_id);
+            String dllink = getDllink(this.br, account, link, client_id, this);
             if (StringUtils.isEmpty(dllink)) {
                 mhm.handleErrorGeneric(account, link, "dllinknull", 2, 5 * 60 * 1000l);
             }
@@ -190,6 +193,7 @@ public class ZeveraCom extends UseNet {
         }
         link.setProperty(NICE_HOSTproperty + "directlink", dllink);
         try {
+            antiCloudflare(br, dllink);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
             final String contenttype = dl.getConnection().getContentType();
             if (contenttype.contains("html")) {
@@ -204,9 +208,17 @@ public class ZeveraCom extends UseNet {
         }
     }
 
+    protected void antiCloudflare(Browser br, final String url) throws Exception {
+        final Request request = br.createHeadRequest(url);
+        prepBrowser(br, request.getURL().getHost());
+        final URLConnectionAdapter con = openAntiDDoSRequestConnection(br, request);
+        con.disconnect();
+    }
+
     /** Account is not required */
     private void handleDL_DIRECT(final Account account, final DownloadLink link) throws Exception {
         try {
+            antiCloudflare(br, link.getPluginPatternMatcher());
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
             final String contenttype = dl.getConnection().getContentType();
             if (contenttype.contains("html")) {
@@ -221,27 +233,27 @@ public class ZeveraCom extends UseNet {
         }
     }
 
-    public static String getDllink(final Browser br, final Account account, final DownloadLink link, final String client_id, final PluginForHost hostPlugin) throws IOException, PluginException {
+    public String getDllink(final Browser br, final Account account, final DownloadLink link, final String client_id, final PluginForHost hostPlugin) throws Exception {
         String dllink = checkDirectLink(br, link, NICE_HOSTproperty + "directlink");
         if (dllink == null) {
             /* TODO: Check if the cache function is useful for us */
             // br.getPage("https://www." + account.getHoster() + "/api/cache/check?client_id=" + client_id + "&pin=" +
             // Encoding.urlEncode(account.getPass()) + "&items%5B%5D=" +
             // Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, hostPlugin)));
-            br.getPage("https://www." + account.getHoster() + "/api/transfer/directdl?client_id=" + client_id + "&pin=" + Encoding.urlEncode(account.getPass()) + "&src=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, hostPlugin)));
+            getPage(br, "https://www." + account.getHoster() + "/api/transfer/directdl?client_id=" + client_id + "&pin=" + Encoding.urlEncode(account.getPass()) + "&src=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, hostPlugin)));
             dllink = PluginJSonUtils.getJsonValue(br, "location");
         }
         return dllink;
     }
 
-    public static String checkDirectLink(final Browser br, final DownloadLink downloadLink, final String property) {
+    public String checkDirectLink(final Browser br, final DownloadLink downloadLink, final String property) {
         String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
-                con = br2.openHeadConnection(dllink);
+                con = openAntiDDoSRequestConnection(br2, br2.createHeadRequest(dllink));
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
@@ -266,7 +278,7 @@ public class ZeveraCom extends UseNet {
         return ai;
     }
 
-    public static AccountInfo fetchAccountInfoAPI(final PluginForHost hostPlugin, final Browser br, final String client_id, final Account account) throws Exception {
+    public AccountInfo fetchAccountInfoAPI(final PluginForHost hostPlugin, final Browser br, final String client_id, final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(br, account, true, client_id);
         /* 2018-12-07: Rare serverside issue returns bad values e.g.: "limit_used":9.3966473825276e-5 */
@@ -303,7 +315,7 @@ public class ZeveraCom extends UseNet {
             }
         }
         account.setMaxSimultanDownloads(-1);
-        br.getPage("/api/services/list?client_id=" + client_id + "&pin=" + Encoding.urlEncode(account.getPass()));
+        getPage(br, "/api/services/list?client_id=" + client_id + "&pin=" + Encoding.urlEncode(account.getPass()));
         final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         // final ArrayList<String> supportedHosts = new ArrayList<String>();
         final ArrayList<String> directdl = (ArrayList<String>) entries.get("directdl");
@@ -324,8 +336,8 @@ public class ZeveraCom extends UseNet {
         return ai;
     }
 
-    public static void login(Browser br, final Account account, final boolean force, final String clientID) throws Exception {
-        synchronized (LOCK) {
+    public void login(Browser br, final Account account, final boolean force, final String clientID) throws Exception {
+        synchronized (account) {
             /* Load cookies */
             br.setCookiesExclusive(true);
             br = prepBR(br);
@@ -333,8 +345,8 @@ public class ZeveraCom extends UseNet {
         }
     }
 
-    public static void loginAPI(final Browser br, final String clientID, final Account account, final boolean force) throws Exception {
-        br.getPage("https://www." + account.getHoster() + "/api/account/info?client_id=" + clientID + "&pin=" + Encoding.urlEncode(account.getPass()));
+    public void loginAPI(final Browser br, final String clientID, final Account account, final boolean force) throws Exception {
+        getPage(br, "https://www." + account.getHoster() + "/api/account/info?client_id=" + clientID + "&pin=" + Encoding.urlEncode(account.getPass()));
         final String status = PluginJSonUtils.getJson(br, "status");
         if (!"success".equalsIgnoreCase(status)) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "API-Key / PIN invalid! Make sure you entered your current API-Key / PIN which can be found here: " + account.getHoster() + "/account", PluginException.VALUE_ID_PREMIUM_DISABLE);

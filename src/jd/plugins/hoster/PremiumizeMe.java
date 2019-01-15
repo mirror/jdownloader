@@ -21,21 +21,6 @@ import java.util.List;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.config.handler.KeyHandler;
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetConfigPanel;
-import org.jdownloader.plugins.components.usenet.UsenetServer;
-import org.jdownloader.plugins.config.AccountConfigInterface;
-import org.jdownloader.plugins.config.Order;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.translate._JDT;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.gui.swing.components.linkbutton.JLink;
@@ -52,8 +37,23 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetConfigPanel;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
+import org.jdownloader.plugins.config.AccountConfigInterface;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.translate._JDT;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumize.me" }, urls = { "premiumizedecrypted://.+" })
-public class PremiumizeMe extends UseNet {
+public class PremiumizeMe extends ZeveraCom {
     private static final String          NICE_HOST                 = "premiumize.me";
     private static final String          NICE_HOSTproperty         = NICE_HOST.replaceAll("(\\.|\\-)", "");
     /* Connection limits */
@@ -129,10 +129,6 @@ public class PremiumizeMe extends UseNet {
         return getProtocol() + this.getHost() + "/?show=tos";
     }
 
-    public static Browser prepBR(final Browser br) {
-        return ZeveraCom.prepBR(br);
-    }
-
     @Override
     public AccountBuilderInterface getAccountFactory(InputChangedCallbackInterface callback) {
         return new PremiumizeAccountFactory(callback);
@@ -148,7 +144,7 @@ public class PremiumizeMe extends UseNet {
         if (isUsenetLink(link)) {
             return super.requestFileInformation(link);
         } else {
-            return ZeveraCom.requestFileInformationDirectURL(this.br, link);
+            return requestFileInformationDirectURL(this.br, link);
         }
     }
 
@@ -165,8 +161,9 @@ public class PremiumizeMe extends UseNet {
         if (StringUtils.equals(getHost(), downloadLink.getHost()) && account == null) {
             // generated links do not require an account
             return true;
+        } else {
+            return account != null;
         }
-        return account != null;
     }
 
     public boolean isDirectURL(final DownloadLink downloadLink) {
@@ -187,8 +184,9 @@ public class PremiumizeMe extends UseNet {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         if (!isDirectURL(link)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            handleDL_DIRECT(null, link);
         }
-        handleDL_DIRECT(null, link);
     }
 
     @Override
@@ -201,8 +199,8 @@ public class PremiumizeMe extends UseNet {
         } else {
             this.br = prepBR(this.br);
             mhm.runCheck(account, link);
-            ZeveraCom.login(this.br, account, false, client_id);
-            String dllink = ZeveraCom.getDllink(this.br, account, link, client_id, this);
+            login(this.br, account, false, client_id);
+            String dllink = getDllink(this.br, account, link, client_id, this);
             if (StringUtils.isEmpty(dllink)) {
                 mhm.handleErrorGeneric(account, link, "dllinknull", 2, 5 * 60 * 1000l);
             }
@@ -216,6 +214,7 @@ public class PremiumizeMe extends UseNet {
         }
         link.setProperty(NICE_HOSTproperty + "directlink", dllink);
         try {
+            antiCloudflare(br, dllink);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
             final String contenttype = dl.getConnection().getContentType();
             if (contenttype.contains("html")) {
@@ -233,6 +232,7 @@ public class PremiumizeMe extends UseNet {
 
     /** Account is not required */
     private void handleDL_DIRECT(final Account account, final DownloadLink link) throws Exception {
+        antiCloudflare(br, link.getPluginPatternMatcher());
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
         final String contenttype = dl.getConnection().getContentType();
         if (contenttype.contains("html")) {
@@ -251,7 +251,7 @@ public class PremiumizeMe extends UseNet {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        return ZeveraCom.fetchAccountInfoAPI(this, this.br, client_id, account);
+        return fetchAccountInfoAPI(this, this.br, client_id, account);
     }
 
     private static String getProtocol() {
