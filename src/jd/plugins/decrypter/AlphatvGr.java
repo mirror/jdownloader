@@ -47,6 +47,10 @@ public class AlphatvGr extends PluginForDecrypt {
         jd.plugins.hoster.AlphatvGr.prepBR(this.br);
         // fastlinkcheck = JDUtilities.getPluginForHost(this.getHost()).getPluginConfig().getBooleanProperty("FAST_LINKCHECK", true);
         br.getPage(parameter);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
         final String linkpart = new Regex(parameter, "(/shows?.+)").getMatch(0);
         final String main_url_title = jd.plugins.hoster.AlphatvGr.getFilenameFromUrl(this.br.getURL());
         // final ConfirmDialog confirm = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, parameter, "For this URL JDownloader can crawl the
@@ -77,7 +81,9 @@ public class AlphatvGr extends PluginForDecrypt {
             final ArrayList<String> yearsDupeCheck = new ArrayList<String>();
             final String[] years = br.getRegex("\"CategoryId\":(\\d+)").getColumn(0);
             if (years == null || years.length == 0 || showID == null) {
-                return null;
+                logger.info("Probably no downloadable content");
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
             }
             /* 2018-11-15: Website default = 12 */
             final int maxItemsPerPage = 50;
@@ -102,7 +108,10 @@ public class AlphatvGr extends PluginForDecrypt {
                     br.getPage("https://www.alphatv.gr/ajax/Isobar.AlphaTv.Components.Shows.Show.episodeslist?Key=" + year + "&Page=" + page + "&PageSize=" + maxItemsPerPage + "&ShowId=" + showID);
                     videoItems = br.getRegex("<div class=\"episodeItem flexClm4\">(.*?)</div>\\s*?</div>").getColumn(0);
                     for (final String videoItem : videoItems) {
-                        final String videoID = new Regex(videoItem, "new episodesContext\\(\\),\\{ id :(\\d+)\\}").getMatch(0);
+                        String videoID = new Regex(videoItem, "new episodesContext\\(\\),\\{ id :(\\d+)\\}").getMatch(0);
+                        if (videoID == null) {
+                            videoID = new Regex(videoItem, "WebTvVideoId\\&quot;:(\\d+)").getMatch(0);
+                        }
                         if (videoID == null) {
                             return null;
                         }

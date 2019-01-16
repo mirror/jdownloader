@@ -23,6 +23,9 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -49,9 +52,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileshark.pl" }, urls = { "https?://(www\\.)?fileshark\\.pl/pobierz/(\\d+)/(.+)" })
 public class FileSharkPl extends PluginForHost {
@@ -104,14 +104,10 @@ public class FileSharkPl extends PluginForHost {
         if (dailyLimitWarning != null) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Hoster reports: " + dailyLimitWarning, 60 * 60 * 1000l);
         }
-        if (br.containsHTML("Kolejne pobranie możliwe za") || br.containsHTML("Proszę czekać. Pobieranie będzie możliwe za")) {
-            String waitTime = br.getRegex("Kolejne pobranie możliwe za <span id=\"timeToDownload\">(\\d+)</span>").getMatch(0);
-            if (waitTime == null) {
-                waitTime = br.getRegex("Pobieranie będzie możliwe za <span id=\"timeToDownload\">(\\d+)</span>").getMatch(0);
-            }
-            if (waitTime != null) {
-                return Long.parseLong(waitTime) * 1000l;
-            }
+        /* 2019-01-16: Only RegEx waittime here to find out about reached limits as website may sometimes switch to English. */
+        final String waitTime = br.getRegex("<span id=\"timeToDownload\">(\\d+)<").getMatch(0);
+        if (waitTime != null) {
+            return Long.parseLong(waitTime) * 1000l;
         }
         return 0l;
     }
@@ -223,7 +219,7 @@ public class FileSharkPl extends PluginForHost {
                         link.setProperty("PREMIUM", "FALSE");
                     }
                 } else
-                    // try without API
+                // try without API
                 {
                     useAPI = false;
                 }
@@ -363,14 +359,7 @@ public class FileSharkPl extends PluginForHost {
         }
         if (!useAPI) {
             if (br.containsHTML(">If you want to download this file, buy")) {
-                try {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-                } catch (final Throwable e) {
-                    if (e instanceof PluginException) {
-                        throw (PluginException) e;
-                    }
-                }
-                throw new PluginException(LinkStatus.ERROR_FATAL, getPhrase("PREMIUM_ONLY"));
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             }
             String downloadURL = downloadLink.getDownloadURL();
             String fileId = new Regex(downloadURL, "https?://(www\\.)?fileshark.pl/pobierz/" + "(\\d+/[0-9a-zA-Z]+/?)").getMatch(1);
@@ -390,6 +379,11 @@ public class FileSharkPl extends PluginForHost {
             // it to hdd and the display as challenge to solve
             for (int i = 0; i < 5; i++) {
                 dlForm = br.getForm(0);
+                if (dlForm == null) {
+                    /* 2019-01-16: Seems like most of the URLs are premiumonly. */
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 String token = dlForm.getInputFieldByName("form%5B_token%5D").getValue();
                 File cf = getLocalCaptchaFile();
                 String imageDataEncoded = new Regex(dlForm.getHtmlCode(), "<img src=\"data:image/jpeg;base64,(.*)\" title=\"").getMatch(0);
@@ -740,43 +734,43 @@ public class FileSharkPl extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-        {
-            put("USE_API", "Use API (recommended!)");
-            put("PREMIUM_USER", "Premium User");
-            put("REGISTERED_USER", "Registered User");
-            put("POLAND_ONLY", "This service is only available in Poland");
-            put("NOT_DOWNLOADABLE", "File is unavailable for download");
-            put("DMCA_REQUEST", "File requested by DMCA");
-            put("FILE_DELETED", "File deleted");
-            put("OTHER_FILE_DOWNLOAD", "Other file is downloading!");
-            put("PREMIUM_ONLY", "This file can only be downloaded by premium users");
-            put("WRONG_CAPTCHA", "Wrong Captcha!");
-            put("LOGIN_FAILED", "Login failed");
-            put("VERIFY_LOGIN", "Please check your Username and Password!");
-            put("LOGIN_ERROR", "Login Error");
-            put("WAITTIME", "You must wait for new download");
-            put("MAX_DOWNLOAD", "Reached max number of simultaneously downloaded files.");
-        }
-    };
+                                                  {
+                                                      put("USE_API", "Use API (recommended!)");
+                                                      put("PREMIUM_USER", "Premium User");
+                                                      put("REGISTERED_USER", "Registered User");
+                                                      put("POLAND_ONLY", "This service is only available in Poland");
+                                                      put("NOT_DOWNLOADABLE", "File is unavailable for download");
+                                                      put("DMCA_REQUEST", "File requested by DMCA");
+                                                      put("FILE_DELETED", "File deleted");
+                                                      put("OTHER_FILE_DOWNLOAD", "Other file is downloading!");
+                                                      put("PREMIUM_ONLY", "This file can only be downloaded by premium users");
+                                                      put("WRONG_CAPTCHA", "Wrong Captcha!");
+                                                      put("LOGIN_FAILED", "Login failed");
+                                                      put("VERIFY_LOGIN", "Please check your Username and Password!");
+                                                      put("LOGIN_ERROR", "Login Error");
+                                                      put("WAITTIME", "You must wait for new download");
+                                                      put("MAX_DOWNLOAD", "Reached max number of simultaneously downloaded files.");
+                                                  }
+                                              };
     private HashMap<String, String> phrasesPL = new HashMap<String, String>() {
-        {
-            put("USE_API", "Używaj API (zalecane!)");
-            put("PREMIUM_USER", "Użytkownik Premium");
-            put("REGISTERED_USER", "Uzytkownik zarejestrowany");
-            put("POLAND_ONLY", "Dostęp do serwisu wyłącznie dla adresów z terenu Polski");
-            put("NOT_DOWNLOADABLE", "Plik niedostępny do pobrania");
-            put("DMCA_REQUEST", "Plik zgłoszony przez DMCA");
-            put("FILE_DELETED", "Plik usunięty");
-            put("OTHER_FILE_DOWNLOAD", "Inny plik jest pobierany!");
-            put("PREMIUM_ONLY", "Plik możliwy do pobierania wyłącznie dla użytkowników Premium");
-            put("WRONG_CAPTCHA", "Błędny kod Captcha!");
-            put("LOGIN_FAILED", "Błędny login/hasło");
-            put("VERIFY_LOGIN", "Proszę zweryfikuj swoją nazwę użytkownika i hasło!");
-            put("LOGIN_ERROR", "Błąd logowania");
-            put("WAITTIME", "Musisz odczekać do kolejnego pobierania");
-            put("MAX_DOWNLOAD", "Osiągnięto maksymalną liczbę sciąganych jednocześnie plików.");
-        }
-    };
+                                                  {
+                                                      put("USE_API", "Używaj API (zalecane!)");
+                                                      put("PREMIUM_USER", "Użytkownik Premium");
+                                                      put("REGISTERED_USER", "Uzytkownik zarejestrowany");
+                                                      put("POLAND_ONLY", "Dostęp do serwisu wyłącznie dla adresów z terenu Polski");
+                                                      put("NOT_DOWNLOADABLE", "Plik niedostępny do pobrania");
+                                                      put("DMCA_REQUEST", "Plik zgłoszony przez DMCA");
+                                                      put("FILE_DELETED", "Plik usunięty");
+                                                      put("OTHER_FILE_DOWNLOAD", "Inny plik jest pobierany!");
+                                                      put("PREMIUM_ONLY", "Plik możliwy do pobierania wyłącznie dla użytkowników Premium");
+                                                      put("WRONG_CAPTCHA", "Błędny kod Captcha!");
+                                                      put("LOGIN_FAILED", "Błędny login/hasło");
+                                                      put("VERIFY_LOGIN", "Proszę zweryfikuj swoją nazwę użytkownika i hasło!");
+                                                      put("LOGIN_ERROR", "Błąd logowania");
+                                                      put("WAITTIME", "Musisz odczekać do kolejnego pobierania");
+                                                      put("MAX_DOWNLOAD", "Osiągnięto maksymalną liczbę sciąganych jednocześnie plików.");
+                                                  }
+                                              };
 
     private boolean getUseAPI() {
         return this.getPluginConfig().getBooleanProperty("USE_API", true);
