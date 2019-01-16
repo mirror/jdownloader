@@ -229,7 +229,7 @@ public class BbcComDecrypter extends PluginForDecrypt {
         }
         if (decryptedLinks.size() == 0 && this.br.getURL().matches("https?://[^/]+/programmes/[^/]+")) {
             /* 2017-03-24: Final fallback - UNSURE if that is a good idea as these IDs must not be real videoIDs!! */
-            final String[] videoIDs = this.br.getRegex("episode_id=([pb][a-z0-9]{7})").getColumn(0);
+            final String[] videoIDs = this.br.getRegex("episode_id=([pbm][a-z0-9]{7})").getColumn(0);
             for (final String vpid : videoIDs) {
                 decryptedLinks.add(createDownloadlink(String.format("http://www.bbc.co.uk/iplayer/episode/%s", vpid)));
             }

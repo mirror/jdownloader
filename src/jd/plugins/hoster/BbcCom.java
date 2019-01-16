@@ -33,7 +33,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bbc.com" }, urls = { "http://bbcdecrypted/[pb][a-z0-9]{7}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bbc.com" }, urls = { "http://bbcdecrypted/[a-z][a-z0-9]{7}" })
 public class BbcCom extends PluginForHost {
     public BbcCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -167,7 +167,7 @@ public class BbcCom extends PluginForHost {
              * 2017-03-24: Example html in this case: <?xml version="1.0" encoding="UTF-8"?><mediaSelection
              * xmlns="http://bbc.co.uk/2008/mp/mediaselection"><error id="geolocation"/></mediaSelection>
              */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "GEO-Blocked or account required");
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "GEO-Blocked and/or account required");
         }
         final String quality_string;
         if (hls_master != null) {
