@@ -28,6 +28,13 @@ import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -42,13 +49,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.ZdfDeMediathek.ZdfmediathekConfigInterface;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de", "neo-magazin-royale.de", "heute.de" }, urls = { "https?://(?:www\\.)?zdf\\.de/.+/[A-Za-z0-9_\\-]+\\.html|https?://(?:www\\.)?zdf\\.de/uri/(syncvideoimport_beitrag_\\d+|[a-z0-9\\-]+)", "https?://(?:www\\.)?neo\\-magazin\\-royale\\.de/.+", "https?://(?:www\\.)?heute\\.de/.+" })
 public class ZDFMediathekDecrypter extends PluginForDecrypt {
@@ -186,6 +186,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
     @SuppressWarnings({ "unchecked" })
     private void getDownloadLinksZdfNew() throws Exception {
         List<String> all_selected_qualities = new ArrayList<String>();
+        final List<String> all_found_languages = new ArrayList<String>();
         final HashMap<String, DownloadLink> all_found_downloadlinks = new HashMap<String, DownloadLink>();
         final ZdfmediathekConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.ZdfDeMediathek.ZdfmediathekConfigInterface.class);
         grabBest = cfg.isGrabBESTEnabled();
@@ -479,7 +480,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                                     if (duration > 0 && hlscontainer.getBandwidth() > 0) {
                                         dl.setDownloadSize(duration / 1000 * hlscontainer.getBandwidth() / 8);
                                     }
-                                    all_found_downloadlinks.put(String.format(quality_selector_string, protocol, ext, height_for_quality_selection, language), dl);
+                                    all_found_downloadlinks.put(generateQualitySelectorString(protocol, ext, height_for_quality_selection, language, all_found_languages), dl);
                                 }
                                 /* Set this so we do not crawl this particular hls master again next round. */
                                 highestHlsMasterValue = hlsMasterValueTemp;
@@ -505,7 +506,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                                     dl.setDownloadSize(filesize);
                                 }
                                 setDownloadlinkProperties(dl, final_filename, type, linkid);
-                                all_found_downloadlinks.put(String.format(quality_selector_string, protocol, ext, quality, language), dl);
+                                all_found_downloadlinks.put(generateQualitySelectorString(protocol, ext, quality, language, all_found_languages), dl);
                             }
                         }
                     }
@@ -563,6 +564,22 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             fp.setName(filename_packagename_base_title);
             fp.addLinks(decryptedLinks);
         }
+    }
+
+    private String generateQualitySelectorString(final String protocol, final String ext, final String quality, final String language, final List<String> all_found_languages) {
+        final String quality_selector_format = "%s_%s_%s";
+        String quality_selector_string = String.format(quality_selector_format, protocol, ext, quality);
+        if (!all_found_languages.contains(language)) {
+            all_found_languages.add(language);
+            if (all_found_languages.size() > 1) {
+                /*
+                 * Check for multiple languages - this will break quality selection but is a rare case and important to handle because if we
+                 * don't handle this, we have the same quality_selector values for different versions!!
+                 */
+                quality_selector_string += "_" + language;
+            }
+        }
+        return quality_selector_string;
     }
 
     private boolean containsQuality(String qualityID, List<String> qualities) {
