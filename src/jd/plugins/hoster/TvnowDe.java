@@ -217,7 +217,8 @@ public class TvnowDe extends PluginForHost {
     }
 
     /* Last revision with old handling: BEFORE 38232 (30393) */
-    private void handleDownload(final DownloadLink downloadLink) throws Exception {
+    private void handleDownload(final DownloadLink downloadLink, final Account acc) throws Exception {
+        final TvnowConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.TvnowDe.TvnowConfigInterface.class);
         final boolean isFree = ((Boolean) entries.get("free")).booleanValue();
         final boolean isDRM = ((Boolean) entries.get("isDrm")).booleanValue();
         final String movieID = Long.toString(JavaScriptEngineFactory.toLong(entries.get("id"), -1));
@@ -228,7 +229,8 @@ public class TvnowDe extends PluginForHost {
             /* There really is no way to download these videos and if, you will get encrypted trash data so let's just stop here. */
             throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming type [DRM]");
         }
-        final boolean useNewAPI = true;
+        /* 2019-01-16: Usage of new API requires auth header --> Only use it in premium mode for now */
+        final boolean useNewAPI = acc != null && acc.getType() == AccountType.PREMIUM;
         if (useNewAPI) {
             final String episodeID = downloadLink.getStringProperty("id_episode", null);
             if (StringUtils.isEmpty(episodeID)) {
@@ -263,7 +265,7 @@ public class TvnowDe extends PluginForHost {
                 /* No content available --> Probably DRM protected */
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming type [DRM]");
             }
-            if (downloadLink.getComment() == null) {
+            if (downloadLink.getComment() == null || cfg.isShowQualityInfoInComment()) {
                 downloadLink.setComment(hlsbest.toString());
             }
             logger.info("Downloading quality: " + hlsbest.toString());
@@ -470,7 +472,7 @@ public class TvnowDe extends PluginForHost {
         // if (ageCheck != null) {
         // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, ageCheck, 10 * 60 * 60 * 1000l);
         // }
-        handleDownload(downloadLink);
+        handleDownload(downloadLink, null);
     }
 
     private static Object LOCK = new Object();
@@ -577,7 +579,7 @@ public class TvnowDe extends PluginForHost {
         requestFileInformation(link);
         login(account, false);
         /* 2019-01-16: At the moment, account implementation is not used at all for downloading as it is simply not required. */
-        handleDownload(link);
+        handleDownload(link, account);
     }
 
     @Override
@@ -630,6 +632,11 @@ public class TvnowDe extends PluginForHost {
                 /* Translation not required for this */
                 return "Display DRM protected content as offline (because it is not downloadable anyway)?";
             }
+
+            public String getShowQualityInfoInComment() {
+                /* Translation not required for this */
+                return "Show quality information in comment field on downloadstart?";
+            }
         }
 
         public static final TRANSLATION TRANSLATION = new TRANSLATION();
@@ -641,9 +648,15 @@ public class TvnowDe extends PluginForHost {
         void setEnableUnlimitedSimultaneousDownloads(boolean b);
 
         @DefaultBooleanValue(false)
-        @Order(10)
+        @Order(20)
         boolean isEnableDRMOffline();
 
         void setEnableDRMOffline(boolean b);
+
+        @DefaultBooleanValue(false)
+        @Order(30)
+        boolean isShowQualityInfoInComment();
+
+        void setShowQualityInfoInComment(boolean b);
     }
 }
