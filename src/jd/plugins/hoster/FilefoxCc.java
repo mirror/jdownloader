@@ -1493,13 +1493,22 @@ public class FilefoxCc extends antiDDoSForHost {
                 getPage(downloadLink.getPluginPatternMatcher());
                 dllink = getDllink();
                 if (dllink == null) {
-                    final Form dlform = br.getFormbyProperty("name", "F1");
-                    if (dlform != null && new Regex(correctedBR, HTML_PASSWORDPROTECTED).matches()) {
+                    Form dlform = br.getFormbyProperty("name", "F1");
+                    if (dlform == null) {
+                        dlform = br.getFormbyProperty("id", "f1");
+                    }
+                    if (dlform == null) {
+                        checkErrors(downloadLink, account, true);
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    if (new Regex(correctedBR, HTML_PASSWORDPROTECTED).matches()) {
                         handlePassword(dlform, downloadLink);
                     }
-                    checkErrors(downloadLink, account, true);
-                    if (dlform == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    if (correctedBR.contains("class=\"g-recaptcha\"")) {
+                        /* 2019-01-16: Appearently this sometimes happens - they call this 'Security Verification'. */
+                        logger.info("SPECIAL: Captcha in Premium mode!!! | Detected captcha method \"RecaptchaV2\" for this host");
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                        dlform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                     }
                     submitForm(dlform);
                     checkErrors(downloadLink, account, true);
