@@ -142,11 +142,13 @@ public class SuperdownComBr extends antiDDoSForHost {
             return false;
         }
         try {
-            br.setFollowRedirects(true);
+            final Browser checkbr = br.cloneBrowser();
+            checkbr.setFollowRedirects(true);
+            checkbr.setAllowedResponseCodes(new int[] { 500 });
             for (DownloadLink dl : urls) {
                 URLConnectionAdapter con = null;
                 try {
-                    con = openAntiDDoSRequestConnection(br, br.createGetRequest(dl.getDownloadURL()));
+                    con = openAntiDDoSRequestConnection(checkbr, checkbr.createGetRequest(dl.getDownloadURL()));
                     if (con.isContentDisposition()) {
                         dl.setFinalFileName(getFileNameFromHeader(con));
                         dl.setDownloadSize(con.getLongContentLength());

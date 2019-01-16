@@ -901,6 +901,15 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
         }
+        // 2019-01-16 javynow.com
+        externID = br.getRegex("(javynow\\.com/player/\\d+/[^\"]+)").getMatch(0);
+        if (externID != null) {
+            externID = "https://" + externID;
+            decryptedLinks.add(externID);
+            if (!processAll) {
+                return decryptedLinks;
+            }
+        }
         /************************************************************************************************************/
         // filename needed for all IDs below
         /************************************************************************************************************/
@@ -992,7 +1001,7 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             }
         }
         // 2018-06-25 rapidvideo.com
-        externID = br.getRegex("<iframe [^<>]+ src=(?:'|\")(https?://www.rapidvideo.com/e/[A-Z0-9]+/)(?:'|\")").getMatch(0);
+        externID = br.getRegex("(?:\\'|\")(https?://(?:www\\.)?rapidvideo.com/e/[A-Z0-9]+/?)(?:\\'|\")").getMatch(0);
         if (externID != null) {
             final DownloadLink dl = createDownloadlink(externID);
             if (title != null) {

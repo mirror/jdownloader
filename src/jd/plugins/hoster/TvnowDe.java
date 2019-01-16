@@ -33,7 +33,12 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Cookies;
+import jd.http.requests.PostRequest;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
@@ -42,11 +47,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MediathekHelper;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tvnow.de" }, urls = { "tvnowdecrypted://.+" })
 public class TvnowDe extends PluginForHost {
     public TvnowDe(final PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("https://my.tvnow.de/registrierung");
     }
 
     /* Settings */
@@ -59,10 +66,11 @@ public class TvnowDe extends PluginForHost {
     public static final String            TYPE_SERIES_SINGLE_EPISODE_NEW = "https?://[^/]+/(?:serien|shows)/([^/]+)/(?:[^/]+/)?([^/]+)";
     public static final String            TYPE_DEEPLINK                  = "^[a-z]+://link\\.[^/]+/.+";
     public static final String            API_BASE                       = "https://api.tvnow.de/v3";
+    private static final String           API_NEW_BASE                   = "https://apigw.tvnow.de";
     public static final String            CURRENT_DOMAIN                 = "tvnow.de";
     private LinkedHashMap<String, Object> entries                        = null;
 
-    public static Browser prepBR(final Browser br) {
+    public static Browser prepBRAPI(final Browser br) {
         br.getHeaders().put("Accept", "application/json, text/plain, */*");
         /* 400-bad request for invalid API requests */
         br.setAllowedResponseCodes(new int[] { 400 });
@@ -98,6 +106,7 @@ public class TvnowDe extends PluginForHost {
      * ~2016-02-24: Summary: There is absolutely NO WAY to download from this website <br />
      * ~2016-03-15: Domainchange from nowtv.de to tvnow.de<br />
      * .2018-04-17: Big code cleanup and HLS streams were re-introduced<br />
+     * .2019-01-16: Added FHD download via hlsfairplayhd, added account support <br />
      */
     @SuppressWarnings({ "unchecked" })
     @Override
@@ -105,7 +114,7 @@ public class TvnowDe extends PluginForHost {
         setBrowserExclusive();
         /* Fix old urls */
         correctDownloadLink(downloadLink);
-        prepBR(this.br);
+        prepBRAPI(this.br);
         /* Required to access items via API and also used as linkID */
         final String urlpart = getURLPart(downloadLink);
         // ?fields=*,format,files,manifest,breakpoints,paymentPaytypes,trailers,packages,isDrm
@@ -208,7 +217,7 @@ public class TvnowDe extends PluginForHost {
     }
 
     /* Last revision with old handling: BEFORE 38232 (30393) */
-    private void download(final DownloadLink downloadLink) throws Exception {
+    private void handleDownload(final DownloadLink downloadLink) throws Exception {
         final boolean isFree = ((Boolean) entries.get("free")).booleanValue();
         final boolean isDRM = ((Boolean) entries.get("isDrm")).booleanValue();
         final String movieID = Long.toString(JavaScriptEngineFactory.toLong(entries.get("id"), -1));
@@ -219,16 +228,28 @@ public class TvnowDe extends PluginForHost {
             /* There really is no way to download these videos and if, you will get encrypted trash data so let's just stop here. */
             throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming type [DRM]");
         }
-        final String urlpart = getURLPart(downloadLink);
-        br.getPage(API_BASE + "/movies/" + urlpart + "?fields=manifest");
+        final boolean useNewAPI = true;
+        if (useNewAPI) {
+            final String episodeID = downloadLink.getStringProperty("id_episode", null);
+            if (StringUtils.isEmpty(episodeID)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.getPage(API_NEW_BASE + "/module/player/" + episodeID);
+        } else {
+            final String urlpart = getURLPart(downloadLink);
+            br.getPage(API_BASE + "/movies/" + urlpart + "?fields=manifest");
+        }
         entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         entries = (LinkedHashMap<String, Object>) entries.get("manifest");
         /* 2018-04-18: So far I haven't seen a single http stream! */
         // final String urlHTTP = (String) entries.get("hbbtv");
         final String hdsMaster = (String) entries.get("hds");
-        String hlsMaster = (String) entries.get("hlsclear");
-        if (StringUtils.isEmpty(hlsMaster)) {
+        String hlsMaster = (String) entries.get("hlsfairplayhd");
+        if (StringUtils.isEmpty(hlsMaster) || !hlsMaster.startsWith("http")) {
             hlsMaster = (String) entries.get("hlsfairplay");
+            if (StringUtils.isEmpty(hlsMaster) || !hlsMaster.startsWith("http")) {
+                hlsMaster = (String) entries.get("hlsclear");
+            }
             /* 2018-05-04: Only "hls" == Always DRM */
             // if (StringUtils.isEmpty(hlsMaster)) {
             // hlsMaster = (String) entries.get("hls");
@@ -242,6 +263,10 @@ public class TvnowDe extends PluginForHost {
                 /* No content available --> Probably DRM protected */
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming type [DRM]");
             }
+            if (downloadLink.getComment() == null) {
+                downloadLink.setComment(hlsbest.toString());
+            }
+            logger.info("Downloading quality: " + hlsbest.toString());
             checkFFmpeg(downloadLink, "Download a HLS Stream");
             try {
                 dl = new HLSDownloader(downloadLink, br, hlsbest.getDownloadurl());
@@ -425,6 +450,10 @@ public class TvnowDe extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
+        return getMaxSimultaneousDownloads();
+    }
+
+    public int getMaxSimultaneousDownloads() {
         final TvnowConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.TvnowDe.TvnowConfigInterface.class);
         if (cfg.isEnableUnlimitedSimultaneousDownloads()) {
             return -1;
@@ -441,7 +470,125 @@ public class TvnowDe extends PluginForHost {
         // if (ageCheck != null) {
         // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, ageCheck, 10 * 60 * 60 * 1000l);
         // }
-        download(downloadLink);
+        handleDownload(downloadLink);
+    }
+
+    private static Object LOCK = new Object();
+
+    private void login(final Account account, final boolean force) throws Exception {
+        synchronized (LOCK) {
+            try {
+                br.setFollowRedirects(true);
+                br.setCookiesExclusive(true);
+                final Cookies cookies = account.loadCookies("");
+                String authtoken = account.getStringProperty("authtoken", null);
+                String userID = account.getStringProperty("userid", null);
+                /* Always try to re-use sessions! */
+                if (cookies != null && authtoken != null && userID != null) {
+                    this.br.setCookies(this.getHost(), cookies);
+                    setLoginHeaders(this.br, authtoken);
+                    /* Only request the fields we need to verify whether stored headers&cookies are valid or not. */
+                    br.getPage(API_BASE + "/users/" + userID + "/transactions?fields=id,status");
+                    final String useridTmp = PluginJSonUtils.getJson(br, "id");
+                    if (useridTmp != null && useridTmp.matches("\\d+") && br.getHttpConnection().getResponseCode() != 401) {
+                        return;
+                    }
+                    /* Full login required - cleanup old cookies / headers */
+                    br = new Browser();
+                }
+                /* 2019-01-16: This is skippable */
+                // br.getPage("https://my." + this.getHost() + "/login");
+                prepBRAPI(br);
+                final PostRequest loginReq = br.createJSonPostRequest(API_BASE + "/backend/login?fields=[%22*%22,%22user%22,[%22receiveInsiderEmails%22,%22receiveMarketingEmails%22,%22marketingsettingsDone%22,%22receiveGroupMarketingEmails%22,%22receiveRTLIIMarketingEmails%22]]", "{\"email\":\"" + account.getUser() + "\",\"password\":\"" + account.getPass() + "\"}");
+                br.openRequestConnection(loginReq);
+                br.loadConnection(null);
+                /*
+                 * This token is a set of base64 strings separated by dots which contains more json which contains some information about
+                 * the account and some more tokens (again base64)
+                 */
+                authtoken = PluginJSonUtils.getJson(br, "token");
+                userID = PluginJSonUtils.getJson(br, "id");
+                final String clientID = PluginJSonUtils.getJson(br, "clientId");
+                final String ck = PluginJSonUtils.getJson(br, "ck");
+                if (authtoken == null || userID == null || clientID == null || ck == null) {
+                    /* E.g. wrong logindata: {"error":{"code":401,"message":"backend.user.authentication.failed"}} */
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                /* Important header! */
+                setLoginHeaders(this.br, authtoken);
+                account.setProperty("userid", userID);
+                account.setProperty("authtoken", authtoken);
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
+            } catch (final PluginException e) {
+                account.clearCookies("");
+                throw e;
+            }
+        }
+    }
+
+    private void setLoginHeaders(final Browser br, final String authtoken) {
+        br.getHeaders().put("x-auth-token", authtoken);
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        try {
+            login(account, true);
+        } catch (PluginException e) {
+            account.setValid(false);
+            throw e;
+        }
+        final String userID = account.getStringProperty("userid", null);
+        br.getPage(API_BASE + "/users/" + userID + "/transactions?fields=*,paymentPaytype.*,paymentPaytype.format.*,paymentTransaction.*,paymentTransaction.paymentProvider&filter=%7B%22ContainerId%22:0%7D");
+        /** We can get A LOT of information here ... but we really only want to know if we have a free- or a premium account. */
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "items/{0}");
+        final String expiredateStr = (String) entries.get("endDate");
+        final String createdateStr = (String) entries.get("created");
+        final long expiredateTimestamp = !StringUtils.isEmpty(expiredateStr) ? TimeFormatter.getMilliSeconds(expiredateStr, "yyyy-MM-dd HH:mm:ss", Locale.GERMANY) : 0;
+        ai.setUnlimitedTraffic();
+        if (!StringUtils.isEmpty(createdateStr)) {
+            ai.setCreateTime(TimeFormatter.getMilliSeconds(createdateStr, "yyyy-MM-dd HH:mm:ss", Locale.GERMANY));
+        }
+        if (expiredateTimestamp < System.currentTimeMillis()) {
+            account.setType(AccountType.FREE);
+            /* free accounts can still have captcha */
+            account.setConcurrentUsePossible(false);
+            ai.setStatus("Registered (free) user");
+        } else {
+            ai.setValidUntil(expiredateTimestamp);
+            account.setType(AccountType.PREMIUM);
+            account.setConcurrentUsePossible(true);
+            final String cancelleddateStr = (String) entries.get("cancelled");
+            final long cancelleddateTimestamp = !StringUtils.isEmpty(cancelleddateStr) ? TimeFormatter.getMilliSeconds(cancelleddateStr, "yyyy-MM-dd HH:mm:ss", Locale.GERMANY) : 0;
+            if (cancelleddateTimestamp > 0) {
+                ai.setStatus("Premium account (subscription cancelled)");
+            } else {
+                ai.setStatus("Premium account (subscription active)");
+            }
+        }
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link);
+        login(account, false);
+        /* 2019-01-16: At the moment, account implementation is not used at all for downloading as it is simply not required. */
+        handleDownload(link);
+    }
+
+    @Override
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        /* This provider has no captchas at all */
+        return false;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return getMaxSimultaneousDownloads();
     }
 
     @Override
