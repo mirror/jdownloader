@@ -36,8 +36,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alphatv.gr" }, urls = { "https?://(?:www\\.)?alphatv\\.gr/show/.*?/\\?vtype=[a-z]+\\&vid=\\d+\\&year=\\d+\\&showId=\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alphatv.gr" }, urls = { "https?://(?:www\\.)?alphatv\\.gr/.+vtype=[a-z0-9]+\\&vid=\\d+.+" })
 public class AlphatvGr extends PluginForHost {
     public AlphatvGr(PluginWrapper wrapper) {
         super(wrapper);
@@ -74,8 +75,11 @@ public class AlphatvGr extends PluginForHost {
         this.setBrowserExclusive();
         prepBR(this.br);
         br.getHeaders().put("x-requested-with", "XMLHttpRequest");
-        final String parameters = new Regex(link.getPluginPatternMatcher(), "\\?(.+)").getMatch(0);
-        br.getPage("https://www.alphatv.gr/ajax/Isobar.AlphaTv.Components.PopUpVideo.PopUpVideo.EpisodesForYear?" + parameters);
+        String parameters = new Regex(link.getPluginPatternMatcher(), "(vid=\\d+.*?\\&showId=\\d+)").getMatch(0);
+        if (parameters == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        br.getPage("https://www.alphatv.gr/ajax/Isobar.AlphaTv.Components.PopUpVideo.PopUpVideo.PlayMedia/?" + parameters);
         if (isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -88,6 +92,9 @@ public class AlphatvGr extends PluginForHost {
         final Regex finfo = br.getRegex("/microsites/mourmoura/(?:video/)?(\\d+)/?([^\"]*?)\\.mp4");
         final String date = finfo.getMatch(0);
         String title = finfo.getMatch(1);
+        if (title == null) {
+            title = br.getRegex("/([^/]+)\\.mp4").getMatch(0);
+        }
         if (title == null) {
             title = getFilenameFromUrl(br.getURL());
             if (title == null) {
@@ -112,7 +119,12 @@ public class AlphatvGr extends PluginForHost {
         final String hls_master = null;
         final String url_rtmp = null;
         /* 2018-11-15: http streaming is the only streaming method at the moment! */
-        final String url_http = this.br.getRegex("id=\"currentvideourl\" data\\-url=\"(https?://[^\"]+)\"").getMatch(0);
+        String json = br.getRegex("id=\"currentvideourl\" data-plugin-player=\"(\\{[^\"]+\\})\"").getMatch(0);
+        String url_http = this.br.getRegex("id=\"currentvideourl\" data\\-url=\"(https?://[^\"]+)\"").getMatch(0);
+        if (url_http == null && json != null) {
+            json = Encoding.htmlDecode(json);
+            url_http = PluginJSonUtils.getJson(json, "url");
+        }
         if (hls_master == null && url_rtmp == null && url_http == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

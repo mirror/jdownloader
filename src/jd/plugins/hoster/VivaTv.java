@@ -13,11 +13,15 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -32,9 +36,8 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mtv.com" }, urls = { "http://viacommgid/mgid:.+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mtv.com" }, urls = { "http://viacommgid/mgid:.+" })
 public class VivaTv extends PluginForHost {
-
     public VivaTv(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -57,7 +60,6 @@ public class VivaTv extends PluginForHost {
     public static final String   url_service_mediagen_intl_mtvnservices              = "http://intl.mtvnservices.com/mediagen/%s/";
     public static final String   url_service_mediagen_mediautils_mtvnservices_device = "http://media-utils.mtvnservices.com/services/MediaGenerator/%s?device={device}";
     public static final String   url_service_mediagen_ESPERANTO                      = "http://intl.esperanto.mtvi.com/www/xml/media/mediaGen.jhtml?uri=%s";
-
     /*
      * E.g. json-version:
      * http://media-utils.mtvnservices.com/services/MediaGenerator/mgid:arc:episode:comedycentral.com:0e9587e2-d682-4c1d-a20c
@@ -74,7 +76,6 @@ public class VivaTv extends PluginForHost {
      * Description of possible parameters in feed-urls:<br />
      * Possible values for "version": "as3"<br />
      */
-
     /**
      * EVERY MTV project has mgid strings! Core of this is either a (6-7 digits?) long ID or a hash-like id e.g. xxx-yyy-ggg-hhh-ttt. Only
      * mgids with the short IDs can be embedded into other websites (as far as I've seen it).
@@ -87,16 +88,13 @@ public class VivaTv extends PluginForHost {
      * XML tag.
      */
     /** Note: There might also be a way to get mobile (http) links, see YT-dl project. */
-
     /** Tags: Viacom International Media Networks Northern Europe, mrss */
     /** Additional thanks goes to: https://github.com/rg3/youtube-dl/blob/master/youtube_dl/extractor/mtv.py */
-
     /* Plugin related things */
     private static final String  player_url                                          = "http://player.mtvnn.com/g2/g2player_2.2.1.swf";
     /* Obey german law - very important! */
     private static final boolean rtmpe_supported                                     = false;
     public static final String   default_ext                                         = ".mp4";
-
     private String               mgid                                                = null;
     private String               feed_url                                            = null;
     private String               mediagen_url                                        = null;
@@ -123,11 +121,9 @@ public class VivaTv extends PluginForHost {
         this.mgid = getMGIDOutOfURL(link.getDownloadURL());
         this.feed_url = mgidGetFeedurlForMgid(this.mgid);
         this.mediagen_url = mgidGetMediagenurlForMgid(this.mgid);
-
         if (this.feed_url == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-
         if (filename == null) {
             if (this.mgid.contains("nick")) {
                 /* Very strange but this is needed for all "nick" websites */
@@ -151,7 +147,6 @@ public class VivaTv extends PluginForHost {
             filename += ext;
         }
         link.setFinalFileName(filename);
-
         if (description != null && description.length() > 20) {
             description = doEncoding(description);
             try {
@@ -192,10 +187,8 @@ public class VivaTv extends PluginForHost {
             mediagen_url = Encoding.htmlDecode(mediagen_url);
             mediagen_url = mediagen_url.trim();
         }
-
         br.getHeaders().put("Referer", player_url);
         br.getPage(mediagen_url);
-
         if (br.getHttpConnection().getResponseCode() == 404) {
             /* Video temporarily or forever offline */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 3 * 60 * 60 * 1000l);
@@ -207,35 +200,47 @@ public class VivaTv extends PluginForHost {
         } else if (br.containsHTML("Sorry, we're unable to play this video")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Sorry, we're unable to play this video'", 3 * 60 * 60 * 1000l);
         }
-        /* Chose highest quality available */
-        final String[] srcs = br.getRegex("([a-z]+://[^<>\"]*?)</src>").getColumn(0);
-        if (srcs == null || srcs.length == 0) {
-            /* Very very rare case! */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 1 * 60 * 60 * 1000l);
-        }
-        /* Now get the best quality (highest width) */
+        final boolean isJson = br.toString().startsWith("{");
         String src_url = null;
-        int best_width = 0;
-        int tempwidth = 0;
-        for (final String tmpsrc : srcs) {
-            final String width = new Regex(tmpsrc, "_(\\d+)x\\d+_").getMatch(0);
-            if (width != null) {
-                tempwidth = Integer.parseInt(width);
-                if (tempwidth > best_width) {
-                    best_width = tempwidth;
-                    src_url = tmpsrc;
+        if (isJson) {
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "package/video/item/{0}/rendition/{0}");
+            src_url = (String) entries.get("src");
+        } else {
+            /* Chose highest quality available */
+            final String[] srcs = br.getRegex("([a-z]+://[^<>\"]*?)</src>").getColumn(0);
+            if (srcs == null || srcs.length == 0) {
+                /* Very very rare case! */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 1 * 60 * 60 * 1000l);
+            }
+            /* Now get the best quality (highest width) */
+            int best_width = 0;
+            int tempwidth = 0;
+            for (final String tmpsrc : srcs) {
+                final String width = new Regex(tmpsrc, "_(\\d+)x\\d+_").getMatch(0);
+                if (width != null) {
+                    tempwidth = Integer.parseInt(width);
+                    if (tempwidth > best_width) {
+                        best_width = tempwidth;
+                        src_url = tmpsrc;
+                    }
                 }
             }
+            /* No width given? Grab the last element of the array - if this is not the best resolution, improve the upper function. */
+            if (src_url != null) {
+                logger.info("Found BEST downloadlink");
+            } else {
+                logger.info("Failed to find BEST downloadlink");
+                src_url = srcs[srcs.length - 1];
+            }
         }
-        /* No width given? Grab the last element of the array - if this is not the best resolution, improve the upper function. */
-        if (src_url != null) {
-            logger.info("Found BEST downloadlink");
-        } else {
-            logger.info("Failed to find BEST downloadlink");
-            src_url = srcs[srcs.length - 1];
-        }
-        String httpurl;
-        if (src_url.startsWith("http")) {
+        String httpurl = null;
+        String hlsurl = null;
+        if (src_url.contains(".m3u8")) {
+            br.getPage(src_url);
+            final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
+            hlsurl = hlsbest.getDownloadurl();
+        } else if (src_url.startsWith("http")) {
             /* In very rare cases we already have http urls */
             httpurl = src_url;
         } else {
@@ -244,6 +249,8 @@ public class VivaTv extends PluginForHost {
         }
         if (httpurl != null) {
             downloadHTTP(downloadLink, httpurl);
+        } else if (hlsurl != null) {
+            downloadHLS(downloadLink, hlsurl);
         } else {
             downloadRTMP(downloadLink, src_url);
         }
@@ -260,6 +267,12 @@ public class VivaTv extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        dl.startDownload();
+    }
+
+    private void downloadHLS(final DownloadLink downloadLink, final String hls_src) throws Exception {
+        checkFFmpeg(downloadLink, "Download a HLS Stream");
+        dl = new HLSDownloader(downloadLink, br, hls_src);
         dl.startDownload();
     }
 
@@ -390,7 +403,6 @@ public class VivaTv extends PluginForHost {
         if (flvgen_url != null) {
             flvgen_url = Encoding.htmlDecode(flvgen_url);
         }
-
         String mediagen_url = br.getRegex("(?:\\'|\")(https?://[^<>\"]*?mediaGen[^<>\"]*?)(?:\\'|\")").getMatch(0);
         if (mediagen_url == null) {
             mediagen_url = br.getRegex("(?:\\'|\")(https?://[^<>\"]*?/mediagen/[^<>\"/]*?)(?:\\'|\")").getMatch(0);
@@ -425,7 +437,9 @@ public class VivaTv extends PluginForHost {
          * ,384x216_200_b30
          * ,384x216_400_m30,512x288_750_m30,640x360_1200_m30,768x432_1700_m30,960x540_2200_m31,1280x720_3500_h32,.mp4.csmil/master
          * .m3u8?hdnea=st%3D1449327840%
-         * 7Eexp%3D1449342240%7Eacl%3D%2Fi%2Fmtvnorigin%2Fgsp.comedystor%2Fcom%2Fdailyshow%2FTDS%2FSeason_21%2F21031%2Fds_21_031_act1_55d2de0e05_%2C384x216_200_b30%2C384x216_400_m30%2C512x288_750_m30%2C640x360_1200_m30%2C768x432_1700_m30%2C960x540_2200_m31%2C1280x720_3500_h32%2C.mp4.csmil%2F
+         * 7Eexp%3D1449342240%7Eacl%3D%2Fi%2Fmtvnorigin%2Fgsp.comedystor%2Fcom%2Fdailyshow%2FTDS%2FSeason_21%2F21031%
+         * 2Fds_21_031_act1_55d2de0e05_%2C384x216_200_b30%2C384x216_400_m30%2C512x288_750_m30%2C640x360_1200_m30%2C768x432_1700_m30%
+         * 2C960x540_2200_m31%2C1280x720_3500_h32%2C.mp4.csmil%2F
          * *%7Ehmac%3D2e08c5d2409aab4aa8db4b9a9954607e133885d070f8ab6b994c8caa8c7342d7&__a__=off&__b__=450&__viacc__=NONE
          */
         /*
@@ -478,42 +492,53 @@ public class VivaTv extends PluginForHost {
 
     /** Static list of FEED-urls. If one is missing they can be found by accessing the correct player-URL (see list below). */
     public static HashMap<String, String> feedURLs                    = new HashMap<String, String>(new HashMap<String, String>() {
-        {
-            put("ALL_OTHERS", url_service_feed_api_mtvnn_v2);
-            /*
-             * Seems like this one is used for most big mtv sites as well
-             */
-            put("nick.de", url_service_feed_ESPERANTO_AS3);
-            put("uk.viva.tv", url_service_feed_ESPERANTO);
-            put("mtvworldwide", "http://all.mtvworldverticals.com/feed-xml/?uri=%s");
-            put("mtv.de", "http://movies.mtv.de/mrss/%s");
-            put("mtvmovies.com", "http://movies.mtv.de/mrss/%s");
-            put("mtv.com", url_service_feed_mtv_com);
-            put("mtvu.com", url_service_feed_mtv_com);
-            put("southpark.de", "http://www.southpark.de/feeds/video-player/mrss/%s");
-            put("southpark.cc.com", url_service_feed_SOUTHPARKSTUDIOS);
-            put("southparkstudios.com", url_service_feed_SOUTHPARKSTUDIOS);
-            put("gameone.de", "http://www.gameone.de/api/mrss/%s");
-            put("gameone.de_2", "https://gameone.de/api/mrss/%s");
-            put("vh1.com", "http://www.vh1.com/player/embed/AS3/rss/?uri=%s");
-            put("vh1.com_2", "http://www.vh1.com/player/embed/AS3/fullepisode/rss/?uri=%s&ref={ref}&instance=vh1shows");
-            put("tvland.com", "http://www.tvland.com/feeds/mrss/?uri=%s&tvlandSyndicated=true");
-            put("spike.com", "http://www.spike.com/feeds/mrss/?uri=%s");
-            put("nick.com", url_service_feed_NICK_COM);
-            put("nicktoons.com", url_service_feed_NICK_COM);
-            put("teennick.com", url_service_feed_NICK_COM);
-            put("nickatnite.com", url_service_feed_NICK_COM);
-            put("nickmom.com", "http://www.nickmom.com/services/mrss/?mgid=%s");
-            put("cmt.com", "http://www.cmt.com/sitewide/apps/player/embed/rss/?uri=%s");
-            put("cc.com", url_service_feed_COMEDYCENTRAL);
-            put("tosh.comedycentral.com", url_service_feed_COMEDYCENTRAL);
-            put("comedycentral.com", url_service_feed_COMEDYCENTRAL);
-            put("mtv.com.au", "http://www.mtv.com.au/mrss/");
-            put("logotv.com", "http://www.logotv.com/player/includes/rss.jhtml?uri=%s");
-            put("mtvnn.com", "http://api.mtvnn.com/v2/mrss.xml?uri=%s");
-        }
-    });
-
+                                                                          {
+                                                                              put("ALL_OTHERS", url_service_feed_api_mtvnn_v2);
+                                                                                                                                                                                                                                                                                                                                    /*
+                                                                                                                                                                                                                                                                                                                                     * Seems
+                                                                                                                                                                                                                                                                                                                                     * like
+                                                                                                                                                                                                                                                                                                                                     * this
+                                                                                                                                                                                                                                                                                                                                     * one
+                                                                                                                                                                                                                                                                                                                                     * is
+                                                                                                                                                                                                                                                                                                                                     * used
+                                                                                                                                                                                                                                                                                                                                     * for
+                                                                                                                                                                                                                                                                                                                                     * most
+                                                                                                                                                                                                                                                                                                                                     * big
+                                                                                                                                                                                                                                                                                                                                     * mtv
+                                                                                                                                                                                                                                                                                                                                     * sites
+                                                                                                                                                                                                                                                                                                                                     * as
+                                                                                                                                                                                                                                                                                                                                     * well
+                                                                                                                                                                                                                                                                                                                                     */
+                                                                              put("nick.de", url_service_feed_ESPERANTO_AS3);
+                                                                              put("uk.viva.tv", url_service_feed_ESPERANTO);
+                                                                              put("mtvworldwide", "http://all.mtvworldverticals.com/feed-xml/?uri=%s");
+                                                                              put("mtv.de", "http://movies.mtv.de/mrss/%s");
+                                                                              put("mtvmovies.com", "http://movies.mtv.de/mrss/%s");
+                                                                              put("mtv.com", url_service_feed_mtv_com);
+                                                                              put("mtvu.com", url_service_feed_mtv_com);
+                                                                              put("southpark.de", "http://www.southpark.de/feeds/video-player/mrss/%s");
+                                                                              put("southpark.cc.com", url_service_feed_SOUTHPARKSTUDIOS);
+                                                                              put("southparkstudios.com", url_service_feed_SOUTHPARKSTUDIOS);
+                                                                              put("gameone.de", "http://www.gameone.de/api/mrss/%s");
+                                                                              put("gameone.de_2", "https://gameone.de/api/mrss/%s");
+                                                                              put("vh1.com", "http://www.vh1.com/player/embed/AS3/rss/?uri=%s");
+                                                                              put("vh1.com_2", "http://www.vh1.com/player/embed/AS3/fullepisode/rss/?uri=%s&ref={ref}&instance=vh1shows");
+                                                                              put("tvland.com", "http://www.tvland.com/feeds/mrss/?uri=%s&tvlandSyndicated=true");
+                                                                              put("spike.com", "http://www.spike.com/feeds/mrss/?uri=%s");
+                                                                              put("nick.com", url_service_feed_NICK_COM);
+                                                                              put("nicktoons.com", url_service_feed_NICK_COM);
+                                                                              put("teennick.com", url_service_feed_NICK_COM);
+                                                                              put("nickatnite.com", url_service_feed_NICK_COM);
+                                                                              put("nickmom.com", "http://www.nickmom.com/services/mrss/?mgid=%s");
+                                                                              put("cmt.com", "http://www.cmt.com/sitewide/apps/player/embed/rss/?uri=%s");
+                                                                              put("cc.com", url_service_feed_COMEDYCENTRAL);
+                                                                              put("tosh.comedycentral.com", url_service_feed_COMEDYCENTRAL);
+                                                                              put("comedycentral.com", url_service_feed_COMEDYCENTRAL);
+                                                                              put("mtv.com.au", "http://www.mtv.com.au/mrss/");
+                                                                              put("logotv.com", "http://www.logotv.com/player/includes/rss.jhtml?uri=%s");
+                                                                              put("mtvnn.com", "http://api.mtvnn.com/v2/mrss.xml?uri=%s");
+                                                                          }
+                                                                      });
     /** Static list of mediagen URLs. These are usually sub-URLs of feed-urls and they'll return the final downloadlinks. */
     /**
      * Possible parameters of mediagen URLs:
@@ -532,77 +557,223 @@ public class VivaTv extends PluginForHost {
      *
      */
     public static HashMap<String, String> mediagenURLs                = new HashMap<String, String>(new HashMap<String, String>() {
-        {
-            /*
-             * For some of these, we have to access the feed- or player
-             * before to get the mediagen-URL. This means that having the
-             * mgid is not always enough to get the final URLs.
-             */
-            put("videos.mtv.com", "http://videos.mtvnn.com/mediagen/<some kinda hash (length = 32)>");
-            /*
-             * Seems like this one is used for most big mtv sites as well
-             */
-            put("nick.de", url_service_mediagen_ESPERANTO);
-            /*
-             * Do not use pre-defined mediagen for uk.viva.tv to increase
-             * chances of avoiding their GEO-block!
-             */
-            // put("uk.viva.tv", url_service_mediagen_ESPERANTO);
-            put("mtv.com", url_service_mediagen_mtv_com);
-            put("mtvu.com", url_service_mediagen_mtv_com);
-            put("southpark.de", "http://www.southpark.de/feeds/video-player/mediagen?uri=%s&suppressRegisterBeacon=true&lang=de&acceptMethods=%s");
-            put("southpark.cc.com", url_service_mediagen_media_utils_api);
-            put("southparkstudios.com", url_service_mediagen_media_utils_api);
-            put("vh1.com", "http://www.vh1.com/player/embed/AS3/includes/mediaGen.jhtml?uri=%s");
-            put("vh1.com_episodes", "http://www.vh1.com/meta/context/mediaGen?uri=%s");
-            put("tvland.com", "http://www.tvland.com/feeds/mediagen/?uri=%s&device=None");
-            put("spike.com", "http://www.spike.com/feeds/mediagen/?uri=%s");
-            put("nick.com", "http://www.nick.com/dynamo/video/data/mediaGen.jhtml?mgid=%s");
-            put("nickmom.com", url_service_mediagen_media_utils_api);
-            put("cc.com", url_service_mediagen_media_utils_api);
-            put("tosh.comedycentral.com", url_service_mediagen_mediautils_mtvnservices_device);
-            put("comedycentral.com", url_service_mediagen_media_utils_api);
-            put("cmt.com", "http://www.cmt.com/sitewide/apps/player/embed/includes/mediaGen.jhtml?uri=%s");
-            put("cc.com", "http://www.cc.com/feeds/mediagen/?uri=%s&device={device}");
-            put("mtv.com.au", url_service_mediagen_intl_mtvnservices);
-            /*
-             * Prefer mediautils api url as this can avoid geo-blocks more
-             * often
-             */
-            put("nicktoons.com", url_service_mediagen_mediautils_mtvnservices_device);
-            /*
-             * Prefer mediautils api url as this can avoid geo-blocks more
-             * often
-             */
-            put("teennick.com", url_service_mediagen_mediautils_mtvnservices_device);
-            /*
-             * Prefer mediautils api url as this can avoid geo-blocks more
-             * often
-             */
-            put("nickatnite.com", url_service_mediagen_mediautils_mtvnservices_device);
-            /*
-             * Prefer mediautils api url as this can avoid geo-blocks more
-             * often
-             */
-            put("logotv.com", url_service_mediagen_mediautils_mtvnservices_device);
-            // put("logotv.com",
-            // "http://www.logotv.com/player/includes/mediaGen.jhtml?uri=%s");
-        }
-    });
-
+                                                                          {
+                                                                                                                                                                                                                                                                                                                                    /*
+                                                                                                                                                                                                                                                                                                                                     * For
+                                                                                                                                                                                                                                                                                                                                     * some
+                                                                                                                                                                                                                                                                                                                                     * of
+                                                                                                                                                                                                                                                                                                                                     * these,
+                                                                                                                                                                                                                                                                                                                                     * we
+                                                                                                                                                                                                                                                                                                                                     * have
+                                                                                                                                                                                                                                                                                                                                     * to
+                                                                                                                                                                                                                                                                                                                                     * access
+                                                                                                                                                                                                                                                                                                                                     * the
+                                                                                                                                                                                                                                                                                                                                     * feed-
+                                                                                                                                                                                                                                                                                                                                     * or
+                                                                                                                                                                                                                                                                                                                                     * player
+                                                                                                                                                                                                                                                                                                                                     * before
+                                                                                                                                                                                                                                                                                                                                     * to
+                                                                                                                                                                                                                                                                                                                                     * get
+                                                                                                                                                                                                                                                                                                                                     * the
+                                                                                                                                                                                                                                                                                                                                     * mediagen
+                                                                                                                                                                                                                                                                                                                                     * -
+                                                                                                                                                                                                                                                                                                                                     * URL.
+                                                                                                                                                                                                                                                                                                                                     * This
+                                                                                                                                                                                                                                                                                                                                     * means
+                                                                                                                                                                                                                                                                                                                                     * that
+                                                                                                                                                                                                                                                                                                                                     * having
+                                                                                                                                                                                                                                                                                                                                     * the
+                                                                                                                                                                                                                                                                                                                                     * mgid
+                                                                                                                                                                                                                                                                                                                                     * is
+                                                                                                                                                                                                                                                                                                                                     * not
+                                                                                                                                                                                                                                                                                                                                     * always
+                                                                                                                                                                                                                                                                                                                                     * enough
+                                                                                                                                                                                                                                                                                                                                     * to
+                                                                                                                                                                                                                                                                                                                                     * get
+                                                                                                                                                                                                                                                                                                                                     * the
+                                                                                                                                                                                                                                                                                                                                     * final
+                                                                                                                                                                                                                                                                                                                                     * URLs.
+                                                                                                                                                                                                                                                                                                                                     */
+                                                                              put("videos.mtv.com", "http://videos.mtvnn.com/mediagen/<some kinda hash (length = 32)>");
+                                                                                                                                                                                                                                                                                                                                    /*
+                                                                                                                                                                                                                                                                                                                                     * Seems
+                                                                                                                                                                                                                                                                                                                                     * like
+                                                                                                                                                                                                                                                                                                                                     * this
+                                                                                                                                                                                                                                                                                                                                     * one
+                                                                                                                                                                                                                                                                                                                                     * is
+                                                                                                                                                                                                                                                                                                                                     * used
+                                                                                                                                                                                                                                                                                                                                     * for
+                                                                                                                                                                                                                                                                                                                                     * most
+                                                                                                                                                                                                                                                                                                                                     * big
+                                                                                                                                                                                                                                                                                                                                     * mtv
+                                                                                                                                                                                                                                                                                                                                     * sites
+                                                                                                                                                                                                                                                                                                                                     * as
+                                                                                                                                                                                                                                                                                                                                     * well
+                                                                                                                                                                                                                                                                                                                                     */
+                                                                              put("nick.de", url_service_mediagen_ESPERANTO);
+                                                                                                                                                                                                                                                                                                                                    /*
+                                                                                                                                                                                                                                                                                                                                     * Do
+                                                                                                                                                                                                                                                                                                                                     * not
+                                                                                                                                                                                                                                                                                                                                     * use
+                                                                                                                                                                                                                                                                                                                                     * pre
+                                                                                                                                                                                                                                                                                                                                     * -
+                                                                                                                                                                                                                                                                                                                                     * defined
+                                                                                                                                                                                                                                                                                                                                     * mediagen
+                                                                                                                                                                                                                                                                                                                                     * for
+                                                                                                                                                                                                                                                                                                                                     * uk
+                                                                                                                                                                                                                                                                                                                                     * .
+                                                                                                                                                                                                                                                                                                                                     * viva
+                                                                                                                                                                                                                                                                                                                                     * .
+                                                                                                                                                                                                                                                                                                                                     * tv
+                                                                                                                                                                                                                                                                                                                                     * to
+                                                                                                                                                                                                                                                                                                                                     * increase
+                                                                                                                                                                                                                                                                                                                                     * chances
+                                                                                                                                                                                                                                                                                                                                     * of
+                                                                                                                                                                                                                                                                                                                                     * avoiding
+                                                                                                                                                                                                                                                                                                                                     * their
+                                                                                                                                                                                                                                                                                                                                     * GEO
+                                                                                                                                                                                                                                                                                                                                     * -
+                                                                                                                                                                                                                                                                                                                                     * block!
+                                                                                                                                                                                                                                                                                                                                     */
+                                                                              // put("uk.viva.tv", url_service_mediagen_ESPERANTO);
+                                                                              put("mtv.com", url_service_mediagen_mtv_com);
+                                                                              put("mtvu.com", url_service_mediagen_mtv_com);
+                                                                              put("southpark.de", "http://www.southpark.de/feeds/video-player/mediagen?uri=%s&suppressRegisterBeacon=true&lang=de&acceptMethods=%s");
+                                                                              put("southpark.cc.com", url_service_mediagen_media_utils_api);
+                                                                              put("southparkstudios.com", "http://media-utils.mtvnservices.com/services/MediaGenerator/%s?aspectRatio=16:9&lang=de&context=Array&format=json&acceptMethods=%s");
+                                                                              put("vh1.com", "http://www.vh1.com/player/embed/AS3/includes/mediaGen.jhtml?uri=%s");
+                                                                              put("vh1.com_episodes", "http://www.vh1.com/meta/context/mediaGen?uri=%s");
+                                                                              put("tvland.com", "http://www.tvland.com/feeds/mediagen/?uri=%s&device=None");
+                                                                              put("spike.com", "http://www.spike.com/feeds/mediagen/?uri=%s");
+                                                                              put("nick.com", "http://www.nick.com/dynamo/video/data/mediaGen.jhtml?mgid=%s");
+                                                                              put("nickmom.com", url_service_mediagen_media_utils_api);
+                                                                              put("cc.com", url_service_mediagen_media_utils_api);
+                                                                              put("tosh.comedycentral.com", url_service_mediagen_mediautils_mtvnservices_device);
+                                                                              put("comedycentral.com", url_service_mediagen_media_utils_api);
+                                                                              put("cmt.com", "http://www.cmt.com/sitewide/apps/player/embed/includes/mediaGen.jhtml?uri=%s");
+                                                                              put("cc.com", "http://www.cc.com/feeds/mediagen/?uri=%s&device={device}");
+                                                                              put("mtv.com.au", url_service_mediagen_intl_mtvnservices);
+                                                                                                                                                                                                                                                                                                                                    /*
+                                                                                                                                                                                                                                                                                                                                     * Prefer
+                                                                                                                                                                                                                                                                                                                                     * mediautils
+                                                                                                                                                                                                                                                                                                                                     * api
+                                                                                                                                                                                                                                                                                                                                     * url
+                                                                                                                                                                                                                                                                                                                                     * as
+                                                                                                                                                                                                                                                                                                                                     * this
+                                                                                                                                                                                                                                                                                                                                     * can
+                                                                                                                                                                                                                                                                                                                                     * avoid
+                                                                                                                                                                                                                                                                                                                                     * geo
+                                                                                                                                                                                                                                                                                                                                     * -
+                                                                                                                                                                                                                                                                                                                                     * blocks
+                                                                                                                                                                                                                                                                                                                                     * more
+                                                                                                                                                                                                                                                                                                                                     * often
+                                                                                                                                                                                                                                                                                                                                     */
+                                                                              put("nicktoons.com", url_service_mediagen_mediautils_mtvnservices_device);
+                                                                                                                                                                                                                                                                                                                                    /*
+                                                                                                                                                                                                                                                                                                                                     * Prefer
+                                                                                                                                                                                                                                                                                                                                     * mediautils
+                                                                                                                                                                                                                                                                                                                                     * api
+                                                                                                                                                                                                                                                                                                                                     * url
+                                                                                                                                                                                                                                                                                                                                     * as
+                                                                                                                                                                                                                                                                                                                                     * this
+                                                                                                                                                                                                                                                                                                                                     * can
+                                                                                                                                                                                                                                                                                                                                     * avoid
+                                                                                                                                                                                                                                                                                                                                     * geo
+                                                                                                                                                                                                                                                                                                                                     * -
+                                                                                                                                                                                                                                                                                                                                     * blocks
+                                                                                                                                                                                                                                                                                                                                     * more
+                                                                                                                                                                                                                                                                                                                                     * often
+                                                                                                                                                                                                                                                                                                                                     */
+                                                                              put("teennick.com", url_service_mediagen_mediautils_mtvnservices_device);
+                                                                                                                                                                                                                                                                                                                                    /*
+                                                                                                                                                                                                                                                                                                                                     * Prefer
+                                                                                                                                                                                                                                                                                                                                     * mediautils
+                                                                                                                                                                                                                                                                                                                                     * api
+                                                                                                                                                                                                                                                                                                                                     * url
+                                                                                                                                                                                                                                                                                                                                     * as
+                                                                                                                                                                                                                                                                                                                                     * this
+                                                                                                                                                                                                                                                                                                                                     * can
+                                                                                                                                                                                                                                                                                                                                     * avoid
+                                                                                                                                                                                                                                                                                                                                     * geo
+                                                                                                                                                                                                                                                                                                                                     * -
+                                                                                                                                                                                                                                                                                                                                     * blocks
+                                                                                                                                                                                                                                                                                                                                     * more
+                                                                                                                                                                                                                                                                                                                                     * often
+                                                                                                                                                                                                                                                                                                                                     */
+                                                                              put("nickatnite.com", url_service_mediagen_mediautils_mtvnservices_device);
+                                                                                                                                                                                                                                                                                                                                    /*
+                                                                                                                                                                                                                                                                                                                                     * Prefer
+                                                                                                                                                                                                                                                                                                                                     * mediautils
+                                                                                                                                                                                                                                                                                                                                     * api
+                                                                                                                                                                                                                                                                                                                                     * url
+                                                                                                                                                                                                                                                                                                                                     * as
+                                                                                                                                                                                                                                                                                                                                     * this
+                                                                                                                                                                                                                                                                                                                                     * can
+                                                                                                                                                                                                                                                                                                                                     * avoid
+                                                                                                                                                                                                                                                                                                                                     * geo
+                                                                                                                                                                                                                                                                                                                                     * -
+                                                                                                                                                                                                                                                                                                                                     * blocks
+                                                                                                                                                                                                                                                                                                                                     * more
+                                                                                                                                                                                                                                                                                                                                     * often
+                                                                                                                                                                                                                                                                                                                                     */
+                                                                              put("logotv.com", url_service_mediagen_mediautils_mtvnservices_device);
+                                                                              // put("logotv.com",
+                                                                              // "http://www.logotv.com/player/includes/mediaGen.jhtml?uri=%s");
+                                                                          }
+                                                                      });
     public static HashMap<String, String> embedURLs                   = new HashMap<String, String>(new HashMap<String, String>() {
-        {
-            /*
-             * Only a small amount if embeddable - usually embedded links
-             * are never needed but via them we gan get the players url
-             * which contains the feed-URL so this list might be useful in
-             * the future. Strong format --> Put mgid in.
-             */
-            put("ALL_OTHERS", "http://media.mtvnservices.com/%s");
-            put("mtv.com", "http://media.mtvnservices.com/embed/%s/");
-        }
-    });
-
+                                                                          {
+                                                                                                                                                                                                                                                                                                                                    /*
+                                                                                                                                                                                                                                                                                                                                     * Only
+                                                                                                                                                                                                                                                                                                                                     * a
+                                                                                                                                                                                                                                                                                                                                     * small
+                                                                                                                                                                                                                                                                                                                                     * amount
+                                                                                                                                                                                                                                                                                                                                     * if
+                                                                                                                                                                                                                                                                                                                                     * embeddable
+                                                                                                                                                                                                                                                                                                                                     * -
+                                                                                                                                                                                                                                                                                                                                     * usually
+                                                                                                                                                                                                                                                                                                                                     * embedded
+                                                                                                                                                                                                                                                                                                                                     * links
+                                                                                                                                                                                                                                                                                                                                     * are
+                                                                                                                                                                                                                                                                                                                                     * never
+                                                                                                                                                                                                                                                                                                                                     * needed
+                                                                                                                                                                                                                                                                                                                                     * but
+                                                                                                                                                                                                                                                                                                                                     * via
+                                                                                                                                                                                                                                                                                                                                     * them
+                                                                                                                                                                                                                                                                                                                                     * we
+                                                                                                                                                                                                                                                                                                                                     * gan
+                                                                                                                                                                                                                                                                                                                                     * get
+                                                                                                                                                                                                                                                                                                                                     * the
+                                                                                                                                                                                                                                                                                                                                     * players
+                                                                                                                                                                                                                                                                                                                                     * url
+                                                                                                                                                                                                                                                                                                                                     * which
+                                                                                                                                                                                                                                                                                                                                     * contains
+                                                                                                                                                                                                                                                                                                                                     * the
+                                                                                                                                                                                                                                                                                                                                     * feed
+                                                                                                                                                                                                                                                                                                                                     * -
+                                                                                                                                                                                                                                                                                                                                     * URL
+                                                                                                                                                                                                                                                                                                                                     * so
+                                                                                                                                                                                                                                                                                                                                     * this
+                                                                                                                                                                                                                                                                                                                                     * list
+                                                                                                                                                                                                                                                                                                                                     * might
+                                                                                                                                                                                                                                                                                                                                     * be
+                                                                                                                                                                                                                                                                                                                                     * useful
+                                                                                                                                                                                                                                                                                                                                     * in
+                                                                                                                                                                                                                                                                                                                                     * the
+                                                                                                                                                                                                                                                                                                                                     * future.
+                                                                                                                                                                                                                                                                                                                                     * Strong
+                                                                                                                                                                                                                                                                                                                                     * format
+                                                                                                                                                                                                                                                                                                                                     * -
+                                                                                                                                                                                                                                                                                                                                     * -
+                                                                                                                                                                                                                                                                                                                                     * >
+                                                                                                                                                                                                                                                                                                                                     * Put
+                                                                                                                                                                                                                                                                                                                                     * mgid
+                                                                                                                                                                                                                                                                                                                                     * in.
+                                                                                                                                                                                                                                                                                                                                     */
+                                                                              put("ALL_OTHERS", "http://media.mtvnservices.com/%s");
+                                                                              put("mtv.com", "http://media.mtvnservices.com/embed/%s/");
+                                                                          }
+                                                                      });
     /**
      * These are only accessed for embedded videos. They contain the feed-URLs. This list might be useful in the future. Strong format:
      * 0=mgid without the actual ID (so it ends with ':'), 1=FULL mgid Example: http://media.mtvnservices
@@ -612,36 +783,74 @@ public class VivaTv extends PluginForHost {
      * =Even+more+keywords+in+this+format
      */
     public static HashMap<String, String> playerURLs                  = new HashMap<String, String>(new HashMap<String, String>() {
-        {
-            put("mtv.com", "http://media.mtvnservices.com/pmt-arc/e1/players/%s/context49/config.xml?uri=%s");
-            put("southpark.de", "http://media.mtvnservices.com/pmt-arc/e1/players/%s/context5/config.xml?uri=%s");
-            put("tvland.com", "http://media.mtvnservices.com/pmt-arc/e1/players/%s/context3/config.xml?uri=%s");
-            put("spike.com", "http://media.mtvnservices.com/pmt-arc/e1/players/%s/context4/config.xml?uri=%s");
-            put("vh1.com", "http://media.mtvnservices.com/pmt-arc/e1/players/%s/context13/config.xml?uri=%s");
-            put("cmt.com", "http://media.mtvnservices.com/pmt-arc/e1/players/%s/context40/context6/config.xml?uri=%s");
-            put("mtvla.com", "http://media.mtvnservices.com/pmt-arc/e1/players/%s/config.xml?uri=%s");
-            put("mtv.com.au", "http://media.mtvnservices.com/pmt-arc/e1/players/%s/context4/config.xml?uri=%s&type=network&ref=www.mtv.com.au&geo=DE&group=intl&network=None&device=Other");
-            put("cc.com", "http://media.mtvnservices.com/pmt/e1/access/index.html?uri=%s&configtype=edge");
-        }
-    });
-
+                                                                          {
+                                                                              put("mtv.com", "http://media.mtvnservices.com/pmt-arc/e1/players/%s/context49/config.xml?uri=%s");
+                                                                              put("southpark.de", "http://media.mtvnservices.com/pmt-arc/e1/players/%s/context5/config.xml?uri=%s");
+                                                                              put("tvland.com", "http://media.mtvnservices.com/pmt-arc/e1/players/%s/context3/config.xml?uri=%s");
+                                                                              put("spike.com", "http://media.mtvnservices.com/pmt-arc/e1/players/%s/context4/config.xml?uri=%s");
+                                                                              put("vh1.com", "http://media.mtvnservices.com/pmt-arc/e1/players/%s/context13/config.xml?uri=%s");
+                                                                              put("cmt.com", "http://media.mtvnservices.com/pmt-arc/e1/players/%s/context40/context6/config.xml?uri=%s");
+                                                                              put("mtvla.com", "http://media.mtvnservices.com/pmt-arc/e1/players/%s/config.xml?uri=%s");
+                                                                              put("mtv.com.au", "http://media.mtvnservices.com/pmt-arc/e1/players/%s/context4/config.xml?uri=%s&type=network&ref=www.mtv.com.au&geo=DE&group=intl&network=None&device=Other");
+                                                                              put("cc.com", "http://media.mtvnservices.com/pmt/e1/access/index.html?uri=%s&configtype=edge");
+                                                                          }
+                                                                      });
     public static HashMap<String, String> possibleAcceptMethodsValues = new HashMap<String, String>(new HashMap<String, String>() {
-        {
-            /*
-             * "acceptMethods" is a parameter of mediagen URLs. It's
-             * optional but has an influence on the final URLs.
-             */
-            /* Default seting (if ever used) */
-            put("default", "fms,hdn1,hds");
-            /*
-             * Returns http links but less available qualities and usually
-             * not as good as their rtmp(e) streams
-             */
-            put("http", "http");
-            put("hls", "http");
-            put("hds", "http");
-        }
-    });
+                                                                          {
+                                                                                                                                                                                                                                                                                                                                    /*
+                                                                                                                                                                                                                                                                                                                                     * "acceptMethods"
+                                                                                                                                                                                                                                                                                                                                     * is
+                                                                                                                                                                                                                                                                                                                                     * a
+                                                                                                                                                                                                                                                                                                                                     * parameter
+                                                                                                                                                                                                                                                                                                                                     * of
+                                                                                                                                                                                                                                                                                                                                     * mediagen
+                                                                                                                                                                                                                                                                                                                                     * URLs.
+                                                                                                                                                                                                                                                                                                                                     * It
+                                                                                                                                                                                                                                                                                                                                     * '
+                                                                                                                                                                                                                                                                                                                                     * s
+                                                                                                                                                                                                                                                                                                                                     * optional
+                                                                                                                                                                                                                                                                                                                                     * but
+                                                                                                                                                                                                                                                                                                                                     * has
+                                                                                                                                                                                                                                                                                                                                     * an
+                                                                                                                                                                                                                                                                                                                                     * influence
+                                                                                                                                                                                                                                                                                                                                     * on
+                                                                                                                                                                                                                                                                                                                                     * the
+                                                                                                                                                                                                                                                                                                                                     * final
+                                                                                                                                                                                                                                                                                                                                     * URLs.
+                                                                                                                                                                                                                                                                                                                                     */
+                                                                                                                                                                                                                                                                                                                                    /*
+                                                                                                                                                                                                                                                                                                                                     * Default
+                                                                                                                                                                                                                                                                                                                                     * seting
+                                                                                                                                                                                                                                                                                                                                     * (if
+                                                                                                                                                                                                                                                                                                                                     * ever
+                                                                                                                                                                                                                                                                                                                                     * used)
+                                                                                                                                                                                                                                                                                                                                     */
+                                                                              put("default", "fms,hdn1,hds");
+                                                                                                                                                                                                                                                                                                                                    /*
+                                                                                                                                                                                                                                                                                                                                     * Returns
+                                                                                                                                                                                                                                                                                                                                     * http
+                                                                                                                                                                                                                                                                                                                                     * links
+                                                                                                                                                                                                                                                                                                                                     * but
+                                                                                                                                                                                                                                                                                                                                     * less
+                                                                                                                                                                                                                                                                                                                                     * available
+                                                                                                                                                                                                                                                                                                                                     * qualities
+                                                                                                                                                                                                                                                                                                                                     * and
+                                                                                                                                                                                                                                                                                                                                     * usually
+                                                                                                                                                                                                                                                                                                                                     * not
+                                                                                                                                                                                                                                                                                                                                     * as
+                                                                                                                                                                                                                                                                                                                                     * good
+                                                                                                                                                                                                                                                                                                                                     * as
+                                                                                                                                                                                                                                                                                                                                     * their
+                                                                                                                                                                                                                                                                                                                                     * rtmp
+                                                                                                                                                                                                                                                                                                                                     * (
+                                                                                                                                                                                                                                                                                                                                     * e)
+                                                                                                                                                                                                                                                                                                                                     * streams
+                                                                                                                                                                                                                                                                                                                                     */
+                                                                              put("http", "http");
+                                                                              put("hls", "http");
+                                                                              put("hds", "http");
+                                                                          }
+                                                                      });
 
     /** Returns a feed URL based on the domain. */
     private String getFEEDurl(final String domain) throws PluginException {
@@ -710,6 +919,18 @@ public class VivaTv extends PluginForHost {
                 mediagenurl = String.format(mediagenURLs.get(host), mgid, possibleAcceptMethodsValues.get("default"));
             }
             mediagenurl_formatted = true;
+        } else if (host.equals("southparkstudios.com")) {
+            // http://media-utils.mtvnservices.com/services/MediaGenerator/mgid:arc:video:southparkstudios.com:5ec92f29-7934-4061-8336-734918193cd8?aspectRatio=16:9&lang=de&context=Array&format=json&acceptMethods=hls
+            if (!rtmpe_supported) {
+                /*
+                 * Special case: In germany they only have lower quality http urls so we have to enforce hls to get higher quality and avoid
+                 * rtmpe!
+                 */
+                mediagenurl = String.format(mediagenURLs.get(host), mgid, "hls");
+            } else {
+                mediagenurl = String.format(mediagenURLs.get(host), mgid, possibleAcceptMethodsValues.get("default"));
+            }
+            mediagenurl_formatted = true;
         } else {
             mediagenurl = mediagenURLs.get(host);
         }
@@ -750,5 +971,4 @@ public class VivaTv extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

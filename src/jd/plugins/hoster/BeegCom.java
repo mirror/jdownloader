@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.util.LinkedHashMap;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -28,8 +30,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "beeg.com" }, urls = { "https?://(?:www\\.)?beeg\\.com/((?!section|static|tag)[a-z0-9\\-]+/[a-z0-9\\-]+|\\d+)" })
 public class BeegCom extends PluginForHost {
@@ -66,16 +66,24 @@ public class BeegCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getPluginPatternMatcher());
         String[] match = br.getRegex("script src=\"([^\"]+/(\\d+)\\.js)").getRow(0);
-        if (match == null || match.length == 0) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String jsurl = null;
+        String beegVersion = null;
+        if (match != null) {
+            jsurl = match[0];
+            beegVersion = match[1];
         }
-        String jsurl = match[0];
-        String beegVersion = match[1];
-        Browser cbr = br.cloneBrowser();
-        cbr.getPage(jsurl);
-        String salt = cbr.getRegex("beeg_salt=\"([^\"]+)").getMatch(0);
-        if (salt == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        /* 2019-01-16: Salt is not always given/required */
+        String salt = null;
+        if (beegVersion == null) {
+            beegVersion = br.getRegex("var beeg_version = (\\d+);").getMatch(0);
+        }
+        if (jsurl != null) {
+            final Browser cbr = br.cloneBrowser();
+            cbr.getPage(jsurl);
+            salt = cbr.getRegex("beeg_salt=\"([^\"]+)").getMatch(0);
+            if (salt == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         br.getPage("//beeg.com/api/v6/" + beegVersion + "/video/" + fid);
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -98,7 +106,7 @@ public class BeegCom extends PluginForHost {
         }
         DLLINK = DLLINK.replace("{DATA_MARKERS}", "data=pc.XX");
         final String key = new Regex(this.DLLINK, "/key=([^<>\"=]+)%2Cend=").getMatch(0);
-        if (key != null) {
+        if (key != null && salt != null) {
             String deckey = decryptKey(key, salt);
             DLLINK = DLLINK.replace(key, deckey).replace("%2C", ",");
         }
