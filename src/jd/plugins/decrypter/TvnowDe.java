@@ -169,7 +169,7 @@ public class TvnowDe extends PluginForDecrypt {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
-            jd.plugins.hoster.TvnowDe.prepBR(this.br);
+            jd.plugins.hoster.TvnowDe.prepBRAPI(this.br);
             /* First we need to find the ID of whatever the user added */
             br.getPage(jd.plugins.hoster.TvnowDe.API_BASE + "/formats/seo?fields=id,title,hasFreeEpisodes,isGeoblocked&name=" + url_showname + ".php&station=" + stationName);
             entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());

@@ -54,16 +54,16 @@ public class RocketshareCom extends PluginForHost {
     }
 
     /* Connection stuff */
-    private final boolean       FREE_RESUME                  = true;
-    private final int           FREE_MAXCHUNKS               = 0;
-    private final int           FREE_MAXDOWNLOADS            = 20;
-    private final boolean       ACCOUNT_FREE_RESUME          = true;
-    private final int           ACCOUNT_FREE_MAXCHUNKS       = 0;
-    private final int           ACCOUNT_FREE_MAXDOWNLOADS    = 20;
-    private final boolean       ACCOUNT_PREMIUM_RESUME       = true;
-    private final int           ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private final int           ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-    private static final String API_BASE                     = "https://rocketshare.com/api/jd2";
+    private final boolean       FREE_RESUME               = false;
+    private final int           FREE_MAXCHUNKS            = 1;
+    private final int           FREE_MAXDOWNLOADS         = 1;
+    private final boolean       ACCOUNT_FREE_RESUME       = false;
+    private final int           ACCOUNT_FREE_MAXCHUNKS    = 1;
+    // private final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
+    private final boolean       ACCOUNT_PREMIUM_RESUME    = true;
+    private final int           ACCOUNT_PREMIUM_MAXCHUNKS = 0;
+    // private final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private static final String API_BASE                  = "https://rocketshare.com/api/jd2";
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -162,7 +162,6 @@ public class RocketshareCom extends PluginForHost {
 
     private void handleDownload(final DownloadLink downloadLink, final Account account, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
-        dllink = null;
         if (dllink == null) {
             final String mode;
             String token = null;
@@ -179,7 +178,6 @@ public class RocketshareCom extends PluginForHost {
             }
             if (captchaRequired) {
                 /* GUEST an FREE(-account) mode */
-                /* 2019-01-15: TODO: GUEST- and FREE mode are not yet working properly */
                 final boolean useHardcodedReCaptchaSiteKey = false;
                 final String reCaptchaSiteKey;
                 if (useHardcodedReCaptchaSiteKey) {
@@ -195,7 +193,9 @@ public class RocketshareCom extends PluginForHost {
                 }
                 token = "\"" + new CaptchaHelperHostPluginRecaptchaV2(this, br, reCaptchaSiteKey).getToken() + "\"";
             }
-            PostRequest downloadReq = br.createJSonPostRequest(API_BASE + "/download/initialize/" + getLinkID(downloadLink), "{\"mode\": \"" + mode + "\",\"token\": " + token + "}");
+            final String requesturl = API_BASE + "/download/initialize/" + getLinkID(downloadLink);
+            final String postdata = "{\"mode\": \"" + mode + "\",\"token\": " + token + "}";
+            PostRequest downloadReq = br.createJSonPostRequest(requesturl, postdata);
             br.openRequestConnection(downloadReq);
             br.loadConnection(null);
             /* Premium users may get 1 second of waittime when they try to download an URL for the first time! */
@@ -207,11 +207,15 @@ public class RocketshareCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, available_in_long * 1001l);
                 }
                 this.sleep(available_in_long * 1001l, downloadLink);
+                downloadReq = br.createJSonPostRequest(requesturl, postdata);
                 br.openRequestConnection(downloadReq);
                 br.loadConnection(null);
-                /* TODO: This does not yet work for GUEST and FREE mode */
             }
             dllink = PluginJSonUtils.getJson(br, "url");
+            final String sha1 = PluginJSonUtils.getJson(br, "sha1");
+            if (!StringUtils.isEmpty(sha1)) {
+                downloadLink.setSha1Hash(sha1);
+            }
             if (StringUtils.isEmpty(dllink)) {
                 handleErrors();
                 logger.warning("dllink is null");
@@ -252,13 +256,23 @@ public class RocketshareCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "FREE account: No simultaneous downloads possible");
             } else if (error_string.equalsIgnoreCase("ERROR_GUEST_NO_SIMULTANEOUS_DOWNLOADS")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "GUEST: No simultaneous downloads possible");
+            } else if (error_string.equalsIgnoreCase("ERROR_WAIT_REQUIRED")) {
+                int wait = 60;
+                final String waitStr = PluginJSonUtils.getJson(br, "available_in");
+                if (waitStr != null && waitStr.matches("\\d+")) {
+                    wait = Integer.parseInt(waitStr);
+                }
+                if (wait <= 180) {
+                    /* Short waittime */
+                    throw new PluginException(LinkStatus.ERROR_RETRY, wait * 1001l);
+                } else {
+                    /* Long (reconnect) waittime */
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l);
+                }
             } else {
                 /* E.g. "ERROR_INVALID_MODE", "ERROR_LOGGED_IN_GUEST", "ERROR_NOT_LOGGED_IN_FREE" or any other unhandled error-string */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            // if (error_string.equalsIgnoreCase("ERROR_WAIT_REQUIRED")) {
-            // /* TODO: Waittime is handled before this gets executed but we should maybe still check for it here just in case */
-            // }
         }
     }
 
@@ -313,11 +327,16 @@ public class RocketshareCom extends PluginForHost {
         }
         br.getPage(API_BASE + "/user");
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        final boolean isPremium = ((Boolean) entries.get("premium")).booleanValue();
+        int maxDls = (int) JavaScriptEngineFactory.toLong(entries.get("max_concurrent_downloads"), 1);
+        if (maxDls == 0) {
+            /* Unlimited (premium) */
+            maxDls = -1;
+        }
+        final Object isPremiumO = entries.get("premium");
+        final boolean isPremium = isPremiumO != null && ((Boolean) isPremiumO).booleanValue() == true;
         if (!isPremium) {
             account.setType(AccountType.FREE);
             /* free accounts can still have captcha */
-            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
             account.setConcurrentUsePossible(false);
             ai.setStatus("Registered (free) user");
         } else {
@@ -327,10 +346,10 @@ public class RocketshareCom extends PluginForHost {
             ai.setValidUntil(valid_until_timestamp * 1000);
             ai.setTrafficLeft(daily_traffic_left);
             account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             account.setConcurrentUsePossible(true);
             ai.setStatus("Premium account");
         }
+        account.setMaxSimultanDownloads(maxDls);
         return ai;
     }
 
@@ -357,11 +376,6 @@ public class RocketshareCom extends PluginForHost {
         }
         /* Premium accounts do not have captchas */
         return false;
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return ACCOUNT_FREE_MAXDOWNLOADS;
     }
 
     @Override

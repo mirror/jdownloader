@@ -101,7 +101,10 @@ public class ShareVideosSe extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* First try this source, it is more reliable! */
-        dllink = br.getRegex("<source src=\"(https?://[^<>\"]*?file1\\.mp4)\"").getMatch(0);
+        dllink = br.getRegex("random_file\\.push\\(\"(http[^<>\"]+)\"\\);").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("<source src=\"(https?://[^<>\"]*?file1\\.mp4)\"").getMatch(0);
+        }
         if (dllink == null) {
             dllink = br.getRegex("<source src=\"(https?://[^<>\"]*?\\.mp4)\"").getMatch(0);
         }
