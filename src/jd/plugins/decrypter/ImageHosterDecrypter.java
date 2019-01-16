@@ -33,8 +33,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pic5you.ru", "image2you.ru", "picsee.net", "pichost.me", "imagecurl.com", "otofotki.pl", "twitpic.com", "pic4you.ru", "postimage.org", "turboimagehost.com", "imagebam.com", "freeimagehosting.net", "pixhost.org", "girlswithmuscle.com" }, urls = { "http://pic5you\\.ru/\\d+/\\d+/", "http://(?:www\\.)?image2you\\.ru/\\d+/\\d+/", "http://(www\\.)?picsee\\.net/\\d{4}-\\d{2}-\\d{2}/.*?\\.html", "http://(www\\.)?pichost\\.me/\\d+", "http://(?:www\\.)?imagecurl\\.com/viewer\\.php\\?file=[\\w-]+\\.[a-z]{2,4}", "http://img\\d+\\.otofotki\\.pl/[A-Za-z0-9\\-_]+\\.jpg\\.html", "https?://(www\\.)?twitpic\\.com/show/[a-z]+/[a-z0-9]+", "http://(?:www\\.)?pic4you\\.ru/\\d+/\\d+/", "https?://((?:www\\.)?postim(age|g)\\.org/image/[a-z0-9]+|s\\d{1,2}\\.postimg\\.org/[a-z0-9]+/[^/]*\\.(?-i)[a-z]{3,4})",
-        "https?://(?:www\\.)?turboimagehost\\.com/p/\\d+/.*?\\.html", "https?://[\\w\\.]*imagebam\\.com/(image|gallery)/[a-z0-9]+", "http://[\\w\\.]*?freeimagehosting\\.net/image\\.php\\?.*?\\..{3,4}", "https?://(www\\.)?pixhost\\.(?:org|to)/show/\\d+/.+", "https?://(www.)?girlswithmuscle\\.com/\\d+/?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pic5you.ru", "image2you.ru", "picsee.net", "imagecurl.com", "twitpic.com", "pic4you.ru", "postimage.org", "turboimagehost.com", "imagebam.com", "freeimagehosting.net", "girlswithmuscle.com" }, urls = { "http://pic5you\\.ru/\\d+/\\d+/", "http://(?:www\\.)?image2you\\.ru/\\d+/\\d+/", "http://(www\\.)?picsee\\.net/\\d{4}-\\d{2}-\\d{2}/.*?\\.html", "http://(?:www\\.)?imagecurl\\.com/viewer\\.php\\?file=[\\w-]+\\.[a-z]{2,4}", "https?://(www\\.)?twitpic\\.com/show/[a-z]+/[a-z0-9]+", "http://(?:www\\.)?pic4you\\.ru/\\d+/\\d+/", "https?://((?:www\\.)?postim(age|g)\\.org/image/[a-z0-9]+|s\\d{1,2}\\.postimg\\.org/[a-z0-9]+/[^/]*\\.(?-i)[a-z]{3,4})", "https?://(?:www\\.)?turboimagehost\\.com/p/\\d+/.*?\\.html", "https?://[\\w\\.]*imagebam\\.com/(image|gallery)/[a-z0-9]+",
+        "http://[\\w\\.]*?freeimagehosting\\.net/image\\.php\\?.*?\\..{3,4}", "https?://(www.)?girlswithmuscle\\.com/\\d+/?" })
 public class ImageHosterDecrypter extends antiDDoSForDecrypt {
     public ImageHosterDecrypter(final PluginWrapper wrapper) {
         super(wrapper);
@@ -127,17 +127,6 @@ public class ImageHosterDecrypter extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
             finallink = parameter.replace("image.php?", "uploads/");
-        } else if (parameter.contains("pixhost.org") || parameter.contains("pixhost.to")) {
-            br.getPage(parameter);
-            br.followRedirect();
-            /* Error handling */
-            if (!br.containsHTML("images/")) {
-                return decryptedLinks;
-            }
-            finallink = br.getRegex("show_image\" src=\"(https?.*?)\"").getMatch(0);
-            if (finallink == null) {
-                finallink = br.getRegex("\"(https?://img[0-9]+\\.pixhost\\.(?:org|to)/images/[0-9]+/.*?)\"").getMatch(0);
-            }
         } else if (parameter.contains("sharenxs.com/")) {
             br.getPage(parameter + "&offset=original");
             finallink = br.getRegex("<img[^>]+class=\"view_photo\" src=\"(.*?)\"").getMatch(0);
@@ -217,21 +206,12 @@ public class ImageHosterDecrypter extends antiDDoSForDecrypt {
             br.setFollowRedirects(false);
             br.getPage(parameter);
             finallink = br.getRedirectLocation();
-        } else if (parameter.contains("otofotki.pl/")) {
-            br.getPage(parameter);
-            finallink = br.getRegex("<img src='\\.(/obrazki/[^<>\"]*?)' border='0'").getMatch(0);
-            if (finallink != null) {
-                finallink = new Regex(parameter, "(http://img\\d+\\.otofotki\\.pl)").getMatch(0) + finallink;
-            }
         } else if (parameter.contains("imagecurl.com/")) {
             br.getPage(parameter);
             finallink = br.getRegex("\\('<br/><a href=\"(http://cdn\\.imagecurl\\.com/images/\\w+\\.[a-z]{2,4})\">").getMatch(0);
             if (finallink == null) {
                 finallink = br.getRegex("To view its <a href=\"(http://cdn\\.imagecurl\\.com/images/\\w+\\.[a-z]{2,4})\">true size<").getMatch(0) + finallink;
             }
-        } else if (parameter.contains("pichost.me/")) {
-            br.getPage(parameter);
-            finallink = br.getRegex("\"(http://[a-z0-9]+\\.pichost\\.me/i/[^<>\"]*?)\"").getMatch(0);
         } else if (parameter.contains("picsee.net/")) {
             finallink = parameter.replace("picsee.net/", "picsee.net/upload/").replace(".html", "");
         } else if (parameter.contains("image2you.ru/")) {
@@ -261,6 +241,9 @@ public class ImageHosterDecrypter extends antiDDoSForDecrypt {
             }
         } else if (parameter.contains("girlswithmuscle.com/")) {
             String fuid = new Regex(parameter, "([\\d+]+)/?$").getMatch(0);
+            if (!parameter.endsWith("/")) {
+                parameter = parameter + "/";
+            }
             br.getPage(parameter);
             finallink = br.getRegex("<a href=\"([^\"]+)\">Link to full-size").getMatch(0);
             String ext = new Regex(finallink, "(\\.[a-z0-9]+$)").getMatch(0);
