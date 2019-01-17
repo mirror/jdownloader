@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -41,9 +40,8 @@ import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wushare.com" }, urls = { "http://(www\\.)?wushare\\.com/file/[A-Za-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wushare.com" }, urls = { "https?://(www\\.)?wushare\\.com/file/[A-Za-z0-9]+" })
 public class WuShareCom extends PluginForHost {
-
     public WuShareCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://wushare.com/premium");
@@ -94,7 +92,7 @@ public class WuShareCom extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
             }
-            final String code = getCaptchaCode("http://wushare.com/captcha?id=" + System.currentTimeMillis(), downloadLink);
+            final String code = getCaptchaCode("https://wushare.com/captcha?id=" + System.currentTimeMillis(), downloadLink);
             br.postPage(br.getURL(), "action=get_download_link&captcha_response_field=" + code);
             if (br.containsHTML("\"error_captcha\"")) {
                 try {
@@ -107,11 +105,11 @@ public class WuShareCom extends PluginForHost {
                 validateLastChallengeResponse();
             } catch (final Throwable e) {
             }
-            final String waitSeconds = br.getRegex("\"status\": \"waiting\", \"time\": (\\d+)").getMatch(0);
+            final String waitSeconds = br.getRegex("\"status\"\\s*:\\s*\"waiting\"\\s*,\\s*\"time\"\\s*:\\s*(\\d+)").getMatch(0);
             if (waitSeconds != null) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(waitSeconds) * 1001l);
             }
-            dllink = br.getRegex("\"link\": \"(http://[^<>\"]*?)\"").getMatch(0);
+            dllink = br.getRegex("\"link\"\\s*:\\s*\"(https?://[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -157,7 +155,6 @@ public class WuShareCom extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-
         account.setValid(true);
         ai.setUnlimitedTraffic();
         final String expire = br.getRegex("expire:</span><span class=\"info\">([^<>\"]*?)</span>").getMatch(0);
@@ -225,7 +222,7 @@ public class WuShareCom extends PluginForHost {
         requestFileInformation(downloadLink);
         login(account, false);
         br.getPage(downloadLink.getDownloadURL());
-        final String dllink = br.getRegex("class=\"dl_link\">(http[^<>\"]*?)</p>").getMatch(0);
+        final String dllink = br.getRegex("class=\"dl_link\">(https?[^<>\"]*?)</p>").getMatch(0);
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
