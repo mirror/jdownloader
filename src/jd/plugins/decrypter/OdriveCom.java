@@ -75,6 +75,7 @@ public class OdriveCom extends PluginForDecrypt {
             dl.setLinkID(folderID + "_" + filename);
             if (!StringUtils.isEmpty(directlink)) {
                 dl.setProperty("directlink", directlink);
+                dl.setContentUrl(directlink);
             }
             /* Properties required to find this item later in order to find our final downloadlink */
             dl.setProperty("folderid", folderID);
