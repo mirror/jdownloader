@@ -213,6 +213,7 @@ public class ToMvzUs extends antiDDoSForDecrypt {
         }
         if (br.containsHTML("Enter captcha:")) {
             logger.info("Handling captcha");
+            /* 2019-01-17: reCaptcha key hardcoded */
             final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, "6LdbViUTAAAAABBE0NJRfpZ05KN6oE4Ojawle0h3").getToken();
             br.postPage(br.getURL(), "your_age=18&unblock_me=Unblock+me+now%21&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
         }
