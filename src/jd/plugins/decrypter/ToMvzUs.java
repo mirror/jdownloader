@@ -17,11 +17,13 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
@@ -66,6 +68,7 @@ public class ToMvzUs extends antiDDoSForDecrypt {
         final String cookie_host = Browser.getHost(parameter);
         br.setCookie(cookie_host, "links_tos", "1");
         br.setCookie(cookie_host, "js_enabled", "true");
+        br.setCookie(cookie_host, "subscribe", "true");
         getPage(parameter);
         if (br.getHttpConnection() == null || !br.getHttpConnection().isOK()) {
             decryptedLinks.add(createOfflinelink(parameter));
@@ -106,29 +109,38 @@ public class ToMvzUs extends antiDDoSForDecrypt {
     private void decryptIframe(ArrayList<DownloadLink> decryptedLinks) throws Exception {
         // they are always held in iframe src. page seems to only have one.
         confirm_continue();
+        DownloadLink dl = null;
         if (br.containsHTML("We temporary marked this link .*? as possibly dangerous")) {
             final String finallink = br.getRegex("/user/go_away/\\?go=(https?://[^<>\"]+)\"").getMatch(0);
             if (finallink == null) {
                 throw new DecrypterException("Handling for 'dangerous' urls failed");
             }
+            dl = createDownloadlink(finallink);
             decryptedLinks.add(createDownloadlink(finallink));
+            distribute(dl);
         } else {
             String externID = br.getRegex("go=(http[^<>\"]+)\"").getMatch(0);
             if (externID != null) {
+                dl = createDownloadlink(externID);
                 decryptedLinks.add(createDownloadlink(externID));
-                return;
+                distribute(dl);
             }
             final String[] iframes = br.getRegex("<iframe .*?</iframe>").getColumn(-1);
-            if (iframes != null) {
+            if (iframes != null && iframes.length > 0) {
                 for (final String iframe : iframes) {
-                    final String src = new Regex(iframe, "src=(\"|')(.*?)\\1").getMatch(1);
+                    String src = new Regex(iframe, "src=(\"|')(.*?)\\1").getMatch(1);
                     if (src != null) {
-                        decryptedLinks.add(createDownloadlink("http:" + src));
+                        if (!src.startsWith("http:")) {
+                            src = "http:" + src;
+                        }
+                        dl = createDownloadlink(src);
+                        decryptedLinks.add(dl);
+                        distribute(dl);
                         logger.info("Queueing: http:" + src);
                     }
                 }
             } else {
-                System.out.println("Possible error: break point me");
+                logger.warning("Failed to find iFrames - possible plugin failure: " + br.getURL());
             }
         }
     }
@@ -155,15 +167,17 @@ public class ToMvzUs extends antiDDoSForDecrypt {
             getPage("https://" + domain + full_movie); // To get another links
             confirm_continue();
         }
-        // scan for each fm
+        /* Crawl all mirrors - wait after each item to avoid captchas */
         final String[] fms = br.getRegex("full_movie/\\d+/\\d+/\\d+/(?:episode/\\d+/\\d+/|movie/)").getColumn(-1);
         if (fms != null && fms.length > 0) {
+            int counter = 1;
             logger.info("fms.length: " + fms.length);
             for (final String fm : fms) {
-                final DownloadLink dl = createDownloadlink("https://" + domain + fm);
-                // decryptedLinks.add(dl); // ToDo: - Must serialize and reduce rate
-                // distribute(dl);
-                // logger.info("fm: " + "https://" + domain + fm);
+                logger.info("Decrypting item " + counter + " of " + fms.length);
+                getPage("/" + fm);
+                decryptIframe(decryptedLinks);
+                this.sleep(5000, param);
+                counter++;
             }
         } else {
             if (br.containsHTML("Enter captcha:")) {
@@ -178,9 +192,16 @@ public class ToMvzUs extends antiDDoSForDecrypt {
         String toshash = br.getRegex("document\\.getElementById\\(\"toshash2\"\\)\\.value = \"([^<>\"]+)\"").getMatch(0);
         if (toshash == null) {
             /* 2017-03-16 */
-            toshash = br.getRegex("var\\s*?hash\\s*?=\\s*?\\'([a-f0-9]+)\\'; ").getMatch(0);
+            toshash = br.getRegex("var\\s*?hash\\s*?=\\s*?\\'([a-f0-9]+)\\';").getMatch(0);
         }
-        final Form tosform = br.getFormbyKey("confirm_continue");
+        if (toshash == null) {
+            /* 2019-01-17 */
+            toshash = br.getRegex("var\\s*?hash2\\s*?=\\s*?\\'([a-f0-9]+)\\';").getMatch(0);
+        }
+        Form tosform = br.getFormbyKey("confirm_continue");
+        if (tosform == null) {
+            tosform = br.getFormbyProperty("id", "continueToLinkForm");
+        }
         if (tosform != null) {
             if (toshash != null) {
                 tosform.put("hash", toshash);
@@ -189,6 +210,11 @@ public class ToMvzUs extends antiDDoSForDecrypt {
             if (br.containsHTML(">Before you start watching")) {
                 throw new DecrypterException("submitForm(tosform) failed ");
             }
+        }
+        if (br.containsHTML("Enter captcha:")) {
+            logger.info("Handling captcha");
+            final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, "6LdbViUTAAAAABBE0NJRfpZ05KN6oE4Ojawle0h3").getToken();
+            br.postPage(br.getURL(), "your_age=18&unblock_me=Unblock+me+now%21&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
         }
         return;
     }

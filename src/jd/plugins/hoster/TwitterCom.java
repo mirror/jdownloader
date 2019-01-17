@@ -148,25 +148,45 @@ public class TwitterCom extends PluginForHost {
             br.getHeaders().put("Accept", "*/*");
             br.getHeaders().put("Origin", "https://twitter.com");
             br.getHeaders().put("Referer", "https://" + this.getHost() + "/i/videos/tweet/" + tweet_id);
-            if (guest_token == null) {
-                synchronized (LOCK) {
+            synchronized (LOCK) {
+                if (guest_token == null) {
                     br.getHeaders().put("x-csrf-token", "undefined");
                     br.postPage("https://api.twitter.com/1.1/guest/activate.json", "");
                     /** TODO: Save guest_token throughout session so we do not generate them so frequently */
                     guest_token = PluginJSonUtils.getJson(br, "guest_token");
                 }
-            }
-            if (guest_token != null) {
-                br.getHeaders().put("x-guest-token", guest_token);
-            }
-            /* Without guest_token in header we might often get blocked here with this response: HTTP/1.1 429 Too Many Requests */
-            br.getPage("https://api.twitter.com/1.1/videos/tweet/config/" + tweet_id + ".json");
-            if (br.containsHTML("<div id=\"message\">")) {
-                /* E.g. <div id="message">Das Medium konnte nicht abgespielt werden. */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (br.getHttpConnection().getResponseCode() == 403) {
-                /* 403 is typically 'rights missing' but in this case it means that the content is offline. */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                if (guest_token != null) {
+                    br.getHeaders().put("x-guest-token", guest_token);
+                }
+                /* Without guest_token in header we might often get blocked here with this response: HTTP/1.1 429 Too Many Requests */
+                br.getPage("https://api.twitter.com/1.1/videos/tweet/config/" + tweet_id + ".json");
+                final String errorcode = PluginJSonUtils.getJson(br, "error");
+                final String errormessage = PluginJSonUtils.getJson(br, "message");
+                if (br.containsHTML("<div id=\"message\">")) {
+                    /* E.g. <div id="message">Das Medium konnte nicht abgespielt werden. */
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else if (br.getHttpConnection().getResponseCode() == 403) {
+                    /* 403 is typically 'rights missing' but in this case it means that the content is offline. */
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else if (!StringUtils.isEmpty(errorcode)) {
+                    logger.info("Failure, errorcode: " + errorcode);
+                    if (!StringUtils.isEmpty(errormessage)) {
+                        logger.info("Errormessage: " + errormessage);
+                    }
+                    if (errorcode.equals("353")) {
+                        if (guest_token != null) {
+                            /* Reset token and force usage of a new token for the next try */
+                            logger.info("Possible token failure, retrying");
+                            guest_token = null;
+                            throw new PluginException(LinkStatus.ERROR_RETRY, "Server error 353");
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 353", 30 * 60 * 1000l);
+                        }
+                    } else {
+                        logger.warning("Unknown error");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                }
             }
             // this.br.getRequest().setHtmlCode(Encoding.htmlDecode(this.br.toString()));
             dllink = PluginJSonUtils.getJson(this.br, "playbackUrl");

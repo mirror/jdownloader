@@ -17,9 +17,13 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 
+import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DefaultEnumValue;
+import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.downloader.hds.HDSDownloader;
@@ -48,6 +52,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MediathekHelper;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.hoster.TvnowDe.TvnowConfigInterface.Quality;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tvnow.de" }, urls = { "tvnowdecrypted://.+" })
 public class TvnowDe extends PluginForHost {
@@ -62,8 +67,8 @@ public class TvnowDe extends PluginForHost {
     /* Old + new movie-linktype */
     public static final String            TYPE_MOVIE_OLD                 = "https?://[^/]+/[^/]+/[^/]+";
     public static final String            TYPE_MOVIE_NEW                 = "https?://[^/]+/filme/.+";
-    public static final String            TYPE_SERIES_NEW                = "https?://[^/]+/serien/([^/]+)$";
-    public static final String            TYPE_SERIES_SINGLE_EPISODE_NEW = "https?://[^/]+/(?:serien|shows)/([^/]+)/(?:[^/]+/)?([^/]+)";
+    public static final String            TYPE_SERIES_NEW                = "https?://[^/]+/(?:serien|shows)/([^/]+)(?:/staffel\\-\\d+)?$";
+    public static final String            TYPE_SERIES_SINGLE_EPISODE_NEW = "https?://[^/]+/(?:serien|shows)/([^/]+)/(?:[^/]+/)?(?!staffel\\-\\d+)([^/]+)$";
     public static final String            TYPE_DEEPLINK                  = "^[a-z]+://link\\.[^/]+/.+";
     public static final String            API_BASE                       = "https://api.tvnow.de/v3";
     private static final String           API_NEW_BASE                   = "https://apigw.tvnow.de";
@@ -84,6 +89,11 @@ public class TvnowDe extends PluginForHost {
 
     public static boolean isMovie_old(final String url) {
         return url.matches(TYPE_MOVIE_OLD) && !url.matches(TYPE_MOVIE_NEW) && !url.matches(TYPE_SERIES_SINGLE_EPISODE_NEW) && !url.matches(TYPE_SERIES_NEW);
+    }
+
+    public static boolean isSeriesSingleEpisodeNew(final String url) {
+        // return url.matches(TYPE_SERIES_SINGLE_EPISODE_NEW) && !url.matches("https?://[^/]+/(?:serien|shows)/[^/]+/staffel\\-\\d+$");
+        return url.matches(TYPE_SERIES_SINGLE_EPISODE_NEW);
     }
 
     @Override
@@ -258,20 +268,44 @@ public class TvnowDe extends PluginForHost {
             // }
         }
         if (!StringUtils.isEmpty(hlsMaster)) {
-            hlsMaster = hlsMaster.replaceAll("(filter=.*?)(&|$)", "");// show all available qualities
+            hlsMaster = hlsMaster.replaceAll("(\\??filter=.*?)(&|$)", "");// show all available qualities
             br.getPage(hlsMaster);
-            final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
-            if (hlsbest == null) {
+            /* Find user-preferred quality */
+            final Quality preferredQuality = cfg.getPreferredQuality();
+            final String preferredQualityString = selectedQualityEnumToQualityString(preferredQuality);
+            final boolean preferBEST = preferredQuality == Quality.BEST;
+            final List<HlsContainer> hlsQualities = HlsContainer.getHlsQualities(br);
+            HlsContainer hlsDownloadCandidate = null;
+            if (preferBEST) {
+                hlsDownloadCandidate = HlsContainer.findBestVideoByBandwidth(hlsQualities);
+            } else {
+                for (final HlsContainer currentHlsQuality : hlsQualities) {
+                    final String qualityStringTemp = bandwidthToQualityString(currentHlsQuality.getBandwidth());
+                    if (qualityStringTemp.equalsIgnoreCase(preferredQualityString)) {
+                        hlsDownloadCandidate = currentHlsQuality;
+                        break;
+                    }
+                }
+                if (hlsDownloadCandidate != null) {
+                    logger.info("Found preferred quality: " + preferredQualityString);
+                } else {
+                    /* Fallback */
+                    logger.info("Failed to find preferred quality: " + preferredQualityString);
+                    hlsDownloadCandidate = HlsContainer.findBestVideoByBandwidth(hlsQualities);
+                    logger.info("Downloading best quality instead: " + hlsDownloadCandidate.getResolution());
+                }
+            }
+            if (hlsDownloadCandidate == null) {
                 /* No content available --> Probably DRM protected */
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming type [DRM]");
             }
             if (downloadLink.getComment() == null || cfg.isShowQualityInfoInComment()) {
-                downloadLink.setComment(hlsbest.toString());
+                downloadLink.setComment(hlsDownloadCandidate.toString());
             }
-            logger.info("Downloading quality: " + hlsbest.toString());
+            logger.info("Downloading quality: " + hlsDownloadCandidate.toString());
             checkFFmpeg(downloadLink, "Download a HLS Stream");
             try {
-                dl = new HLSDownloader(downloadLink, br, hlsbest.getDownloadurl());
+                dl = new HLSDownloader(downloadLink, br, hlsDownloadCandidate.getDownloadurl());
             } catch (final Throwable e) {
                 /*
                  * 2017-11-15: They've changed these URLs to redirect to image content (a pixel). Most likely we have a broken HLS url -->
@@ -316,6 +350,60 @@ public class TvnowDe extends PluginForHost {
             // dl = new HDSDownloader(downloadLink, br, url_hds);
             // dl.startDownload();
         }
+    }
+
+    private String selectedQualityEnumToQualityString(final Quality selectedQuality) {
+        final String qualitystring;
+        switch (selectedQuality) {
+        case FHD1080:
+            qualitystring = "1080p";
+            break;
+        case HD720:
+            qualitystring = "720p";
+            break;
+        case SD540HIGH:
+            qualitystring = "540phigh";
+            break;
+        case SD540LOW:
+            qualitystring = "540plow";
+            break;
+        case SD360HIGH:
+            qualitystring = "360phigh";
+            break;
+        case SD360LOW:
+            qualitystring = "360plow";
+            break;
+        default:
+            /* BEST */
+            qualitystring = null;
+        }
+        return qualitystring;
+    }
+
+    private String bandwidthToQualityString(final int bandwidth) {
+        final String qualitystring;
+        if (bandwidth > 150000 && bandwidth < 1006000) {
+            /* 360p low */
+            qualitystring = "360plow";
+        } else if (bandwidth >= 1006000 && bandwidth < 1656000) {
+            /* 360p high */
+            qualitystring = "360phigh";
+        } else if (bandwidth >= 1656000 && bandwidth < 3006000) {
+            /* 540 low */
+            qualitystring = "540plow";
+        } else if (bandwidth >= 3006000 && bandwidth < 6006000) {
+            /* 540 high */
+            qualitystring = "540phigh";
+        } else if (bandwidth >= 6006000 && bandwidth < 7000000) {
+            /* 720p */
+            qualitystring = "720p";
+        } else if (bandwidth >= 7000000) {
+            /* 1080p */
+            qualitystring = "1080p";
+        } else {
+            qualitystring = "unknown";
+        }
+        return qualitystring;
     }
 
     private String getURLPart(final DownloadLink dl) throws PluginException, IOException {
@@ -639,6 +727,51 @@ public class TvnowDe extends PluginForHost {
             }
         }
 
+        public static enum Quality implements LabelInterface {
+            BEST {
+                @Override
+                public String getLabel() {
+                    return "Best";
+                }
+            },
+            FHD1080 {
+                @Override
+                public String getLabel() {
+                    return "1080p";
+                }
+            },
+            HD720 {
+                @Override
+                public String getLabel() {
+                    return "720p";
+                }
+            },
+            SD540HIGH {
+                @Override
+                public String getLabel() {
+                    return "540p high";
+                }
+            },
+            SD540LOW {
+                @Override
+                public String getLabel() {
+                    return "540p low";
+                }
+            },
+            SD360HIGH {
+                @Override
+                public String getLabel() {
+                    return "360p high";
+                }
+            },
+            SD360LOW {
+                @Override
+                public String getLabel() {
+                    return "360p low";
+                }
+            };
+        }
+
         public static final TRANSLATION TRANSLATION = new TRANSLATION();
 
         @DefaultBooleanValue(false)
@@ -658,5 +791,12 @@ public class TvnowDe extends PluginForHost {
         boolean isShowQualityInfoInComment();
 
         void setShowQualityInfoInComment(boolean b);
+
+        @AboutConfig
+        @DefaultEnumValue("BEST")
+        @Order(40)
+        Quality getPreferredQuality();
+
+        void setPreferredQuality(Quality quality);
     }
 }
