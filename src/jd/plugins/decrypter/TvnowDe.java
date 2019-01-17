@@ -95,7 +95,7 @@ public class TvnowDe extends PluginForDecrypt {
             } else {
                 isMovie = false;
             }
-        } else if (parameter.matches(jd.plugins.hoster.TvnowDe.TYPE_SERIES_SINGLE_EPISODE_NEW)) {
+        } else if (jd.plugins.hoster.TvnowDe.isSeriesSingleEpisodeNew(parameter)) {
             /* New single-series-episode linkformat */
             final Regex urlInfo = new Regex(parameter, jd.plugins.hoster.TvnowDe.TYPE_SERIES_SINGLE_EPISODE_NEW);
             stationName = null;
