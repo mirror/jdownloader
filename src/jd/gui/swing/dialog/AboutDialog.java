@@ -22,8 +22,10 @@ import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.lang.management.MemoryPoolMXBean;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -159,11 +161,11 @@ public class AboutDialog extends AbstractDialog<Integer> {
         stats = new MigPanel("ins 0 10 0 0,wrap 2", "[][grow,align right]", "[]");
         contentpane.add(stats, "pushx,growx,spanx");
         stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_core()), "");
-        stats.add(disable("Copyright \u00A9 2009-2018 AppWork GmbH"));
+        stats.add(disable("Copyright \u00A9 2009-2019 AppWork GmbH"));
         stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_plugins()), "");
-        stats.add(disable("Copyright \u00A9 2009-2018 JDownloader Community"));
+        stats.add(disable("Copyright \u00A9 2009-2019 JDownloader Community"));
         stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_translations()), "");
-        stats.add(disable("Copyright \u00A9 2009-2018 JDownloader Community"));
+        stats.add(disable("Copyright \u00A9 2009-2019 JDownloader Community"));
         try {
             stats.add(new JLabel("Java:"), "");
             java.lang.management.MemoryUsage memory = java.lang.management.ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
@@ -205,7 +207,27 @@ public class AboutDialog extends AbstractDialog<Integer> {
                 org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e1);
             }
             stats.add(new JLabel("Memory:"), "");
-            stats.add(disable("Usage: " + SizeFormatter.formatBytes(memory.getUsed()) + " - Allocated: " + SizeFormatter.formatBytes(memory.getCommitted()) + " - Max: " + SizeFormatter.formatBytes(memory.getMax())));
+            stats.add(comp = disable("Usage: " + SizeFormatter.formatBytes(memory.getUsed()) + " - Allocated: " + SizeFormatter.formatBytes(memory.getCommitted()) + " - Max: " + SizeFormatter.formatBytes(memory.getMax())));
+            try {
+                final List<MemoryPoolMXBean> memoryPoolMXBeans = java.lang.management.ManagementFactory.getMemoryPoolMXBeans();
+                StringBuilder sb = new StringBuilder();
+                for (final MemoryPoolMXBean memoryPoolMXBean : memoryPoolMXBeans) {
+                    if (sb.length() > 0) {
+                        sb.append("\r\n");
+                    }
+                    sb.append("Pool:").append(memoryPoolMXBean.getName()).append("\r\n");
+                    sb.append("Type:").append(memoryPoolMXBean.getType()).append("\r\n");
+                    sb.append("Managed by:").append(Arrays.toString(memoryPoolMXBean.getMemoryManagerNames())).append("\r\n");
+                    memory = memoryPoolMXBean.getCollectionUsage();
+                    if (memory != null) {
+                        sb.append("Usage: " + SizeFormatter.formatBytes(memory.getUsed()) + " - Allocated: " + SizeFormatter.formatBytes(memory.getCommitted()) + " - Max: " + SizeFormatter.formatBytes(memory.getMax()));
+                    }
+                    sb.append("\r\n");
+                }
+                comp.setToolTipText(sb.toString());
+            } catch (final Throwable e1) {
+                org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e1);
+            }
         } catch (final Throwable e) {
             org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
         }
