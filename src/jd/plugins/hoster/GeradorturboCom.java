@@ -215,28 +215,11 @@ public class GeradorturboCom extends antiDDoSForHost {
             ai.setValidUntil(expiredate);
             ai.setUnlimitedTraffic();
         }
-        account.setValid(true);
-        final String[] possible_domains = { "to", "de", "com", "net", "co.nz", "in", "co", "me", "biz", "ch", "pl", "cc" };
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         final String[] crippledDomains = br.getRegex("a\\.([A-Za-z0-9]+)\\{[\t\n\r ]*?background:").getColumn(0);
         for (String crippledhost : crippledDomains) {
             crippledhost = crippledhost.toLowerCase();
-            /* First cover special cases */
-            if (crippledhost.equals("shareonline")) {
-                supportedHosts.add("share-online.biz");
-            } else if ("onefichier".equals(crippledhost)) {
-                supportedHosts.add("1fichier.com");
-            } else if ("twoshared".equals(crippledhost)) {
-                supportedHosts.add("2shared.com");
-            } else if ("shared".equals(crippledhost)) {
-                supportedHosts.add("4shared.com");
-            } else {
-                /* Finally, go insane... */
-                for (final String possibledomain : possible_domains) {
-                    final String full_possible_host = crippledhost + "." + possibledomain;
-                    supportedHosts.add(full_possible_host);
-                }
-            }
+            supportedHosts.add(crippledhost);
         }
         ai.setMultiHostSupport(this, supportedHosts);
         return ai;
