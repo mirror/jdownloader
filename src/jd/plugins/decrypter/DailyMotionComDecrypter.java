@@ -373,6 +373,10 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
     private String channelName = null;
     private long   date        = 0;
 
+    /**
+     * 2019-01-18: psp: Issues with http URLs - seems like http urls are not valid anymore/at the moment. Via browser they work sometimes
+     * but really slow/often run into timeouts --> I auto-reset settings, disabled http downloads by default and preferred HLS!
+     */
     @SuppressWarnings("deprecation")
     protected void decryptSingleVideo(ArrayList<DownloadLink> decryptedLinks) throws Exception {
         logger.info("Decrypting single video: " + parameter);
@@ -518,8 +522,8 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         final ArrayList<String> selectedQualities = new ArrayList<String>();
         final SubConfiguration cfg = SubConfiguration.getConfig("dailymotion.com");
         final boolean best = cfg.getBooleanProperty(ALLOW_BEST, false);
-        boolean mp4 = cfg.getBooleanProperty("ALLOW_MP4", false);
-        boolean hls = cfg.getBooleanProperty("ALLOW_HLS", false);
+        boolean mp4 = cfg.getBooleanProperty(jd.plugins.hoster.DailyMotionCom.ALLOW_MP4, jd.plugins.hoster.DailyMotionCom.default_ALLOW_MP4);
+        boolean hls = cfg.getBooleanProperty(jd.plugins.hoster.DailyMotionCom.ALLOW_HLS, jd.plugins.hoster.DailyMotionCom.default_ALLOW_HLS);
         if (!mp4 && !hls) {
             hls = true;
             mp4 = true;

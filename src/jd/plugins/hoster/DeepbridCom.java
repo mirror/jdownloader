@@ -192,28 +192,15 @@ public class DeepbridCom extends antiDDoSForHost {
                         /* Skip hosts which do not work via this MOCH at this moment! */
                         continue;
                     }
-                    addHost(host, supportedhostslist);
+                    supportedhostslist.add(host);
                 }
             } else if (hostO instanceof String) {
-                addHost((String) hostO, supportedhostslist);
+                supportedhostslist.add((String) hostO);
             }
         }
         account.setConcurrentUsePossible(true);
         ai.setMultiHostSupport(this, supportedhostslist);
         return ai;
-    }
-
-    private void addHost(final String host, final ArrayList<String> supportedhostslist) {
-        final String[] tlds = { "de", "com", "net", "nz", "co", "biz" };
-        if (host.contains(".")) {
-            /* Good: tld is given */
-            supportedhostslist.add(host);
-        } else {
-            /* Not good: TLD is not given */
-            for (final String tld : tlds) {
-                supportedhostslist.add(host + "." + tld);
-            }
-        }
     }
 
     private void login(final Account account, final boolean forceFullLogin) throws Exception {
