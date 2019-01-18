@@ -17,9 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -32,15 +29,18 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fanfox.net" }, urls = { "https?://fanfox\\.net/manga/[^/]+/(?:v[A-Za-z0-9]+/)?c[\\d\\.]+/\\d+\\.html" })
 public class Mangafox extends PluginForHost {
     public Mangafox(PluginWrapper wrapper) {
         super(wrapper);
     }
+
     /* DEV NOTES */
     // Tags:
     // other:
-
     /* Extension which will be used if no correct extension is found */
     private static final String  default_extension = ".jpg";
     /* Connection stuff */
@@ -139,29 +139,31 @@ public class Mangafox extends PluginForHost {
     private String decodeDownloadLink(final String s) {
         String decoded = null;
         try {
-            Regex params = new Regex(s, "'(.*?[^\\\\])',(\\d+),(\\d+),'(.*?)'");
+            final Regex params = new Regex(s, "'(.*?[^\\\\])',(\\d+),(\\d+),'(.*?)'");
             String p = params.getMatch(0).replaceAll("\\\\", "");
-            int a = Integer.parseInt(params.getMatch(1));
+            final int a = Integer.parseInt(params.getMatch(1));
             int c = Integer.parseInt(params.getMatch(2));
-            String[] k = params.getMatch(3).split("\\|");
+            // '|a|b|c|' will result in '','a','b' and 'c' and last empty will not be within array
+            final String[] k = params.getMatch(3).split("\\|");
             while (c != 0) {
                 c--;
-                if (k[c].length() != 0) {
+                if (k.length > c && k[c].length() != 0) {
                     p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
                 }
             }
             decoded = p;
         } catch (Exception e) {
+            logger.log(e);
         }
-        String finallink = null;
         if (decoded != null) {
             final String part1 = new Regex(decoded, "var pix=\"(http[^\"]+)\"").getMatch(0);
             final String part2 = new Regex(decoded, "var pvalue=\\[\"([^\"]+)\"").getMatch(0);
             if (part1 != null && part2 != null) {
-                finallink = part1 + part2;
+                final String finallink = part1 + part2;
+                return finallink;
             }
         }
-        return finallink;
+        return null;
     }
 
     @Override
