@@ -22,6 +22,11 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -43,11 +48,6 @@ import jd.plugins.decrypter.DailyMotionComDecrypter;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "https?://dailymotiondecrypted\\.com/video/\\w+" })
 public class DailyMotionCom extends PluginForHost {
     public String getVideosource(final Browser br, final String videoID) throws Exception {
@@ -64,8 +64,8 @@ public class DailyMotionCom extends PluginForHost {
     private static final String  COUNTRYBLOCKUSERTEXT   = "This video is not available for your country";
     /** Settings stuff */
     private static final String  ALLOW_BEST             = "ALLOW_BEST";
-    private static final String  ALLOW_HLS              = "ALLOW_HLS";
-    private static final String  ALLOW_MP4              = "ALLOW_MP4";
+    public static final String   ALLOW_HLS              = "ALLOW_HLS_2019_01_18";
+    public static final String   ALLOW_MP4              = "ALLOW_MP4_2019_01_18";
     private static final String  ALLOW_144              = "ALLOW_0";
     private static final String  ALLOW_240              = "ALLOW_1";
     private static final String  ALLOW_380              = "ALLOW_2";
@@ -82,6 +82,8 @@ public class DailyMotionCom extends PluginForHost {
     private final static String  defaultCustomFilename  = "*videoname*_*quality**ext*";
     private final static String  defaultCustomDate      = "dd.MM.yyyy";
     private final static boolean defaultAllowAudio      = true;
+    public static final boolean  default_ALLOW_HLS      = true;
+    public static final boolean  default_ALLOW_MP4      = false;
 
     public DailyMotionCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -512,8 +514,8 @@ public class DailyMotionCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_AUDIO, JDL.L("plugins.hoster.dailymotioncom.checkaudio", "Allow audio download")).setDefaultValue(defaultAllowAudio));
         /* 2016-06-10: Disabled rtmp and hds - should not be needed anymore! */
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_OTHERS, JDL.L("plugins.hoster.dailymotioncom.checkother", "Grab other available qualities (RTMP/OTHERS)?")).setDefaultValue(true).setEnabledCondidtion(hq, false).setEnabled(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_HLS, JDL.L("plugins.hoster.dailymotioncom.allowhls", "Grab HLS?")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_MP4, JDL.L("plugins.hoster.dailymotioncom.allowmp4", "Grab MP4?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_HLS, JDL.L("plugins.hoster.dailymotioncom.allowhls", "Grab HLS?")).setDefaultValue(default_ALLOW_HLS));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_MP4, JDL.L("plugins.hoster.dailymotioncom.allowmp4", "Grab MP4 HTTP?")).setDefaultValue(default_ALLOW_MP4));
         addConfigElementHDS(hq);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filenames"));

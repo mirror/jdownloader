@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -36,9 +35,8 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "naughtyamerica.com" }, urls = { "https?://(?:beta\\.)?(?:members|tour)\\.naughtyamerica\\.com/scene/[a-z0-9\\-]+\\-\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "naughtyamerica.com" }, urls = { "https?://(?:beta\\.)?(?:members|tour|www)\\.naughtyamerica\\.com/scene/[a-z0-9\\-]+\\-\\d+" })
 public class NaughtyamericaCom extends PluginForDecrypt {
-
     public NaughtyamericaCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -80,7 +78,6 @@ public class NaughtyamericaCom extends PluginForDecrypt {
                 title = filename_url;
             }
         }
-
         if (is_logged_in) {
             final String[] videoInfo = getVideoInfoArray(br);
             for (final String singleVideoInfo : videoInfo) {
@@ -111,7 +108,6 @@ public class NaughtyamericaCom extends PluginForDecrypt {
                     filename += type + "_";
                 }
                 filename += quality_url + ext;
-
                 final DownloadLink dl = this.createDownloadlink(directlink.replaceAll("https?://", "http://naughtyamericadecrypted"));
                 dl.setLinkID(linkid);
                 dl.setName(filename);
@@ -162,7 +158,6 @@ public class NaughtyamericaCom extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
         fp.addLinks(decryptedLinks);
-
         return decryptedLinks;
     }
 
@@ -190,11 +185,11 @@ public class NaughtyamericaCom extends PluginForDecrypt {
     }
 
     public static String getVideoUrlFree(final String filename_url) {
-        return "http://tour." + DOMAIN_BASE + "/scene/" + filename_url;
+        return "https://www." + DOMAIN_BASE + "/scene/" + filename_url;
     }
 
     public static String getVideoUrlPremium(final String filename_url) {
-        return "http://" + DOMAIN_PREFIX_PREMIUM + DOMAIN_BASE + "/scene/" + filename_url;
+        return "https://" + DOMAIN_PREFIX_PREMIUM + DOMAIN_BASE + "/scene/" + filename_url;
     }
 
     public static String getTypeForProperty(final String type) {
@@ -226,7 +221,6 @@ public class NaughtyamericaCom extends PluginForDecrypt {
         try {
             ((jd.plugins.hoster.NaughtyamericaCom) hostPlugin).login(br, aa, force);
         } catch (final PluginException e) {
-
             aa.setValid(false);
             return false;
         }
@@ -237,5 +231,4 @@ public class NaughtyamericaCom extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

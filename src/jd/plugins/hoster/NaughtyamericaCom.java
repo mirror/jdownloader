@@ -85,12 +85,28 @@ public class NaughtyamericaCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final Account aa = AccountController.getInstance().getValidAccount(this);
-        if (aa == null) {
-            link.getLinkStatus().setStatusText("Cannot check links without valid premium account");
-            return AvailableStatus.UNCHECKABLE;
+        if (aa != null) {
+            login(br, aa, false);
+            dllink = link.getPluginPatternMatcher();
+        } else {
+            logger.info("No account available, checking trailer download");
+            final String filename_url = link.getStringProperty("filename_url", null);
+            if (filename_url == null) {
+                /* This should never happen! */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final String main_video_url_free = jd.plugins.decrypter.NaughtyamericaCom.getVideoUrlFree(filename_url);
+            br.getPage(main_video_url_free);
+            if (jd.plugins.decrypter.NaughtyamericaCom.isOffline(br)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            /* 2019-01-18: Trailer is only available in a single quality */
+            dllink = br.getRegex("file\\s*?:\\s*?\"(http[^<>\"]+)\"").getMatch(0);
+            if (StringUtils.isEmpty(dllink)) {
+                link.getLinkStatus().setStatusText("Trailer not foind: Cannot check/download links without valid premium account");
+                return AvailableStatus.UNCHECKABLE;
+            }
         }
-        login(br, aa, false);
-        dllink = link.getDownloadURL();
         URLConnectionAdapter con = null;
         try {
             con = br.openHeadConnection(dllink);
@@ -187,11 +203,7 @@ public class NaughtyamericaCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
-    }
-
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        handleDownload(downloadLink);
     }
 
     @Override
@@ -304,13 +316,12 @@ public class NaughtyamericaCom extends PluginForHost {
         return ai;
     }
 
-    @Override
-    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
+    private void handleDownload(final DownloadLink link) throws Exception {
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /* Usually only happens in free mode e.g. trailer download --> But no trailer is available */
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -318,13 +329,19 @@ public class NaughtyamericaCom extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setProperty("premium_directlink", dllink);
         dl.startDownload();
     }
 
     @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link);
+        handleDownload(link);
+    }
+
+    @Override
     public boolean canHandle(final DownloadLink downloadLink, final Account account) throws Exception {
-        return account != null;
+        /* 2019-01-18: Without account: Trailer download, with account: full video download */
+        return true;
     }
 
     public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {

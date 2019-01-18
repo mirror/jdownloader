@@ -80,6 +80,7 @@ public class UnknownPornScript5 extends PluginForHost {
         dllink = null;
         final String host = downloadLink.getHost();
         br = new Browser();
+        br.setAllowedResponseCodes(new int[] { 410 });
         br.setFollowRedirects(true);
         if (downloadLink.getDownloadURL().contains("bigcamtube.com")) {
             br.setCookie("www.bigcamtube.com", "age_verify", "1");
@@ -93,13 +94,9 @@ public class UnknownPornScript5 extends PluginForHost {
              */
             br.getPage(downloadLink.getDownloadURL());
         }
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Sorry, we couldn't find")) {
-            /* E.g. responsecode 404: boyfriendtv.com */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
         /* Now lets find the url_filename as a fallback in case we cannot find the filename inside the html code. */
         String url_filename = null;
-        final String[] urlparts = new Regex(downloadLink.getDownloadURL(), "https?://[^/]+/[^/]+/(.+)").getMatch(0).split("/");
+        final String[] urlparts = new Regex(downloadLink.getPluginPatternMatcher(), "https?://[^/]+/[^/]+/(.+)").getMatch(0).split("/");
         String url_id = null;
         for (String urlpart : urlparts) {
             if (urlpart.matches("\\d+")) {
@@ -109,12 +106,7 @@ public class UnknownPornScript5 extends PluginForHost {
                 break;
             }
         }
-        if (url_filename == null && url_id == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (url_filename == null) {
-            url_filename = url_id;
-        } else {
+        if (url_filename != null) {
             url_filename = url_filename.replace(".html", "");
             if (url_id == null) {
                 /* In case we have an ID, it might be in the url_filename --> Find it */
@@ -129,6 +121,20 @@ public class UnknownPornScript5 extends PluginForHost {
                 /* Remove url_id from url_filename */
                 url_filename = url_filename.replace(url_id, "");
             }
+        } else {
+            url_filename = url_id;
+        }
+        if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 410 || br.containsHTML(">Sorry, we couldn't find")) {
+            /* E.g. responsecode 404: boyfriendtv.com */
+            /* E.g. 410: pornoxo.com (DMCA removed content) */
+            if (url_filename != null) {
+                /* Offline content should at least display a name in linkgrabber instead of 'unknownFileName' */
+                downloadLink.setName(url_filename);
+            }
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (url_filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* Make it look nicer! */
         url_filename = url_filename.replace("-", " ");
