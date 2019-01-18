@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import java.math.BigDecimal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -24,15 +23,21 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -43,10 +48,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 //Decrypts embedded videos from dailymotion
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "https?://(?:www\\.)?dailymotion\\.com/.+" })
@@ -80,7 +81,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
     private static final String             ALLOW_OTHERS      = "ALLOW_OTHERS";
     public static final String              ALLOW_AUDIO       = "ALLOW_AUDIO";
     private static final String             TYPE_PLAYLIST     = "https?://(?:www\\.)?dailymotion\\.com/playlist/[A-Za-z0-9\\-_]+(?:/\\d+)?.*?";
-    private static final String             TYPE_USER         = "https?://(?:www\\.)?dailymotion\\.com/user/[A-Za-z0-9_\\-]+/\\d+";
+    private static final String             TYPE_USER         = "https?://(?:www\\.)?dailymotion\\.com/(user/[A-Za-z0-9_\\-]+/\\d+|[^/]+/videos)";
     private static final String             TYPE_USER_SEARCH  = "https?://(?:www\\.)?dailymotion\\.com/.*?/user/[^/]+/search/[^/]+/\\d+";
     private static final String             TYPE_VIDEO        = "https?://(?:www\\.)?dailymotion\\.com/((?:embed/)?video/[^/]+|swf(?:/video)?/[^/]+)";
     /** API limits for: https://developer.dailymotion.com/api#graph-api */
@@ -166,7 +167,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         logger.info("Decrypting user: " + parameter);
         String username = new Regex(parameter, "dailymotion\\.com/user/([A-Za-z0-9\\-_]+)").getMatch(0);
         if (username == null) {
-            username = new Regex(parameter, "dailymotion\\.com/([A-Za-z0-9_\\-]+)").getMatch(0);
+            username = new Regex(parameter, "dailymotion\\.com/([^/]+)").getMatch(0);
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(username);
@@ -190,7 +191,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
                     decryptedLinks = null;
                     return;
                 }
-                final DownloadLink dl = this.createDownloadlink(br.getURL("//www.dailymotion.com/video/" + videoid).toString());
+                final DownloadLink dl = this.createDownloadlink(createVideolink(videoid));
                 dl._setFilePackage(fp);
                 this.decryptedLinks.add(dl);
                 distribute(dl);
@@ -203,91 +204,109 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         }
     }
 
+    private String createVideolink(final String videoID) {
+        return String.format("https://www.dailymotion.com/video/%s", videoID);
+    }
+
     private void decryptPlaylist() throws Exception {
-        final ArrayList<String> dupelist = new ArrayList<String>();
         logger.info("Decrypting playlist: " + parameter);
-        final Regex info = br.getRegex("class=\"name\">([^<>\"]*?)</a> \\| (\\d+(,\\d+)?) Videos?");
-        String username = info.getMatch(0);
-        if (username == null) {
-            username = br.getRegex("<meta name=\"author\" content=\"([^<>\"]*?)\"").getMatch(0);
+        final String playlist_id = new Regex(this.parameter, "/playlist/([^/]+)").getMatch(0);
+        final String player_config_json = br.getRegex("var __PLAYER_CONFIG__ = (\\{.*?\\});</script>").getMatch(0);
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(player_config_json);
+        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "context/api");
+        final String client_id = (String) entries.get("client_id");
+        final String auth_url = (String) entries.get("auth_url");
+        final String client_secret = (String) entries.get("client_secret");
+        if (StringUtils.isEmpty(auth_url) || StringUtils.isEmpty(client_id) || StringUtils.isEmpty(client_secret)) {
+            logger.warning("Failed to find auth_url, client_id or client_secret");
+            throw new DecrypterException();
         }
-        if (username == null) {
-            username = PluginJSonUtils.getJsonValue(this.br, "playlist_owner_login");
+        // final String client_scope = (String) entries.get("client_scope");
+        // final String product_scope = (String) entries.get("product_scope");
+        final String postdata = "grant_type=client_credentials&client_secret=" + client_secret + "&client_id=" + client_id;
+        br.postPage(auth_url, postdata);
+        // final String expires_in = PluginJSonUtils.getJson(br, "expires_in");
+        br.getHeaders().put("content-type", "application/json, application/json");
+        final String access_token = PluginJSonUtils.getJson(br, "access_token");
+        if (StringUtils.isEmpty(access_token)) {
+            logger.warning("Failed to find access_token");
+            throw new DecrypterException();
         }
-        String fpName = br.getRegex("<div id=\"playlist_name\">([^<>\"]*?)</div>").getMatch(0);
-        if (fpName == null) {
-            fpName = br.getRegex("<div class=\"page\\-title mrg\\-btm\\-sm\">([^<>\"]*?)</div>").getMatch(0);
-        }
-        if (fpName == null) {
-            fpName = br.getRegex("\"playlist_title\":\"([^<>\"]*?)\"").getMatch(0);
-        }
-        if (fpName == null) {
-            fpName = new Regex(parameter, "dailymotion.com/playlist/([^/]+)").getMatch(0);
-        }
-        fpName = Encoding.htmlDecode(fpName.trim());
-        String videosNum = info.getMatch(1);
-        final String videosnum_text = br.getRegex("class=\"link\\-on\\-hvr\"(.*?)<span>").getMatch(0);
-        if (videosNum == null && videosnum_text != null) {
-            videosNum = new Regex(videosnum_text, "(\\d+(,\\d+)?) Videos?").getMatch(0);
-        }
-        if (videosNum == null) {
-            /* Empty playlist site */
-            if (!br.containsHTML("\"watchlaterAdd\"")) {
-                final DownloadLink dl = this.createOfflinelink(parameter);
-                dl.setFinalFileName(fpName);
-                decryptedLinks.add(dl);
-                return;
-            }
-            logger.warning("Decrypter failed: " + parameter);
-            decryptedLinks = null;
-            return;
-        }
-        final int videoCount = Integer.parseInt(videosNum.replace(",", ""));
-        if (videoCount == 0) {
-            /* User has 0 videos */
-            final DownloadLink dl = this.createOfflinelink(parameter);
-            dl.setFinalFileName(username);
-            decryptedLinks.add(dl);
-            return;
-        }
+        br.getHeaders().put("authorization", "Bearer " + access_token);
+        br.getHeaders().put("x-dm-appinfo-id", "com.dailymotion.neon");
+        br.getHeaders().put("x-dm-appinfo-type", "website");
+        br.getHeaders().put("x-dm-appinfo-version", "v2019-01-10T13:08:47.423Z");
+        br.getHeaders().put("x-dm-neon-ssr", "0");
+        br.getHeaders().put("x-dm-preferred-country", "de");
+        br.getHeaders().put("accept", "*/*, */*");
+        br.getHeaders().put("accept-language", "de-DE");
+        br.getHeaders().put("origin", "https://www.dailymotion.com");
+        br.getHeaders().put("accept-encoding", "gzip, deflate, br");
+        final ArrayList<String> dupelist = new ArrayList<String>();
+        final boolean parseDesiredPageOnly;
         String desiredPage = new Regex(parameter, "playlist/[A-Za-z0-9]+_[A-Za-z0-9\\-_]+/(\\d+)").getMatch(0);
         if (desiredPage == null) {
+            logger.info("Crawling all pages");
             desiredPage = "1";
+            parseDesiredPageOnly = false;
+        } else {
+            logger.info("Only crawling desired page: " + desiredPage);
+            parseDesiredPageOnly = true;
         }
-        boolean parsePageOnly = false;
-        if (Integer.parseInt(desiredPage) != 1) {
-            parsePageOnly = true;
-        }
-        final BigDecimal bd = new BigDecimal((double) videoCount / 18);
-        final int pagesNum = bd.setScale(0, BigDecimal.ROUND_UP).intValue();
-        int currentPage = Integer.parseInt(desiredPage);
-        final String base_link = "https://www.dailymotion.com/playlist/" + new Regex(parameter, "/playlist/([^/]+)").getMatch(0);
+        int page = Integer.parseInt(desiredPage);
+        int numberofVideos = 0;
+        boolean hasMore = false;
+        String username = null;
+        String playlistTitle = null;
         do {
+            /* Check for abort by user */
             if (this.isAbort()) {
-                logger.info("Decrypt process aborted by user on page " + currentPage + " of " + pagesNum);
-                return;
-            }
-            final String nextpage = base_link + "/" + currentPage;
-            logger.info("Decrypting page: " + nextpage);
-            br.getPage(nextpage);
-            final String[] videos = br.getRegex("href=\"(/video/[^/]+)").getColumn(0);
-            if (videos == null || videos.length == 0) {
-                logger.info("Found no videos on page " + currentPage + " -> Stopping decryption");
                 break;
             }
-            for (final String videolink : videos) {
-                if (!dupelist.contains(videolink)) {
-                    final DownloadLink fina = createDownloadlink(br.getURL(videolink).toString());
-                    distribute(fina);
-                    decryptedLinks.add(fina);
+            final PostRequest playlistPagination = br.createJSonPostRequest("https://graphql.api.dailymotion.com/", "{\"operationName\":\"DESKTOP_COLLECTION_VIDEO_QUERY\",\"variables\":{\"xid\":\"" + playlist_id + "\",\"pageCV\":" + page
+                    + ",\"allowExplicit\":false},\"query\":\"fragment COLLECTION_BASE_FRAGMENT on Collection {\\n  id\\n  xid\\n  updatedAt\\n  __typename\\n}\\n\\nfragment COLLECTION_IMAGES_FRAGMENT on Collection {\\n  thumbURLx60: thumbnailURL(size: \\\"x60\\\")\\n  thumbURLx120: thumbnailURL(size: \\\"x120\\\")\\n  thumbURLx180: thumbnailURL(size: \\\"x180\\\")\\n  thumbURLx240: thumbnailURL(size: \\\"x240\\\")\\n  thumbURLx360: thumbnailURL(size: \\\"x360\\\")\\n  thumbURLx480: thumbnailURL(size: \\\"x480\\\")\\n  thumbURLx720: thumbnailURL(size: \\\"x720\\\")\\n  __typename\\n}\\n\\nfragment CHANNEL_BASE_FRAGMENT on Channel {\\n  id\\n  xid\\n  name\\n  displayName\\n  isArtist\\n  logoURL(size: \\\"x60\\\")\\n  isFollowed\\n  accountType\\n  __typename\\n}\\n\\nfragment CHANNEL_IMAGES_FRAGMENT on Channel {\\n  coverURLx375: coverURL(size: \\\"x375\\\")\\n  __typename\\n}\\n\\nfragment CHANNEL_UPDATED_FRAGMENT on Channel {\\n  isFollowed\\n  stats {\\n    views {\\n      total\\n      __typename\\n    }\\n    followers {\\n      total\\n      __typename\\n    }\\n    videos {\\n      total\\n      __typename\\n    }\\n    __typename\\n  }\\n  __typename\\n}\\n\\nfragment CHANNEL_NORMAL_FRAGMENT on Channel {\\n  ...CHANNEL_BASE_FRAGMENT\\n  ...CHANNEL_IMAGES_FRAGMENT\\n  ...CHANNEL_UPDATED_FRAGMENT\\n  __typename\\n}\\n\\nfragment ALTERNATIVE_VIDEO_BASE_FRAGMENT on Video {\\n  id\\n  xid\\n  title\\n  description\\n  thumbnail: thumbnailURL(size: \\\"x240\\\")\\n  thumbURLx60: thumbnailURL(size: \\\"x60\\\")\\n  thumbURLx120: thumbnailURL(size: \\\"x120\\\")\\n  thumbURLx240: thumbnailURL(size: \\\"x240\\\")\\n  thumbURLx360: thumbnailURL(size: \\\"x360\\\")\\n  thumbURLx480: thumbnailURL(size: \\\"x480\\\")\\n  thumbURLx720: thumbnailURL(size: \\\"x720\\\")\\n  thumbURLx1080: thumbnailURL(size: \\\"x1080\\\")\\n  bestAvailableQuality\\n  viewCount\\n  duration\\n  createdAt\\n  isInWatchLater\\n  isLiked\\n  isWatched\\n  isExplicit\\n  canDisplayAds\\n  stats {\\n    views {\\n      total\\n      __typename\\n    }\\n    __typename\\n  }\\n  __typename\\n}\\n\\nfragment COLLECTION_UPDATED_FRAGMENT on Collection {\\n  name\\n  description\\n  stats {\\n    videos {\\n      total\\n      __typename\\n    }\\n    __typename\\n  }\\n  videos(first: 15, page: $pageCV, allowExplicit: $allowExplicit) {\\n    pageInfo {\\n      hasNextPage\\n      nextPage\\n      __typename\\n    }\\n    edges {\\n      node {\\n        __typename\\n        ...ALTERNATIVE_VIDEO_BASE_FRAGMENT\\n        channel {\\n          ...CHANNEL_BASE_FRAGMENT\\n          __typename\\n        }\\n      }\\n      __typename\\n    }\\n    __typename\\n  }\\n  __typename\\n}\\n\\nfragment COLLECTION_FRAGMENT on Collection {\\n  ...COLLECTION_BASE_FRAGMENT\\n  ...COLLECTION_UPDATED_FRAGMENT\\n  ...COLLECTION_IMAGES_FRAGMENT\\n  channel {\\n    ...CHANNEL_NORMAL_FRAGMENT\\n    __typename\\n  }\\n  __typename\\n}\\n\\nquery DESKTOP_COLLECTION_VIDEO_QUERY($xid: String!, $pageCV: Int!, $allowExplicit: Boolean) {\\n  collection(xid: $xid) {\\n    ...COLLECTION_FRAGMENT\\n    __typename\\n  }\\n}\\n\"}");
+            br.openRequestConnection(playlistPagination);
+            br.loadConnection(null);
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/collection");
+            if (page == 1) {
+                numberofVideos = (int) JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "stats/videos/total"), 0);
+                username = (String) JavaScriptEngineFactory.walkJson(entries, "channel/name");
+                playlistTitle = (String) entries.get("name");
+                if (numberofVideos == 0) {
+                    /* User has 0 videos */
+                    logger.info("Playlist contains 0 items");
+                    final DownloadLink dl = this.createOfflinelink(parameter);
+                    /* TODO */
+                    // dl.setFinalFileName(username);
+                    decryptedLinks.add(dl);
+                    return;
                 }
-                logger.info("Decrypted page " + currentPage + " of " + pagesNum);
-                logger.info("Found " + videos.length + " links on current page");
-                logger.info("Found " + decryptedLinks.size() + " of total " + videoCount + " links already...");
-                dupelist.add(videolink);
-                currentPage++;
             }
-        } while (decryptedLinks.size() < videoCount && !parsePageOnly);
+            hasMore = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "videos/pageInfo/hasNextPage")).booleanValue();
+            final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "videos/edges");
+            if (ressourcelist == null || ressourcelist.size() == 0) {
+                logger.info("Stopping: Found nothing on page: " + page);
+                break;
+            }
+            for (final Object videoO : ressourcelist) {
+                entries = (LinkedHashMap<String, Object>) videoO;
+                entries = (LinkedHashMap<String, Object>) entries.get("node");
+                final String videoid = (String) entries.get("xid");
+                if (dupelist.contains(videoid)) {
+                    logger.info("Found dupe, stopping");
+                    break;
+                }
+                final DownloadLink fina = createDownloadlink(createVideolink(videoid));
+                distribute(fina);
+                decryptedLinks.add(fina);
+                dupelist.add(videoid);
+            }
+            logger.info("Decrypted page " + page);
+            logger.info("Found " + ressourcelist.size() + " links on current page");
+            logger.info("Found " + decryptedLinks.size() + " of total " + numberofVideos + " links already...");
+            page++;
+        } while (hasMore && !parseDesiredPageOnly);
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
             logger.warning("Decrypter failed: " + parameter);
             decryptedLinks = null;
