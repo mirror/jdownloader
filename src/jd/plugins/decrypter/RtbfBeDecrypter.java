@@ -23,6 +23,10 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Random;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -35,10 +39,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.RtbfBe.RtbfBeConfigInterface;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rtbf.be" }, urls = { "https?://(?:www\\.)?rtbf\\.be/(?:video|auvio)/.+\\?id=\\d+" })
 public class RtbfBeDecrypter extends PluginForDecrypt {
@@ -91,7 +91,8 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
             date_formatted = new Regex(uploadDate, "^(\\d{4}\\-\\d{2}\\-\\d{2})").getMatch(0);
         }
         br.getPage("/auvio/embed/media?id=" + video_id + "&autoplay=1");
-        if (br.getRequest().getHttpConnection().getResponseCode() == 404 || br.containsHTML("Ce contenu (n'est plus disponible|est visible uniquement en Belgique)")) {
+        final boolean eventually_geoblocked = br.containsHTML("Ce contenu (n'est plus disponible|est visible uniquement en Belgique)");
+        if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
@@ -104,6 +105,10 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
             video_json = this.br.getRegex("data\\-media=\"(.*?)\"></div>").getMatch(0);
         }
         if (video_json == null) {
+            if (eventually_geoblocked) {
+                decryptedLinks.add(createOfflinelink(parameter, "GEO_BLOCKED"));
+                return decryptedLinks;
+            }
             return null;
         }
         // this is json encoded with htmlentities.

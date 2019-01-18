@@ -29,6 +29,10 @@ import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -51,17 +55,14 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunfile.com" }, urls = { "http://(www|(p(?:age)?\\d|share)\\.)?(?:yunfile|filemarkets|yfdisk|needisk|5xpan|dix3|dfpan|pwpan|srcpan|skpan|gmpan|tadown|putpan)\\.com/(file/(down/)?[a-z0-9]+/[a-z0-9]+|fs/[a-z0-9]+/?)" })
 public class YunFileCom extends PluginForHost {
-    private static final String            MAINPAGE    = "http://www.yunfile.com/";
-    private static final String            CAPTCHAPART = "/verifyimg/getPcv";
-    private static Object                  LOCK        = new Object();
-    private static AtomicReference<String> agent       = new AtomicReference<String>();
-    private static final String            DOMAINS     = "(?:yunfile|filemarkets|yfdisk|needisk|5xpan|dix3|dfpan|pwpan|srcpan|skpan|gmpan|tadown|putpan)\\.com";
+    private static final String            MAINPAGE       = "http://www.dfpan.com/";
+    private static final String            CAPTCHAPART    = "/verifyimg/getPcv";
+    private static Object                  LOCK           = new Object();
+    private static AtomicReference<String> agent          = new AtomicReference<String>();
+    private static final String            DOMAINS        = "(?:yunfile|filemarkets|yfdisk|needisk|5xpan|dix3|dfpan|pwpan|srcpan|skpan|gmpan|tadown|putpan)\\.com";
+    private static final String            domain_current = "dfpan.com";
 
     // Works like HowFileCom
     public YunFileCom(PluginWrapper wrapper) {
@@ -73,10 +74,11 @@ public class YunFileCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
         String url = link.getDownloadURL();
-        // to fix jiaz bad commit
-        url = url.replaceAll("(?:share|p(?:age)?\\d*|www)\\.www\\.yunfile\\.com/", "yunfile.com/");
+        final String domain_original = new Regex(link.getPluginPatternMatcher(), "https?://(?:[a-z0-9]+)?\\.([^/]+)/").getMatch(0);
+        // to fix jiaz' bad commit
+        url = url.replaceAll("(?:share|p(?:age)?\\d*|www)\\.www\\." + domain_original + "/", domain_current + "/");
         // standard
-        url = url.replace("share.yunfile.com/", "yunfile.com/").replaceFirst("(?:[A-Za-z0-9]+)\\.com/", "yunfile.com/");
+        url = url.replace(domain_original, domain_current);
         url = url.replace("/file/down/", "/file/");
         link.setUrlDownload(url);
     }
@@ -133,7 +135,7 @@ public class YunFileCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         br = new Browser();
-        // need to correct links that are added prior to fixing!
+        /* They often change domains */
         correctDownloadLink(link);
         prepBrowser(br);
         br.setFollowRedirects(true);
