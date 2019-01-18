@@ -186,7 +186,6 @@ public class GeradorturboCom extends antiDDoSForHost {
         return dllink;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         setConstants(account, null);
@@ -219,6 +218,18 @@ public class GeradorturboCom extends antiDDoSForHost {
         final String[] crippledDomains = br.getRegex("a\\.([A-Za-z0-9]+)\\{[\t\n\r ]*?background:").getColumn(0);
         for (String crippledhost : crippledDomains) {
             crippledhost = crippledhost.toLowerCase();
+            /* First cover special cases */
+            if (crippledhost.equals("shareonline")) {
+                supportedHosts.add("share-online.biz");
+            } else if ("onefichier".equals(crippledhost)) {
+                supportedHosts.add("1fichier.com");
+            } else if ("twoshared".equals(crippledhost)) {
+                supportedHosts.add("2shared.com");
+            } else if ("shared".equals(crippledhost)) {
+                supportedHosts.add("4shared.com");
+            } else {
+                supportedHosts.add(crippledhost);
+            }
             supportedHosts.add(crippledhost);
         }
         ai.setMultiHostSupport(this, supportedHosts);
