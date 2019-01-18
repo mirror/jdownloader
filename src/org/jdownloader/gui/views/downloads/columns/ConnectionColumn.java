@@ -27,6 +27,7 @@ import jd.controlling.reconnect.ipcheck.IPCheckException;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.http.ProxySelectorInterface;
 import jd.http.Request;
+import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForHost;
@@ -379,7 +380,12 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                 }
             }
             if (dli != null) {
-                panel.add(lbl = new JLabel(_GUI.T.ConnectionColumn_getStringValue_from(dli.getDownloadable().getHost()), url, JLabel.LEADING));
+                final URLConnectionAdapter con = dli.getConnection();
+                if (con != null) {
+                    panel.add(lbl = new JLabel(_GUI.T.ConnectionColumn_getStringValue_from(con.getURL().getProtocol() + "@" + dli.getDownloadable().getHost()), url, JLabel.LEADING));
+                } else {
+                    panel.add(lbl = new JLabel(_GUI.T.ConnectionColumn_getStringValue_from(dli.getDownloadable().getHost()), url, JLabel.LEADING));
+                }
                 SwingUtils.setOpaque(lbl, false);
                 lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
                 panel.add(lbl = new JLabel(_GUI.T.ConnectionColumn_getStringValue_chunks(dli.getManagedConnetionHandler().size()), connections, JLabel.LEADING));
