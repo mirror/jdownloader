@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -26,9 +25,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jwpaste.com" }, urls = { "https?://(?:www\\.)?jwpaste\\.com/v/\\d+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jwpaste.com" }, urls = { "https?://(?:www\\.)?jwpaste\\.com/v/\\d+" })
 public class JwpasteCom extends PluginForDecrypt {
-
     public JwpasteCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -41,6 +39,11 @@ public class JwpasteCom extends PluginForDecrypt {
         if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("class=\"paste\\-error\"")) {
             final DownloadLink offline = this.createOfflinelink(parameter);
             decryptedLinks.add(offline);
+            return decryptedLinks;
+        } else if (br.containsHTML("name=\"botonPastePass\"")) {
+            /* 2019-01-18 */
+            logger.info("Password protected links are not yet supported");
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         String plaintxt = br.getRegex("<td nowrap align=\"left\"(.*?)</table>").getMatch(0);
@@ -64,7 +67,6 @@ public class JwpasteCom extends PluginForDecrypt {
                 decryptedLinks.add(link);
             }
         }
-
         return decryptedLinks;
     }
 
@@ -72,5 +74,4 @@ public class JwpasteCom extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

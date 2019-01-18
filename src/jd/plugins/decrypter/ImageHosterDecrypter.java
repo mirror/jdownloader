@@ -57,11 +57,7 @@ public class ImageHosterDecrypter extends antiDDoSForDecrypt {
             }
             if (br.containsHTML("Image not found|>Image violated our terms of service|>The requested image could not be located|>The image has been deleted")) {
                 logger.info("Link offline: " + parameter);
-                try {
-                    decryptedLinks.add(this.createOfflinelink(parameter));
-                } catch (final Throwable e) {
-                    /* Not available in old 0.9.581 Stable */
-                }
+                decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
             if (parameter.contains("/gallery/")) {
