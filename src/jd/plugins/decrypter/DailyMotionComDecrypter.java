@@ -164,6 +164,10 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private void decryptUser() throws Exception {
+        /*
+         * 2019-01-18: The API used in decryptPlaylist can also be used to crawl all videos of a user but as long as this one is working,
+         * we'll stick to that.
+         */
         logger.info("Decrypting user: " + parameter);
         String username = new Regex(parameter, "dailymotion\\.com/user/([A-Za-z0-9\\-_]+)").getMatch(0);
         if (username == null) {

@@ -294,25 +294,27 @@ public class DeepbridCom extends antiDDoSForHost {
          * "message":"You have already downloaded, wait \u003Cb\u003E 14:11 minutes\u003C\/b\u003E to download again. \u003Ca href=\"..\/signup\" target=\"_blank\"\u003EUpgrade to premium\u003C\/a\u003E and forget waiting times and enjoy unlimited features!"
          * }
          */
-        // final int errorcode = getErrorcode(br);
-        // // final String errormsg = getErrormessage(this.br);
-        // switch (errorcode) {
-        // case 0:
-        // break;
-        // case 401:
-        // /* Login failed */
-        // throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        // case 400:
-        // /* Bad request, this should never happen */
-        // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // case 404:
-        // mhm.handleErrorGeneric(account, link, "hoster_offline_or_unsupported", 10, 5 * 60 * 1000l);
-        // case 503:
-        // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "503 - Service unavailable");
-        // default:
-        // /* Unknown issue */
-        // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // }
+        final String errorcode = PluginJSonUtils.getJson(br, "error");
+        if (errorcode != null) {
+            if (errorcode.equals("0")) {
+                /* All ok */
+            } else if (errorcode.equals("1")) {
+                /* No link entered - this should never happen */
+                mhm.handleErrorGeneric(account, link, "api_error_1", 10, 5 * 60 * 1000l);
+            } else if (errorcode.equals("2")) {
+                /* http:// or https:// required --> WTF no idea what this means */
+                mhm.handleErrorGeneric(account, link, "api_error_2", 10, 5 * 60 * 1000l);
+            } else if (errorcode.equals("3")) {
+                /* Link not supported */
+                mhm.putError(account, link, 10 * 60 * 1000l, "Unsupported host");
+            } else if (errorcode.equals("9")) {
+                /* Hosters limit reached for this day */
+                mhm.putError(account, link, 10 * 60 * 1000l, "Daily limit reached for this host");
+            } else {
+                /* Unknown error */
+                mhm.handleErrorGeneric(account, link, "api_error_unknown", 10, 5 * 60 * 1000l);
+            }
+        }
     }
 
     private int getErrorcode(final Browser br) {

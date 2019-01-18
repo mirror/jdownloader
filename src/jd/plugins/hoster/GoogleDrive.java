@@ -20,6 +20,11 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.google.GoogleHelper;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -39,11 +44,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
-
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.google.GoogleHelper;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "docs.google.com" }, urls = { "https?://(?:www\\.)?(?:docs|drive)\\.google\\.com/(?:(?:leaf|open|uc)\\?([^<>\"/]+)?id=[A-Za-z0-9\\-_]+|(?:a/[a-zA-z0-9\\.]+/)?(?:file|document)/d/[A-Za-z0-9\\-_]+)|https?://video\\.google\\.com/get_player\\?docid=[A-Za-z0-9\\-_]+" })
 public class GoogleDrive extends PluginForHost {
@@ -288,10 +288,17 @@ public class GoogleDrive extends PluginForHost {
             }
             br.getPage("https://docs.google.com/uc?id=" + getID(downloadLink) + "&export=download");
             if (br.containsHTML("error\\-subcaption\">Too many users have viewed or downloaded this file recently\\. Please try accessing the file again later\\.|<title>Google Drive – (Quota|Cuota|Kuota|La quota|Quote)")) {
-                // so its not possible to download at this time.
+                /*
+                 * 2019-01-18: Its not possible to download at this time - sometimes it is possible to download such files when logged in
+                 * but not necessarily!
+                 */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download not possible at this point in time - wait or try with your google account!", 60 * 60 * 1000);
             } else if (br.containsHTML("class=\"uc\\-error\\-caption\"")) {
                 /* 2017-02-06: This could also be another error but we catch it by the classname to make this more language independant! */
+                /*
+                 * 2019-01-18: Its not possible to download at this time - sometimes it is possible to download such files when logged in
+                 * but not necessarily!
+                 */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download not possible at this point in time - wait or try with your google account!", 60 * 60 * 1000);
             }
             if ((br.containsHTML("<TITLE>Not Found</TITLE>") || br.getHttpConnection().getResponseCode() == 404) && streamLink == null) {
@@ -368,7 +375,9 @@ public class GoogleDrive extends PluginForHost {
                     // so its not possible to download at this time.
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download not possible at this point in time - wait or try with your google account!", 60 * 60 * 1000);
                 } else if (br.containsHTML("class=\"uc\\-error\\-caption\"")) {
-                    /* 2017-02-06: This could also be another error but we catch it by the classname to make this more language independant! */
+                    /*
+                     * 2017-02-06: This could also be another error but we catch it by the classname to make this more language independant!
+                     */
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download not possible at this point in time - wait or try with your google account!", 60 * 60 * 1000);
                 } else if (br.containsHTML("<p class=\"uc-warning-caption\">Google Drive can't scan this file for viruses\\.</p>")) {
                     // dllink = br.getRegex("href=\"(/uc\\?export=download.*?)\">Download anyway</a>").getMatch(0);
