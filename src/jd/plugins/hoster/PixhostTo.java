@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2009  JD-Team support@jdownloader.org
+//Copyright (C) 2017  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -17,8 +17,10 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -29,16 +31,18 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vocaroo.com" }, urls = { "https?://(?:www\\.)?vocaroo\\.com/i/[A-Za-z0-9]+" })
-public class VocarooCom extends PluginForHost {
-    public VocarooCom(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixhost.to" }, urls = { "https?://(?:www\\.)?pixhost\\.to/show/((\\d+)/([^/]+))" })
+public class PixhostTo extends PluginForHost {
+    public PixhostTo(PluginWrapper wrapper) {
         super(wrapper);
     }
     /* DEV NOTES */
-    // Tags:
+    // Tags: pichost
     // protocol: no https
-    // other:
+    // other: related to: PixhstCom (pxhst.co)
 
+    /* Extension which will be used if no correct extension is found */
+    private static final String  default_extension = ".jpg";
     /* Connection stuff */
     private static final boolean free_resume       = false;
     private static final int     free_maxchunks    = 1;
@@ -48,56 +52,71 @@ public class VocarooCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "https://vocaroo.com/?info";
+        return "http://pixhost.to/";
     }
 
-    @SuppressWarnings("deprecation")
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        link.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
         dllink = null;
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        // br.getPage(link.getDownloadURL());
-        // if (br.getHttpConnection().getResponseCode() == 404) {
-        // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        // }
-        final String fid = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
-        String filename = null;
-        if (filename == null) {
-            filename = fid;
+        br.getPage(link.getPluginPatternMatcher());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        /* Other possible formats via command={download_ogg, download_flac, download_wav, download_webm} */
-        dllink = "https://vocaroo.com/media_command.php?command=download_mp3&media=" + fid;
+        final String url_filename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(2);
+        String filename = br.getRegex("title\\s*?:\\s*?\\'([^<>\"\\']+)\\'").getMatch(0);
+        if (StringUtils.isEmpty(filename)) {
+            filename = url_filename;
+        }
+        dllink = br.getRegex("(https?://[^/]+/images/[^<>\"\\']+)").getMatch(0);
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        filename += ".mp3";
-        link.setFinalFileName(filename);
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br2.openHeadConnection(dllink);
-            if (!con.getContentType().contains("html")) {
-                link.setDownloadSize(con.getLongContentLength());
-                link.setProperty("directlink", dllink);
-            } else {
-                /* The only way to perform an online check for this particular website! */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String ext;
+        if (!StringUtils.isEmpty(dllink)) {
+            ext = getFileNameExtensionFromString(dllink, default_extension);
+            if (ext != null && !ext.matches("\\.(?:flv|mp4)")) {
+                ext = default_extension;
             }
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
-            }
+        } else {
+            ext = default_extension;
         }
+        if (!filename.endsWith(ext)) {
+            filename += ext;
+        }
+        if (!StringUtils.isEmpty(dllink)) {
+            dllink = Encoding.htmlDecode(dllink);
+            link.setFinalFileName(filename);
+            URLConnectionAdapter con = null;
+            try {
+                con = br.openHeadConnection(dllink);
+                if (!con.getContentType().contains("html")) {
+                    link.setDownloadSize(con.getLongContentLength());
+                } else {
+                    server_issues = true;
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+        } else {
+            /* We cannot be sure whether we have the correct extension or not! */
+            link.setName(filename);
+        }
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -105,7 +124,7 @@ public class VocarooCom extends PluginForHost {
         requestFileInformation(downloadLink);
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (dllink == null) {
+        } else if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);

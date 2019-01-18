@@ -21,6 +21,10 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -37,10 +41,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixiv.net" }, urls = { "https?://(?:www\\.)?pixiv\\.net/(?:member_illust\\.php\\?mode=[a-z]+\\&illust_id=\\d+|member(_illust)?\\.php\\?id=\\d+)" })
 public class PixivNet extends PluginForDecrypt {
@@ -184,8 +184,20 @@ public class PixivNet extends PluginForDecrypt {
             }
             int counter = 0;
             for (String singleLink : links) {
+                counter++;
                 singleLink = singleLink.replaceAll("\\\\", "");
-                String filename = lid + "_p" + (counter++) + (fpName != null ? fpName : "");
+                final String filename_url = new Regex(singleLink, "/([^/]+\\.[a-z]+)$").getMatch(0);
+                String filename;
+                final String picNumberStr = new Regex(singleLink, "/[^/]+_p(\\d+)[^/]+\\.[a-z]+$").getMatch(0);
+                if (picNumberStr != null) {
+                    filename = lid + "_p" + picNumberStr + (fpName != null ? fpName : "");
+                } else {
+                    /* Fallback - just use the given filename (minus extension)! */
+                    filename = filename_url.substring(0, filename_url.lastIndexOf("."));
+                }
+                if (StringUtils.isEmpty(filename)) {
+                    return null;
+                }
                 final String ext = getFileNameExtensionFromString(singleLink, jd.plugins.hoster.PixivNet.default_extension);
                 if (StringUtils.equalsIgnoreCase(ext, ".zip")) {
                     final String resolution = new Regex(singleLink, "(\\d+x\\d+)").getMatch(0);
@@ -320,7 +332,8 @@ public class PixivNet extends PluginForDecrypt {
     }
 
     private boolean isAdultImageLoginRequired(String lid) {
-        return br.containsHTML("r18=true") || br.containsHTML("\"illustId\"\\s*:\\s*\"" + lid + "\".*?\"xRestrict\"\\s*:\\s*1") || br.containsHTML("r18-image");
+        /* 2019-01-18: TODO: Add way to get around r18-block (without account) */
+        return br.containsHTML("r18=true") || br.containsHTML("\"illustId\"\\s*:\\s*\"" + lid + "\".*?\"xRestrict\"\\s*:\\s*1") || br.containsHTML("r18-image") || br.containsHTML("\"tag\":\"R-18\",\"locked\":true");
     }
 
     public static boolean isAccountOrRightsRequired(final Browser br) {

@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jwpaste.com" }, urls = { "https?://(?:www\\.)?sznpaste\\.net/[A-Za-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sznpaste.net" }, urls = { "https?://(?:www\\.)?sznpaste\\.net/[A-Za-z0-9]+" })
 public class SznpasteNet extends PluginForDecrypt {
     public SznpasteNet(PluginWrapper wrapper) {
         super(wrapper);

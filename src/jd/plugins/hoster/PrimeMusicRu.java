@@ -15,6 +15,9 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
@@ -23,10 +26,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "primemusic.ru", "freshmusic.club", "newhit.me" }, urls = { "", "", "https?://(www\\.)?(primemusic\\.ru|prime\\-music\\.net|primemusic\\.cc|primemusic\\.me|freshmusic\\.club|newhit\\.me)/Media\\-page\\-\\d+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "primemusic.ru", "freshmusic.club", "newhit.me" }, urls = { "", "", "https?://(?:www\\.)?(primemusic\\.ru|prime\\-music\\.net|primemusic\\.cc|primemusic\\.me|freshmusic\\.club|newhit\\.me|(?:[a-z0-9]+\\.)?new\\-hits\\.ru)/Media\\-page\\-\\d+\\.html" })
 public class PrimeMusicRu extends antiDDoSForHost {
     @Override
     public String[] siteSupportedNames() {
@@ -44,15 +44,16 @@ public class PrimeMusicRu extends antiDDoSForHost {
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("(primemusic\\.ru|prime\\-music\\.net|primemusic\\.cc|primemusic\\.me|newhit\\.me)/", "newhit.me/"));
+        /* 2019-01-18: Added domain new-hits.ru but did not enforce the usage of it as newhit.me is still active. */
+        link.setUrlDownload(link.getPluginPatternMatcher().replaceAll("(primemusic\\.ru|prime\\-music\\.net|primemusic\\.cc|primemusic\\.me|newhit\\.me)/", "newhit.me/"));
     }
 
-    @SuppressWarnings("deprecation")
+    /** 2019-01-18: This website GEO-blocks german IPs */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        getPage(link.getDownloadURL());
+        getPage(link.getPluginPatternMatcher());
         if (br.containsHTML("<h1 class=\"radio_title\">Композиция не найдена</h1>|>Композиция удалена") || br.getURL().contains("/index.php")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

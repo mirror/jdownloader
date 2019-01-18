@@ -15,6 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -28,15 +30,13 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pxhst.co" }, urls = { "https?://(?:www\\.)?(?:pixhst\\.com|pxhst\\.co|avxhome\\.se)/pictures/\\d+" })
 public class PixhstCom extends antiDDoSForHost {
     public PixhstCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // note: pixhst.com is parked.
+    // note: pixhst.com is parked, related to: PixhostTo (pixhost.to)
     @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
         // some times pxhost redirects to avxhome other times not!
