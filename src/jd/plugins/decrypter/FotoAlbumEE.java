@@ -29,7 +29,6 @@ import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fotoalbum.ee" }, urls = { "http://(www\\.)?(pseudaholic\\.|nastazzy\\.)?fotoalbum\\.ee/photos/[^<>\"\\'/]+(/sets|/[0-9]+)?(/[0-9]+)?" })
 public class FotoAlbumEE extends PluginForDecrypt {
-
     public FotoAlbumEE(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -41,15 +40,14 @@ public class FotoAlbumEE extends PluginForDecrypt {
         br.setFollowRedirects(true);
         final String parameter = param.toString();
         br.getPage(parameter);
-
         if (br.containsHTML(">Pilti ei leitud v\\&otilde;i on see kustutatud|\"/img/404\\.png\"")) {
             logger.info("Link offline: " + parameter);
+            decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
-
         String nextPage = null;
         String[] sets = null;
-        final String setName = br.getRegex("<a href=\"/photos/[^<>\"/]*?/sets/\\d+\">[^<>\"]*?</a>([^<>\"]*?)</h1>").getMatch(0);
+        final String setName = br.getRegex("<a href=\"/photos/[^<>\"/]*?/sets/\\d+[^<>]+>[^<>\"]*?</a> &raquo; ([^<>\"]*?)</h1>").getMatch(0);
         FilePackage fp = null;
         if (setName != null) {
             fp = FilePackage.getInstance();
@@ -100,8 +98,11 @@ public class FotoAlbumEE extends PluginForDecrypt {
         progress.setRange(picLinks.size());
         for (String picLink : picLinks) {
             br.getPage(picLink);
-            linkInfo = br.getRegex("<div class=\"photo\\-full\"> [\t\n\r ]+<span>[\t\n\r ]+<img src=\"(http://[^<>\"\\']*?)\" border=\"0\" alt=\"([^<>\"/]*?)\"");
+            linkInfo = br.getRegex("<div class=\"photo\\-full\"> [\t\n\r ]+<span>[\t\n\r ]+<img src=\"([^<>\"\\']*?)\" border=\"0\" alt=\"([^<>\"/]*?)\"");
             pictureURL = linkInfo.getMatch(0);
+            if (pictureURL.startsWith("//")) {
+                pictureURL = "http:" + pictureURL;
+            }
             filename = linkInfo.getMatch(1);
             if (pictureURL == null || filename == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -124,5 +125,4 @@ public class FotoAlbumEE extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
