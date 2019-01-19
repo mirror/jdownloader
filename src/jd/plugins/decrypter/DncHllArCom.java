@@ -2,6 +2,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -9,8 +11,6 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  * category not designed to do spanning page support!
@@ -32,11 +32,11 @@ public class DncHllArCom extends antiDDoSForDecrypt {
             return decryptedLinks;
         }
         if (parameter.contains("/category/")) {
-            final String filter = br.getRegex("(<div class=\"blog-lists-blog clearfix\">.*?)<div class=\"pagination clearfix\">").getMatch(0);
+            final String filter = br.getRegex("(<div class=\"td-ss-main-content\">.*?)<div class=\"clearfix\">").getMatch(0);
             if (filter == null) {
                 return null;
             }
-            String[] results = new Regex(filter, "<a class=\"tpcrn-read-more\" href=('|\"|)(https?://(\\w*\\.)?dancehallarena\\.com/(?:[a-zA-Z0-9\\-/]+))\\1").getColumn(1);
+            String[] results = new Regex(filter, "td-module-thumb\"><a href=('|\"|)(https?://(\\w*\\.)?dancehallarena\\.com/(?:[a-zA-Z0-9\\-/]+))\\1").getColumn(1);
             if (results == null || results.length == 0) {
                 results = new Regex(filter, "<h3><a href=('|\"|)(https?://(\\w*\\.)?dancehallarena\\.com/(?:[a-zA-Z0-9\\-/]+))\\1").getColumn(0);
                 if (results == null || results.length == 0) {
@@ -49,7 +49,8 @@ public class DncHllArCom extends antiDDoSForDecrypt {
             return decryptedLinks;
         }
         // all external links pass via there own tracking url
-        String[] links = br.getRegex("xurl=(http[^\"]+|://[^\"]+|%3A%2F%2F[^\"]+)").getColumn(0);
+        // String[] links = br.getRegex("xurl=(http[^\"]+|://[^\"]+|%3A%2F%2F[^\"]+)").getColumn(0);
+        String[] links = br.getRegex("xurl=(%3A%2F%2F[^\"]+)\" target=").getColumn(0);
         if (links != null) {
             for (String link : links) {
                 link = validate(link);
