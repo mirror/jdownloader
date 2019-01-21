@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
@@ -35,7 +36,6 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
-import jd.plugins.AccountInvalidException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -51,8 +51,6 @@ public class MegarapidoNet extends antiDDoSForHost {
     private final String                 DOMAIN                       = "megarapido.net";
     private final String                 PRIMARYURL                   = "https://" + DOMAIN;
     private final String                 NICE_HOSTproperty            = DOMAIN.replaceAll("(\\.|-)", "") + "_";
-    private final String                 NOCHUNKS                     = NICE_HOSTproperty + "NOCHUNKS";
-    private final String                 NORESUME                     = NICE_HOSTproperty + "NORESUME";
     private final String                 DIRECTLINK                   = NICE_HOSTproperty + "DIRECTLINK";
     /* Connection limits */
     private static final boolean         ACCOUNT_PREMIUM_RESUME       = true;
@@ -121,7 +119,6 @@ public class MegarapidoNet extends antiDDoSForHost {
         return new FEATURE[] { FEATURE.MULTIHOST };
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         setConstants(account, link);
@@ -144,22 +141,12 @@ public class MegarapidoNet extends antiDDoSForHost {
 
     @SuppressWarnings("deprecation")
     private void handleDL(final Account account, final DownloadLink link, final String dllink) throws Exception {
-        int maxChunks = ACCOUNT_PREMIUM_MAXCHUNKS;
-        if (link.getBooleanProperty(NOCHUNKS, false)) {
-            maxChunks = 1;
-        }
-        boolean resume = ACCOUNT_PREMIUM_RESUME;
-        if (link.getBooleanProperty(NORESUME, false)) {
-            resume = false;
-            link.setProperty(NORESUME, Boolean.valueOf(false));
-        }
         link.setProperty(DIRECTLINK, dllink);
         try {
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume, maxChunks);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
             if (dl.getConnection().getResponseCode() == 416) {
-                logger.info("Resume impossible, disabling it for the next try");
+                logger.info("Resume impossible ...");
                 link.setChunksProgress(null);
-                link.setProperty(NORESUME, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
             final String contenttype = dl.getConnection().getContentType();
@@ -174,30 +161,7 @@ public class MegarapidoNet extends antiDDoSForHost {
                 handleAPIErrors();
                 mhm.handleErrorGeneric(currAcc, currDownloadLink, "unknowndlerror", 5);
             }
-            try {
-                if (!this.dl.startDownload()) {
-                    try {
-                        if (dl.externalDownloadStop()) {
-                            return;
-                        }
-                    } catch (final Throwable e) {
-                    }
-                    /* unknown error, we disable multiple chunks */
-                    if (link.getBooleanProperty(NOCHUNKS, false) == false) {
-                        link.setProperty(NOCHUNKS, Boolean.valueOf(true));
-                        throw new PluginException(LinkStatus.ERROR_RETRY);
-                    }
-                }
-            } catch (final PluginException e) {
-                e.printStackTrace();
-                // New V2 chunk errorhandling
-                /* unknown error, we disable multiple chunks */
-                if (link.getBooleanProperty(NOCHUNKS, false) == false) {
-                    link.setProperty(NOCHUNKS, Boolean.valueOf(true));
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-                throw e;
-            }
+            dl.startDownload();
         } catch (final Exception e) {
             link.setProperty(DIRECTLINK, Property.NULL);
             throw e;
@@ -228,15 +192,14 @@ public class MegarapidoNet extends antiDDoSForHost {
         return dllink;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         setConstants(account, null);
         final AccountInfo ai = new AccountInfo();
         login();
         final String date = PluginJSonUtils.getJson(br, "data_final_premium");
-        if (date == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (StringUtils.isEmpty(date)) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Failed to find expiredate", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
         ai.setValidUntil(TimeFormatter.getMilliSeconds(date, "yyyy-MM-dd hh:mm:ss", Locale.ENGLISH), br);
         if (ai.isExpired()) {
@@ -254,13 +217,11 @@ public class MegarapidoNet extends antiDDoSForHost {
             ai.setStatus("Premium Account");
             account.setType(AccountType.PREMIUM);
         }
-        account.setValid(true);
         // host map found here
         getPage("/api/servers/list");
         // invalid json response
         final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject("{ \"hostarray\":" + br.toString() + "}");
         final ArrayList<LinkedHashMap<String, Object>> hostDomainsInfo = (ArrayList) entries.get("hostarray");
-        final String[] possible_domains = { "to", "de", "com", "net", "co.nz", "in", "co", "me", "biz", "ch", "pl", "us", "cc" };
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         for (final LinkedHashMap<String, Object> entry : hostDomainsInfo) {
             // nome=name
@@ -272,24 +233,10 @@ public class MegarapidoNet extends antiDDoSForHost {
             if (!"Disponível".equals(status)) {
                 continue;
             }
+            supportedHosts.add(crippledhost);
             // wont use, just use error message.
             // final String limit = (String)entries.get("limit");
             // //Ilimitado = unlimited
-            /* First cover special cases */
-            if (crippledhost.equals("mediafire")) {
-                /* There is also mediafire.bz and so on but .com is the right one in this case! */
-                supportedHosts.add("mediafire.com");
-            } else if (crippledhost.equals("uploaded")) {
-                supportedHosts.add("uploaded.net");
-            } else if (crippledhost.equals("minhateca.com.br")) {
-                supportedHosts.add("minhateca.com.br");
-            } else {
-                /* Finally, go insane... */
-                for (final String possibledomain : possible_domains) {
-                    final String full_possible_host = crippledhost + "." + possibledomain;
-                    supportedHosts.add(full_possible_host);
-                }
-            }
         }
         ai.setMultiHostSupport(this, supportedHosts);
         return ai;
@@ -323,7 +270,7 @@ public class MegarapidoNet extends antiDDoSForHost {
                 f.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 formAPISafe(f);
                 if ("Email ou senha inválidos".equals(br.toString())) {
-                    throw new AccountInvalidException();
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 currAcc.saveCookies(br.getCookies(PRIMARYURL), "");
             } catch (final PluginException e) {
@@ -372,7 +319,7 @@ public class MegarapidoNet extends antiDDoSForHost {
         }
     }
 
-    private void handleAPIErrors() throws PluginException {
+    private void handleAPIErrors() throws PluginException, InterruptedException {
         switch (statuscode) {
         case 0:
             /* Everything ok */
@@ -381,7 +328,7 @@ public class MegarapidoNet extends antiDDoSForHost {
             /* Host currently not supported --> deactivate it for some hours. */
             mhm.putError(currAcc, currDownloadLink, 3 * 60 * 1000l, "Host is currently not supported");
         default:
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+            mhm.handleErrorGeneric(currAcc, currDownloadLink, "unknowndlerror", 50, 5 * 60 * 1000l);
         }
     }
 

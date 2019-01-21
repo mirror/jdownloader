@@ -227,13 +227,10 @@ public class LinkspremiumDownload extends PluginForHost {
         ArrayList<String> supportedHosts = new ArrayList<String>();
         if (isPremium) {
             account.setType(AccountType.PREMIUM);
-            final String[] tlds = { "com.br", "br", "to", "de", "com", "net", "co.nz", ".nz", "in", "co", "me", "biz", "ch", "pl", "us", "cc", "eu" };
             final String[] hostlist = br.getRegex("publico/host_([^\"]+)\"").getColumn(0);
             if (hostlist != null) {
                 for (final String crippledHost : hostlist) {
-                    for (final String tld : tlds) {
-                        supportedHosts.add(crippledHost + "." + tld);
-                    }
+                    supportedHosts.add(crippledHost);
                 }
             }
             ai.setUnlimitedTraffic();

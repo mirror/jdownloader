@@ -175,7 +175,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     private static Object        LOCK                               = new Object();
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 2.7.8.0<br />
+     * DEV NOTES XfileSharingProBasic Version 2.7.8.1<br />
      ****************************
      * NOTES from raztoki <br/>
      * - no need to set setfollowredirect true. <br />
@@ -1387,16 +1387,17 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * download.
      */
     private void checkServerErrors() throws NumberFormatException, PluginException {
-        // dead file
         if (new Regex(correctedBR.trim(), "^No file$").matches()) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (new Regex(correctedBR.trim(), "^Wrong IP$").matches()) {
+            /* Possibly dead file but it is supposed to be online so let's wait and retry! */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
+        } else if (new Regex(correctedBR.trim(), "^Wrong IP$").matches()) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: 'Wrong IP'", 2 * 60 * 60 * 1000l);
-        }
-        // most likely result of generated link that has expired -raztoki
-        if (new Regex(correctedBR.trim(), "(^File Not Found$|<h1>404 Not Found</h1>)").matches()) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error (404)", 30 * 60 * 1000l);
+        } else if (new Regex(correctedBR.trim(), "^Expired$").matches()) {
+            /* 2019-01-20: Special */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: 'Expired'", 2 * 60 * 60 * 1000l);
+        } else if (new Regex(correctedBR.trim(), "(^File Not Found$|<h1>404 Not Found</h1>)").matches()) {
+            /* most likely result of generated link that has expired -raztoki */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
         }
     }
 

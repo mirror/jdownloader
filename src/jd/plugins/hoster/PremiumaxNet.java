@@ -48,7 +48,6 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumax.net" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
 public class PremiumaxNet extends antiDDoSForHost {
-
     private static MultiHosterManagement mhm               = new MultiHosterManagement("premiumax.net");
     private static final String          NOCHUNKS          = "NOCHUNKS";
     private static final String          MAINPAGE          = "http://premiumax.net";
@@ -109,7 +108,9 @@ public class PremiumaxNet extends antiDDoSForHost {
         for (String hinfo : hostDomainsInfo) {
             String crippledhost = new Regex(hinfo, "images/hosts/([a-z0-9\\-\\.]+)\\.png\"").getMatch(0);
             if (crippledhost == null) {
+                /* Skip invalid entries */
                 logger.warning("WTF");
+                continue;
             }
             if ("file".equals(crippledhost)) {
                 // first span does have full host. re: file.al
@@ -117,21 +118,6 @@ public class PremiumaxNet extends antiDDoSForHost {
                 if (host != null && host.length() > crippledhost.length()) {
                     crippledhost = host;
                 }
-            } else if (crippledhost.equalsIgnoreCase("k2share")) {
-                /* Spelling mistake on their website --> Correct that */
-                crippledhost = "keep2share";
-            } else if (crippledhost.equalsIgnoreCase("2shared")) {
-                /* Avoid adding keep2share.cc instead of 2shared.com. */
-                crippledhost = "2shared.com";
-            } else if (crippledhost.equalsIgnoreCase("loaded")) {
-                /* Avoid adding uploaded.net for free accounts. */
-                crippledhost = "loaded.to";
-            } else if (crippledhost.equalsIgnoreCase("mediafire")) {
-                /* We don't want to add "mediafire.bz" by mistake --> Correct this here. */
-                crippledhost = "mediafire.com";
-            } else if (crippledhost.equalsIgnoreCase("filespace")) {
-                /* We don't want to add "mediafire.bz" by mistake --> Correct this here. */
-                crippledhost = "filespace.com";
             }
             final String[] imgs = new Regex(hinfo, "src=\"(tmpl/images/[^<>\"]*?)\"").getColumn(0);
             /* Apply supported hosts depending on account type */

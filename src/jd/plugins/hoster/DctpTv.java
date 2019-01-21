@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
 import org.appwork.utils.StringUtils;
@@ -24,7 +23,6 @@ import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
-import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -33,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dctp.tv" }, urls = { "https?://(?:www\\.)?dctp\\.tv/filme/[a-z0-9_\\-]+/" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dctp.tv" }, urls = { "https?://(?:www\\.)?dctp\\.tv/filme/[a-z0-9_\\-]+/?" })
 public class DctpTv extends PluginForHost {
     public DctpTv(PluginWrapper wrapper) {
         super(wrapper);
@@ -62,13 +60,21 @@ public class DctpTv extends PluginForHost {
         final String json = br.getRegex("window\\.__PRELOADED_STATE__ = (\\{.*?\\});").getMatch(0);
         entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
         entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "ivms/media_items/{0}");
-        final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("");
-        String filename = (String) entries.get("title");
-        final String date = (String) entries.get("airdate");
-        if (filename == null || date == null) {
+        // final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("");
+        String title = (String) entries.get("title");
+        String date = (String) entries.get("airdate");
+        if (StringUtils.isEmpty(date)) {
+            /* 2019-01-21: Fallback e.g. required for very old content! */
+            date = (String) entries.get("web_airdate");
+        }
+        if (title == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        filename = date + "_dctpTV_" + Encoding.htmlDecode(filename.trim()) + ".mp4";
+        String filename = "";
+        if (!StringUtils.isEmpty(date)) {
+            filename += date;
+        }
+        filename += "_dctpTV_" + title + ".mp4";
         link.setFinalFileName(filename);
         final String description = (String) entries.get("description");
         if (link.getComment() == null) {
@@ -82,10 +88,13 @@ public class DctpTv extends PluginForHost {
         requestFileInformation(downloadLink);
         final boolean is_wide = ((Boolean) entries.get("is_wide")).booleanValue();
         String scalefactor;
+        String scalefactor_new;
         if (is_wide) {
             scalefactor = "16x9";
+            scalefactor_new = "720p";
         } else {
-            scalefactor = "4x3";
+            scalefactor = "0500_4x3";
+            scalefactor_new = "0500_4x3";
         }
         final String uuid = (String) entries.get("uuid");
         if (StringUtils.isEmpty(uuid)) {
@@ -95,7 +104,7 @@ public class DctpTv extends PluginForHost {
         final boolean hlsUseNewWay = true;
         String url_hls_master = null;
         if (hlsUseNewWay) {
-            url_hls_master = String.format("https://cdn-segments.dctp.tv/%s_dctp_%s.m4v/playlist.m3u8", uuid, "720p");
+            url_hls_master = String.format("https://cdn-segments.dctp.tv/%s_dctp_%s.m4v/playlist.m3u8", uuid, scalefactor_new);
         } else {
             final String hls_playpath_path = this.br.getRegex("(/[^<>\"\\']+/playlist\\.m3u8)").getMatch(0);
             String hls_stream_server = null;
@@ -108,7 +117,7 @@ public class DctpTv extends PluginForHost {
             if (hls_stream_server != null && !hls_stream_server.equals("") && hls_playpath_path != null) {
                 final boolean build_custom_url = true;
                 if (build_custom_url) {
-                    url_hls_master = String.format("http://%s/vods3/_definst/mp4:dctp_completed_media/%s_dctp_0500_%s.m4v/playlist.m3u8", hls_stream_server, uuid, scalefactor);
+                    url_hls_master = String.format("http://%s/vods3/_definst/mp4:dctp_completed_media/%s_dctp_%s.m4v/playlist.m3u8", hls_stream_server, uuid, scalefactor);
                 } else {
                     url_hls_master = String.format("http://%s%s", playpath, hls_playpath_path);
                 }

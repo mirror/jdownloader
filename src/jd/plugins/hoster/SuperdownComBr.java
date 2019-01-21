@@ -33,6 +33,7 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
@@ -51,8 +52,6 @@ public class SuperdownComBr extends antiDDoSForHost {
     private static final String                            NICE_HOSTproperty  = NICE_HOST.replaceAll("(\\.|\\-)", "");
     private final String                                   html_loggedin      = "href=\"[^<>\"]*?logout[^<>\"]*?\"";
     private static Object                                  LOCK               = new Object();
-    private static final String[][]                        HOSTS              = { { "mega", "mega.co.nz" }, { "oboom", "oboom.com" }, { "4shared", "4shared.com" }, { "datafile", "datafile.com" }, { "ddlstorage", "ddlstorage.com" }, { "depositfiles", "depositfiles.com" }, { "easybytez", "easybytez.com" }, { "extmatrix", "extmatrix.com" }, { "fayloobmennik", "fayloobmennik.net" }, { "filecloud", "filecloud.io" }, { "Filefactory", "filefactory.com" }, { "filesmonster", "filesmonster.com" }, { "Freakshare", "freakshare.com" }, { "hugefiles", "hugefiles.net" }, { "Keep2share", "keep2share.cc" }, { "lumfile", "lumfile.com" }, { "Mediafire", "mediafire.com" }, { "novafile", "novafile.com" }, { "Rapidgator", "rapidgator.net" }, { "Sendspace", "sendspace.com" }, { "Turbobit", "turbobit.net" }, { "uploadable", "uploadable.ch" }, { "uploaded.to", "uploaded.net" }, { "uppit", "uppit.com" },
-            { "Zippyshare", "zippyshare.com" }, { "1Fichier", "1fichier.com" }, { "2shared", "2shared.com" }, { "Mega", "mega.co.nz" }, { "Minhateca", "minhateca.com.br" }, { "Uptobox", "uptobox.com" }, { "Fileboom", "fileboom.me" } };
 
     public SuperdownComBr(PluginWrapper wrapper) {
         super(wrapper);
@@ -111,7 +110,7 @@ public class SuperdownComBr extends antiDDoSForHost {
             }
         }
         // direct link... shouldn't need account
-        if (downloadLink.getDownloadURL().matches(this.getSupportedLinks().pattern())) {
+        if (downloadLink.getPluginPatternMatcher().matches(this.getSupportedLinks().pattern())) {
             return true;
         }
         if (account == null) {
@@ -134,7 +133,7 @@ public class SuperdownComBr extends antiDDoSForHost {
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         /* handle premium should never be called */
-        handleDL(account, link, link.getDownloadURL());
+        handleDL(account, link, link.getPluginPatternMatcher());
     }
 
     public boolean checkLinks(DownloadLink[] urls) {
@@ -367,25 +366,49 @@ public class SuperdownComBr extends antiDDoSForHost {
         }
         final String[] days_digits = new Regex(expire_text, "<li>(\\d+)</li>").getColumn(0);
         String days_string = "";
-        for (final String digit : days_digits) {
-            days_string += digit;
+        long expire_timestamp = 0;
+        if (days_digits.length > 0) {
+            for (final String digit : days_digits) {
+                days_string += digit;
+            }
+            expire_timestamp = System.currentTimeMillis() + Long.parseLong(days_string) * 24 * 60 * 60 * 1000l;
         }
-        ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(days_string) * 24 * 60 * 60 * 1000l);
-        ai.setUnlimitedTraffic();
-        account.setValid(true);
+        if (expire_timestamp > System.currentTimeMillis()) {
+            ai.setValidUntil(expire_timestamp);
+            ai.setUnlimitedTraffic();
+            ai.setStatus("Premium Account");
+            account.setType(AccountType.PREMIUM);
+        } else {
+            ai.setTrafficLeft(0);
+            ai.setStatus("Free Account");
+            account.setType(AccountType.FREE);
+        }
         account.setMaxSimultanDownloads(-1);
         account.setConcurrentUsePossible(true);
         final ArrayList<String> supportedHosts = new ArrayList<String>();
-        /* Apply supported hosts depending on account type */
-        for (final String[] filehost : HOSTS) {
-            final String crippledHost = filehost[0];
-            final String realHost = filehost[1];
-            if (br.containsHTML("<b>.*?" + crippledHost + ".*?:</b>[\t\n\r ]+(Available|Testing)")) {
-                supportedHosts.add(realHost);
+        boolean extendedCheckSuccessful = false;
+        final String supportedHostsTableHTML = br.getRegex("<div[^>]*?class=\"servidores\"[^>]*?>\\s*?<ul>(.*?)</ul>").getMatch(0);
+        if (supportedHostsTableHTML != null) {
+            final String[] hostInfoHtmls = new Regex(supportedHostsTableHTML, "<li.*?</li>").getColumn(-1);
+            for (final String hostInfoHtml : hostInfoHtmls) {
+                String crippledHost = new Regex(hostInfoHtml, "<b>[^<]*?([A-Za-z0-9\\-\\.]+)[^<]*?</b>").getMatch(0);
+                final boolean isOnline = new Regex(hostInfoHtml, "class=\"(soso|on)\"").matches() || new Regex(hostInfoHtml, "Novo|Disponível").matches();
+                if (!StringUtils.isEmpty(crippledHost) && isOnline) {
+                    crippledHost = crippledHost.toLowerCase();
+                    extendedCheckSuccessful = true;
+                    supportedHosts.add(crippledHost);
+                }
+            }
+        }
+        if (!extendedCheckSuccessful) {
+            /* Fallback - wider RegEx without check for host-status */
+            final String[] crippledHosts = br.getRegex("<b>[^<]*?([A-Za-z0-9\\-\\.]+)[^<]*?</b>").getColumn(0);
+            for (String crippledHost : crippledHosts) {
+                crippledHost = crippledHost.toLowerCase();
+                supportedHosts.add(crippledHost);
             }
         }
         ai.setMultiHostSupport(this, supportedHosts);
-        ai.setStatus("Premium Account");
         return ai;
     }
 

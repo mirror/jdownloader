@@ -175,8 +175,8 @@ public class DeepbridCom extends antiDDoSForHost {
             account.setMaxSimultanDownloads(defaultMAXDOWNLOADS);
             final String validuntil = PluginJSonUtils.getJsonValue(br, "expiration");
             ai.setStatus("Premium account");
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(validuntil, "yyyy-MM-dd", Locale.ENGLISH));
-            ai.setUnlimitedTraffic();
+            /* Correct expire-date - add 24 hours */
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(validuntil, "yyyy-MM-dd", Locale.ENGLISH) + 24 * 60 * 60 * 1000);
             ai.setUnlimitedTraffic();
         }
         this.getAPISafe(API_BASE + "?page=api&action=hosters", account, null);
@@ -297,26 +297,14 @@ public class DeepbridCom extends antiDDoSForHost {
             } else if (errorcode.equals("9")) {
                 /* Hosters limit reached for this day */
                 mhm.putError(account, link, 10 * 60 * 1000l, "Daily limit reached for this host");
+            } else if (errorcode.equals("15")) {
+                /* Service detected usage of proxy which they do not tolerate */
+                mhm.putError(account, link, 15 * 60 * 1000l, "Proxy, VPN or VPS detected. Please contact deepbrid support!");
             } else {
                 /* Unknown error */
                 mhm.handleErrorGeneric(account, link, "api_error_unknown", 10, 5 * 60 * 1000l);
             }
         }
-    }
-
-    private int getErrorcode(final Browser br) {
-        String status = PluginJSonUtils.getJson(br, "status");
-        if (status != null) {
-            /* Return errorcode */
-            return Integer.parseInt(status);
-        } else {
-            /* Everything ok */
-            return 0;
-        }
-    }
-
-    private String getErrormessage(final Browser br) {
-        return PluginJSonUtils.getJson(br, "details");
     }
 
     @Override

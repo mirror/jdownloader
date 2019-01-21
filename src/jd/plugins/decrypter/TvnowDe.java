@@ -53,20 +53,6 @@ public class TvnowDe extends PluginForDecrypt {
             formatID = new Regex(url_showname, ".+\\-(\\d+)$").getMatch(0);
             isMovie = true;
             url_showname = jd.plugins.hoster.TvnowDe.cleanupShowTitle(url_showname);
-        } else if (jd.plugins.hoster.TvnowDe.isMovie_old(parameter)) {
-            /* Old movies linkformat */
-            url_old = parameter;
-            final Regex urlInfo = new Regex(parameter, "https?://[^/]+/([^/]+)/([^/]+)");
-            stationName = urlInfo.getMatch(0);
-            url_showname = urlInfo.getMatch(1);
-            isMovie = true;
-        } else if (parameter.matches("https?://[^/]+/[^/]+/[^/]+")) {
-            /* 2018-12-12: New linkformat */
-            stationName = null;
-            url_showname = new Regex(parameter, "/([^/]+)$").getMatch(0);
-            formatID = new Regex(url_showname, ".+\\-(\\d+)$").getMatch(0);
-            url_showname = jd.plugins.hoster.TvnowDe.cleanupShowTitle(url_showname);
-            isMovie = false;
         } else if (parameter.matches(jd.plugins.hoster.TvnowDe.TYPE_DEEPLINK)) {
             formatID = new Regex(parameter, "f=(\\d+)").getMatch(0);
             singleEpisodeID = new Regex(parameter, "e=(\\d+)").getMatch(0);
@@ -110,11 +96,24 @@ public class TvnowDe extends PluginForDecrypt {
             }
             url_showname = jd.plugins.hoster.TvnowDe.cleanupShowTitle(url_showname);
             isMovie = false;
-        } else if (parameter.matches(jd.plugins.hoster.TvnowDe.TYPE_SERIES_NEW)) {
+        } else if (jd.plugins.hoster.TvnowDe.isSeriesNew(parameter)) {
             /* New series linkformat */
-            final Regex urlInfo = new Regex(parameter, jd.plugins.hoster.TvnowDe.TYPE_SERIES_NEW);
             stationName = null;
-            url_showname = urlInfo.getMatch(0);
+            url_showname = new Regex(parameter, "/(?:serien|shows|specials)/([^/]+)").getMatch(0);
+            formatID = new Regex(url_showname, ".+\\-(\\d+)$").getMatch(0);
+            url_showname = jd.plugins.hoster.TvnowDe.cleanupShowTitle(url_showname);
+            isMovie = false;
+        } else if (jd.plugins.hoster.TvnowDe.isMovie_old(parameter)) {
+            /* Old movies linkformat */
+            url_old = parameter;
+            final Regex urlInfo = new Regex(parameter, "https?://[^/]+/([^/]+)/([^/]+)");
+            stationName = urlInfo.getMatch(0);
+            url_showname = urlInfo.getMatch(1);
+            isMovie = true;
+        } else if (parameter.matches("https?://[^/]+/[^/]+/[^/]+")) {
+            /* 2018-12-12: New linkformat */
+            stationName = null;
+            url_showname = new Regex(parameter, "/([^/]+)$").getMatch(0);
             formatID = new Regex(url_showname, ".+\\-(\\d+)$").getMatch(0);
             url_showname = jd.plugins.hoster.TvnowDe.cleanupShowTitle(url_showname);
             isMovie = false;
@@ -163,6 +162,7 @@ public class TvnowDe extends PluginForDecrypt {
         LinkedHashMap<String, Object> entries = null;
         if (formatID == null) {
             /* Required for old URLs which contain showname and stationName but not the formatID. */
+            /* 2019-01-21: TODO: Find a way to find the stationName if it is not given at this stage! */
             if (StringUtils.isEmpty(stationName) || StringUtils.isEmpty(url_showname)) {
                 /* This request is impossible without the correct stationName. */
                 logger.warning("Failed to find stationName - probably invalid/offline URL");
@@ -195,18 +195,8 @@ public class TvnowDe extends PluginForDecrypt {
         }
         if (url_singleEpisodeName != null) {
             /* Single item --> Hosterplugin */
-            final String contentURL;
-            if (formatID != null && singleEpisodeID != null) {
-                contentURL = generateDeeplinkURL(formatID, singleEpisodeID);
-            } else {
-                contentURL = url_old;
-            }
-            if (contentURL == null) {
-                /* This should never happen */
-                logger.warning("contentURL is null");
-                return null;
-            }
-            final DownloadLink dl = this.createDownloadlink(contentURL);
+            final String contentturl = getContentURL(formatID, singleEpisodeID, url_showname, url_singleEpisodeName, null, null, parameter, url_old, stationName, null, isMovie, true);
+            final DownloadLink dl = this.createDownloadlink(contentturl);
             /* Very important! */
             jd.plugins.hoster.TvnowDe.storeUrlPartInfo(dl, url_showname, url_singleEpisodeName, stationName, formatID, singleEpisodeID);
             decryptedLinks.add(dl);
@@ -241,7 +231,7 @@ public class TvnowDe extends PluginForDecrypt {
                 final String broadcastStartDate_important_part = new Regex(broadcastStartDate, "^(\\d{4}\\-\\d{2})").getMatch(0);
                 /* An URL which is rarely used on their website but this one will always lead us to their website! */
                 /* Structure: http://link.tvnow.de/?f=<formatID>&e=<episodeID> */
-                final String deeplinkUrl = (String) entries.get("deeplinkUrl");
+                // final String deeplinkUrl = (String) entries.get("deeplinkUrl");
                 final String thisStationName;
                 if (stationName != null) {
                     thisStationName = stationName;
@@ -256,51 +246,9 @@ public class TvnowDe extends PluginForDecrypt {
                 // /* E.g. stuff which is only available online but not on TV. */
                 // logger.info("DEBUG");
                 // }
-                final boolean creation_of_old_linktype_possible = url_old != null || (jd.plugins.hoster.TvnowDe.isValidTvStation(thisStationName));
-                final boolean useNewContentURL = true;
-                final boolean useDeeplinkAsContentURL = false;
-                String contentURL;
-                /*
-                 * 2018-12-18: Both linktypes are still officially supported via website but the old linktype does not work for content
-                 * which does not actually get aired on TV as the tvStationName is part of the old URL.
-                 */
-                if (useNewContentURL || !creation_of_old_linktype_possible) {
-                    /* Different URLs for movies- and series */
-                    final String showname_with_formatID = url_showname + "-" + formatID;
-                    final String videoSeoName_with_episodeID = videoSeoName + "-" + episodeID;
-                    if (isMovie) {
-                        contentURL = String.format("https://www.tvnow.de/filme/%s", videoSeoName_with_episodeID);
-                    } else {
-                        if (seasonnumber.equals("-1") || episodenumber.equals("-1")) {
-                            /* This should never happen! */
-                            return null;
-                        }
-                        if (seasonnumber.matches("\\d{4}")) {
-                            contentURL = String.format("https://www.tvnow.de/serien/%s/%s/episode-%s-%s", showname_with_formatID, broadcastStartDate_important_part, episodenumber, videoSeoName_with_episodeID);
-                        } else {
-                            contentURL = String.format("https://www.tvnow.de/serien/%s/staffel-%s/episode-%s-%s", showname_with_formatID, seasonnumber, episodenumber, videoSeoName_with_episodeID);
-                        }
-                    }
-                } else if (useDeeplinkAsContentURL) {
-                    if (StringUtils.isEmpty(deeplinkUrl)) {
-                        logger.warning("Failed to find deeplinkUrl");
-                        return null;
-                    }
-                    contentURL = deeplinkUrl;
-                } else {
-                    /* Old layout: https://www.tvnow.de/<tvStationName>/<showname>/<videoSeoName> (different for movies) */
-                    if (url_old != null && ressourcelist.size() == 1) {
-                        /* Easiest case - valid old_url is simply given and we can use it because user only added a single object. */
-                        contentURL = url_old;
-                    } else {
-                        if (isMovie) {
-                            contentURL = String.format("https://www.tvnow.de/%s/%s", thisStationName, url_showname);
-                        } else {
-                            contentURL = String.format("https://www.tvnow.de/%s/%s/%s", thisStationName, url_showname, videoSeoName);
-                        }
-                    }
-                }
-                final DownloadLink dl = this.createDownloadlink(contentURL);
+                final boolean isSingleObject = ressourcelist.size() == 1;
+                final String contentturl = getContentURL(formatID, episodeID, url_showname, videoSeoName, seasonnumber, episodenumber, parameter, url_old, thisStationName, broadcastStartDate_important_part, isMovie, isSingleObject);
+                final DownloadLink dl = this.createDownloadlink(contentturl);
                 jd.plugins.hoster.TvnowDe.parseInformation(dl, entries, thisStationName, formatTitle);
                 /* Very important! */
                 jd.plugins.hoster.TvnowDe.storeUrlPartInfo(dl, url_showname, videoSeoName, thisStationName, formatID, episodeID);
@@ -324,6 +272,69 @@ public class TvnowDe extends PluginForDecrypt {
         // fp.addLinks(decryptedLinks);
         // }
         return decryptedLinks;
+    }
+
+    private String getContentURL(final String formatID, final String episodeID, final String url_showname, final String videoSeoName, final String seasonnumber, final String episodenumber, final String url_addedbyuser, final String url_old, final String thisStationName, final String broadcastStartDate_important_part, final boolean isMovie, final boolean isSingleObject) {
+        final boolean deeplinkURLgiven = false;
+        final boolean preferNewContentURL = true;
+        final boolean preferDeeplinkAsContentURL = false;
+        /* Use this URL if the sh!t hits the fan and we're not able to generate an URL which points directly to our crawled content! */
+        final String fallbackURL = url_addedbyuser;
+        final String deeplinkUrl;
+        if (deeplinkURLgiven) {
+            /* 2019-01-21: These URLs are sometimes still given (via json) but it seems like they do not work anymore! */
+            deeplinkUrl = String.format("http://link.tvnow.de/?f=%s&e=%s", formatID, episodeID);
+        } else {
+            deeplinkUrl = null;
+        }
+        final boolean creation_of_old_linktype_possible = url_old != null || (jd.plugins.hoster.TvnowDe.isValidTvStation(thisStationName));
+        String contentURL;
+        /*
+         * 2018-12-18: Both linktypes are still officially supported via website but the old linktype does not work for content which does
+         * not actually get aired on TV as the tvStationName is part of the old URL.
+         */
+        if (isSingleObject) {
+            /* TODO: Check this for shows with only 1 object */
+            /* Easiest case - valid old_url is given as user only added 1 URL and we can use it because user only added a single object. */
+            contentURL = url_addedbyuser;
+        } else if (preferNewContentURL || !creation_of_old_linktype_possible) {
+            /* Different URLs for movies- and series */
+            final String showname_with_formatID = url_showname + "-" + formatID;
+            final String videoSeoName_with_episodeID = videoSeoName + "-" + episodeID;
+            if (isMovie) {
+                contentURL = String.format("https://www.tvnow.de/filme/%s", videoSeoName_with_episodeID);
+            } else {
+                if (seasonnumber.equals("-1") || episodenumber.equals("-1")) {
+                    /* This should never happen! */
+                    // throw new DecrypterException("Value missing: seasonnumber or episodenumber");
+                    return fallbackURL;
+                }
+                if (seasonnumber.matches("\\d{4}")) {
+                    if (broadcastStartDate_important_part == null) {
+                        // throw new DecrypterException("Value missing: broadcastStartDate_important_part");
+                        return fallbackURL;
+                    }
+                    contentURL = String.format("https://www.tvnow.de/serien/%s/%s/episode-%s-%s", showname_with_formatID, broadcastStartDate_important_part, episodenumber, videoSeoName_with_episodeID);
+                } else {
+                    contentURL = String.format("https://www.tvnow.de/serien/%s/staffel-%s/episode-%s-%s", showname_with_formatID, seasonnumber, episodenumber, videoSeoName_with_episodeID);
+                }
+            }
+        } else if (preferDeeplinkAsContentURL) {
+            if (StringUtils.isEmpty(deeplinkUrl)) {
+                logger.warning("Failed to find deeplinkUrl");
+                // throw new DecrypterException("Value missing: deeplinkUrl");
+                return fallbackURL;
+            }
+            contentURL = deeplinkUrl;
+        } else {
+            /* Old layout: https://www.tvnow.de/<tvStationName>/<showname>/<videoSeoName> (different for movies) */
+            if (isMovie) {
+                contentURL = String.format("https://www.tvnow.de/%s/%s", thisStationName, url_showname);
+            } else {
+                contentURL = String.format("https://www.tvnow.de/%s/%s/%s", thisStationName, url_showname, videoSeoName);
+            }
+        }
+        return contentURL;
     }
 
     @Override
