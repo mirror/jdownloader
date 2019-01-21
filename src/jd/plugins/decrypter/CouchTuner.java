@@ -26,7 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 40019 $", interfaceVersion = 2, names = { "couchtuner.cloud" }, urls = { "https?://(www\\.)?(?:freetvonline\\.xyz|couchtuner\\.cloud)/.*" })
+@DecrypterPlugin(revision = "$Revision: 40019 $", interfaceVersion = 2, names = { "couchtuner.cloud" }, urls = { "https?://(www\\.)?(?:freetvonline\\.xyz|watch-online\\.xyz|couchtuner\\.cloud)/.*" })
 public class CouchTuner extends PluginForDecrypt {
     public CouchTuner(PluginWrapper wrapper) {
         super(wrapper);
