@@ -120,9 +120,9 @@ public class VidbomCom extends antiDDoSForHost {
      */
     private final boolean        AUDIOHOSTER                        = false;
     /* If activated, checks if the video is directly available via "vidembed" --> Skips ALL waittimes- and captchas */
-    private final boolean        VIDEOHOSTER                        = true;
+    private final boolean        VIDEOHOSTER                        = false;
     /* If activated, checks if the video is directly available via "embed" --> Skips all waittimes & captcha in most cases */
-    private final boolean        VIDEOHOSTER_2                      = false;
+    private final boolean        VIDEOHOSTER_2                      = true;
     private final boolean        VIDEOHOSTER_ENFORCE_VIDEO_FILENAME = false;
     /*
      * Enable this for imagehosts --> fuid will be used as filename if none is available, doFree will check for correct filename and doFree
@@ -199,7 +199,9 @@ public class VidbomCom extends antiDDoSForHost {
         if (!(this.browserPrepped.containsKey(prepBr) && this.browserPrepped.get(prepBr) == Boolean.TRUE)) {
             super.prepBrowser(prepBr, host);
             /* define custom browser headers and language settings */
-            prepBr.setCookie(COOKIE_HOST, "lang", "english");
+            // prepBr.setCookie(COOKIE_HOST, "lang", "english");
+            /* 2019-01-20: Special */
+            prepBr.setCookie(COOKIE_HOST, "lang", "1");
             prepBr.setAllowedResponseCodes(new int[500]);
         }
         return prepBr;
@@ -222,10 +224,16 @@ public class VidbomCom extends antiDDoSForHost {
         Browser altbr = null;
         fuid = null;
         correctDownloadLink(link);
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36");
+        // br.cloneBrowser().getPage("https://vidbom.com/dl?op=get_slides&file_code=" + this.fuid);
         getPage(link.getPluginPatternMatcher());
         setFUID(link);
         if (br.getHttpConnection().getResponseCode() == 404 || new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String file_id = new Regex(correctedBR, "\\$\\.cookie\\(\\'file_id\\', \\'(\\d+)\\'").getMatch(0);
+        if (file_id != null) {
+            br.setCookie(br.getHost(), "file_id", file_id);
         }
         altbr = br.cloneBrowser();
         if (websiteIsUnderMaintenance()) {
@@ -501,7 +509,7 @@ public class VidbomCom extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 0, PROPERTY_DLLINK_FREE);
+        doFree(downloadLink, true, -2, PROPERTY_DLLINK_FREE);
     }
 
     @SuppressWarnings({ "unused" })
@@ -510,9 +518,13 @@ public class VidbomCom extends antiDDoSForHost {
         /* 1, bring up saved final links */
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         /* 2, check for streaming/direct links on the first page */
-        if (dllink == null) {
-            dllink = getDllink();
-        }
+        /*
+         * 2019-01-20: Special: Do NOT use the downloadlink from the main page as it will get errors 'Expired' or 'Wrong IP' on
+         * downloadstart! Only use the "/-embed" URL --> Get downloadlink --> Start download
+         */
+        // if (dllink == null) {
+        // dllink = getDllink();
+        // }
         /* 3, do they provide audio hosting? */
         if (dllink == null && AUDIOHOSTER && downloadLink.getName().endsWith(".mp3")) {
             try {
@@ -808,6 +820,10 @@ public class VidbomCom extends antiDDoSForHost {
                 controlFree(-1);
             }
         } else {
+            br.getHeaders().put("Accept-Encoding", "identity;q=1, *;q=0");
+            // br.getHeaders().remove("Referer");
+            br.getHeaders().put("Referer", null);
+            // br.getHeaders().put("Range", "bytes=0-");
             dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumable, maxchunks);
             if (dl.getConnection().getContentType().contains("html")) {
                 checkResponseCodeErrors(dl.getConnection());
@@ -1381,16 +1397,17 @@ public class VidbomCom extends antiDDoSForHost {
      * download.
      */
     private void checkServerErrors() throws NumberFormatException, PluginException {
-        // dead file
         if (new Regex(correctedBR.trim(), "^No file$").matches()) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (new Regex(correctedBR.trim(), "^Wrong IP$").matches()) {
+            /* Possibly dead file but it is supposed to be online so let's wait and retry! */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
+        } else if (new Regex(correctedBR.trim(), "^Wrong IP$").matches()) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: 'Wrong IP'", 2 * 60 * 60 * 1000l);
-        }
-        // most likely result of generated link that has expired -raztoki
-        if (new Regex(correctedBR.trim(), "(^File Not Found$|<h1>404 Not Found</h1>)").matches()) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error (404)", 30 * 60 * 1000l);
+        } else if (new Regex(correctedBR.trim(), "^Expired$").matches()) {
+            /* 2019-01-20: Special */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: 'Expired'", 2 * 60 * 60 * 1000l);
+        } else if (new Regex(correctedBR.trim(), "(^File Not Found$|<h1>404 Not Found</h1>)").matches()) {
+            /* most likely result of generated link that has expired -raztoki */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
         }
     }
 

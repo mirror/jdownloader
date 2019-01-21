@@ -421,6 +421,7 @@ public class PornHubCom extends PluginForDecrypt {
             parameter = newLink;
             jd.plugins.hoster.PornHubCom.getPage(br, parameter);
         }
+        final String username = br.getRegex("class=\"bolded\">([^<>]+)</a>").getMatch(0);
         final String viewkey = jd.plugins.hoster.PornHubCom.getViewkeyFromURL(parameter);
         // jd.plugins.hoster.PornHubCom.getPage(br, jd.plugins.hoster.PornHubCom.createPornhubVideolink(viewkey, aa));
         final String fpName = jd.plugins.hoster.PornHubCom.getSiteTitle(this, br);
@@ -464,7 +465,11 @@ public class PornHubCom extends PluginForDecrypt {
                 if (grab) {
                     ret = true;
                     logger.info("Grab:" + qualityInfo);
-                    final String final_filename = fpName + "_" + qualityInfo + "p.mp4";
+                    String final_filename = fpName + "_";
+                    if (!StringUtils.isEmpty(username)) {
+                        final_filename += username + "_";
+                    }
+                    final_filename += qualityInfo + "p.mp4";
                     final DownloadLink dl = getDecryptDownloadlink(viewkey, qualityInfo);
                     dl.setProperty("directlink", finallink);
                     dl.setProperty("quality", qualityInfo);

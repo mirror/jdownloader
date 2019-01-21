@@ -17,6 +17,9 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -28,9 +31,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vcrypt.net" }, urls = { "https?://(?:www\\.)?vcrypt\\.(?:net|pw)/(?:[^/]+/([a-z0-9]+)|[a-z0-9]{6})" })
 public class VcryptNet extends antiDDoSForDecrypt {
@@ -48,6 +48,24 @@ public class VcryptNet extends antiDDoSForDecrypt {
             offline.setFinalFileName(new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0));
             decryptedLinks.add(offline);
             return decryptedLinks;
+        }
+        final Form form0 = br.getForm(0);
+        Form textCaptchaForm = null;
+        if (form0 != null && form0.hasInputFieldByName("answerpost")) {
+            textCaptchaForm = form0;
+        }
+        if (textCaptchaForm != null) {
+            /* 2019-01-21: New */
+            final String captchaurl = br.getRegex("\\'(https?://vcrypt\\.net/convert_string_img\\.php[^\"\\']+)").getMatch(0);
+            if (captchaurl == null) {
+                return null;
+            }
+            final String code = this.getCaptchaCode(captchaurl, param);
+            textCaptchaForm.put("answerpost", code);
+            br.submitForm(textCaptchaForm);
+            if (br.containsHTML("convert_string_img")) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
         }
         if (parameter.matches("https?://[^/]+/[^/]+/[a-zA-Z0-9]+")) {
             Form continueForm = br.getFormByInputFieldKeyValue("submit", "Continue");

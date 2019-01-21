@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -21,6 +20,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -39,27 +41,19 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "jheberg.net" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
 public class JhebergNet extends PluginForHost {
-
     private static final boolean                           ACCOUNT_PREMIUM_RESUME       = false;
     private static final int                               ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
     private static final int                               ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap           = new HashMap<Account, HashMap<String, Long>>();
-
     private static final String                            DOMAIN                       = "https://jheberg.net/";
     private static final String                            HOST                         = "https://www.jheberg.net/";
     private static final String                            NICE_HOST                    = "jheberg.net";
     private int                                            STATUSCODE                   = 0;
     private static final String                            NICE_HOSTproperty            = NICE_HOST.replaceAll("(\\.|\\-)", "");
-
     private Account                                        currAcc                      = null;
     private DownloadLink                                   currDownloadLink             = null;
-
     private static Object                                  LOCK                         = new Object();
 
     public JhebergNet(PluginWrapper wrapper) {
@@ -144,7 +138,6 @@ public class JhebergNet extends PluginForHost {
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         setConstants(account, link);
         this.br = newBrowser();
-
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap != null) {
@@ -160,7 +153,6 @@ public class JhebergNet extends PluginForHost {
                 }
             }
         }
-
         this.login(this.currAcc, false);
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null) {
@@ -252,7 +244,6 @@ public class JhebergNet extends PluginForHost {
         }
         this.accessAPISafe("/profile/debrid/link/");
         final ArrayList<String> supportedHosts = new ArrayList<String>();
-        final String[] possible_domains = { "to", "de", "com", "net", "co.nz", "in", "co", "me", "biz", "ch", "pl", "us", "cc" };
         final String[] hostDomains = br.getRegex("data\\-name=\"([A-Za-z0-9\\.\\-]+)\"").getColumn(0);
         for (String crippledhost : hostDomains) {
             crippledhost = crippledhost.toLowerCase();
@@ -261,11 +252,7 @@ public class JhebergNet extends PluginForHost {
             } else if (crippledhost.equals("loadto")) {
                 supportedHosts.add("load.to");
             } else {
-                /* Go insane */
-                for (final String possibledomain : possible_domains) {
-                    final String full_possible_host = crippledhost + "." + possibledomain;
-                    supportedHosts.add(full_possible_host);
-                }
+                supportedHosts.add(crippledhost);
             }
         }
         ai.setMultiHostSupport(this, supportedHosts);
@@ -400,5 +387,4 @@ public class JhebergNet extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

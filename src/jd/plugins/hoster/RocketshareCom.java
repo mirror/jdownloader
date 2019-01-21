@@ -179,13 +179,23 @@ public class RocketshareCom extends PluginForHost {
             if (captchaRequired) {
                 /* GUEST an FREE(-account) mode */
                 final boolean useHardcodedReCaptchaSiteKey = false;
-                final String reCaptchaSiteKey;
+                final String reCaptchaSiteKeyStatic = "6LeXdH8UAAAAALDYC_CQg3iQxWeO5KiVvon";
+                String reCaptchaSiteKey = null;
                 if (useHardcodedReCaptchaSiteKey) {
                     /* 2019-01-14 */
-                    reCaptchaSiteKey = "6LeXdH8UAAAAALDYC_CQg3iQxWeO5KiVvon-ZxFC";
+                    logger.info("Using static reCaptchaV2Key");
+                    reCaptchaSiteKey = reCaptchaSiteKeyStatic;
                 } else {
-                    br.getPage("https://" + this.getHost() + "/static/assets/js/download.js?v=9&s=0");
-                    reCaptchaSiteKey = br.getRegex("sitekey:\\'([^\\'\"]+)\\'").getMatch(0);
+                    logger.info("Trying to find reCaptchaV2Key");
+                    try {
+                        br.getPage("https://" + this.getHost() + "/static/assets/js/download.js?v=9&s=0");
+                        reCaptchaSiteKey = br.getRegex("sitekey\\s*?:\\s*?\\'([^\\'\"]+)\\'").getMatch(0);
+                    } catch (final Throwable e) {
+                    }
+                    if (StringUtils.isEmpty(reCaptchaSiteKey)) {
+                        logger.info("Failed to find reCaptchaV2Key --> Fallback to static reCaptchaV2Key");
+                        reCaptchaSiteKey = reCaptchaSiteKeyStatic;
+                    }
                     if (StringUtils.isEmpty(reCaptchaSiteKey)) {
                         logger.warning("Failed to find reCaptchaSiteKey");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

@@ -18,6 +18,10 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -33,10 +37,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "conexaomega.com.br" }, urls = { "" })
 public class ConexaomegaComBr extends antiDDoSForHost {
@@ -231,14 +231,14 @@ public class ConexaomegaComBr extends antiDDoSForHost {
             ai.setUnlimitedTraffic();
             ai.setValidUntil(System.currentTimeMillis() + 24 * Long.parseLong(premium_days_left) * 60 * 60 * 1000l);
         }
-        account.setValid(true);
         this.getAPISafe("/planos");
         final String supportedhosttable = this.br.getRegex("<div class=\"lista\\-geradores\">(.*?<br/>)<br/>[\t\n\r ]*?</div>").getMatch(0);
         if (supportedhosttable != null) {
             final ArrayList<String> supportedHosts = new ArrayList<String>();
             final String hosts_crippled[] = new Regex(supportedhosttable, "([A-Za-z0-9\\.\\-]+)[\t\n\r ]*?<br").getColumn(0);
             for (String host_crippled : hosts_crippled) {
-                supportedHosts.add(host_crippled.trim());
+                host_crippled = host_crippled.toLowerCase().trim();
+                supportedHosts.add(host_crippled);
             }
             ai.setMultiHostSupport(this, supportedHosts);
         }

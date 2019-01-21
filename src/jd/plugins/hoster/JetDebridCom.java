@@ -324,7 +324,6 @@ public class JetDebridCom extends PluginForHost {
         this.getAPISafe("/user_download.php");
         final String[] supportedHosts = br.getRegex("\\s+<img src=\"images/hosts/.*?\\.png\" title=\"(.*?)\"").getColumn(0);
         final List<String> list = Arrays.asList(supportedHosts);
-        account.setValid(true);
         account.setConcurrentUsePossible(true);
         hostMaxchunksMap.clear();
         hostMaxdlsMap.clear();

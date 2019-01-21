@@ -13,13 +13,14 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -37,18 +38,13 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "baixarpremium.net" }, urls = { "" })
 public class BaixarPremiumNet extends PluginForHost {
-
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static AtomicInteger                           maxPrem            = new AtomicInteger(20);
     private static final String                            MAINPAGE           = "http://baixarpremium.net";
-
     private static final String                            NICE_HOST          = "baixarpremium.net";
     private static final String                            NICE_HOSTproperty  = NICE_HOST.replaceAll("(\\.|\\-)", "");
-
     private Account                                        currAcc            = null;
     private DownloadLink                                   currDownloadLink   = null;
 
@@ -109,7 +105,6 @@ public class BaixarPremiumNet extends PluginForHost {
             ac.setUnlimitedTraffic();
         }
         final ArrayList<String> supportedHosts = new ArrayList<String>();
-        final String[] possible_domains = { "com.br", "br", "to", "de", "com", "net", "co.nz", ".nz", "in", "co", "me", "biz", "ch", "pl", "us", "cc", "eu" };
         String[] crippledHosts;
         if (hoststext != null) {
             crippledHosts = hoststext.split(", ");
@@ -124,15 +119,7 @@ public class BaixarPremiumNet extends PluginForHost {
         for (String crippledhost : crippledHosts) {
             crippledhost = crippledhost.trim();
             crippledhost = crippledhost.toLowerCase();
-            if (crippledhost.equals("shareonline")) {
-                supportedHosts.add("share-online.biz");
-            } else {
-                /* Go insane */
-                for (final String possibledomain : possible_domains) {
-                    final String full_possible_host = crippledhost + "." + possibledomain;
-                    supportedHosts.add(full_possible_host);
-                }
-            }
+            supportedHosts.add(crippledhost);
         }
         ac.setMultiHostSupport(plugin, supportedHosts);
         return ac;
@@ -155,9 +142,7 @@ public class BaixarPremiumNet extends PluginForHost {
 
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-
         setConstants(account, link);
-
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap != null) {
@@ -173,13 +158,11 @@ public class BaixarPremiumNet extends PluginForHost {
                 }
             }
         }
-
         login(this.br, account, false);
         final String dllink = getDllinkBaixar(this.br, this.currAcc, this.currDownloadLink);
         if (!dllink.startsWith("http")) {
             handleErrorRetries("dllinknull", 50, 2 * 60 * 1000l);
         }
-
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -205,7 +188,6 @@ public class BaixarPremiumNet extends PluginForHost {
         }
         final String keypass = br.getCookie(account.getHoster(), "utmhb");
         final String getdata = "?link=" + Encoding.base16Encode(link.getDownloadURL()) + "&keypass=" + keypass + additional_param;
-
         final String dllink = br.getPage("http://baixarpremium.net/api/index.php" + getdata);
         if (br.toString().equals("Arquivo-nao-encontrado")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -346,5 +328,4 @@ public class BaixarPremiumNet extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

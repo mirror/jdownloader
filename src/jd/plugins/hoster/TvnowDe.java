@@ -67,7 +67,8 @@ public class TvnowDe extends PluginForHost {
     /* Old + new movie-linktype */
     public static final String            TYPE_MOVIE_OLD                 = "https?://[^/]+/[^/]+/[^/]+";
     public static final String            TYPE_MOVIE_NEW                 = "https?://[^/]+/filme/.+";
-    public static final String            TYPE_SERIES_NEW                = "https?://[^/]+/(?:serien|shows)/([^/]+)(?:/staffel\\-\\d+)?$";
+    public static final String            TYPE_SERIES_NEW                = "^https?://[^/]+/(?:serien|shows)/([^/]+)(?:/staffel\\-\\d+)?";
+    public static final String            TYPE_SERIES_NEW_SPECIAL        = "^https?://[^/]+/specials/[^/]+$";
     public static final String            TYPE_SERIES_SINGLE_EPISODE_NEW = "https?://[^/]+/(?:serien|shows)/([^/]+)/(?:[^/]+/)?(?!staffel\\-\\d+)([^/]+)$";
     public static final String            TYPE_DEEPLINK                  = "^[a-z]+://link\\.[^/]+/.+";
     public static final String            API_BASE                       = "https://api.tvnow.de/v3";
@@ -94,6 +95,10 @@ public class TvnowDe extends PluginForHost {
     public static boolean isSeriesSingleEpisodeNew(final String url) {
         // return url.matches(TYPE_SERIES_SINGLE_EPISODE_NEW) && !url.matches("https?://[^/]+/(?:serien|shows)/[^/]+/staffel\\-\\d+$");
         return url.matches(TYPE_SERIES_SINGLE_EPISODE_NEW);
+    }
+
+    public static boolean isSeriesNew(final String url) {
+        return (url.matches(TYPE_SERIES_NEW) && !isSeriesSingleEpisodeNew(url)) || url.matches(TYPE_SERIES_NEW_SPECIAL);
     }
 
     @Override
@@ -527,7 +532,7 @@ public class TvnowDe extends PluginForHost {
         episodename = episodename.replaceAll("^episode\\-\\d+\\-", "");
         /* This part is tricky - we have to filter-out stuff which does not belong to their intern title ... */
         /* Examples: which shall NOT be modified: "super-8-kamera-von-1965", "folge-w-05" */
-        if (!episodename.matches(".*?(folge|teil|w)\\-\\d+$") && !episodename.matches(".+\\d{4}\\-\\d{2}-\\d{2}-\\d{2}-\\d{2}-\\d{2}$") && !episodename.matches(".+\\-[12]\\d{3}")) {
+        if (!episodename.matches(".*?(folge|teil)\\-\\d+$") && !episodename.matches(".+\\d{4}\\-\\d{2}-\\d{2}-\\d{2}-\\d{2}-\\d{2}$") && !episodename.matches(".+\\-[12]\\d{3}")) {
             episodename = episodename.replaceAll("\\-\\d+$", "");
         }
         return episodename;

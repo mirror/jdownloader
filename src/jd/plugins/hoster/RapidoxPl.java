@@ -21,6 +21,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -38,11 +43,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidox.pl" }, urls = { "" })
 public class RapidoxPl extends PluginForHost {
@@ -121,7 +121,6 @@ public class RapidoxPl extends PluginForHost {
         return new FEATURE[] { FEATURE.MULTIHOST };
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         this.br = newBrowser();
@@ -300,7 +299,6 @@ public class RapidoxPl extends PluginForHost {
         account.setValid(true);
         /* Only add hosts which are listed as 'on' (working) */
         this.getAPISafe("http://rapidox.pl/panel/status_hostingow");
-        final String[] possible_domains = { "to", "de", "com", "net", "co.nz", "in", "co", "me", "biz", "ch", "pl", "cc" };
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         final String hosttable = br.getRegex("</tr></thead><tr>(.*?)</tr></table>").getMatch(0);
         final String[] hostDomainsInfo = hosttable.split("<td width=\"50px\"");
@@ -322,11 +320,7 @@ public class RapidoxPl extends PluginForHost {
             } else if (crippledhost.equals("_4shared")) {
                 supportedHosts.add("4shared.com");
             } else {
-                /* Finally, go insane... */
-                for (final String possibledomain : possible_domains) {
-                    final String full_possible_host = crippledhost + "." + possibledomain;
-                    supportedHosts.add(full_possible_host);
-                }
+                supportedHosts.add(crippledhost);
             }
         }
         ai.setMultiHostSupport(this, supportedHosts);
