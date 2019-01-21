@@ -224,7 +224,6 @@ public class VidbomCom extends antiDDoSForHost {
         Browser altbr = null;
         fuid = null;
         correctDownloadLink(link);
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36");
         // br.cloneBrowser().getPage("https://vidbom.com/dl?op=get_slides&file_code=" + this.fuid);
         getPage(link.getPluginPatternMatcher());
         setFUID(link);

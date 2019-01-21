@@ -119,7 +119,11 @@ public class BaixarPremiumNet extends PluginForHost {
         for (String crippledhost : crippledHosts) {
             crippledhost = crippledhost.trim();
             crippledhost = crippledhost.toLowerCase();
-            supportedHosts.add(crippledhost);
+            if (crippledhost.equals("shareonline")) {
+                supportedHosts.add("share-online.biz");
+            } else {
+                supportedHosts.add(crippledhost);
+            }
         }
         ac.setMultiHostSupport(plugin, supportedHosts);
         return ac;
