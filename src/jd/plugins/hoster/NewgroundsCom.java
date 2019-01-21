@@ -120,7 +120,18 @@ public class NewgroundsCom extends antiDDoSForHost {
                         filename = filename + "_" + fid;
                     }
                 }
-                dllink = "https://www." + this.getHost() + "/audio/download/" + fid;
+                // var embed_controller = new
+                // embedController([{"url":"https:\/\/audio.ngfiles.com\/843000\/843897_Starbarians-3-Suite.mp3?f1548006356"
+                if (br.containsHTML("/audio/download/" + fid)) {
+                    dllink = "https://www." + this.getHost() + "/audio/download/" + fid;
+                } else {
+                    final String embedController = br.getRegex("embedController\\s*\\(\\s*\\[\\s*\\{\\s*\"url\"\\s*:\\s*\"(https?:.*?)\"").getMatch(0);
+                    if (embedController != null) {
+                        dllink = embedController.replaceAll("\\\\", "");
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                }
                 ext = ".mp3";
             } else {
                 if (br.containsHTML("requires a Newgrounds account to play\\.<")) {
