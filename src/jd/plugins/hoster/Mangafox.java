@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.URL;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -67,6 +68,7 @@ public class Mangafox extends PluginForHost {
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.setCookie(new URL(link.getPluginPatternMatcher()).getHost(), "isAdult", "1");
         br.getPage(link.getPluginPatternMatcher());
         /* Check if main URL is still online */
         if (isOffline(br)) {

@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.net.URL;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 
@@ -26,6 +27,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangafox.me" }, urls = { "https?://[\\w\\.]*?(?:mangafox\\.(com|me|mobi|la)|fanfox\\.net)/manga/.*?/(v[A-Za-z0-9]+/c[\\d\\.]+|c[\\d\\.]+)" })
@@ -44,10 +47,15 @@ public class Mangafox extends PluginForDecrypt {
             url = url.substring(0, url.length() - 1);
         }
         /* Access URL of first picture */
+        br.setCookie(new URL(url).getHost(), "isAdult", "1");
         br.getPage(url + "/1.html");
         if (jd.plugins.hoster.Mangafox.isOffline(br)) {
-            decryptedLinks.add(this.createOfflinelink(url));
-            return decryptedLinks;
+            if (br.containsHTML("Caution to under-aged viewers") || br.containsHTML("\"id\\s*=\\s*\"checkAdult\"")) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                decryptedLinks.add(this.createOfflinelink(url));
+                return decryptedLinks;
+            }
         }
         String title = br.getRegex("<title>(.*?) \\- Read (.*?) Online \\- Page 1</title>").getMatch(0);
         if (title == null) {
