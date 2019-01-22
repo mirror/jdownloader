@@ -1779,7 +1779,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         QUEUE.add(new QueueAction<Void, RuntimeException>(Queue.QueuePriority.HIGH) {
             @Override
             protected Void run() throws RuntimeException {
-                if (lpackages != null && restoreMap != null) {
+                if (lpackages != null) {
                     preProcessCrawledPackages(lpackages);
                     try {
                         writeLock();
@@ -1791,51 +1791,53 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                 }
                             }
                             filePackage.setControlledBy(LinkCollector.this);
-                            final CrawledPackageStorable storable = restoreMap.get(filePackage);
-                            switch (filePackage.getType()) {
-                            case NORMAL:
-                                if (storable.getPackageID() != null) {
-                                    final CrawledPackageMappingID packageID = CrawledPackageMappingID.get(storable.getPackageID());
-                                    if (packageID != null) {
-                                        packageMap.put(packageID, filePackage);
-                                    }
-                                }
-                                break;
-                            case VARIOUS:
-                                if (variousPackage == null) {
-                                    variousPackage = filePackage;
-                                }
-                                for (final CrawledLinkStorable link : storable.getLinks()) {
-                                    final String id = link.getID();
-                                    if (id != null) {
-                                        final CrawledPackageMappingID packageID = CrawledPackageMappingID.get(id);
+                            if (restoreMap != null) {
+                                final CrawledPackageStorable storable = restoreMap.get(filePackage);
+                                switch (filePackage.getType()) {
+                                case NORMAL:
+                                    if (storable.getPackageID() != null) {
+                                        final CrawledPackageMappingID packageID = CrawledPackageMappingID.get(storable.getPackageID());
                                         if (packageID != null) {
-                                            final List<CrawledLink> list = getIdentifiedMap(packageID, variousMap);
-                                            list.add(link._getCrawledLink());
+                                            packageMap.put(packageID, filePackage);
                                         }
                                     }
-                                }
-                                break;
-                            case OFFLINE:
-                                if (offlinePackage == null) {
-                                    offlinePackage = filePackage;
-                                }
-                                for (final CrawledLinkStorable link : storable.getLinks()) {
-                                    final String id = link.getID();
-                                    if (id != null) {
-                                        final CrawledPackageMappingID packageID = CrawledPackageMappingID.get(id);
-                                        if (packageID != null) {
-                                            final List<CrawledLink> list = getIdentifiedMap(packageID, offlineMap);
-                                            list.add(link._getCrawledLink());
+                                    break;
+                                case VARIOUS:
+                                    if (variousPackage == null) {
+                                        variousPackage = filePackage;
+                                    }
+                                    for (final CrawledLinkStorable link : storable.getLinks()) {
+                                        final String id = link.getID();
+                                        if (id != null) {
+                                            final CrawledPackageMappingID packageID = CrawledPackageMappingID.get(id);
+                                            if (packageID != null) {
+                                                final List<CrawledLink> list = getIdentifiedMap(packageID, variousMap);
+                                                list.add(link._getCrawledLink());
+                                            }
                                         }
                                     }
+                                    break;
+                                case OFFLINE:
+                                    if (offlinePackage == null) {
+                                        offlinePackage = filePackage;
+                                    }
+                                    for (final CrawledLinkStorable link : storable.getLinks()) {
+                                        final String id = link.getID();
+                                        if (id != null) {
+                                            final CrawledPackageMappingID packageID = CrawledPackageMappingID.get(id);
+                                            if (packageID != null) {
+                                                final List<CrawledLink> list = getIdentifiedMap(packageID, offlineMap);
+                                                list.add(link._getCrawledLink());
+                                            }
+                                        }
+                                    }
+                                    break;
+                                case POFFLINE:
+                                    if (permanentofflinePackage == null) {
+                                        permanentofflinePackage = filePackage;
+                                    }
+                                    break;
                                 }
-                                break;
-                            case POFFLINE:
-                                if (permanentofflinePackage == null) {
-                                    permanentofflinePackage = filePackage;
-                                }
-                                break;
                             }
                         }
                         updateUniqueAlltimeIDMaps(lpackages);
