@@ -38,7 +38,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "solidfiles.com" }, urls = { "https?://(?:www\\.)?solidfiles\\.com/(?:d|v)/[a-z0-9]+/?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "solidfiles.com" }, urls = { "https?://(?:www\\.)?solidfiles\\.com/(?:d|v)/[a-z0-9]+" })
 public class SolidFilesCom extends PluginForHost {
     public SolidFilesCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -83,21 +83,21 @@ public class SolidFilesCom extends PluginForHost {
         String filename = br.getRegex("<h1 class=\"node-name\">(.*?)</h1>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>([^<>\"]*?) (?:-|\\|) Solidfiles</title>").getMatch(0);
+            if (filename == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        link.setName(Encoding.htmlDecode(filename.trim()));
+        link.setName(Encoding.htmlDecode(filename.trim()).replace(" ", "_"));// spaces are replaced by _
         String filesize = PluginJSonUtils.getJsonValue(br, "size");
         if (filesize == null) {
             filesize = br.getRegex("class=\"filesize\">\\(([^<>\"]*?)\\)</span>").getMatch(0);
-        }
-        if (filesize == null) {
-            filesize = br.getRegex("dt>File size<.*?dd>(.*?)</").getMatch(0);
-        }
-        if (filesize == null) {
-            /* 2017-03-21 */
-            filesize = br.getRegex("</copy-button>([^<>\"]*?) -").getMatch(0);
+            if (filesize == null) {
+                filesize = br.getRegex("dt>File size<.*?dd>(.*?)</").getMatch(0);
+                if (filesize == null) {
+                    /* 2017-03-21 */
+                    filesize = br.getRegex("</copy-button>([^<>\"]*?) -").getMatch(0);
+                }
+            }
         }
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
