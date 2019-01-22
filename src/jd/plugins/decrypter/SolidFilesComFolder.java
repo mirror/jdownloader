@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -35,7 +34,6 @@ import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "solidfiles.com" }, urls = { "https?://(?:www\\.)?solidfiles\\.com/(?:folder|v)/[a-z0-9]+/?" })
 public class SolidFilesComFolder extends PluginForDecrypt {
-
     public SolidFilesComFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -50,7 +48,12 @@ public class SolidFilesComFolder extends PluginForDecrypt {
             // direct downloadable
             final DownloadLink dl = createDownloadlink(parameter);
             dl.setProperty("directDownload", true);
-            dl.setName(getFileNameFromHeader(br.getHttpConnection()));
+            final String fileName = getFileNameFromDispositionHeader(br.getHttpConnection());
+            if (fileName != null) {
+                dl.setFinalFileName(fileName);
+            } else {
+                dl.setName(getFileNameFromHeader(br.getHttpConnection()));
+            }
             dl.setVerifiedFileSize(br.getHttpConnection().getContentLength());
             dl.setAvailable(true);
             decryptedLinks.add(dl);
@@ -100,7 +103,7 @@ public class SolidFilesComFolder extends PluginForDecrypt {
                     url = Request.getLocation(url, br.getRequest());
                     final DownloadLink dl = createDownloadlink(url);
                     filename = Encoding.htmlDecode(filename);
-                    dl.setName(filename);
+                    dl.setName(filename.replace(" ", "_"));// spaces are replaced by _
                     // dl.setDownloadSize(SizeFormatter.getSize(filesize));
                     dl.setAvailable(true);
                     decryptedLinks.add(dl);
@@ -117,5 +120,4 @@ public class SolidFilesComFolder extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
