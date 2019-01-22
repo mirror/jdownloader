@@ -97,7 +97,7 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
         resumeIndicator = NewTheme.I().getIcon(IconKey.ICON_REFRESH, 16);
         directConnection = NewTheme.I().getIcon(IconKey.ICON_MODEM, 16);
         proxyConnection = NewTheme.I().getIcon(IconKey.ICON_PROXY_ROTATE, 16);
-        connections = NewTheme.I().getIcon(IconKey.ICON_PARALELL, 16);
+        connections = NewTheme.I().getIcon(IconKey.ICON_CHUNKS, 16);
         url = NewTheme.I().getIcon(IconKey.ICON_URL, 16);
         panel.setLayout(new MigLayout("ins 0 0 0 0", sb.toString(), "[grow,fill]"));
         // panel.add(Box.createGlue(), "pushx,growx");

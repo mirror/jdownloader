@@ -2366,8 +2366,10 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
                     if (orgLinkID == null) {
                         final String linkID = getLinkID();
                         setProperty("ORG_LINKID", linkID);
+                        setLinkID(linkID + "_" + variant._getUniqueId());
+                    } else {
+                        setLinkID(orgLinkID + "_" + variant._getUniqueId());
                     }
-                    setLinkID(orgLinkID + "_" + variant._getUniqueId());
                 }
             }
             if (hasNotificationListener()) {
