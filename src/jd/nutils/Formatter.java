@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.nutils;
 
 import java.text.DecimalFormat;
@@ -25,7 +24,6 @@ import jd.parser.Regex;
 import org.appwork.utils.formatter.StringFormatter;
 
 public class Formatter {
-
     /**
      * The format describing an http date.
      */
@@ -62,16 +60,18 @@ public class Formatter {
             ret.append(hours).append('h');
         }
         if (minutes != 0 || ret.length() != 0) {
+            final int numFill = ret.length() != 0 ? 2 : 1;
             if (ret.length() != 0) {
                 ret.append(':');
             }
-            ret.append(Formatter.fillInteger(minutes, 2, "0")).append('m');
+            ret.append(Formatter.fillInteger(minutes, numFill, "0")).append('m');
         }
         if (showsec) {
+            final int numFill = ret.length() != 0 ? 2 : 1;
             if (ret.length() != 0) {
                 ret.append(':');
             }
-            ret.append(Formatter.fillInteger(seconds, 2, "0")).append('s');
+            ret.append(Formatter.fillInteger(seconds, numFill, "0")).append('s');
         }
         return ret.toString();
     }
@@ -199,5 +199,4 @@ public class Formatter {
         }
         return -1;
     }
-
 }

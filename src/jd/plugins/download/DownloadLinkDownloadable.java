@@ -232,7 +232,7 @@ public class DownloadLinkDownloadable implements Downloadable {
         if (hashInfo == null) {
             return null;
         }
-        TYPE type = hashInfo.getType();
+        final TYPE type = hashInfo.getType();
         final PluginProgress hashProgress = new HashCheckPluginProgress(outputPartFile, Color.YELLOW.darker(), type);
         hashProgress.setProgressSource(this);
         try {
