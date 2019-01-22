@@ -60,6 +60,7 @@ public class PornroxCom extends PluginForHost {
 
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("pornroxxx.com/", "pornrox.com/"));
+        link.setContentUrl(link.getDownloadURL().replace("pornroxxx.com/", "pornrox.com/"));
     }
 
     @SuppressWarnings("deprecation")
