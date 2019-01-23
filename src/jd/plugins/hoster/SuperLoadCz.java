@@ -13,19 +13,14 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -45,19 +40,23 @@ import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "superload.cz" }, urls = { "http://\\w+\\.superload\\.eu/download\\.php\\?a=[a-z0-9]+" })
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "superload.cz" }, urls = { "https?://(?:www\\.)?(superload\\.cz|superload\\.eu|superload\\.sk|superloading\\.com|stahomat\\.cz|stahomat\\.sk|stahovatelka\\.cz)/(stahnout|download)/[a-zA-Z0-9%-]+" })
 public class SuperLoadCz extends antiDDoSForHost {
     /* IMPORTANT: superload.cz and stahomat.cz use the same api */
     /* IMPORTANT2: 30.04.15: They block IPs from the following countries: es, it, jp, fr, cl, br, ar, de, mx, cn, ve */
     // DEV NOTES
     // supports last09 based on pre-generated links and jd2
-
     private static final String          mName             = "superload.cz/";
     private static final String          mProt             = "http://";
     private static final String          mAPI              = "http://api.superload.cz/a-p-i";
     private static final String          NICE_HOSTproperty = "superloadcz";
     private static MultiHosterManagement mhm               = new MultiHosterManagement("superload.cz");
-
     private static Object                LOCK              = new Object();
 
     public SuperLoadCz(final PluginWrapper wrapper) {
@@ -68,6 +67,23 @@ public class SuperLoadCz extends antiDDoSForHost {
     @Override
     public String getAGBLink() {
         return mProt + mName + "/terms";
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return new String[] { "superload.cz", "superload.eu", "superload.sk", "superloading.com", "stahomat.cz", "stahomat.sk", "stahovatelka.cz" };
+    }
+
+    @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        try {
+            final String host = new URL(link.getPluginPatternMatcher()).getHost();
+            if (!StringUtils.equalsIgnoreCase(host, getHost())) {
+                link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace(host + "/", getHost() + "/"));
+            }
+        } catch (final Throwable e) {
+            LogController.CL().log(e);
+        }
     }
 
     @Override
@@ -449,5 +465,4 @@ public class SuperLoadCz extends antiDDoSForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

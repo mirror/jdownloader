@@ -401,6 +401,8 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
             return Long.toString(System.currentTimeMillis());
         }
         if (StringUtils.equalsIgnoreCase("HuaweiHG255s", key)) {
+            // SHA256(this.content.get("UserName") + base64Encode(SHA256(this.content.get("Password"))) + csrf_obj.csrf_param
+            // +csrf_obj.csrf_token)
             if (br == null) {
                 throw new ReconnectException("HuaweiHG255s not possible yet! No Browser available!");
             } else {
