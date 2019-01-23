@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
@@ -44,6 +45,17 @@ public class NewsHostingCom extends UseNet {
     public static interface NewsHostingComConfigInterface extends UsenetAccountConfigInterface {
     };
 
+    private Form getLoginForm(Browser br) {
+        Form login = br.getFormbyActionRegex("^$");
+        if (login == null) {
+            login = br.getFormbyActionRegex("^/customer/login.php$");
+            if (login == null) {
+                login = br.getFormbyActionRegex("^/customer/index.php$");
+            }
+        }
+        return login;
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         setBrowserExclusive();
@@ -52,11 +64,10 @@ public class NewsHostingCom extends UseNet {
             br.setFollowRedirects(true);
             final Cookies cookies = account.loadCookies("");
             try {
-                Form login = null;
                 if (cookies != null) {
                     br.setCookies(getHost(), cookies);
                     br.getPage("https://controlpanel.newshosting.com/customer/login.php");
-                    login = br.getFormbyActionRegex("^$");
+                    final Form login = getLoginForm(br);
                     if (login != null && login.containsHTML("username") && login.containsHTML("password")) {
                         br.getCookies(getHost()).clear();
                     } else if (br.getCookie(getHost(), "sessionID") == null) {
@@ -67,11 +78,14 @@ public class NewsHostingCom extends UseNet {
                     account.clearCookies("");
                     final String userName = account.getUser();
                     br.getPage("https://controlpanel.newshosting.com/customer/login.php");
-                    login = br.getFormbyActionRegex("^$");
+                    Form login = getLoginForm(br);
+                    if (login == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                     login.put("username", Encoding.urlEncode(userName));
                     login.put("password", Encoding.urlEncode(account.getPass()));
                     br.submitForm(login);
-                    login = br.getFormbyActionRegex("^$");
+                    login = getLoginForm(br);
                     if (login != null && login.containsHTML("username") && login.containsHTML("password")) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else if (br.getCookie(getHost(), "sessionID") == null) {
@@ -120,6 +134,8 @@ public class NewsHostingCom extends UseNet {
                 if (trafficLeft != null && trafficTotal != null) {
                     ai.setTrafficMax(Long.parseLong(trafficTotal));
                     ai.setTrafficLeft(trafficLeft);
+                } else if (StringUtils.equalsIgnoreCase(trafficLeft, "unlimited")) {
+                    ai.setUnlimitedTraffic();
                 }
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
