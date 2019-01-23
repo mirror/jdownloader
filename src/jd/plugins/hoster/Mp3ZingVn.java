@@ -105,7 +105,7 @@ public class Mp3ZingVn extends PluginForHost {
     }
 
     private boolean isOffline() {
-        return br.containsHTML("title-404|vip_required") || br.getHttpConnection().getResponseCode() == 404;
+        return br.containsHTML("title-404|vip_required|Bài hát này không nghe") || br.getHttpConnection().getResponseCode() == 404;
     }
 
     @Override
