@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -32,9 +31,8 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "superload.cz" }, urls = { "http://(www\\.)?superload\\.(cz|hu|pl|com)/dl/[^<>\"]*" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "superload.cz" }, urls = { "https?://(?:www\\.)?(superload\\.cz|superload\\.eu|superload\\.sk|superloading\\.com|stahomat\\.cz|stahomat\\.sk|stahovatelka\\.cz)/dl/[^<>\"]*" })
 public class SuperLoadCz extends PluginForDecrypt {
-
     public SuperLoadCz(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -85,7 +83,6 @@ public class SuperLoadCz extends PluginForDecrypt {
         }
         finallink = finallink.replace("\\", "");
         decryptedLinks.add(createDownloadlink(finallink));
-
         return decryptedLinks;
     }
 
@@ -96,5 +93,4 @@ public class SuperLoadCz extends PluginForDecrypt {
         }
         return result;
     }
-
 }
