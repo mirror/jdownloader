@@ -43,7 +43,7 @@ public class YoutubeConverterFLVToMP3Audio extends AbstractDemuxToAudioConverter
             downloadLink.addPluginProgress(set);
             final File file = new File(downloadLink.getFileOutput());
             plugin.checkFFmpeg(downloadLink, _GUI.T.YoutubeDash_handleDownload_youtube_dash());
-            final FFmpeg ffmpeg = plugin.getFFmpeg(downloadLink);
+            final FFmpeg ffmpeg = plugin.getFFmpeg(null, downloadLink);
             final File finalFile = downloadLink.getDownloadLinkController().getFileOutput(false, true);
             if (!ffmpeg.demuxMp3(set, finalFile.getAbsolutePath(), file.getAbsolutePath())) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI.T.YoutubeDash_handleFree_error_());
@@ -60,5 +60,4 @@ public class YoutubeConverterFLVToMP3Audio extends AbstractDemuxToAudioConverter
             downloadLink.removePluginProgress(set);
         }
     }
-
 }

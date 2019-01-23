@@ -9,12 +9,17 @@ import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.parser.Regex;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.IO.SYNC;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.ide.IDEUtils;
+import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.parser.UrlQuery;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -22,6 +27,7 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.controlling.ffmpeg.FFprobe;
 import org.jdownloader.controlling.ffmpeg.json.Stream;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.components.youtube.itag.AudioBitrate;
 import org.jdownloader.plugins.components.youtube.itag.AudioCodec;
 import org.jdownloader.plugins.components.youtube.itag.VideoCodec;
@@ -33,10 +39,6 @@ import org.jdownloader.plugins.components.youtube.variants.DownloadType;
 import org.jdownloader.plugins.components.youtube.variants.FileContainer;
 import org.jdownloader.plugins.components.youtube.variants.VariantBase;
 import org.jdownloader.plugins.components.youtube.variants.VariantGroup;
-
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.parser.Regex;
 
 public class ItagHelper {
     private static HashSet<String> dupes;
@@ -527,6 +529,7 @@ public class ItagHelper {
         this.br = br;
         this.vid = vid;
     }
+
     // public Object get(Object name) {
     // String ret = mapping.get(name);
     // if (ret != null) {
@@ -639,7 +642,6 @@ public class ItagHelper {
     // System.out.println("StreamInfo");
     // }
     // }
-
     // private static void notify(String string) {
     // try {
     // Dialog.getInstance().showInputDialog(0, "New Youtube ITAG. add it to " + YoutubeITAG.class, string);
@@ -721,7 +723,13 @@ public class ItagHelper {
     // return get(ret) + "";
     // }
     public void loadStreamInfo() throws IOException {
-        final FFprobe ffprobe = new FFprobe();
+        final LogInterface logger = LogController.CL(true);
+        final FFprobe ffprobe = new FFprobe(null) {
+            @Override
+            public LogInterface getLogger() {
+                return logger;
+            }
+        };
         file = Application.getResource("tmp/ytdev/stream_" + itag + "_" + vid.videoID + ".dat");
         if (!file.exists()) {
             final URLConnectionAdapter con = br.openGetConnection(url);

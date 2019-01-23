@@ -44,7 +44,7 @@ public class YoutubeConverterMP4ToM4AAudio extends AbstractDemuxToAudioConverter
             final File file = new File(downloadLink.getFileOutput());
             plugin.checkFFmpeg(downloadLink, _GUI.T.YoutubeDash_handleDownload_youtube_dash());
             final File finalFile = downloadLink.getDownloadLinkController().getFileOutput(false, true);
-            final FFmpeg ffmpeg = plugin.getFFmpeg(downloadLink);
+            final FFmpeg ffmpeg = plugin.getFFmpeg(null, downloadLink);
             if (!ffmpeg.demuxM4a(set, finalFile.getAbsolutePath(), file.getAbsolutePath())) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI.T.YoutubeDash_handleFree_error_());
             }
@@ -60,5 +60,4 @@ public class YoutubeConverterMP4ToM4AAudio extends AbstractDemuxToAudioConverter
             downloadLink.removePluginProgress(set);
         }
     }
-
 }

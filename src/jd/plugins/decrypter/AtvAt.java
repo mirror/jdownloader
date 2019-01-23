@@ -181,7 +181,12 @@ public class AtvAt extends PluginForDecrypt {
         hybrid_name = decodeUnicode(hybrid_name);
         final String[] possibleQualities = { "1080", "720", "576", "540", "360", "226" };
         final int possibleQualitiesCount = possibleQualities.length;
-        final FFmpeg ffmpeg = new FFmpeg();
+        final FFmpeg ffmpeg = new FFmpeg(br.cloneBrowser()) {
+            @Override
+            public LogInterface getLogger() {
+                return AtvAt.this.getLogger();
+            }
+        };
         int part_counter = 1;
         for (final Object parto : parts) {
             entries = (LinkedHashMap<String, Object>) parto;

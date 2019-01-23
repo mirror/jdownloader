@@ -2400,7 +2400,13 @@ public class YoutubeHelper {
     private synchronized static Boolean isSupported(YoutubeITAG itag) {
         if (itag != null) {
             if (FFMPEG_SUPPORTED_FLAGS == null) {
-                final FFmpeg ffmpeg = new FFmpeg();
+                final LogInterface logger = LogController.CL(true);
+                final FFmpeg ffmpeg = new FFmpeg(null) {
+                    @Override
+                    public LogInterface getLogger() {
+                        return logger;
+                    }
+                };
                 if (ffmpeg.isAvailable() && ffmpeg.isCompatible()) {
                     FFMPEG_SUPPORTED_FLAGS = ffmpeg.getSupportedFlags();
                 }
@@ -2852,7 +2858,12 @@ public class YoutubeHelper {
                             if (proxies != null && proxies.size() > 0) {
                                 clone.setProxySelector(new StaticProxySelector(proxies.get(0)));
                             }
-                            FFprobe ffmpeg = new FFprobe(clone);
+                            FFprobe ffmpeg = new FFprobe(clone) {
+                                @Override
+                                public LogInterface getLogger() {
+                                    return YoutubeHelper.this.logger;
+                                }
+                            };
                             // probe.isAvailable()
                             checkFFProbe(ffmpeg, "Detect the actual Audio Bitrate");
                             StreamInfo streamInfo = ffmpeg.getStreamInfo(vStream.getUrl());

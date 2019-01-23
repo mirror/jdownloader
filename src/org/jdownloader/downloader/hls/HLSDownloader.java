@@ -271,7 +271,12 @@ public class HLSDownloader extends DownloadInterface {
             } else {
                 throw new IllegalArgumentException("Index " + index + " > m3u8 playlist size " + getM3U8Playlists().size());
             }
-            final FFprobe ffprobe = new FFprobe();
+            final FFprobe ffprobe = new FFprobe() {
+                @Override
+                public LogInterface getLogger() {
+                    return HLSDownloader.this.logger;
+                }
+            };
             if (!ffprobe.isAvailable()) {
                 logger.info("FFProbe is not available");
                 return null;
@@ -377,6 +382,11 @@ public class HLSDownloader extends DownloadInterface {
     private void runConcat() throws IOException, SkipReasonException, PluginException {
         try {
             final FFmpeg ffmpeg = new FFmpeg() {
+                @Override
+                public LogInterface getLogger() {
+                    return HLSDownloader.this.logger;
+                }
+
                 @Override
                 protected void parseLine(boolean isStdout, String line) {
                 }
@@ -526,6 +536,11 @@ public class HLSDownloader extends DownloadInterface {
                             throw e;
                         }
                     }
+                }
+
+                @Override
+                public LogInterface getLogger() {
+                    return HLSDownloader.this.logger;
                 }
 
                 @Override

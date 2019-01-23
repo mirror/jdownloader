@@ -30,12 +30,14 @@ import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.CompareUtils;
 import org.appwork.utils.CounterMap;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.controlling.ffmpeg.AbstractFFmpegBinary;
 import org.jdownloader.controlling.ffmpeg.AbstractFFmpegBinary.FLAG;
 import org.jdownloader.controlling.ffmpeg.FFmpeg;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.components.youtube.VariantIDStorable;
 import org.jdownloader.plugins.components.youtube.itag.VideoResolution;
 import org.jdownloader.plugins.components.youtube.variants.AudioInterface;
@@ -313,7 +315,13 @@ public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper>
         super(id);
         this.all = sorted;
         initListeners();
-        final FFmpeg ffmpeg = new FFmpeg();
+        final LogInterface logger = LogController.CL(true);
+        final FFmpeg ffmpeg = new FFmpeg(null) {
+            @Override
+            public LogInterface getLogger() {
+                return logger;
+            }
+        };
         if (ffmpeg.isAvailable() && ffmpeg.isCompatible()) {
             this.supportedFlags = ffmpeg.getSupportedFlags();
         } else {

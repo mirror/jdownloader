@@ -79,6 +79,7 @@ import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.Base64;
+import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.logging2.extmanager.Log;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
@@ -1310,16 +1311,21 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
     }
 
     @Override
-    public FFmpeg getFFmpeg(final DownloadLink downloadLink) {
+    public FFmpeg getFFmpeg(final Browser br, final DownloadLink downloadLink) {
         final FFmpegMetaData ffMpegMetaData = getFFmpegMetaData(downloadLink);
         if (ffMpegMetaData != null && !ffMpegMetaData.isEmpty()) {
-            return new FFmpeg() {
+            return new FFmpeg(br) {
                 private final UniqueAlltimeID metaDataProcessID = new UniqueAlltimeID();
                 private HttpServer            httpServer        = null;
                 private File                  metaFile          = null;
 
                 private final boolean isWriteFileEnabled() {
                     return true;
+                }
+
+                @Override
+                public LogInterface getLogger() {
+                    return YoutubeDashV2.this.getLogger();
                 }
 
                 @Override
@@ -1535,7 +1541,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                 }
             };
         } else {
-            return new FFmpeg();
+            return super.getFFmpeg(br, downloadLink);
         }
     }
 
@@ -1618,7 +1624,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                 }
                 if (new File(audioStreamPath).exists() && !new File(downloadLink.getFileOutput()).exists()) {
                     downloadLink.setAvailable(true);
-                    final FFmpeg ffmpeg = getFFmpeg(downloadLink);
+                    final FFmpeg ffmpeg = getFFmpeg(br.cloneBrowser(), downloadLink);
                     /* audioStream also finished */
                     /* Do we need an exception here? If a Video is downloaded it is always finished before the audio part. TheCrap */
                     if (videoStreamPath != null && new File(videoStreamPath).exists()) {

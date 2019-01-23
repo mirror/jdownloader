@@ -23,19 +23,16 @@ import org.jdownloader.translate._JDT;
 
 public enum GenericVariants implements LinkVariant {
     ORIGINAL(null, new AbstractIcon(IconKey.ICON_VIDEO, 16)) {
-
         @Override
         public String _getName(Object caller) {
             return _JDT.T.GenericVariants_ORIGINAL();
         }
 
         public void runPostDownload(PluginForHost pluginForHost, DownloadLink downloadLink, Account account) throws Exception {
-
         }
 
         @Override
         public void runPreDownload(PluginForHost pluginForHost, DownloadLink downloadLink, Account account) throws Exception {
-
         }
     },
     DEMUX_MP3("mp3", new AbstractIcon(IconKey.ICON_AUDIO, 16)) {
@@ -54,7 +51,6 @@ public enum GenericVariants implements LinkVariant {
             return ffmpeg.demuxMp3(set, finalFile.getAbsolutePath(), file.getAbsolutePath());
         }
     },
-
     DEMUX_AAC("acc", new AbstractIcon(IconKey.ICON_AUDIO, 16)) {
         @Override
         public String _getName(Object caller) {
@@ -105,9 +101,7 @@ public enum GenericVariants implements LinkVariant {
                 String base = finalFile.getAbsolutePath().substring(0, finalFile.getAbsolutePath().length() - ("." + Files.getExtension(finalFile.getAbsolutePath())).length());
                 for (int i = 0; i < ret.size(); i++) {
                     final File out = ret.get(i);
-
                     String extension = Files.getExtension(out.getAbsolutePath());
-
                     if (i == 0) {
                         final File newFile = new File(base + "." + extension);
                         link.setCustomExtension(extension);
@@ -118,7 +112,6 @@ public enum GenericVariants implements LinkVariant {
                             try {
                                 link.setInternalTmpFilenameAppend(null);
                                 DownloadWatchDog.getInstance().localFileCheck(link.getDownloadLinkController(), new ExceptionRunnable() {
-
                                     @Override
                                     public void run() throws Exception {
                                         String after = link.getForcedFileName();
@@ -130,14 +123,12 @@ public enum GenericVariants implements LinkVariant {
                                         }
                                     }
                                 }, new ExceptionRunnable() {
-
                                     @Override
                                     public void run() throws Exception {
                                         file.delete();
                                         for (File f : ret) {
                                             f.delete();
                                         }
-
                                     }
                                 });
                             } finally {
@@ -145,15 +136,11 @@ public enum GenericVariants implements LinkVariant {
                             }
                             // throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
                         }
-
                     } else {
-
                         while (out.exists() && !out.renameTo(new File(base + "." + (i + 1) + "." + extension))) {
                             i++;
                         }
-
                     }
-
                 }
             }
             return ret != null;
@@ -192,13 +179,12 @@ public enum GenericVariants implements LinkVariant {
         FFMpegProgress set = new FFMpegProgress();
         try {
             downloadLink.addPluginProgress(set);
-            final FFmpeg ffmpeg = pluginForHost.getFFmpeg(downloadLink);
+            final FFmpeg ffmpeg = pluginForHost.getFFmpeg(null, downloadLink);
             File finalFile = downloadLink.getDownloadLinkController().getFileOutput(false, true);
             boolean res = ffmpeg(downloadLink, file, set, ffmpeg, finalFile);
             if (!res) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _JDT.T.PluginForHost_handle_ffmpeg_conversion_failed());
             }
-
             file.delete();
             downloadLink.setDownloadSize(finalFile.length());
             downloadLink.setDownloadCurrent(finalFile.length());
@@ -220,5 +206,4 @@ public enum GenericVariants implements LinkVariant {
     protected boolean ffmpeg(DownloadLink link, File file, FFMpegProgress set, FFmpeg ffmpeg, File finalFile) throws Exception {
         return false;
     }
-
 }

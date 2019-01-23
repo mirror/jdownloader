@@ -1022,12 +1022,26 @@ public abstract class PluginForHost extends Plugin {
         return true;
     }
 
-    public FFmpeg getFFmpeg(DownloadLink downloadLink) {
-        return new FFmpeg();
+    public FFmpeg getFFmpeg(final Browser br, final DownloadLink downloadLink) {
+        return new FFmpeg(br) {
+            @Override
+            public LogInterface getLogger() {
+                return PluginForHost.this.getLogger();
+            }
+        };
+    }
+
+    public FFprobe getFFProbe(final Browser br, final DownloadLink downloadLink) {
+        return new FFprobe(br) {
+            @Override
+            public LogInterface getLogger() {
+                return PluginForHost.this.getLogger();
+            }
+        };
     }
 
     public void checkFFmpeg(final DownloadLink downloadLink, final String reason) throws SkipReasonException, InterruptedException {
-        final FFmpeg ffmpeg = getFFmpeg(downloadLink);
+        final FFmpeg ffmpeg = getFFmpeg(null, downloadLink);
         if (!ffmpeg.isAvailable()) {
             if (UpdateController.getInstance().getHandler() == null) {
                 getLogger().warning("Please set FFMPEG: BinaryPath in advanced options");
@@ -1057,7 +1071,7 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public void checkFFProbe(final DownloadLink downloadLink, final String reason) throws SkipReasonException, InterruptedException {
-        final FFprobe ffprobe = new FFprobe();
+        final FFprobe ffprobe = getFFProbe(null, downloadLink);
         if (!ffprobe.isAvailable()) {
             if (UpdateController.getInstance().getHandler() == null) {
                 getLogger().warning("Please set FFProbe: BinaryPath in advanced options");
