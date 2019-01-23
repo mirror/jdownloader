@@ -21,6 +21,8 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
+import org.jdownloader.downloader.hls.HLSDownloader;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -37,36 +39,41 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.locale.JDL;
 
-import org.jdownloader.downloader.hls.HLSDownloader;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "arte.tv", "concert.arte.tv", "creative.arte.tv", "future.arte.tv", "cinema.arte.tv", "theoperaplatform.eu", "info.arte.tv" }, urls = { "http://arte\\.tv\\.artejd_decrypted_jd/\\d+", "http://concert\\.arte\\.tv\\.artejd_decrypted_jd/\\d+", "http://creative\\.arte\\.tv\\.artejd_decrypted_jd/\\d+", "http://future\\.arte\\.tv\\.artejd_decrypted_jd/\\d+", "http://cinema\\.arte\\.tv\\.artejd_decrypted_jd/\\d+", "http://theoperaplatform\\.eu\\.artejd_decrypted_jd/\\d+", "http://info\\.arte\\.tv\\.artejd_decrypted_jd/\\d+" })
 public class ArteTv extends PluginForHost {
-    private static final String V_NORMAL                   = "V_NORMAL";
-    private static final String V_SUBTITLED                = "V_SUBTITLED";
-    private static final String V_SUBTITLE_DISABLED_PEOPLE = "V_SUBTITLE_DISABLED_PEOPLE";
-    private static final String V_AUDIO_DESCRIPTION        = "V_AUDIO_DESCRIPTION";
-    private static final String http_300                   = "http_300";
-    private static final String http_800                   = "http_800";
-    private static final String http_1500                  = "http_1500";
-    private static final String http_2200                  = "http_2200";
-    private static final String hls                        = "hls";
+    public static final String  V_NORMAL                           = "V_NORMAL_RESET_2019_01_23";
+    public static final String  V_SUBTITLED                        = "V_SUBTITLED_RESET_2019_01_23";
+    public static final String  V_SUBTITLE_DISABLED_PEOPLE         = "V_SUBTITLE_DISABLED_PEOPLE_RESET_2019_01_23";
+    public static final String  V_AUDIO_DESCRIPTION                = "V_AUDIO_DESCRIPTION_RESET_2019_01_23";
+    private static final String http_300                           = "http_300";
+    private static final String http_800                           = "http_800";
+    private static final String http_1500                          = "http_1500";
+    private static final String http_2200                          = "http_2200";
+    private static final String hls                                = "hls";
     /* creative.arte.tv extern qualities */
-    private static final String http_extern_1000           = "http_extern_1000";
-    private static final String hls_extern_250             = "hls_extern_250";
-    private static final String hls_extern_500             = "hls_extern_500";
-    private static final String hls_extern_1000            = "hls_extern_1000";
-    private static final String hls_extern_2000            = "hls_extern_2000";
-    private static final String hls_extern_4000            = "hls_extern_4000";
-    private static final String LOAD_LANGUAGE_URL          = "LOAD_LANGUAGE_URL";
-    private static final String LOAD_BEST                  = "LOAD_BEST";
-    private static final String LOAD_LANGUAGE_GERMAN       = "LOAD_LANGUAGE_GERMAN";
-    private static final String LOAD_LANGUAGE_FRENCH       = "LOAD_LANGUAGE_FRENCH";
-    private static final String THUMBNAIL                  = "THUMBNAIL";
-    private static final String FAST_LINKCHECK             = "FAST_LINKCHECK";
-    private static final String TYPE_GUIDE                 = "http://www\\.arte\\.tv/guide/[a-z]{2}/.+";
-    private static final String TYPE_CONCERT               = "http://(www\\.)?concert\\.arte\\.tv/.+";
-    private String              dllink                     = null;
-    private String              quality_intern             = null;
+    private static final String http_extern_1000                   = "http_extern_1000";
+    private static final String hls_extern_250                     = "hls_extern_250";
+    private static final String hls_extern_500                     = "hls_extern_500";
+    private static final String hls_extern_1000                    = "hls_extern_1000";
+    private static final String hls_extern_2000                    = "hls_extern_2000";
+    private static final String hls_extern_4000                    = "hls_extern_4000";
+    public static final String  LOAD_LANGUAGE_URL                  = "LOAD_LANGUAGE_URL_RESET_2019_01_23";
+    private static final String LOAD_BEST                          = "LOAD_BEST";
+    public static final String  LOAD_LANGUAGE_GERMAN               = "LOAD_LANGUAGE_GERMAN_RESET_2019_01_23";
+    public static final String  LOAD_LANGUAGE_FRENCH               = "LOAD_LANGUAGE_FRENCH_RESET_2019_01_23";
+    private static final String THUMBNAIL                          = "THUMBNAIL";
+    private static final String FAST_LINKCHECK                     = "FAST_LINKCHECK";
+    private static final String TYPE_GUIDE                         = "http://www\\.arte\\.tv/guide/[a-z]{2}/.+";
+    private static final String TYPE_CONCERT                       = "http://(www\\.)?concert\\.arte\\.tv/.+";
+    public static final boolean default_V_NORMAL                   = true;
+    public static final boolean default_V_SUBTITLED                = true;
+    public static final boolean default_V_SUBTITLE_DISABLED_PEOPLE = true;
+    public static final boolean default_V_AUDIO_DESCRIPTION        = true;
+    public static final boolean default_LOAD_LANGUAGE_URL          = false;
+    public static final boolean default_LOAD_LANGUAGE_GERMAN       = true;
+    public static final boolean default_LOAD_LANGUAGE_FRENCH       = true;
+    private String              dllink                             = null;
+    private String              quality_intern                     = null;
 
     @SuppressWarnings("deprecation")
     public ArteTv(PluginWrapper wrapper) {
@@ -353,19 +360,19 @@ public class ArteTv extends PluginForHost {
     }
 
     public static HashMap<String, String> phrasesEN = new HashMap<String, String>(new HashMap<String, String>() {
-        {
-            put("ERROR_USER_NEEDS_TO_CHANGE_FORMAT_SELECTION", "Check_your_plugin_settings_activate_missing_formats_e_g_subtitled_versions_or_other_language_versions_");
-            put("ERROR_CONTENT_NOT_AVAILABLE_ANYMORE_COPYRIGHTS_EXPIRED", "This video is not available anymore since %s!_");
-            put("ERROR_CONTENT_NOT_AVAILABLE_YET", "This content is not available yet. It will be available from the %s!_");
-        }
-    });
+                                                        {
+                                                            put("ERROR_USER_NEEDS_TO_CHANGE_FORMAT_SELECTION", "Check_your_plugin_settings_activate_missing_formats_e_g_subtitled_versions_or_other_language_versions_");
+                                                            put("ERROR_CONTENT_NOT_AVAILABLE_ANYMORE_COPYRIGHTS_EXPIRED", "This video is not available anymore since %s!_");
+                                                            put("ERROR_CONTENT_NOT_AVAILABLE_YET", "This content is not available yet. It will be available from the %s!_");
+                                                        }
+                                                    });
     public static HashMap<String, String> phrasesDE = new HashMap<String, String>(new HashMap<String, String>() {
-        {
-            put("ERROR_USER_NEEDS_TO_CHANGE_FORMAT_SELECTION", "Überprüfe_deine_Plugineinstellungen_aktiviere_fehlende_Formate_z_B_Untertitelte_Version_oder_andere_Sprachversionen_");
-            put("ERROR_CONTENT_NOT_AVAILABLE_ANYMORE_COPYRIGHTS_EXPIRED", "Dieses Video ist seit dem %s nicht mehr verfügbar!_");
-            put("ERROR_CONTENT_NOT_AVAILABLE_YET", "Dieses Video ist noch nicht verfügbar. Es ist erst ab dem %s verfügbar!_");
-        }
-    });
+                                                        {
+                                                            put("ERROR_USER_NEEDS_TO_CHANGE_FORMAT_SELECTION", "Überprüfe_deine_Plugineinstellungen_aktiviere_fehlende_Formate_z_B_Untertitelte_Version_oder_andere_Sprachversionen_");
+                                                            put("ERROR_CONTENT_NOT_AVAILABLE_ANYMORE_COPYRIGHTS_EXPIRED", "Dieses Video ist seit dem %s nicht mehr verfügbar!_");
+                                                            put("ERROR_CONTENT_NOT_AVAILABLE_YET", "Dieses Video ist noch nicht verfügbar. Es ist erst ab dem %s verfügbar!_");
+                                                        }
+                                                    });
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
@@ -405,16 +412,16 @@ public class ArteTv extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), http_2200, JDL.L("plugins.hoster.arte.http_2200", "2200kBit/s 1280x720 (http)")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Folgende Version(en) laden sofern verfügbar:"));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), V_NORMAL, JDL.L("plugins.hoster.arte.V_NORMAL", "Normale Version (ohne Untertitel)")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), V_SUBTITLED, JDL.L("plugins.hoster.arte.V_SUBTITLED", "Untertitelt")).setDefaultValue(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), V_SUBTITLE_DISABLED_PEOPLE, JDL.L("plugins.hoster.arte.V_SUBTITLE_DISABLED_PEOPLE", "Untertitelt für Hörgeschädigte")).setDefaultValue(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), V_AUDIO_DESCRIPTION, JDL.L("plugins.hoster.arte.V_AUDIO_DESCRIPTION", "Audio Deskription")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), V_NORMAL, JDL.L("plugins.hoster.arte.V_NORMAL", "Normale Version (ohne Untertitel)")).setDefaultValue(default_V_NORMAL));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), V_SUBTITLED, JDL.L("plugins.hoster.arte.V_SUBTITLED", "Untertitelt")).setDefaultValue(default_V_SUBTITLED));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), V_SUBTITLE_DISABLED_PEOPLE, JDL.L("plugins.hoster.arte.V_SUBTITLE_DISABLED_PEOPLE", "Untertitelt für Hörgeschädigte")).setDefaultValue(default_V_SUBTITLE_DISABLED_PEOPLE));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), V_AUDIO_DESCRIPTION, JDL.L("plugins.hoster.arte.V_AUDIO_DESCRIPTION", "Audio Deskription")).setDefaultValue(default_V_AUDIO_DESCRIPTION));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Auswahl der Sprachversionen:"));
-        final ConfigEntry cfge = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), LOAD_LANGUAGE_URL, JDL.L("plugins.hoster.arte.LOAD_LANGUAGE_URL", "Sprachausgabe der URL laden (je nach dem, ob '/de/' oder '/fr/' im eingefügten Link steht)?\r\n<html><b>WICHTIG: Falls nur eine Sprachversion verfügbar ist, aber beide ausgewählt sind kann es passieren, dass diese doppelt (als deutsch und französisch gleicher Inhalt mit verschiedenen Dateinamen) im Linkgrabber landet!</b></html>")).setDefaultValue(true);
+        final ConfigEntry cfge = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), LOAD_LANGUAGE_URL, JDL.L("plugins.hoster.arte.LOAD_LANGUAGE_URL", "Sprachausgabe der URL laden (je nach dem, ob '/de/' oder '/fr/' im eingefügten Link steht)?\r\n<html><b>WICHTIG: Falls nur eine Sprachversion verfügbar ist, aber beide ausgewählt sind kann es passieren, dass diese doppelt (als deutsch und französisch gleicher Inhalt mit verschiedenen Dateinamen) im Linkgrabber landet!</b></html>")).setDefaultValue(default_LOAD_LANGUAGE_URL);
         getConfig().addEntry(cfge);
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), LOAD_LANGUAGE_GERMAN, JDL.L("plugins.hoster.arte.LOAD_LANGUAGE_GERMAN", "Sprachausgabe Deutsch laden?")).setDefaultValue(false).setEnabledCondidtion(cfge, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), LOAD_LANGUAGE_FRENCH, JDL.L("plugins.hoster.arte.LOAD_LANGUAGE_FRENCH", "Sprachausgabe Französisch laden?")).setDefaultValue(false).setEnabledCondidtion(cfge, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), LOAD_LANGUAGE_GERMAN, JDL.L("plugins.hoster.arte.LOAD_LANGUAGE_GERMAN", "Sprachausgabe Deutsch laden?")).setDefaultValue(default_LOAD_LANGUAGE_GERMAN).setEnabledCondidtion(cfge, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), LOAD_LANGUAGE_FRENCH, JDL.L("plugins.hoster.arte.LOAD_LANGUAGE_FRENCH", "Sprachausgabe Französisch laden?")).setDefaultValue(default_LOAD_LANGUAGE_FRENCH).setEnabledCondidtion(cfge, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Sonstiges:"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), THUMBNAIL, JDL.L("plugins.hoster.arte.loadthumbnail", "Thumbnail laden?")).setDefaultValue(false));

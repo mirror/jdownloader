@@ -17,6 +17,9 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -33,8 +36,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nexusmods.com" }, urls = { "https?://(?:www\\.)?nexusmods\\.com/(?!contents)[^/]+/mods/\\d+/?" })
 public class NexusmodsCom extends PluginForDecrypt {
@@ -87,6 +88,7 @@ public class NexusmodsCom extends PluginForDecrypt {
             }
             downloadLink.setName(Encoding.htmlOnlyDecode(download[0]));
             downloadLink.setAvailable(true);
+            downloadLink.setMimeHint(CompiledFiletypeFilter.ArchiveExtensions.ZIP);
             decryptedLinks.add(downloadLink);
         }
         final FilePackage fp = FilePackage.getInstance();

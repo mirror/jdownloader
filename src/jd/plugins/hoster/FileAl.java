@@ -511,19 +511,7 @@ public class FileAl extends antiDDoSForHost {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         /* 2, check for streaming/direct links on the first page */
         if (dllink == null) {
-            if (br.getURL().contains("ip_check/")) {
-                /* 2019-01-21: Special captcha before all other steps happens sometimes! */
-                logger.info("Handling special reCaptchaV2");
-                br.setFollowRedirects(true);
-                final Form specialCaptcha = br.getForm(0);
-                if (specialCaptcha == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                specialCaptcha.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                this.submitForm(specialCaptcha);
-                br.setFollowRedirects(false);
-            }
+            checkForSpecialCaptcha();
             dllink = getDllink();
         }
         /* 3, do they provide audio hosting? */
@@ -919,6 +907,23 @@ public class FileAl extends antiDDoSForHost {
             }
         }
         return dllink;
+    }
+
+    private void checkForSpecialCaptcha() throws Exception {
+        if (br.getURL() != null && br.getURL().contains("/ip_check/")) {
+            /* 2019-01-23: Special - this may also happen in premium mode! */
+            /* Tags: XFS_IP_CHECK /ip_check/ */
+            final Form specialCaptchaForm = br.getFormbyProperty("name", "F1");
+            if (specialCaptchaForm != null) {
+                logger.info("Handling specialCaptchaForm");
+                final boolean redirectSetting = br.isFollowingRedirects();
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                specialCaptchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                br.setFollowRedirects(true);
+                this.submitForm(specialCaptchaForm);
+                br.setFollowRedirects(redirectSetting);
+            }
+        }
     }
 
     @Override
@@ -1598,6 +1603,7 @@ public class FileAl extends antiDDoSForHost {
             String dllink = checkDirectLink(downloadLink, PROPERTY_DLLINK_ACCOUNT_PREMIUM);
             if (dllink == null) {
                 getPage(downloadLink.getPluginPatternMatcher());
+                checkForSpecialCaptcha();
                 dllink = getDllink();
                 if (dllink == null) {
                     final Form dlform = br.getFormbyProperty("name", "F1");

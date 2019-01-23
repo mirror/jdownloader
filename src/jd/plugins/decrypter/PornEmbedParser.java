@@ -1057,4 +1057,12 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
         }
         return decryptedLinks;
     }
+
+    @Override
+    public DownloadLink createDownloadlink(String url) {
+        if (url.startsWith("//")) {
+            url = "https:" + url;
+        }
+        return super.createDownloadlink(url);
+    }
 }
