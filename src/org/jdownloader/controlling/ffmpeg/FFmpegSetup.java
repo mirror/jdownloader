@@ -28,7 +28,7 @@ public interface FFmpegSetup extends ConfigInterface {
                     throw new ValidationException("Binary '" + binaryPath + "' must be a file!");
                 } else if (CrossSystem.isUnix() && !file.canExecute()) {
                     throw new ValidationException("Binary '" + binaryPath + "' is not executable!");
-                } else if (CrossSystem.isWindows() && !file.getName().endsWith(".exe")) {
+                } else if (CrossSystem.isWindows() && !StringUtils.endsWithCaseInsensitive(file.getName(), ".exe")) {
                     throw new ValidationException("Binary '" + binaryPath + "' is not executable!");
                 }
             }
