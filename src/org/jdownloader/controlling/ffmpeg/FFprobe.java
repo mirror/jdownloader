@@ -3,9 +3,6 @@ package org.jdownloader.controlling.ffmpeg;
 import java.io.File;
 import java.util.ArrayList;
 
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Hash;
@@ -13,16 +10,15 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.os.CrossSystem.OperatingSystem;
 import org.jdownloader.controlling.UniqueAlltimeID;
-import org.jdownloader.controlling.ffmpeg.FFMpegInstallThread.BINARY;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 
 public abstract class FFprobe extends AbstractFFmpegBinary {
     public FFprobe(Browser br) {
         super(br);
         final String path = config.getBinaryPathProbe();
-        if (path != null && resetBinaryPath(path, BINARY.FFPROBE)) {
-            config.setBinaryPathProbe(null);
-        }
         this.setPath(path);
     }
 

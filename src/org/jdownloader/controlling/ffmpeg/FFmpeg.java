@@ -6,8 +6,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import jd.http.Browser;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.Hash;
@@ -18,16 +16,14 @@ import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.os.CrossSystem.OperatingSystem;
 import org.jdownloader.controlling.UniqueAlltimeID;
-import org.jdownloader.controlling.ffmpeg.FFMpegInstallThread.BINARY;
 import org.jdownloader.settings.GeneralSettings;
+
+import jd.http.Browser;
 
 public abstract class FFmpeg extends AbstractFFmpegBinary {
     public FFmpeg(Browser br) {
         super(br);
         final String path = config.getBinaryPath();
-        if (path != null && resetBinaryPath(path, BINARY.FFMPEG)) {
-            config.setBinaryPath(null);
-        }
         setPath(path);
     }
 

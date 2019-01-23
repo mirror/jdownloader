@@ -17,16 +17,10 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.plugins.PluginProgress;
-import jd.plugins.download.raf.FileBytesMap;
-
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
-import org.appwork.utils.Files;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogInterface;
@@ -41,9 +35,13 @@ import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.processes.ProcessBuilderFactory;
 import org.jdownloader.controlling.ffmpeg.FFMpegException.ERROR;
-import org.jdownloader.controlling.ffmpeg.FFMpegInstallThread.BINARY;
 import org.jdownloader.downloader.hls.M3U8Playlist;
 import org.jdownloader.downloader.hls.M3U8Playlist.M3U8Segment;
+
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.plugins.PluginProgress;
+import jd.plugins.download.raf.FileBytesMap;
 
 public abstract class AbstractFFmpegBinary {
     public static enum FLAGTYPE {
@@ -77,27 +75,6 @@ public abstract class AbstractFFmpegBinary {
     }
 
     public abstract LogInterface getLogger();
-
-    protected boolean resetBinaryPath(final String binaryPath, BINARY binary) {
-        final File jdRoot = Application.getResource("");
-        final String relativeToJDRoot = Files.getRelativePath(jdRoot, new File(binaryPath));
-        if (relativeToJDRoot != null) {
-            getLogger().info("Validate relative path: " + relativeToJDRoot);
-            final File bundledPath = FFMpegInstallThread.getBundledBinaryPath(BINARY.FFMPEG);
-            final String relativeBundledToJDRoot = Files.getRelativePath(jdRoot, bundledPath);
-            getLogger().info("Validate relative bundled path: " + relativeBundledToJDRoot);
-            if (relativeBundledToJDRoot != null) {
-                if (StringUtils.equalsIgnoreCase(relativeToJDRoot, relativeBundledToJDRoot)) {
-                    getLogger().info("reset relative path because it is the same as bundled path!");
-                    return true;
-                } else if (Application.getResource(relativeToJDRoot).exists()) {
-                    getLogger().info("keep valid relative path:" + relativeToJDRoot);
-                    return false;
-                }
-            }
-        }
-        return false;
-    }
 
     public Set<FLAG> getSupportedFlags() {
         final LogInterface logger = getLogger();
