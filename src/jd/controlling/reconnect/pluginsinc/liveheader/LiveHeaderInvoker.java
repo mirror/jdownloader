@@ -37,6 +37,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Hash;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.IPVERSION;
@@ -127,7 +128,7 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
     }
 
     private final String getRouterIP() {
-        return internalVariables.get("ip");
+        return getInternalValue("ip");
     }
 
     private boolean isAttributeSet(NamedNodeMap attributes, String key) {
@@ -228,7 +229,7 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                                         continue;
                                     }
                                     logger.finer("Replace variable: *********(" + params[i - 1] + ")");
-                                    newValue.append(this.getModifiedVariable(params[i - 1]));
+                                    newValue.append(this.getModifiedVariable(params[i - 1], null));
                                     if (i < tmpLength) {
                                         newValue.append(tmp[i]);
                                     }
@@ -391,9 +392,27 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
         return script;
     }
 
-    private String getModifiedVariable(String key) throws ReconnectException {
+    private String getInternalValue(final String key) {
+        return internalVariables != null && key != null ? internalVariables.get(key.toLowerCase(Locale.ENGLISH)) : null;
+    }
+
+    private String getModifiedVariable(String key, final Browser br) throws ReconnectException {
         if (StringUtils.equalsIgnoreCase("timestamp", key)) {
             return Long.toString(System.currentTimeMillis());
+        }
+        if (StringUtils.equalsIgnoreCase("HuaweiHG255s", key)) {
+            if (br == null) {
+                throw new ReconnectException("HuaweiHG255s not possible yet! No Browser available!");
+            } else {
+                final String csrf_param = br.getRegex("\"csrf_param\"\\s*content\\s*=\\s*\"(.*?)\"").getMatch(0);
+                final String csrf_token = br.getRegex("\"csrf_token\"\\s*content\\s*=\\s*\"(.*?)\"").getMatch(0);
+                if (csrf_param == null) {
+                    throw new ReconnectException("csrf_param not found!");
+                } else if (csrf_token == null) {
+                    throw new ReconnectException("csrf_token not found!");
+                }
+                return Hash.getSHA256(getInternalValue("username") + Base64.encode(Hash.getSHA256(getInternalValue("password"))) + csrf_param + csrf_token);
+            }
         }
         if (StringUtils.containsIgnoreCase(key, "random:")) {
             try {
@@ -484,7 +503,7 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                     final int tmpLength = tmp.length;
                     for (int i = 0; i <= tmpLength; i++) {
                         final String key = params[i - 1];
-                        final String modifiedVariable = this.getModifiedVariable(key);
+                        final String modifiedVariable = this.getModifiedVariable(key, br);
                         logger.finer("Replace variable: " + modifiedVariable + "(" + key + ")");
                         req.append(modifiedVariable);
                         if (i < tmpLength) {
@@ -500,7 +519,7 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                             continue;
                         }
                         final String key = params[i - 1];
-                        final String modifiedVariable = this.getModifiedVariable(key);
+                        final String modifiedVariable = this.getModifiedVariable(key, br);
                         logger.finer("Replace variable: " + modifiedVariable + "(" + key + ")");
                         req.append(modifiedVariable);
                         if (i < tmpLength) {
