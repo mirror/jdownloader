@@ -6,68 +6,45 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import jd.http.Browser;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
-import org.appwork.utils.Files;
 import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.extmanager.LoggerFactory;
+import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.os.CrossSystem.OperatingSystem;
 import org.jdownloader.controlling.UniqueAlltimeID;
-import org.jdownloader.logging.LogController;
+import org.jdownloader.controlling.ffmpeg.FFMpegInstallThread.BINARY;
 import org.jdownloader.settings.GeneralSettings;
 
-public class FFmpeg extends AbstractFFmpegBinary {
-    public FFmpeg() {
-        super(null);
-        logger = LogController.getInstance().getLogger(FFmpeg.class.getName());
+public abstract class FFmpeg extends AbstractFFmpegBinary {
+    public FFmpeg(Browser br) {
+        super(br);
         final String path = config.getBinaryPath();
-        if (path != null && !validatePaths(path)) {
+        if (path != null && resetBinaryPath(path, BINARY.FFMPEG)) {
             config.setBinaryPath(null);
-            setPath(null);
-        } else {
-            setPath(path);
         }
+        setPath(path);
+    }
+
+    public FFmpeg() {
+        this(null);
     }
 
     @Override
     public boolean isCompatible() {
-        if (CrossSystem.isWindows()) {
-            if (!CrossSystem.getOS().isMinimum(OperatingSystem.WINDOWS_7)) {
-                final String sha256 = Hash.getFileHash(new File(getFullPath()), Hash.HASH_TYPE_SHA256);
-                if (StringUtils.equalsIgnoreCase("4d41c2db307db1e6639915aa480b363546ada1990d2fd143680a3673483f3a72", sha256) || StringUtils.equalsIgnoreCase("a26f910d561aa3a6a8e2ce70b5dba79e0639fb93eb77b3c2bf1c915901ecbe3e", sha256)) {
-                    logger.severe("ffmpeg binary(" + getFullPath() + ") requires minimum Windows 7!");
-                    return false;
-                }
+        if (CrossSystem.isWindows() && !CrossSystem.getOS().isMinimum(OperatingSystem.WINDOWS_7)) {
+            final String sha256 = Hash.getFileHash(new File(getFullPath()), Hash.HASH_TYPE_SHA256);
+            if (StringUtils.equalsIgnoreCase("4d41c2db307db1e6639915aa480b363546ada1990d2fd143680a3673483f3a72", sha256) || StringUtils.equalsIgnoreCase("a26f910d561aa3a6a8e2ce70b5dba79e0639fb93eb77b3c2bf1c915901ecbe3e", sha256)) {
+                getLogger().severe("ffmpeg binary(" + getFullPath() + ") requires minimum Windows 7!");
+                return false;
             }
         }
         return super.isCompatible();
-    }
-
-    private boolean validatePaths(final String path) {
-        final File root = Application.getResource("");
-        final String relative = Files.getRelativePath(root, new File(path));
-        logger.info("Validate Relative Path: " + relative);
-        if (relative != null) {
-            final File correctPath = FFMpegInstallThread.getFFmpegPath("ffmpeg");
-            final String relativeCorrect = Files.getRelativePath(root, correctPath);
-            logger.info("Validate Relative Correct Path: " + relativeCorrect);
-            if (relativeCorrect != null) {
-                if (!Application.getResource(relativeCorrect).exists() && Application.getResource(relative).exists()) {
-                    // relative path doesn't have to match our expectation of where ffmpeg should be installed to.. Users will install
-                    // to a directory structure of there own liking
-                    logger.info("Validate Relative Path: User has installed to there own path!");
-                    return true;
-                } else if (!StringUtils.equals(relative, relativeCorrect)) {
-                    logger.info("Mismatch. validation failed");
-                    return false;
-                }
-            }
-        }
-        return true;
     }
 
     public boolean muxToMkv(FFMpegProgress progress, String out, String videoIn, String audioIn) throws InterruptedException, IOException, FFMpegException {
@@ -109,6 +86,7 @@ public class FFmpeg extends AbstractFFmpegBinary {
     }
 
     protected boolean demux(FFMpegProgress progress, String out, String audioIn, final String demuxCommand[]) throws InterruptedException, IOException, FFMpegException {
+        final LogInterface logger = getLogger();
         synchronized (LOCK) {
             logger.info("Demux:Input=" + audioIn + "|Output=" + out);
             if (StringUtils.equals(out, audioIn)) {
@@ -155,7 +133,7 @@ public class FFmpeg extends AbstractFFmpegBinary {
                         outFile.setLastModified(lastModifiedAudio);
                     }
                 } catch (final Throwable e) {
-                    LoggerFactory.log(logger, e);
+                    logger.log(e);
                 }
                 return true;
             }
@@ -164,6 +142,7 @@ public class FFmpeg extends AbstractFFmpegBinary {
     }
 
     protected boolean mux(FFMpegProgress progress, String out, String videoIn, String audioIn, final String muxCommand[]) throws InterruptedException, IOException, FFMpegException {
+        final LogInterface logger = getLogger();
         synchronized (LOCK) {
             logger.info("Mux:Video=" + videoIn + "|Audio=" + audioIn + "|Output=" + out);
             if (StringUtils.equals(out, videoIn) || StringUtils.equals(out, audioIn)) {
@@ -216,7 +195,7 @@ public class FFmpeg extends AbstractFFmpegBinary {
                         outFile.setLastModified(lastModified);
                     }
                 } catch (final Throwable e) {
-                    LoggerFactory.log(logger, e);
+                    logger.log(e);
                 }
                 return true;
             }
@@ -229,6 +208,7 @@ public class FFmpeg extends AbstractFFmpegBinary {
     }
 
     public List<File> demuxAudio(FFMpegProgress progress, String out, String audioIn) throws IOException, InterruptedException, FFMpegException {
+        final LogInterface logger = getLogger();
         synchronized (LOCK) {
             long lastModifiedAudio = new File(audioIn).lastModified();
             ArrayList<File> ret = null;
@@ -279,7 +259,7 @@ public class FFmpeg extends AbstractFFmpegBinary {
                                     f.setLastModified(lastModifiedAudio);
                                 }
                             } catch (final Throwable e1) {
-                                LoggerFactory.log(logger, e1);
+                                logger.log(e1);
                             }
                         } else {
                             File f;
@@ -290,7 +270,7 @@ public class FFmpeg extends AbstractFFmpegBinary {
                                     f.setLastModified(lastModifiedAudio);
                                 }
                             } catch (final Throwable e1) {
-                                LoggerFactory.log(logger, e1);
+                                logger.log(e1);
                             }
                         }
                     }

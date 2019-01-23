@@ -26,8 +26,10 @@ import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
+import org.appwork.utils.Files;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.net.httpserver.HttpServer;
@@ -39,10 +41,11 @@ import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.processes.ProcessBuilderFactory;
 import org.jdownloader.controlling.ffmpeg.FFMpegException.ERROR;
+import org.jdownloader.controlling.ffmpeg.FFMpegInstallThread.BINARY;
 import org.jdownloader.downloader.hls.M3U8Playlist;
 import org.jdownloader.downloader.hls.M3U8Playlist.M3U8Segment;
 
-public class AbstractFFmpegBinary {
+public abstract class AbstractFFmpegBinary {
     public static enum FLAGTYPE {
         LIB,
         FORMAT,
@@ -73,7 +76,31 @@ public class AbstractFFmpegBinary {
         }
     }
 
+    public abstract LogInterface getLogger();
+
+    protected boolean resetBinaryPath(final String binaryPath, BINARY binary) {
+        final File jdRoot = Application.getResource("");
+        final String relativeToJDRoot = Files.getRelativePath(jdRoot, new File(binaryPath));
+        if (relativeToJDRoot != null) {
+            getLogger().info("Validate relative path: " + relativeToJDRoot);
+            final File bundledPath = FFMpegInstallThread.getBundledBinaryPath(BINARY.FFMPEG);
+            final String relativeBundledToJDRoot = Files.getRelativePath(jdRoot, bundledPath);
+            getLogger().info("Validate relative bundled path: " + relativeBundledToJDRoot);
+            if (relativeBundledToJDRoot != null) {
+                if (StringUtils.equalsIgnoreCase(relativeToJDRoot, relativeBundledToJDRoot)) {
+                    getLogger().info("reset relative path because it is the same as bundled path!");
+                    return true;
+                } else if (Application.getResource(relativeToJDRoot).exists()) {
+                    getLogger().info("keep valid relative path:" + relativeToJDRoot);
+                    return false;
+                }
+            }
+        }
+        return false;
+    }
+
     public Set<FLAG> getSupportedFlags() {
+        final LogInterface logger = getLogger();
         try {
             HashSet<FLAG> ret = null;
             for (final FLAGTYPE flagType : FLAGTYPE.values()) {
@@ -85,14 +112,12 @@ public class AbstractFFmpegBinary {
                     ret.addAll(supported);
                 }
             }
-            if (ret != null && logger != null) {
+            if (ret != null) {
                 logger.info("ffmpeg: " + ret);
             }
             return ret;
         } catch (Throwable e) {
-            if (logger != null) {
-                logger.log(e);
-            }
+            logger.log(e);
         }
         return null;
     }
@@ -191,7 +216,7 @@ public class AbstractFFmpegBinary {
                 try {
                     readInputStreamToString(stdout, processExitedFlag, process.getInputStream(), true);
                 } catch (Throwable e) {
-                    logger.log(e);
+                    getLogger().log(e);
                 }
             }
         };
@@ -200,7 +225,7 @@ public class AbstractFFmpegBinary {
                 try {
                     readInputStreamToString(stderr, processExitedFlag, process.getErrorStream(), false);
                 } catch (Throwable e) {
-                    logger.log(e);
+                    getLogger().log(e);
                 }
             }
         };
@@ -224,7 +249,7 @@ public class AbstractFFmpegBinary {
                     }
                 };
                 timouter.start();
-                logger.info("ExitCode1: " + process.waitFor());
+                getLogger().info("ExitCode1: " + process.waitFor());
                 processAlive.set(false);
                 processExitedFlag.set(true);
                 synchronized (processExitedFlag) {
@@ -250,7 +275,7 @@ public class AbstractFFmpegBinary {
                 }
                 return new String[] { lastStdout, lastStderr };
             } else {
-                logger.info("ExitCode2: " + process.waitFor());
+                getLogger().info("ExitCode2: " + process.waitFor());
                 processExitedFlag.set(true);
                 synchronized (processExitedFlag) {
                     processExitedFlag.notifyAll();
@@ -294,10 +319,16 @@ public class AbstractFFmpegBinary {
     }
 
     private void readInputStreamToString(final AccessibleByteArrayOutputStream bos, final AtomicBoolean processExitedFlag, final InputStream fis, final boolean isStdout) throws IOException {
+        final LogInterface logger = getLogger();
         long size = 0;
         try {
             final byte[] buf = new byte[8192];
-            final boolean isInstantFlush = logger.isInstantFlush();
+            final boolean isInstantFlush;
+            if (logger != null && logger instanceof LogSource) {
+                isInstantFlush = ((LogSource) logger).isInstantFlush();
+            } else {
+                isInstantFlush = false;
+            }
             int lastReadPosition = 0;
             int lastSize = 0;
             while (true) {
@@ -359,11 +390,10 @@ public class AbstractFFmpegBinary {
     protected void parseLine(boolean isStdout, String line) {
     }
 
-    protected LogSource  logger;
     private String       path;
     protected HttpServer server;
 
-    public String getPath() {
+    protected String getPath() {
         return path;
     }
 
@@ -399,7 +429,7 @@ public class AbstractFFmpegBinary {
             }
             return file.getCanonicalPath();
         } catch (Exception e) {
-            logger.log(e);
+            getLogger().log(e);
             return null;
         }
     }
@@ -481,6 +511,7 @@ public class AbstractFFmpegBinary {
         final HttpServer finalServer = server;
         server.start();
         final AtomicReference<M3U8Playlist> m3u8 = new AtomicReference<M3U8Playlist>();
+        final LogInterface logger = getLogger();
         finalServer.registerRequestHandler(new HttpRequestHandler() {
             final byte[] readBuf = new byte[512];
 
@@ -498,9 +529,7 @@ public class AbstractFFmpegBinary {
             @Override
             public boolean onPostRequest(PostRequest request, HttpResponse response) {
                 try {
-                    if (logger != null) {
-                        logger.info(request.toString());
-                    }
+                    logger.info(request.toString());
                     if (!validateID(request)) {
                         return false;
                     }
@@ -511,9 +540,7 @@ public class AbstractFFmpegBinary {
                         return true;
                     }
                 } catch (Exception e) {
-                    if (logger != null) {
-                        logger.log(e);
-                    }
+                    logger.log(e);
                 }
                 return false;
             }
@@ -522,12 +549,8 @@ public class AbstractFFmpegBinary {
             public boolean onGetRequest(GetRequest request, HttpResponse response) {
                 boolean requestOkay = false;
                 try {
-                    if (logger != null) {
-                        logger.info("START " + request.getRequestedURL());
-                    }
-                    if (logger != null) {
-                        logger.info(request.toString());
-                    }
+                    logger.info("START " + request.getRequestedURL());
+                    logger.info(request.toString());
                     if (!validateID(request)) {
                         return false;
                     }
@@ -625,20 +648,14 @@ public class AbstractFFmpegBinary {
                                 if (segment == null) {
                                     throw new IndexOutOfBoundsException("Unknown segment:" + index);
                                 } else {
-                                    if (logger != null) {
-                                        logger.info("Forward segment:" + (index + 1) + "/" + m3u8Playlists.size());
-                                    }
+                                    logger.info("Forward segment:" + (index + 1) + "/" + m3u8Playlists.size());
                                     downloadURL = segment.getUrl();
                                 }
                             } catch (final NumberFormatException e) {
-                                if (logger != null) {
-                                    logger.log(e);
-                                }
+                                logger.log(e);
                                 return false;
                             } catch (final IndexOutOfBoundsException e) {
-                                if (logger != null) {
-                                    logger.log(e);
-                                }
+                                logger.log(e);
                                 return false;
                             }
                         }
@@ -652,9 +669,7 @@ public class AbstractFFmpegBinary {
                             }
                             final jd.http.requests.GetRequest getRequest = new jd.http.requests.GetRequest(downloadURL);
                             if (fileBytesMap.getFinalSize() > 0) {
-                                if (logger != null) {
-                                    logger.info("Resume(" + retry + "): " + fileBytesMap.toString());
-                                }
+                                logger.info("Resume(" + retry + "): " + fileBytesMap.toString());
                                 final List<Long[]> unMarkedAreas = fileBytesMap.getUnMarkedAreas();
                                 getRequest.getHeaders().put(HTTPConstants.HEADER_REQUEST_RANGE, "bytes=" + unMarkedAreas.get(0)[0] + "-" + unMarkedAreas.get(0)[1]);
                             }
@@ -666,9 +681,7 @@ public class AbstractFFmpegBinary {
                                     throw new IOException("ResponseCode must be 200 or 206!");
                                 }
                             } catch (IOException e) {
-                                if (logger != null) {
-                                    logger.log(e);
-                                }
+                                logger.log(e);
                                 if (connection == null || connection.getResponseCode() == 504) {
                                     Thread.sleep(250 + (retry * 50));
                                     continue retryLoop;
@@ -736,9 +749,7 @@ public class AbstractFFmpegBinary {
                 } catch (IOException e) {
                     e.printStackTrace();
                 } finally {
-                    if (logger != null) {
-                        logger.info("END:" + requestOkay + ">" + request.getRequestedURL());
-                    }
+                    logger.info("END:" + requestOkay + ">" + request.getRequestedURL());
                 }
                 return true;
             }
@@ -784,6 +795,7 @@ public class AbstractFFmpegBinary {
     }
 
     public String runCommand(FFMpegProgress progress, ArrayList<String> commandLine) throws IOException, InterruptedException, FFMpegException {
+        final LogInterface logger = getLogger();
         logger.info("runCommand(ProcessBuilderFactory):" + commandLine);
         final ProcessBuilder pb = ProcessBuilderFactory.create(commandLine);
         logger.info("runCommand(ProcessBuilder):" + pb.command());

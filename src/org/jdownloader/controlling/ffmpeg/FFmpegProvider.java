@@ -1,9 +1,7 @@
 package org.jdownloader.controlling.ffmpeg;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.gui.swing.laf.LookAndFeelController;
 
-import org.appwork.utils.Application;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
 
@@ -29,16 +27,6 @@ public class FFmpegProvider {
      */
     private FFmpegProvider() {
         logger = LogController.getInstance().getLogger(FFmpeg.class.getName());
-    }
-
-    public static void main(String[] args) {
-        try {
-            Application.setApplication(".jd_home");
-            LookAndFeelController.getInstance().init();
-            getInstance().install(new FFMpegInstallProgress(), "test");
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
     }
 
     private final static Object LOCK = new Object();

@@ -1,6 +1,7 @@
 package org.jdownloader.controlling.ffmpeg;
 
 import java.io.File;
+import java.util.Locale;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.CloseReason;
@@ -24,6 +25,11 @@ public class FFMpegInstallThread extends Thread {
     private volatile boolean     success              = false;
     private final String         task;
 
+    public static enum BINARY {
+        FFMPEG,
+        FFPROBE
+    }
+
     public FFMpegInstallThread(FFmpegProvider fFmpegProvider, String task) {
         this.fFmpegProvider = fFmpegProvider;
         this.task = task;
@@ -40,11 +46,11 @@ public class FFMpegInstallThread extends Thread {
     @Override
     public void run() {
         try {
-            File ffmpeg = getFFmpegPath("ffmpeg");
+            File ffmpeg = getBundledBinaryPath(BINARY.FFMPEG);
             if (ffmpeg != null && !ffmpeg.exists()) {
                 ffmpeg = null;
             }
-            File ffprobe = getFFmpegPath("ffprobe");
+            File ffprobe = getBundledBinaryPath(BINARY.FFPROBE);
             if (ffprobe != null && !ffprobe.exists()) {
                 ffprobe = null;
             }
@@ -79,11 +85,11 @@ public class FFMpegInstallThread extends Thread {
                     }
                 }
             }
-            ffmpeg = getFFmpegPath("ffmpeg");
+            ffmpeg = getBundledBinaryPath(BINARY.FFMPEG);
             if (ffmpeg != null && ffmpeg.exists()) {
                 JsonConfig.create(FFmpegSetup.class).setBinaryPath(ffmpeg.getAbsolutePath());
             }
-            ffprobe = getFFmpegPath("ffprobe");
+            ffprobe = getBundledBinaryPath(BINARY.FFPROBE);
             if (ffprobe != null && ffprobe.exists()) {
                 JsonConfig.create(FFmpegSetup.class).setBinaryPathProbe(ffprobe.getAbsolutePath());
             }
@@ -97,7 +103,8 @@ public class FFMpegInstallThread extends Thread {
         }
     }
 
-    public static File getFFmpegPath(String name) {
+    public static File getBundledBinaryPath(BINARY binary) {
+        final String name = binary.name().toLowerCase(Locale.ENGLISH);
         if (CrossSystem.isWindows()) {
             if (CrossSystem.is64BitOperatingSystem()) {
                 final File x64Path = Application.getResource("tools/Windows/ffmpeg/x64/" + name + ".exe");

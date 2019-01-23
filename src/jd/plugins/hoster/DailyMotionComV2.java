@@ -32,7 +32,6 @@ import jd.plugins.components.DailyMotionVariant;
 
 import org.jdownloader.controlling.ffmpeg.FFMpegProgress;
 import org.jdownloader.controlling.ffmpeg.FFmpeg;
-import org.jdownloader.controlling.ffmpeg.FFprobe;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.gui.translate._GUI;
@@ -82,7 +81,7 @@ public class DailyMotionComV2 extends DailyMotionCom {
                 try {
                     downloadLink.addPluginProgress(set);
                     File file = new File(downloadLink.getFileOutput());
-                    FFmpeg ffmpeg = getFFmpeg(downloadLink);
+                    FFmpeg ffmpeg = getFFmpeg(br.cloneBrowser(), downloadLink);
                     File finalFile = downloadLink.getDownloadLinkController().getFileOutput(false, true);
                     if ("aac".equals(var.getConvertTo())) {
                         if (!ffmpeg.demuxAAC(set, finalFile.getAbsolutePath(), file.getAbsolutePath())) {
@@ -155,7 +154,7 @@ public class DailyMotionComV2 extends DailyMotionCom {
                         if (var != null && var.getConvertTo() != null) {
                             if (downloadLink.getProperty("FFP_BITRATE") == null) {
                                 checkFFProbe(downloadLink, _JDT.T.plugin_for_host_reason_for_ffmpeg_demux());
-                                StreamInfo streamInfo = new FFprobe(br.cloneBrowser()).getStreamInfo(dllink);
+                                StreamInfo streamInfo = getFFProbe(br.cloneBrowser(), downloadLink).getStreamInfo(dllink);
                                 downloadLink.setProperty("FFP_BITRATE", streamInfo.getFormat().getBit_rate());
                                 downloadLink.setProperty("FFP_DURATION", streamInfo.getFormat().getDuration());
                                 downloadLink.setProperty("FFP_V_HEIGHT", streamInfo.getStreams().get(0).getHeight());
