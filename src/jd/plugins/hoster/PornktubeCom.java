@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -33,8 +35,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornktube.com" }, urls = { "https?://(?:www\\.)?pornktube\\.com/videos/\\d+/[a-z0-9\\-]+/" })
 public class PornktubeCom extends PluginForHost {
@@ -67,6 +67,7 @@ public class PornktubeCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        boolean foundAtLeastOneDownloadlink = false;
         dllink = null;
         server_issues = false;
         this.setBrowserExclusive();
@@ -125,6 +126,7 @@ public class PornktubeCom extends PluginForHost {
                     if (item[1].equals("720p")) {
                         dllink = "http://s" + item[7] + ".cdna.tv/lhvideo/" + item[5] + "/" + item[6] + "/" + range + "/" + item[4] + "/" + item[4] + ".mp4" + "/" + item[4] + ".mp4";
                     }
+                    foundAtLeastOneDownloadlink = true;
                     logger.info("Debug info: checking dllink: " + dllink);
                     checkDllink(link);
                     if (dllink == null) {
@@ -136,15 +138,19 @@ public class PornktubeCom extends PluginForHost {
                 }
             }
         }
-        if (filename == null || dllink == null) {
-            logger.info("filename: " + filename + ", dllink: " + dllink);
+        if (dllink == null && foundAtLeastOneDownloadlink) {
+            logger.info("Found dllink(s) but none is downloadable");
+            server_issues = true;
+        }
+        if (filename == null) {
+            /* This should never happen */
+            logger.info("filename is null");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
+        final String ext = ".mp4";
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
@@ -183,6 +189,7 @@ public class PornktubeCom extends PluginForHost {
         } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        dllink = Encoding.htmlDecode(dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {

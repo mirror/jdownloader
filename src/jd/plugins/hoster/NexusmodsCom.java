@@ -17,6 +17,10 @@ package jd.plugins.hoster;
 
 import java.net.URL;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -31,10 +35,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nexusmods.com" }, urls = { "https?://(?:www\\.)?nexusmods\\.com+/Core/Libs/Common/Widgets/DownloadPopUp\\?id=\\d+.+" })
 public class NexusmodsCom extends antiDDoSForHost {
@@ -89,8 +89,8 @@ public class NexusmodsCom extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        final String fid = getFID(link.getDownloadURL());
-        br.getPage(link.getDownloadURL());
+        final String fid = getFID(link.getPluginPatternMatcher());
+        getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -141,20 +141,28 @@ public class NexusmodsCom extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS);
+        doFree(downloadLink, null, FREE_RESUME, FREE_MAXCHUNKS);
     }
 
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks) throws Exception, PluginException {
+    private void doFree(final DownloadLink downloadLink, final Account account, final boolean resumable, final int maxchunks) throws Exception, PluginException {
         if (dllink == null) {
             if (loginRequired) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                if (account != null) {
+                    /*
+                     * 2019-01-23: Added errorhandling but this should never happen because if an account exists we should be able to
+                     * download!
+                     */
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Login failure");
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                }
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
         }
         dl.startDownload();
     }
@@ -185,15 +193,18 @@ public class NexusmodsCom extends antiDDoSForHost {
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     br.setCookies(account.getHoster(), cookies);
-                    getPage("https://www.nexusmods.com");
-                    if (!isCookieSet(account, "member_id") || !isCookieSet(account, "sid") || !isCookieSet(account, "pass_hash")) {
+                    getPage("https://www." + account.getHoster());
+                    final boolean isLoggedinCookies = isCookieSet(account, "member_id") && isCookieSet(account, "sid") && isCookieSet(account, "pass_hash");
+                    final boolean isLoggedinHTML = br.containsHTML("class=\"username\"");
+                    if (!isLoggedinCookies || !isLoggedinHTML) {
+                        logger.info("Existing login invalid: Full login required!");
                         br.clearCookies(getHost());
                     } else {
                         account.saveCookies(br.getCookies(account.getHoster()), "");
                         return;
                     }
                 }
-                getPage("https://www.nexusmods.com/Core/Libs/Common/Widgets/LoginPopUp?url=%2F%2Fwww.nexusmods.com%2F");
+                getPage("https://www." + account.getHoster() + "/Core/Libs/Common/Widgets/LoginPopUp?url=%2F%2Fwww.nexusmods.com%2F");
                 final PostRequest request = new PostRequest("https://www.nexusmods.com/Sessions?TryNewLogin");
                 request.put("username", Encoding.urlEncode(account.getUser()));
                 request.put("password", Encoding.urlEncode(account.getPass()));
@@ -228,7 +239,6 @@ public class NexusmodsCom extends antiDDoSForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
@@ -244,16 +254,16 @@ public class NexusmodsCom extends antiDDoSForHost {
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             account.setConcurrentUsePossible(true);
         }
-        account.setValid(true);
         return ai;
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        /* Important! Login before requestFileInformation! */
         login(account);
         requestFileInformation(link);
         /* Free- and premium download is the same. */
-        doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS);
+        doFree(link, account, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS);
     }
 
     public void getPage(Browser ibr, String page) throws Exception {
