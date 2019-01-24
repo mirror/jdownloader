@@ -918,6 +918,14 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
         }
+        // 2019-01-24 flyflv.com
+        externID = br.getRegex("(//(?:www\\.)?flyflv\\.com/movies/player/\\d+)").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(externID);
+            if (!processAll) {
+                return decryptedLinks;
+            }
+        }
         /************************************************************************************************************/
         // filename needed for all IDs below
         /************************************************************************************************************/

@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "flyflv.com" }, urls = { "https?://(?:www\\.)?flyflv\\.com/movies/\\d+/[A-Za-z0-9\\-_]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "flyflv.com" }, urls = { "https?://(?:www\\.)?flyflv\\.com/movies/\\d+(?:/[A-Za-z0-9\\-_]+)?|https?://(?:www\\.)?flyflv\\.com/movies/player/\\d+" })
 public class FlyflvCom extends PluginForHost {
     public FlyflvCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -51,6 +51,22 @@ public class FlyflvCom extends PluginForHost {
         return "http://www.flyflv.com/site/page/terms";
     }
 
+    @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        final String linkpart = new Regex(link.getPluginPatternMatcher(), "/(\\d+(/.+)?)$").getMatch(0);
+        link.setPluginPatternMatcher("https://www.flyflv.com/movies/" + linkpart);
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = new Regex(link.getPluginPatternMatcher(), "/movies/(?:player/)?(\\d+)").getMatch(0);
+        if (linkid != null) {
+            return linkid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -62,7 +78,11 @@ public class FlyflvCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String url_filename = new Regex(link.getDownloadURL(), "movies/\\d+/(.+)").getMatch(0).replace("-", " ");
+        final String linkid = getLinkID(link);
+        String url_filename = new Regex(link.getDownloadURL(), "movies/\\d+/(.+)").getMatch(0);
+        if (url_filename == null) {
+            url_filename = linkid;
+        }
         String filename = br.getRegex("<h1 itemprop=\"name\">([^<>\"]+)</h1>").getMatch(0);
         if (filename == null) {
             filename = url_filename;
@@ -98,7 +118,9 @@ public class FlyflvCom extends PluginForHost {
             /* Do NOT use Head-Request here!! */
             con = br2.openGetConnection(dllink);
             if (!con.getContentType().contains("html")) {
-                link.setDownloadSize(con.getLongContentLength());
+                if (con.getLongContentLength() > 1000) {
+                    link.setDownloadSize(con.getLongContentLength());
+                }
                 link.setProperty("directlink", dllink);
             } else {
                 server_issues = true;
