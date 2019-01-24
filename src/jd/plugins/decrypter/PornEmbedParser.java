@@ -910,6 +910,14 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
         }
+        // 2019-01-24 hqwo.cc (no main webpage, only works when you have URLs which lead to content!)
+        externID = br.getRegex("(//hqwo\\.cc/player/[^<>\"]+)").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(externID);
+            if (!processAll) {
+                return decryptedLinks;
+            }
+        }
         /************************************************************************************************************/
         // filename needed for all IDs below
         /************************************************************************************************************/
@@ -1048,7 +1056,7 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             externID = br.getRegex("<source src=\"(http[^\"]*?)\"").getMatch(0);
         }
         if (externID != null) {
-            final DownloadLink dl = createDownloadlink(externID);
+            final DownloadLink dl = this.createDownloadlink(externID);
             dl.setFinalFileName(title + ".mp4");
             decryptedLinks.add(dl);
             if (!processAll) {

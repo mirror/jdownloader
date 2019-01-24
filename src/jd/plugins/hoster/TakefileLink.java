@@ -151,7 +151,6 @@ public class TakefileLink extends antiDDoSForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    @SuppressWarnings("deprecation")
     public TakefileLink(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
@@ -164,7 +163,7 @@ public class TakefileLink extends antiDDoSForHost {
         Browser altbr = null;
         correctDownloadLink(link);
         setFUID(link);
-        getPage(link.getDownloadURL());
+        getPage(link.getPluginPatternMatcher());
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (!br.getURL().contains(this.fuid) || (br.getRedirectLocation() != null && !br.getRedirectLocation().contains(this.fuid))) {

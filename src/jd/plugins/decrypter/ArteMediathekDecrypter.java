@@ -218,7 +218,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
              * Now let's check which languages the user wants. We'll do the quality selection later but we have to access webpages to get
              * the different languages so let's keep the load low by only grabbing what the user selected.
              */
-            final boolean germanSelected = cfg.getBooleanProperty(jd.plugins.hoster.ArteTv.LOAD_LANGUAGE_FRENCH, jd.plugins.hoster.ArteTv.default_LOAD_LANGUAGE_GERMAN);
+            final boolean germanSelected = cfg.getBooleanProperty(jd.plugins.hoster.ArteTv.LOAD_LANGUAGE_GERMAN, jd.plugins.hoster.ArteTv.default_LOAD_LANGUAGE_GERMAN);
             final boolean francaisSelected = cfg.getBooleanProperty(jd.plugins.hoster.ArteTv.LOAD_LANGUAGE_FRENCH, jd.plugins.hoster.ArteTv.default_LOAD_LANGUAGE_FRENCH);
             final boolean loadURLLanguage = cfg.getBooleanProperty(jd.plugins.hoster.ArteTv.LOAD_LANGUAGE_URL, jd.plugins.hoster.ArteTv.default_LOAD_LANGUAGE_URL);
             final boolean loadBest = cfg.getBooleanProperty(LOAD_BEST, false);
@@ -234,6 +234,12 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                         selectedLanguages.add(LANG_DE);
                     }
                     if (francaisSelected) {
+                        selectedLanguages.add(LANG_FR);
+                    }
+                    if (!germanSelected && !francaisSelected) {
+                        /* Fallback - nothing selected --> Download everything */
+                        logger.info("User selected no language at all --> Downloading all languages");
+                        selectedLanguages.add(LANG_DE);
                         selectedLanguages.add(LANG_FR);
                     }
                 }

@@ -13,42 +13,43 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hqporner.com" }, urls = { "https?://(?:www\\.)?hqporner\\.com/hdporn/\\d+-[A-Za-z0-9\\-_]+\\.html" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hqporner.com" }, urls = { "https?://(?:www\\.)?hqporner\\.com/hdporn/\\d+\\-[A-Za-z0-9\\-_]+\\.html" })
 public class HqpornerCom extends PornEmbedParser {
-
     public HqpornerCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* DEV NOTES */
     /* Porn_plugin */
-
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         this.br.setFollowRedirects(true);
+        /* 2019-01-24: Important! some URLs will just display 404 if Referer is not set! */
+        br.getHeaders().put("Referer", "https://" + this.getHost() + "/");
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String filename = br.getRegex("<h2 style=\"line\\-height: 1em;\">([^<>\"]+)<").getMatch(0);
+        final String url_name = new Regex(parameter, "/hdporn/(.+)\\.html").getMatch(0);
+        String filename = br.getRegex("<h1 class=\"main\\-h1\" style=\"line\\-height: 1em;\">\\s*?([^<>\"]+)</h1>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>([^<>]+) / free HD porn and sex videos on[^<>]+</title>").getMatch(0);
+            /* Fallback */
+            filename = url_name;
         }
         decryptedLinks.addAll(findEmbedUrls(filename));
         return decryptedLinks;
     }
-
 }
