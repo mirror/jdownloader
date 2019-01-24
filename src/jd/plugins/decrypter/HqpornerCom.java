@@ -24,7 +24,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hqporner.com" }, urls = { "https?://(?:www\\.)?hqporner\\.com/hdporn/\\d+\\-[A-Za-z0-9\\-_]+\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hqporner.com" }, urls = { "https?://(?:www\\.)?hqporner\\.com/hdporn/\\d+\\-([^/]+)\\.html" })
 public class HqpornerCom extends PornEmbedParser {
     public HqpornerCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -43,7 +43,7 @@ public class HqpornerCom extends PornEmbedParser {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final String url_name = new Regex(parameter, "/hdporn/(.+)\\.html").getMatch(0);
+        final String url_name = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         String filename = br.getRegex("<h1 class=\"main\\-h1\" style=\"line\\-height: 1em;\">\\s*?([^<>\"]+)</h1>").getMatch(0);
         if (filename == null) {
             /* Fallback */

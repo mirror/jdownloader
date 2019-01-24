@@ -118,7 +118,10 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             }
 
             @Override
-            public boolean add(final String link, final Browser br) {
+            public boolean add(String link, final Browser br) {
+                if (link.startsWith("//")) {
+                    link = "https:" + link;
+                }
                 final String url = Request.getLocation(link, br.getRequest());
                 return add(createDownloadlink(url));
             }
@@ -910,18 +913,30 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
         }
-        // 2019-01-24 hqwo.cc (no main webpage, only works when you have URLs which lead to content!)
-        externID = br.getRegex("(//hqwo\\.cc/player/[^<>\"]+)").getMatch(0);
+        // 2019-01-24 flyflv.com
+        externID = br.getRegex("(//(?:www\\.)?flyflv\\.com/movies/player/\\d+)").getMatch(0);
         if (externID != null) {
-            decryptedLinks.add(externID);
+            final DownloadLink dl = this.createDownloadlink(externID);
+            /* Filename is good to have but not necessarily required, */
+            if (title != null) {
+                title += ".mp4";
+                dl.setFinalFileName(title);
+            }
+            decryptedLinks.add(dl);
             if (!processAll) {
                 return decryptedLinks;
             }
         }
-        // 2019-01-24 flyflv.com
-        externID = br.getRegex("(//(?:www\\.)?flyflv\\.com/movies/player/\\d+)").getMatch(0);
+        // 2019-01-24 hqwo.cc (no main webpage, only works when you have URLs which lead to content!)
+        externID = br.getRegex("(//hqwo\\.cc/player/[^<>\"]+)").getMatch(0);
         if (externID != null) {
-            decryptedLinks.add(externID);
+            final DownloadLink dl = this.createDownloadlink(externID);
+            /* Filename is good to have but not necessarily required, */
+            if (title != null) {
+                title += ".mp4";
+                dl.setFinalFileName(title);
+            }
+            decryptedLinks.add(dl);
             if (!processAll) {
                 return decryptedLinks;
             }
