@@ -62,15 +62,9 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class XFileSharingProBasic extends antiDDoSForHost {
-    // DELETE THIS, after making plugin!
-    @Override
-    public Boolean siteTesterDisabled() {
-        return Boolean.TRUE;
-    }
-
+public class PicbaronCom extends antiDDoSForHost {
     /* 1st domain = current domain! */
-    public static String[] domains = new String[] { "ForDevsToPlayWith.com" };
+    public static String[] domains = new String[] { "picbaron.com" };
 
     public static String[] getAnnotationNames() {
         return new String[] { domains[0] };
@@ -134,7 +128,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * Enable this for imagehosts --> fuid will be used as filename if none is available, doFree will check for correct filename and doFree
      * will check for videohoster "next" Download/Ad- Form.
      */
-    private final boolean        IMAGEHOSTER                        = false;
+    private final boolean        IMAGEHOSTER                        = true;
     private final boolean        SUPPORTS_AVAILABLECHECK_ALT        = true;
     /*
      * true = check via postPage, false = we access the check_files site first and parse the Form to cover eventually required tokens inside
@@ -146,7 +140,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * Scan in html code for filesize? Disable this if a website either does not contain any filesize information in its html or it only
      * contains misleading information such as fake texts. If disabled, there is usually at least one alternative way to find the filesize.
      */
-    private final boolean        SUPPORTS_HTML_FILESIZE_CHECK       = true;
+    private final boolean        SUPPORTS_HTML_FILESIZE_CHECK       = false;
     /* Pre-Download waittime stuff */
     private final boolean        WAITFORCED                         = false;
     private final int            WAITSECONDSMIN                     = 3;
@@ -184,7 +178,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      ****************************
      * mods: Search code for String "Special"<br />
      * limit-info:<br />
-     * captchatype: null 4dignum solvemedia reCaptchaV2<br />
+     * captchatype: null<br />
      * other:<br />
      */
     @Override
@@ -216,7 +210,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public XFileSharingProBasic(PluginWrapper wrapper) {
+    public PicbaronCom(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
@@ -443,13 +437,13 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             /* Browser has not beed used before --> Use absolute path */
             altAvailablecheckUrl = COOKIE_HOST;
         }
-        altAvailablecheckUrl += "/?op=check_files";
+        altAvailablecheckUrl += "/?op=checkfiles";
         try {
             /**
              * TODO: 2018-08-01: Old XFS versions used 'checkfiles' instead of 'check_files'! Keep that in mind in case of problems!
              */
             if (SUPPORTS_AVAILABLECHECK_ALT_FAST) {
-                postPage(br, altAvailablecheckUrl, "op=check_files&process=Check+URLs&list=" + Encoding.urlEncode(dl.getPluginPatternMatcher()), false);
+                postPage(br, altAvailablecheckUrl, "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(dl.getPluginPatternMatcher()), false);
             } else {
                 /* Try to get the Form IF NEEDED as it can contain tokens which are missing otherwise. */
                 br.getPage(altAvailablecheckUrl);
@@ -510,7 +504,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 0, PROPERTY_DLLINK_FREE);
+        doFree(downloadLink, false, 1, PROPERTY_DLLINK_FREE);
     }
 
     @SuppressWarnings({ "unused" })
@@ -980,7 +974,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /** Function to find the final downloadlink. */
-    @SuppressWarnings({ "unused", "unchecked", "rawtypes" })
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     private String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null || new Regex(dllink, this.getSupportedLinks()).matches()) {
@@ -1058,11 +1052,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
         if (dllink == null && IMAGEHOSTER) {
             /* Used for image-hosts */
-            String[] possibleDllinks = new Regex(this.correctedBR, String.format(dllinkRegexImage, getHostsPatternPart())).getColumn(0);
-            if (possibleDllinks == null || possibleDllinks.length == 0) {
-                /* Try without predefined domains */
-                possibleDllinks = new Regex(this.correctedBR, String.format(dllinkRegexImage, "[A-Za-z0-9\\-\\.]+")).getColumn(0);
-            }
+            /* 2019-01-24: Special */
+            String[] possibleDllinks = new Regex(this.correctedBR, "(https?://[^/]+/img/[^<>\"\\']+)").getColumn(0);
             for (final String possibleDllink : possibleDllinks) {
                 /* Do NOT download thumbnails! */
                 if (possibleDllink != null && !possibleDllink.matches(".+_t\\.[A-Za-z]{3,4}$")) {
