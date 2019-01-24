@@ -158,7 +158,7 @@ public class AudioMa extends PluginForHost {
         final String artistId = match[1];
         final String musicSlug = match[2];
         // src='/static/dist/desktop/252.3d3a7d50d9de7c1fefa0.js'
-        String jsurl = br.getRegex("src='([^']+?/252\\.[0-9a-f]+?\\.js)").getMatch(0);
+        String jsurl = br.getRegex("src='([^']+?/275\\.[0-9a-f]+?\\.chunk\\.js)").getMatch(0);
         final Browser cbr = br.cloneBrowser();
         cbr.getPage(jsurl);
         String apiUrl = cbr.getRegex("API_URL:\"([^\"]+)\"").getMatch(0);

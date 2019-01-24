@@ -64,7 +64,10 @@ public class Mangafox extends PluginForDecrypt {
         }
         title = Encoding.htmlDecode(title.trim());
         int numberOfPages = 0;
-        final String maxPage = br.getRegex("of (\\d+)").getMatch(0);
+        String maxPage = br.getRegex("of (\\d+)").getMatch(0);
+        if (maxPage == null) {
+            maxPage = br.getRegex("var imagecount\\s*?=\\s*?(\\d+);").getMatch(0);
+        }
         if (maxPage != null) {
             numberOfPages = Integer.parseInt(maxPage);
         }

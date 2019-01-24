@@ -13,23 +13,26 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
+import java.util.LinkedHashMap;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "eltrecetv.com.ar" }, urls = { "http://(www\\.)?eltrecetv\\.com\\.ar/[^<>\"/]+/[^<>\"/]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "eltrecetv.com.ar" }, urls = { "https?://(?:www\\.)?eltrecetv\\.com\\.ar/.+" })
 public class EltrecetvComAr extends antiDDoSForHost {
-
     public EltrecetvComAr(final PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -44,22 +47,30 @@ public class EltrecetvComAr extends antiDDoSForHost {
         return -1;
     }
 
-    private static final String app = "vod/13tv/";
+    private String hlsurl = null;
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        getPage(downloadLink.getDownloadURL());
+        getPage(downloadLink.getPluginPatternMatcher());
+        final String playerdata = br.getRegex("(playerId/[^/]+/contentId/\\d+)").getMatch(0);
         if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (!br.containsHTML("class=\"player\"")) {
+        } else if (playerdata == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>(.*?) \\|.*?</title>").getMatch(0);
-
-        if (filename == null) {
+        br.getPage("https://api.vodgc.net/player/conf/" + playerdata);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        hlsurl = (String) entries.get("m3u8_url");
+        if (StringUtils.isEmpty(hlsurl)) {
+            hlsurl = (String) JavaScriptEngineFactory.walkJson(entries, "sources/{0}/src");
+        }
+        String filename = (String) entries.get("video_name");
+        if (StringUtils.isEmpty(filename)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = Encoding.htmlDecode(filename).trim();
@@ -75,36 +86,13 @@ public class EltrecetvComAr extends antiDDoSForHost {
 
     private void download(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        final String[] qualities = { "1080", "720", "480", "360", "240" };
-        String qualitiesjson = br.getRegex("data\\-levels=\\'\\[(.*?)\\]").getMatch(0);
-        final String streamer = br.getRegex("data\\-streamer=\"([^<>\"]*?)\"").getMatch(0);
-        if (streamer == null || qualitiesjson == null) {
+        if (StringUtils.isEmpty(hlsurl)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        qualitiesjson = qualitiesjson.replace("\\", "");
-        String playpath = null;
-        for (final String quality : qualities) {
-            playpath = new Regex(qualitiesjson, "\"file\":\"([^<>\"]*?\\-" + quality + ".mp4)\"").getMatch(0);
-            if (playpath != null) {
-                break;
-            }
-        }
-        if (playpath == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        playpath = "mp4:13tv/" + playpath;
-        final String rtmp_r = "rtmp://" + streamer + "/" + app;
-
-        dl = new RTMPDownload(this, downloadLink, rtmp_r);
-        jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-        rtmp.setPlayPath(playpath);
-        rtmp.setUrl(rtmp_r);
-        rtmp.setApp(app);
-        rtmp.setSwfVfy("http://eltrecetv.cdncmd.com/sites/all/libraries/jwplayer5/player-licensed.swf");
-        rtmp.setPageUrl(br.getURL());
-        rtmp.setFlashVer("WIN 16,0,0,257");
-        rtmp.setResume(false);
-        ((RTMPDownload) dl).startDownload();
+        br.getPage(hlsurl);
+        final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
+        dl = new HLSDownloader(downloadLink, br, hlsbest.getDownloadurl());
+        dl.startDownload();
     }
 
     @Override
@@ -118,5 +106,4 @@ public class EltrecetvComAr extends antiDDoSForHost {
     @Override
     public void resetPluginGlobals() {
     }
-
 }
