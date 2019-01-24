@@ -55,7 +55,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunfile.com" }, urls = { "http://(www|(p(?:age)?\\d|share)\\.)?(?:yunfile|filemarkets|yfdisk|needisk|5xpan|dix3|dfpan|pwpan|srcpan|skpan|gmpan|tadown|putpan)\\.com/(file/(down/)?[a-z0-9]+/[a-z0-9]+|fs/[a-z0-9]+/?)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunfile.com" }, urls = { "https?://(www|(p(?:age)?\\d|share)\\.)?(?:yunfile|filemarkets|yfdisk|needisk|5xpan|dix3|dfpan|pwpan|srcpan|skpan|gmpan|tadown|putpan)\\.com/(file/(down/)?[a-z0-9]+/[a-z0-9]+|fs/[a-z0-9]+/?)" })
 public class YunFileCom extends PluginForHost {
     private static final String            MAINPAGE       = "http://www.dfpan.com/";
     private static final String            CAPTCHAPART    = "/verifyimg/getPcv";
@@ -71,16 +71,34 @@ public class YunFileCom extends PluginForHost {
         // this.setStartIntervall(15 * 1000l);
     }
 
-    @SuppressWarnings("deprecation")
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        String linkid = new Regex(link.getPluginPatternMatcher(), "/fs/([^/]+)").getMatch(0);
+        if (linkid == null) {
+            linkid = new Regex(link.getPluginPatternMatcher(), "/file/(.+)").getMatch(0);
+        }
+        if (linkid != null) {
+            return linkid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
     public void correctDownloadLink(final DownloadLink link) {
-        String url = link.getDownloadURL();
-        final String domain_original = new Regex(link.getPluginPatternMatcher(), "https?://(?:[a-z0-9]+)?\\.([^/]+)/").getMatch(0);
-        // to fix jiaz' bad commit
-        url = url.replaceAll("(?:share|p(?:age)?\\d*|www)\\.www\\." + domain_original + "/", domain_current + "/");
-        // standard
-        url = url.replace(domain_original, domain_current);
+        String url = link.getPluginPatternMatcher();
+        final String domain_original = new Regex(link.getPluginPatternMatcher(), "https?://(?:www\\.)?([^/]+)/").getMatch(0);
+        /*
+         * 2019-01-24: Do NOT correct urls with '/fs/' as they need their domain to redirect to the final one e.g.
+         * 'filemarkets.com/fs/blabla/' --> 'page1.dfpan.com/fs/blabla/'
+         */
+        if (!url.contains("/fs/")) {
+            // standard
+            url = url.replace(domain_original, domain_current);
+        }
         url = url.replace("/file/down/", "/file/");
-        link.setUrlDownload(url);
+        /* 2019-01-24: Enforce http, https does not yet work */
+        url = url.replace("https://", "http://");
+        link.setPluginPatternMatcher(url);
     }
 
     @Override
@@ -131,7 +149,6 @@ public class YunFileCom extends PluginForHost {
     }
 
     // Works like MountFileCom and HowFileCom
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         br = new Browser();
@@ -139,7 +156,7 @@ public class YunFileCom extends PluginForHost {
         correctDownloadLink(link);
         prepBrowser(br);
         br.setFollowRedirects(true);
-        final URLConnectionAdapter con = br.openGetConnection(link.getDownloadURL());
+        final URLConnectionAdapter con = br.openGetConnection(link.getPluginPatternMatcher());
         if (con.getResponseCode() == 503 || con.getResponseCode() == 404) {
             con.disconnect();
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

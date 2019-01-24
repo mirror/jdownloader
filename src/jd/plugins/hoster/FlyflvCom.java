@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -67,23 +66,26 @@ public class FlyflvCom extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         dllink = null;
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String linkid = getLinkID(link);
-        String url_filename = new Regex(link.getDownloadURL(), "movies/\\d+/(.+)").getMatch(0);
+        String url_filename = new Regex(link.getPluginPatternMatcher(), "movies/\\d+/(.+)").getMatch(0);
         if (url_filename == null) {
             url_filename = linkid;
         }
-        String filename = br.getRegex("<h1 itemprop=\"name\">([^<>\"]+)</h1>").getMatch(0);
+        /* Check if crawler set filename as this website does not provide good filenames! */
+        String filename = link.getFinalFileName();
+        if (filename == null) {
+            filename = br.getRegex("<h1 itemprop=\"name\">([^<>\"]+)</h1>").getMatch(0);
+        }
         if (filename == null) {
             filename = url_filename;
         }
@@ -110,13 +112,11 @@ public class FlyflvCom extends PluginForHost {
             filename += ext;
         }
         link.setFinalFileName(filename);
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
+        br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            /* Do NOT use Head-Request here!! */
-            con = br2.openGetConnection(dllink);
+            /* Do NOT use Head-Request for this website!! */
+            con = br.openGetConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 if (con.getLongContentLength() > 1000) {
                     link.setDownloadSize(con.getLongContentLength());
@@ -125,13 +125,13 @@ public class FlyflvCom extends PluginForHost {
             } else {
                 server_issues = true;
             }
-            return AvailableStatus.TRUE;
         } finally {
             try {
                 con.disconnect();
             } catch (final Throwable e) {
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override
