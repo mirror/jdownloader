@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.net.URL;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -29,9 +32,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fanfox.net" }, urls = { "https?://fanfox\\.net/manga/[^/]+/(?:v[A-Za-z0-9]+/)?c[\\d\\.]+/\\d+\\.html" })
 public class Mangafox extends PluginForHost {
@@ -132,7 +132,7 @@ public class Mangafox extends PluginForHost {
     public static boolean isOffline(final Browser br) {
         if (br.containsHTML("cannot be found|not available yet")) {
             return true;
-        } else if (!br.containsHTML("class=\"reader\\-main\\-img\"")) {
+        } else if (!br.containsHTML("class=\"reader\\-main\\-")) {
             return true;
         }
         return false;

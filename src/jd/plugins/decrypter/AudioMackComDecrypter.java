@@ -44,6 +44,7 @@ public class AudioMackComDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
+    /* 2019-01-24: API support is broken */
     private static final boolean USE_OAUTH_API = true;
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {

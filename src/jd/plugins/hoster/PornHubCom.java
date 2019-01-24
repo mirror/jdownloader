@@ -34,6 +34,9 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -62,10 +65,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub(?:premium)?\\.com/(?:photo|(embed)?gif)/\\d+|https://pornhubdecrypted/.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com", "pornhubpremium.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub(?:premium)?\\.com/(?:photo|(embed)?gif)/\\d+|https://pornhubdecrypted/.+", "" })
 public class PornHubCom extends PluginForHost {
     /* Connection stuff */
     // private static final boolean FREE_RESUME = true;
@@ -85,15 +85,15 @@ public class PornHubCom extends PluginForHost {
     /* Note: Video bitrates and resolutions are not exact, they can vary. */
     /* Quality, { videoCodec, videoBitrate, videoResolution, audioCodec, audioBitrate } */
     public static LinkedHashMap<String, String[]> formats                   = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
-        {
-            put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
-            put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
-            put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
-            put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
-            put("1440", new String[] { "AVC", "6000", " 2560x1440", "AAC LC", "96" });
-            put("2160", new String[] { "AVC", "8000", "3840x2160", "AAC LC", "128" });
-        }
-    });
+                                                                                {
+                                                                                    put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
+                                                                                    put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
+                                                                                    put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
+                                                                                    put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
+                                                                                    put("1440", new String[] { "AVC", "6000", " 2560x1440", "AAC LC", "96" });
+                                                                                    put("2160", new String[] { "AVC", "8000", "3840x2160", "AAC LC", "128" });
+                                                                                }
+                                                                            });
     public static final String                    BEST_ONLY                 = "BEST_ONLY";
     public static final String                    BEST_SELECTION_ONLY       = "BEST_SELECTION_ONLY";
     public static final String                    FAST_LINKCHECK            = "FAST_LINKCHECK";
@@ -106,10 +106,10 @@ public class PornHubCom extends PluginForHost {
         this.setConfigElements();
     }
 
-    @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
         try {
-            link.setUrlDownload(correctAddedURL(link.getDownloadURL()));
+            link.setPluginPatternMatcher(correctAddedURL(link.getPluginPatternMatcher()));
+            ;
         } catch (PluginException e) {
         }
     }
@@ -123,6 +123,14 @@ public class PornHubCom extends PluginForHost {
         } else {
             return createPornhubVideoLink(viewKey, null);
         }
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if (host == null || "pornhubpremium.com".equals(host)) {
+            return "pornhub.com";
+        }
+        return super.rewriteHost(host);
     }
 
     @Override
@@ -322,7 +330,7 @@ public class PornHubCom extends PluginForHost {
     // private void getVideoLinkAccount() {
     // dlUrl = br.getRegex("class=\"downloadBtn greyButton\" (target=\"_blank\")? href=\"(http[^<>\"]*?)\"").getMatch(1);
     // }
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({ "unchecked" })
     public static Map<String, String> getVideoLinksFree(Plugin plugin, final Browser br) throws Exception {
         boolean success = false;
         final Map<String, String> qualities = new LinkedHashMap<String, String>();
@@ -864,17 +872,42 @@ public class PornHubCom extends PluginForHost {
         return String.format("https://www.pornhub.com/embed/%s", viewkey);
     }
 
+    private boolean isVideo(final String url) {
+        return url != null && url.contains("viewkey=");
+    }
+
+    @Override
+    public String buildExternalDownloadURL(final DownloadLink downloadLink, final PluginForHost buildForThisPlugin) {
+        if (buildForThisPlugin != null && !StringUtils.equals(this.getHost(), buildForThisPlugin.getHost())) {
+            return downloadLink.getStringProperty("mainlink", null);
+        } else {
+            return super.buildExternalDownloadURL(downloadLink, buildForThisPlugin);
+        }
+    }
+
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
+        if (!downloadLink.isEnabled() && "".equals(downloadLink.getPluginPatternMatcher())) {
+            /*
+             * setMultiHostSupport uses a dummy DownloadLink, with isEnabled == false. we must set to true for the host to be added to the
+             * supported host array.
+             */
+            return true;
+        } else {
+            /* Original plugin can handle every kind of URL! */
+            final boolean downloadViaSourcePlugin = downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
+            /* MOCHs can only handle video URLs! */
+            final boolean downloadViaMOCH = !downloadLink.getHost().equalsIgnoreCase(plugin.getHost()) && isVideo(downloadLink.getStringProperty("mainlink", null));
+            return downloadViaSourcePlugin || downloadViaMOCH;
+        }
+    }
+
     public static String getProtocolPremium() {
         return "https://";
     }
 
     public static String getProtocolFree() {
         return "https://";
-    }
-
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
-    public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
-        return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
     }
 
     public final static String evalRNKEY(Browser br) throws ScriptException {

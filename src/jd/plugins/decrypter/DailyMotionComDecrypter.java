@@ -379,6 +379,8 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
      */
     @SuppressWarnings("deprecation")
     protected void decryptSingleVideo(ArrayList<DownloadLink> decryptedLinks) throws Exception {
+        final SubConfiguration cfg = SubConfiguration.getConfig("dailymotion.com");
+        boolean grab_subtitle = cfg.getBooleanProperty(jd.plugins.hoster.DailyMotionCom.ALLOW_SUBTITLE, jd.plugins.hoster.DailyMotionCom.default_ALLOW_SUBTITLE);
         logger.info("Decrypting single video: " + parameter);
         // We can't download live streams
         if (br.containsHTML("DMSTREAMMODE=live")) {
@@ -478,9 +480,9 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(filename);
-        /** Decrypt subtitles if available */
+        /** Decrypt subtitles if available and user wants to have it */
         String subsource = new Regex(videoSource, "\"recorded\",(.*?\\}\\})").getMatch(0);
-        if (subsource != null) {
+        if (subsource != null && grab_subtitle) {
             subsource = subsource.replace("\\/", "/");
             final String[] subtitles = new Regex(subsource, "\"(https?://static\\d+(-ssl)?\\.dmcdn\\.net/static/video/\\d+/\\d+/\\d+:subtitle_[a-z]{1,4}\\.srt(?:\\?\\d+)?)\"").getColumn(0);
             if (subtitles != null && subtitles.length != 0) {
@@ -520,7 +522,6 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         /** Find videolinks END */
         /** Pick qualities, selected by the user START */
         final ArrayList<String> selectedQualities = new ArrayList<String>();
-        final SubConfiguration cfg = SubConfiguration.getConfig("dailymotion.com");
         final boolean best = cfg.getBooleanProperty(ALLOW_BEST, false);
         boolean mp4 = cfg.getBooleanProperty(jd.plugins.hoster.DailyMotionCom.ALLOW_MP4, jd.plugins.hoster.DailyMotionCom.default_ALLOW_MP4);
         boolean hls = cfg.getBooleanProperty(jd.plugins.hoster.DailyMotionCom.ALLOW_HLS, jd.plugins.hoster.DailyMotionCom.default_ALLOW_HLS);

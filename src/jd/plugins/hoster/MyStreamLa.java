@@ -55,9 +55,9 @@ public class MyStreamLa extends PluginForHost {
         fuid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]{12})$").getMatch(0);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.setAllowedResponseCodes(500);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">File Not Found<|The video has been blocked|The file you were looking for could not be found|>The file was deleted by administration because|File was deleted") || br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
+        br.setAllowedResponseCodes(new int[] { 500 });
+        br.getPage(downloadLink.getPluginPatternMatcher());
+        if (br.containsHTML(">File Not Found<|The video has been blocked|The file you were looking for could not be found|>The file was deleted by administration because|File was deleted|>We are unable to find the video you're looking for") || br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = PluginJSonUtils.getJsonValue(br, "title");

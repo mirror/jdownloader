@@ -79,7 +79,7 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends antiDDoS
         String finalfilename = null;
         /* Some links don't have to be accessed (here) */
         try {
-            if (!new Regex(parameter, "clictune\\.com|tm-exchange\\.com/|dwz\\.cn/|icefilms\\.info/|linkdecode\\.com|fastdecode\\.com/|is\\.gd/|swzz\\.xyz/|animeforce\\.org/|nifteam\\.info/").matches()) {
+            if (!new Regex(parameter, "clictune\\.com|tm-exchange\\.com/|icefilms\\.info/|linkdecode\\.com|fastdecode\\.com/|is\\.gd/|swzz\\.xyz/|animeforce\\.org/|nifteam\\.info/").matches()) {
                 getPage(parameter);
             }
             if (parameter.contains("link.songs.pk/") || parameter.contains("songspk.info/ghazals/download/ghazals.php?id=") || parameter.contains("link.songspk.help/")) {

@@ -63,6 +63,7 @@ public class DailyMotionCom extends PluginForHost {
     private static final String  REGISTEREDONLYUSERTEXT = "Download only possible for registered users";
     private static final String  COUNTRYBLOCKUSERTEXT   = "This video is not available for your country";
     /** Settings stuff */
+    public static final String   ALLOW_SUBTITLE         = "ALLOW_SUBTITLE";
     private static final String  ALLOW_BEST             = "ALLOW_BEST";
     public static final String   ALLOW_HLS              = "ALLOW_HLS_2019_01_18";
     public static final String   ALLOW_MP4              = "ALLOW_MP4_2019_01_18";
@@ -81,6 +82,7 @@ public class DailyMotionCom extends PluginForHost {
     private static final String  CUSTOM_FILENAME        = "CUSTOM_FILENAME";
     private final static String  defaultCustomFilename  = "*videoname*_*quality**ext*";
     private final static String  defaultCustomDate      = "dd.MM.yyyy";
+    public final static boolean  default_ALLOW_SUBTITLE = true;
     private final static boolean defaultAllowAudio      = true;
     public static final boolean  default_ALLOW_HLS      = true;
     public static final boolean  default_ALLOW_MP4      = false;
@@ -501,6 +503,7 @@ public class DailyMotionCom extends PluginForHost {
     }
 
     private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_SUBTITLE, "Grab subtitle?").setDefaultValue(default_ALLOW_SUBTITLE));
         final ConfigEntry hq = addConfigElementBestOnly();
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_144, JDL.L("plugins.hoster.dailymotioncom.check144", "Grab 144p?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
