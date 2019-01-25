@@ -31,6 +31,7 @@ import jd.http.Request;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.components.PluginJSonUtils;
@@ -81,14 +82,16 @@ public class ShorteSt extends antiDDoSForDecrypt {
             return decryptedLinks;
         }
         br.setFollowRedirects(true);
-        if (br.containsHTML("g-recaptcha\"")) {
-            final Form captchaForm = br.getForm(0);
+        handleSiteVerification(parameter);
+        if (br.containsHTML("g-recaptcha\"|google\\.com/recaptcha/")) {
+            Form captchaForm = br.getForm(0);
             if (captchaForm == null) {
                 return null;
             }
             final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
             captchaForm.put("g-recaptcha-response", recaptchaV2Response);
-            br.submitForm(captchaForm);
+            submitForm(captchaForm);
+            handleSiteVerification(parameter);
         }
         final String timer = PluginJSonUtils.getJsonValue(br, "seconds");
         final String cb = PluginJSonUtils.getJsonValue(br, "callbackUrl");
@@ -118,6 +121,31 @@ public class ShorteSt extends antiDDoSForDecrypt {
         }
         decryptedLinks.add(createDownloadlink(finallink.replaceAll(" ", "%20")));
         return decryptedLinks;
+    }
+
+    /** 2019-01-25: 'site-verification' without captcha */
+    private void handleSiteVerification(final String parameter) throws Exception {
+        if (br.containsHTML("BROWSER VERIFICATION")) {
+            final String jsurl = br.getRegex("<script src=\\'(/grey_wizard_rewrite_js/\\?[^<>\"\\']+)\\'>").getMatch(0);
+            if (jsurl != null) {
+                logger.info("Handling browser-verification ...");
+                getPage(jsurl);
+                final String c_value = br.getRegex("c_value = \\'([^<>\"\\']+)\\'").getMatch(0);
+                final String waitStr = br.getRegex(">Please wait (\\d+) seconds").getMatch(0);
+                if (c_value == null) {
+                    throw new DecrypterException("SITE_VERIFICATION_FAILED");
+                }
+                br.setCookie(br.getURL(), "grey_wizard", c_value);
+                br.setCookie(br.getURL(), "grey_wizard_rewrite", c_value);
+                int wait = 4;
+                if (waitStr != null) {
+                    wait = Integer.parseInt(waitStr) + 1;
+                }
+                logger.info("Waiting (seconds): " + wait);
+                this.sleep(wait * 1001, param);
+                getPage(parameter);
+            }
+        }
     }
 
     private static AtomicReference<String> HOSTS           = new AtomicReference<String>(null);
