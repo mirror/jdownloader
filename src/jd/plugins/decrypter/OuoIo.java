@@ -53,23 +53,35 @@ public class OuoIo extends antiDDoSForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         // they don't support https.. redirects to http.
         set(param.toString().replace("//www.", "//").replace("https://", "http://"));
+        DownloadLink fallBack = null;
         if (slink != null) {
-            decryptedLinks.add(createDownloadlink(Encoding.urlDecode(slink, false)));
-            return decryptedLinks;
+            fallBack = createDownloadlink(Encoding.urlDecode(slink, false));
+            if (true) {
+                decryptedLinks.add(fallBack);
+                return decryptedLinks;
+            }
         } else if (fuid == null && slink == null) {
             // fuid is just a URL owner identifier! slink value is needed, without it you can't get the end URL!
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
+        final String browserReferrer = getBrowserReferrer();
+        if (browserReferrer != null) {
+            br.setCurrentURL(browserReferrer);
+        }
         getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
+            if (fallBack != null) {
+                decryptedLinks.add(fallBack);
+            } else {
+                decryptedLinks.add(this.createOfflinelink(parameter));
+            }
             return decryptedLinks;
         }
         do {
             final String redirect = br.getRedirectLocation();
             if (redirect != null) {
-                if (!Browser.getHost(redirect).equals(Browser.getHost(parameter))) {
+                if (!Browser.getHost(redirect).matches("(ouo.io|ouo.press|cpmlink.net|uskip.me)")) {
                     // don't follow redirects to other hosts
                     decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
                     return decryptedLinks;
@@ -123,14 +135,6 @@ public class OuoIo extends antiDDoSForDecrypt {
         parameter = downloadLink;
         fuid = new Regex(parameter, "https?://[^/]+/([A-Za-z0-9]+)").getMatch(0);
         slink = new Regex(parameter, "\\.(?:io|press)/s/[A-Za-z0-9]{4,}\\?s=((?:http|ftp).+)").getMatch(0);
-    }
-
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        set(link.getDownloadURL());
-        if (slink != null) {
-            return false;
-        }
-        return true;
     }
 
     public boolean hasAutoCaptcha() {

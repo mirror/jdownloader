@@ -20,11 +20,6 @@ import java.util.ArrayList;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.controlling.PasswordUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -38,6 +33,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.controlling.PasswordUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 /**
  * NOTE: <br />
  * - UID case sensitive.<br />
@@ -46,7 +46,7 @@ import jd.plugins.PluginException;
  * @version raz_Template-pastebin-201508200000
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "spaste.com" }, urls = { "https?://(?:www\\.)?spaste\\.com/(?:(?:site/checkPasteUrl|p/?)\\?c=[a-zA-Z0-9]{10}|s/[a-zA-Z0-9]{6})" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "spaste.com" }, urls = { "https?://(?:www\\.)?spaste\\.com/(?:(?:site/checkPasteUrl|p/?)\\?c=[a-zA-Z0-9]{10}|s/[a-zA-Z0-9]{6}|r/[a-zA-Z0-9]{6}\\?link=.+)" })
 public class SpasteCom extends antiDDoSForDecrypt {
     public SpasteCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -57,6 +57,10 @@ public class SpasteCom extends antiDDoSForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.setFollowRedirects(true);
+        final String browserReferrer = getBrowserReferrer();
+        if (browserReferrer != null) {
+            br.setCurrentURL(browserReferrer);
+        }
         getPage(parameter);
         /* Error handling */
         if (br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 404 || br._getURL().getPath().equals("/site/index") || br.containsHTML("Page Not Found|<h4>\\s*Oops\\s*!\\s*</h4>|>\\s*The requested paste has been deleted by")) {
@@ -159,7 +163,7 @@ public class SpasteCom extends antiDDoSForDecrypt {
         }
         final String plaintxt;
         // /s links have a different format
-        if (parameter.contains("spaste.com/s/")) {
+        if (parameter.contains("spaste.com/s/") || parameter.contains("spaste.com/r/")) {
             // we need some info
             final String id = br.getRegex("\\$\\.post\\(\"/site/getRedirectLink\",\\{id:'(\\d+)'\\}").getMatch(0);
             if (id == null) {

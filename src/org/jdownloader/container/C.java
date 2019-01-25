@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package org.jdownloader.container;
 
 import java.io.ByteArrayInputStream;
@@ -40,7 +39,6 @@ import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.seamless.util.io.IO;
 
 public class C extends PluginsC {
-
     public C() {
         super("CFF", "file:/.+\\.ccf$", "$Revision$");
     }
@@ -56,19 +54,16 @@ public class C extends PluginsC {
         final BufferedBlockCipher cipher1 = new BufferedBlockCipher(new CBCBlockCipher(new RijndaelEngine()));
         cipher1.reset();
         cipher1.init(false, cipherParams1);
-
         final KeyParameter keyParam11 = new KeyParameter(HexFormatter.hexToByteArray(CCF50[0][0]));
         final CipherParameters cipherParams11 = new ParametersWithIV(keyParam11, HexFormatter.hexToByteArray(CCF50[0][1]));
         final BufferedBlockCipher cipher11 = new BufferedBlockCipher(new CBCBlockCipher(new RijndaelEngine()));
         cipher11.reset();
         cipher11.init(false, cipherParams11);
-
         final KeyParameter keyParam2 = new KeyParameter(HexFormatter.hexToByteArray(CCF50[1][0]));
         final CipherParameters cipherParams2 = new ParametersWithIV(keyParam2, HexFormatter.hexToByteArray(CCF50[1][1]));
         final BufferedBlockCipher cipher2 = new BufferedBlockCipher(new CBCBlockCipher(new RijndaelEngine()));
         cipher2.reset();
         cipher2.init(false, cipherParams2);
-
         final InputStream is = new CipherInputStream(new CipherInputStream(new CipherInputStream(inputStream, cipher11), cipher2), cipher1);
         String d = new String(IO.readBytes(is), "UTF-8");
         return d;
@@ -80,7 +75,6 @@ public class C extends PluginsC {
         final BufferedBlockCipher cipher1 = new BufferedBlockCipher(new CBCBlockCipher(new RijndaelEngine()));
         cipher1.reset();
         cipher1.init(false, cipherParams1);
-
         final InputStream is = new CipherInputStream(inputStream, cipher1);
         String d = new String(IO.readBytes(is), "UTF-8");
         return d;
@@ -189,15 +183,11 @@ public class C extends PluginsC {
                     ccfContent = check;
                 }
             } else {
-                final ByteArrayInputStream is = new ByteArrayInputStream(ccfBytes);
-                is.reset();
                 for (String ccf[] : (String[][]) getClass().forName(new String(HexFormatter.hexToByteArray("6F72672E6A646F776E6C6F616465722E636F6E7461696E65722E436F6E666967"), "UTF-8")).getMethod("CCF0710").invoke(null)) {
                     /**
                      * CCF0.7-CCF1.0
                      */
-
-                    is.reset();
-                    final String check = decryptCCF07_10(is, ccf[0], ccf[1]);
+                    final String check = decryptCCF07_10(new ByteArrayInputStream(ccfBytes), ccf[0], ccf[1]);
                     if (StringUtils.contains(check, "CryptLoad")) {
                         ccfContent = check;
                         break;
@@ -207,8 +197,7 @@ public class C extends PluginsC {
                     /**
                      * CCF5.0
                      */
-                    is.reset();
-                    final String check = decryptCCF5(is);
+                    final String check = decryptCCF5(new ByteArrayInputStream(ccfBytes));
                     if (StringUtils.contains(check, "CryptLoad")) {
                         ccfContent = check;
                     }
@@ -230,11 +219,9 @@ public class C extends PluginsC {
         }
         cs.setStatus(ContainerStatus.STATUS_FAILED);
         return cs;
-
     }
 
     public String[] encrypt(String plain) {
         return null;
     }
-
 }

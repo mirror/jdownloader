@@ -120,7 +120,7 @@ public class IzleSeneCom extends PluginForHost {
         }
         downloadLink.setFinalFileName(downloadLink.getName().replace(downloadLink.getName().substring(downloadLink.getName().length() - 4, downloadLink.getName().length()), ext));
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (dl.getConnection().getContentType().contains("html") || !dl.getConnection().isOK()) {
             br.followConnection();
             if (br.containsHTML("(<title>404 Not Found</title>|<h1>404 Not Found</h1>)")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
