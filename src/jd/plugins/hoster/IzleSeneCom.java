@@ -13,10 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -29,9 +30,12 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "izlesene.com" }, urls = { "https?://(?:www\\.)?izlesene\\.com/video/[a-z0-9\\-]+/\\d+" })
 public class IzleSeneCom extends PluginForHost {
-
     private String DLLINK = null;
 
     public IzleSeneCom(PluginWrapper wrapper) {
@@ -78,9 +82,9 @@ public class IzleSeneCom extends PluginForHost {
             }
             DLLINK = "http://dcdn.nokta.com/" + DLLINK + "_1_2_1.xml";
             br.getPage(DLLINK);
-            DLLINK = br.getRegex("<server durl=\"(http://.*?)\"").getMatch(0);
+            DLLINK = br.getRegex("<server durl=\"(https?://.*?)\"").getMatch(0);
             if (DLLINK == null) {
-                DLLINK = br.getRegex("\"(http://istr\\d+\\.izlesene\\.com/data/videos/\\d+/\\d+\\-\\d+.{1,5})\"").getMatch(0);
+                DLLINK = br.getRegex("\"(https?://istr\\d+\\.izlesene\\.com/data/videos/\\d+/\\d+\\-\\d+.{1,5})\"").getMatch(0);
             }
         } else {
             /* Since 2016-05-31 */
@@ -89,7 +93,23 @@ public class IzleSeneCom extends PluginForHost {
              * NEEDED!)
              */
             this.br.getPage(downloadLink.getDownloadURL());
-            DLLINK = PluginJSonUtils.getJsonValue(this.br, "streamurl");
+            final String media = br.getRegex("\"media\"\\s*:\\s*(\\{\\s*\"defaultQuality\".*?\\})\\s*,\\s*\"").getMatch(0);
+            if (media != null) {
+                final Map<String, Object> map = JSonStorage.restoreFromString(media, TypeRef.HASHMAP);
+                final List<Map<String, Object>> levels = (List<Map<String, Object>>) map.get("level");
+                if (levels != null) {
+                    int quality = -1;
+                    for (final Map<String, Object> level : levels) {
+                        final Number value = JavaScriptEngineFactory.toLong(level.get("value"), -1);
+                        if (value.intValue() > quality) {
+                            quality = value.intValue();
+                            DLLINK = (String) level.get("source");
+                        }
+                    }
+                }
+            } else {
+                DLLINK = PluginJSonUtils.getJsonValue(this.br, "streamurl");
+            }
         }
         if (DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
