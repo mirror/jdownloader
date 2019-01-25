@@ -52,6 +52,9 @@ public class OneChannelCh extends antiDDoSForDecrypt {
         String parameter = param.toString().replace("vodly.to/", "primewire.is/").replace("primewire.ag/", "primewire.is/");
         br.setFollowRedirects(true);
         getPage(parameter);
+        String page = br.toString();
+        String slug = new Regex(parameter, "/([^/]+)$").getMatch(0);
+        String itemID = new Regex(slug.toString(), "([0-9]+)").getMatch(0).toString();
         if (br.containsHTML("\\(TV Show\\) \\-  on 1Channel \\| LetMeWatchThis</title>")) {
             final String[] episodes = br.getRegex("class=\"tv_episode_item\"> <a href=\"(/tv[^<>\"]*?)\"").getColumn(0);
             if (episodes == null || episodes.length == 0) {
@@ -98,8 +101,20 @@ public class OneChannelCh extends antiDDoSForDecrypt {
                 } catch (final Exception e) {
                     e.printStackTrace();
                 }
+            } else if (br.containsHTML("<div class=\"loader\">") || br.containsHTML("Please Wait! Loading The Links.")) {
+                Browser br2 = br.cloneBrowser();
+                String page2 = br2.getPage("/ajax-78583.php?slug=" + slug + "&cp=7TYP4N");
+                String[] links = br2.getRegex("href=\"([^\"]*go\\.php[^\"]*)\"").getColumn(0);
+                for (String singleLink : links) {
+                    singleLink = Encoding.htmlDecode(singleLink);
+                    if (!dupe.add(singleLink)) {
+                        continue;
+                    }
+                    decryptedLinks.add(createDownloadlink(singleLink));
+                }
+                page2 = page2;
             } else {
-                final String[] links = br.getRegex("(/\\w+\\.php[^\"]*[&?](?:url|link)=[^\"]*?|/(?:external|goto|gohere|go)\\.php[^<>\"]*?)\"").getColumn(0);
+                String[] links = br.getRegex("(/\\w+\\.php[^\"]*[&?](?:url|link)=[^\"]*?|/(?:external|goto|gohere|go)\\.php[^<>\"]*?)\"").getColumn(0);
                 if (links == null || links.length == 0) {
                     if (br.containsHTML("\\'HD Sponsor\\'")) {
                         logger.info("Found no downloadlink in link: " + parameter);
