@@ -851,11 +851,15 @@ public class OldRAFDownload extends DownloadInterface {
     }
 
     protected HashResult onChunksReady() throws Exception {
-        logger.info("Close connections if they are not closed yet");
         HashResult result = null;
         try {
-            for (RAFChunk c : chunks) {
-                c.closeConnections();
+            final long timeStamp = System.currentTimeMillis();
+            try {
+                for (final RAFChunk c : chunks) {
+                    c.closeConnections();
+                }
+            } finally {
+                logger.info("All connections closed:" + TimeFormatter.formatMilliSeconds(System.currentTimeMillis() - timeStamp, 0));
             }
         } finally {
             cleanupDownladInterface();
@@ -1120,14 +1124,21 @@ public class OldRAFDownload extends DownloadInterface {
             final RandomAccessFile loutputPartFileRaf = outputPartFileRaf.getAndSet(null);
             if (loutputPartFileRaf != null) {
                 try {
+                    final long timeStamp = System.currentTimeMillis();
                     try {
                         loutputPartFileRaf.getChannel().force(true);
                     } catch (final IOException e) {
                         logger.log(e);
+                    } finally {
+                        logger.info("Buffers forced to disk:" + TimeFormatter.formatMilliSeconds(System.currentTimeMillis() - timeStamp, 0));
                     }
-                    logger.info("Close File. Let AV programs run");
                 } finally {
-                    loutputPartFileRaf.close();
+                    final long timeStamp = System.currentTimeMillis();
+                    try {
+                        loutputPartFileRaf.close();
+                    } finally {
+                        logger.info("File closed:" + TimeFormatter.formatMilliSeconds(System.currentTimeMillis() - timeStamp, 0));
+                    }
                 }
             }
         } catch (Throwable e) {
