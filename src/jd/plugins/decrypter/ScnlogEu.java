@@ -17,8 +17,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.html.HTMLParser;
@@ -27,12 +25,14 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 /**
  * So I had this written some time back, just never committed. Here is my original with proper error handling etc. -raz
  *
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "scnlog.eu" }, urls = { "https?://(?:www\\.)?scnlog\\.(#?:eu|me|life)/(?:[a-z0-9_\\-]+/){2,}" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "scnlog.me" }, urls = { "https?://(?:www\\.)?scnlog\\.(#?:eu|me|life)/(?:[a-z0-9_\\-]+/){2,}" })
 public class ScnlogEu extends antiDDoSForDecrypt {
     public ScnlogEu(PluginWrapper wrapper) {
         super(wrapper);
@@ -70,7 +70,7 @@ public class ScnlogEu extends antiDDoSForDecrypt {
             String[] results = HTMLParser.getHttpLinks(download, "");
             for (String result : results) {
                 // prevent site links from been added.
-                if (result.matches("https?://[^/]*scnlog.(?:eu|me)/.+")) {
+                if (result.matches("https?://[^/]*scnlog.(?:eu|me|life)/.+")) {
                     continue;
                 }
                 decryptedLinks.add(createDownloadlink(result));

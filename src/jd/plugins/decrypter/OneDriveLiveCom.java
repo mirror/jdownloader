@@ -22,9 +22,6 @@ import java.util.LinkedHashMap;
 import java.util.Random;
 import java.util.Set;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -40,6 +37,9 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "onedrive.live.com" }, urls = { "https?://([a-zA-Z0-9\\-]+\\.)?(onedrive\\.live\\.com/.+|skydrive\\.live\\.com/.+|(sdrv|1drv)\\.ms/[A-Za-z0-9&!=#\\.,-_]+)" })
 public class OneDriveLiveCom extends PluginForDecrypt {
@@ -219,7 +219,7 @@ public class OneDriveLiveCom extends PluginForDecrypt {
                         distribute(link);
                     }
                 } else {
-                    if (ressourcelist == null && entries.containsKey("folder")) {
+                    if (entries.containsKey("folder")) {
                         entries = (LinkedHashMap<String, Object>) entries.get("folder");
                         ressourcelist = (ArrayList) entries.get("children");
                     }
@@ -248,15 +248,6 @@ public class OneDriveLiveCom extends PluginForDecrypt {
                         decryptedLinks.add(main);
                         return decryptedLinks;
                     } else if (totalCount == 0 && childCount == 0) {
-                        if (fp != null) {
-                            main.setFinalFileName(fp.getName());
-                        }
-                        main.setAvailable(false);
-                        main.setProperty("offline", true);
-                        if (fp != null) {
-                            fp.add(main);
-                        }
-                        decryptedLinks.add(main);
                         return decryptedLinks;
                     }
                     main.setProperty("mainlink", parameter);

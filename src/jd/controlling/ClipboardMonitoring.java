@@ -1133,8 +1133,15 @@ public class ClipboardMonitoring {
         } else {
             ret = getBrowserMime(transferable, dataFlavors, "x-moz-url-priv");
         }
-        if (!StringUtils.isEmpty(ret) && HTMLParser.getProtocol(ret) != null) {
-            return ret;
+        if (!StringUtils.isEmpty(ret)) {
+            if (HTMLParser.getProtocol(ret) != null) {
+                return ret;
+            } else {
+                final String viewSource = new Regex(ret, "^view-source:(https?://.+)").getMatch(0);
+                if (!StringUtils.isEmpty(viewSource) && HTMLParser.getProtocol(viewSource) != null) {
+                    return viewSource;
+                }
+            }
         }
         if (htmlFlavor != null) {
             String viewSource = new Regex(htmlFlavor, "<a href=\"view-source:(https?://.*?)\"").getMatch(0);
