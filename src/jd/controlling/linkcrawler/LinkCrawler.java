@@ -3792,27 +3792,6 @@ public class LinkCrawler {
                 br.followConnection();
                 return null;
             }
-
-            @Override
-            public boolean looksLikeDownloadableContent(URLConnectionAdapter urlConnection) {
-                final boolean hasContentType = urlConnection.getHeaderField(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE) != null;
-                if (urlConnection.getResponseCode() == 200) {
-                    if (urlConnection.isContentDisposition()) {
-                        return true;
-                    } else if (hasContentType && StringUtils.contains(urlConnection.getContentType(), "octet-stream")) {
-                        return true;
-                    } else if (hasContentType && StringUtils.contains(urlConnection.getContentType(), "audio")) {
-                        return true;
-                    } else if (hasContentType && StringUtils.contains(urlConnection.getContentType(), "video")) {
-                        return true;
-                    } else if (hasContentType && StringUtils.contains(urlConnection.getContentType(), "image")) {
-                        return true;
-                    } else if (urlConnection.getLongContentLength() > 2 * 1024 * 1024l && (!hasContentType || !StringUtils.contains(urlConnection.getContentType(), "text"))) {
-                        return true;
-                    }
-                }
-                return false;
-            }
         };
     }
 

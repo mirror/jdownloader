@@ -61,12 +61,10 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
         final ArrayList<AdvancedConfigAPIEntry> ret = new ArrayList<AdvancedConfigAPIEntry>();
         final java.util.List<AdvancedConfigEntry> entries = AdvancedConfigManager.getInstance().list();
         final boolean isInterfaceQuery = !StringUtils.isEmpty(query.getConfigInterface());
-
         Pattern cPat = null;
         if (!StringUtils.isEmpty(query.getPattern())) {
             cPat = Pattern.compile(query.getPattern(), Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
         }
-
         for (final AdvancedConfigEntry entry : entries) {
             if (isInterfaceQuery && !query.getConfigInterface().equals(entry.getKeyHandler().getStorageHandler().getConfigInterface().getName())) {
                 continue;
@@ -82,11 +80,9 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
                 }
             }
         }
-
         if (query.isIncludeExtensions()) {
             ret.addAll(createExtensionConfigList(query));
         }
-
         return ret;
     }
 
@@ -114,7 +110,6 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
                         return false;
                         // throw new InvalidValueException(e);
                     }
-
                 }
             }
             if (key != null && key.startsWith("InstallExtension")) {
@@ -124,17 +119,31 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
             }
             return false;
         }
-        final KeyHandler<Object> kh = getKeyHandler(interfaceName, storage, key);
-        if (kh != null) {
-            final Type rc = kh.getRawType();
-            final String json = JSonStorage.serializeToJson(value);
-            final TypeRef<Object> type = new TypeRef<Object>(rc) {
+        final KeyHandler<Object> keyHandler = getKeyHandler(interfaceName, storage, key);
+        if (keyHandler != null) {
+            final Type type = keyHandler.getRawType();
+            final TypeRef<Object> typeRef = new TypeRef<Object>(type) {
             };
             try {
-                final Object v = JSonStorage.stringToObject(json, type, null);
-                kh.setValue(v);
+                Object setValue = null;
+                if (value instanceof String) {
+                    try {
+                        // for example Map<String,Integer> or Number
+                        setValue = JSonStorage.restoreFromString((String) value, typeRef);
+                    } catch (Exception e) {
+                        // for example ENUM
+                        final String jsonString = JSonStorage.serializeToJson(value);
+                        setValue = JSonStorage.restoreFromString(jsonString, typeRef);
+                    }
+                } else {
+                    // for example Array(List) or Set
+                    final String jsonString = JSonStorage.serializeToJson(value);
+                    setValue = JSonStorage.restoreFromString(jsonString, typeRef);
+                }
+                keyHandler.setValue(setValue);
                 return true;
             } catch (Exception e) {
+                return false;
             }
         }
         return false;
@@ -186,15 +195,12 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
 
     @Override
     public ArrayList<EnumOption> listEnum(String type) throws BadParameterException {
-
         try {
             Class<?> cls = Class.forName(type);
-
             return listEnumOptions(cls);
         } catch (Exception e) {
             throw new BadParameterException(e, "Bad Type: " + type);
         }
-
     }
 
     /**
@@ -207,7 +213,6 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
      */
     private ArrayList<EnumOption> listEnumOptions(Class<?> cls) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException, NoSuchFieldException {
         ArrayList<EnumOption> ret = new ArrayList<EnumOption>();
-
         Object[] values = (Object[]) cls.getMethod("values", new Class[] {}).invoke(null, new Object[] {});
         for (final Object o : values) {
             String label = null;
@@ -215,15 +220,12 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
             if (lbl != null) {
                 label = lbl.value();
             } else {
-
                 if (o instanceof LabelInterface) {
-
                     label = (((LabelInterface) o).getLabel());
                 }
             }
             ret.add(new EnumOption(o.toString(), label));
         }
-
         return ret;
     }
 
@@ -241,7 +243,6 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
             entry.setInterfaceName(EXTENSION);
             String dummyKey = "InstallExtension" + ext.getId().toUpperCase(Locale.ENGLISH);
             entry.setKey(dummyKey);
-
             if (query.isValues()) {
                 entry.setValue(false);
             }
@@ -260,12 +261,10 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
             entry.setInterfaceName(EXTENSION);
             String dummyKey = createExtensionToggleDummyKey("Enable", ext);
             entry.setKey(dummyKey);
-
             if (query.isValues()) {
                 entry.setValue(ext._isEnabled());
             }
             ret.add(entry);
-
         }
         return ret;
     }
@@ -273,25 +272,19 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
     private AdvancedConfigAPIEntry createAPIEntry(boolean returnDescription, boolean returnValues, boolean returnDefaultValues, boolean returnEnumInfo, final AdvancedConfigEntry entry) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException, NoSuchFieldException {
         AdvancedConfigAPIEntry acae = new AdvancedConfigAPIEntry(entry, returnDescription, returnValues, returnDefaultValues);
         if (returnEnumInfo && Clazz.isEnum(entry.getClazz())) {
-
             ArrayList<EnumOption> enumOptions;
-
             enumOptions = listEnumOptions(entry.getClazz());
-
             String[][] constants = new String[enumOptions.size()][2];
-
             String label = null;
             Enum<?> value = ((Enum<?>) entry.getValue());
             for (int i = 0; i < enumOptions.size(); i++) {
                 EnumOption option = enumOptions.get(i);
                 constants[i] = new String[] { option.getName(), option.getLabel() };
-
                 if (value != null && value.name().equals(option.getName())) {
                     label = constants[i][1];
                 }
             }
             acae.setEnumLabel(label);
-
             acae.setEnumOptions(constants);
         }
         return acae;
@@ -305,7 +298,6 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
 
     private KeyHandler<Object> getKeyHandler(String interfaceName, String storage, String key) {
         StorageHandler<?> storageHandler = StorageHandler.getStorageHandler(interfaceName, storage);
-
         if (storageHandler == null) {
             // check plugins
             if (interfaceName.startsWith("jd.plugins.hoster.") || interfaceName.startsWith("jd.plugins.decrypter")) {
@@ -319,21 +311,18 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
                             cf = PluginJsonConfig.get((Class<PluginConfigInterface>) pluginClassLoader.loadClass(ifName));
                             storageHandler = cf._getStorageHandler();
                             break;
-
                         } catch (ClassNotFoundException e) {
                             e.printStackTrace();
                         }
                         System.out.println(ifName);
                     }
                 }
-
                 for (LazyCrawlerPlugin cplg : CrawlerPluginController.getInstance().list()) {
                     String ifName = cplg.getConfigInterface();
                     if (StringUtils.isNotEmpty(ifName)) {
                         System.out.println(ifName);
                     }
                 }
-
             }
             if (storageHandler == null) {
                 return null;
@@ -346,14 +335,11 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
     private void installExtension(final String toInstall) {
         new Thread("Install Extension") {
             public void run() {
-
                 if (UIOManager.I().showConfirmDialog(0, _GUI.T.lit_are_you_sure(), _GUI.T.installExtension_remote_rly(toInstall))) {
                     UpdaterListener listener = null;
                     try {
                         final AtomicLong last = new AtomicLong(System.currentTimeMillis());
-
                         UpdateController.getInstance().getEventSender().addListener(listener = new UpdaterListener() {
-
                             @Override
                             public void onUpdatesAvailable(boolean selfupdate, InstallLog installlog) {
                                 System.out.println();
@@ -368,37 +354,28 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
                             }
                         });
                         UpdateController.getInstance().runExtensionInstallation(toInstall);
-
                         while (true) {
                             Thread.sleep(1000);
                             if (!UpdateController.getInstance().isRunning()) {
                                 break;
                             }
-
                             UpdateController.getInstance().waitForUpdate();
-
                         }
                         // boolean installed = UpdateController.getInstance().isExtensionInstalled(id);
                         final boolean pending = UpdateController.getInstance().hasPendingUpdates();
                         //
-
                         if (UIOManager.I().showConfirmDialog(0, "Install Extension " + toInstall, _GUI.T.UninstalledExtension_waiting_for_restart(), new AbstractIcon(IconKey.ICON_RESTART, 32), _GUI.T.lit_restart_now(), _GUI.T.lit_later())) {
                             RestartController.getInstance().asyncRestart(new SmartRlyRestartRequest(true));
                         }
-
                     } catch (Exception e) {
                         UIOManager.I().showException(_GUI.T.lit_error_occured(), e);
                     } finally {
                         UpdateController.getInstance().getEventSender().removeListener(listener);
                     }
-
                 }
-
             };
         }.start();
-
     }
-
     // @Override
     // public List<ConfigInterfaceAPIStorable> queryConfigInterfaces(APIQuery
     // query) {
