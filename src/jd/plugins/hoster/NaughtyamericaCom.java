@@ -240,12 +240,21 @@ public class NaughtyamericaCom extends PluginForHost {
                 // br.setCookie(br.getURL(), "DG_IID", "");
                 // br.setCookie(br.getURL(), "DG_SID", "");
                 // br.setCookie(br.getURL(), "DG_UID", "");
+                br.getPage("https://" + jd.plugins.decrypter.NaughtyamericaCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/");
                 br.getPage("https://" + jd.plugins.decrypter.NaughtyamericaCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/login");
                 final String redirect = br.getRegex("http-equiv=\"refresh\" content=\"\\d+; url=(/[^<>\"]+)\"").getMatch(0);
                 if (redirect != null) {
                     /* 2019-01-21: Hmm leads to HTTP/1.1 405 Not Allowed */
-                    Thread.sleep(6000);
-                    br.getPage(redirect);
+                    /*
+                     * <meta http-equiv="refresh" content="10; url=/distil_r_captcha.html?requestId=<requestId>c&httpReferrer=%2Flogin" />
+                     */
+                    final String waitStr = br.getRegex("content=\"(\\d+)").getMatch(0);
+                    int wait = 10;
+                    if (waitStr != null) {
+                        wait = Integer.parseInt(waitStr);
+                    }
+                    Thread.sleep(wait * 1001l);
+                    // br.getPage(redirect);
                 }
                 Form loginform = br.getFormbyKey("username");
                 if (loginform == null) {

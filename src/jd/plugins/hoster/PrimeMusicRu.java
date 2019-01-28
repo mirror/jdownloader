@@ -53,8 +53,10 @@ public class PrimeMusicRu extends antiDDoSForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.setAllowedResponseCodes(new int[] { 451 });
         getPage(link.getPluginPatternMatcher());
-        if (br.containsHTML("<h1 class=\"radio_title\">Композиция не найдена</h1>|>Композиция удалена") || br.getURL().contains("/index.php")) {
+        final boolean offlineForLegalReasons = br.getHttpConnection().getResponseCode() == 451;
+        if (br.containsHTML("<h1 class=\"radio_title\">Композиция не найдена</h1>|>Композиция удалена") || br.getURL().contains("/index.php") || offlineForLegalReasons) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String finalfilename = br.getRegex("<h2[^<>]*>Слушать\\s*([^<>\"]*?)\\s*(\\.mp3|онлайн)</h2>").getMatch(0);

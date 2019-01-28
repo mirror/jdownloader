@@ -20,6 +20,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -35,8 +37,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-import org.appwork.utils.StringUtils;
-
 /**
  *
  * I've created jac for this under the default names entry 'click.tf'.
@@ -47,7 +47,7 @@ import org.appwork.utils.StringUtils;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ClkTf extends PluginForDecrypt {
     // add new domains here.
-    private static final String[] domains = { "click.tf", "ssh.yt", "ssh.tf", "yep.pm", "adlink.wf", "kyc.pm", "lan.wf", "led.wf" };
+    private static final String[] domains = { "click.tf", "ssh.tf", "yep.pm", "adlink.wf", "kyc.pm", "lan.wf", "led.wf" };
 
     // all other domains mentioned within /services.html do not match expected.
     public ClkTf(PluginWrapper wrapper) {

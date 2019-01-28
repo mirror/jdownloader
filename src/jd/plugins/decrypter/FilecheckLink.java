@@ -19,49 +19,32 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dwindly.io" }, urls = { "https?://(?:www\\.)?dwindly\\.io/[A-Za-z0-9]+" })
-public class DwindlyIo extends PluginForDecrypt {
-    public DwindlyIo(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filecheck.link", "container.cool", "redirect.codes" }, urls = { "https?://(?:www\\.)?filecheck\\.link/d/[A-Za-z0-9]+", "https?://(?:www\\.)?container\\.cool/d/[A-Za-z0-9]+", "https?://(?:www\\.)?redirect\\.codes/d/[A-Za-z0-9]+" })
+public class FilecheckLink extends PluginForDecrypt {
+    public FilecheckLink(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404 || br.toString().length() <= 100 || br.containsHTML(">Link no longer exists")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<h1>File Not Found</h1><br>")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String continueurl = br.getRegex("document\\.location\\.href = \"(https?://dwindly\\.io/[A-Za-z0-9]+)\"").getMatch(0);
-        if (continueurl == null) {
+        /* Website of [XFS] filehost */
+        final String website = br.getRegex("name=\"F1\" action=\"(https?://[^/]+/)").getMatch(0);
+        final String fid = br.getRegex("\"id\" value=\"([^\"]+)\"").getMatch(0);
+        if (website == null || fid == null) {
             return null;
         }
-        br.getPage(continueurl);
-        continueurl = br.getRegex("window\\.open\\(encD\\(\"([^<>\"]+)\"\\)").getMatch(0);
-        if (continueurl == null) {
-            return null;
-        }
-        continueurl = Encoding.Base64Decode(continueurl);
-        continueurl = "https://" + br.getHost() + "/" + continueurl;
-        /* 2018-08-08: Waittime is skippable */
-        // this.sleep(5500, param);
-        br.setFollowRedirects(false);
-        /* Important cookie! */
-        br.setCookie(br.getHost(), "s32", "1");
-        br.getPage(continueurl);
-        final String finallink = br.getRedirectLocation();
-        if (finallink == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
+        final String finallink = website + fid;
         decryptedLinks.add(createDownloadlink(finallink));
         return decryptedLinks;
     }
