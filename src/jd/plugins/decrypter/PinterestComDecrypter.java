@@ -543,12 +543,6 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                                 } else {
                                     if (nextbookmark != null) {
                                         getpage = "/resource/BoardFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22bookmarks%22%3A%5B%22" + Encoding.urlEncode(nextbookmark) + "%3D%3D%22%5D%2C%22isPrefetch%22%3Afalse%2C%22board_id%22%3A%22" + board_id + "%22%2C%22board_url%22%3A%22" + Encoding.urlEncode(source_url) + "%22%2C%22field_set_key%22%3A%22react_grid_pin%22%2C%22filter_section_pins%22%3Atrue%2C%22layout%22%3A%22default%22%2C%22page_size%22%3A" + max_entries_per_page_free + "%2C%22redux_normalize_feed%22%3Atrue%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis();
-                                        // getpage = "/resource/BoardRelatedPixieFeedResource/get/?source_url=" +
-                                        // Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22bookmarks%22%3A%5B%22" +
-                                        // Encoding.urlEncode(nextbookmark) + "%22%5D%2C%22isPrefetch%22%3Afalse%2C%22board_id%22%3A%22" +
-                                        // board_id +
-                                        // "%22%2C%22add_vase%22%3Atrue%2C%22field_set_key%22%3A%22unauth_react%22%7D%2C%22context%22%3A%7B%7D%7D&_="
-                                        // + System.currentTimeMillis();
                                     } else {
                                         getpage = "/resource/BoardRelatedPixieFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22isPrefetch%22%3Afalse%2C%22board_id%22%3A%22" + board_id + "%22%2C%22add_vase%22%3Atrue%2C%22field_set_key%22%3A%22unauth_react%22%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis();
                                     }

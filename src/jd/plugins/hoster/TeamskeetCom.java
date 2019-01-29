@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2009  JD-Team support@jdownloader.org
+//Copyright (C) 2017  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -16,8 +16,12 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -29,15 +33,14 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fapality.com" }, urls = { "https?://(?:[a-z]+\\.)?fapality\\.com/\\d+/?$" })
-public class FapalityCom extends PluginForHost {
-    public FapalityCom(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "teamskeet.com" }, urls = { "https?://(?:www\\.)?teamskeet\\.com/t1/trailer/view/([^/]+/[^/]+)" })
+public class TeamskeetCom extends PluginForHost {
+    public TeamskeetCom(PluginWrapper wrapper) {
         super(wrapper);
     }
     /* DEV NOTES */
-    // Tags:
+    // Tags: Porn plugin
     // protocol: no https
     // other:
 
@@ -52,33 +55,86 @@ public class FapalityCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://fapality.com/info/tos";
+        return "https://www.psmhelp.com/tos";
     }
 
-    @SuppressWarnings("deprecation")
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        if (linkid != null) {
+            return linkid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         dllink = null;
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        br.getPage(link.getPluginPatternMatcher());
+        if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains("trailer")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String url_filename = new Regex(link.getDownloadURL(), "(\\d+)/?$").getMatch(0);
-        String filename = br.getRegex("<title>([^<>\"]+)</title>").getMatch(0);
-        if (filename == null) {
-            filename = url_filename;
+        String filename = br.getRegex("<title>([^<>\"]+) \\| TeamSkeet</title>").getMatch(0);
+        if (StringUtils.isEmpty(filename)) {
+            filename = this.getLinkID(link);
         }
-        dllink = br.getRegex("video_url[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
-        if (StringUtils.isEmpty(dllink)) {
-            /* 2019-01-29: Prefer HD */
-            dllink = br.getRegex("<source id=\"video_source_1\" src=\"(https[^\"]+)\" type=\"video/mp4\" data\\-is\\-hd=\"true\"[^>]*?>").getMatch(0);
+        /* RegExes sometimes used for streaming */
+        final String jssource = br.getRegex("player\\.updateSrc\\((\\[.*?\\])").getMatch(0);
+        if (jssource != null) {
+            try {
+                HashMap<String, Object> entries = null;
+                Object quality_temp_o = null;
+                Object quality_temp_o_2 = null;
+                long quality_temp = 0;
+                String quality_temp_str = null;
+                long quality_best = 0;
+                String dllink_temp = null;
+                final ArrayList<Object> ressourcelist = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(jssource);
+                for (final Object videoo : ressourcelist) {
+                    entries = (HashMap<String, Object>) videoo;
+                    dllink_temp = (String) entries.get("src");
+                    quality_temp_o = entries.get("label");
+                    quality_temp_o_2 = entries.get("res");
+                    if (quality_temp_o_2 != null && quality_temp_o_2 instanceof Long) {
+                        quality_temp = JavaScriptEngineFactory.toLong(quality_temp_o_2, 0);
+                    } else if (quality_temp_o != null && quality_temp_o instanceof Long) {
+                        quality_temp = JavaScriptEngineFactory.toLong(quality_temp_o, 0);
+                    } else if (quality_temp_o != null && quality_temp_o instanceof String) {
+                        quality_temp_str = (String) quality_temp_o;
+                        if (quality_temp_str.matches("\\d+p.*?")) {
+                            /* E.g. '360p' */
+                            quality_temp = Long.parseLong(new Regex(quality_temp_str, "(\\d+)p").getMatch(0));
+                        } else {
+                            /* Bad / Unsupported format */
+                            continue;
+                        }
+                    }
+                    if (StringUtils.isEmpty(dllink_temp) || quality_temp == 0) {
+                        continue;
+                    } else if (dllink_temp.contains(".m3u8")) {
+                        /* Skip hls, prefer http */
+                        continue;
+                    }
+                    if (quality_temp > quality_best) {
+                        quality_best = quality_temp;
+                        dllink = dllink_temp;
+                    }
+                }
+                if (!StringUtils.isEmpty(dllink)) {
+                    logger.info("BEST handling for multiple video source succeeded");
+                }
+            } catch (final Throwable e) {
+                logger.info("BEST handling for multiple video source failed");
+            }
         }
         if (StringUtils.isEmpty(dllink)) {
-            /* Fallback: Do not care about quality */
-            dllink = br.getRegex("<source id=\"video_source_1\" src=\"(https[^\"]+)\" type=\"video/mp4\"[^>]*?>").getMatch(0);
+            /* Fallback - official download (.wmv) */
+            dllink = br.getRegex("(https?://[a-z0-9\\.\\-]+\\.downloads\\.trailers\\.[^/]+/[^\"]+)\"").getMatch(0);
         }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -86,9 +142,12 @@ public class FapalityCom extends PluginForHost {
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        final String ext;
+        String ext;
         if (!StringUtils.isEmpty(dllink)) {
             ext = getFileNameExtensionFromString(dllink, default_extension);
+            if (ext != null && !ext.matches("\\.(?:flv|mp4)")) {
+                ext = default_extension;
+            }
         } else {
             ext = default_extension;
         }
@@ -100,10 +159,9 @@ public class FapalityCom extends PluginForHost {
             link.setFinalFileName(filename);
             URLConnectionAdapter con = null;
             try {
-                con = br.cloneBrowser().openHeadConnection(dllink);
+                con = br.openHeadConnection(dllink);
                 if (!con.getContentType().contains("html")) {
                     link.setDownloadSize(con.getLongContentLength());
-                    link.setProperty("directlink", dllink);
                 } else {
                     server_issues = true;
                 }
@@ -151,12 +209,11 @@ public class FapalityCom extends PluginForHost {
     }
 
     @Override
-    public SiteTemplate siteTemplateType() {
-        return SiteTemplate.KernelVideoSharing;
+    public void reset() {
     }
 
     @Override
-    public void reset() {
+    public void resetPluginGlobals() {
     }
 
     @Override
