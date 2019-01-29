@@ -20,6 +20,10 @@ import java.io.IOException;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -29,9 +33,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "javynow.com" }, urls = { "https?://(?:www\\.)?javynow\\.com/video(?:\\.php\\?id=|/)[A-Za-z0-9]+.+" })
 public class JavynowCom extends PluginForHost {
@@ -65,7 +66,7 @@ public class JavynowCom extends PluginForHost {
         this.setBrowserExclusive();
         /* Important - do NOT allow redirects here! */
         br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -74,9 +75,9 @@ public class JavynowCom extends PluginForHost {
             // <a href="https://javynow.com/video/20805072/">
             br.getPage(br.getRegex("<a href=\"(http[^<>\"]+)\"").getMatch(0));
         }
-        final String url_filename = new Regex(link.getDownloadURL(), "(?:id=|/)([A-Za-z0-9]+)").getMatch(0).replace("-", " ");
+        final String url_filename = new Regex(link.getDownloadURL(), "video(?:id=|/)([A-Za-z0-9]+)").getMatch(0).replace("-", " ");
         String filename = br.getRegex("<title>([^<>\"]+) JavyNow</title>").getMatch(0);
-        if (filename == null) {
+        if (StringUtils.isEmpty(filename) || "no title".equals(filename)) {
             filename = url_filename;
         }
         dllink = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
@@ -114,6 +115,7 @@ public class JavynowCom extends PluginForHost {
         } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        br.setFollowRedirects(true);
         checkFFmpeg(downloadLink, "Download a HLS Stream");
         dl = new HLSDownloader(downloadLink, br, dllink);
         dl.startDownload();
@@ -131,7 +133,7 @@ public class JavynowCom extends PluginForHost {
             } catch (final Exception e) {
                 getLogger().log(e);
             }
-            return new Regex(decoded, "(https?://[^\"]*\\.m3u8[^\"]*)").getMatch(0);
+            return new Regex(decoded, "(https?://[^\"]*\\.(?:m3u8|mp4)[^\"]*)").getMatch(0);
         } else {
             return null;
         }

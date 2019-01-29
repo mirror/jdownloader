@@ -49,14 +49,14 @@ import jd.plugins.components.SiteType.SiteTemplate;
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
-    private static final String[]     domains                    = { "medche.com", "go-urls.tk", "btc4link.com", "topklink.com", "shorts-link.com", "rawabbet.com", "easy4earn.com", "linkat4all.com", "linkdrop.net", "shrtz.me", "ctkings.com", "linksad.net", "paylink.pro", "123link.pro", "donia2link.com", "cutpaid.com", "shortadz.org", "itiurl.co", "shortli.net", "cutearn.ca", "icutit.ca", "cut-one.com", "cll.press", "link-zero.com", "linktor.io", "cash4url.com", "cashat.net", "shortit.ca", "123short.com", "skip-url.me", "msms4.com", "empireshort.com", "loadurl.com", "shortmony.me", "geistlink.com", "cutt.us.com", "arabdollar.com", "shortenow.com", "kingurl.net", "best3link.com", "solo-link.com", "best5link.com", "lkky.co", "win4cut.com", "coinlink.co", "adlink.guru", "short.es", "tmearn.com", "ibly.co", "urle.co", "mitly.us", "zlshorte.net", "igram.im", "gram.im", "bit-url.com",
-            "adbilty.me", "linclik.com", "oke.io", "vivads.net", "pnd.tl", "met.bz", "urlcloud.us",
+    private static final String[]     domains                    = { "arabtvlink.com", "medche.com", "go-urls.tk", "btc4link.com", "topklink.com", "shorts-link.com", "rawabbet.com", "easy4earn.com", "linkat4all.com", "linkdrop.net", "shrtz.me", "ctkings.com", "linksad.net", "paylink.pro", "123link.pro", "donia2link.com", "cutpaid.com", "shortadz.org", "itiurl.co", "shortli.net", "cutearn.ca", "icutit.ca", "cut-one.com", "cll.press", "link-zero.com", "linktor.io", "cash4url.com", "cashat.net", "shortit.ca", "123short.com", "skip-url.me", "msms4.com", "empireshort.com", "loadurl.com", "shortmony.me", "geistlink.com", "cutt.us.com", "arabdollar.com", "shortenow.com", "kingurl.net", "best3link.com", "solo-link.com", "best5link.com", "lkky.co", "win4cut.com", "coinlink.co", "adlink.guru", "short.es", "tmearn.com", "ibly.co", "urle.co", "mitly.us", "zlshorte.net", "igram.im", "gram.im",
+            "bit-url.com", "adbilty.me", "linclik.com", "oke.io", "vivads.net", "pnd.tl", "met.bz", "urlcloud.us",
             /** clicksfly.com domains */
             "clicksfly.com", "gifsis.com", "blogginggyanbox.com", "buyitonline.store", "clk.ink",
             /** eglink.info domains */
             "eglink.info", "egyptiangy.net", "egypt-mix.com",
             /** cut-urls.com domains */
-            "cut-urls.com", "curs.io", "cuon.io",
+            "cut-urls.com", "curs.io", "cuon.io", "cuus.io",
             /** wicr.me domains */
             "wicr.me", "wi.cr",
             /** cutwin.com domains */
@@ -136,7 +136,11 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
         final String source_host = Browser.getHost(parameter);
         br.setFollowRedirects(false);
         getPage(parameter);
-        final String redirect = br.getRedirectLocation();
+        String redirect = br.getRedirectLocation();
+        if (redirect == null) {
+            /* 2019-01-29: E.g. cuon.io */
+            redirect = br.getRegex("<meta http\\-equiv=\"refresh\" content=\"\\d+;url=(https?://[^\"]+)\">").getMatch(0);
+        }
         if (redirect != null && !redirect.contains(source_host + "/")) {
             /*
              * 2018-07-18: Direct redirect without captcha or any Form e.g. vivads.net OR redirect to other domain of same service e.g.

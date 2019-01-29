@@ -230,6 +230,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         correctDownloadLink(link);
         if (IMAGEHOSTER) {
             link.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
+        } else if (VIDEOHOSTER_ENFORCE_VIDEO_FILENAME) {
+            link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         }
         getPage(link.getPluginPatternMatcher());
         setFUID(link);

@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.ByteArrayInputStream;
@@ -51,7 +50,6 @@ import jd.plugins.components.RuTubeVariant;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rutube.ru" }, urls = { "http://(www\\.)?video\\.decryptedrutube\\.ru/[0-9a-f]{32}" })
 public class RuTubeRu extends PluginForHost {
-
     public RuTubeRu(final PluginWrapper wrapper) {
         super(wrapper);
         setStartIntervall(5000l);
@@ -95,7 +93,6 @@ public class RuTubeRu extends PluginForHost {
     public void setActiveVariantByLink(DownloadLink downloadLink, LinkVariant variant) {
         downloadLink.setDownloadSize(-1);
         super.setActiveVariantByLink(downloadLink, variant);
-
     }
 
     @Override
@@ -124,19 +121,16 @@ public class RuTubeRu extends PluginForHost {
          * 'video_balancer' object which leads to a (lower quality?) http videourl.
          */
         // br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:50.0) Gecko/20100101 Firefox/50.0");
-        getPage("http://rutube.ru/api/play/trackinfo/" + nextId + "/");
+        getPage("https://rutube.ru/api/play/trackinfo/" + nextId + "/");
         if (br.containsHTML("<root><detail>Not found</detail></root>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new ByteArrayInputStream(br.toString().getBytes("UTF-8")));
         final XPath xPath = XPathFactory.newInstance().newXPath();
-
         String filename = getText(doc, xPath, "/root/title");
-
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-
         if (var != null) {
             downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + "_" + var.getHeight() + "p" + ".mp4");
         }
@@ -151,20 +145,15 @@ public class RuTubeRu extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-
         ajax = cloneBrowser(br);
         ajax.getPage(videoBalancer);
-
         Document d = parser.parse(new ByteArrayInputStream(ajax.toString().getBytes("UTF-8")));
         String baseUrl = xPath.evaluate("/manifest/baseURL", d).trim();
-
         NodeList f4mUrls = (NodeList) xPath.evaluate("/manifest/media", d, XPathConstants.NODESET);
         Node best = f4mUrls.item(f4mUrls.getLength() - 1);
-
         RuTubeVariant bestVariant = null;
         long bestSizeEstimation = 0;
         String bestUrl = null;
-
         String width = null;
         String height = null;
         String bitrate = null;
@@ -175,14 +164,11 @@ public class RuTubeRu extends PluginForHost {
             height = getAttByNamedItem(best, "height");
             bitrate = getAttByNamedItem(best, "bitrate");
             f4murl = getAttByNamedItem(best, "href");
-
             ajax = cloneBrowser(br);
             ajax.getPage(baseUrl + f4murl);
-
             d = parser.parse(new ByteArrayInputStream(ajax.toString().getBytes("UTF-8")));
             double duration = Double.parseDouble(xPath.evaluate("/manifest/duration", d));
             bestSizeEstimation = (long) ((duration * Long.parseLong(bitrate) * 1024l) / 8);
-
             NodeList mediaUrls = (NodeList) xPath.evaluate("/manifest/media", d, XPathConstants.NODESET);
             Node media;
             for (int j = 0; j < mediaUrls.getLength(); j++) {
@@ -209,9 +195,7 @@ public class RuTubeRu extends PluginForHost {
                         }
                     }
                 }
-
             }
-
         }
         if (bestSizeEstimation > 0) {
             downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + "_" + height + "p" + ".mp4");
@@ -219,9 +203,7 @@ public class RuTubeRu extends PluginForHost {
             downloadLink.setProperty("f4vUrl", bestUrl);
             return AvailableStatus.TRUE;
         }
-
         return AvailableStatus.FALSE;
-
     }
 
     private void getPage(final String url) throws IOException {
@@ -281,5 +263,4 @@ public class RuTubeRu extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
-
 }

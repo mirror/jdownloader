@@ -36,7 +36,6 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porndig.com" }, urls = { "https?://(?:www\\.)?porndig\\.com/videos/\\d+/[a-z0-9\\-]+\\.html" })
 public class PorndigCom extends PluginForHost {
-
     public PorndigCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -100,7 +99,7 @@ public class PorndigCom extends PluginForHost {
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         }
-        final String url_embed = this.br.getRegex("<iframe[^<>]*?src=\"(http[^<>\"]+)\"").getMatch(0);
+        final String url_embed = this.br.getRegex("<iframe[^<>]*?src=\"(http[^<>\"]+player/[^<>\"]+)\"").getMatch(0);
         if (url_embed == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -117,6 +116,10 @@ public class PorndigCom extends PluginForHost {
                 for (final Object videoo : ressourcelist) {
                     entries = (HashMap<String, Object>) videoo;
                     dllink_temp = (String) entries.get("file");
+                    if (dllink_temp == null) {
+                        /* 2019-01-29 */
+                        dllink_temp = (String) entries.get("src");
+                    }
                     quality_temp_o = entries.get("label");
                     if (quality_temp_o != null && quality_temp_o instanceof Long) {
                         quality_temp = JavaScriptEngineFactory.toLong(quality_temp_o, 0);
@@ -173,7 +176,6 @@ public class PorndigCom extends PluginForHost {
                     dllink = hlsbest.getDownloadurl();
                 }
             }
-
         }
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
