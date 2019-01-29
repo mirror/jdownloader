@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2009  JD-Team support@jdownloader.org
+//Copyright (C) 2017  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -15,9 +15,11 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import java.util.LinkedHashMap;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -29,18 +31,17 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornalized.com" }, urls = { "https?://(?:www\\.)?pornalized\\.com/videos/\\d+/[a-z0-9\\-]+" })
-public class PornalizedCom extends PluginForHost {
-    public PornalizedCom(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "videopress.com" }, urls = { "https?://(?:www\\.)?videopress\\.com/embed/([A-Za-z0-9]+)" })
+public class VideopressCom extends PluginForHost {
+    public VideopressCom(PluginWrapper wrapper) {
         super(wrapper);
     }
-
     /* DEV NOTES */
     // Tags:
     // protocol: no https
     // other:
+
     /* Extension which will be used if no correct extension is found */
     private static final String  default_extension = ".mp4";
     /* Connection stuff */
@@ -52,38 +53,50 @@ public class PornalizedCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://pornalized.com/terms.html";
+        return "https://videopress.com/";
     }
 
-    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        if (linkid != null) {
+            return linkid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         dllink = null;
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        final String linkid = this.getLinkID(link);
+        br.getPage("https://public-api.wordpress.com/rest/v1.1/videos/" + linkid);
         if (br.getHttpConnection().getResponseCode() == 404) {
+            /* {"error":"unknown_media","message":"The specified video was not found."} */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String url_filename = new Regex(link.getDownloadURL(), "videos/\\d+/(.+)").getMatch(0);
-        String filename = br.getRegex("<title>([^<>\"]+) \\- Pornalized\\.com</title>").getMatch(0);
-        if (filename == null) {
-            filename = url_filename;
+        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        String filename = (String) entries.get("title");
+        if (StringUtils.isEmpty(filename)) {
+            filename = linkid;
         }
-        dllink = br.getRegex("(?:file|sourceMp4)(?:\\')?\\s*?:\\s*?\\'(https?[^<>\"]*?)\\'").getMatch(0);
-        if (dllink == null) {
-            dllink = br.getRegex("\\'(https?://v\\d+\\.pornalized\\.com/pornalized/[^<>\"\\']+)").getMatch(0);
-        }
+        dllink = (String) entries.get("original");
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        final String ext;
+        String ext;
         if (!StringUtils.isEmpty(dllink)) {
             ext = getFileNameExtensionFromString(dllink, default_extension);
+            if (ext != null && !ext.matches("\\.(?:flv|mp4)")) {
+                ext = default_extension;
+            }
         } else {
             ext = default_extension;
         }
@@ -98,7 +111,6 @@ public class PornalizedCom extends PluginForHost {
                 con = br.openHeadConnection(dllink);
                 if (!con.getContentType().contains("html")) {
                     link.setDownloadSize(con.getLongContentLength());
-                    link.setProperty("directlink", dllink);
                 } else {
                     server_issues = true;
                 }
@@ -143,11 +155,6 @@ public class PornalizedCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
-    }
-
-    @Override
-    public SiteTemplate siteTemplateType() {
-        return SiteTemplate.KernelVideoSharing;
     }
 
     @Override

@@ -546,6 +546,7 @@ public class DouploadsCom extends antiDDoSForHost {
         }
         /* 7, continue like normal */
         if (dllink == null) {
+            checkErrors(downloadLink, false);
             final Form download1 = br.getFormByInputFieldKeyValue("op", "download1");
             if (download1 != null) {
                 download1.remove("method_premium");

@@ -40,7 +40,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.RtbfBe.RtbfBeConfigInterface;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rtbf.be" }, urls = { "https?://(?:www\\.)?rtbf\\.be/(?:video|auvio)/.+\\?id=\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rtbf.be" }, urls = { "https?://(?:www\\.)?rtbf\\.be/(?:video|auvio)/.+" })
 public class RtbfBeDecrypter extends PluginForDecrypt {
     public RtbfBeDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -54,19 +54,39 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
 
     @SuppressWarnings({ "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final RtbfBeConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.RtbfBe.RtbfBeConfigInterface.class);
         final String parameter = param.toString();
-        final String id_url = new Regex(parameter, "(\\d+)$").getMatch(0);
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String decryptedhost = "http://" + this.getHost() + "decrypted/";
-        String date_formatted = null;
-        fastLinkcheck = cfg.isFastLinkcheckEnabled();
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getRequest().getHttpConnection().getResponseCode() == 404 || br.containsHTML("Ce contenu n'est plus disponible") || br.getURL().equals("https://www.rtbf.be/auvio/")) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
+        if (parameter.matches(".+(categorie/|/archives).+")) {
+            crawlCategory(decryptedLinks, parameter);
+        } else {
+            crawlSingleVideo(decryptedLinks, parameter);
+        }
+        return decryptedLinks;
+    }
+
+    private ArrayList<DownloadLink> crawlCategory(final ArrayList<DownloadLink> decryptedLinks, final String parameter) throws Exception {
+        final String[] singleVideos = br.getRegex("\"(https?://(?:www\\.)?rtbf\\.be/auvio/[^\"]+\\?id=\\d+)\"").getColumn(0);
+        for (final String singleVideo : singleVideos) {
+            if (singleVideo.matches(".+(categorie/|/archives).+")) {
+                continue;
+            }
+            decryptedLinks.add(this.createDownloadlink(singleVideo));
+        }
+        return decryptedLinks;
+    }
+
+    private ArrayList<DownloadLink> crawlSingleVideo(final ArrayList<DownloadLink> decryptedLinks, final String parameter) throws Exception {
+        final RtbfBeConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.RtbfBe.RtbfBeConfigInterface.class);
+        fastLinkcheck = cfg.isFastLinkcheckEnabled();
+        String date_formatted = null;
+        final String decryptedhost = "http://" + this.getHost() + "decrypted/";
+        final String id_url = new Regex(parameter, "(\\d+)$").getMatch(0);
         String video_id = br.getRegex("/embed/media\\?id=(\\d+)").getMatch(0);
         if (video_id == null) {
             /*

@@ -1,6 +1,6 @@
 package jd.plugins.hoster;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.appwork.utils.StringUtils;
@@ -98,8 +98,13 @@ public class GeraGeraComBr extends PluginForHost {
             account.setMaxSimultanDownloads(1);
             ac.setStatus("Free Account");
         }
-        final String[] hostsList = { "uploaded.net", "rapidgator.net", "bigfile.to", "mega.co.nz", "alfafile.net", "uptobox.com", "uptostream.com", "datafile.com", "4shared.com", "1fichier.com", "filefactory.com", "file4go.com", "mediafire.com", "turbobit.net", "userscloud.com", "oboom.com", "sendspace.com", "usersfiles.com", "uppit.com", "aniteca.zlx.com.br", "uploadcloud.pro", "Openload.io" };
-        ac.setMultiHostSupport(this, Arrays.asList(hostsList));
+        br.getPage("https://" + br.getHost() + "/");
+        final ArrayList<String> supportedHosts = new ArrayList<String>();
+        final String[] crippledHosts = br.getRegex("<div class=\"servidor ([^\"]+)\"").getColumn(0);
+        for (final String crippledHost : crippledHosts) {
+            supportedHosts.add(crippledHost);
+        }
+        ac.setMultiHostSupport(this, supportedHosts);
         return ac;
     }
 
