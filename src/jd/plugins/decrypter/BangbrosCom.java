@@ -111,6 +111,8 @@ public class BangbrosCom extends PluginForDecrypt {
                 /* Fallback to id from inside url */
                 title = fid;
             }
+            /* 2019-01-29: Content-Servers are very slow */
+            final boolean fast_linkcheck = true;
             final String[] htmls_videourls = getVideourls(this.br);
             for (final String html_videourl : htmls_videourls) {
                 final String videourl = getVideourlFromHtml(html_videourl);
@@ -124,18 +126,27 @@ public class BangbrosCom extends PluginForDecrypt {
                 final String ext = ".mp4";
                 final DownloadLink dl = this.createDownloadlink(videourl, fid, productid, quality_url);
                 dl.setName(title + "_" + quality_url + ext);
+                if (fast_linkcheck) {
+                    dl.setAvailable(true);
+                }
                 decryptedLinks.add(dl);
             }
             if (cfg.getBooleanProperty("GRAB_photos", false)) {
                 final String quality = "pictures";
                 final DownloadLink dl = this.createDownloadlink(directurl_photos, fid, productid, quality);
                 dl.setName(title + "_" + quality + ".zip");
+                if (fast_linkcheck) {
+                    dl.setAvailable(true);
+                }
                 decryptedLinks.add(dl);
             }
             if (cfg.getBooleanProperty("GRAB_screencaps", false)) {
                 final String quality = "screencaps";
                 final DownloadLink dl = this.createDownloadlink(directurl_screencaps, fid, productid, quality);
                 dl.setName(title + "_" + quality + ".zip");
+                if (fast_linkcheck) {
+                    dl.setAvailable(true);
+                }
                 decryptedLinks.add(dl);
             }
         }

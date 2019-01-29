@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.Random;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -61,7 +62,6 @@ public class BangbrosCom extends PluginForHost {
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     private final String         DOMAIN_PREFIX_PREMIUM        = "members.";
-    public static final String   html_loggedin                = "class=\"thumbsMN thumbsMN\\-urPrchs\"";
     private String               dllink                       = null;
     private boolean              server_issues                = false;
     private boolean              logged_in                    = false;
@@ -69,11 +69,12 @@ public class BangbrosCom extends PluginForHost {
     public static Browser prepBR(final Browser br) {
         /* This may happen after logging in but usually login process will be okay anways. */
         br.setAllowedResponseCodes(500);
+        br.setFollowRedirects(true);
         return br;
     }
 
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("bangbrosdecrypted://", "http://"));
+        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replaceAll("bangbrosdecrypted://", "https://"));
     }
 
     @SuppressWarnings("deprecation")
@@ -159,7 +160,7 @@ public class BangbrosCom extends PluginForHost {
         if (fid == null || quality == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        this.br.getPage("http://" + DOMAIN_PREFIX_PREMIUM + this.getHost() + "/product/" + product + "/movie/" + fid);
+        this.br.getPage("https://" + DOMAIN_PREFIX_PREMIUM + this.getHost() + "/product/" + product + "/movie/" + fid);
         if (jd.plugins.decrypter.BangbrosCom.isOffline(this.br, getMainlink(link))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -236,24 +237,38 @@ public class BangbrosCom extends PluginForHost {
                      * when the user logs in via browser.
                      */
                     br.setCookies(account.getHoster(), cookies);
-                    br.getPage("http://" + DOMAIN_PREFIX_PREMIUM + this.getHost() + "/library");
-                    if (br.containsHTML(html_loggedin)) {
+                    br.getPage("https://" + DOMAIN_PREFIX_PREMIUM + this.getHost() + "/library");
+                    if (isLoggedin(br)) {
                         logger.info("Cookie login successful");
                         return;
                     }
                     logger.info("Cookie login failed --> Performing full login");
                     br = prepBR(new Browser());
                 }
-                br.getPage("http://" + DOMAIN_PREFIX_PREMIUM + this.getHost() + "/login");
+                br.getPage("https://" + DOMAIN_PREFIX_PREMIUM + this.getHost() + "/login");
                 final Form loginform = br.getForm(0);
+                if (loginform == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 loginform.put("login%5Busername%5D", Encoding.urlEncode(account.getUser()));
                 loginform.put("login%5Bpassword%5D", Encoding.urlEncode(account.getPass()));
                 loginform.put("profiler_input", Integer.toString(new Random().nextInt(1000)));
+                if (loginform.containsHTML("g-recaptcha")) {
+                    final DownloadLink dlinkbefore = this.getDownloadLink();
+                    if (dlinkbefore == null) {
+                        this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true));
+                    }
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    if (dlinkbefore != null) {
+                        this.setDownloadLink(dlinkbefore);
+                    }
+                    loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                }
                 br.submitForm(loginform);
                 if (!br.getURL().contains("/library")) {
                     br.getPage("/library");
                 }
-                if (!br.containsHTML(html_loggedin)) {
+                if (!isLoggedin(br)) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername,Passwort und/oder login Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -266,6 +281,14 @@ public class BangbrosCom extends PluginForHost {
                 throw e;
             }
         }
+    }
+
+    private boolean isLoggedin(final Browser br) {
+        // final String logincookie = br.getCookie(account.getHoster(), "bangbros_remember_me");
+        // final String logincookie2 = br.getCookie(account.getHoster(), "st_login");
+        // final boolean isLoggedin = (logincookie != null && !"deleted".equalsIgnoreCase(logincookie)) || (logincookie2 != null &&
+        // !"deleted".equalsIgnoreCase(logincookie2));
+        return br.containsHTML("all_purchased_switcher");
     }
 
     @Override
@@ -341,6 +364,7 @@ public class BangbrosCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_480p", "Grab 480p (mp4)?").setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_720p", "Grab 720p (mp4)?").setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_1080p", "Grab 1080p (mp4)?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_2160p", "Grab 2160p (mp4)?").setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_photos", "Grab photos (.zip containing images)?").setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_screencaps", "Grab screencaps (.zip containing images)?").setDefaultValue(false));
     }

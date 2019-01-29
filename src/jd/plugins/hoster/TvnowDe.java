@@ -43,6 +43,7 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
@@ -274,6 +275,9 @@ public class TvnowDe extends PluginForHost {
         }
         if (!StringUtils.isEmpty(hlsMaster)) {
             hlsMaster = hlsMaster.replaceAll("(\\??filter=.*?)(&|$)", "");// show all available qualities
+            /*
+             * 2019-01-29: Error 404 may happen for content which is premiumonly (for ALL streaming-types, URLs are given but do not work!)
+             */
             br.getPage(hlsMaster);
             /* Find user-preferred quality */
             final Quality preferredQuality = cfg.getPreferredQuality();
@@ -297,12 +301,13 @@ public class TvnowDe extends PluginForHost {
                     /* Fallback */
                     logger.info("Failed to find preferred quality: " + preferredQualityString);
                     hlsDownloadCandidate = HlsContainer.findBestVideoByBandwidth(hlsQualities);
-                    logger.info("Downloading best quality instead: " + hlsDownloadCandidate.getResolution());
+                    if (hlsDownloadCandidate != null) {
+                        logger.info("Downloading best quality instead: " + hlsDownloadCandidate.getResolution());
+                    }
                 }
             }
             if (hlsDownloadCandidate == null) {
-                /* No content available --> Probably DRM protected */
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming type [DRM]");
+                errorNoDownloadurlFound(acc, isFree);
             }
             if (downloadLink.getComment() == null || cfg.isShowQualityInfoInComment()) {
                 downloadLink.setComment(hlsDownloadCandidate.toString());
@@ -321,14 +326,7 @@ public class TvnowDe extends PluginForHost {
             dl.startDownload();
         } else {
             /* hds */
-            if (!isFree) {
-                /*
-                 * We found no downloadurls plus the video is not viewable for free --> Paid content. TODO: Maybe check if it is
-                 * downloadable once a user bought it --> Probably not as chances are high that it will be DRM protected!
-                 */
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Download nicht möglich (muss gekauft werden)");
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "HDS streaming is not (yet) supported");
+            errorNoDownloadurlFound(acc, isFree);
             // /* Now we're sure that our .mp4 availablecheck-filename is correct */
             // downloadLink.setFinalFileName(downloadLink.getName());
             // /* TODO */
@@ -355,6 +353,19 @@ public class TvnowDe extends PluginForHost {
             // dl = new HDSDownloader(downloadLink, br, url_hds);
             // dl.startDownload();
         }
+    }
+
+    private void errorNoDownloadurlFound(final Account acc, final boolean isFree) throws PluginException {
+        /* 2019-01-29: TODO: Check if this can also happen when logged-in */
+        if (!isFree) {
+            logger.info("Only downloadable via premium");
+            if (acc != null) {
+                logger.info("Account available --> WTF, maybe content has to be bought individually");
+            }
+            throw new AccountRequiredException();
+        }
+        /* Assume that no downloadable stream-type is available. */
+        throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming type [DRM]");
     }
 
     private String selectedQualityEnumToQualityString(final Quality selectedQuality) {
