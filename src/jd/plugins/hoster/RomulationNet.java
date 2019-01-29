@@ -16,11 +16,9 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.Locale;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -223,16 +221,20 @@ public class RomulationNet extends PluginForHost {
             ai.setStatus("Registered (free) user");
         } else {
             /* 2019-01-29: TODO */
-            final String expire = br.getRegex("").getMatch(0);
-            if (expire == null) {
-                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort oder nicht unterstützter Account Typ!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or unsupported account type!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-            } else {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
-            }
+            // final String expire = br.getRegex("").getMatch(0);
+            // if (expire == null) {
+            // if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+            // throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort oder nicht unterstützter Account
+            // Typ!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein
+            // Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            // } else {
+            // throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or unsupported account type!\r\nQuick
+            // help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters,
+            // change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            // }
+            // } else {
+            // ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
+            // }
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             account.setConcurrentUsePossible(true);
