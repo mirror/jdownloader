@@ -21,6 +21,11 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -39,11 +44,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
-
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pinterest.com" }, urls = { "https?://(?:(?:www|[a-z]{2})\\.)?pinterest\\.(?:com|de|fr|it|es|co\\.uk)/(pin/[A-Za-z0-9\\-_]+/|[^/]+/[^/]+/(?:[^/]+/)?)" })
 public class PinterestComDecrypter extends PluginForDecrypt {
@@ -538,11 +538,17 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                                         logger.info("Failed to find nextbookmark --> Cannot grab more items --> Stopping");
                                         break;
                                     } else {
-                                        getpage = "/resource/BoardFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22board_id%22%3A%22" + board_id + "%22%2C%22page_size%22%3A" + max_pins_per_board_pagination + "%2C%22add_vase%22%3Atrue%2C%22bookmarks%22%3A%5B%22" + Encoding.urlEncode(nextbookmark) + "%22%5D%2C%22field_set_key%22%3A%22unauth_react%22%2C%22pin_count%22%3A" + total_pin_count + "%2C%22rank_with_query%22%3Anull%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis();
+                                        getpage = "/resource/BoardFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22isPrefetch%22%3Afalse%2C%22board_id%22%3A%22" + board_id + "%22%2C%22board_url%22%3A%22" + Encoding.urlEncode(source_url) + "%22%2C%22field_set_key%22%3A%22react_grid_pin%22%2C%22filter_section_pins%22%3Atrue%2C%22layout%22%3A%22default%22%2C%22page_size%22%3A" + max_entries_per_page_free + "%2C%22redux_normalize_feed%22%3Atrue%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis();
                                     }
                                 } else {
                                     if (nextbookmark != null) {
-                                        getpage = "/resource/BoardRelatedPixieFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22bookmarks%22%3A%5B%22" + Encoding.urlEncode(nextbookmark) + "%22%5D%2C%22isPrefetch%22%3Afalse%2C%22board_id%22%3A%22" + board_id + "%22%2C%22add_vase%22%3Atrue%2C%22field_set_key%22%3A%22unauth_react%22%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis();
+                                        getpage = "/resource/BoardFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22bookmarks%22%3A%5B%22" + Encoding.urlEncode(nextbookmark) + "%3D%3D%22%5D%2C%22isPrefetch%22%3Afalse%2C%22board_id%22%3A%22" + board_id + "%22%2C%22board_url%22%3A%22" + Encoding.urlEncode(source_url) + "%22%2C%22field_set_key%22%3A%22react_grid_pin%22%2C%22filter_section_pins%22%3Atrue%2C%22layout%22%3A%22default%22%2C%22page_size%22%3A" + max_entries_per_page_free + "%2C%22redux_normalize_feed%22%3Atrue%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis();
+                                        // getpage = "/resource/BoardRelatedPixieFeedResource/get/?source_url=" +
+                                        // Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22bookmarks%22%3A%5B%22" +
+                                        // Encoding.urlEncode(nextbookmark) + "%22%5D%2C%22isPrefetch%22%3Afalse%2C%22board_id%22%3A%22" +
+                                        // board_id +
+                                        // "%22%2C%22add_vase%22%3Atrue%2C%22field_set_key%22%3A%22unauth_react%22%7D%2C%22context%22%3A%7B%7D%7D&_="
+                                        // + System.currentTimeMillis();
                                     } else {
                                         getpage = "/resource/BoardRelatedPixieFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22isPrefetch%22%3Afalse%2C%22board_id%22%3A%22" + board_id + "%22%2C%22add_vase%22%3Atrue%2C%22field_set_key%22%3A%22unauth_react%22%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis();
                                     }
@@ -642,7 +648,8 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                         processPinsKamikaze(json_root, board_id, source_url);
                     }
                     final boolean changed = dupeList.size() - before != 0;
-                    nextbookmark = (String) JavaScriptEngineFactory.walkJson(entries, "resource/options/bookmarks/{0}");
+                    /* 2019-01-29: We should always find our 'nextbookmark' value here on first try! */
+                    nextbookmark = (String) JavaScriptEngineFactory.walkJson(json_root, "resource/options/bookmarks/{0}");
                     if (nextbookmark == null || nextbookmark.equalsIgnoreCase("-end-")) {
                         /* Fallback to RegEx */
                         nextbookmark = new Regex(json_source_for_crawl_process, "\"bookmarks\"\\s*?:\\s*?\"([^\"]{6,})\"").getMatch(0);

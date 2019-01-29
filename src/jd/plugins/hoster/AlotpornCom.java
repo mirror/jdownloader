@@ -15,7 +15,10 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -25,8 +28,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alotporn.com" }, urls = { "https?://(?:www\\.)?alotporn\\.com/(?:\\d+/[A-Za-z0-9\\-_]+/|(?:embed\\.php\\?id=|embed/)\\d+)|https?://m\\.alotporn\\.com/\\d+/[a-z0-9\\-]+/" })
 public class AlotpornCom extends PluginForHost {
@@ -135,6 +136,14 @@ public class AlotpornCom extends PluginForHost {
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (StringUtils.isEmpty(dllink)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        /* 2019-01-29: URL can only be used once so we need to generate a new one after the availablecheck. */
+        this.br = new Browser();
+        this.br.setFollowRedirects(true);
+        br.getPage(downloadLink.getPluginPatternMatcher());
+        dllink = this.getDllink();
+        if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);

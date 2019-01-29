@@ -26,10 +26,13 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.gui.UserIO;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.nativeintegration.LocalBrowser;
@@ -39,9 +42,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.HexFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "definebabe.com", "definefetish.com" }, urls = { "definebabedecrypted://(?:www\\.)?definebabes?\\.com/video/[a-z0-9]+/[a-z0-9\\-]+/", "http://(www\\.)?definefetish\\.com/video/[a-z0-9]+/[a-z0-9\\-]+/" })
 public class DefineBabeCom extends PluginForHost {
@@ -58,6 +58,7 @@ public class DefineBabeCom extends PluginForHost {
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
     private String               dllink            = null;
+    private boolean              server_issues     = false;
 
     @Override
     public String getAGBLink() {
@@ -105,39 +106,28 @@ public class DefineBabeCom extends PluginForHost {
                 break;
             }
         }
-        if (dllink == null) {
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = Encoding.htmlDecode(dllink);
-        if (filename == null || dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
-        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
-        if (!filename.endsWith(ext)) {
-            filename += ext;
-        }
+        filename = filename.trim() + ".mp4";
         downloadLink.setFinalFileName(filename);
-        URLConnectionAdapter con = null;
-        try {
+        if (dllink != null) {
+            dllink = Encoding.htmlDecode(dllink);
+            URLConnectionAdapter con = null;
             try {
                 con = br.openGetConnection(dllink);
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            downloadLink.setProperty("directlink", dllink);
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
+                if (!con.getContentType().contains("html")) {
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                } else {
+                    server_issues = true;
+                }
+                downloadLink.setProperty("directlink", dllink);
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
         return AvailableStatus.TRUE;
@@ -150,6 +140,11 @@ public class DefineBabeCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (server_issues) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+        } else if (StringUtils.isEmpty(dllink)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         if (br.containsHTML("Please, call later\\.")) {
             downloadLink.getLinkStatus().setStatusText("Server is busy");
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is busy", 5 * 60 * 1000l);

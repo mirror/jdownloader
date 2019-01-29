@@ -599,6 +599,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
         /* 7, continue like normal */
         if (dllink == null) {
+            /*
+             * Check errors here because if we don't and a link is premiumonly, download1 Form will be present, plugin will send it and most
+             * likely end up with error "Fatal countdown error (countdown skipped)"
+             */
             checkErrors(downloadLink, false);
             final Form download1 = br.getFormByInputFieldKeyValue("op", "download1");
             if (download1 != null) {
