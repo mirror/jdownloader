@@ -16,6 +16,8 @@
 package jd.plugins.hoster;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -30,7 +32,6 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "justporno.tv", "xxx.justporno.tv" }, urls = { "https?://(?:www\\.)?justporno\\.tv/(?:1|hd)/\\d+/[a-z0-9\\-_]+", "https?://xxx\\.justporno\\.tv/videos/\\d+/[^/]+/" })
 public class JustpornoTv extends PluginForHost {
-
     public JustpornoTv(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -96,10 +97,15 @@ public class JustpornoTv extends PluginForHost {
             link.setFinalFileName(filename);
             URLConnectionAdapter con = null;
             try {
-                con = br.openHeadConnection(dllink);
-                if (!con.getContentType().contains("html")) {
+                /* 2019-01-29: Use GET connection instead of HEAD as we may sometimes get HLS URLs instead and want to get the final URL! */
+                con = br.openGetConnection(dllink);
+                final String contenttype = con.getContentType();
+                if (contenttype.contains("video/mp4")) {
                     link.setDownloadSize(con.getLongContentLength());
                     link.setProperty("directlink", dllink);
+                } else if (contenttype.contains("x-mpegurl")) {
+                    br.followConnection();
+                    dllink = br.getURL();
                 } else {
                     server_issues = true;
                 }
@@ -124,21 +130,33 @@ public class JustpornoTv extends PluginForHost {
         } else if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+        if (br.getURL().contains(".m3u8")) {
+            final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
+            if (hlsbest == null) {
+                /* No content available --> Probably the user wants to download hasn't aired yet --> Wait and retry later! */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Sendung wurde noch nicht ausgestrahlt", 60 * 60 * 1000l);
             }
-            br.followConnection();
-            try {
-                dl.getConnection().disconnect();
-            } catch (final Throwable e) {
+            dllink = hlsbest.getDownloadurl();
+            checkFFmpeg(downloadLink, "Download a HLS Stream");
+            dl = new HLSDownloader(downloadLink, br, dllink);
+            dl.startDownload();
+        } else {
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
+            if (dl.getConnection().getContentType().contains("html")) {
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                }
+                br.followConnection();
+                try {
+                    dl.getConnection().disconnect();
+                } catch (final Throwable e) {
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dl.startDownload();
         }
-        dl.startDownload();
     }
 
     @Override

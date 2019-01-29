@@ -33,7 +33,6 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fapality.com" }, urls = { "https?://(?:[a-z]+\\.)?fapality\\.com/\\d+/?$" })
 public class FapalityCom extends PluginForHost {
-
     public FapalityCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -73,6 +72,14 @@ public class FapalityCom extends PluginForHost {
             filename = url_filename;
         }
         dllink = br.getRegex("video_url[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
+        if (StringUtils.isEmpty(dllink)) {
+            /* 2019-01-29: Prefer HD */
+            dllink = br.getRegex("<source id=\"video_source_1\" src=\"(https[^\"]+)\" type=\"video/mp4\" data\\-is\\-hd=\"true\" title=\"720p\">").getMatch(0);
+        }
+        if (StringUtils.isEmpty(dllink)) {
+            /* Fallback: Do not care about quality */
+            dllink = br.getRegex("<source id=\"video_source_1\" src=\"(https[^\"]+)\" type=\"video/mp4\"[^>]*?>").getMatch(0);
+        }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

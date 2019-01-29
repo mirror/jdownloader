@@ -409,7 +409,6 @@ public class YunFileCom extends PluginForHost {
         try {
             login(account, true);
         } catch (final PluginException e) {
-            account.setValid(false);
             throw e;
         }
         if (!br.getURL().contains("/user/edit.html")) {
@@ -458,7 +457,7 @@ public class YunFileCom extends PluginForHost {
                 br.setFollowRedirects(true);
                 if (br.getURL() == null) {
                     // only load page if page hasn't already been requested
-                    br.getPage(MAINPAGE);
+                    br.getPage("http://www.yfpan.com/");
                 }
                 Form login = br.getFormbyProperty("id", "login_form");
                 final String lang = System.getProperty("user.language");
@@ -475,7 +474,7 @@ public class YunFileCom extends PluginForHost {
                 login.put("remember", "on");
                 login.put("returnPath", Encoding.urlEncode(br.getURL()));
                 br.submitForm(login);
-                if (br.getCookie(MAINPAGE, "jforumUserHash") == null || br.getCookie(MAINPAGE, "membership") == null) {
+                if (br.getCookie(br.getHost(), "jforumUserHash") == null || br.getCookie(br.getHost(), "membership") == null) {
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {

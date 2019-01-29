@@ -108,8 +108,12 @@ public class HomemadeVoyeurCom extends PluginForDecrypt {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
+            /* Last chance - directurl */
             if (tempID == null) {
                 tempID = br.getRegex("<source type=\"video/mp4\" src=\"([^\"]+)\"").getMatch(0);
+            }
+            if (tempID == null) {
+                tempID = br.getRegex("<source src=\"([^\"]+)\" type=\"video/mp4\"").getMatch(0);
             }
             if (tempID == null || filename == null) {
                 logger.info("filename: " + filename + ", tempID: " + tempID);
