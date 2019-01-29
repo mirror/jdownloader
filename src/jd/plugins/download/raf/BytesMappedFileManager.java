@@ -2,6 +2,7 @@ package jd.plugins.download.raf;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Locale;
 
@@ -15,11 +16,11 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.Files;
 import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
+import org.appwork.utils.IO.WriteToFileCallback;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.logging.LogController;
 
 public class BytesMappedFileManager {
-
     private static final class BytesMappedFileStorable implements Storable, FileBytesMapViewInterface {
         private long[][] markedAreas = null;
         private String   name        = null;
@@ -58,7 +59,6 @@ public class BytesMappedFileManager {
         public void setMarkedAreas(long[][] markedAreas) {
             this.markedAreas = markedAreas;
         }
-
     }
 
     private final HashMap<File, BytesMappedFile> openFiles = new HashMap<File, BytesMappedFile>();
@@ -98,7 +98,6 @@ public class BytesMappedFileManager {
                 fileBytesMap.reset();
             }
             ret = new BytesMappedFile(file, fileBytesMap, true) {
-
                 @Override
                 protected void onFlushed() throws IOException {
                     write(this);
@@ -222,7 +221,20 @@ public class BytesMappedFileManager {
             File file = bytesMappedFile.getFile();
             File mapFile = getMapFile(file);
             try {
-                IO.secureWrite(mapFile, JSonStorage.serializeToJson(new BytesMappedFileStorable(bytesMappedFile)).getBytes("UTF-8"), IO.SYNC.META_AND_DATA);
+                IO.secureWrite(mapFile, new WriteToFileCallback() {
+                    @Override
+                    public void writeTo(OutputStream os) throws IOException {
+                        JSonStorage.getMapper().writeObject(os, new BytesMappedFileStorable(bytesMappedFile));
+                    }
+
+                    @Override
+                    public void onIOException(IOException e) throws IOException {
+                    }
+
+                    @Override
+                    public void onClosed() {
+                    }
+                }, IO.SYNC.META_AND_DATA);
             } catch (final IOException e) {
                 LogController.CL(true).log(e);
                 throw e;

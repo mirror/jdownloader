@@ -74,7 +74,6 @@ import org.appwork.uio.ExceptionDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
-import org.appwork.utils.IOErrorHandler;
 import org.appwork.utils.JarHandlerWorkaround;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -420,9 +419,7 @@ public class SecondLevelLaunch {
     }
 
     private static void vmOptionsWorkaround(long maxHeap) {
-        final IOErrorHandler errorHandler = IO.getErrorHandler();
         try {
-            IO.setErrorHandler(null);
             if (maxHeap > 0 && maxHeap <= 256 * 1024 * 1024) {
                 LoggerFactory.getDefaultLogger().warning("WARNING: MaxMemory detected! MaxMemory=" + maxHeap + " bytes");
                 if (CrossSystem.isWindows() || CrossSystem.isUnix()) {
@@ -555,8 +552,6 @@ public class SecondLevelLaunch {
             }
         } catch (final Throwable e) {
             LoggerFactory.getDefaultLogger().log(e);
-        } finally {
-            IO.setErrorHandler(errorHandler);
         }
     }
 

@@ -21,6 +21,8 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.lang.reflect.Type;
 
+import jd.gui.swing.laf.LookAndFeelController;
+
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.JsonSerializer;
 import org.appwork.storage.TypeRef;
@@ -30,21 +32,16 @@ import org.appwork.txtresource.TranslationFactory;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.IO.SYNC;
-import org.appwork.utils.IOErrorHandler;
 import org.appwork.utils.Regex;
-import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.logging2.LogSourceRedirector;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.ExtensionController;
-import org.jdownloader.logging.LogController;
 import org.jdownloader.myjdownloader.client.json.JSonHandler;
 import org.jdownloader.myjdownloader.client.json.JsonFactoryInterface;
 import org.jdownloader.myjdownloader.client.json.MyJDJsonMapper;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
-
-import jd.gui.swing.laf.LookAndFeelController;
 
 public class Main {
     public static ParameterHandler PARAMETER_HANDLER = null;
@@ -87,26 +84,6 @@ public class Main {
             e.printStackTrace();
         }
         Dialog.getInstance().setLafManager(LookAndFeelController.getInstance());
-        IO.setErrorHandler(new IOErrorHandler() {
-            @Override
-            public void onWriteException(final Throwable e, final File file, final byte[] data) {
-                final LogSource logger = LogController.getInstance().getLogger("GlobalIOErrors");
-                logger.log(e);
-                logger.severe("An error occured while writing " + data.length + " bytes to " + file);
-                logger.close();
-            }
-
-            @Override
-            public void onReadStreamException(final Throwable e, final java.io.InputStream fis) {
-                final LogSource logger = LogController.getInstance().getLogger("GlobalIOErrors");
-                logger.log(e);
-                logger.close();
-            }
-
-            @Override
-            public void onCopyException(Throwable e, File in, File out) {
-            }
-        });
     }
 
     public static void checkLanguageSwitch(final String[] args) {
