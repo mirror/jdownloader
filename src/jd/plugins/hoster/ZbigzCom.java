@@ -35,7 +35,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zbigz.com" }, urls = { "http://(www\\.)?zbigz\\.com/file/[a-z0-9]+/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zbigz.com" }, urls = { "https?://(?:www\\.)?zbigz\\.com/file/[a-z0-9]+/\\d+|https?://api\\.zbigz\\.com/v1/storage/get/[a-f0-9]+" })
 public class ZbigzCom extends antiDDoSForHost {
     public ZbigzCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -64,7 +64,12 @@ public class ZbigzCom extends antiDDoSForHost {
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
             login(aa, false);
-            getPage(downloadLink.getDownloadURL());
+            final boolean enable_antiddos_workaround = true;
+            if (enable_antiddos_workaround) {
+                br.getPage(downloadLink.getPluginPatternMatcher());
+            } else {
+                super.getPage(downloadLink.getPluginPatternMatcher());
+            }
             if (br.containsHTML("Page not found")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -97,14 +102,7 @@ public class ZbigzCom extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        try {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        } catch (final Throwable e) {
-            if (e instanceof PluginException) {
-                throw (PluginException) e;
-            }
-        }
-        throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by registered/premium users");
+        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
 
     private static Object LOCK = new Object();
@@ -126,7 +124,7 @@ public class ZbigzCom extends antiDDoSForHost {
                 postPage("https://api.zbigz.com/v1/account/info", "undefined=undefined");
                 /* Important header!! */
                 br.getHeaders().put("Origin", "https://zbigz.com");
-                final PostFormDataRequest authReq = br.createPostFormDataRequest("https://api.zbigz.com/v1/account/auth");
+                final PostFormDataRequest authReq = br.createPostFormDataRequest("https://api.zbigz.com/v1/account/auth/token");
                 authReq.addFormData(new FormData("undefined", "undefined"));
                 super.sendRequest(authReq);
                 final String auth_token_name = PluginJSonUtils.getJson(br, "auth_token_name");
@@ -134,12 +132,13 @@ public class ZbigzCom extends antiDDoSForHost {
                 if (StringUtils.isEmpty(auth_token_name) || StringUtils.isEmpty(auth_token_value)) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                final PostFormDataRequest loginReq = br.createPostFormDataRequest("/v1/account/login");
+                final PostFormDataRequest loginReq = br.createPostFormDataRequest("/v1/account/sign-in");
                 loginReq.addFormData(new FormData("login", account.getUser()));
                 loginReq.addFormData(new FormData("email", account.getUser()));
                 loginReq.addFormData(new FormData("password", account.getPass()));
                 loginReq.addFormData(new FormData("csrf_name", auth_token_name));
                 loginReq.addFormData(new FormData("csrf_value", auth_token_value));
+                loginReq.addFormData(new FormData("recaptcha", ""));
                 super.sendRequest(loginReq);
                 final String sessiontoken = PluginJSonUtils.getJson(br, "session");
                 if (StringUtils.isEmpty(sessiontoken)) {
@@ -153,14 +152,12 @@ public class ZbigzCom extends antiDDoSForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
             login(account, true);
         } catch (PluginException e) {
-            account.setValid(false);
             throw e;
         }
         /* Browser: https://zbigz.com/account */
@@ -196,19 +193,7 @@ public class ZbigzCom extends antiDDoSForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (!this.dl.startDownload()) {
-            try {
-                if (dl.externalDownloadStop()) {
-                    return;
-                }
-            } catch (final Throwable e) {
-            }
-            /* unknown error, we disable multiple chunks */
-            if (link.getBooleanProperty(ZbigzCom.NOCHUNKS, false) == false) {
-                link.setProperty(ZbigzCom.NOCHUNKS, Boolean.valueOf(true));
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
-        }
+        this.dl.startDownload();
     }
 
     @Override

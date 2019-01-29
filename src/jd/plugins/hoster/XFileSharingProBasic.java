@@ -63,6 +63,11 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XFileSharingProBasic extends antiDDoSForHost {
+    public XFileSharingProBasic(PluginWrapper wrapper) {
+        super(wrapper);
+        // this.enablePremium(COOKIE_HOST + "/premium.html");
+    }
+
     // DELETE THIS, after making plugin!
     @Override
     public Boolean siteTesterDisabled() {
@@ -214,11 +219,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/tos.html";
-    }
-
-    public XFileSharingProBasic(PluginWrapper wrapper) {
-        super(wrapper);
-        // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     @SuppressWarnings({ "unused" })
@@ -1456,7 +1456,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             ai.setUsedSpace(space[0] + "Mb");
         }
         /* Traffic can also be negative! */
-        final String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"']+)</b>").getMatch(0);
+        final String availabletraffic = new Regex(correctedBR, "Traffic available[^<>]*?:?</TD><TD><b>([^<>\"']+)</b>").getMatch(0);
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
             availabletraffic.trim();
             /* need to set 0 traffic left, as getSize returns positive result, even when negative value supplied. */

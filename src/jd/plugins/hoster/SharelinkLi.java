@@ -28,10 +28,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
@@ -62,18 +62,53 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wrzucajpliki.pl" }, urls = { "https?://(?:www\\.)?wrzucajpliki\\.pl/(?:embed\\-)?[a-z0-9]{12}" })
-public class WrzucajplikiPl extends antiDDoSForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+public class SharelinkLi extends antiDDoSForHost {
+    /* 1st domain = current domain! */
+    public static String[] domains = new String[] { "sharelink.li" };
+
+    public static String[] getAnnotationNames() {
+        return new String[] { domains[0] };
+    }
+
+    /**
+     * returns the annotation pattern array: 'https?://(?:www\\.)?(?:domain1|domain2)/(?:embed\\-)?[a-z0-9]{12}'
+     *
+     */
+    public static String[] getAnnotationUrls() {
+        // construct pattern
+        final String host = getHostsPattern();
+        return new String[] { host + "/(?:embed\\-)?[a-z0-9]{12}" };
+    }
+
+    /** Returns '(?:domain1|domain2)' */
+    private static String getHostsPatternPart() {
+        final StringBuilder pattern = new StringBuilder();
+        for (final String name : domains) {
+            pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
+        }
+        return pattern.toString();
+    }
+
+    /** returns 'https?://(?:www\\.)?(?:domain1|domain2)' */
+    private static String getHostsPattern() {
+        final String hosts = "https?://(?:www\\.)?" + "(?:" + getHostsPatternPart() + ")";
+        return hosts;
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return domains;
+    }
+
     /* Some HTML code to identify different (error) states */
     private static final String  HTML_PASSWORDPROTECTED             = "<br><b>Passwor(d|t):</b> <input";
     private static final String  HTML_MAINTENANCE_MODE              = ">This server is in maintenance mode";
     /* Here comes our XFS-configuration */
     private final boolean        SUPPORTS_HTTPS                     = false;
     /* primary website url, take note of redirects */
-    private final String         COOKIE_HOST                        = "http://wrzucajpliki.pl".replaceFirst("https?://", SUPPORTS_HTTPS ? "https://" : "http://");
+    private final String         COOKIE_HOST                        = ("http://" + domains[0]).replaceFirst("https?://", SUPPORTS_HTTPS ? "https://www." : "http://www.");
     private final String         NICE_HOSTproperty                  = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
-    /* domain names used within download links */
-    private final static String  DOMAINS                            = "(?:wrzucajpliki\\.pl)";
     private final static String  dllinkRegexFile                    = "https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|(?:[\\w\\-\\.]+\\.)?%s)(?::\\d{1,4})?/(?:files|d|cgi\\-bin/dl\\.cgi)/(?:\\d+/)?[a-z0-9]+/[^<>\"/]*?";
     private final static String  dllinkRegexFile_2                  = "https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|(?:[\\w\\-\\.]+\\.)?%s)(?::\\d{1,4})?/[a-z0-9]{50,}/[^<>\"/]*?";
     private final static String  dllinkRegexImage                   = "https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|(?:[\\w\\-\\.]+\\.)?%s)(?:/img/\\d+/[^<>\"'\\[\\]]+|/img/[a-z0-9]+/[^<>\"'\\[\\]]+|/img/[^<>\"'\\[\\]]+|/i/\\d+/[^<>\"'\\[\\]]+|/i/\\d+/[^<>\"'\\[\\]]+(?!_t\\.[A-Za-z]{3,4}))";
@@ -104,9 +139,9 @@ public class WrzucajplikiPl extends antiDDoSForHost {
     private final boolean        SUPPORTS_AVAILABLECHECK_ABUSE      = true;
     /*
      * Scan in html code for filesize? Disable this if a website either does not contain any filesize information in its html or it only
-     * contains misleading information such as fake texts.
+     * contains misleading information such as fake texts. If disabled, there is usually at least one alternative way to find the filesize.
      */
-    private final boolean        SUPPORTS_HTML_FILESIZE_CHECK       = false;
+    private final boolean        SUPPORTS_HTML_FILESIZE_CHECK       = true;
     /* Pre-Download waittime stuff */
     private final boolean        WAITFORCED                         = false;
     private final int            WAITSECONDSMIN                     = 3;
@@ -135,7 +170,7 @@ public class WrzucajplikiPl extends antiDDoSForHost {
     private static Object        LOCK                               = new Object();
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 2.7.7.3<br />
+     * DEV NOTES XfileSharingProBasic Version 2.7.8.3<br />
      ****************************
      * NOTES from raztoki <br/>
      * - no need to set setfollowredirect true. <br />
@@ -144,9 +179,7 @@ public class WrzucajplikiPl extends antiDDoSForHost {
      ****************************
      * mods: Search code for String "Special"<br />
      * limit-info:<br />
-     * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
-     * ALL) it is usually impossible to get any filename/filesize/status information!<br />
-     * captchatype: null 4dignum solvemedia reCaptchaV1 reCaptchaV2<br />
+     * captchatype: null 4dignum solvemedia reCaptchaV2<br />
      * other:<br />
      */
     @Override
@@ -168,6 +201,7 @@ public class WrzucajplikiPl extends antiDDoSForHost {
             super.prepBrowser(prepBr, host);
             /* define custom browser headers and language settings */
             prepBr.setCookie(COOKIE_HOST, "lang", "english");
+            prepBr.setAllowedResponseCodes(new int[500]);
         }
         return prepBr;
     }
@@ -177,7 +211,7 @@ public class WrzucajplikiPl extends antiDDoSForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public WrzucajplikiPl(PluginWrapper wrapper) {
+    public SharelinkLi(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
@@ -189,16 +223,21 @@ public class WrzucajplikiPl extends antiDDoSForHost {
         Browser altbr = null;
         fuid = null;
         correctDownloadLink(link);
+        if (IMAGEHOSTER) {
+            link.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
+        } else if (VIDEOHOSTER_ENFORCE_VIDEO_FILENAME) {
+            link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+        }
         getPage(link.getPluginPatternMatcher());
         setFUID(link);
-        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
+        if (br.getHttpConnection().getResponseCode() == 404 || new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         altbr = br.cloneBrowser();
-        if (new Regex(correctedBR, HTML_MAINTENANCE_MODE).matches()) {
+        if (websiteIsUnderMaintenance()) {
             /* In maintenance mode this sometimes is a way to find filenames! */
             if (SUPPORTS_AVAILABLECHECK_ABUSE) {
-                fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
+                fileInfo[0] = this.getFnameViaAbuseLink(altbr, link, fileInfo[0]);
                 if (!inValidate(fileInfo[0])) {
                     link.setName(Encoding.htmlOnlyDecode(fileInfo[0]).trim());
                     return AvailableStatus.TRUE;
@@ -214,7 +253,7 @@ public class WrzucajplikiPl extends antiDDoSForHost {
             logger.info("PREMIUMONLY handling: Trying alternative linkcheck");
             link.getLinkStatus().setStatusText(USERTEXT_PREMIUMONLY_LINKCHECK);
             if (SUPPORTS_AVAILABLECHECK_ABUSE) {
-                fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
+                fileInfo[0] = this.getFnameViaAbuseLink(altbr, link, fileInfo[0]);
             }
             if (SUPPORTS_AVAILABLECHECK_ALT) {
                 fileInfo[1] = getFilesizeViaAvailablecheckAlt(altbr, link);
@@ -243,11 +282,11 @@ public class WrzucajplikiPl extends antiDDoSForHost {
         /* Filename abbreviated over x chars long --> Use getFnameViaAbuseLink as a workaround to find the full-length filename! */
         if (!inValidate(fileInfo[0]) && fileInfo[0].trim().endsWith("&#133;") && SUPPORTS_AVAILABLECHECK_ABUSE) {
             logger.warning("filename length is larrrge");
-            fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
+            fileInfo[0] = this.getFnameViaAbuseLink(altbr, link, fileInfo[0]);
         } else if (inValidate(fileInfo[0]) && SUPPORTS_AVAILABLECHECK_ABUSE) {
             /* We failed to find the filename via html --> Try getFnameViaAbuseLink */
             logger.info("Failed to find filename, trying getFnameViaAbuseLink");
-            fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
+            fileInfo[0] = this.getFnameViaAbuseLink(altbr, link, fileInfo[0]);
         }
         if (inValidate(fileInfo[0]) && IMAGEHOSTER) {
             /*
@@ -271,6 +310,12 @@ public class WrzucajplikiPl extends antiDDoSForHost {
         }
         if (!inValidate(fileInfo[2])) {
             link.setMD5Hash(fileInfo[2].trim());
+        }
+        /*
+         * Decode HtmlEntity encoding in filename
+         */
+        if (Encoding.isHtmlEntityCoded(fileInfo[0])) {
+            fileInfo[0] = Encoding.htmlDecode(fileInfo[0]);
         }
         /* Remove some html tags - usually not necessary! */
         fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "").trim();
@@ -299,7 +344,7 @@ public class WrzucajplikiPl extends antiDDoSForHost {
         final String sharebox1 = "copy\\(this\\);.+\\](.+) - ([\\d\\.]+ (?:B|KB|MB|GB))\\[/URL\\]";
         /* standard traits from base page */
         if (inValidate(fileInfo[0])) {
-            fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + DOMAINS + "/" + fuid + "/(.*?)</font>").getMatch(1);
+            fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + getHostsPatternPart() + "/" + fuid + "/(.*?)</font>").getMatch(1);
             if (inValidate(fileInfo[0])) {
                 fileInfo[0] = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
                 if (inValidate(fileInfo[0])) {
@@ -314,7 +359,7 @@ public class WrzucajplikiPl extends antiDDoSForHost {
                                 fileInfo[0] = new Regex(correctedBR, sharebox1).getMatch(0);
                                 if (inValidate(fileInfo[0])) {
                                     /* Link of the box without filesize */
-                                    fileInfo[0] = new Regex(correctedBR, "onFocus=\"copy\\(this\\);\">http://(www\\.)?" + DOMAINS + "/" + fuid + "/([^<>\"]*?)</textarea").getMatch(1);
+                                    fileInfo[0] = new Regex(correctedBR, "onFocus=\"copy\\(this\\);\">http://(www\\.)?" + getHostsPatternPart() + "/" + fuid + "/([^<>\"]*?)</textarea").getMatch(1);
                                 }
                             }
                         }
@@ -370,12 +415,20 @@ public class WrzucajplikiPl extends antiDDoSForHost {
      *
      * @throws Exception
      */
-    private String getFnameViaAbuseLink(final Browser br, final DownloadLink dl) throws Exception {
+    private String getFnameViaAbuseLink(final Browser br, final DownloadLink dl, final String fallbackFilename) throws Exception {
         getPage(br, COOKIE_HOST + "/?op=report_file&id=" + fuid, false);
         if (br.containsHTML(">No such file<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        return br.getRegex("<b>Filename\\s*:?\\s*</b></td><td>([^<>\"]*?)</td>").getMatch(0);
+        String filename = br.getRegex("<b>Filename\\s*:?\\s*</b></td><td>([^<>\"]*?)</td>").getMatch(0);
+        if (filename == null) {
+            /* 2019-01-30: Special */
+            filename = br.getRegex("<b>Filename</b><br />([^<>\"]+)</td></tr>").getMatch(0);
+        }
+        if (filename == null) {
+            filename = fallbackFilename;
+        }
+        return filename;
     }
 
     /**
@@ -386,19 +439,24 @@ public class WrzucajplikiPl extends antiDDoSForHost {
      */
     private String getFilesizeViaAvailablecheckAlt(final Browser br, final DownloadLink dl) {
         String filesize = null;
+        String altAvailablecheckUrl = "";
+        if (br.getURL() == null) {
+            /* Browser has not beed used before --> Use absolute path */
+            altAvailablecheckUrl = COOKIE_HOST;
+        }
+        altAvailablecheckUrl += "/?op=check_files";
         try {
             /**
-             * TODO: 2018-02-09: Current XFS versions may all use 'check_files' inside URL AND querry parameter instead of 'checkfiles'!
-             * Maybe add a logic to check this via html code so we do not waste attempts / implement both versions.
+             * TODO: 2018-08-01: Old XFS versions used 'checkfiles' instead of 'check_files'! Keep that in mind in case of problems!
              */
             if (SUPPORTS_AVAILABLECHECK_ALT_FAST) {
-                postPage(br, COOKIE_HOST + "/?op=check_files", "op=check_files&process=Check+URLs&list=" + Encoding.urlEncode(dl.getPluginPatternMatcher()), false);
+                postPage(br, altAvailablecheckUrl, "op=check_files&process=Check+URLs&list=" + Encoding.urlEncode(dl.getPluginPatternMatcher()), false);
             } else {
                 /* Try to get the Form IF NEEDED as it can contain tokens which are missing otherwise. */
-                br.getPage("/?op=check_files");
+                br.getPage(altAvailablecheckUrl);
                 final Form checkfiles_form = br.getFormByInputFieldKeyValue("op", "check_files");
                 if (checkfiles_form == null) {
-                    logger.info("Failed to find check_files Form --> AltAvailablecheck failed");
+                    logger.info("AltAvailablecheck: Failed to find check_files Form");
                     return null;
                 }
                 checkfiles_form.put("list", Encoding.urlEncode(dl.getPluginPatternMatcher()));
@@ -407,7 +465,16 @@ public class WrzucajplikiPl extends antiDDoSForHost {
             filesize = br.getRegex(this.fuid + "</td>\\s*?<td style=\"color:green;\">Found</td>\\s*?<td>([^<>\"]*?)</td>").getMatch(0);
         } catch (final Throwable e) {
         }
+        if (filesize != null) {
+            logger.info("AltAvailablecheck: Successfully found filesize");
+        } else {
+            logger.info("AltAvailablecheck: Failed to find filesize");
+        }
         return filesize;
+    }
+
+    private boolean websiteIsUnderMaintenance() {
+        return br.getHttpConnection().getResponseCode() == 500 || new Regex(correctedBR, HTML_MAINTENANCE_MODE).matches();
     }
 
     /**
@@ -444,7 +511,7 @@ public class WrzucajplikiPl extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 0, PROPERTY_DLLINK_FREE);
+        doFree(downloadLink, false, 1, PROPERTY_DLLINK_FREE);
     }
 
     @SuppressWarnings({ "unused" })
@@ -533,6 +600,11 @@ public class WrzucajplikiPl extends antiDDoSForHost {
         }
         /* 7, continue like normal */
         if (dllink == null) {
+            /*
+             * Check errors here because if we don't and a link is premiumonly, download1 Form will be present, plugin will send it and most
+             * likely end up with error "Fatal countdown error (countdown skipped)"
+             */
+            checkErrors(downloadLink, false);
             final Form download1 = br.getFormByInputFieldKeyValue("op", "download1");
             if (download1 != null) {
                 download1.remove("method_premium");
@@ -670,19 +742,7 @@ public class WrzucajplikiPl extends antiDDoSForHost {
                         logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
                     } else if (new Regex(correctedBR, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {
                         logger.info("Detected captcha method \"reCaptchaV1\" for this host");
-                        final Recaptcha rc = new Recaptcha(br, this);
-                        rc.findID();
-                        rc.load();
-                        final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                        final String c = getCaptchaCode("recaptcha", cf, downloadLink);
-                        dlForm.put("recaptcha_challenge_field", rc.getChallenge());
-                        dlForm.put("recaptcha_response_field", Encoding.urlEncode(c));
-                        logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
-                        /*
-                         * 2017-07-25: Waittime for reCaptchaV1 was skipple in older XFS versions over a long period of time but is usually
-                         * NOT skippable anymore.
-                         */
-                        skipWaittime = false;
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "Website uses reCaptchaV1 which has been shut down by Google. Contact website owner!");
                     } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                         logger.info("Detected captcha method \"solvemedia\" for this host");
                         final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
@@ -868,12 +928,12 @@ public class WrzucajplikiPl extends antiDDoSForHost {
         return maxFree.get();
     }
 
-    /* do not add @Override here to keep 0.* compatibility */
+    @Override
     public boolean hasAutoCaptcha() {
         return true;
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    @Override
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
         if (acc == null) {
             /* no account, yes we can expect captcha */
@@ -883,6 +943,7 @@ public class WrzucajplikiPl extends antiDDoSForHost {
             /* Free accounts can have captchas */
             return true;
         }
+        /* Premium accounts do not have captchas */
         return false;
     }
 
@@ -928,11 +989,11 @@ public class WrzucajplikiPl extends antiDDoSForHost {
     @SuppressWarnings({ "unused", "unchecked", "rawtypes" })
     private String getDllink() {
         String dllink = br.getRedirectLocation();
-        if (dllink == null) {
-            dllink = new Regex(correctedBR, "(\"|')(" + String.format(dllinkRegexFile, DOMAINS) + ")\\1").getMatch(1);
+        if (dllink == null || new Regex(dllink, this.getSupportedLinks()).matches()) {
+            dllink = new Regex(correctedBR, "(\"|')(" + String.format(dllinkRegexFile, getHostsPatternPart()) + ")\\1").getMatch(1);
             /* Use wider and wider RegEx */
             if (dllink == null) {
-                dllink = new Regex(correctedBR, "(" + String.format(dllinkRegexFile, DOMAINS) + ")(\"|')").getMatch(0);
+                dllink = new Regex(correctedBR, "(" + String.format(dllinkRegexFile, getHostsPatternPart()) + ")(\"|')").getMatch(0);
             }
             if (dllink == null) {
                 /* Finally try without hardcoded domains */
@@ -940,11 +1001,11 @@ public class WrzucajplikiPl extends antiDDoSForHost {
             }
             if (dllink == null) {
                 /* Try short version */
-                dllink = new Regex(correctedBR, "(\"|')(" + String.format(dllinkRegexFile_2, DOMAINS) + ")\\1").getMatch(1);
+                dllink = new Regex(correctedBR, "(\"|')(" + String.format(dllinkRegexFile_2, getHostsPatternPart()) + ")\\1").getMatch(1);
             }
             if (dllink == null) {
                 /* Try short version without hardcoded domains and wide */
-                dllink = new Regex(correctedBR, "(" + String.format(dllinkRegexFile_2, DOMAINS) + ")").getMatch(0);
+                dllink = new Regex(correctedBR, "(" + String.format(dllinkRegexFile_2, getHostsPatternPart()) + ")").getMatch(0);
             }
             if (dllink == null) {
                 final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
@@ -1003,7 +1064,7 @@ public class WrzucajplikiPl extends antiDDoSForHost {
         }
         if (dllink == null && IMAGEHOSTER) {
             /* Used for image-hosts */
-            String[] possibleDllinks = new Regex(this.correctedBR, String.format(dllinkRegexImage, DOMAINS)).getColumn(0);
+            String[] possibleDllinks = new Regex(this.correctedBR, String.format(dllinkRegexImage, getHostsPatternPart())).getColumn(0);
             if (possibleDllinks == null || possibleDllinks.length == 0) {
                 /* Try without predefined domains */
                 possibleDllinks = new Regex(this.correctedBR, String.format(dllinkRegexImage, "[A-Za-z0-9\\-\\.]+")).getColumn(0);
@@ -1015,6 +1076,13 @@ public class WrzucajplikiPl extends antiDDoSForHost {
                     break;
                 }
             }
+        }
+        /* 2019-01-30: Special: Fix downloadurls */
+        final String filename_part = new Regex(dllink, "/([^/]+)$").getMatch(0);
+        if (filename_part != null) {
+            String filename_part_new = Encoding.htmlDecode(filename_part);
+            filename_part_new = URLEncode.encodeURIComponent(filename_part_new);
+            dllink = dllink.replace(filename_part, filename_part_new);
         }
         return dllink;
     }
@@ -1309,7 +1377,7 @@ public class WrzucajplikiPl extends antiDDoSForHost {
         } else if (correctedBR.contains(">Expired download session")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Expired download session'", 10 * 60 * 1000l);
         }
-        if (new Regex(correctedBR, HTML_MAINTENANCE_MODE).matches()) {
+        if (websiteIsUnderMaintenance()) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, USERTEXT_MAINTENANCE, 2 * 60 * 60 * 1000l);
         }
         checkResponseCodeErrors(br.getHttpConnection());
@@ -1335,16 +1403,17 @@ public class WrzucajplikiPl extends antiDDoSForHost {
      * download.
      */
     private void checkServerErrors() throws NumberFormatException, PluginException {
-        // dead file
         if (new Regex(correctedBR.trim(), "^No file$").matches()) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (new Regex(correctedBR.trim(), "^Wrong IP$").matches()) {
+            /* Possibly dead file but it is supposed to be online so let's wait and retry! */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
+        } else if (new Regex(correctedBR.trim(), "^Wrong IP$").matches()) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: 'Wrong IP'", 2 * 60 * 60 * 1000l);
-        }
-        // most likely result of generated link that has expired -raztoki
-        if (new Regex(correctedBR.trim(), "(^File Not Found$|<h1>404 Not Found</h1>)").matches()) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error (404)", 30 * 60 * 1000l);
+        } else if (new Regex(correctedBR.trim(), "^Expired$").matches()) {
+            /* 2019-01-20: Special */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: 'Expired'", 2 * 60 * 60 * 1000l);
+        } else if (new Regex(correctedBR.trim(), "(^File Not Found$|<h1>404 Not Found</h1>)").matches()) {
+            /* most likely result of generated link that has expired -raztoki */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
         }
     }
 
@@ -1373,7 +1442,6 @@ public class WrzucajplikiPl extends antiDDoSForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
@@ -1393,9 +1461,12 @@ public class WrzucajplikiPl extends antiDDoSForHost {
             /* premium users the Mb value isn't provided for some reason... */
             ai.setUsedSpace(space[0] + "Mb");
         }
-        account.setValid(true);
         /* Traffic can also be negative! */
-        final String availabletraffic = new Regex(correctedBR, "Traffic available[^<>]*?:?</TD><TD><b>([^<>\"']+)</b>").getMatch(0);
+        String availabletraffic = new Regex(correctedBR, "Traffic available[^<>]*?:?</TD><TD><b>([^<>\"']+)</b>").getMatch(0);
+        if (StringUtils.isEmpty(availabletraffic)) {
+            /* 2019-01-30: Special */
+            availabletraffic = new Regex(correctedBR, ">Traffic available today</div>\\s*?<div class=\"txt2\">([^<>\"]+)</div>").getMatch(0);
+        }
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
             availabletraffic.trim();
             /* need to set 0 traffic left, as getSize returns positive result, even when negative value supplied. */
@@ -1468,6 +1539,7 @@ public class WrzucajplikiPl extends antiDDoSForHost {
                         account.saveCookies(br.getCookies(this.getHost()), "");
                     }
                     if (loggedInViaCookies && !force) {
+                        /* No additional check required e.g. for account type --> We know cookies are valid and we're logged in --> Done! */
                         return;
                     }
                 }
@@ -1486,7 +1558,7 @@ public class WrzucajplikiPl extends antiDDoSForHost {
                     if (br.containsHTML("class=\"g\\-recaptcha\"")) {
                         final DownloadLink dlinkbefore = this.getDownloadLink();
                         if (dlinkbefore == null) {
-                            this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "http://" + account.getHoster(), true));
+                            this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true));
                         }
                         final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                         if (dlinkbefore != null) {
@@ -1526,7 +1598,7 @@ public class WrzucajplikiPl extends antiDDoSForHost {
         if (account.getType() == AccountType.FREE) {
             /* Perform linkcheck after logging in */
             requestFileInformation(downloadLink);
-            doFree(downloadLink, true, 0, PROPERTY_DLLINK_ACCOUNT_FREE);
+            doFree(downloadLink, false, 1, PROPERTY_DLLINK_ACCOUNT_FREE);
         } else {
             String dllink = checkDirectLink(downloadLink, PROPERTY_DLLINK_ACCOUNT_PREMIUM);
             if (dllink == null) {
