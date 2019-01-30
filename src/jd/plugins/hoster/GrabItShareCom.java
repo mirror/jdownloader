@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -21,6 +20,9 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -39,20 +41,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "grabitshare.com" }, urls = { "http://(www\\.)?grabitshare\\.com/((\\?d|download\\.php\\?id)=[A-Z0-9]+|((en|ru|fr|es)/)?file/[0-9]+/)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "grabitshare.com" }, urls = { "http://(www\\.)?grabitshare\\.com/((\\?d|download\\.php\\?id)=[A-Z0-9]+|((en|ru|fr|es)/)?file/[0-9]+/)" })
 public class GrabItShareCom extends PluginForHost {
-
     private static final String COOKIE_HOST      = "http://grabitshare.com";
-
     private static final String IPBLOCKED        = "(You have got max allowed bandwidth size per hour|You have got max allowed download sessions from the same IP|\">Dostigli ste download limit\\. Pričekajte 1h za nastavak)";
-
     private static final String RECAPTCHATEXT    = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
-
     private static final String CHEAPCAPTCHATEXT = "captcha\\.php";
 
     public GrabItShareCom(PluginWrapper wrapper) {
@@ -183,7 +179,6 @@ public class GrabItShareCom extends PluginForHost {
                 if (br.containsHTML("class=textinput name=downloadpw")) {
                     if (link.getStringProperty("pass", null) == null) {
                         passCode = Plugin.getUserInput("Password?", link);
-
                     } else {
                         /* gespeicherten PassCode holen */
                         passCode = link.getStringProperty("pass", null);
@@ -354,7 +349,6 @@ public class GrabItShareCom extends PluginForHost {
             ai.setStatus("Premium User");
         }
         account.setValid(true);
-
         return ai;
     }
 
@@ -398,7 +392,6 @@ public class GrabItShareCom extends PluginForHost {
                     parameter.setProperty("pass", null);
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
-
                 if (passCode != null) {
                     parameter.setProperty("pass", passCode);
                 }
@@ -457,5 +450,10 @@ public class GrabItShareCom extends PluginForHost {
             return true;
         }
         return false;
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.MhfScriptBasic;
     }
 }

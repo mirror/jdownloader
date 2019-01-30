@@ -68,6 +68,7 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
     /** List of services for which waittime is skippable. */
     private static final List<String> domains_waittime_skippable = Arrays.asList(new String[] {});
     // /** List of services for which captcha is skippable or not required. */
+    /** TODO: Find a way to automatically detect this edge-case */
     private static final List<String> domains_captcha_skippable  = Arrays.asList(new String[] { "safelinku.com", "idsly.bid", "idsly.net" });
 
     /**

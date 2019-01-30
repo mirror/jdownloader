@@ -13,8 +13,9 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -26,12 +27,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.SiteType.SiteTemplate;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bin.ge" }, urls = { "http://(www\\.)?bin\\.ge/dl/\\d+/" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bin.ge" }, urls = { "http://(www\\.)?bin\\.ge/dl/\\d+/" })
 public class BinGe extends PluginForHost {
-
     private static final String COOKIE_HOST = "http://bin.ge";
 
     public BinGe(PluginWrapper wrapper) {
@@ -98,7 +97,6 @@ public class BinGe extends PluginForHost {
                 if (br.containsHTML("class=textinput name=downloadpw")) {
                     if (link.getStringProperty("pass", null) == null) {
                         passCode = getUserInput(null, link);
-
                     } else {
                         /* gespeicherten PassCode holen */
                         passCode = link.getStringProperty("pass", null);
@@ -199,5 +197,10 @@ public class BinGe extends PluginForHost {
             return true;
         }
         return false;
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.MhfScriptBasic;
     }
 }
