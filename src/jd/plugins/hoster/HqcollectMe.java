@@ -18,10 +18,10 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hqcollect.me" }, urls = { "https?://(?:www\\.)?hqcollect\\.(?:me|net)/(?:pack|downloads)/[^/]+/(?!page)[^/]+/" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hqcollect.me" }, urls = { "https?://(?:www\\.)?hqcollect\\.(?:me|net)/(?:pack|downloads)/(\\d+\\-[a-z0-9\\-]+)\\.html" })
 public class HqcollectMe extends PluginForHost {
     public HqcollectMe(PluginWrapper wrapper) {
         super(wrapper);
@@ -55,18 +55,27 @@ public class HqcollectMe extends PluginForHost {
         return "https://hqcollect.me/support/";
     }
 
-    @SuppressWarnings("deprecation")
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        if (linkid != null) {
+            return linkid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         dllink = null;
         server_issues = false;
         limit_reached = false;
         this.setBrowserExclusive();
-        final String url_filename = new Regex(link.getDownloadURL(), "([^/]+)/$").getMatch(0).replace("-", " ");
+        final String linkid = getLinkID(link);
         /* Set readable filename in teams of (unexpected) errors. */
-        link.setName(url_filename + default_Extension);
+        link.setName(linkid + default_Extension);
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -77,7 +86,9 @@ public class HqcollectMe extends PluginForHost {
             filename = br.getRegex("<h1>([^<>\"]+)</h1>").getMatch(0);
         }
         if (filename == null) {
-            filename = url_filename;
+            filename = linkid;
+        } else {
+            filename = linkid + "_" + filename;
         }
         dllink = br.getRegex("<source src=\"(https?://[^<>\"]+)\" type=\"video/mp4\">").getMatch(0);
         if (dllink == null) {
@@ -93,7 +104,6 @@ public class HqcollectMe extends PluginForHost {
         filename = filename.trim();
         filename = encodeUnicode(filename);
         String ext = null;
-        link.setFinalFileName(filename);
         if (!limit_reached && this.dllink != null) {
             dllink = Encoding.htmlDecode(dllink);
             ext = getFileNameExtensionFromString(dllink, ".mp4");
@@ -104,12 +114,9 @@ public class HqcollectMe extends PluginForHost {
                 filename += ext;
             }
             link.setFinalFileName(filename);
-            final Browser br2 = br.cloneBrowser();
-            // In case the link redirects to the finallink
-            br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
-                con = br2.openHeadConnection(dllink);
+                con = br.openHeadConnection(dllink);
                 if (!con.getContentType().contains("html")) {
                     link.setDownloadSize(con.getLongContentLength());
                     link.setProperty("directlink", dllink);
@@ -139,7 +146,8 @@ public class HqcollectMe extends PluginForHost {
             /* 2016-10-07: Exact waittime is not given */
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         } else if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /* Probably only available for premium users */
+            throw new AccountRequiredException();
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
