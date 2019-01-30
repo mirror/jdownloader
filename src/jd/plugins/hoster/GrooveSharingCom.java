@@ -13,8 +13,9 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -28,12 +29,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.SiteType.SiteTemplate;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "groovesharing.com" }, urls = { "http://(www\\.)?(groovesharing|groovestreams)\\.com/\\?d=[A-Z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "groovesharing.com" }, urls = { "http://(www\\.)?(groovesharing|groovestreams)\\.com/\\?d=[A-Z0-9]+" })
 public class GrooveSharingCom extends PluginForHost {
-
     public GrooveSharingCom(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/register.php?g=3");
@@ -98,7 +97,6 @@ public class GrooveSharingCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-
             if (br.containsHTML(">AccessKey is expired, please request")) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL server error, waittime skipped?");
             }
@@ -179,5 +177,10 @@ public class GrooveSharingCom extends PluginForHost {
             return true;
         }
         return false;
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.MhfScriptBasic;
     }
 }

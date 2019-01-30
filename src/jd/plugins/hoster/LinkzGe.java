@@ -28,11 +28,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uafile.com" }, urls = { "http://(www\\.)?uafile\\.com/file/\\d+/[^<>\"/]+\\.html" })
-public class UaFileCom extends PluginForHost {
-    public UaFileCom(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkz.ge" }, urls = { "https?://(?:www\\.)?linkz\\.ge/file/\\d+/(?:[^<>\"/]+\\.html)?" })
+public class LinkzGe extends PluginForHost {
+    public LinkzGe(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/service.php");
     }
@@ -42,13 +41,13 @@ public class UaFileCom extends PluginForHost {
         return COOKIE_HOST + "/rules.php";
     }
 
-    private static final String COOKIE_HOST     = "http://uafile.com";
+    private static final String COOKIE_HOST     = "http://linkz.ge";
     private static final int    DEFAULTWAITTIME = 0;
 
     // MhfScriptBasic 1.9
     // FREE limits: 1 * 20
     // PREMIUM limits: Chunks * Maxdl
-    // Captchatype: mhfstandard
+    // Captchatype: none
     // Other notes:
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceAll("(en|ru|fr|es|de)/file/", "file/"));
@@ -61,7 +60,7 @@ public class UaFileCom extends PluginForHost {
         br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
         br.setCookie(COOKIE_HOST, "yab_mylang", "en");
         br.getPage(parameter.getDownloadURL());
-        if (br.getURL().contains("&code=DL_FileNotFound") || br.containsHTML("(Your requested file is not found|No file found)")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("&code=DL_FileNotFound") || br.containsHTML("(Your requested file is not found|No file found)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = getData("File name:");
@@ -131,7 +130,7 @@ public class UaFileCom extends PluginForHost {
             wait = Integer.parseInt(waittime);
         }
         sleep(wait * 1001l, downloadLink);
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, finalLink, true, 1);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, finalLink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML(">AccessKey is expired, please request")) {
@@ -178,10 +177,5 @@ public class UaFileCom extends PluginForHost {
             return true;
         }
         return false;
-    }
-
-    @Override
-    public SiteTemplate siteTemplateType() {
-        return SiteTemplate.MhfScriptBasic;
     }
 }

@@ -131,7 +131,6 @@ public class Xt7Pl extends PluginForHost {
             validUntil = validUntil.replace(" / ", " ");
             ai.setProperty("premium", "TRUE");
         }
-
         long expireTime = TimeFormatter.getMilliSeconds(validUntil, "dd.MM.yyyy HH:mm", Locale.ENGLISH);
         ai.setValidUntil(expireTime);
         account.setValid(true);
@@ -259,7 +258,7 @@ public class Xt7Pl extends PluginForHost {
         // because download doesn't support more chunks and
         // and resume (header response has no: "Content-Range" info)
         final String url = link.getPluginPatternMatcher();
-        final String oneChunkHostersPattern = ".*(lunaticfiles\\.com|sharehost\\.eu|fileshark\\.pl).*";
+        final String oneChunkHostersPattern = ".*(lunaticfiles\\.com|fileshark\\.pl).*";
         if (url.matches(oneChunkHostersPattern) || downloadUrl.matches(oneChunkHostersPattern)) {
             chunks = 1;
             resume = false;

@@ -48,7 +48,7 @@ public class MegafilePL extends PluginForHost {
         /* 2017-02-22: Use website to get better hostlist as that is impossible via API! */
         this.br.getPage("https://" + this.getHost() + "/howitworks");
         final String[] supportedHostsUgly = this.br.getRegex("/images/([A-Za-z0-9\\.\\-]+)\\.mini\\.png").getColumn(0);
-        final String supportedHostsStatic[] = { "catshare.net", "rapidu.net", "fileshark.pl", "lunaticfiles.com", "sharehost.eu", "uploaded.to", "turbobit.net", "rapidgator.net", "uploadrocket.net", "filefactory.com", "hitfile.net", "fastshare.cz", "hugefiles.net", "1fichier.com", "uptobox.com", "alfafile.net", "datafile.com", "keep2share.cc", "filejoker.net", "depositfiles.com", "nitroflare.com", "chomikuj.pl", "" };
+        final String supportedHostsStatic[] = { "catshare.net", "rapidu.net", "fileshark.pl", "lunaticfiles.com", "uploaded.to", "turbobit.net", "rapidgator.net", "uploadrocket.net", "filefactory.com", "hitfile.net", "fastshare.cz", "hugefiles.net", "1fichier.com", "uptobox.com", "alfafile.net", "datafile.com", "keep2share.cc", "filejoker.net", "depositfiles.com", "nitroflare.com", "chomikuj.pl", "" };
         final List<String> supportedHosts;
         if (supportedHostsUgly != null && supportedHostsUgly.length > 0) {
             supportedHosts = Arrays.asList(supportedHostsUgly);
