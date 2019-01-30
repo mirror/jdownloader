@@ -19,6 +19,7 @@ import java.io.IOException;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -32,16 +33,27 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "files.d-lan.dp.ua", "zfile.in.ua" }, urls = { "https?://(?:www\\.)?files\\.d\\-lan\\.dp\\.ua/download\\?file=([a-f0-9]{32})(?:\\&name=[^/\\&#]+)?", "https?://(?:www\\.)?zfile\\.in\\.ua/download\\?file=([a-f0-9]{32})(?:\\&name=[^/\\&#]+)?" })
-public class FilesDlanDpUa extends PluginForHost {
-    public FilesDlanDpUa(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "studfiles.net" }, urls = { "https?://(?:www\\.)?studfiles\\.(?:net|ru)/preview/(\\d+)/?" })
+public class StudfilesNet extends PluginForHost {
+    public StudfilesNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://files.d-lan.dp.ua/";
+        return "https://studfiles.net/";
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        if (linkid != null) {
+            return linkid;
+        } else {
+            return super.getLinkID(link);
+        }
     }
 
     /* Connection stuff */
@@ -61,30 +73,25 @@ public class FilesDlanDpUa extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        final String linkid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
-        final String url_name = new Regex(link.getPluginPatternMatcher(), "name=(.+)").getMatch(0);
-        link.setLinkID(linkid);
-        link.setMD5Hash(linkid);
-        br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("\\&g=1|/error\\.png\"")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML("type=\"password\" name=\"pass\"")) {
-            /* 2018-08-07: Password protected - not yet supported. */
+        /* Website hosts documents only. */
+        link.setMimeHint(CompiledFiletypeFilter.DocumentExtensions.PDF);
+        final String linkid = this.getLinkID(link);
+        br.getPage(link.getPluginPatternMatcher());
+        if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("Название файла\\s*?:\\s*?(?:<b>)?([^<>\"]+)<").getMatch(0);
-        String filesize = br.getRegex("Размер: ([^<>\"]+)<").getMatch(0);
+        String filename = br.getRegex("var pageTitle\\s*==\\s*=\"([^<>\"]+)\";").getMatch(0);
         if (StringUtils.isEmpty(filename)) {
-            filename = url_name;
-        }
-        if (StringUtils.isEmpty(filename)) {
-            /* Final fallback */
             filename = linkid;
+        }
+        String filesize = br.getRegex(">Размер:</span> <div class=\"details \">([^<>\"]+)<").getMatch(0);
+        if (StringUtils.isEmpty(filename)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = Encoding.htmlDecode(filename).trim();
         link.setName(filename);
         if (filesize != null) {
-            filesize = filesize.replace("Гбайта", "GB").replace("Мбайт", "MB").replace("Кбайта", "kb");
+            filesize = filesize.replace("Mб", "MB");
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         return AvailableStatus.TRUE;
@@ -99,7 +106,8 @@ public class FilesDlanDpUa extends PluginForHost {
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
-            dllink = br.getRegex("\"(https?://[^/]+/download\\d+\\.php[^<>\"]+)\"").getMatch(0);
+            br.getPage("https://" + this.getHost() + "/api/files.json.php?method=checkDownloadStatus&file_id=" + this.getLinkID(downloadLink));
+            dllink = PluginJSonUtils.getJson(br, "download_url");
             if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -111,6 +119,7 @@ public class FilesDlanDpUa extends PluginForHost {
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
+            br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty(directlinkproperty, dl.getConnection().getURL().toString());

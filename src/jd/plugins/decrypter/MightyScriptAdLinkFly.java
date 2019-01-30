@@ -51,6 +51,8 @@ import jd.plugins.components.SiteType.SiteTemplate;
 public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
     private static final String[]     domains                    = { "arabtvlink.com", "medche.com", "go-urls.tk", "btc4link.com", "topklink.com", "shorts-link.com", "rawabbet.com", "easy4earn.com", "linkat4all.com", "linkdrop.net", "shrtz.me", "ctkings.com", "linksad.net", "paylink.pro", "123link.pro", "donia2link.com", "cutpaid.com", "shortadz.org", "itiurl.co", "shortli.net", "cutearn.ca", "icutit.ca", "cut-one.com", "cll.press", "link-zero.com", "linktor.io", "cash4url.com", "cashat.net", "shortit.ca", "123short.com", "skip-url.me", "msms4.com", "empireshort.com", "loadurl.com", "shortmony.me", "geistlink.com", "cutt.us.com", "arabdollar.com", "shortenow.com", "kingurl.net", "best3link.com", "solo-link.com", "best5link.com", "lkky.co", "win4cut.com", "coinlink.co", "adlink.guru", "short.es", "tmearn.com", "ibly.co", "urle.co", "mitly.us", "zlshorte.net", "igram.im", "gram.im",
             "bit-url.com", "adbilty.me", "linclik.com", "oke.io", "vivads.net", "pnd.tl", "met.bz", "urlcloud.us",
+            /** safelinku.com domains */
+            "safelinku.com", "idsly.bid", "idsly.net",
             /** clicksfly.com domains */
             "clicksfly.com", "gifsis.com", "blogginggyanbox.com", "buyitonline.store", "clk.ink",
             /** eglink.info domains */
@@ -65,6 +67,8 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
             "adshort.co", "adsrt.com", "adsrt.me", "adshort.me", "adshort.im" };
     /** List of services for which waittime is skippable. */
     private static final List<String> domains_waittime_skippable = Arrays.asList(new String[] {});
+    // /** List of services for which captcha is skippable or not required. */
+    private static final List<String> domains_captcha_skippable  = Arrays.asList(new String[] { "safelinku.com", "idsly.bid", "idsly.net" });
 
     /**
      * returns the annotation pattern array
@@ -200,8 +204,8 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
         } else {
             /* 2018-07-18: Not all sites require a captcha to be solved */
             final CaptchaType captchaType = getCaptchaType();
-            if (evalulateCaptcha(captchaType)) {
-                /* Captcha required */
+            if (evalulateCaptcha(captchaType, parameter)) {
+                logger.info("Captcha required");
                 boolean requiresCaptchaWhichCanFail = false;
                 boolean captchaFailed = false;
                 for (int i = 0; i <= 2; i++) {
@@ -268,10 +272,14 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                 if (requiresCaptchaWhichCanFail && captchaFailed) {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
+            } else if (form != null) {
+                /* 2019-01-30: E.g. "safelinku.com", "idsly.bid", "idsly.net" */
+                logger.info("Captcha NOT required but we have a Form to submit");
+                this.submitForm(form);
             }
             final boolean skipWait = waittimeIsSkippable(source_host);
             /** TODO: Fix waittime-detection for tmearn.com */
-            /* 2018-07-18: It is important to keep this exact as some websites have "ad-forms" e.g. urlcloud.us */
+            /* 2018-07-18: It is very important to keep this exact as some websites have "ad-forms" e.g. urlcloud.us !! */
             Form f2 = br.getFormbyKey("_Token[fields]");
             if (f2 == null) {
                 f2 = br.getFormbyKey("_Token%5Bfields%5D");
@@ -343,8 +351,9 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
      * @param captchatype
      *            : Type of the captcha found in js/html - required in some rare cases.
      */
-    private boolean evalulateCaptcha(final CaptchaType captchatype) {
+    private boolean evalulateCaptcha(final CaptchaType captchatype, final String url_source) {
         // if ("yes" !== app_vars.enable_captcha) return !0;
+        final String source_host = Browser.getHost(url_source);
         boolean hasCaptcha;
         String captchaIndicatorValue = getAppVarsResult("enable_captcha");
         if (captchaIndicatorValue != null) {
@@ -364,6 +373,10 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
             } else {
                 hasCaptcha = false;
             }
+        }
+        if (hasCaptcha && domains_captcha_skippable.contains(source_host)) {
+            logger.info("Captcha should be required but current host does not require captcha");
+            hasCaptcha = false;
         }
         return hasCaptcha;
     }
