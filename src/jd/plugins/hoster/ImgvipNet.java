@@ -33,7 +33,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgvip.net" }, urls = { "https?://(?:www\\.)?(?:vestimage\\.site|imgfile\\.net|fortstore\\.net|imgsky\\.net|pixsense\\.net|chaosimg\\.site)/[a-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgvip.net" }, urls = { "https?://(?:www\\.)?(?:vestimage\\.site|imgfile\\.net|fortstore\\.net|imgsky\\.net|iceimg\\.net|pixsense\\.net|chaosimg\\.site)/(site/v/\\d+|[a-z0-9]+)" })
 public class ImgvipNet extends PluginForHost {
     public ImgvipNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -45,42 +45,49 @@ public class ImgvipNet extends PluginForHost {
     }
 
     @Override
-    public String getLinkID(final DownloadLink link) {
-        final String linkid = new Regex(link.getPluginPatternMatcher(), "([a-z0-9]+)$").getMatch(0);
-        if (linkid != null) {
-            return linkid;
-        } else {
-            return super.getLinkID(link);
-        }
-    }
-
-    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         link.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
-        final String linkid = getLinkID(link);
+        /* 2019-01-30: Important: Only set linkid if we have the real one! */
+        String linkid = new Regex(link.getPluginPatternMatcher(), "([a-z0-9]+)$").getMatch(0);
+        boolean isRealLinkid = !linkid.matches("\\d+");
+        if (isRealLinkid) {
+            link.setLinkID(linkid);
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
         final String defaultdomain = br.getRegex("var default_domain=\"([^\"]+)\";").getMatch(0);
         if (defaultdomain != null && br.containsHTML("document\\.location\\.href=redirect_url")) {
+            String continue_id = br.getRegex("default_domain\\+\"(/[^\"\\']+)\"").getMatch(0);
+            if (continue_id == null) {
+                continue_id = "/" + linkid;
+            }
             /* Redirect do other domain */
             String protocol_and_www = br.getRegex("var redirect_url=\"(https?://(?:www\\.)?)").getMatch(0);
             if (protocol_and_www == null) {
                 protocol_and_www = "http://www.";
             }
-            br.getPage(protocol_and_www + defaultdomain + "/" + linkid);
+            br.getPage(protocol_and_www + defaultdomain + continue_id);
         }
-        if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(linkid) || br.containsHTML(">This image has been deleted")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || (isRealLinkid && !br.getURL().contains(linkid)) || br.containsHTML(">This image has been deleted")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        // String filename = br.getRegex("").getMatch(0);
-        // if (filename == null) {
-        // filename = br.getRegex("").getMatch(0);
-        // }
-        // if (StringUtils.isEmpty(filename)) {
-        // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // }
-        link.setName(linkid);
+        if (!isRealLinkid) {
+            logger.info("Trying to find real linkid");
+            linkid = new Regex(br.getURL(), "([a-z0-9]+)$").getMatch(0);
+            isRealLinkid = !linkid.matches("\\d+");
+            if (isRealLinkid) {
+                logger.info("Found and set real linkid");
+                link.setLinkID(linkid);
+            } else {
+                logger.info("Failed to find real linkid");
+            }
+        }
+        String filename = br.getRegex("<title>([^<>\"\\']+)</title>").getMatch(0);
+        if (filename == null) {
+            filename = linkid + ".jpg";
+        }
+        link.setName(filename);
         return AvailableStatus.TRUE;
     }
 
@@ -88,8 +95,12 @@ public class ImgvipNet extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String dllink = checkDirectLink(downloadLink, "directlink");
-        if (dllink == null) {
+        if (StringUtils.isEmpty(dllink)) {
             dllink = br.getRegex("\"(https?://[^/]+/images/[^<>\"\\']+)\"").getMatch(0);
+            if (StringUtils.isEmpty(dllink)) {
+                /* 2019-01-30: New */
+                dllink = br.getRegex("<img src=\"(https?://[^<>\"\\']+)\"onclick=\"window\\.open\\(this\\.src\\)\">").getMatch(0);
+            }
         }
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

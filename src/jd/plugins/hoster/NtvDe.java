@@ -13,15 +13,17 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import org.jdownloader.downloader.hls.HLSDownloader;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -29,11 +31,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.jdownloader.downloader.hls.HLSDownloader;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "n-tv.de" }, urls = { "https?://(www\\.)?n\\-tv\\.de/mediathek/videos/[^/]+/[^/]+\\.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "n-tv.de" }, urls = { "https?://(www\\.)?n\\-tv\\.de/mediathek/videos/([^/]+/[^/]+)\\.html" })
 public class NtvDe extends PluginForHost {
-
     public NtvDe(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -43,16 +42,20 @@ public class NtvDe extends PluginForHost {
         return "http://www.n-tv.de/ntvintern/n-tv-Webseiten-article495196.html";
     }
 
-    private static final String host_hls = "http://video.n-tv.de";
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        if (linkid != null) {
+            return linkid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
 
+    private static final String host_hls = "http://video.n-tv.de";
     // private static final String host_http = "http://video.n-tv.de";
     // private static final String host_rtmp = "rtmp://fms.n-tv.de/ntv/";
 
-    /*
-     * Possible rtmpdump parameters: rtmpdump -r "rtmp://fms.n-tv.de/ntv/" -W
-     * "http://www.n-tv.de/resources/ts23917643-2/ver1-0/videoplayer/ntv_player.swf" -p "http://www.ntv.de/" -R -y
-     * "mp4:2015/06/ContentPoolSchiesspolizist_1506251137.f4v" -o "ntvtest.mp4"
-     */
     /* Possible http url (low quality for old mobile phones): http://video.n-tv.de/mobile/ContentPoolSchiesspolizist_1506251137.mp4 */
     /* Available streaming types (best to worst): hls, rtmpe, http */
     @SuppressWarnings("deprecation")
@@ -64,15 +67,19 @@ public class NtvDe extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String date = br.getRegex("publishedDateAsUnixTimeStamp:[\t\n\r ]*?\"(\\d+)\"").getMatch(0);
-        String title = br.getRegex("ntv\\.pageInfo\\.title[\t\n\r ]*?=[\t\n\r ]*?\"([^<>]*?)\";\r").getMatch(0);
-        if (title == null || date == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final String date = br.getRegex("publishedDateAsUnixTimeStamp:\\s*?\"(\\d+)\"").getMatch(0);
+        String title = br.getRegex("headline:\\s*?\"([^\"]+)\"").getMatch(0);
+        if (title == null) {
+            title = this.getLinkID(link);
         }
         title = title.replace("\\", "");
         title = Encoding.htmlDecode(title).trim();
         title = encodeUnicode(title);
-        final String filename = formatDate(date) + "_n-tv_" + title + ".mp4";
+        String filename = "";
+        if (date != null) {
+            filename = formatDate(date) + "_";
+        }
+        filename += "_n-tv_" + title + ".mp4";
         link.setFinalFileName(filename);
         return AvailableStatus.TRUE;
     }
@@ -80,23 +87,42 @@ public class NtvDe extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String dllink = br.getRegex("videoM3u8:[\t\n\r ]*?\"(/apple/[^<>\"/]+\\.m3u8)\"").getMatch(0);
-        if (dllink == null) {
-            logger.warning("Failed to find HLS index");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String dllink_http = br.getRegex("progressive\\s*?:\\s*?\"(https[^\"]+)\"").getMatch(0);
+        if (dllink_http != null) {
+            /* 2019-01-30: New */
+            final String filter = new Regex(dllink_http, "(\\?filter=.+)").getMatch(0);
+            if (filter != null) {
+                dllink_http = dllink_http.replace(filter, "");
+            }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink_http, true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                }
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
+            }
+            dl.startDownload();
+        } else {
+            String dllink_m3u8 = br.getRegex("videoM3u8:[\t\n\r ]*?\"(/apple/[^<>\"/]+\\.m3u8)\"").getMatch(0);
+            if (dllink_m3u8 == null) {
+                logger.warning("Failed to find HLS index");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            /* Access index */
+            br.getPage(host_hls + dllink_m3u8);
+            /* Grab highest quality possible - always located at the beginning of the index file (for this host). */
+            dllink_m3u8 = br.getRegex("([^<>\"/\r\n\t]+\\.m3u8)\n").getMatch(0);
+            if (dllink_m3u8 == null) {
+                logger.warning("Failed to find HLS quality");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dllink_m3u8 = host_hls + "/apple/" + dllink_m3u8;
+            checkFFmpeg(downloadLink, "Download a HLS Stream");
+            dl = new HLSDownloader(downloadLink, this.br, dllink_m3u8);
+            dl.startDownload();
         }
-        /* Access index */
-        br.getPage(host_hls + dllink);
-        /* Grab highest quality possible - always located at the beginning of the index file (for this host). */
-        dllink = br.getRegex("([^<>\"/\r\n\t]+\\.m3u8)\n").getMatch(0);
-        if (dllink == null) {
-            logger.warning("Failed to find HLS quality");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dllink = host_hls + "/apple/" + dllink;
-        checkFFmpeg(downloadLink, "Download a HLS Stream");
-        dl = new HLSDownloader(downloadLink, this.br, dllink);
-        dl.startDownload();
     }
 
     public String formatDate(final String input) {
@@ -125,5 +151,4 @@ public class NtvDe extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }

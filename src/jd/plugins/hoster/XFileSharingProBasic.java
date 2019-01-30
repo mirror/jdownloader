@@ -299,7 +299,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
              * ".jpg" extension so that linkgrabber filtering is possible although we do not y<et have our final filename.
              */
             fileInfo[0] = this.fuid + ".jpg";
-            link.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
         }
         if (inValidate(fileInfo[0])) {
             /*
