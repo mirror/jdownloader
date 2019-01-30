@@ -148,7 +148,11 @@ public class NaughtyamericaCom extends PluginForDecrypt {
             final String linkid = title + type_dummy + quality_dummy;
             final DownloadLink dl = this.createDownloadlink("http://naughtyamericadecryptedlvl3.secure.naughtycdn.com/mfhg/members/chanelvan/" + filename_url + "_" + quality_dummy + ".mp4");
             dl.setLinkID(linkid);
-            dl.setName(title + "_" + quality_dummy + ".mp4");
+            /*
+             * Do not include quality in filename here as we do not kow which quality we'll get in the end - user might only download the
+             * trailer which is often only available in 480p.
+             */
+            dl.setName(title + ".mp4");
             dl.setProperty("fid", fid);
             dl.setProperty("quality", quality_dummy);
             dl.setProperty("filename_url", filename_url);

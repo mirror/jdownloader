@@ -16,12 +16,9 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -35,9 +32,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "teamskeet.com" }, urls = { "https?://(?:www\\.)?teamskeet\\.com/t1/trailer/view/([^/]+/[^/]+)" })
-public class TeamskeetCom extends PluginForHost {
-    public TeamskeetCom(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kink.com" }, urls = { "https?://(?:www\\.)?kink.com/shoot/(\\d+)" })
+public class KinkCom extends PluginForHost {
+    public KinkCom(PluginWrapper wrapper) {
         super(wrapper);
     }
     /* DEV NOTES */
@@ -56,7 +53,7 @@ public class TeamskeetCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "https://www.psmhelp.com/tos";
+        return "https://kink.zendesk.com/hc/en-us/articles/360004660854-Kink-com-Terms-of-Use";
     }
 
     @Override
@@ -76,88 +73,31 @@ public class TeamskeetCom extends PluginForHost {
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        final String linkid = this.getLinkID(link);
         br.getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains("trailer")) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>([^<>\"]+) \\| TeamSkeet</title>").getMatch(0);
+        String filename = br.getRegex("<title>([^<>\"]+) \\- Kink</title>").getMatch(0);
         if (StringUtils.isEmpty(filename)) {
-            filename = this.getLinkID(link);
+            filename = linkid;
+        } else {
+            filename = linkid + "_" + filename;
         }
-        /* RegExes sometimes used for streaming */
-        final String jssource = br.getRegex("player\\.updateSrc\\((\\[.*?\\])").getMatch(0);
-        if (jssource != null) {
-            try {
-                HashMap<String, Object> entries = null;
-                Object quality_temp_o = null;
-                Object quality_temp_o_2 = null;
-                long quality_temp = 0;
-                String quality_temp_str = null;
-                long quality_best = 0;
-                String dllink_temp = null;
-                final ArrayList<Object> ressourcelist = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(jssource);
-                for (final Object videoo : ressourcelist) {
-                    entries = (HashMap<String, Object>) videoo;
-                    dllink_temp = (String) entries.get("src");
-                    quality_temp_o = entries.get("label");
-                    quality_temp_o_2 = entries.get("res");
-                    if (quality_temp_o_2 != null && quality_temp_o_2 instanceof Long) {
-                        quality_temp = JavaScriptEngineFactory.toLong(quality_temp_o_2, 0);
-                    } else if (quality_temp_o != null && quality_temp_o instanceof Long) {
-                        quality_temp = JavaScriptEngineFactory.toLong(quality_temp_o, 0);
-                    } else if (quality_temp_o != null && quality_temp_o instanceof String) {
-                        quality_temp_str = (String) quality_temp_o;
-                        if (quality_temp_str.matches("\\d+p.*?")) {
-                            /* E.g. '360p' */
-                            quality_temp = Long.parseLong(new Regex(quality_temp_str, "(\\d+)p").getMatch(0));
-                        } else {
-                            /* Bad / Unsupported format */
-                            continue;
-                        }
-                    }
-                    if (StringUtils.isEmpty(dllink_temp) || quality_temp == 0) {
-                        continue;
-                    } else if (dllink_temp.contains(".m3u8")) {
-                        /* Skip hls, prefer http */
-                        continue;
-                    }
-                    if (quality_temp > quality_best) {
-                        quality_best = quality_temp;
-                        dllink = dllink_temp;
-                    }
-                }
-                if (!StringUtils.isEmpty(dllink)) {
-                    logger.info("BEST handling for multiple video source succeeded");
-                }
-            } catch (final Throwable e) {
-                logger.info("BEST handling for multiple video source failed");
-            }
-        }
-        if (StringUtils.isEmpty(dllink)) {
-            /* Fallback - official download (.wmv) */
-            dllink = br.getRegex("(https?://[a-z0-9\\.\\-]+\\.downloads\\.trailers\\.[^/]+/[^\"]+)\"").getMatch(0);
-        }
+        dllink = br.getRegex("data\\-type=\"trailer\\-src\" data\\-url=\"(https?[^\"]+)\"").getMatch(0);
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext;
-        if (!StringUtils.isEmpty(dllink)) {
-            ext = getFileNameExtensionFromString(dllink, default_extension);
-            if (ext != null && !ext.matches("\\.(?:flv|mp4)")) {
-                ext = default_extension;
-            }
-        } else {
-            ext = default_extension;
-        }
+        final String ext = default_extension;
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
+        link.setName(filename);
         if (!StringUtils.isEmpty(dllink)) {
             dllink = Encoding.htmlDecode(dllink);
-            link.setFinalFileName(filename);
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
@@ -172,9 +112,6 @@ public class TeamskeetCom extends PluginForHost {
                 } catch (final Throwable e) {
                 }
             }
-        } else {
-            /* We cannot be sure whether we have the correct extension or not! */
-            link.setName(filename);
         }
         return AvailableStatus.TRUE;
     }
