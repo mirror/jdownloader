@@ -20,8 +20,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -39,6 +37,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sdilej.cz" }, urls = { "https?://(www\\.)?sdilej\\.cz/\\d+/[a-z0-9-\\.]+" })
 public class SdilejCz extends PluginForHost {
@@ -201,16 +201,22 @@ public class SdilejCz extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         br.setFollowRedirects(false);
-        String code = br.getRegex("<input type=\"hidden\" name=\"code\" value=\"(.*?)\"").getMatch(0);
-        if (code == null) {
-            code = br.getRegex("\\&amp;code=(.*?)\"").getMatch(0);
-        }
-        String linkID = new Regex(downloadLink.getDownloadURL(), "sdilej\\.cz/(\\d+)/").getMatch(0);
-        if (linkID == null || code == null) {
+        final String linkID = new Regex(downloadLink.getDownloadURL(), "sdilej\\.cz/(\\d+)/").getMatch(0);
+        if (linkID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.postPage("http://sdilej.cz/profi_down.php", "id=" + linkID + "&code=" + code);
-        final String dllink = br.getRedirectLocation();
+        String dllink = br.getRegex("\"\\s*(https?://(?:\\w+\\.)?sdilej.cz/sdilej_(?:profi|down)\\.php\\?id=" + linkID + "&.*?)\\s*\"").getMatch(0);
+        if (dllink == null) {
+            String code = br.getRegex("<input type=\"hidden\" name=\"code\" value=\"(.*?)\"").getMatch(0);
+            if (code == null) {
+                code = br.getRegex("\\&amp;code=(.*?)\"").getMatch(0);
+                if (code == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+            br.postPage("http://sdilej.cz/profi_down.php", "id=" + linkID + "&code=" + code);
+            dllink = br.getRedirectLocation();
+        }
         if (dllink == null) {
             logger.warning("dllink is null...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

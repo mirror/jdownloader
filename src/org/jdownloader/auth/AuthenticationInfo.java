@@ -108,11 +108,20 @@ public class AuthenticationInfo implements Storable {
         }
     }
 
-    private String username;
-    private String password;
-    private Type   type = Type.HTTP;
-    private String hostmask;
-    private String realm;
+    private String  username;
+    private String  password;
+    private Type    type       = Type.HTTP;
+    private String  hostmask;
+    private String  realm;
+    private boolean alwaysFlag = false;
+
+    public boolean isAlwaysFlag() {
+        return alwaysFlag;
+    }
+
+    public void setAlwaysFlag(boolean alwaysFlag) {
+        this.alwaysFlag = alwaysFlag;
+    }
 
     public String getRealm() {
         return realm;
