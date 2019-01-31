@@ -116,7 +116,7 @@ public class BadoinkvrCom extends PluginForHost {
         }
         long lowest_filesize = 0;
         if (userHasCompatibleMOCHAccount) {
-            /* Assume that MOCH will return lowest quality possible. */
+            /* Assume that MOCH will return lowest quality possible, see if we can find the lowest filesize. */
             final String[] filesizes = br.getRegex("class=\"video-dl-options-file-info\">\\d+fps \\(([^\"]+)\\)</span>").getColumn(0);
             int i = 0;
             for (final String filesize_str : filesizes) {
@@ -132,7 +132,7 @@ public class BadoinkvrCom extends PluginForHost {
             }
         }
         if (lowest_filesize > 0) {
-            /* Display assumed filesize for MOCH download. */
+            /* Successfully found 'MOCH-filesize' --> Display assumed filesize for MOCH download. */
             link.setDownloadSize(lowest_filesize);
         } else if (!StringUtils.isEmpty(dllink)) {
             dllink = Encoding.htmlDecode(dllink);

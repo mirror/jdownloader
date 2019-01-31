@@ -62,10 +62,6 @@ public class YourPornSexy extends PluginForHost {
             // logger.info("vnfo: " + vnfo);
             getDllink(link, vnfo, fid);
         }
-        if (dllink == null) {
-            logger.info("authorid: " + authorid + ", json: " + json);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
         return AvailableStatus.TRUE;
     }
 
@@ -74,7 +70,7 @@ public class YourPornSexy extends PluginForHost {
         final String items[][] = new Regex(vnfo, "/cdn/([^/]+)/([^/]+)/([^/]+)/([^/]+)").getMatches();
         if (items != null && items.length > 0 && authorid != null) {
             for (final String item[] : items) {
-                dllink = "https://" + item[0] + ".trafficdeposit.com/bvideo/" + item[2] + "/" + item[3] + "/" + authorid + "/" + id + ".mp4";
+                dllink = "https://" + item[0] + ".trafficdeposit.com/video/" + item[1] + "/" + item[2] + "/" + item[3] + "/" + authorid + "/" + id + ".mp4";
                 // logger.info("dllink: " + dllink);
             }
         } else {
@@ -105,7 +101,7 @@ public class YourPornSexy extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
         if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -2);
         if (dl.getConnection().getContentType().contains("html")) {

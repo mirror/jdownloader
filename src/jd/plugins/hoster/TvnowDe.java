@@ -277,6 +277,7 @@ public class TvnowDe extends PluginForHost {
             hlsMaster = hlsMaster.replaceAll("(\\??filter=.*?)(&|$)", "");// show all available qualities
             /*
              * 2019-01-29: Error 404 may happen for content which is premiumonly (for ALL streaming-types, URLs are given but do not work!)
+             * It may also happen that content is broken, all sources return 404 and the same happens with acount.
              */
             br.getPage(hlsMaster);
             /* Find user-preferred quality */
@@ -359,7 +360,13 @@ public class TvnowDe extends PluginForHost {
         /* 2019-01-29: TODO: Check if this can also happen when logged-in */
         if (!isFree) {
             logger.info("Only downloadable via premium");
-            if (acc != null) {
+            if (acc != null && acc.getType() == AccountType.PREMIUM) {
+                /*
+                 * 2019-01-30: If content is not available for freeusers but also fails via premium account this is an indication of
+                 * missing/broken content - this shall be a very rare case!
+                 */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find downloadurl: content missing/broken");
+            } else if (acc != null) {
                 logger.info("Account available --> WTF, maybe content has to be bought individually");
             }
             throw new AccountRequiredException();

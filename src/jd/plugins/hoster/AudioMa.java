@@ -17,6 +17,7 @@ package jd.plugins.hoster;
 
 import java.util.Random;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.Base64;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.macs.HMac;
@@ -112,7 +113,7 @@ public class AudioMa extends PluginForHost {
         String dllink;
         if (use_oauth_api) {
             dllink = PluginJSonUtils.getJsonValue(br, "download_url");
-            if (dllink == null) {
+            if (StringUtils.isEmpty(dllink)) {
                 dllink = PluginJSonUtils.getJsonValue(br, "streaming_url");
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -149,6 +150,7 @@ public class AudioMa extends PluginForHost {
     }
 
     public static String getOAuthQueryString(final Browser br) throws Exception {
+        /* 2019-01-30: Used hardcoded values as they change js more often and API vars have also changed */
         String ogurl = br.getRegex("\"og:url\" content=\"([^\"]+)\"").getMatch(0);
         String[] match = new Regex(ogurl, ".+?/(?:embed/)?(song|album|playlist)/(.+?)/(.+)$").getRow(0);
         if (match == null || match.length != 3) {
@@ -158,13 +160,17 @@ public class AudioMa extends PluginForHost {
         final String artistId = match[1];
         final String musicSlug = match[2];
         // src='/static/dist/desktop/252.3d3a7d50d9de7c1fefa0.js'
-        String jsurl = br.getRegex("src='([^']+?/275\\.[0-9a-f]+?\\.chunk\\.js)").getMatch(0);
+        // String jsurl = br.getRegex("src='([^']+?/275\\.[0-9a-f]+?\\.chunk\\.js)").getMatch(0);
         final Browser cbr = br.cloneBrowser();
-        cbr.getPage(jsurl);
+        // cbr.getPage(jsurl);
         String apiUrl = cbr.getRegex("API_URL:\"([^\"]+)\"").getMatch(0);
+        apiUrl = "https://api.audiomack.com";
         String apiVersion = cbr.getRegex("API_VERSION:\"([^\"]+)\"").getMatch(0);
+        apiVersion = "v1";
         String apiConsumerKey = cbr.getRegex("API_CONSUMER_KEY:\"([^\"]+)\"").getMatch(0);
+        apiConsumerKey = "audiomack-js";
         String apiConsumerSecret = cbr.getRegex("API_CONSUMER_SECRET:\"([^\"]+)\"").getMatch(0);
+        apiConsumerSecret = "f3ac5b086f3eab260520d8e3049561e6";
         String method = "GET";
         String requestUrlFmt;
         if ("playlist".equals(musicType)) {
