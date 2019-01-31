@@ -24,6 +24,7 @@ import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -31,62 +32,80 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixhost.to" }, urls = { "https?://(?:www\\.)?pixhost\\.to/show/((\\d+)/([^/]+))" })
-public class PixhostTo extends PluginForHost {
-    public PixhostTo(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ddfnetwork" }, urls = { "https?://(?:[a-z]+\\.)?ddfnetwork\\.com/videos/(?!featured|trending)([^/]+)/(\\d{3})" })
+public class DdfnetworkCom extends PluginForHost {
+    public DdfnetworkCom(PluginWrapper wrapper) {
         super(wrapper);
     }
     /* DEV NOTES */
-    // Tags: pichost
+    // Tags: Porn plugin
     // protocol: no https
-    // other: related to: PixhstCom (pxhst.co)
+    // other:
 
     /* Extension which will be used if no correct extension is found */
-    private static final String  default_extension = ".jpg";
+    private static final String  default_extension = ".mp4";
     /* Connection stuff */
-    private static final boolean free_resume       = false;
-    private static final int     free_maxchunks    = 1;
+    private static final boolean free_resume       = true;
+    private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
     private String               dllink            = null;
     private boolean              server_issues     = false;
 
     @Override
     public String getAGBLink() {
-        return "http://pixhost.to/";
+        return "https://de.ddfnetwork.com/legal/terms";
     }
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        final String linkid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
+        if (linkid != null) {
+            return linkid;
+        } else {
+            return super.getLinkID(link);
+        }
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        link.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
+        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         dllink = null;
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"sendErrorReport\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String url_filename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(2);
-        /* 2019-01-31: It is better to grab the filename via URL! */
-        String filename = null;
+        final String linkid = this.getLinkID(link);
+        final String url_filename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        String filename = br.getRegex("itemprop=\"name\" content=\"([^<>\"]+)\"").getMatch(0);
         if (StringUtils.isEmpty(filename)) {
-            filename = url_filename;
+            filename = linkid + "_" + url_filename;
+        } else {
+            filename = linkid + "_" + filename;
         }
-        final String json_for_current_object = br.getRegex("\\{[^\\}]*?" + url_filename + "[^\\}]*?\\}").getMatch(-1);
-        if (json_for_current_object != null) {
-            dllink = new Regex(json_for_current_object, "src\\s*?:\\s*?\\'(http[^\"\\']+)\\'").getMatch(0);
+        /* Find highest quality trailer */
+        final String[] htmls = br.getRegex("<source.*?type=\"video/mp4\"[^>]*?/>").getColumn(-1);
+        long quality_temp = 0;
+        String quality_temp_str = null;
+        long quality_best = 0;
+        String dllink_temp = null;
+        for (final String html : htmls) {
+            dllink_temp = new Regex(html, "src=\"(http[^\"]+)\"").getMatch(0);
+            quality_temp_str = new Regex(html, "label=\"(\\d+)p\"").getMatch(0);
+            if (StringUtils.isEmpty(dllink_temp) || StringUtils.isEmpty(quality_temp_str)) {
+                continue;
+            }
+            quality_temp = Long.parseLong(quality_temp_str);
+            if (quality_temp > quality_best) {
+                quality_best = quality_temp;
+                this.dllink = dllink_temp;
+            }
         }
-        /* Fallback */
-        if (dllink == null) {
-            dllink = br.getRegex("(https?://[^/]+/images/[^<>\"\\']+)").getMatch(0);
-        }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (StringUtils.isEmpty(dllink)) {
+            /* Fallback - do not care about the quality */
+            dllink = br.getRegex("\"(https[^\"]+\\.mp4)\"").getMatch(0);
         }
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
@@ -133,7 +152,8 @@ public class PixhostTo extends PluginForHost {
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (StringUtils.isEmpty(dllink)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /* Display premiumonly message in this case */
+            throw new AccountRequiredException();
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
