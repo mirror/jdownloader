@@ -44,6 +44,7 @@ public class BiqleRu extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         if ("biqle.ru".equals(getHost())) {
+            final String decryptedhost = "biqledecrypted://";
             br.getPage(param.getCryptedUrl());
             br.followRedirect();
             final String title = br.getRegex("<title>\\s*(.*?)\\s*(— BIQLE Video)?</title>").getMatch(0);
@@ -65,7 +66,7 @@ public class BiqleRu extends PluginForDecrypt {
                             }
                             String fileName = (String) cdn_file.getValue();
                             fileName = fileName.replace(".", ".mp4?extra=");
-                            final DownloadLink downloadLink = createDownloadlink("directhttp://http://" + server + "/videos/" + cdn_id.replace("_", "/") + "/" + fileName);
+                            final DownloadLink downloadLink = createDownloadlink(decryptedhost + server + "/videos/" + cdn_id.replace("_", "/") + "/" + fileName);
                             if (title != null) {
                                 downloadLink.setFinalFileName(title + "_" + resolution + ".mp4");
                             } else {
@@ -109,7 +110,7 @@ public class BiqleRu extends PluginForDecrypt {
                             StringBuilder sb = new StringBuilder(fileUrl);
                             sb.insert(insertPos, server + "/");
                             sb.append(String.format("&extra_key=%s&videos=%s", partialQuality.get(resolution), videoId));
-                            final DownloadLink downloadLink = createDownloadlink("directhttp://" + sb.toString());
+                            final DownloadLink downloadLink = createDownloadlink(sb.toString().replaceAll("https?://", decryptedhost));
                             downloadLink.setFinalFileName(titleName + "_" + resolution + ".mp4");
                             downloadLink.setContainerUrl(param.getCryptedUrl());
                             ret.add(downloadLink);
