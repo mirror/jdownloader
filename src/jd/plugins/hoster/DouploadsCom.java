@@ -128,7 +128,7 @@ public class DouploadsCom extends antiDDoSForHost {
     private String               fuid                               = null;
     private String               passCode                           = null;
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger totalMaxSimultanFreeDownload       = new AtomicInteger(20);
+    private static AtomicInteger totalMaxSimultanFreeDownload       = new AtomicInteger(1);
     /* don't touch the following! */
     private static AtomicInteger maxFree                            = new AtomicInteger(1);
     private static Object        LOCK                               = new Object();
@@ -457,7 +457,7 @@ public class DouploadsCom extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 0, PROPERTY_DLLINK_FREE);
+        doFree(downloadLink, true, -2, PROPERTY_DLLINK_FREE);
     }
 
     @SuppressWarnings({ "unused" })
@@ -763,6 +763,11 @@ public class DouploadsCom extends antiDDoSForHost {
                 controlFree(-1);
             }
         } else {
+            /*
+             * Save directurl before download-attempt as it should be valid even if it e.g. fails because of server issue 503 (= too many
+             * connections) --> Should work fine after the next try.
+             */
+            downloadLink.setProperty(directlinkproperty, dllink);
             dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumable, maxchunks);
             if (dl.getConnection().getContentType().contains("html")) {
                 checkResponseCodeErrors(dl.getConnection());
@@ -772,7 +777,6 @@ public class DouploadsCom extends antiDDoSForHost {
                 checkServerErrors();
                 handlePluginBroken(downloadLink, "dllinknofile", 3);
             }
-            downloadLink.setProperty(directlinkproperty, dllink);
             fixFilename(downloadLink);
             try {
                 /* add a download slot */
@@ -1357,7 +1361,7 @@ public class DouploadsCom extends antiDDoSForHost {
         if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
             /* Expired premium or no expire date given --> It is usually a Free Account */
             account.setType(AccountType.FREE);
-            account.setMaxSimultanDownloads(-1);
+            account.setMaxSimultanDownloads(1);
             account.setConcurrentUsePossible(false);
         } else {
             /* Expire date is in the future --> It is a premium account */
@@ -1451,7 +1455,7 @@ public class DouploadsCom extends antiDDoSForHost {
         if (account.getType() == AccountType.FREE) {
             /* Perform linkcheck after logging in */
             requestFileInformation(downloadLink);
-            doFree(downloadLink, true, 0, PROPERTY_DLLINK_ACCOUNT_FREE);
+            doFree(downloadLink, true, -2, PROPERTY_DLLINK_ACCOUNT_FREE);
         } else {
             String dllink = checkDirectLink(downloadLink, PROPERTY_DLLINK_ACCOUNT_PREMIUM);
             if (dllink == null) {
@@ -1476,6 +1480,11 @@ public class DouploadsCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
+            /*
+             * Save directurl before download-attempt as it should be valid even if it e.g. fails because of server issue 503 (= too many
+             * connections) --> Should work fine after the next try.
+             */
+            downloadLink.setProperty(PROPERTY_DLLINK_ACCOUNT_PREMIUM, dllink);
             dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 checkResponseCodeErrors(dl.getConnection());
@@ -1486,7 +1495,6 @@ public class DouploadsCom extends antiDDoSForHost {
                 handlePluginBroken(downloadLink, "dllinknofile", 3);
             }
             fixFilename(downloadLink);
-            downloadLink.setProperty(PROPERTY_DLLINK_ACCOUNT_PREMIUM, dllink);
             dl.startDownload();
         }
     }

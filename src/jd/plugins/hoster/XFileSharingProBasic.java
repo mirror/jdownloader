@@ -180,7 +180,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     private static Object        LOCK                               = new Object();
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 2.7.8.3<br />
+     * DEV NOTES XfileSharingProBasic Version 2.7.8.4<br />
      ****************************
      * NOTES from raztoki <br/>
      * - no need to set setfollowredirect true. <br />
@@ -823,6 +823,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 controlFree(-1);
             }
         } else {
+            /*
+             * Save directurl before download-attempt as it should be valid even if it e.g. fails because of server issue 503 (= too many
+             * connections) --> Should work fine after the next try.
+             */
+            downloadLink.setProperty(directlinkproperty, dllink);
             dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumable, maxchunks);
             if (dl.getConnection().getContentType().contains("html")) {
                 checkResponseCodeErrors(dl.getConnection());
@@ -832,7 +837,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 checkServerErrors();
                 handlePluginBroken(downloadLink, "dllinknofile", 3);
             }
-            downloadLink.setProperty(directlinkproperty, dllink);
             fixFilename(downloadLink);
             try {
                 /* add a download slot */
@@ -906,7 +910,14 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             try {
                 final Browser br2 = br.cloneBrowser();
                 con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                if (con.getResponseCode() == 503) {
+                    /*
+                     * Too many connections but that does not mean that our downloadlink is valid. Accept it and if it still returns 503 on
+                     * download-attempt this error will get displayed to the user.
+                     */
+                    logger.info("Stored directurl lead to 503");
+                    return dllink;
+                } else if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
                 }
@@ -1612,6 +1623,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
+            /*
+             * Save directurl before download-attempt as it should be valid even if it e.g. fails because of server issue 503 (= too many
+             * connections) --> Should work fine after the next try.
+             */
+            downloadLink.setProperty(PROPERTY_DLLINK_ACCOUNT_PREMIUM, dllink);
             dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 checkResponseCodeErrors(dl.getConnection());
@@ -1622,7 +1638,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 handlePluginBroken(downloadLink, "dllinknofile", 3);
             }
             fixFilename(downloadLink);
-            downloadLink.setProperty(PROPERTY_DLLINK_ACCOUNT_PREMIUM, dllink);
             dl.startDownload();
         }
     }

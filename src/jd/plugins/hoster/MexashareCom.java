@@ -57,18 +57,18 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mexashare.com" }, urls = { "https?://(?:www\\.)?mexashare\\.com/(?:embed\\-)?[a-z0-9]{12}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mx-sh.net", "mexashare.com" }, urls = { "https?://(?:www\\.)?(?:mexashare\\.com|mx\\-sh\\.net)/(?:embed\\-)?[a-z0-9]{12}", "" })
 public class MexashareCom extends PluginForHost {
     /* Some HTML code to identify different (error) states */
     private static final String            HTML_PASSWORDPROTECTED             = "<br><b>Passwor(d|t):</b> <input";
     private static final String            HTML_MAINTENANCE_MODE              = ">This server is in maintenance mode|>The service is currently under maintenance";
     /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                        = "http://mexashare.com";
+    private static final String            COOKIE_HOST                        = "https://mx-sh.net";
     private static final String            NICE_HOST                          = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty                  = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                            = "(mexashare\\.com)";
+    private static final String            DOMAINS                            = "(mexashare\\.com|mx\\\\-sh\\\\.net)";
     /* Errormessages inside URLs */
     private static final String            URL_ERROR_PREMIUMONLY              = "/?op=login&redirect=";
     /* All kinds of XFS-plugin-configuration settings - be sure to configure this correctly when developing new XFS plugins! */
@@ -87,8 +87,8 @@ public class MexashareCom extends PluginForHost {
      * will check for videohoster "next" Download/Ad- Form.
      */
     private final boolean                  IMAGEHOSTER                        = false;
-    private final boolean                  SUPPORTS_HTTPS                     = false;
-    private final boolean                  SUPPORTS_HTTPS_FORCED              = false;
+    private final boolean                  SUPPORTS_HTTPS                     = true;
+    private final boolean                  SUPPORTS_HTTPS_FORCED              = true;
     private final boolean                  SUPPORTS_AVAILABLECHECK_ALT        = true;
     private final boolean                  SUPPORTS_AVAILABLECHECK_ABUSE      = true;
     /* Enable/Disable random User-Agent - only needed if a website blocks the standard JDownloader User-Agent */
@@ -153,6 +153,14 @@ public class MexashareCom extends PluginForHost {
             link.setContentUrl(url_embed);
         }
         link.setUrlDownload(corrected_downloadurl);
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if (host == null || "mexashare.com".equals(host)) {
+            return "mx-sh.net";
+        }
+        return super.rewriteHost(host);
     }
 
     @Override

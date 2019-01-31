@@ -54,8 +54,19 @@ public class TvnowDe extends PluginForDecrypt {
             isMovie = true;
             url_showname = jd.plugins.hoster.TvnowDe.cleanupShowTitle(url_showname);
         } else if (parameter.matches(jd.plugins.hoster.TvnowDe.TYPE_DEEPLINK)) {
+            /*
+             * 2019-01-21: These URLs are sometimes still given (via json) but it seems like they do not work anymore! They will redirect to
+             * mainpage.
+             */
+            final boolean deeplinkOffline = true;
             formatID = new Regex(parameter, "f=(\\d+)").getMatch(0);
             singleEpisodeID = new Regex(parameter, "e=(\\d+)").getMatch(0);
+            if (deeplinkOffline) {
+                final DownloadLink offline = this.createOfflinelink(parameter);
+                offline.setFinalFileName(formatID + "_" + singleEpisodeID);
+                decryptedLinks.add(offline);
+                return decryptedLinks;
+            }
             url_showname = null;
             stationName = null;
             br.getPage(parameter);

@@ -16,8 +16,9 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.Map.Entry;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
@@ -25,8 +26,7 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
+import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -84,85 +84,125 @@ public class MixCloudCom extends antiDDoSForDecrypt {
         }
         theName = Encoding.htmlDecode(theName).trim();
         String comment = "";
-        String playInfo = null;
-        String url_mp3_preview = null;
-        String json = br.getRegex("id=\"relay-data\"[^>]*>(.*?)<").getMatch(0);
-        Object cloudcastStreamInfo = null;
-        LinkedHashMap<String, Object> entries = null;
-        /* Find correct json object inside ArrayList */
-        json = Encoding.htmlOnlyDecode(json);
-        final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
-        for (final Object audioO : ressourcelist) {
-            entries = (LinkedHashMap<String, Object>) audioO;
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "cloudcast/data/cloudcastLookup");
-            if (entries == null) {
-                continue;
+        int page = 0;
+        boolean hasMore = false;
+        do {
+            /* Find Array with stream-objects */
+            LinkedHashMap<String, Object> entries = null;
+            ArrayList<Object> audio_objects = null;
+            /* Find correct json ArrayList */
+            if (page == 0) {
+                String json = br.getRegex("id=\"relay-data\"[^>]*>(.*?)<").getMatch(0);
+                json = Encoding.htmlOnlyDecode(json);
+                final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+                for (final Object audioO : ressourcelist) {
+                    entries = (LinkedHashMap<String, Object>) audioO;
+                    entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "user/data/userLookup");
+                    if (entries == null) {
+                        continue;
+                    }
+                    Iterator<Entry<String, Object>> iterator = entries.entrySet().iterator();
+                    while (iterator.hasNext()) {
+                        final Entry<String, Object> entry = iterator.next();
+                        final String keyName = entry.getKey();
+                        if (keyName.matches("_stream.+")) {
+                            entries = (LinkedHashMap<String, Object>) entry.getValue();
+                            break;
+                        }
+                    }
+                    audio_objects = (ArrayList<Object>) entries.get("edges");
+                    if (audio_objects == null) {
+                        continue;
+                    }
+                    /* Only set this boolean if we at least found our array */
+                    hasMore = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "pageInfo/hasNextPage")).booleanValue();
+                    break;
+                }
+            } else {
+                /* TODO */
+                if (true) {
+                    break;
+                }
+                final String requestJson = "TODO";
+                final PostRequest downloadReq = br.createJSonPostRequest("https://www." + this.getHost() + "/graphql", requestJson);
+                downloadReq.getHeaders().put("accept", "application/json");
+                downloadReq.getHeaders().put("content-type", "application/json");
+                downloadReq.getHeaders().put("origin", "https://www." + this.getHost() + "/");
+                downloadReq.getHeaders().put("x-csrftoken", "TODO");
+                downloadReq.getHeaders().put("x-requested-with", "XMLHttpRequest");
+                br.openRequestConnection(downloadReq);
+                br.loadConnection(null);
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+                entries = (LinkedHashMap<String, Object>) entries.get("data");
+                Iterator<Entry<String, Object>> iterator = entries.entrySet().iterator();
+                while (iterator.hasNext()) {
+                    final Entry<String, Object> entry = iterator.next();
+                    final String keyName = entry.getKey();
+                    if (keyName.matches("_user.+")) {
+                        entries = (LinkedHashMap<String, Object>) entry.getValue();
+                        break;
+                    }
+                }
+                iterator = entries.entrySet().iterator();
+                while (iterator.hasNext()) {
+                    final Entry<String, Object> entry = iterator.next();
+                    final String keyName = entry.getKey();
+                    if (keyName.matches("_stream.+")) {
+                        entries = (LinkedHashMap<String, Object>) entry.getValue();
+                        break;
+                    }
+                }
+                audio_objects = (ArrayList<Object>) entries.get("edges");
+                if (audio_objects == null) {
+                    return null;
+                }
+                /* Only set this boolean if we at least found our array */
+                hasMore = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "pageInfo/hasNextPage")).booleanValue();
             }
-            cloudcastStreamInfo = entries.get("streamInfo");
-            if (cloudcastStreamInfo != null) {
+            for (final Object edgeO : audio_objects) {
+                entries = (LinkedHashMap<String, Object>) edgeO;
+                entries = (LinkedHashMap<String, Object>) entries.get("node");
+                if (entries == null) {
+                    /* Skip invalid objects */
+                    continue;
+                }
+                final String title = (String) entries.get("name");
+                final Object cloudcastStreamInfo = entries.get("streamInfo");
+                if (StringUtils.isEmpty(title) || cloudcastStreamInfo == null) {
+                    /* Skip invalid objects */
+                    continue;
+                }
                 /* We should have found the correct object here! */
-                url_mp3_preview = (String) entries.get("previewUrl");
+                // final String url_mp3_preview = (String) entries.get("previewUrl");
                 entries = (LinkedHashMap<String, Object>) cloudcastStreamInfo;
                 /*
                  * 2017-11-15: We can chose between dash, http or hls
                  */
-                playInfo = (String) entries.get("url");
-                if (playInfo != null) {
-                    playInfo = decode(playInfo);
-                    if (playInfo.contains("test")) {
-                        /* Skip teststreams */
-                        continue;
-                    }
-                    break;
-                }
-            }
-        }
-        if (playInfo == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        tempLinks.add(playInfo);
-        final HashMap<String, Long> alreadyFound = new HashMap<String, Long>();
-        boolean streamFailed;
-        br.setFollowRedirects(true);
-        for (final String dl : tempLinks) {
-            streamFailed = false;
-            final String ext = getFileNameExtensionFromString(dl, null);
-            if (!StringUtils.endsWithCaseInsensitive(ext, ".mp3") && !StringUtils.endsWithCaseInsensitive(ext, ".m4a")) {
-                continue;
-            }
-            URLConnectionAdapter con = null;
-            final Browser br = this.br.cloneBrowser();
-            final DownloadLink dlink = createDownloadlink(dl);
-            if (!StringUtils.isEmpty(comment)) {
-                dlink.setComment(comment);
-            }
-            dlink.setFinalFileName(theName + ext);
-            /* Nicht alle Links im Array sets[] sind verfügbar. */
-            try {
-                try {
-                    con = br.openGetConnection(dl);
-                } catch (final Throwable e) {
-                    streamFailed = true;
-                }
-                if (streamFailed || con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                String downloadurl = (String) entries.get("url");
+                if (downloadurl == null) {
+                    /* Skip objects without streams */
                     continue;
                 }
-                if (alreadyFound.get(dlink.getName()) != null && alreadyFound.get(dlink.getName()) == con.getLongContentLength()) {
+                downloadurl = decode(downloadurl);
+                if (StringUtils.isEmpty(downloadurl) || downloadurl.contains("test")) {
+                    /* Skip teststreams */
                     continue;
-                } else {
-                    alreadyFound.put(dlink.getName(), con.getLongContentLength());
-                    dlink.setAvailable(true);
-                    dlink.setDownloadSize(con.getLongContentLength());
-                    decryptedLinks.add(dlink);
                 }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
+                final String ext = getFileNameExtensionFromString(downloadurl, ".mp3");
+                if (!StringUtils.endsWithCaseInsensitive(ext, ".mp3") && !StringUtils.endsWithCaseInsensitive(ext, ".m4a")) {
+                    /* Skip unsupported extensions. */
+                    continue;
                 }
+                final DownloadLink dlink = createDownloadlink(downloadurl);
+                if (!StringUtils.isEmpty(comment)) {
+                    dlink.setComment(comment);
+                }
+                dlink.setFinalFileName(title + ext);
+                dlink.setAvailable(true);
+                decryptedLinks.add(dlink);
             }
-        }
+            page++;
+        } while (hasMore);
         /* Add thumbnail if possible. */
         if (!StringUtils.isEmpty(url_thumbnail)) {
             final DownloadLink dlink = createDownloadlink(url_thumbnail);
