@@ -412,21 +412,18 @@ public abstract class Plugin implements ActionListener {
                 if (StringUtils.isEmpty(username)) {
                     throw new PluginException(LinkStatus.ERROR_FATAL, _JDT.T.plugins_errors_wrongusername());
                 }
+                final Type type;
                 if (StringUtils.startsWithCaseInsensitive(link.getDownloadURL(), "ftp")) {
-                    return new Login(Type.FTP, realm, link.getHost(), username, password) {
-                        @Override
-                        public boolean isRememberSelected() {
-                            return handle.isRememberSelected();
-                        }
-                    };
+                    type = Type.FTP;
                 } else {
-                    return new Login(Type.HTTP, realm, link.getHost(), username, password) {
-                        @Override
-                        public boolean isRememberSelected() {
-                            return handle.isRememberSelected();
-                        }
-                    };
+                    type = Type.HTTP;
                 }
+                return new Login(type, realm, link.getHost(), username, password, false) {
+                    @Override
+                    public boolean isRememberSelected() {
+                        return handle.isRememberSelected();
+                    }
+                };
             } else {
                 throw new PluginException(LinkStatus.ERROR_FATAL, _JDT.T.plugins_errors_wrongpassword());
             }

@@ -99,8 +99,9 @@ public class AuthTableModel extends ExtTableModel<AuthenticationInfo> implements
                     return _GUI.T.authtablemodel_column_type_ftp();
                 case HTTP:
                     return _GUI.T.authtablemodel_column_type_http();
+                default:
+                    return null;
                 }
-                return null;
             }
 
             @Override
@@ -267,6 +268,51 @@ public class AuthTableModel extends ExtTableModel<AuthenticationInfo> implements
             @Override
             protected void setStringValue(String value, AuthenticationInfo object) {
                 object.setPassword(value);
+            }
+        });
+        this.addColumn(new ExtCheckColumn<AuthenticationInfo>(_GUI.T.authtablemodel_column_always()) {
+            private static final long serialVersionUID = 1L;
+
+            public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
+                final ExtTableHeaderRenderer ret = new ExtTableHeaderRenderer(this, jTableHeader) {
+                    private static final long serialVersionUID = 1L;
+                    private final Icon        ok               = NewTheme.I().getIcon(IconKey.ICON_BASICAUTH, 14);
+
+                    @Override
+                    public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                        super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                        setIcon(ok);
+                        setHorizontalAlignment(CENTER);
+                        setText(null);
+                        return this;
+                    }
+                };
+                return ret;
+            }
+
+            @Override
+            public int getMaxWidth() {
+                return 30;
+            }
+
+            @Override
+            public boolean isHidable() {
+                return false;
+            }
+
+            @Override
+            protected boolean getBooleanValue(AuthenticationInfo value) {
+                return value.isAlwaysFlag();
+            }
+
+            @Override
+            public boolean isEditable(AuthenticationInfo obj) {
+                return true;
+            }
+
+            @Override
+            protected void setBooleanValue(boolean value, AuthenticationInfo object) {
+                object.setAlwaysFlag(value);
             }
         });
     }

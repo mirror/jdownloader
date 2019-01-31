@@ -146,6 +146,14 @@ public class AuthenticationController {
         if (logins != null) {
             for (final Login login : logins) {
                 ret.add(new DefaultAuthenticanFactory(login.getHost(), login.getRealm(), login.getUsername(), login.getPassword()) {
+                    protected boolean requiresAuthentication(final Request request) {
+                        if (login.isAlwaysFlag()) {
+                            return getWWWAuthenticate(request) != null;
+                        } else {
+                            return super.requiresAuthentication(request);
+                        }
+                    }
+
                     @Override
                     public boolean retry(Authentication authentication, Browser browser, Request request) {
                         if (containsAuthentication(authentication) && request.getAuthentication() == authentication && !requiresAuthentication(request)) {
@@ -161,9 +169,10 @@ public class AuthenticationController {
 
     public List<Login> getSortedLoginsList(final URL url, final String realm) {
         final AuthenticationInfo.Type type;
-        if (StringUtils.equalsIgnoreCase(url.getProtocol(), "ftp")) {
+        final String protocol = url.getProtocol();
+        if (StringUtils.equalsIgnoreCase(protocol, "ftp")) {
             type = Type.FTP;
-        } else if (StringUtils.equalsIgnoreCase(url.getProtocol(), "https") || StringUtils.equalsIgnoreCase(url.getProtocol(), "http")) {
+        } else if (StringUtils.equalsIgnoreCase(protocol, "https") || StringUtils.equalsIgnoreCase(protocol, "http")) {
             type = Type.HTTP;
         } else {
             org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Unknown Protocoll: " + url);
@@ -204,17 +213,28 @@ public class AuthenticationController {
                     }
                 }
 
+                private int compare(long x, long y) {
+                    return (x < y) ? -1 : ((x == y) ? 0 : 1);
+                }
+
+                private int compare(boolean x, boolean y) {
+                    return (x == y) ? 0 : (x ? 1 : -1);
+                }
+
                 @Override
                 public int compare(AuthenticationInfo o1, AuthenticationInfo o2) {
-                    int ret = Integer.compare(getRealm(o2).length(), getRealm(o1).length());
+                    int ret = compare(getRealm(o2).length(), getRealm(o1).length());
                     if (ret == 0) {
-                        ret = Integer.compare(o2.getHostmask().length(), o1.getHostmask().length());
+                        ret = compare(o2.getHostmask().length(), o1.getHostmask().length());
                     }
                     if (ret == 0) {
-                        ret = Long.compare(o2.getLastValidated(), o1.getLastValidated());
+                        ret = compare(o2.isAlwaysFlag(), o1.isAlwaysFlag());
                     }
                     if (ret == 0) {
-                        ret = Long.compare(o2.getCreated(), o1.getCreated());
+                        ret = compare(o2.getLastValidated(), o1.getLastValidated());
+                    }
+                    if (ret == 0) {
+                        ret = compare(o2.getCreated(), o1.getCreated());
                     }
                     return ret;
                 }
@@ -224,7 +244,7 @@ public class AuthenticationController {
         }
         final List<Login> ret = new ArrayList<Login>();
         for (final AuthenticationInfo info : selection) {
-            ret.add(new Login(info.getType(), info.getHostmask(), info.getRealm(), info.getUsername(), info.getPassword()) {
+            ret.add(new Login(info.getType(), info.getHostmask(), info.getRealm(), info.getUsername(), info.getPassword(), info.isAlwaysFlag()) {
                 @Override
                 public void validate() {
                     info.setLastValidated(System.currentTimeMillis());

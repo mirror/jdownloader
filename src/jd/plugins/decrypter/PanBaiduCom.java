@@ -20,8 +20,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Random;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -37,6 +35,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pan.baidu.com" }, urls = { "https?://(?:www\\.)?(?:pan|yun)\\.baidu\\.com/(?:share|wap)/.+|https?://(?:www\\.)?pan\\.baidu\\.com/s/[A-Za-z0-9-_]+(\\?linkpassword=[^#&]+)?(?:#(dir|list)/path=%2F.+)?" })
 public class PanBaiduCom extends PluginForDecrypt {
@@ -301,7 +301,8 @@ public class PanBaiduCom extends PluginForDecrypt {
             }
             if (link_password != null) {
                 /*
-                 * Add passsword so in case user adds password protected mainfolder once he does not have to enter the password again for each subfolder :)
+                 * Add passsword so in case user adds password protected mainfolder once he does not have to enter the password again for
+                 * each subfolder :)
                  */
                 subdir_link += "&linkpassword=" + Encoding.urlEncode(link_password);
             }
@@ -328,6 +329,7 @@ public class PanBaiduCom extends PluginForDecrypt {
             dl.setProperty("mainLink", contenturl);
             // dl.setProperty("dirName", dir);
             dl.setProperty("important_link_password", link_password);
+            dl.setDownloadPassword(link_password);
             dl.setProperty("important_link_password_cookie", link_password_cookie);
             dl.setProperty("important_fsid", fsid);
             dl.setContentUrl(contenturl);
