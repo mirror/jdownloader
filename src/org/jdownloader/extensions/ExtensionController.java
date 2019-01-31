@@ -23,6 +23,10 @@ import java.util.jar.JarInputStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.SecondLevelLaunch;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.WarnLevel;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -51,10 +55,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.UpdateController;
-
-import jd.SecondLevelLaunch;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.WarnLevel;
 
 public class ExtensionController implements MenuExtenderHandler {
     private static final String              TMP_INVALIDEXTENSIONS = "invalidextensions";
@@ -192,6 +192,7 @@ public class ExtensionController implements MenuExtenderHandler {
         if (set.add("org.jdownloader.extensions.schedulerV2.SchedulerExtension") || !Application.isJared(null)) {
             ret.add(new UninstalledExtension("scheduler", IconKey.ICON_WAIT, _GUI.T.ExtensionController_initUninstalledExtensions_SchedulerExtension(), _GUI.T.ExtensionController_initUninstalledExtensions_SchedulerExtension_description()));
         }
+        // TODO: shutdown und antistandby are not optional yet
         if (!Application.isHeadless()) {
             if (set.add("org.jdownloader.extensions.infobar.InfoBarExtension") || !Application.isJared(null)) {
                 ret.add(new UninstalledExtension("infobar", IconKey.ICON_INFO, _GUI.T.ExtensionController_initUninstalledExtensions_INFOBAR(), _GUI.T.ExtensionController_initUninstalledExtensions_INFOBAR_description()));
