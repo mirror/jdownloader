@@ -13,10 +13,12 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.concurrent.atomic.AtomicReference;
+
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -30,16 +32,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "7tv.de" }, urls = { "http://7tvdecrypted\\.de/\\d+" })
 public class ProSevenDe extends PluginForHost {
-
     /** Other domains: proxieben.at (redirects to .de) */
     /** Tags: prosiebensat1.de, */
     /** Interesting extern lib: https://github.com/bromix/repository.bromix.storage/tree/master/plugin.video.7tv */
-
     private static final String            URLTEXT_NO_FLASH         = "no_flash_de";
     private static final String            URLTEXT_COUNTRYBLOCKED_1 = "/not_available_";
     private static final String            URLTEXT_COUNTRYBLOCKED_2 = "wrong_cc_de_en_";
@@ -121,7 +118,6 @@ public class ProSevenDe extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-
         /* Let's find the downloadlink */
         final String clip_id = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
         if (clip_id == null) {
@@ -139,9 +135,9 @@ public class ProSevenDe extends PluginForHost {
         /*
          * Example of an hls url:
          * http://vodakpsdhls-vh.akamaihd.net/i/clips/09/09/4117599-1o6e6wx-tp,03,04,05,06,.mp4.csmil/master.m3u8?hdnea=st%3D1448240481%
-         * 7Eexp%3D1448326881%7Eacl%3D%2Fi%2Fclips%2F09%2F09%2F4117599-1o6e6wx-tp%2C03%2C04%2C05%2C06%2C.mp4%2A%7Ehmac%3Dedb40ef2bc90a159a2fc660e108a8e4ed9f934ee5c2e5376222ecc54bfe47f3a&__a__=off
+         * 7Eexp%3D1448326881%7Eacl%3D%2Fi%2Fclips%2F09%2F09%2F4117599-1o6e6wx-tp%2C03%2C04%2C05%2C06%2C.mp4%2A%7Ehmac%
+         * 3Dedb40ef2bc90a159a2fc660e108a8e4ed9f934ee5c2e5376222ecc54bfe47f3a&__a__=off
          */
-
         /*
          * First try to get a http stream --> Faster downloadspeed & more reliable/stable connection than rtmp and slightly better
          * videoquality
@@ -150,7 +146,7 @@ public class ProSevenDe extends PluginForHost {
         /* User-Agent not necessarily needed */
         br.getHeaders().put("User-Agent", agent_hbbtv.get());
         /* method=6 needed so that the Highest quality-trick works see 'getDllink' method */
-        br.getPage("http://ws.vtc.sim-technik.de/video/video.jsonp?clipid=" + clip_id + "&app=hbbtv&type=1&method=6&callback=video" + clip_id);
+        br.getPage("http://vas.sim-technik.de/video/video.jsonp?clipid=" + clip_id + "&app=hbbtv&type=1&method=6&callback=video" + clip_id);
         getDllink();
         if (json == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -160,13 +156,12 @@ public class ProSevenDe extends PluginForHost {
             /* User-Agent not necessarily needed */
             br.getHeaders().put("User-Agent", agent_normal.get());
             /* http stream not available[via the above method] --> Maybe here --> Or it's either rtmp or rtmpe */
-            br.getPage("http://ws.vtc.sim-technik.de/video/video.jsonp?clipid=" + clip_id + "&app=moveplayer&method=6&callback=SIMVideoPlayer.FlashPlayer.jsonpCallback");
+            br.getPage("http://vas.sim-technik.de/video/video.jsonp?clipid=" + clip_id + "&app=moveplayer&method=6&callback=SIMVideoPlayer.FlashPlayer.jsonpCallback");
             getDllink();
             if (json == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-
         boolean failed = false;
         if (json.contains(URLTEXT_COUNTRYBLOCKED_1)) {
             failed = true;
@@ -194,9 +189,8 @@ public class ProSevenDe extends PluginForHost {
             // client_name));
             // final String sources_api_url = "http://vas.sim-technik.de/vas/live/v2/videos/" + clip_id + "/sources?" + "access_token=" +
             // access_token + "&client_name=" + client_name + "&client_location=" + client_location;
-
             this.br.setFollowRedirects(true);
-            br.getPage("http://ws.vtc.sim-technik.de/video/playlist.m3u8?ClipID=" + clip_id);
+            br.getPage("http://vas.sim-technik.de/video/playlist.m3u8?ClipID=" + clip_id);
             final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
             if (hlsbest == null) {
                 /* Fallback failed - no way to (legally) download this content! */
@@ -216,7 +210,7 @@ public class ProSevenDe extends PluginForHost {
              * TODO: Instead of just trying all qualities, consider to use the f4mgenerator XML file to find the existing qualities:
              * http://vas.sim-technik.de/f4mgenerator.f4m?cid=3868276&ttl=604800&access_token=kabeleins&cdn=akamai&token=
              * a3c706238cec19617b8e70b64480fa20aacc2a162a3bbd21294a8ddaf0209699&g=TGENNQIQUMYD&hdcore=3.7.0&plugin=aasp-3.7.0.39.44
-             * 
+             *
              * ... but it might happen that not all are listed so maybe trying all possible qualities makes more sense especially if one of
              * them is down e.g. because of server issues.
              */
@@ -324,5 +318,4 @@ public class ProSevenDe extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
-
 }
