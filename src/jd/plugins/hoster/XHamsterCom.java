@@ -70,7 +70,6 @@ public class XHamsterCom extends PluginForHost {
     public static final long      trust_cookie_age                = 300000l;
     private static final String   ALLOW_MULTIHOST_USAGE           = "ALLOW_MULTIHOST_USAGE";
     private static final boolean  default_allow_multihoster_usage = false;
-    private static final String   HTML_PASSWORD_PROTECTED         = "id='videoPass'|>This video requires password<";
     private static final String   HTML_PAID_VIDEO                 = "class=\"buy_tips\"|<tipt>This video is paid</tipt>";
     private static final String   DOMAIN_CURRENT                  = "xhamster.com";
     final String                  SELECTED_VIDEO_FORMAT           = "SELECTED_VIDEO_FORMAT";
@@ -192,12 +191,12 @@ public class XHamsterCom extends PluginForHost {
                 if (br.containsHTML(">\\s*This (gallery|video) is visible (for|to) <")) {
                     friendsOnly = true;
                     return AvailableStatus.TRUE;
-                }
-                if (br.containsHTML("Conversion of video processing")) {
+                } else if (br.containsHTML("Conversion of video processing")) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Conversion of video processing", 60 * 60 * 1000l);
-                }
-                if (br.containsHTML("<title>Page was deleted</title>")) {
+                } else if (br.containsHTML("<title>Page was deleted</title>")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else if (isPasswordProtected()) {
+                    return AvailableStatus.TRUE;
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else if (responsecode == 404 || responsecode == 410 || responsecode == 452) {
@@ -233,8 +232,7 @@ public class XHamsterCom extends PluginForHost {
                 downloadLink.getLinkStatus().setStatusText("Only downloadable for friends of " + onlyfor);
                 downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "movies/[0-9]+/(.*?)\\.html").getMatch(0) + ".mp4");
                 return AvailableStatus.TRUE;
-            } else if (br.containsHTML(HTML_PASSWORD_PROTECTED)) {
-                downloadLink.getLinkStatus().setStatusText("This video is password protected");
+            } else if (isPasswordProtected()) {
                 return AvailableStatus.TRUE;
             }
             if (downloadLink.getFinalFileName() == null || dllink == null) {
@@ -266,6 +264,10 @@ public class XHamsterCom extends PluginForHost {
             }
             return AvailableStatus.TRUE;
         }
+    }
+
+    private boolean isPasswordProtected() {
+        return br.containsHTML("class=\"video\\-password\\-block\"");
     }
 
     private String getSiteTitle() {
@@ -502,12 +504,12 @@ public class XHamsterCom extends PluginForHost {
         final String onlyfor = br.getRegex(">([^<>\"]*?)</a>\\'s friends only</div>").getMatch(0);
         if (onlyfor != null) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        } else if (br.containsHTML(HTML_PASSWORD_PROTECTED)) {
+        } else if (isPasswordProtected()) {
             if (passCode == null) {
                 passCode = Plugin.getUserInput("Password?", downloadLink);
             }
             br.postPage(br.getURL(), "password=" + Encoding.urlEncode(passCode));
-            if (br.containsHTML(HTML_PASSWORD_PROTECTED)) {
+            if (isPasswordProtected()) {
                 downloadLink.setProperty("pass", Property.NULL);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
             }
