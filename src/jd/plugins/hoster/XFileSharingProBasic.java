@@ -1018,6 +1018,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 /* Try short version without hardcoded domains and wide */
                 dllink = new Regex(correctedBR, "(" + String.format(dllinkRegexFile_2, getHostsPatternPart()) + ")").getMatch(0);
             }
+            /* 2019-02-02: TODO: Add attempt to find downloadlink by the first url which ends with the filename */
             if (dllink == null) {
                 final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
                 if (cryptedScripts != null && cryptedScripts.length != 0) {

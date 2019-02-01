@@ -1338,7 +1338,7 @@ public class FlashbitCc extends antiDDoSForHost {
             /* Expire date is in the future --> It is a premium account */
             ai.setValidUntil(expire_milliseconds);
             account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(1);
+            account.setMaxSimultanDownloads(10);
             account.setConcurrentUsePossible(true);
         }
         return ai;

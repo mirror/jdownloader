@@ -68,7 +68,7 @@ public class MexashareCom extends PluginForHost {
     private static final String            NICE_HOST                          = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty                  = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                            = "(mexashare\\.com|mx\\\\-sh\\\\.net)";
+    private static final String            DOMAINS                            = "(mexashare\\.com|mx\\-sh\\.net)";
     /* Errormessages inside URLs */
     private static final String            URL_ERROR_PREMIUMONLY              = "/?op=login&redirect=";
     /* All kinds of XFS-plugin-configuration settings - be sure to configure this correctly when developing new XFS plugins! */
@@ -619,11 +619,11 @@ public class MexashareCom extends PluginForHost {
                 } else if (correctedBR.contains("class=\"g-recaptcha\"")) {
                     logger.info("Detected captcha method \"reCaptchaV2\" for this host");
                     /* Special: First wait, then request the captcha answer as it cam time out! */
-                    waitTime(downloadLink, timeBefore);
+                    // waitTime(downloadLink, timeBefore);
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                     dlForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                     /* Workaround for reCaptchaV2 timeout issue */
-                    skipWaittime = true;
+                    // skipWaittime = true;
                 } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                     logger.info("Detected captcha method \"solvemedia\" for this host");
                     final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);

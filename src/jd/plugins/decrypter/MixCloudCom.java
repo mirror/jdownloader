@@ -123,12 +123,34 @@ public class MixCloudCom extends antiDDoSForDecrypt {
                 if (true) {
                     break;
                 }
-                final String requestJson = "TODO";
+                String xcsrftoken = br.getCookie(br.getHost(), "csrftoken");
+                // br.setCookie(br.getHost(), "previmpr", "");
+                // final String authJson = "{\"id\":\"0\",\"query\":\"mutation UnknownFile($input_0:SetExperimentGoalMutationInput!)
+                // {setExperimentGoal(input:$input_0)
+                // {clientMutationId}}\",\"variables\":{\"input_0\":{\"goal\":\"page_view\",\"clientMutationId\":\"0\"}}}";
+                // final PostRequest authReq = br.createJSonPostRequest("https://www." + this.getHost() + "/graphql", authJson);
+                // authReq.getHeaders().put("accept", "application/json");
+                // authReq.getHeaders().put("content-type", null);
+                // authReq.getHeaders().put("content-type", "application/json");
+                // authReq.getHeaders().put("origin", "https://www." + this.getHost() + "/");
+                // authReq.getHeaders().put("x-csrftoken", xcsrftoken);
+                // authReq.getHeaders().put("x-requested-with", "XMLHttpRequest");
+                // authReq.getHeaders().put("accept-language", "de-DE,de;q=0.9,en-US;q=0.8,en;q=0.7");
+                // br.openRequestConnection(authReq);
+                // br.loadConnection(null);
+                // br.setAllowedResponseCodes(new int[] { 400 });
+                // xcsrftoken = br.getCookie(br.getHost(), "csrftoken");
+                // if (xcsrftoken == null) {
+                // logger.warning("Failed to find xcsrftoken");
+                // break;
+                // }
+                final String requestJson = "{\"id\":\"q59\",\"query\":\"query UserStreamPageQuery($first_0:Int!,$lighten_1:Int!,$alpha_2:Float!) {_user1w5emR:user(id:\\\"VXNlcjoxMjIwNTM0NA==\\\") {id,...Fh}} fragment F0 on Picture {urlRoot,primaryColor} fragment F1 on User {id} fragment F2 on User {username,hasProFeatures,hasPremiumFeatures,isStaff,isSelect,id} fragment F3 on Cloudcast {isExclusive,isExclusivePreviewOnly,slug,owner {username,id},id} fragment F4 on CloudcastTag {tag {name,slug,isCategory,id},position} fragment F5 on Cloudcast {_tags4ruy33:tags {...F4},id} fragment F6 on Cloudcast {restrictedReason,owner {username,id},slug,id,isAwaitingAudio,isDraft,isPlayable,streamInfo {hlsUrl,dashUrl,url,uuid},audioLength,currentPosition,proportionListened,seekRestriction,previewUrl,isExclusivePreviewOnly,picture {primaryColor,isLight,_primaryColor2pfPSM:primaryColor(lighten:$lighten_1),_primaryColor3Yfcks:primaryColor(alpha:$alpha_2)}} fragment F7 on Cloudcast {id,name,slug,owner {id,username,displayName,isSelect,...F1,...F2},isUnlisted,isExclusive,...F3,...F5,...F6} fragment F8 on Cloudcast {isDraft,hiddenStats,plays,publishDate,qualityScore,listenerMinutes,id} fragment F9 on Cloudcast {id,isFavorited,isPublic,hiddenStats,favorites {totalCount},slug,owner {id,isFollowing,username,displayName,isViewer}} fragment Fa on Cloudcast {id,isReposted,isPublic,hiddenStats,reposts {totalCount},owner {isViewer,id}} fragment Fb on Cloudcast {id,isUnlisted,isPublic} fragment Fc on Cloudcast {id,isUnlisted,isPublic,slug,description,picture {urlRoot},owner {displayName,isViewer,username,id}} fragment Fd on Cloudcast {id,isPublic,isHighlighted,owner {isViewer,id}} fragment Fe on Cloudcast {id,isPublic,owner {isViewer,id},...F8,...F9,...Fa,...Fb,...Fc,...Fd} fragment Ff on Cloudcast {owner {quantcastTrackingPixel,id},id} fragment Fg on Cloudcast {id,slug,name,isAwaitingAudio,isDraft,isScheduled,restrictedReason,publishDate,waveformUrl,audioLength,owner {username,id},picture {...F0},...F7,...Fe,...Ff} fragment Fh on User {id,displayName,username,_streamvC1bh:stream(first:$first_0,after:\\\"2018-02-15 17:10:20+00:00|510659675\\\") {edges {cursor,repostedBy,node {id,...Fg}},pageInfo {endCursor,hasNextPage,hasPreviousPage}}}\",\"variables\":{\"first_0\":20,\"lighten_1\":15,\"alpha_2\":0.3}}";
                 final PostRequest downloadReq = br.createJSonPostRequest("https://www." + this.getHost() + "/graphql", requestJson);
                 downloadReq.getHeaders().put("accept", "application/json");
+                downloadReq.getHeaders().put("content-type", null);
                 downloadReq.getHeaders().put("content-type", "application/json");
                 downloadReq.getHeaders().put("origin", "https://www." + this.getHost() + "/");
-                downloadReq.getHeaders().put("x-csrftoken", "TODO");
+                downloadReq.getHeaders().put("x-csrftoken", xcsrftoken);
                 downloadReq.getHeaders().put("x-requested-with", "XMLHttpRequest");
                 br.openRequestConnection(downloadReq);
                 br.loadConnection(null);
