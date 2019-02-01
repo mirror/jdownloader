@@ -214,7 +214,6 @@ public abstract class SimpleFTP {
         }
     }
 
-    private static final int   TIMEOUT            = 20 * 1000;
     private boolean            binarymode         = false;
     private Socket             socket             = null;
     private String             dir                = "/";
@@ -226,6 +225,18 @@ public abstract class SimpleFTP {
 
     public String getUser() {
         return user;
+    }
+
+    public int getReadTimeout(STATE state) {
+        switch (state) {
+        case CLOSING:
+            return 10 * 1000;
+        case CONNECTING:
+        case CONNECTED:
+        case DOWNLOADING:
+        default:
+            return 30 * 1000;
+        }
     }
 
     public String getPass() {
@@ -336,12 +347,23 @@ public abstract class SimpleFTP {
     public Socket createSocket(SocketAddress address) throws IOException {
         final Socket socket = createSocket();
         try {
-            socket.connect(address);
+            socket.connect(address, getConnectTimeout());
         } catch (IOException e) {
             socket.close();
             throw e;
         }
         return socket;
+    }
+
+    public int getConnectTimeout() {
+        return 60 * 1000;
+    }
+
+    public static enum STATE {
+        CONNECTING,
+        CONNECTED,
+        DOWNLOADING,
+        CLOSING
     }
 
     /**
@@ -357,8 +379,9 @@ public abstract class SimpleFTP {
         socket = createSocket(new InetSocketAddress(host, port));
         this.host = host;
         this.port = port;
-        socket.setSoTimeout(TIMEOUT);
+        socket.setSoTimeout(getReadTimeout(STATE.CONNECTING));
         String response = readLines(new int[] { 220 }, "SimpleFTP received an unknown response when connecting to the FTP server: ");
+        socket.setSoTimeout(getReadTimeout(STATE.CONNECTED));
         sendLine("USER " + user);
         response = readLines(new int[] { 230, 331 }, "SimpleFTP received an unknown response after sending the user: ");
         String[] lines = getLines(response);
@@ -710,9 +733,8 @@ public abstract class SimpleFTP {
         Socket dataSocket = null;
         try {
             final long resumeAmount = resumePosition;
-            dataSocket = new Socket();
-            dataSocket.setSoTimeout(30 * 1000);
-            dataSocket.connect(new InetSocketAddress(pasv.getHostName(), pasv.getPort()), 30 * 1000);
+            dataSocket = createSocket(new InetSocketAddress(pasv.getHostName(), pasv.getPort()));
+            dataSocket.setSoTimeout(getReadTimeout(STATE.DOWNLOADING));
             sendLine("RETR " + filename);
             input = dataSocket.getInputStream();
             fos = new RandomAccessFile(file, "rw");
@@ -727,7 +749,7 @@ public abstract class SimpleFTP {
             while ((bytesRead = input.read(buffer)) != -1) {
                 if (Thread.currentThread().isInterrupted()) {
                     /* max 10 seks wait for buggy servers */
-                    socket.setSoTimeout(TIMEOUT);
+                    socket.setSoTimeout(getReadTimeout(STATE.CLOSING));
                     shutDownSocket(dataSocket);
                     input.close();
                     try {
@@ -746,7 +768,7 @@ public abstract class SimpleFTP {
                 }
             }
             /* max 10 seks wait for buggy servers */
-            socket.setSoTimeout(TIMEOUT);
+            socket.setSoTimeout(getReadTimeout(STATE.CLOSING));
             shutDownSocket(dataSocket);
             input.close();
             try {

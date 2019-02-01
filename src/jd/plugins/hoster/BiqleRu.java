@@ -18,9 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -34,6 +31,9 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "biqle.ru" }, urls = { "biqledecrypted://.+" })
 public class BiqleRu extends PluginForHost {
     public BiqleRu(PluginWrapper wrapper) {
@@ -43,11 +43,11 @@ public class BiqleRu extends PluginForHost {
     public void correctDownloadLink(final DownloadLink link) {
         link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("biqledecrypted://", "https://"));
     }
+
     /* DEV NOTES */
     // Tags:
     // protocol: no https
     // other: Basically this plugin only exists to refresh URLs on timeout
-
     /* Extension which will be used if no correct extension is found */
     /* Connection stuff */
     private static final boolean free_resume       = true;
@@ -117,7 +117,11 @@ public class BiqleRu extends PluginForHost {
         } catch (final Throwable e) {
             if (decrypterplugin.getBrowser().getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                logger.log(e);
             }
+        } finally {
+            decrypterplugin.clean();
         }
         return freshDirecturl;
     }

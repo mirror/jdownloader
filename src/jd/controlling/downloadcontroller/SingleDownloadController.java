@@ -19,7 +19,9 @@ import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -205,12 +207,20 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
         return processingPlugin.isValueSet();
     }
 
+    private final Set<String> stackTraces = new HashSet<String>();
+
     @Override
     public void interrupt() {
         super.interrupt();
         final LogInterface logger = getLogger();
         if (logger != null) {
-            logger.log(new Exception("SingleDownloadController.interrupt"));
+            final Exception exception = new Exception("SingleDownloadController.interrupt");
+            final String stackTrace = Exceptions.getStackTrace(exception);
+            synchronized (stackTraces) {
+                if (stackTraces.add(stackTrace)) {
+                    logger.log(exception);
+                }
+            }
         }
     }
 
@@ -221,12 +231,12 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
         }
         if (abortFlag.compareAndSet(false, true)) {
             /* this is our initial abort request */
-            Thread abortThread = new Thread() {
+            final Thread abortThread = new Thread() {
                 @Override
                 public void run() {
                     while (isActive() && SingleDownloadController.this.isAlive()) {
                         try {
-                            DownloadInterface dli = getDownloadInstance();
+                            final DownloadInterface dli = getDownloadInstance();
                             if (dli != null) {
                                 dli.stopDownload();
                             }
@@ -250,11 +260,17 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
             };
             abortThread.setDaemon(true);
             abortThread.setName("Abort: " + downloadLink.getView().getDisplayName() + "_" + downloadLink.getUniqueID());
-            final LogInterface logger = getLogger();
-            if (logger != null) {
-                logger.log(new Exception("SingleDownloadController.abort"));
-            }
             abortThread.start();
+        }
+        final LogInterface logger = getLogger();
+        if (logger != null) {
+            final Exception exception = new Exception("SingleDownloadController.abort");
+            final String stackTrace = Exceptions.getStackTrace(exception);
+            synchronized (stackTraces) {
+                if (stackTraces.add(stackTrace)) {
+                    logger.log(exception);
+                }
+            }
         }
     }
 
