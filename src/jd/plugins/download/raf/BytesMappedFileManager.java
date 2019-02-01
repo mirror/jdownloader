@@ -216,7 +216,7 @@ public class BytesMappedFileManager {
         return ret;
     }
 
-    public void write(BytesMappedFile bytesMappedFile) throws IOException {
+    public void write(final BytesMappedFile bytesMappedFile) throws IOException {
         synchronized (bytesMappedFile) {
             File file = bytesMappedFile.getFile();
             File mapFile = getMapFile(file);
