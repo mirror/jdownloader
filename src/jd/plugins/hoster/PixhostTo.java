@@ -77,6 +77,10 @@ public class PixhostTo extends PluginForHost {
         if (StringUtils.isEmpty(filename)) {
             filename = url_filename;
         }
+        /*
+         * Picture might be part of a gallery and website will have an array of all of them --> Make sure that we grab the correct
+         * downloadurl.
+         */
         final String json_for_current_object = br.getRegex("\\{[^\\}]*?" + url_filename + "[^\\}]*?\\}").getMatch(-1);
         if (json_for_current_object != null) {
             dllink = new Regex(json_for_current_object, "src\\s*?:\\s*?\\'(http[^\"\\']+)\\'").getMatch(0);
