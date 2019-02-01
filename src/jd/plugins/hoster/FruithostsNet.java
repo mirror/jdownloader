@@ -45,11 +45,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fruithosts.net", "streamango.com", "streamcherry.com" }, urls = { "https?://(?:www\\.)?streamango\\.com/(?:f|embed)/([a-z0-9]+)(/[^/]+)?", "", "https?://(?:www\\.)?streamcherry\\.com/(?:f|embed)/([a-z0-9]+)(/[^/]+)?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fruithosts.net", "streamango.com", "streamcherry.com" }, urls = { "https?://(?:www\\.)?(?:streamango\\.com|fruithosts\\.net)/(?:f|embed)/([a-z0-9]+)(/[^/]+)?", "", "https?://(?:www\\.)?streamcherry\\.com/(?:f|embed)/([a-z0-9]+)(/[^/]+)?" })
 public class FruithostsNet extends antiDDoSForHost {
     public FruithostsNet(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium("");
+        this.enablePremium("http://fruithosts.net/register");
     }
 
     @Override
@@ -158,7 +158,7 @@ public class FruithostsNet extends antiDDoSForHost {
 
     private void handleDownloadAPI(final DownloadLink downloadLink, final Account acc, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         if (true) {
-            /* 2019-02-01: TODO: Not yet finished! */
+            /* 2019-02-01: Download mode not yet done! */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
@@ -173,23 +173,21 @@ public class FruithostsNet extends antiDDoSForHost {
                 ticketForm.put("key", acc.getPass());
             }
             submitForm(ticketForm);
+            handleErrorsAPI();
             final String ticket = PluginJSonUtils.getJson(br, "ticket");
             final String captcha_url = PluginJSonUtils.getJson(br, "captcha_url");
-            final String wait_timeStr = PluginJSonUtils.getJson(br, "wait_time");
-            final String captcha_response = this.getCaptchaCode(captcha_url, downloadLink);
-            if (wait_timeStr != null) {
-                int wait = 10;
-                if (wait_timeStr.matches("\\d+")) {
-                    wait = Integer.parseInt(wait_timeStr);
-                }
-                this.sleep(wait * 1001l, downloadLink);
-            }
+            final long timeBefore = System.currentTimeMillis();
             final Form dlForm = new Form();
             dlForm.setAction(API_BASE + "file/dl");
             dlForm.setMethod(MethodType.GET);
             dlForm.put("file", this.getLinkID(downloadLink));
             dlForm.put("ticket", ticket);
-            dlForm.put("captcha_response", captcha_response);
+            if (captcha_url != null) {
+                final String captcha_response = this.getCaptchaCode(captcha_url, downloadLink);
+                dlForm.put("captcha_response", captcha_response);
+            }
+            waitTime(downloadLink, timeBefore);
+            submitForm(dlForm);
             dllink = PluginJSonUtils.getJson(br, "url");
             if (StringUtils.isEmpty(dllink)) {
                 logger.warning("Failed to find downloadurl");
@@ -208,6 +206,59 @@ public class FruithostsNet extends antiDDoSForHost {
         }
         downloadLink.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
+    }
+
+    private void handleErrorsAPI() throws PluginException {
+        int status = 200;
+        final String statusStr = PluginJSonUtils.getJson(br, "status");
+        if (statusStr != null) {
+            status = Integer.parseInt(statusStr);
+        }
+        switch (status) {
+        case 200:
+            /* Everything is fine */
+            break;
+        case 400:
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 400");
+        case 403:
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403");
+        case 404:
+            /* File or Folder not found */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        case 451:
+            /* Not available due to legal reasons */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        case 509:
+            /*
+             * {"status":509,
+             * "msg":"bandwidth usage too high (peak hours). out of capacity for non-browser downloads. please use browser download"
+             * ,"result":null}
+             */
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Bandwidth usage too high (peak hours)");
+        default:
+            /* Unknown error */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+    }
+
+    /**
+     * Handles pre download (pre-captcha) waittime. If WAITFORCED it ensures to always wait long enough even if the waittime RegEx fails.
+     */
+    private void waitTime(final DownloadLink downloadLink, final long timeBefore) throws PluginException {
+        int wait = 10;
+        int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
+        /* Ticket Time */
+        final String waitStr = PluginJSonUtils.getJson(br, "wait_time");
+        if (waitStr != null && waitStr.matches("\\d+")) {
+            wait = Integer.parseInt(waitStr);
+        }
+        wait -= passedTime;
+        if (wait > 0) {
+            logger.info("Waiting waittime: " + wait);
+            sleep(wait * 1000l, downloadLink);
+        } else {
+            logger.info("No waittime left after captcha");
+        }
     }
 
     private void handleDownloadWebsite(final DownloadLink downloadLink, final Account acc, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
@@ -282,9 +333,15 @@ public class FruithostsNet extends antiDDoSForHost {
                     this.br.setCookies(this.getHost(), cookies);
                     return;
                 }
-                br.getPage("");
-                br.postPage("", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                if (br.getCookie(this.getHost(), "") == null) {
+                /**
+                 * 2019-01-01: API Login requires special name/password which can be found here: http://fruithosts.net/account#usersettings
+                 * --> FTP/API Information
+                 */
+                getPage(API_BASE + "/account/info?login=" + account.getUser() + "&key=" + Encoding.urlEncode(account.getPass()));
+                try {
+                    handleErrorsAPI();
+                } catch (final PluginException e) {
+                    /* Typically error 403 */
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
@@ -300,7 +357,7 @@ public class FruithostsNet extends antiDDoSForHost {
         final AccountInfo ai = new AccountInfo();
         try {
             login(account, true);
-        } catch (PluginException e) {
+        } catch (final PluginException e) {
             throw e;
         }
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
@@ -308,15 +365,11 @@ public class FruithostsNet extends antiDDoSForHost {
         final String date_account_created = (String) entries.get("signup_at");
         // final long storage_left = JavaScriptEngineFactory.toLong(entries.get("storage_left"), 0);
         // final long balance = JavaScriptEngineFactory.toLong(entries.get("balance"), 0);
-        final long storage_used = JavaScriptEngineFactory.toLong(entries.get("storage_used"), 0);
+        // final long traffic_used_24h = JavaScriptEngineFactory.toLong(entries.get("used_24h"), 0);
         entries = (LinkedHashMap<String, Object>) entries.get("traffic");
         final long traffic_left = JavaScriptEngineFactory.toLong(entries.get("left"), 0);
-        final long traffic_used_24h = JavaScriptEngineFactory.toLong(entries.get("used_24h"), 0);
         if (!StringUtils.isEmpty(date_account_created)) {
             ai.setCreateTime(TimeFormatter.getMilliSeconds(date_account_created, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
-        }
-        if (storage_used > -1) {
-            ai.setUsedSpace(storage_used);
         }
         if (traffic_left == -1) {
             ai.setUnlimitedTraffic();
