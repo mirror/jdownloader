@@ -1660,6 +1660,7 @@ added_date_column_invalid=n.p.
 added_date_column_title=Datum Dodavanja
 are_you_sure_disabled_premium=Da li ste sigurni? Pokušavate da onemogućite sve premium naloge. Ako nastavite, JDownloader NEĆE koristiti vaše premium naloge osim ako ponovo ne omogućite ovu opciju.
 ask=Pitaj me
+authtablemodel_column_always=Uvijek
 authtablemodel_column_enabled=Koristi Login podatke
 authtablemodel_column_host=Domaćin/URL
 authtablemodel_column_password=Šifra
