@@ -18,23 +18,18 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 
 import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
-import jd.parser.html.InputField;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadmagnet.com", "mirr.re" }, urls = { "https?://(?:www\\.)?(?:multi\\.hotshare\\.biz|uploadmagnet\\.com|pdownload\\.net|zlinx\\.me|filesuploader\\.com|multiupload\\.biz|multimirrorupload\\.com|multifilemirror\\.com)/([a-zA-Z0-9]{1,2}_)?([a-zA-Z0-9]{12})", "https?://(?:www\\.)?(?:mirr\\.re)/d/([a-zA-Z0-9]+)" })
@@ -151,81 +146,43 @@ public class MirStkCm extends antiDDoSForDecrypt {
                     }
                     finallink = brc.getRedirectLocation();
                     if (finallink == null) {
-                        if (this.getHost().equals("filemack.com")) {
-                            Form f = null;
-                            for (final Form aform : brc.getForms()) {
-                                if (aform.hasInputFieldByName("_token") && !aform.containsHTML("/login")) {
-                                    f = aform;
-                                    break;
-                                }
-                            }
-                            if (f == null) {
-                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                            }
-                            String js_source = brc.getRegex("var\\s*?hp=\\s*?\\[(.*?)\\]").getMatch(0);
-                            if (js_source != null) {
-                                /* Fix form-bullshit */
-                                js_source = js_source.replace("'", "");
-                                final String[] delete_values = js_source.split(",");
-                                for (final InputField i : f.getInputFields()) {
-                                    for (String deletekey : delete_values) {
-                                        deletekey = Encoding.Base64Decode(deletekey);
-                                        if (i.getKey().equals(deletekey)) {
-                                            i.setValue("");
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-                            // can contain one recaptchav2 event for each uid (not mirror)
-                            if (f.containsHTML("class=(\"|')g-recaptcha\\1")) {
-                                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, brc).getToken();
-                                f.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                            }
-                            submitForm(brc, f);
-                            finallink = brc.getRedirectLocation();
-                            if (finallink != null) {
-                                this.sleep(1200, param);
-                            }
+                        String referer = null;
+                        String add_char = "";
+                        Integer wait = 0;
+                        if (parameter.matches(".+(multiupload\\.biz)/.+")) {
+                            add_char = "?";
+                            referer = new Regex(br.getURL(), "(https?://[^/]+)/").getMatch(0) + "/r_counter";
+                            wait = 10;
                         } else {
-                            String referer = null;
-                            String add_char = "";
-                            Integer wait = 0;
-                            if (parameter.matches(".+(multiupload\\.biz)/.+")) {
-                                add_char = "?";
-                                referer = new Regex(br.getURL(), "(https?://[^/]+)/").getMatch(0) + "/r_counter";
-                                wait = 10;
-                            } else {
-                                referer = new Regex(br.getURL(), "(https?://[^/]+)/").getMatch(0) + "/r_counter";
-                            }
-                            brc.getHeaders().put("Referer", referer);
-                            sleep(wait * 1000, param);
-                            getPage(brc, singleLink + add_char);
-                            finallink = brc.getRedirectLocation();
+                            referer = new Regex(br.getURL(), "(https?://[^/]+)/").getMatch(0) + "/r_counter";
+                        }
+                        brc.getHeaders().put("Referer", referer);
+                        sleep(wait * 1000, param);
+                        getPage(brc, singleLink + add_char);
+                        finallink = brc.getRedirectLocation();
+                        if (StringUtils.isEmpty(finallink)) {
+                            finallink = brc.getRegex("name\\s*=\\s*\"shturl\"[^>]*value\\s*=\\s*\"(https?://[^>]*?)\"").getMatch(0);
                             if (StringUtils.isEmpty(finallink)) {
-                                finallink = brc.getRegex("name\\s*=\\s*\"shturl\"[^>]*value\\s*=\\s*\"(https?://[^>]*?)\"").getMatch(0);
+                                final Form button = brc.getFormBySubmitvalue("Download");
+                                if (button != null) {
+                                    final Browser br2 = brc.cloneBrowser();
+                                    br2.submitForm(button);
+                                    finallink = br2.getRedirectLocation();
+                                }
                                 if (StringUtils.isEmpty(finallink)) {
-                                    final Form button = brc.getFormBySubmitvalue("Download");
-                                    if (button != null) {
-                                        final Browser br2 = brc.cloneBrowser();
-                                        br2.submitForm(button);
-                                        finallink = br2.getRedirectLocation();
-                                    }
-                                    if (StringUtils.isEmpty(finallink)) {
-                                        // fail over
-                                        final String[] links = HTMLParser.getHttpLinks(brc.toString(), "");
-                                        for (final String link : links) {
-                                            if (!Browser.getHost(link).contains(Browser.getHost(brc.getURL()))) {
-                                                final DownloadLink dl = createDownloadlink(link);
-                                                if (fp != null) {
-                                                    fp.add(dl);
-                                                }
-                                                decryptedLinks.add(dl);
-                                                distribute(dl);
+                                    // fail over
+                                    final String[] links = HTMLParser.getHttpLinks(brc.toString(), "");
+                                    for (final String link : links) {
+                                        if (!Browser.getHost(link).contains(Browser.getHost(brc.getURL()))) {
+                                            final DownloadLink dl = createDownloadlink(link);
+                                            if (fp != null) {
+                                                fp.add(dl);
                                             }
+                                            decryptedLinks.add(dl);
+                                            distribute(dl);
                                         }
-                                        continue;
                                     }
+                                    continue;
                                 }
                             }
                         }

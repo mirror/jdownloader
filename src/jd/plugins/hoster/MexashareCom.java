@@ -618,12 +618,13 @@ public class MexashareCom extends PluginForHost {
                     skipWaittime = true;
                 } else if (correctedBR.contains("class=\"g-recaptcha\"")) {
                     logger.info("Detected captcha method \"reCaptchaV2\" for this host");
-                    /* Special: First wait, then request the captcha answer as it cam time out! */
-                    // waitTime(downloadLink, timeBefore);
+                    /*
+                     * 2019-02-01: Changed again, first captcha (as it usually takes some time to solve), then wait remaining waittime if
+                     * needed.
+                     */
+                    /// * Special: First wait, then request the captcha answer as it cam time out! */
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                     dlForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                    /* Workaround for reCaptchaV2 timeout issue */
-                    // skipWaittime = true;
                 } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                     logger.info("Detected captcha method \"solvemedia\" for this host");
                     final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
