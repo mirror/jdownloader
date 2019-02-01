@@ -20,6 +20,7 @@ import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.SimpleFTP;
+import jd.nutils.SimpleFTP.STATE;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
@@ -39,7 +40,6 @@ import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.translate._JDT;
 
 public class SimpleFTPDownloadInterface extends DownloadInterface {
-
     private final Downloadable                      downloadable;
     private final ManagedThrottledConnectionHandler connectionHandler;
     private final LogInterface                      logger;
@@ -160,7 +160,7 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
         MeteredThrottledInputStream input = null;
         try {
             dataSocket = simpleFTP.createSocket(new InetSocketAddress(pasv.getHostName(), pasv.getPort()));
-            dataSocket.setSoTimeout(30 * 1000);
+            dataSocket.setSoTimeout(simpleFTP.getReadTimeout(STATE.DOWNLOADING));
             simpleFTP.sendLine("RETR " + filename);
             simpleFTP.readLines(new int[] { 150, 125 }, null);
             input = new MeteredThrottledInputStream(dataSocket.getInputStream(), new AverageSpeedMeter(10));
@@ -185,7 +185,7 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
                 }
             }
             /* max 10 seks wait for buggy servers */
-            simpleFTP.getSocket().setSoTimeout(20 * 1000);
+            simpleFTP.getSocket().setSoTimeout(simpleFTP.getReadTimeout(STATE.CLOSING));
             simpleFTP.shutDownSocket(dataSocket);
             input.close();
             try {
@@ -230,7 +230,6 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
             DownloadPluginProgress downloadPluginProgress = null;
             try {
                 if (!downloadable.checkIfWeCanWrite(new ExceptionRunnable() {
-
                     @Override
                     public void run() throws Exception {
                         downloadable.checkAndReserve(reservation);
@@ -375,7 +374,6 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
                 logger.severe("Filesize: " + getFileSize() + " Loaded: " + totalLinkBytesLoaded);
                 if (caughtPluginException == null) {
                     downloadable.setLinkStatus(LinkStatus.FINISHED);
-
                 }
                 return true;
             }
@@ -439,5 +437,4 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
     public boolean isResumedDownload() {
         return resumed;
     }
-
 }

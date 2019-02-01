@@ -129,6 +129,21 @@ public class Ftp extends PluginForHost {
         final HTTPProxy proxy = proxies.get(0);
         return new SimpleFTP(proxy, logger) {
             @Override
+            public int getConnectTimeout() {
+                return Browser.getGlobalConnectTimeout();
+            }
+
+            @Override
+            public int getReadTimeout(STATE state) {
+                switch (state) {
+                case CLOSING:
+                    return super.getReadTimeout(state);
+                default:
+                    return Browser.getGlobalReadTimeout();
+                }
+            }
+
+            @Override
             protected Socket createSocket() {
                 return SocketConnectionFactory.createSocket(getProxy());
             }

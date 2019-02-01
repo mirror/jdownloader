@@ -27,15 +27,6 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -60,6 +51,15 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class WorldBytezCom extends antiDDoSForHost {
@@ -166,7 +166,6 @@ public class WorldBytezCom extends antiDDoSForHost {
     private static AtomicInteger totalMaxSimultanFreeDownload       = new AtomicInteger(1);
     /* don't touch the following! */
     private static AtomicInteger maxFree                            = new AtomicInteger(1);
-    private static Object        LOCK                               = new Object();
 
     /**
      * DEV NOTES XfileSharingProBasic Version 2.7.8.0<br />
@@ -1424,12 +1423,7 @@ public class WorldBytezCom extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (final PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account, true);
         final String space[] = new Regex(correctedBR, ">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
         if ((space != null && space.length != 0) && (space[0] != null && space[1] != null)) {
             /* free users it's provided by default */
@@ -1493,8 +1487,8 @@ public class WorldBytezCom extends antiDDoSForHost {
         return br.containsHTML("op=logout");
     }
 
-    private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+    private void login(final Account account, final boolean validateCookies) throws Exception {
+        synchronized (account) {
             try {
                 /* Load cookies */
                 br.setCookiesExclusive(true);
@@ -1502,7 +1496,7 @@ public class WorldBytezCom extends antiDDoSForHost {
                 boolean loggedInViaCookies = false;
                 if (cookies != null) {
                     br.setCookies(this.getHost(), cookies);
-                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l) {
+                    if (!validateCookies && System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l) {
                         /* We trust these cookies as they're not that old --> Do not check them */
                         return;
                     }
@@ -1511,10 +1505,13 @@ public class WorldBytezCom extends antiDDoSForHost {
                     if (loggedInViaCookies) {
                         /* Save new cookie-timestamp */
                         account.saveCookies(br.getCookies(this.getHost()), "");
-                    }
-                    if (loggedInViaCookies && !force) {
-                        /* No additional check required e.g. for account type --> We know cookies are valid and we're logged in --> Done! */
-                        return;
+                        if (!validateCookies) {
+                            /*
+                             * No additional check required e.g. for account type --> We know cookies are valid and we're logged in -->
+                             * Done!
+                             */
+                            return;
+                        }
                     }
                 }
                 if (!loggedInViaCookies) {
