@@ -10,6 +10,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
 import jd.controlling.proxy.ProxyController;
+import jd.http.Browser;
 import jd.http.BrowserSettingsThread;
 import jd.http.NoGateWayException;
 import jd.http.ProxySelectorInterface;
@@ -83,6 +84,16 @@ public class UseNet extends antiDDoSForHost {
         final List<HTTPProxy> proxies = selectProxies(url);
         final HTTPProxy proxy = proxies.get(0);
         final SimpleUseNet client = new SimpleUseNet(proxy, getLogger()) {
+            @Override
+            public int getConnectTimeout() {
+                return Browser.getGlobalConnectTimeout();
+            }
+
+            @Override
+            public int getReadTimeout() {
+                return Browser.getGlobalReadTimeout();
+            }
+
             @Override
             protected Socket createSocket() {
                 return SocketConnectionFactory.createSocket(getProxy());
@@ -238,6 +249,16 @@ public class UseNet extends antiDDoSForHost {
         final List<HTTPProxy> proxies = selectProxies(url);
         final HTTPProxy proxy = proxies.get(0);
         final SimpleUseNet client = new SimpleUseNet(proxy, getLogger()) {
+            @Override
+            public int getConnectTimeout() {
+                return Browser.getGlobalConnectTimeout();
+            }
+
+            @Override
+            public int getReadTimeout() {
+                return Browser.getGlobalReadTimeout();
+            }
+
             @Override
             protected Socket createSocket() {
                 return SocketConnectionFactory.createSocket(getProxy());
