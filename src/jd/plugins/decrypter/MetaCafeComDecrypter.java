@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -29,7 +28,6 @@ import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "metacafe.com" }, urls = { "http://(www\\.)?metacafe\\.com/((watch|fplayer)/(sy\\-)?\\d+/.{1}|watch/yt\\-[A-Za-z0-9\\-_]+/.{1})" })
 public class MetaCafeComDecrypter extends PluginForDecrypt {
-
     public MetaCafeComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -52,7 +50,7 @@ public class MetaCafeComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(this.createDownloadlink(parameter));
             return decryptedLinks;
         }
-        final String externID = br.getRegex("src=\"[^<>\"]+youtube\\.com/embed/([A-Za-z0-9\\-_]+)\"").getMatch(0);
+        final String externID = br.getRegex("src=(?:'|\")[^<>\"]+youtube\\.com/embed/([A-Za-z0-9\\-_]+)(?:'|\")").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("http://www.youtube.com/embed/" + externID));
             return decryptedLinks;
@@ -66,12 +64,10 @@ public class MetaCafeComDecrypter extends PluginForDecrypt {
             main.setAvailable(true);
         }
         decryptedLinks.add(main);
-
         return decryptedLinks;
     }
 
     public static boolean isOffline(final Browser br) {
         return br.getRequest().getHttpConnection().getResponseCode() == 400 || br.getURL().contains("/?pageNotFound") || br.containsHTML("<title>Metacafe \\- Best Videos \\&amp; Funny Movies</title>") || br.getURL().contains("metacafe.com/?m=removed") || br.containsHTML(">This content is temporarily not available\\.<|>Page '.' is temporarily unavailable\\.<");
     }
-
 }
