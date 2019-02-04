@@ -1660,6 +1660,7 @@ added_date_column_invalid=yok
 added_date_column_title=Ekleme Tarihi
 are_you_sure_disabled_premium=Emin misiniz? Tüm premium hesapları etkisizleştirmeye çalışıyorsunuz.\nEğer devam ederseniz, JDownloader premium hesaplarınızı siz bu özelliği yeniden etkinleştirmedikçe KULLANMAYACAK.
 ask=Bana sor
+authtablemodel_column_always=Her zaman
 authtablemodel_column_enabled=Oturum açılışlarını kullan
 authtablemodel_column_host=Anamakine/URL
 authtablemodel_column_password=Parola
