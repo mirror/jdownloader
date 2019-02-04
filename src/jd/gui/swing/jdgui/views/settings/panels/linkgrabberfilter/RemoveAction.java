@@ -4,6 +4,7 @@ import java.awt.event.ActionEvent;
 import java.util.List;
 
 import jd.controlling.TaskQueue;
+import jd.gui.UserIO;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.WarnLevel;
 
@@ -32,7 +33,6 @@ public class RemoveAction extends AppAction {
         setName(_GUI.T.literally_remove());
         setIconKey(IconKey.ICON_REMOVE);
         ;
-
     }
 
     public RemoveAction(AbstractFilterTable table, java.util.List<LinkgrabberFilterRule> selected, boolean force) {
@@ -43,9 +43,8 @@ public class RemoveAction extends AppAction {
     }
 
     protected boolean rly(String msg) {
-
         try {
-            Dialog.getInstance().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.literall_are_you_sure(), msg, null, null, null);
+            Dialog.getInstance().showConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI.T.literall_are_you_sure(), msg, null, null, null);
             return true;
         } catch (DialogClosedException e) {
             e.printStackTrace();
@@ -53,14 +52,17 @@ public class RemoveAction extends AppAction {
             e.printStackTrace();
         }
         return false;
-
     }
 
     public void actionPerformed(ActionEvent e) {
         if (JDGui.bugme(WarnLevel.NORMAL)) {
-            if (!rly(_JDT.T.RemoveAction_actionPerformed_rly_msg())) return;
+            if (!rly(_JDT.T.RemoveAction_actionPerformed_rly_msg())) {
+                return;
+            }
         }
-        if (!isEnabled()) return;
+        if (!isEnabled()) {
+            return;
+        }
         final List<LinkgrabberFilterRule> remove;
         if (selected != null) {
             remove = selected;
@@ -69,7 +71,6 @@ public class RemoveAction extends AppAction {
         }
         if (remove != null && remove.size() > 0) {
             TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
-
                 @Override
                 protected Void run() throws RuntimeException {
                     for (LinkgrabberFilterRule lf : remove) {
@@ -80,11 +81,12 @@ public class RemoveAction extends AppAction {
                 }
             });
         }
-
     }
 
     private ExtTable<LinkgrabberFilterRule> getTable() {
-        if (table != null) return table;
+        if (table != null) {
+            return table;
+        }
         return linkgrabberFilter.getTable();
     }
 
@@ -92,11 +94,14 @@ public class RemoveAction extends AppAction {
     public boolean isEnabled() {
         if (selected != null) {
             for (LinkgrabberFilterRule rule : selected) {
-                if (rule.isStaticRule()) return false;
+                if (rule.isStaticRule()) {
+                    return false;
+                }
             }
         }
-        if (ignoreSelection) return super.isEnabled();
+        if (ignoreSelection) {
+            return super.isEnabled();
+        }
         return selected != null && selected.size() > 0;
     }
-
 }

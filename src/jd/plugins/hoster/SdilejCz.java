@@ -44,7 +44,6 @@ import org.appwork.utils.formatter.SizeFormatter;
 public class SdilejCz extends PluginForHost {
     /** Former czshare.com */
     private static AtomicInteger SIMULTANEOUS_PREMIUM = new AtomicInteger(-1);
-    private static Object        LOCK                 = new Object();
     private static final String  MAINPAGE             = "http://sdilej.cz/";
     private static final String  CAPTCHATEXT          = "captcha\\.php";
 
@@ -221,7 +220,7 @@ public class SdilejCz extends PluginForHost {
             logger.warning("dllink is null...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -10);
         URLConnectionAdapter con = dl.getConnection();
         if (!con.isContentDisposition()) {
             if (dl.getConnection().getResponseCode() == 403) {
@@ -238,7 +237,7 @@ public class SdilejCz extends PluginForHost {
 
     @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 prepBR(br);
                 br.setCookiesExclusive(true);
@@ -285,7 +284,9 @@ public class SdilejCz extends PluginForHost {
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", cookies);
             } catch (PluginException e) {
-                account.setProperty("cookies", null);
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.setProperty("cookies", null);
+                }
                 throw e;
             }
         }
@@ -295,12 +296,7 @@ public class SdilejCz extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account, true);
         br.getPage("/upload/");
         final String trafficleft = br.getRegex("kredit: <strong>([^<>\"]*?)<").getMatch(0);
         if (trafficleft == null) {
