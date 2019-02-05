@@ -93,7 +93,6 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPluginClass;
 import org.jdownloader.plugins.controller.PluginClassLoader;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
@@ -2379,42 +2378,58 @@ public class LinkCrawler {
             List<LazyCrawlerPlugin> ret = sortedLazyCrawlerPlugins.get();
             if (ret == null) {
                 /* sort cHosts according to their usage */
-                ret = new ArrayList<LazyCrawlerPlugin>(unsortedLazyCrawlerPlugins);
+                ret = new ArrayList<LazyCrawlerPlugin>(unsortedLazyCrawlerPlugins.size());
                 try {
-                    Collections.sort(ret, new Comparator<LazyCrawlerPlugin>() {
-                        @Override
-                        public final int compare(LazyCrawlerPlugin o1, LazyCrawlerPlugin o2) {
-                            final LazyPluginClass l1 = o1.getLazyPluginClass();
-                            final LazyPluginClass l2 = o2.getLazyPluginClass();
-                            if (l1.getInterfaceVersion() == l2.getInterfaceVersion()) {
-                                return 0;
-                            }
-                            if (l1.getInterfaceVersion() > l2.getInterfaceVersion()) {
-                                return -1;
-                            }
-                            return 1;
+                    final List<LazyCrawlerPlugin> allPlugins = new ArrayList<LazyCrawlerPlugin>(unsortedLazyCrawlerPlugins);
+                    final Map<String, Object> pluginMap = new HashMap<String, Object>();
+                    for (final LazyCrawlerPlugin plugin : allPlugins) {
+                        final Object entry = pluginMap.get(plugin.getDisplayName());
+                        if (entry == null) {
+                            pluginMap.put(plugin.getDisplayName(), plugin);
+                        } else if (entry instanceof List) {
+                            ((List<LazyCrawlerPlugin>) entry).add(plugin);
+                        } else {
+                            final ArrayList<LazyCrawlerPlugin> list = new ArrayList<LazyCrawlerPlugin>();
+                            list.add((LazyCrawlerPlugin) entry);
+                            list.add(plugin);
+                            pluginMap.put(plugin.getDisplayName(), list);
                         }
-                    });
-                    Collections.sort(ret, new Comparator<LazyCrawlerPlugin>() {
-                        public final int compare(long x, long y) {
+                    }
+                    Collections.sort(allPlugins, new Comparator<LazyCrawlerPlugin>() {
+                        public final int compare(final long x, final long y) {
                             return (x < y) ? 1 : ((x == y) ? 0 : -1);
                         }
 
-                        @Override
-                        public final int compare(LazyCrawlerPlugin o1, LazyCrawlerPlugin o2) {
-                            return compare(o1.getPluginUsage(), o2.getPluginUsage());
-                        }
-                    });
-                    Collections.sort(ret, new Comparator<LazyCrawlerPlugin>() {
-                        public final int compare(boolean x, boolean y) {
+                        public final int compare(final boolean x, final boolean y) {
                             return (x == y) ? 0 : (x ? 1 : -1);
                         }
 
                         @Override
-                        public final int compare(LazyCrawlerPlugin o1, LazyCrawlerPlugin o2) {
-                            return compare(o1.hasFeature(FEATURE.GENERIC), o2.hasFeature(FEATURE.GENERIC));
+                        public int compare(LazyCrawlerPlugin o1, LazyCrawlerPlugin o2) {
+                            final int ret = compare(o1.getPluginUsage(), o2.getPluginUsage());
+                            if (ret == 0) {
+                                return compare(o1.hasFeature(FEATURE.GENERIC), o2.hasFeature(FEATURE.GENERIC));
+                            } else {
+                                return ret;
+                            }
                         }
                     });
+                    for (final LazyCrawlerPlugin plugin : allPlugins) {
+                        final Object entry = pluginMap.remove(plugin.getDisplayName());
+                        if (entry == null) {
+                            if (pluginMap.isEmpty()) {
+                                break;
+                            } else {
+                                continue;
+                            }
+                        } else if (entry instanceof LazyCrawlerPlugin) {
+                            ret.add((LazyCrawlerPlugin) entry);
+                        } else {
+                            final List<LazyCrawlerPlugin> list = (List<LazyCrawlerPlugin>) entry;
+                            sortLazyCrawlerPluginByInterfaceVersion(list);
+                            ret.addAll(list);
+                        }
+                    }
                 } catch (final Throwable e) {
                     LogController.CL(true).log(e);
                 }
@@ -2422,6 +2437,23 @@ public class LinkCrawler {
             }
             return ret;
         }
+    }
+
+    protected void sortLazyCrawlerPluginByInterfaceVersion(final List<LazyCrawlerPlugin> plugins) {
+        Collections.sort(plugins, new Comparator<LazyCrawlerPlugin>() {
+            @Override
+            public final int compare(final LazyCrawlerPlugin lazyCrawlerPlugin1, final LazyCrawlerPlugin lazyCrawlerPlugin2) {
+                final int i1 = lazyCrawlerPlugin1.getLazyPluginClass().getInterfaceVersion();
+                final int i2 = lazyCrawlerPlugin2.getLazyPluginClass().getInterfaceVersion();
+                if (i1 == i2) {
+                    return 0;
+                } else if (i1 > i2) {
+                    return -1;
+                } else {
+                    return 1;
+                }
+            }
+        });
     }
 
     protected List<LazyHostPlugin> getSortedLazyHostPlugins() {
