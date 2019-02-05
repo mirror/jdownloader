@@ -63,19 +63,13 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class XFileSharingProBasic extends antiDDoSForHost {
-    public XFileSharingProBasic(PluginWrapper wrapper) {
+public class UploadevCom extends antiDDoSForHost {
+    public UploadevCom(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium(COOKIE_HOST + "/premium.html");
+        this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
-    // DELETE THIS, after making plugin!
-    @Override
-    public Boolean siteTesterDisabled() {
-        return Boolean.TRUE;
-    }
-
-    public static String[] domains = new String[] { "ForDevsToPlayWith.com" };
+    public static String[] domains = new String[] { "uploadev.com" };
 
     @Override
     public String[] siteSupportedNames() {
@@ -182,52 +176,13 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     private String               fuid                                 = null;
     private String               passCode                             = null;
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger totalMaxSimultanFreeDownload         = new AtomicInteger(getDownloadModeMaxSimultaneousDownloads(null));
+    private static AtomicInteger totalMaxSimultanFreeDownload         = new AtomicInteger(20);
     /* don't touch the following! */
     private static AtomicInteger maxFree                              = new AtomicInteger(1);
     private static Object        LOCK                                 = new Object();
 
-    private static boolean getDownloadModeSupportsResume(final Account account) {
-        if (account == null) {
-            /* Free (anonymous) */
-            return true;
-        } else if (account.getType() == AccountType.FREE) {
-            /* Free Account */
-            return true;
-        } else {
-            /* Premium account */
-            return true;
-        }
-    }
-
-    private static int getDownloadModeMaxChunks(final Account account) {
-        if (account == null) {
-            /* Free (anonymous) */
-            return 0;
-        } else if (account.getType() == AccountType.FREE) {
-            /* Free Account */
-            return 0;
-        } else {
-            /* Premium account */
-            return 0;
-        }
-    }
-
-    private static int getDownloadModeMaxSimultaneousDownloads(final Account account) {
-        if (account == null) {
-            /* Free (anonymous) */
-            return -1;
-        } else if (account.getType() == AccountType.FREE) {
-            /* Free Account */
-            return -1;
-        } else {
-            /* Premium account */
-            return -1;
-        }
-    }
-
     /**
-     * DEV NOTES XfileSharingProBasic Version 2.7.8.6<br />
+     * DEV NOTES XfileSharingProBasic Version 2.7.8.5<br />
      ****************************
      * NOTES from raztoki <br/>
      * - no need to set setfollowredirect true. <br />
@@ -914,9 +869,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
     }
 
-    private void handleCaptcha(final DownloadLink link, final Form captchaForm) {
-    }
-
     private Form findFormF1() {
         Form dlForm = null;
         /* First try to find Form for video hosts with multiple qualities. */
@@ -1008,7 +960,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     @Override
     public boolean hasAutoCaptcha() {
-        return false;
+        return true;
     }
 
     @Override
@@ -1552,50 +1504,18 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         if (expire != null) {
             expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH);
         }
-        final boolean useAltExpire = true;
-        if (expire_milliseconds == 0 || useAltExpire) {
-            /* A more accurate expire time, down to the second. Usually shown on 'extend premium account' page. */
-            getPage("/?op=payments");
-            String expireSecond = new Regex(correctedBR, "<div class=\"accexpire\">.*?</div>").getMatch(-1);
-            if (StringUtils.isEmpty(expireSecond)) {
-                expireSecond = new Regex(correctedBR, "Premium(-| )Account expires?:([^\\s]+)").getMatch(1);
-            }
-            if (!inValidate(expireSecond)) {
-                String tmpYears = new Regex(expireSecond, "(\\d+)\\s+years?").getMatch(0);
-                String tmpdays = new Regex(expireSecond, "(\\d+)\\s+days?").getMatch(0);
-                String tmphrs = new Regex(expireSecond, "(\\d+)\\s+hours?").getMatch(0);
-                String tmpmin = new Regex(expireSecond, "(\\d+)\\s+minutes?").getMatch(0);
-                String tmpsec = new Regex(expireSecond, "(\\d+)\\s+seconds?").getMatch(0);
-                long years = 0, days = 0, hours = 0, minutes = 0, seconds = 0;
-                if (!inValidate(tmpYears)) {
-                    years = Integer.parseInt(tmpYears);
-                }
-                if (!inValidate(tmpdays)) {
-                    days = Integer.parseInt(tmpdays);
-                }
-                if (!inValidate(tmphrs)) {
-                    hours = Integer.parseInt(tmphrs);
-                }
-                if (!inValidate(tmpmin)) {
-                    minutes = Integer.parseInt(tmpmin);
-                }
-                if (!inValidate(tmpsec)) {
-                    seconds = Integer.parseInt(tmpsec);
-                }
-                expire_milliseconds = ((years * 86400000 * 365) + (days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000)) + System.currentTimeMillis();
-            }
-        }
         if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
             /* Expired premium or no expire date given --> It is usually a Free Account */
             account.setType(AccountType.FREE);
+            account.setMaxSimultanDownloads(-1);
             account.setConcurrentUsePossible(false);
         } else {
             /* Expire date is in the future --> It is a premium account */
             ai.setValidUntil(expire_milliseconds);
             account.setType(AccountType.PREMIUM);
+            account.setMaxSimultanDownloads(-1);
             account.setConcurrentUsePossible(true);
         }
-        account.setMaxSimultanDownloads(getDownloadModeMaxSimultaneousDownloads(account));
         return ai;
     }
 
@@ -1628,19 +1548,22 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 boolean loggedInViaCookies = false;
                 if (cookies != null) {
                     br.setCookies(this.getHost(), cookies);
-                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l && !force) {
+                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l) {
                         /* We trust these cookies as they're not that old --> Do not check them */
                         return;
                     }
-                    logger.info("Verifying login-cookies");
                     getPage(COOKIE_HOST + "/");
                     loggedInViaCookies = isLoggedinHTML();
+                    if (loggedInViaCookies) {
+                        /* Save new cookie-timestamp */
+                        account.saveCookies(br.getCookies(this.getHost()), "");
+                    }
+                    if (loggedInViaCookies && !force) {
+                        /* No additional check required e.g. for account type --> We know cookies are valid and we're logged in --> Done! */
+                        return;
+                    }
                 }
-                if (loggedInViaCookies) {
-                    /* No additional check required --> We know cookies are valid and we're logged in --> Done! */
-                    logger.info("Successfully logged in via cookies");
-                } else {
-                    logger.info("Performing full login");
+                if (!loggedInViaCookies) {
                     getPage(COOKIE_HOST + "/login.html");
                     if (br.getHttpConnection().getResponseCode() == 404) {
                         /* Required for some XFS setups. */
@@ -1692,12 +1615,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         /* Perform linkcheck without logging in */
         requestFileInformation(downloadLink);
         login(account, false);
-        final boolean resume = getDownloadModeSupportsResume(account);
-        final int maxChunks = getDownloadModeMaxChunks(account);
         if (account.getType() == AccountType.FREE) {
             /* Perform linkcheck after logging in */
             requestFileInformation(downloadLink);
-            doFree(downloadLink, resume, maxChunks, PROPERTY_DLLINK_ACCOUNT_FREE);
+            doFree(downloadLink, true, 0, PROPERTY_DLLINK_ACCOUNT_FREE);
         } else {
             String dllink = checkDirectLink(downloadLink, PROPERTY_DLLINK_ACCOUNT_PREMIUM);
             if (dllink == null) {
@@ -1727,7 +1648,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
              * connections) --> Should work fine after the next try.
              */
             downloadLink.setProperty(PROPERTY_DLLINK_ACCOUNT_PREMIUM, dllink);
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resume, maxChunks);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 checkResponseCodeErrors(dl.getConnection());
                 logger.warning("The final dllink seems not to be a file!");

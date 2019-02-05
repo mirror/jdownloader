@@ -20,6 +20,12 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -28,6 +34,7 @@ import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -38,12 +45,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "crazyshare.cc" }, urls = { "https?://(?:www\\.)?crazyshare\\.cc/[A-Za-z0-9]+" })
 public class CrazyshareCc extends antiDDoSForHost {
@@ -511,40 +512,76 @@ public class CrazyshareCc extends antiDDoSForHost {
         synchronized (LOCK) {
             try {
                 br.setCookiesExclusive(true);
+                prepBrowser(this.br, account.getHoster());
                 br.setFollowRedirects(true);
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null && !force) {
-                    br.setCookies(this.getHost(), cookies);
-                    return;
-                }
-                getPage(br, this.getProtocol() + this.getHost() + "/");
-                final String lang = System.getProperty("user.language");
-                final String loginstart = new Regex(br.getURL(), "(https?://(www\\.)?)").getMatch(0);
-                if (useOldLoginMethod) {
-                    postPage(br, this.getProtocol() + this.getHost() + "/login." + type, "submit=Login&submitme=1&loginUsername=" + Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()));
-                    if (br.containsHTML(">Your username and password are invalid<") || !br.containsHTML("/logout\\.html\">")) {
-                        if ("de".equalsIgnoreCase(lang)) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        } else {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        }
+                boolean loggedInViaCookies = false;
+                if (cookies != null) {
+                    this.br.setCookies(this.getHost(), cookies);
+                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l && !force) {
+                        /* We trust these cookies as they're not that old --> Do not check them */
+                        return;
                     }
+                    logger.info("Verifying login-cookies");
+                    getPage("https://" + this.getHost() + "/");
+                    loggedInViaCookies = br.containsHTML("/logout.html");
+                }
+                if (loggedInViaCookies) {
+                    /* No additional check required --> We know cookies are valid and we're logged in --> Done! */
+                    logger.info("Successfully logged in via cookies");
                 } else {
-                    getPage(br, this.getProtocol() + this.getHost() + "/login." + type);
-                    final String loginpostpage = loginstart + this.getHost() + "/ajax/_account_login.ajax.php";
-                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                    br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-                    postPage(br, loginpostpage, "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                    if (!br.containsHTML("\"login_status\":\"success\"")) {
-                        if ("de".equalsIgnoreCase(lang)) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        } else {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    logger.info("Performing full login");
+                    getPage(this.getProtocol() + this.getHost() + "/");
+                    final String lang = System.getProperty("user.language");
+                    final String loginstart = new Regex(br.getURL(), "(https?://(www\\.)?)").getMatch(0);
+                    if (useOldLoginMethod) {
+                        postPage(this.getProtocol() + this.getHost() + "/login." + type, "submit=Login&submitme=1&loginUsername=" + Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()));
+                        if (br.containsHTML(">Your username and password are invalid<") || !br.containsHTML("/logout\\.html\">")) {
+                            if ("de".equalsIgnoreCase(lang)) {
+                                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                            } else {
+                                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                            }
+                        }
+                    } else {
+                        getPage(this.getProtocol() + this.getHost() + "/login." + type);
+                        final String loginpostpage = loginstart + this.getHost() + "/ajax/_account_login.ajax.php";
+                        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                        br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+                        Form loginform = br.getFormbyProperty("id", "form_login");
+                        if (loginform == null) {
+                            logger.info("Fallback to custom built loginform");
+                            loginform = new Form();
+                            loginform.put("submitme", "1");
+                        }
+                        loginform.put("username", Encoding.urlEncode(account.getUser()));
+                        loginform.put("password", Encoding.urlEncode(account.getPass()));
+                        loginform.setAction(loginpostpage);
+                        if (loginform.containsHTML("class=\"g\\-recaptcha\"")) {
+                            final DownloadLink dlinkbefore = this.getDownloadLink();
+                            if (dlinkbefore == null) {
+                                this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true));
+                            }
+                            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                            if (dlinkbefore != null) {
+                                this.setDownloadLink(dlinkbefore);
+                            }
+                            loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                        }
+                        submitForm(loginform);
+                        // postPage(loginpostpage, "username=" + Encoding.urlEncode(account.getUser()) + "&password=" +
+                        // Encoding.urlEncode(account.getPass()));
+                        if (!br.containsHTML("\"login_status\":\"success\"")) {
+                            if ("de".equalsIgnoreCase(lang)) {
+                                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                            } else {
+                                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                            }
                         }
                     }
                 }
-                getPage(br, loginstart + this.getHost() + "/account_home." + type);
-                account.saveCookies(br.getCookies(this.getHost()), "");
+                getPage("/account_home." + type);
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;
