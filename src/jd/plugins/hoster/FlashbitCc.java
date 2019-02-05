@@ -1338,7 +1338,7 @@ public class FlashbitCc extends antiDDoSForHost {
             /* Expire date is in the future --> It is a premium account */
             ai.setValidUntil(expire_milliseconds);
             account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(10);
+            account.setMaxSimultanDownloads(6);
             account.setConcurrentUsePossible(true);
         }
         return ai;
@@ -1433,7 +1433,7 @@ public class FlashbitCc extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 1);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, -3);
             if (dl.getConnection().getContentType().contains("html")) {
                 checkResponseCodeErrors(dl.getConnection());
                 logger.warning("The final dllink seems not to be a file!");
