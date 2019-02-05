@@ -13,13 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -32,11 +30,9 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ivoox.com" }, urls = { "https?://(?:(?:www|de)\\.)?ivoox\\.com/(?:en/)?[a-z0-9\\-]+audios\\-mp3_rf_\\d+_\\d+\\.html" })
 public class IvooxCom extends PluginForHost {
-
     public IvooxCom(PluginWrapper wrapper) {
         super(wrapper);
     }
-
     /* DEV NOTES */
     // Tags:
     // protocol: no https
@@ -46,9 +42,8 @@ public class IvooxCom extends PluginForHost {
     private static final String  default_extension = ".mp3";
     /* Connection stuff */
     private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
+    private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
     private boolean              server_issues     = false;
 
@@ -77,7 +72,17 @@ public class IvooxCom extends PluginForHost {
         if (filename == null) {
             filename = fid;
         }
-        dllink = "http://files.ivoox.com/listen/" + fid;
+        String official_download = br.getRegex("downloadlink\\'\\)\\.load\\(\\'([^<>\"\\']+)\\'\\)").getMatch(0);
+        if (official_download != null) {
+            if (!official_download.startsWith("/")) {
+                official_download = "/" + official_download;
+            }
+            br.getPage(official_download);
+            dllink = br.getRegex("downloadFollow\\(event,\\'(https[^<>\"]+)\\'\\)").getMatch(0);
+        } else {
+            /* 2019-02-05: Old way! */
+            dllink = "http://files.ivoox.com/listen/" + fid;
+        }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -91,12 +96,9 @@ public class IvooxCom extends PluginForHost {
         if (dllink != null) {
             dllink = Encoding.htmlDecode(dllink);
             link.setFinalFileName(filename);
-            final Browser br2 = br.cloneBrowser();
-            // In case the link redirects to the finallink
-            br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
-                con = br2.openHeadConnection(dllink);
+                con = br.openHeadConnection(dllink);
                 if (!con.getContentType().contains("html")) {
                     link.setDownloadSize(con.getLongContentLength());
                     link.setProperty("directlink", dllink);

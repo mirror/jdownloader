@@ -158,13 +158,14 @@ public class TvnowDe extends PluginForHost {
     public static AvailableStatus parseInformation(final DownloadLink downloadLink, final LinkedHashMap<String, Object> entries, final String tv_station, final String formatTitle) {
         final MediathekProperties data = downloadLink.bindData(MediathekProperties.class);
         final String date = (String) entries.get("broadcastStartDate");
-        final String episode_str = new Regex(downloadLink.getPluginPatternMatcher(), "folge\\-(\\d+)").getMatch(0);
+        final String episode_url_str = new Regex(downloadLink.getPluginPatternMatcher(), "folge\\-(\\d+)").getMatch(0);
         final int season = (int) JavaScriptEngineFactory.toLong(entries.get("season"), -1);
-        int episode = (int) JavaScriptEngineFactory.toLong(entries.get("episode"), -1);
+        final String episodeStr = getEpisodeNumber(entries);
+        int episode = Integer.parseInt(episodeStr);
         final boolean isDRM = ((Boolean) entries.get("isDrm")).booleanValue();
-        if (episode == -1 && episode_str != null) {
+        if (episode == -1 && episode_url_str != null) {
             /* Fallback which should usually not be required */
-            episode = (int) Long.parseLong(episode_str);
+            episode = (int) Long.parseLong(episode_url_str);
         }
         final String description = (String) entries.get("articleLong");
         /* Title or subtitle of a current series-episode */
@@ -226,6 +227,42 @@ public class TvnowDe extends PluginForHost {
         }
         downloadLink.setFinalFileName(filename);
         return status;
+    }
+
+    /** Returns (modified) episodenumber (source = json) */
+    public static String getEpisodeNumber(final LinkedHashMap<String, Object> entries) {
+        final Object episodeO = getEpisodeNumberRAW(entries);
+        String episodenumber = null;
+        if (episodeO != null && episodeO instanceof String) {
+            final String episodeTmp = (String) episodeO;
+            if (episodeTmp.matches("\\d+")) {
+                episodenumber = episodeTmp;
+            } else if (episodenumberHasSpecialStringFormat(episodeO)) {
+                /* 2019-02-05: Very rare case */
+                episodenumber = new Regex(episodeTmp, "V(\\d+)").getMatch(0);
+                // System.out.println("WTF_workarounded: " + episodeTmp);
+            } else {
+                /* 2019-02-05: This should never happen! */
+                episodenumber = "-1";
+                // System.out.println("WTF: " + episodeTmp);
+            }
+        } else if (episodeO != null && episodeO instanceof Integer) {
+            episodenumber = Integer.toString(((Integer) episodeO).intValue());
+        } else if (episodeO != null && episodeO instanceof Long) {
+            episodenumber = Long.toString(((Long) episodeO).longValue());
+        } else {
+            episodenumber = null;
+        }
+        return episodenumber;
+    }
+
+    /** Returns RAW String of episodenumber from json */
+    public static Object getEpisodeNumberRAW(final LinkedHashMap<String, Object> entries) {
+        return entries.get("episode");
+    }
+
+    public static boolean episodenumberHasSpecialStringFormat(final Object episodeO) {
+        return episodeO instanceof String && ((String) episodeO).matches("V\\d+");
     }
 
     public static boolean isValidTvStation(final String tv_station) {
@@ -643,14 +680,12 @@ public class TvnowDe extends PluginForHost {
         br.getHeaders().put("x-auth-token", authtoken);
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         try {
             login(account, true);
         } catch (PluginException e) {
-            account.setValid(false);
             throw e;
         }
         final String userID = account.getStringProperty("userid", null);
@@ -658,21 +693,29 @@ public class TvnowDe extends PluginForHost {
         /** We can get A LOT of information here ... but we really only want to know if we have a free- or a premium account. */
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "items/{0}");
-        final String expiredateStr = (String) entries.get("endDate");
-        final String createdateStr = (String) entries.get("created");
-        final long expiredateTimestamp = !StringUtils.isEmpty(expiredateStr) ? TimeFormatter.getMilliSeconds(expiredateStr, "yyyy-MM-dd HH:mm:ss", Locale.GERMANY) : 0;
-        ai.setUnlimitedTraffic();
-        if (!StringUtils.isEmpty(createdateStr)) {
-            ai.setCreateTime(TimeFormatter.getMilliSeconds(createdateStr, "yyyy-MM-dd HH:mm:ss", Locale.GERMANY));
+        long expiredateTimestamp = 0;
+        if (entries != null) {
+            final String expiredateStr = (String) entries.get("endDate");
+            final String createdateStr = (String) entries.get("created");
+            expiredateTimestamp = !StringUtils.isEmpty(expiredateStr) ? TimeFormatter.getMilliSeconds(expiredateStr, "yyyy-MM-dd HH:mm:ss", Locale.GERMANY) : 0;
+            if (!StringUtils.isEmpty(createdateStr)) {
+                ai.setCreateTime(TimeFormatter.getMilliSeconds(createdateStr, "yyyy-MM-dd HH:mm:ss", Locale.GERMANY));
+            }
         }
         if (expiredateTimestamp < System.currentTimeMillis()) {
             account.setType(AccountType.FREE);
+            /*
+             * 2019-02-05: Free accounts do not have any advantages over anonymous streaming - also, login is not used for downloading
+             * anyways (only for premium accounts)!
+             */
+            ai.setTrafficLeft(0);
             /* free accounts can still have captcha */
             account.setConcurrentUsePossible(false);
             ai.setStatus("Registered (free) user");
         } else {
-            ai.setValidUntil(expiredateTimestamp);
             account.setType(AccountType.PREMIUM);
+            ai.setValidUntil(expiredateTimestamp);
+            ai.setUnlimitedTraffic();
             account.setConcurrentUsePossible(true);
             final String cancelleddateStr = (String) entries.get("cancelled");
             final long cancelleddateTimestamp = !StringUtils.isEmpty(cancelleddateStr) ? TimeFormatter.getMilliSeconds(cancelleddateStr, "yyyy-MM-dd HH:mm:ss", Locale.GERMANY) : 0;

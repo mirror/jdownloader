@@ -63,19 +63,13 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class XFileSharingProBasic extends antiDDoSForHost {
-    public XFileSharingProBasic(PluginWrapper wrapper) {
+public class UploadhiveCom extends antiDDoSForHost {
+    public UploadhiveCom(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium(COOKIE_HOST + "/premium.html");
+        this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
-    // DELETE THIS, after making plugin!
-    @Override
-    public Boolean siteTesterDisabled() {
-        return Boolean.TRUE;
-    }
-
-    public static String[] domains = new String[] { "ForDevsToPlayWith.com" };
+    public static String[] domains = new String[] { "uploadhive.com" };
 
     @Override
     public String[] siteSupportedNames() {
@@ -116,7 +110,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     private static final String  HTML_PASSWORDPROTECTED               = "<br><b>Passwor(d|t):</b> <input";
     private static final String  HTML_MAINTENANCE_MODE                = ">This server is in maintenance mode";
     /* Here comes our XFS-configuration */
-    private final boolean        SUPPORTS_HTTPS                       = true;
+    private final boolean        SUPPORTS_HTTPS                       = false;
     /* primary website url, take note of redirects */
     private final String         COOKIE_HOST                          = ("http://" + domains[0]).replaceFirst("https?://", SUPPORTS_HTTPS ? "https://" : "http://");
     private final String         NICE_HOSTproperty                    = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
@@ -1628,19 +1622,22 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 boolean loggedInViaCookies = false;
                 if (cookies != null) {
                     br.setCookies(this.getHost(), cookies);
-                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l && !force) {
+                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l) {
                         /* We trust these cookies as they're not that old --> Do not check them */
                         return;
                     }
-                    logger.info("Verifying login-cookies");
                     getPage(COOKIE_HOST + "/");
                     loggedInViaCookies = isLoggedinHTML();
+                    if (loggedInViaCookies) {
+                        /* Save new cookie-timestamp */
+                        account.saveCookies(br.getCookies(this.getHost()), "");
+                    }
+                    if (loggedInViaCookies && !force) {
+                        /* No additional check required e.g. for account type --> We know cookies are valid and we're logged in --> Done! */
+                        return;
+                    }
                 }
-                if (loggedInViaCookies) {
-                    /* No additional check required --> We know cookies are valid and we're logged in --> Done! */
-                    logger.info("Successfully logged in via cookies");
-                } else {
-                    logger.info("Performing full login");
+                if (!loggedInViaCookies) {
                     getPage(COOKIE_HOST + "/login.html");
                     if (br.getHttpConnection().getResponseCode() == 404) {
                         /* Required for some XFS setups. */

@@ -22,6 +22,7 @@ import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.downloader.hls.M3U8Playlist;
 import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -70,6 +71,7 @@ public class TwitterCom extends PluginForHost {
     private static final int     ACCOUNT_FREE_MAXDOWNLOADS = 20;
     private String               dllink                    = null;
     private boolean              account_required          = false;
+    private boolean              geo_blocked               = false;
     private boolean              server_issues             = false;
     private String               tweetid                   = null;
     private static String        guest_token               = null;
@@ -96,7 +98,8 @@ public class TwitterCom extends PluginForHost {
         /* Most times twitter-image/videolinks will come from the decrypter. */
         String filename = link.getStringProperty("decryptedfilename", null);
         String vmap_url = null;
-        if (link.getDownloadURL().matches(TYPE_VIDEO) || link.getDownloadURL().matches(TYPE_VIDEO_VMAP)) {
+        boolean possibly_geo_blocked = false;
+        if (link.getPluginPatternMatcher().matches(TYPE_VIDEO) || link.getPluginPatternMatcher().matches(TYPE_VIDEO_VMAP)) {
             this.br.getPage(link.getDownloadURL());
             if (this.br.getHttpConnection().getResponseCode() == 403) {
                 account_required = true;
@@ -104,9 +107,9 @@ public class TwitterCom extends PluginForHost {
             } else if (this.br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (link.getDownloadURL().matches(TYPE_VIDEO_VMAP)) {
+            if (link.getPluginPatternMatcher().matches(TYPE_VIDEO_VMAP)) {
                 /* Direct vmap url was added by user- or decrypter. */
-                vmap_url = link.getDownloadURL();
+                vmap_url = link.getPluginPatternMatcher();
             } else {
                 /* Videolink was added by user or decrypter. */
                 vmap_url = this.br.getRegex("name=\"twitter:amplify:vmap\" content=\"(https?://[^<>\"]*?\\.vmap)\"").getMatch(0);
@@ -119,7 +122,7 @@ public class TwitterCom extends PluginForHost {
             if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-        } else if (link.getDownloadURL().matches(TYPE_VIDEO_EMBED)) {
+        } else if (link.getPluginPatternMatcher().matches(TYPE_VIDEO_EMBED)) {
             final String tweet_id = new Regex(link.getPluginPatternMatcher(), "/tweet/(\\d+)$").getMatch(0);
             /* 2018-11-13: Using static token */
             final boolean use_static_token = true;
@@ -160,6 +163,18 @@ public class TwitterCom extends PluginForHost {
                 }
                 /* Without guest_token in header we might often get blocked here with this response: HTTP/1.1 429 Too Many Requests */
                 br.getPage("https://api.twitter.com/1.1/videos/tweet/config/" + tweet_id + ".json");
+                try {
+                    LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                    entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "track/mediaAvailability");
+                    final String status = (String) entries.get("status");
+                    if (status.equalsIgnoreCase("unavailable")) {
+                        final String reason = (String) entries.get("reason");
+                        if (reason.equalsIgnoreCase("geoblocked")) {
+                            possibly_geo_blocked = true;
+                        }
+                    }
+                } catch (final Throwable e) {
+                }
                 final String errorcode = PluginJSonUtils.getJson(br, "error");
                 final String errormessage = PluginJSonUtils.getJson(br, "message");
                 if (br.containsHTML("<div id=\"message\">")) {
@@ -235,11 +250,21 @@ public class TwitterCom extends PluginForHost {
                 if (dllink.contains(".m3u8")) {
                     link.setFinalFileName(filename);
                     checkFFProbe(link, "Download a HLS Stream");
-                    br.getPage(dllink);
+                    br.setAllowedResponseCodes(new int[] { 403 });
+                    try {
+                        br.getPage(dllink);
+                    } catch (final Exception e) {
+                        logger.info("Fatal failure");
+                    }
                     if (this.br.getHttpConnection().getResponseCode() == 403) {
                         /* 2017-06-01: Unsure because browser shows the thumbnail and video 'wants to play' but doesn't. */
                         // throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked or offline content");
-                        account_required = true;
+                        if (possibly_geo_blocked) {
+                            /* We already had the info before that this content is probably GEO-blocked - now we know it for sure! */
+                            geo_blocked = true;
+                        } else {
+                            account_required = true;
+                        }
                         return AvailableStatus.TRUE;
                     } else if (br.getHttpConnection().getResponseCode() == 404) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -327,7 +352,9 @@ public class TwitterCom extends PluginForHost {
     }
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        if (account_required) {
+        if (geo_blocked) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked");
+        } else if (account_required) {
             /*
              * 2017-05-10: This can also happen when a user is logged in because there are e.g. timelines which only 'friends' can view
              * which means having an account does not necessarily mean that a user has the rights to view all of the other users' content ;)
