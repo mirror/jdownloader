@@ -89,7 +89,7 @@ public class MixCloudCom extends antiDDoSForDecrypt {
         do {
             /* Find Array with stream-objects */
             LinkedHashMap<String, Object> entries = null;
-            ArrayList<Object> audio_objects = null;
+            ArrayList<Object> audio_objects = new ArrayList<Object>();
             /* Find correct json ArrayList */
             if (page == 0) {
                 String json = br.getRegex("id=\"relay-data\"[^>]*>(.*?)<").getMatch(0);
@@ -97,26 +97,34 @@ public class MixCloudCom extends antiDDoSForDecrypt {
                 final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
                 for (final Object audioO : ressourcelist) {
                     entries = (LinkedHashMap<String, Object>) audioO;
-                    entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "user/data/userLookup");
-                    if (entries == null) {
-                        continue;
-                    }
-                    Iterator<Entry<String, Object>> iterator = entries.entrySet().iterator();
-                    while (iterator.hasNext()) {
-                        final Entry<String, Object> entry = iterator.next();
-                        final String keyName = entry.getKey();
-                        if (keyName.matches("_stream.+")) {
-                            entries = (LinkedHashMap<String, Object>) entry.getValue();
+                    /* All items of a user? */
+                    final Object userLookup = JavaScriptEngineFactory.walkJson(entries, "user/data/userLookup");
+                    /* More likely a single item? */
+                    final Object cloudcastLookup = JavaScriptEngineFactory.walkJson(entries, "cloudcast/data/cloudcastLookup");
+                    if (cloudcastLookup != null) {
+                        audio_objects.add(cloudcastLookup);
+                    } else if (userLookup != null) {
+                        entries = (LinkedHashMap<String, Object>) userLookup;
+                        Iterator<Entry<String, Object>> iterator = entries.entrySet().iterator();
+                        while (iterator.hasNext()) {
+                            final Entry<String, Object> entry = iterator.next();
+                            final String keyName = entry.getKey();
+                            if (keyName.matches("_stream.+")) {
+                                entries = (LinkedHashMap<String, Object>) entry.getValue();
+                                break;
+                            }
+                        }
+                        final Object audio_objects_o = entries.get("edges");
+                        if (audio_objects_o != null && audio_objects_o instanceof ArrayList) {
+                            audio_objects = (ArrayList<Object>) audio_objects_o;
+                            /* Only set this boolean if we at least found our array */
+                            try {
+                                hasMore = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "pageInfo/hasNextPage")).booleanValue();
+                            } catch (final Throwable e) {
+                            }
                             break;
                         }
                     }
-                    audio_objects = (ArrayList<Object>) entries.get("edges");
-                    if (audio_objects == null) {
-                        continue;
-                    }
-                    /* Only set this boolean if we at least found our array */
-                    hasMore = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "pageInfo/hasNextPage")).booleanValue();
-                    break;
                 }
             } else {
                 /* TODO */
@@ -183,7 +191,11 @@ public class MixCloudCom extends antiDDoSForDecrypt {
             }
             for (final Object edgeO : audio_objects) {
                 entries = (LinkedHashMap<String, Object>) edgeO;
-                entries = (LinkedHashMap<String, Object>) entries.get("node");
+                final Object node = entries.get("node");
+                if (node != null && node instanceof LinkedHashMap) {
+                    /* E.g. decryption of multiple items (all items of user) */
+                    entries = (LinkedHashMap<String, Object>) node;
+                }
                 if (entries == null) {
                     /* Skip invalid objects */
                     continue;

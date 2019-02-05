@@ -125,19 +125,30 @@ public class FruithostsNet extends antiDDoSForHost {
                     if (finfo == null) {
                         link.setAvailable(false);
                     } else {
-                        final String filename = (String) finfo.get("name");
-                        final String sha1 = (String) finfo.get("sha1");
-                        final long filesize = JavaScriptEngineFactory.toLong(finfo.get("size"), 0);
-                        if (!StringUtils.isEmpty(filename)) {
-                            link.setFinalFileName(filename);
+                        final long status = JavaScriptEngineFactory.toLong(finfo.get("status"), 404);
+                        if (status != 200) {
+                            /* For offline files, nearly all other values will be booleans! */
+                            /*
+                             * E.g.
+                             * {"status":200,"msg":"OK","result":{"anqbqnmdtksrpeds":{"id":"anqbqnmdtksrpeds","status":404,"name":false,
+                             * "size":false,"sha1":false,"content_type":false,"cstatus":"error"}}}
+                             */
+                            link.setAvailable(false);
+                        } else {
+                            final String filename = (String) finfo.get("name");
+                            final String sha1 = (String) finfo.get("sha1");
+                            final long filesize = JavaScriptEngineFactory.toLong(finfo.get("size"), 0);
+                            if (!StringUtils.isEmpty(filename)) {
+                                link.setFinalFileName(filename);
+                            }
+                            if (filesize > 0) {
+                                link.setDownloadSize(filesize);
+                            }
+                            if (!StringUtils.isEmpty(sha1)) {
+                                link.setSha1Hash(sha1);
+                            }
+                            link.setAvailable(true);
                         }
-                        if (filesize > 0) {
-                            link.setDownloadSize(filesize);
-                        }
-                        if (!StringUtils.isEmpty(sha1)) {
-                            link.setSha1Hash(sha1);
-                        }
-                        link.setAvailable(true);
                     }
                 }
                 if (index == urls.length) {
@@ -153,46 +164,75 @@ public class FruithostsNet extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        handleDownloadAPI(downloadLink, null, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        doFree(downloadLink, null, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void handleDownloadAPI(final DownloadLink downloadLink, final Account acc, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        if (true) {
-            /* 2019-02-01: Download mode not yet done! */
+    public void doFree(final DownloadLink downloadLink, final Account acc, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        String dllink = checkDirectLink(downloadLink, directlinkproperty);
+        if (StringUtils.isEmpty(dllink)) {
+            /*
+             * Try website first as it does not require a captcha. Downloaded files are the same as via API, file-hashes fit also for the
+             * "website downloads".
+             */
+            try {
+                dllink = getDllinkWebsite(downloadLink, acc, resumable, maxchunks, directlinkproperty);
+            } catch (final Throwable e) {
+            }
+            if (StringUtils.isEmpty(dllink)) {
+                dllink = getDllinkAPI(downloadLink, null);
+            }
+        }
+        handleDownload(downloadLink, dllink, resumable, maxchunks, directlinkproperty);
+    }
+
+    private String getDllinkAPI(final DownloadLink downloadLink, final Account acc) throws Exception, PluginException {
+        // if (true) {
+        // /* 2019-02-01: Download mode not yet done! */
+        // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // }
+        String dllink = null;
+        final Form ticketForm = new Form();
+        /* TODO: Add more errorhandling */
+        ticketForm.setAction(API_BASE + "file/dlticket");
+        ticketForm.setMethod(MethodType.GET);
+        ticketForm.put("file", this.getLinkID(downloadLink));
+        if (acc != null) {
+            ticketForm.put("login", acc.getUser());
+            ticketForm.put("key", acc.getPass());
+        }
+        submitForm(ticketForm);
+        handleErrorsAPI();
+        final String ticket = PluginJSonUtils.getJson(br, "ticket");
+        final String captcha_url = PluginJSonUtils.getJson(br, "captcha_url");
+        final long timeBefore = System.currentTimeMillis();
+        final Form dlForm = new Form();
+        dlForm.setAction(API_BASE + "file/dl");
+        dlForm.setMethod(MethodType.GET);
+        dlForm.put("file", this.getLinkID(downloadLink));
+        dlForm.put("ticket", ticket);
+        if (captcha_url != null) {
+            final String captcha_response = this.getCaptchaCode(captcha_url, downloadLink);
+            dlForm.put("captcha_response", captcha_response);
+        }
+        waitTime(downloadLink, timeBefore);
+        submitForm(dlForm);
+        dllink = PluginJSonUtils.getJson(br, "url");
+        return dllink;
+    }
+
+    private String getDllinkWebsite(final DownloadLink downloadLink, final Account acc, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        br.getPage(downloadLink.getPluginPatternMatcher());
+        String[] match = br.getRegex("type:\"video/mp4\",src:d\\('([^']+)',(\\d+)\\)").getRow(0);
+        if (match == null || match.length != 2) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String dllink = checkDirectLink(downloadLink, directlinkproperty);
-        if (dllink == null) {
-            final Form ticketForm = new Form();
-            /* TODO: Add more errorhandling */
-            ticketForm.setAction(API_BASE + "file/dlticket");
-            ticketForm.setMethod(MethodType.GET);
-            ticketForm.put("file", this.getLinkID(downloadLink));
-            if (acc != null) {
-                ticketForm.put("login", acc.getUser());
-                ticketForm.put("key", acc.getPass());
-            }
-            submitForm(ticketForm);
-            handleErrorsAPI();
-            final String ticket = PluginJSonUtils.getJson(br, "ticket");
-            final String captcha_url = PluginJSonUtils.getJson(br, "captcha_url");
-            final long timeBefore = System.currentTimeMillis();
-            final Form dlForm = new Form();
-            dlForm.setAction(API_BASE + "file/dl");
-            dlForm.setMethod(MethodType.GET);
-            dlForm.put("file", this.getLinkID(downloadLink));
-            dlForm.put("ticket", ticket);
-            if (captcha_url != null) {
-                final String captcha_response = this.getCaptchaCode(captcha_url, downloadLink);
-                dlForm.put("captcha_response", captcha_response);
-            }
-            waitTime(downloadLink, timeBefore);
-            submitForm(dlForm);
-            dllink = PluginJSonUtils.getJson(br, "url");
-            if (StringUtils.isEmpty(dllink)) {
-                logger.warning("Failed to find downloadurl");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+        final String dllink = websiteDecodeStreamlink(match[0], Integer.parseInt(match[1]));
+        return dllink;
+    }
+
+    private void handleDownload(final DownloadLink downloadLink, final String dllink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception {
+        if (StringUtils.isEmpty(dllink)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -242,7 +282,7 @@ public class FruithostsNet extends antiDDoSForHost {
     }
 
     /**
-     * Handles pre download (pre-captcha) waittime. If WAITFORCED it ensures to always wait long enough even if the waittime RegEx fails.
+     * Handles pre download (pre-captcha) waittime.
      */
     private void waitTime(final DownloadLink downloadLink, final long timeBefore) throws PluginException {
         int wait = 10;
@@ -259,37 +299,6 @@ public class FruithostsNet extends antiDDoSForHost {
         } else {
             logger.info("No waittime left after captcha");
         }
-    }
-
-    private void handleDownloadWebsite(final DownloadLink downloadLink, final Account acc, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        if (true) {
-            /* 2019-02-01: TODO: Not yet finished! */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        String dllink = checkDirectLink(downloadLink, directlinkproperty);
-        if (dllink == null) {
-            String[] match = br.getRegex("type:\"video/mp4\",src:d\\('([^']+)',(\\d+)\\)").getRow(0);
-            if (match == null || match.length != 2) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dllink = websiteDecodeStreamlink(match[0], Integer.parseInt(match[1]));
-            if (StringUtils.isEmpty(dllink)) {
-                logger.warning("Failed to find downloadurl");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            }
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        downloadLink.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
-        dl.startDownload();
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
@@ -326,6 +335,7 @@ public class FruithostsNet extends antiDDoSForHost {
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
+                /** TODO: Check if cookie-login even works */
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
@@ -395,11 +405,15 @@ public class FruithostsNet extends antiDDoSForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
-        br.getPage(link.getPluginPatternMatcher());
         if (account.getType() == AccountType.FREE) {
-            handleDownloadAPI(link, account, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
+            doFree(link, account, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
         } else {
-            handleDownloadAPI(link, account, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS, "premium_directlink");
+            /* Force API usage */
+            String dllink = checkDirectLink(link, "premium_directlink");
+            if (StringUtils.isEmpty(dllink)) {
+                dllink = getDllinkAPI(link, account);
+            }
+            handleDownload(link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS, "premium_directlink");
         }
     }
 
@@ -434,14 +448,14 @@ public class FruithostsNet extends antiDDoSForHost {
     @Override
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
         if (acc == null) {
-            /* no account, yes we can expect captcha */
+            /* No account, yes we can expect captcha */
             return true;
         }
         if (acc.getType() == AccountType.FREE) {
             /* Free accounts can have captchas */
             return true;
         }
-        /* Premium accounts do not have captchas */
+        /* Premium accounts should not have captchas */
         return false;
     }
 
