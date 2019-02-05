@@ -2,15 +2,14 @@ package jd.plugins.components;
 
 import javax.swing.Icon;
 
+import jd.plugins.DownloadLink;
+
 import org.appwork.storage.Storable;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.AbstractIcon;
 
-import jd.plugins.DownloadLink;
-
 public class DailyMotionVariant implements Storable, LinkVariant {
-
     private static final Icon VIDEO = new AbstractIcon(IconKey.ICON_VIDEO, 16);
     private static final Icon AUDIO = new AbstractIcon(IconKey.ICON_AUDIO, 16);
     private String            link;
@@ -50,7 +49,6 @@ public class DailyMotionVariant implements Storable, LinkVariant {
     }
 
     private String orgQName;
-
     private int    qrate;
 
     public int getQrate() {
@@ -75,7 +73,6 @@ public class DailyMotionVariant implements Storable, LinkVariant {
     }
 
     public DailyMotionVariant(DownloadLink dl) {
-
         link = dl.getStringProperty("directlink");
         // "5"
         qValue = dl.getStringProperty("qualityvalue");
@@ -84,10 +81,8 @@ public class DailyMotionVariant implements Storable, LinkVariant {
         // stream_h264_ld_url
         orgQName = dl.getStringProperty("originalqualityname");
         // "5"
-
         qrate = Integer.parseInt(dl.getStringProperty("qualitynumber"));
         displayName = qName;
-
     }
 
     private String displayName;
@@ -124,13 +119,13 @@ public class DailyMotionVariant implements Storable, LinkVariant {
     public Icon _getIcon(Object caller) {
         if ("m4a".equals(getConvertTo()) || "aac".equals(getConvertTo())) {
             return AUDIO;
+        } else {
+            return VIDEO;
         }
-        return VIDEO;
     }
 
     @Override
     public String _getTooltipDescription(Object caller) {
         return _getName(caller);
     }
-
 }
