@@ -4,6 +4,7 @@ import java.awt.event.KeyEvent;
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.util.HashMap;
+import java.util.Map;
 
 import org.appwork.storage.Storable;
 import org.appwork.storage.config.ConfigInterface;
@@ -259,6 +260,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     @DefaultBooleanValue(true)
     @RequiresRestart("A JDownloader Restart is Required")
+    @AboutConfig
     boolean isLinkgrabberSidebarVisible();
 
     @DefaultBooleanValue(false)
@@ -1166,9 +1168,9 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     @RequiresRestart("Restart is Required")
     @AboutConfig
-    HashMap<String, Long> getPremiumExpireWarningMapV2();
+    Map<String, Long> getPremiumExpireWarningMapV2();
 
-    void setPremiumExpireWarningMapV2(HashMap<String, Long> value);
+    void setPremiumExpireWarningMapV2(Map<String, Long> value);
 
     @AboutConfig
     @DefaultBooleanValue(true)

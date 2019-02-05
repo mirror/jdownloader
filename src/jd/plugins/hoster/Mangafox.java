@@ -18,8 +18,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.net.URL;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -32,6 +32,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fanfox.net" }, urls = { "https?://fanfox\\.net/manga/[^/]+/(?:v[A-Za-z0-9]+/)?c[\\d\\.]+/\\d+\\.html" })
 public class Mangafox extends PluginForHost {
@@ -138,31 +142,45 @@ public class Mangafox extends PluginForHost {
         return false;
     }
 
-    private String decodeDownloadLink(final String s) {
+    private String decodeDownloadLink(final String s) throws IOException {
         String decoded = null;
-        try {
-            final Regex params = new Regex(s, "'(.*?[^\\\\])',(\\d+),(\\d+),'(.*?)'");
-            String p = params.getMatch(0).replaceAll("\\\\", "");
-            final int a = Integer.parseInt(params.getMatch(1));
-            int c = Integer.parseInt(params.getMatch(2));
-            // '|a|b|c|' will result in '','a','b' and 'c' and last empty will not be within array
-            final String[] k = params.getMatch(3).split("\\|");
-            while (c != 0) {
-                c--;
-                if (k.length > c && k[c].length() != 0) {
-                    p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
-                }
+        final String js = br.getRegex("eval\\((function\\(p,a,c,k,e,d\\)[^\r\n]+\\))\\)").getMatch(0);
+        if (js != null) {
+            final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(null);
+            final ScriptEngine engine = manager.getEngineByName("javascript");
+            try {
+                engine.eval("var res = " + js + ";");
+                decoded = (String) engine.get("res");
+            } catch (final Exception e) {
+                logger.log(e);
             }
-            decoded = p;
-        } catch (Exception e) {
-            logger.log(e);
+        }
+        if (decoded == null) {
+            try {
+                final Regex params = new Regex(s, "'(.*?[^\\\\])',(\\d+),(\\d+),'(.*?)'");
+                String p = params.getMatch(0).replaceAll("\\\\", "");
+                final int a = Integer.parseInt(params.getMatch(1));
+                int c = Integer.parseInt(params.getMatch(2));
+                // '|a|b|c|' will result in '','a','b' and 'c' and last empty will not be within array
+                final String[] k = params.getMatch(3).split("\\|");
+                while (c != 0) {
+                    c--;
+                    if (k.length > c && k[c].length() != 0) {
+                        p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
+                    }
+                }
+                decoded = p;
+            } catch (Exception e) {
+                logger.log(e);
+            }
         }
         if (decoded != null) {
-            final String part1 = new Regex(decoded, "var pix=\"(http[^\"]+)\"").getMatch(0);
+            final String part1 = new Regex(decoded, "var pix=\"((https?|//)[^\"]+)\"").getMatch(0);
             final String part2 = new Regex(decoded, "var pvalue=\\[\"([^\"]+)\"").getMatch(0);
             if (part1 != null && part2 != null) {
-                final String finallink = part1 + part2;
-                return finallink;
+                final String url = part1 + part2;
+                final String ret = br.getURL(url).toString();
+                return ret;
             }
         }
         return null;
