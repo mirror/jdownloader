@@ -55,7 +55,7 @@ public class DailyMotionComDecrypterV2 extends DailyMotionComDecrypter {
                 }
                 DailyMotionVariant vi;
                 variantInfos.add(vi = new DailyMotionVariant(dl));
-                if (bestVi == null || vi.getQrate() < bestVi.getQrate()) {
+                if (bestVi == null || vi.getQrate() > bestVi.getQrate()) {
                     bestVi = vi;
                     variantLink = dl;
                 }
