@@ -115,7 +115,7 @@ public interface GuiTranslation extends TranslateInterface {
     String gui_plugin_settings_share_online_shared_ip_workaround();
 
     @Default(lngs = { "en", "de" }, values = { "<html>Enable traffic workaround?<br /><p style=\"color:#808080\">Share-online has a premium fair-use-limit of 100 GB per day - if exceeded you can continue downloading but with limited speed.<br />Usually JDownloader disables accounts 'without traffic' - if you activate this setting, share-online accounts will still get used in this case.<br />If you only own a single premium account to download from share-online, it makes sense to use this setting.</p></html>",
-    "<html>Aktiviere traffic workaround?<br /><p style=\"color:#808080\">Share-Online hat ein premium fair-use-Limit von 100 GB pro Tag - danach kann man nur gedrosselt weiter herunterladen.<br />Normalerweise deaktiviert JDownloader Accounts 'ohne Traffic' - aktiviert man diese Einstellung, werden betroffene share-online Accounts in diesem Fall trotzdem weiter verwendet.<br />Sofern du nur einen premium Account zum Download von share-online besitzt ist es sinnvoll, diese Einstellung zu verwenden.</p></html>" })
+            "<html>Aktiviere traffic workaround?<br /><p style=\"color:#808080\">Share-Online hat ein premium fair-use-Limit von 100 GB pro Tag - danach kann man nur gedrosselt weiter herunterladen.<br />Normalerweise deaktiviert JDownloader Accounts 'ohne Traffic' - aktiviert man diese Einstellung, werden betroffene share-online Accounts in diesem Fall trotzdem weiter verwendet.<br />Sofern du nur einen premium Account zum Download von share-online besitzt ist es sinnvoll, diese Einstellung zu verwenden.</p></html>" })
     String gui_plugin_settings_share_online_traffic_workaround();
 
     @Default(lngs = { "en", "de" }, values = { "Prefer HTTPS communication?\r\nOnly available for premium users.", "Bevorzuge sichere Kommunikation per HTTPS?\r\nNur für Premium Nutzer verfügbar!" })
@@ -6589,7 +6589,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "(PAID) Fully automated remote Captcha Solving" })
     String AntiCaptchaCom_getName_();
 
-    @Default(lngs = { "en" }, values = { "This captcha is harder to solve than others. JDownloader needs help from our browser extension to continue." })
+    @Default(lngs = { "en" }, values = { "This captcha is harder to solve than others. JDownloader needs help from our browser extension to continue. This works without MyJDownloader account, no need to login or register! Just install the extension and start the download again." })
     String extension_required_description();
 
     @Default(lngs = { "en" }, values = { "Browser Extension Needed" })
@@ -6597,6 +6597,45 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Download Browser Extension" })
     String extension_required_link_title();
+
+    @Default(lngs = { "en" }, values = { "You are using a different browser?" })
+    String install_extension_using_other_browser();
+
+    @Default(lngs = { "en" }, values = { "Install our extension for your browser" })
+    String install_extension_header();
+
+    @Default(lngs = { "en" }, values = { "You're done. Just restart your download. No need to login with the extension if you just want to solve captchas." })
+    String install_extension_done();
+
+    @Default(lngs = { "en" }, values = { "Show all browsers" })
+    String install_extension_show_all_browsers_link();
+
+    @Default(lngs = { "en" }, values = { "Chrome Browser Extension" })
+    String install_chrome_extension_header();
+
+    @Default(lngs = { "en" }, values = { "Follow the link to the chrome webstore and install the extension from there. After installation, you are done. No need to login to MyJDownloader or register an account." })
+    String install_chrome_extension_description();
+
+    @Default(lngs = { "en" }, values = { "Chrome Web Store" })
+    String install_chrome_extension_link_title();
+
+    @Default(lngs = { "en" }, values = { "Firefox Browser Extension" })
+    String install_firefox_extension_header();
+
+    @Default(lngs = { "en" }, values = { "Click on the following link to download and install the Firefox extension. After installation, you are done. No need to login to MyJDownloader or register an account." })
+    String install_firefox_extension_description();
+
+    @Default(lngs = { "en" }, values = { "Firefox Extension Download" })
+    String install_firefox_extension_link_title();
+
+    @Default(lngs = { "en" }, values = { "Opera Browser Extension" })
+    String install_opera_extension_header();
+
+    @Default(lngs = { "en" }, values = { "Click on the following link to go to Opera addons. Install the extension from there. After installation, you are done. No need to login to MyJDownloader or register an account." })
+    String install_opera_extension_description();
+
+    @Default(lngs = { "en" }, values = { "Opera Addons Store" })
+    String install_opera_extension_link_title();
 
     @Default(lngs = { "en" }, values = { "Unsupported Browser" })
     String extension_unsupported_browser_header();
@@ -6609,6 +6648,12 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "wants you to solve a captcha. Only after solving this captcha, you are allowed to continue with your downloads. JDownloader is not able to auto-solve these captchas, so we need to pass the captcha to you." })
     String extension_help_description();
+
+    @Default(lngs = { "en" }, values = { "Find more apps:" })
+    String find_more_apps_description();
+
+    @Default(lngs = { "en" }, values = { "MyJDownloader Apps" })
+    String find_more_apps_link_title();
 
     @Default(lngs = { "en" }, values = { "Do you need help?" })
     String extension_support_header();

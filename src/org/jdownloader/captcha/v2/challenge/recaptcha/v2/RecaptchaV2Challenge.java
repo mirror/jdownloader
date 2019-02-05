@@ -9,10 +9,6 @@ import java.util.ArrayList;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.Plugin;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
@@ -40,6 +36,10 @@ import org.jdownloader.captcha.v2.solver.browser.BrowserViewport;
 import org.jdownloader.captcha.v2.solver.browser.BrowserWindow;
 import org.jdownloader.captcha.v2.solver.service.BrowserSolverService;
 import org.jdownloader.gui.translate._GUI;
+
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Plugin;
 
 public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
     public static final String             RAWTOKEN    = "rawtoken";
@@ -627,6 +627,21 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
                 html = html.replace("%%%noExtensionDescription%%%", _GUI.T.extension_required_description());
                 html = html.replace("%%%noExtensionLinkTitle%%%", _GUI.T.extension_required_link_title());
             }
+            html = html.replace("%%%installExtensionHeader%%%", _GUI.T.install_extension_header());
+            html = html.replace("%%%installExtensionDone%%%", _GUI.T.install_extension_done());
+            html = html.replace("%%%installExtensionUsingOtherBrowser%%%", _GUI.T.install_extension_using_other_browser());
+            html = html.replace("%%%installExtensionShowAllBrowsers%%%", _GUI.T.install_extension_show_all_browsers_link());
+            html = html.replace("%%%chromeExtensionHeader%%%", _GUI.T.install_chrome_extension_header());
+            html = html.replace("%%%chromeExtensionDescription%%%", _GUI.T.install_chrome_extension_description());
+            html = html.replace("%%%chromeExtensionLinkTitle%%%", _GUI.T.install_chrome_extension_link_title());
+            html = html.replace("%%%firefoxExtensionHeader%%%", _GUI.T.install_firefox_extension_header());
+            html = html.replace("%%%firefoxExtensionDescription%%%", _GUI.T.install_firefox_extension_description());
+            html = html.replace("%%%firefoxExtensionLinkTitle%%%", _GUI.T.install_firefox_extension_link_title());
+            html = html.replace("%%%operaExtensionHeader%%%", _GUI.T.install_opera_extension_header());
+            html = html.replace("%%%operaExtensionDescription%%%", _GUI.T.install_opera_extension_description());
+            html = html.replace("%%%operaExtensionLinkTitle%%%", _GUI.T.install_opera_extension_link_title());
+            html = html.replace("%%%findMoreAppsLinkTitle%%%", _GUI.T.find_more_apps_link_title());
+            html = html.replace("%%%findMoreAppsDescription%%%", _GUI.T.find_more_apps_description());
             html = html.replace("%%%session%%%", id);
             html = html.replace("%%%challengeId%%%", Long.toString(getId().getID()));
             html = html.replace("%%%namespace%%%", getHttpPath());
