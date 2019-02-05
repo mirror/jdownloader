@@ -10,6 +10,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -767,7 +768,7 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
                         boolean notify;
                         synchronized (this) {
                             final String ID = "warn_" + hoster;
-                            HashMap<String, Long> expireNotifies = CFG_GUI.CFG.getPremiumExpireWarningMapV2();
+                            Map<String, Long> expireNotifies = CFG_GUI.CFG.getPremiumExpireWarningMapV2();
                             final Long lastNotify = expireNotifies != null ? expireNotifies.get(ID) : null;
                             if (lastNotify == null || (System.currentTimeMillis() - lastNotify > (30 * DAY))) {
                                 notify = true;
@@ -788,7 +789,7 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
                     boolean notify;
                     synchronized (this) {
                         final String ID = "expired_" + hoster;
-                        HashMap<String, Long> expireNotifies = CFG_GUI.CFG.getPremiumExpireWarningMapV2();
+                        Map<String, Long> expireNotifies = CFG_GUI.CFG.getPremiumExpireWarningMapV2();
                         final Long lastNotify = expireNotifies != null ? expireNotifies.get(ID) : null;
                         // ask at max once a month
                         if (lastNotify == null || System.currentTimeMillis() - lastNotify > 30 * DAY) {
