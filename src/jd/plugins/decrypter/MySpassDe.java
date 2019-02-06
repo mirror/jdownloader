@@ -58,14 +58,14 @@ public class MySpassDe extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String show = this.br.getRegex("itemprop=\\'name\\'>([^<>\"]*?) \\- (im kostenlosen|Ganze Folgen) [^<>]+</title>").getMatch(0);
+        String show = br.getRegex("itemprop='name'>([^<>\"]*?) - (im kostenlosen|Ganze Folgen|Der gratis) [^<>]+</title>").getMatch(0);
         if (show == null) {
             /* Fallback to url */
             show = new Regex(parameter, ".+/shows/[^/]+/([^/]+)/?").getMatch(0);
             show = show.replace("-", " ");
         }
         show = Encoding.htmlDecode(show).trim();
-        String videoid = br.getRegex("data\\-videoid=\"(\\d+)\" ").getMatch(0);
+        String videoid = br.getRegex("data-videoid=\"(\\d+)\"\\s").getMatch(0);
         String seasonnumber = null;
         String seasonnumber_formatted = null;
         String fpName = null;
