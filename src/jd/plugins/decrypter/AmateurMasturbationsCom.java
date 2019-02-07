@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -26,21 +25,23 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "amateurmasturbations.com" }, urls = { "http://(www\\.)?amateurmasturbations\\.com/(\\d+/[a-z0-9\\-]+/|video/\\d+/.*?\\.html)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "amateurmasturbations.com" }, urls = { "http://(www\\.)?amateurmasturbations\\.com/(\\d+/[a-z0-9\\-]+/|video/\\d+/.*?\\.html)" })
 public class AmateurMasturbationsCom extends PluginForDecrypt {
-
     public AmateurMasturbationsCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* DEV NOTES */
     /* Porn_plugin */
-
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
         String parameter = param.toString();
         br.getPage(parameter);
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Page Not Found")) {
+            decryptedLinks.add(createOfflinelink(parameter));
+            return decryptedLinks;
+        }
         String externID = br.getRedirectLocation();
         if (externID != null && !externID.contains("amateurmasturbations.com/")) {
             decryptedLinks.add(createDownloadlink(externID));
@@ -118,7 +119,6 @@ public class AmateurMasturbationsCom extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
-
         // filename needed for all IDs below
         String filename = br.getRegex("\" rel=\"bookmark\">(.*?)</a></h2>").getMatch(0);
         if (filename == null) {
@@ -193,5 +193,4 @@ public class AmateurMasturbationsCom extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
