@@ -21,7 +21,6 @@ import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin.FEATURE;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "genericautocontainer" }, urls = { "https?://[\\w\\.:\\-@]*/.*\\.(dlc|ccf|rsdf|nzb)$" })
 public class GenericAutoContainer extends PluginForDecrypt {
-
     @Override
     public Boolean siteTesterDisabled() {
         return Boolean.TRUE;
@@ -44,10 +43,9 @@ public class GenericAutoContainer extends PluginForDecrypt {
             ret.add(createDownloadlink(url));
         } else {
             final String type = new Regex(url, this.getSupportedLinks()).getMatch(0);
-            URLConnectionAdapter con = null;
+            final URLConnectionAdapter con = br.openGetConnection(url);
             File containerTemp = null;
             try {
-                con = br.openGetConnection(url);
                 if (con.isOK()) {
                     boolean seemsValidContainer = StringUtils.containsIgnoreCase(con.getContentType(), type);
                     seemsValidContainer = seemsValidContainer | (con.isContentDisposition() && StringUtils.containsIgnoreCase(Plugin.getFileNameFromHeader(con), type)) || (con.getContentLength() > 100 && (con.getContentType() == null || !StringUtils.containsIgnoreCase(con.getContentType(), "text")));
@@ -68,9 +66,7 @@ public class GenericAutoContainer extends PluginForDecrypt {
                 if (containerTemp != null && containerTemp.exists()) {
                     containerTemp.delete();
                 }
-                if (con != null) {
-                    con.disconnect();
-                }
+                con.disconnect();
             }
             if (containerTemp != null && ret.size() == 0) {
                 ret.add(createDownloadlink(url));
@@ -78,5 +74,4 @@ public class GenericAutoContainer extends PluginForDecrypt {
         }
         return ret;
     }
-
 }
