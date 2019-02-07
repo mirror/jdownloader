@@ -208,7 +208,7 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
                 if (object.getType() instanceof Class) {
                     final Class<?> clazz = (Class<?>) object.getType();
                     if (clazz.isArray() || clazz.isAssignableFrom(List.class) || clazz.isAssignableFrom(Set.class)) {
-                        if (value != null && !"null".equalsIgnoreCase(value.trim()) && !value.matches("^\\s*\\[.+\\]\\s*$")) {
+                        if (value != null && !"null".equalsIgnoreCase(value.trim()) && !value.matches("(?s)^\\s*\\[.+\\]\\s*$")) {
                             value = "[" + value + "]";
                         }
                     }
