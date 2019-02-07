@@ -53,7 +53,7 @@ public class FileHorseCom extends PluginForHost {
         if (br.containsHTML("(>404 Error \\- Page Not Found<|>Page Not Found)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>([^<>\"]*?) Download for").getMatch(0);
+        String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         String filesize = br.getRegex("id=\"btn_file_size\">\\(([^<>\"]*?)\\)</span>").getMatch(0);
         if (filesize == null) {
             filesize = br.getRegex(">File size / license:</p><p>(\\d+(\\.\\d+)? [A-Za-z]{1,5})").getMatch(0);
