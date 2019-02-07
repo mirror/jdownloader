@@ -21,6 +21,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.requests.GetRequest;
@@ -35,10 +39,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.HashInfo;
 import jd.utils.JDUtilities;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keep2share.cc" }, urls = { "https?://((www|new|spa)\\.)?(keep2share|k2s|k2share|keep2s|keep2)\\.cc/(folder|file)/(info/)?[a-z0-9]+" })
 public class Keep2ShareCcDecrypter extends PluginForDecrypt {
@@ -65,13 +65,17 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
             final List<Map<String, Object>> files = (List<Map<String, Object>>) response.get("files");
             if (files != null) {
                 for (Map<String, Object> file : files) {
-                    final Boolean isFolder = (Boolean) file.get("is_folder");
-                    final Boolean isAvailable = (Boolean) file.get("is_available");
                     final String id = (String) file.get("id");
+                    final Boolean isAvailable = (Boolean) file.get("is_available");
+                    if (Boolean.FALSE.equals(isAvailable)) {
+                        decryptedLinks.add(createOfflinelink("https://k2s.cc/file/" + id));
+                        continue;
+                    }
                     final String name = (String) file.get("name");
+                    final String size = file.get("size").toString();
                     final String md5 = (String) file.get("md5");
                     final String access = (String) file.get("access");
-                    final String size = file.get("size").toString();
+                    final Boolean isFolder = (Boolean) file.get("is_folder");
                     if (Boolean.FALSE.equals(isFolder)) {
                         final DownloadLink link = createDownloadlink("https://k2s.cc/file/" + id);
                         if (StringUtils.isNotEmpty(name)) {
