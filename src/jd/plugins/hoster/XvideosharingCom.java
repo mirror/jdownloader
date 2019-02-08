@@ -17,17 +17,19 @@ package jd.plugins.hoster;
 
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class PicbaronCom extends XFileSharingProBasic {
-    public PicbaronCom(final PluginWrapper wrapper) {
+public class XvideosharingCom extends XFileSharingProBasic {
+    public XvideosharingCom(final PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(super.getPremiumLink());
     }
@@ -39,11 +41,16 @@ public class PicbaronCom extends XFileSharingProBasic {
      * captchatype-info: 2019-02-08: null<br />
      * other:<br />
      */
-    private static String[] domains = new String[] { "picbaron.com" };
+    private static String[] domains = new String[] { "xvideosharing.com" };
+
+    @Override
+    public boolean supports_availablecheck_alt() {
+        return false;
+    }
 
     @Override
     public boolean supports_https() {
-        return true;
+        return false;
     }
 
     @Override
@@ -52,7 +59,7 @@ public class PicbaronCom extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean isImagehoster() {
+    public boolean isVideohoster_enforce_video_filename() {
         return true;
     }
 
@@ -60,13 +67,13 @@ public class PicbaronCom extends XFileSharingProBasic {
     public boolean isResumeable(final DownloadLink link, final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return false;
+            return true;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return false;
+            return true;
         } else {
             /* Free(anonymous) and unknown account type */
-            return false;
+            return true;
         }
     }
 
@@ -74,13 +81,13 @@ public class PicbaronCom extends XFileSharingProBasic {
     public int getDownloadModeMaxChunks(final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return 1;
+            return -2;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return 1;
+            return -2;
         } else {
             /* Free(anonymous) and unknown account type */
-            return 1;
+            return -2;
         }
     }
 
@@ -108,6 +115,16 @@ public class PicbaronCom extends XFileSharingProBasic {
         return domains;
     }
 
+    /** 2019-02-08: Special */
+    @Override
+    public String getDllink() {
+        String dllink = super.getDllink();
+        if (StringUtils.isEmpty(dllink)) {
+            dllink = new Regex(super.correctedBR, "\"(https?://[^\"]+v\\.mp4)\"").getMatch(0);
+        }
+        return dllink;
+    }
+
     /**
      * returns the annotation pattern array: 'https?://(?:www\\.)?(?:domain1|domain2)/(?:embed\\-)?[a-z0-9]{12}'
      *
@@ -115,7 +132,7 @@ public class PicbaronCom extends XFileSharingProBasic {
     public static String[] getAnnotationUrls() {
         // construct pattern
         final String host = getHostsPattern();
-        return new String[] { host + "/(?:embed\\-)?[a-z0-9]{12}" };
+        return new String[] { host + "/(?:embed\\-)?[a-z0-9]{12}(?:/[^/]+\\.html)?" };
     }
 
     /** returns 'https?://(?:www\\.)?(?:domain1|domain2)' */
