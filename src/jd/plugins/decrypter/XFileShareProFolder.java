@@ -35,11 +35,11 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 @SuppressWarnings("deprecation")
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "XFileShareProFolder" }, urls = {
-        "https?://(www\\.)?(subyshare\\.com|brupload\\.net|(exclusivefaile\\.com|exclusiveloader\\.com)|ex-load\\.com|hulkload\\.com|koofile\\.com|bestreams\\.net|powvideo\\.net|lunaticfiles\\.com|youwatch\\.org|streamratio\\.com|vshare\\.eu|up\\.media1fire\\.com|salefiles\\.com|ortofiles\\.com|restfile\\.ca|restfilee\\.com|storagely\\.com|free\\-uploading\\.com|rapidfileshare\\.net|fireget\\.com|ishareupload\\.com|gorillavid\\.in|mixshared\\.com|longfiles\\.com|novafile\\.com|orangefiles\\.me|qtyfiles\\.com|free\\-uploading\\.com|free\\-uploading\\.com|uppit\\.com|downloadani\\.me|movdivx\\.com|faststore\\.org|clicknupload\\.org|isra\\.cloud|(up\\-4\\.net|up\\-4ever\\.com))/(users/[a-z0-9_]+/[^\\?\r\n]+|folder/\\d+/[^\\?\r\n]+)|https?://(?:www\\.)?users(?:files|cloud)\\.com/go/[a-zA-Z0-9]{12}/?|https?://(www\\.)?(hotlink\\.cc|ex-load\\.com)/folder/[a-f0-9\\-]+" })
+        "https?://(www\\.)?(subyshare\\.com|brupload\\.net|(exclusivefaile\\.com|exclusiveloader\\.com)|ex-load\\.com|hulkload\\.com|koofile\\.com|bestreams\\.net|powvideo\\.net|lunaticfiles\\.com|youwatch\\.org|streamratio\\.com|vshare\\.eu|up\\.media1fire\\.com|salefiles\\.com|ortofiles\\.com|restfile\\.ca|restfilee\\.com|storagely\\.com|free\\-uploading\\.com|rapidfileshare\\.net|fireget\\.com|ishareupload\\.com|gorillavid\\.in|mixshared\\.com|longfiles\\.com|novafile\\.com|orangefiles\\.me|qtyfiles\\.com|free\\-uploading\\.com|free\\-uploading\\.com|uppit\\.com|downloadani\\.me|movdivx\\.com|faststore\\.org|clicknupload\\.org|isra\\.cloud|(up\\-4\\.net|up\\-4ever\\.com))/(users/[a-z0-9_]+/[^\\?\r\n]+|folder/\\d+/[^\\?\r\n]+)|https?://(?:www\\.)?users(?:files|cloud)\\.com/go/[a-zA-Z0-9]{12}/?|https?://(www\\.)?(hotlink\\.cc|ex-load\\.com)/folder/[a-f0-9\\-]+|https?://(?:www\\.)?imgbaron\\.com/g/[A-Za-z0-9]+" })
 public class XFileShareProFolder extends antiDDoSForDecrypt {
     // DONT FORGET TO MAINTAIN HERE ALSO!
     public String[] siteSupportedNames() {
-        return new String[] { "up-4.net", "usersfiles.com", "subyshare.com", "brupload.net", "exclusivefaile.com", "exclusiveloader.com", "ex-load.com", "hulkload.com", "koofile.com", "powvideo.net", "lunaticfiles.com", "youwatch.org", "streamratio.com", "vshare.eu", "up.media1fire.com", "salefiles.com", "ortofiles.com", "restfile.ca", "restfilee.com", "storagely.com", "free-uploading.com", "rapidfileshare.net", "fireget.com", "ishareupload.com", "gorillavid.in", "mixshared.com", "longfiles.com", "novafile.com", "orangefiles.me", "qtyfiles.com", "free-uploading.com", "free-uploading.com", "uppit.com", "downloadani.me", "movdivx.com", "faststore.org", "hotlink.cc", "clicknupload.org", "isra.cloud", "up-4.net" };
+        return new String[] { "up-4.net", "usersfiles.com", "subyshare.com", "brupload.net", "exclusivefaile.com", "exclusiveloader.com", "ex-load.com", "hulkload.com", "koofile.com", "powvideo.net", "lunaticfiles.com", "youwatch.org", "streamratio.com", "vshare.eu", "up.media1fire.com", "salefiles.com", "ortofiles.com", "restfile.ca", "restfilee.com", "storagely.com", "free-uploading.com", "rapidfileshare.net", "fireget.com", "ishareupload.com", "gorillavid.in", "mixshared.com", "longfiles.com", "novafile.com", "orangefiles.me", "qtyfiles.com", "free-uploading.com", "free-uploading.com", "uppit.com", "downloadani.me", "movdivx.com", "faststore.org", "hotlink.cc", "clicknupload.org", "isra.cloud", "up-4.net", "imgbaron.com" };
     }
 
     @Override
@@ -55,6 +55,7 @@ public class XFileShareProFolder extends antiDDoSForDecrypt {
     private String                        host           = null;
     private String                        parameter      = null;
     private final ArrayList<String>       dupe           = new ArrayList<String>();
+    FilePackage                           fp             = null;
     private final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
     /**
@@ -75,7 +76,7 @@ public class XFileShareProFolder extends antiDDoSForDecrypt {
             logger.warning("Failure finding HOST : " + parameter);
             return null;
         }
-        br.setCookie("http://" + host, "lang", "english");
+        br.setCookie("https://" + host, "lang", "english");
         br.setFollowRedirects(true);
         getPage(parameter);
         if (br.containsHTML("No such user exist")) {
@@ -104,6 +105,15 @@ public class XFileShareProFolder extends antiDDoSForDecrypt {
                     }
                 }
             }
+            if (fpName == null) {
+                /* 2019-02-08: E.g. for photo galleries (e.g. imgbaron.com) */
+                fpName = br.getRegex("<H1>\\s*?(.*?)\\s*?</H1>").getMatch(0);
+            }
+        }
+        if (fpName != null) {
+            fpName = Encoding.htmlDecode(fpName);
+            fp = FilePackage.getInstance();
+            fp.setName(fpName.trim());
         }
         dupe.add(parameter);
         // count value prevents continuous loop.
@@ -112,30 +122,35 @@ public class XFileShareProFolder extends antiDDoSForDecrypt {
             count = decryptedLinks.size();
             parsePage();
         } while (decryptedLinks.size() > count && parseNextPage() && !this.isAbort());
-        if (fpName != null) {
-            fpName = "Folder - " + Encoding.htmlDecode(fpName);
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(fpName.trim());
-            fp.addLinks(decryptedLinks);
-        }
         return decryptedLinks;
     }
 
     private void parsePage() throws PluginException {
-        final String[] links = br.getRegex("href=(\"|')(https?://(?:www\\.)?" + Pattern.quote(host) + "/[a-z0-9]{12})(?:/.*?)?\\1").getColumn(1);
+        final String[] links = br.getRegex("href=(\"|')(https?://(?:www\\.)?" + Pattern.quote(host) + "/[a-z0-9]{12}(?:/.*?)?)\\1").getColumn(1);
         if (links != null && links.length > 0) {
-            for (String dl : links) {
-                if (dupe.add(dl)) {
-                    decryptedLinks.add(createDownloadlink(dl));
+            for (final String link : links) {
+                final String linkid = new Regex(link, "https?://(?:www\\.)?[^/]+/([a-z0-9]{12})").getMatch(0);
+                if (dupe.add(linkid)) {
+                    /**
+                     * TODO: Consider adding support for "fast linkcheck" --> Set links as available here - maybe only if filename is given
+                     * inside URL (which is often the case). In general, files inside a folder should be online!
+                     */
+                    final DownloadLink dl = createDownloadlink(link);
+                    /* Set ContentURL - VERY important for XFS (Mass-)Linkchecking! */
+                    dl.setContentUrl(link);
+                    decryptedLinks.add(dl);
+                    distribute(dl);
                 }
             }
         }
         // these should only be shown when its a /user/ decrypt task
         final String folders[] = br.getRegex("folder.?\\.gif.*?<a href=\"(.+?" + Pattern.quote(host) + "[^\"]+users/[^\"]+)").getColumn(0);
         if (folders != null && folders.length > 0) {
-            for (String dl : folders) {
-                if (dl.matches(this.getSupportedLinks().pattern()) && dupe.add(dl) && !parameter.equals(dl)) {
-                    decryptedLinks.add(createDownloadlink(dl));
+            for (String folder : folders) {
+                if (folder.matches(this.getSupportedLinks().pattern()) && dupe.add(folder) && !parameter.equals(folder)) {
+                    final DownloadLink dlfolder = createDownloadlink(folder);
+                    decryptedLinks.add(dlfolder);
+                    distribute(dlfolder);
                 }
             }
         }
@@ -146,31 +161,33 @@ public class XFileShareProFolder extends antiDDoSForDecrypt {
 
     private boolean parseNextPage() throws Exception {
         // not sure if this is the same for normal folders, but the following
-        // picks up users/username/*
-        String nextPage = br.getRegex("<div class=(\"|')paging\\1>[^\r\n]+<a href=('|\")([^']+&amp;page=\\d+|/go/[a-zA-Z0-9]{12}/\\d+/?)\\2>Next").getMatch(2);
+        // picks up users/username/*, 2019-02-08: will also work for photo galleries ('host.tld/g/bla')
+        /* Increment page */
+        i++;
+        String nextPage = br.getRegex("<div class=(\"|')paging\\1>[^\r\n]+<a href=('|\")([^']+\\&amp;page=\\d+|/go/[a-zA-Z0-9]{12}/\\d+/?)\\2>Next").getMatch(2);
         if (nextPage != null) {
             nextPage = HTMLEntities.unhtmlentities(nextPage);
             nextPage = Request.getLocation(nextPage, br.getRequest());
+            getPage(nextPage);
             return true;
         }
-        /* Increment page */
-        i++;
         if (postData == null) {
             /* pagination ? */
             final String pagination = br.getRegex("setPagination\\('\\.files_paging',.*?\\);").getMatch(-1);
-            if (pagination != null) {
-                final String op = new Regex(pagination, "op:\\s*'(\\w+)'").getMatch(0);
-                final String usr_login = new Regex(pagination, "usr_login:\\s*'(\\w+)'").getMatch(0);
-                final String fld_id = new Regex(pagination, "fld_id:\\s*'(\\w+)'").getMatch(0);
-                if (op == null || usr_login == null || fld_id == null) {
-                    return false;
-                }
-                postData = "op=" + Encoding.urlEncode(op) + "&load=files&page=%s&fld_id=" + Encoding.urlEncode(fld_id) + "&usr_login=" + Encoding.urlEncode(usr_login);
+            if (pagination == null) {
+                return false;
             }
+            final String op = new Regex(pagination, "op:\\s*'(\\w+)'").getMatch(0);
+            final String usr_login = new Regex(pagination, "usr_login:\\s*'(\\w+)'").getMatch(0);
+            final String fld_id = new Regex(pagination, "fld_id:\\s*'(\\w+)'").getMatch(0);
+            if (op == null || usr_login == null || fld_id == null) {
+                return false;
+            }
+            postData = "op=" + Encoding.urlEncode(op) + "&load=files&page=%s&fld_id=" + Encoding.urlEncode(fld_id) + "&usr_login=" + Encoding.urlEncode(usr_login);
         }
         br.getHeaders().put("Accept", "*/*");
         br.getHeaders().put("x-requested-with", "XMLHttpRequest");
-        br.postPage(br.getURL(), String.format(postData, i));
+        postPage(br.getURL(), String.format(postData, i));
         return true;
     }
 

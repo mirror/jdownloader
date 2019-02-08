@@ -26,8 +26,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class PicbaronCom extends XFileSharingProBasic {
-    public PicbaronCom(final PluginWrapper wrapper) {
+public class XimagesharingCom extends XFileSharingProBasic {
+    public XimagesharingCom(final PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(super.getPremiumLink());
     }
@@ -39,11 +39,11 @@ public class PicbaronCom extends XFileSharingProBasic {
      * captchatype-info: 2019-02-08: null<br />
      * other:<br />
      */
-    private static String[] domains = new String[] { "picbaron.com" };
+    private static String[] domains = new String[] { "ximagesharing.com" };
 
     @Override
     public boolean supports_https() {
-        return true;
+        return false;
     }
 
     @Override
