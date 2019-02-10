@@ -380,7 +380,8 @@ public class IntouploadNet extends antiDDoSForHost {
                     fileInfo[1] = getHighestVideoQualityFilesize();
                 }
                 if (inValidate(fileInfo[1])) {
-                    fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"'/]+)\\)(.*?)</font>").getMatch(0);
+                    // fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"'/]+)\\)(.*?)</font>").getMatch(0);
+                    fileInfo[1] = new Regex(correctedBR, "size : <p>([^<>]+)<").getMatch(0);
                     /* next two are details from sharing box */
                     if (inValidate(fileInfo[1])) {
                         fileInfo[1] = new Regex(correctedBR, sharebox0).getMatch(1);
