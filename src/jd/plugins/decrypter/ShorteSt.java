@@ -67,7 +67,7 @@ public class ShorteSt extends antiDDoSForDecrypt {
         }
         getPage(parameter);
         final String redirect = br.getRegex("<meta http-equiv=\"refresh\" content=\"\\d+\\;url=(.*?)\" \\/>").getMatch(0);
-        if (containsLoginRedirect(redirect)) {
+        if (containsLoginRedirect(redirect) || br.containsHTML(">link removed<")) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         } else if (redirect != null) {
