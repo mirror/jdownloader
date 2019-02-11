@@ -1290,7 +1290,6 @@ public class FlashbitCc extends antiDDoSForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
@@ -1370,8 +1369,7 @@ public class FlashbitCc extends antiDDoSForHost {
                 if (!inValidate(tmpsec)) {
                     seconds = Integer.parseInt(tmpsec);
                 }
-                expire_milliseconds = ((years * 86400000 * 365) + (days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000)) + System.currentTimeMillis();
-                expire_milliseconds_precise_to_the_second = expire_milliseconds;
+                expire_milliseconds_precise_to_the_second = ((years * 86400000 * 365) + (days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000)) + System.currentTimeMillis();
             }
         }
         // final boolean trust_expire_milliseconds_from_expiredate = expire_milliseconds_from_expiredate > 0;

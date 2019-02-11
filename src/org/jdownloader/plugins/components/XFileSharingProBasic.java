@@ -113,7 +113,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     /* Used variables */
     public String                correctedBR                  = "";
-    private String               fuid                         = null;
+    protected String             fuid                         = null;
     /*
      * Note:Final value will be set later in init(). CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
      */
@@ -503,11 +503,15 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return br.getHttpConnection().getResponseCode() == 500 || new Regex(correctedBR, "\">This server is in maintenance mode").matches();
     }
 
+    public boolean isOffline(final DownloadLink link) {
+        return isOffline(this.br, link);
+    }
+
     /**
      * @return true: File is offline. <br />
      *         false: File should be online.
      */
-    public boolean isOffline() {
+    public boolean isOffline(final Browser br, final DownloadLink link) {
         return br.getHttpConnection().getResponseCode() == 404 || new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches();
     }
 
@@ -522,7 +526,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         setWeakFilename(link);
         getPage(link.getPluginPatternMatcher());
         setFUID(link);
-        if (isOffline()) {
+        if (isOffline(this.br, link)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         altbr = br.cloneBrowser();
@@ -1890,12 +1894,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             /* premium users the Mb value isn't provided for some reason... */
             ai.setUsedSpace(space[0] + "Mb");
         }
-        /* Traffic can also be negative! */
-        String availabletraffic = new Regex(correctedBR, "Traffic available[^<>]*?:?</TD><TD><b>([^<>\"']+)</b>").getMatch(0);
-        if (availabletraffic == null) {
-            /* 2019-02-11: For newer XFS versions */
-            availabletraffic = new Regex(correctedBR, ">Traffic available(?: today)?</div>\\s*?<div class=\"txt\\d+\">([^<>\"]+)<").getMatch(0);
-        }
+        String availabletraffic = getTrafficLeft();
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
             availabletraffic.trim();
             /* need to set 0 traffic left, as getSize returns positive result, even when negative value supplied. */
@@ -1921,36 +1920,55 @@ public class XFileSharingProBasic extends antiDDoSForHost {
          */
         final boolean useAltExpire = this.fetchAccountInfo_PreferExactExpireDate();
         if (expire_milliseconds_from_expiredate == 0 || useAltExpire) {
-            /* A more accurate expire time, down to the second. Usually shown on 'extend premium account' page. */
-            getPage("/?op=payments");
-            String expireSecond = new Regex(correctedBR, "<div class=\"accexpire\">.*?</div>").getMatch(-1);
-            if (StringUtils.isEmpty(expireSecond)) {
-                expireSecond = new Regex(correctedBR, "Premium(-| )Account expires?:([^\\s]+)").getMatch(1);
-            }
-            if (!inValidate(expireSecond)) {
-                String tmpYears = new Regex(expireSecond, "(\\d+)\\s+years?").getMatch(0);
-                String tmpdays = new Regex(expireSecond, "(\\d+)\\s+days?").getMatch(0);
-                String tmphrs = new Regex(expireSecond, "(\\d+)\\s+hours?").getMatch(0);
-                String tmpmin = new Regex(expireSecond, "(\\d+)\\s+minutes?").getMatch(0);
-                String tmpsec = new Regex(expireSecond, "(\\d+)\\s+seconds?").getMatch(0);
-                long years = 0, days = 0, hours = 0, minutes = 0, seconds = 0;
-                if (!inValidate(tmpYears)) {
-                    years = Integer.parseInt(tmpYears);
+            /*
+             * A more accurate expire time, down to the second. Usually shown on 'extend premium account' page. Case[0] e.g. 'flashbit.cc',
+             * Case [1] e.g. takefile.link
+             */
+            final String[] paymentURLs = new String[] { "/?op=payments", "/upgrade" };
+            for (final String paymentURL : paymentURLs) {
+                try {
+                    getPage(paymentURL);
+                } catch (final Throwable e) {
+                    continue;
                 }
-                if (!inValidate(tmpdays)) {
-                    days = Integer.parseInt(tmpdays);
+                String expireSecond = new Regex(correctedBR, Pattern.compile("<div class=\"accexpire\">.*?</div>", Pattern.CASE_INSENSITIVE)).getMatch(-1);
+                if (StringUtils.isEmpty(expireSecond)) {
+                    expireSecond = new Regex(correctedBR, Pattern.compile("Premium(-| )Account expires?:([^\\s]+)", Pattern.CASE_INSENSITIVE)).getMatch(1);
                 }
-                if (!inValidate(tmphrs)) {
-                    hours = Integer.parseInt(tmphrs);
+                if (StringUtils.isEmpty(expireSecond)) {
+                    /* Last attempt - wider RegEx but we expect the 'second(s)' value to always be present!! */
+                    expireSecond = new Regex(correctedBR, Pattern.compile("(\\d+ years?, )?(\\d+ days?, )?(\\d+ hours?, )?(\\d+ minutes?, )?\\d+ seconds", Pattern.CASE_INSENSITIVE)).getMatch(-1);
                 }
-                if (!inValidate(tmpmin)) {
-                    minutes = Integer.parseInt(tmpmin);
+                if (!inValidate(expireSecond)) {
+                    String tmpYears = new Regex(expireSecond, "(\\d+)\\s+years?").getMatch(0);
+                    String tmpdays = new Regex(expireSecond, "(\\d+)\\s+days?").getMatch(0);
+                    String tmphrs = new Regex(expireSecond, "(\\d+)\\s+hours?").getMatch(0);
+                    String tmpmin = new Regex(expireSecond, "(\\d+)\\s+minutes?").getMatch(0);
+                    String tmpsec = new Regex(expireSecond, "(\\d+)\\s+seconds?").getMatch(0);
+                    long years = 0, days = 0, hours = 0, minutes = 0, seconds = 0;
+                    if (!inValidate(tmpYears)) {
+                        years = Integer.parseInt(tmpYears);
+                    }
+                    if (!inValidate(tmpdays)) {
+                        days = Integer.parseInt(tmpdays);
+                    }
+                    if (!inValidate(tmphrs)) {
+                        hours = Integer.parseInt(tmphrs);
+                    }
+                    if (!inValidate(tmpmin)) {
+                        minutes = Integer.parseInt(tmpmin);
+                    }
+                    if (!inValidate(tmpsec)) {
+                        seconds = Integer.parseInt(tmpsec);
+                    }
+                    expire_milliseconds_precise_to_the_second = ((years * 86400000 * 365) + (days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000)) + System.currentTimeMillis();
                 }
-                if (!inValidate(tmpsec)) {
-                    seconds = Integer.parseInt(tmpsec);
+                if (expire_milliseconds_precise_to_the_second > 0) {
+                    logger.info("Successfully found expire_milliseconds_precise_to_the_second via paymentURL: " + paymentURL);
+                    break;
+                } else {
+                    logger.info("Failed to find expire_milliseconds_precise_to_the_second via paymentURL: " + paymentURL);
                 }
-                expire_milliseconds = ((years * 86400000 * 365) + (days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000)) + System.currentTimeMillis();
-                expire_milliseconds_precise_to_the_second = expire_milliseconds;
             }
         }
         // final boolean trust_expire_milliseconds_from_expiredate = expire_milliseconds_from_expiredate > 0;
@@ -1999,8 +2017,27 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return loginform;
     }
 
+    public String getTrafficLeft() {
+        return getTrafficLeft(this.correctedBR);
+    }
+
+    /** Tries to find available traffic for RegEx. */
+    public String getTrafficLeft(final String source) {
+        /* Traffic can also be negative! */
+        String availabletraffic = new Regex(source, "Traffic available[^<>]*?:?</TD><TD><b>([^<>\"']+)</b>").getMatch(0);
+        if (availabletraffic == null) {
+            /* 2019-02-11: For newer XFS versions */
+            availabletraffic = new Regex(source, ">Traffic available(?: today)?</div>\\s*?<div class=\"txt\\d+\">([^<>\"]+)<").getMatch(0);
+        }
+        return availabletraffic;
+    }
+
     public boolean isLoggedinHTML() {
         return br.containsHTML("op=logout");
+    }
+
+    public String getLoginURL() {
+        return getMainPage() + "/login.html";
     }
 
     public void login(final Account account, final boolean force) throws Exception {
@@ -2025,7 +2062,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     logger.info("Successfully logged in via cookies");
                 } else {
                     logger.info("Performing full login");
-                    getPage(getMainPage() + "/login.html");
+                    br.clearCookies(br.getHost());
+                    getPage(getLoginURL());
                     if (br.getHttpConnection().getResponseCode() == 404) {
                         /* Required for some XFS setups. */
                         getPage(getMainPage() + "/login");
