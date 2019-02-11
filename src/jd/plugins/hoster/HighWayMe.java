@@ -219,7 +219,7 @@ public class HighWayMe extends UseNet {
 
     @Override
     public boolean canHandle(final DownloadLink downloadLink, final Account account) throws Exception {
-        if (downloadLink.getDownloadURL().matches(TYPE_DIRECT)) {
+        if (account != null && downloadLink.getPluginPatternMatcher().matches(TYPE_DIRECT)) {
             /* This is the only linktype which is downloadable via account */
             return true;
         } else if (account == null) {

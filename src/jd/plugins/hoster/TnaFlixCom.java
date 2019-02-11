@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -36,7 +35,6 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tnaflix.com" }, urls = { "https?://(?:[a-z0-9]+\\.)?tnaflix\\.com/(view_video\\.php\\?viewkey=[a-z0-9]+|.*?video\\d+)|https?://(?:www\\.)?tnaflix\\.com/embedding_player/embedding_feed\\.php\\?viewkey=[a-z0-9]+" })
 public class TnaFlixCom extends PluginForHost {
-
     public TnaFlixCom(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
@@ -44,7 +42,6 @@ public class TnaFlixCom extends PluginForHost {
 
     private static final String  ALLOW_MULTIHOST_USAGE           = "ALLOW_MULTIHOST_USAGE";
     private static final boolean default_allow_multihoster_usage = false;
-
     private static final String  TYPE_NORMAL                     = "https?://(?:www\\.)?tnaflix\\.com/(view_video\\.php\\?viewkey=[a-z0-9]+|.*?video\\d+)";
     private static final String  TYPE_embedding_player           = "https?://(?:www\\.)?tnaflix\\.com/embedding_player/embedding_feed\\.php\\?viewkey=[a-z0-9]+";
 
@@ -133,7 +130,6 @@ public class TnaFlixCom extends PluginForHost {
         if (videoid == null) {
             videoid = this.br.getRegex("id=\"VID\" type=\"hidden\" value=\"(\\d+)\"").getMatch(0);
         }
-
         final String nkey = this.br.getRegex("id=\"nkey\" type=\"hidden\" value=\"([^<>\"]+)\"").getMatch(0);
         // This link doesn't have quality choice: https://www.tnaflix.com/view_video.php?viewkey=b5a6fcf68b48e6dd6734
         String dllink1 = br.getRegex("itemprop=\"contentUrl\" content=\"([^\"]+?)\"").getMatch(0);
@@ -178,14 +174,12 @@ public class TnaFlixCom extends PluginForHost {
                 }
             }
         }
-
         if (dllink == null) {
             dllink = br.getRegex("<file>(http://.*?)</file>").getMatch(0);
         }
         if (dllink == null) {
             dllink = br.getRegex("<videolink>(http://.*?)</videoLink>").getMatch(0);
         }
-
         if (dllink == null && videoid != null) {
             logger.info("Fallback to ajax method");
             this.br.getPage("https://dyn.tnaflix.com/ajax/info.php?action=video&vid=" + videoid);
@@ -194,7 +188,6 @@ public class TnaFlixCom extends PluginForHost {
                 dllink = "https:" + dllink;
             }
         }
-
         if (dllink == null) {
             dllink = dllink1;
         }
@@ -214,7 +207,7 @@ public class TnaFlixCom extends PluginForHost {
         }
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
         }
         dl.startDownload();
     }

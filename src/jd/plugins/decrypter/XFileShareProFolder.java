@@ -54,9 +54,10 @@ public class XFileShareProFolder extends antiDDoSForDecrypt {
     // TODO: remove old xfileshare folder plugins after next major update.
     private String                        host           = null;
     private String                        parameter      = null;
+    private boolean                       fast_linkcheck = false;
     private final ArrayList<String>       dupe           = new ArrayList<String>();
-    FilePackage                           fp             = null;
     private final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    FilePackage                           fp             = null;
 
     /**
      * @author raztoki
@@ -138,6 +139,9 @@ public class XFileShareProFolder extends antiDDoSForDecrypt {
                     final DownloadLink dl = createDownloadlink(link);
                     /* Set ContentURL - VERY important for XFS (Mass-)Linkchecking! */
                     dl.setContentUrl(link);
+                    if (fast_linkcheck) {
+                        dl.setAvailable(true);
+                    }
                     decryptedLinks.add(dl);
                     distribute(dl);
                 }

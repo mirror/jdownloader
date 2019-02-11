@@ -62,7 +62,7 @@ public class AnonFilesCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCookie(this.getHost(), "lang", "us");
-        br.getPage("https://anonfile.com/api/v2/file/" + new Regex(link.getPluginPatternMatcher(), "([A-Za-z0-9]+)$").getMatch(0) + "/info");
+        br.getPage("https://anonfiles.com/api/v2/file/" + new Regex(link.getPluginPatternMatcher(), "([A-Za-z0-9]+)$").getMatch(0) + "/info");
         if (!br.containsHTML("\"status\":true") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

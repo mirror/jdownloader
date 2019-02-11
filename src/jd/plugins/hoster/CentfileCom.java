@@ -27,10 +27,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class ImagetwistCom extends XFileSharingProBasic {
-    public ImagetwistCom(final PluginWrapper wrapper) {
+public class CentfileCom extends XFileSharingProBasic {
+    public CentfileCom(final PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium(super.getPremiumLink());
+        this.enablePremium(super.getPremiumLink());
     }
 
     /**
@@ -40,39 +40,19 @@ public class ImagetwistCom extends XFileSharingProBasic {
      * captchatype-info: 2019-02-11: null<br />
      * other:<br />
      */
-    private static String[] domains = new String[] { "imagetwist.com", "croea.com" };
-
-    @Override
-    public boolean supports_https() {
-        return true;
-    }
-
-    @Override
-    public boolean supports_availablecheck_filesize_html() {
-        return false;
-    }
-
-    @Override
-    public boolean supports_availablecheck_alt() {
-        return false;
-    }
-
-    @Override
-    public boolean isImagehoster() {
-        return true;
-    }
+    private static String[] domains = new String[] { "centfile.com" };
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return false;
+            return true;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return false;
+            return true;
         } else {
             /* Free(anonymous) and unknown account type */
-            return false;
+            return true;
         }
     }
 
@@ -80,13 +60,13 @@ public class ImagetwistCom extends XFileSharingProBasic {
     public int getDownloadModeMaxChunks(final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return 1;
+            return 0;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return 1;
+            return 0;
         } else {
             /* Free(anonymous) and unknown account type */
-            return 1;
+            return 0;
         }
     }
 
@@ -105,6 +85,66 @@ public class ImagetwistCom extends XFileSharingProBasic {
         return -1;
     }
 
+    @Override
+    public boolean supports_https() {
+        return super.supports_https();
+    }
+
+    @Override
+    public boolean fetchAccountInfo_PreferExactExpireDate() {
+        return super.fetchAccountInfo_PreferExactExpireDate();
+    }
+
+    @Override
+    public boolean isAudiohoster() {
+        return super.isAudiohoster();
+    }
+
+    @Override
+    public boolean isVideohoster() {
+        return super.isVideohoster();
+    }
+
+    @Override
+    public boolean isVideohoster_2() {
+        return super.isVideohoster_2();
+    }
+
+    @Override
+    public boolean isVideohoster_enforce_video_filename() {
+        return super.isVideohoster_enforce_video_filename();
+    }
+
+    @Override
+    public boolean isImagehoster() {
+        return super.isImagehoster();
+    }
+
+    @Override
+    public boolean supports_availablecheck_alt() {
+        return super.supports_availablecheck_alt();
+    }
+
+    @Override
+    public boolean supports_availablecheck_filesize_alt_fast() {
+        return super.supports_availablecheck_filesize_alt_fast();
+    }
+
+    @Override
+    public boolean prefer_availablecheck_filesize_alt_type_old() {
+        return super.prefer_availablecheck_filesize_alt_type_old();
+    }
+
+    @Override
+    public boolean supports_availablecheck_filename_abuse() {
+        return super.supports_availablecheck_filename_abuse();
+    }
+
+    @Override
+    public boolean supports_availablecheck_filesize_html() {
+        return super.supports_availablecheck_filesize_html();
+    }
+
     public static String[] getAnnotationNames() {
         return new String[] { domains[0] };
     }
@@ -121,7 +161,7 @@ public class ImagetwistCom extends XFileSharingProBasic {
     public static String[] getAnnotationUrls() {
         // construct pattern
         final String host = getHostsPattern();
-        return new String[] { host + "/(?:embed\\-)?[a-z0-9]{12}(?:/[^/]+\\.html)?" };
+        return new String[] { host + "/(?:embed\\-)?[a-z0-9]{12}" };
     }
 
     /** returns 'https?://(?:www\\.)?(?:domain1|domain2)' */

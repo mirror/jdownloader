@@ -24,6 +24,7 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class CornfileCom extends XFileSharingProBasic {
@@ -47,7 +48,7 @@ public class CornfileCom extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean supports_html_filesize_check() {
+    public boolean supports_availablecheck_filesize_html() {
         return false;
     }
 
@@ -95,7 +96,7 @@ public class CornfileCom extends XFileSharingProBasic {
     }
 
     public static String[] getAnnotationNames() {
-        return domains;
+        return new String[] { domains[0] };
     }
 
     @Override
@@ -126,5 +127,10 @@ public class CornfileCom extends XFileSharingProBasic {
             pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
         }
         return pattern.toString();
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.SibSoft_XFileShare;
     }
 }

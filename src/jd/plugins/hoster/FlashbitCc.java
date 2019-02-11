@@ -27,6 +27,16 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -51,16 +61,6 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "flashbit.cc" }, urls = { "https?://(?:www\\.)?flashbit\\.cc/(?:embed\\-)?[a-z0-9]{12}" })
 public class FlashbitCc extends antiDDoSForHost {
@@ -1294,7 +1294,15 @@ public class FlashbitCc extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        login(account, true);
+        try {
+            login(account, true);
+        } catch (final PluginException e) {
+            throw e;
+        }
+        /* Only access URL if we haven't accessed it before already. */
+        if (br.getURL() == null || !br.getURL().contains("/?op=my_account")) {
+            getPage("https://" + this.getHost() + "/?op=my_account");
+        }
         final String space[] = new Regex(correctedBR, ">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
         if ((space != null && space.length != 0) && (space[0] != null && space[1] != null)) {
             /* free users it's provided by default */
@@ -1303,9 +1311,12 @@ public class FlashbitCc extends antiDDoSForHost {
             /* premium users the Mb value isn't provided for some reason... */
             ai.setUsedSpace(space[0] + "Mb");
         }
-        account.setValid(true);
         /* Traffic can also be negative! */
-        final String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"']+)</b>").getMatch(0);
+        String availabletraffic = new Regex(correctedBR, "Traffic available[^<>]*?:?</TD><TD><b>([^<>\"']+)</b>").getMatch(0);
+        if (availabletraffic == null) {
+            /* 2019-02-11: For newer XFS versions */
+            availabletraffic = new Regex(correctedBR, ">Traffic available(?: today)?</div>\\s*?<div class=\"txt\\d+\">([^<>\"]+)<").getMatch(0);
+        }
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
             availabletraffic.trim();
             /* need to set 0 traffic left, as getSize returns positive result, even when negative value supplied. */
@@ -1317,23 +1328,78 @@ public class FlashbitCc extends antiDDoSForHost {
         } else {
             ai.setUnlimitedTraffic();
         }
-        /* If the premium account is expired we'll simply accept it as a free account. */
+        /* If the premium account is expired or we cannot find an expire-date we'll simply accept it as a free account. */
         final String expire = new Regex(correctedBR, "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
         long expire_milliseconds = 0;
+        long expire_milliseconds_from_expiredate = 0;
+        long expire_milliseconds_precise_to_the_second = 0;
         if (expire != null) {
-            expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH);
+            expire_milliseconds_from_expiredate = TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH);
+        }
+        /**
+         * TODO: Rename this settings' name, improve this handling to always use it as a fallback on missing expiredate, make sure that the
+         * value we get is near the other value if we have both.
+         */
+        final boolean useAltExpire = true;
+        if (expire_milliseconds_from_expiredate == 0 || useAltExpire) {
+            /* A more accurate expire time, down to the second. Usually shown on 'extend premium account' page. */
+            getPage("/?op=payments");
+            String expireSecond = new Regex(correctedBR, "<div class=\"accexpire\">.*?</div>").getMatch(-1);
+            if (StringUtils.isEmpty(expireSecond)) {
+                expireSecond = new Regex(correctedBR, "Premium(-| )Account expires?:([^\\s]+)").getMatch(1);
+            }
+            if (!inValidate(expireSecond)) {
+                String tmpYears = new Regex(expireSecond, "(\\d+)\\s+years?").getMatch(0);
+                String tmpdays = new Regex(expireSecond, "(\\d+)\\s+days?").getMatch(0);
+                String tmphrs = new Regex(expireSecond, "(\\d+)\\s+hours?").getMatch(0);
+                String tmpmin = new Regex(expireSecond, "(\\d+)\\s+minutes?").getMatch(0);
+                String tmpsec = new Regex(expireSecond, "(\\d+)\\s+seconds?").getMatch(0);
+                long years = 0, days = 0, hours = 0, minutes = 0, seconds = 0;
+                if (!inValidate(tmpYears)) {
+                    years = Integer.parseInt(tmpYears);
+                }
+                if (!inValidate(tmpdays)) {
+                    days = Integer.parseInt(tmpdays);
+                }
+                if (!inValidate(tmphrs)) {
+                    hours = Integer.parseInt(tmphrs);
+                }
+                if (!inValidate(tmpmin)) {
+                    minutes = Integer.parseInt(tmpmin);
+                }
+                if (!inValidate(tmpsec)) {
+                    seconds = Integer.parseInt(tmpsec);
+                }
+                expire_milliseconds = ((years * 86400000 * 365) + (days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000)) + System.currentTimeMillis();
+                expire_milliseconds_precise_to_the_second = expire_milliseconds;
+            }
+        }
+        // final boolean trust_expire_milliseconds_from_expiredate = expire_milliseconds_from_expiredate > 0;
+        final boolean trust_expire_milliseconds_precise_to_the_second = expire_milliseconds_from_expiredate - expire_milliseconds_precise_to_the_second <= 24 * 60 * 60 * 1000;
+        if (trust_expire_milliseconds_precise_to_the_second) {
+            /*
+             * Prefer more precise expire-date as long as it is max. 48 hours shorter than the other expire-date which is only exact up to
+             * 24 hours (up to the last day).
+             */
+            logger.info("Using precise expire-date");
+            expire_milliseconds = expire_milliseconds_precise_to_the_second;
+        } else if (expire_milliseconds_from_expiredate > 0) {
+            logger.info("Using expire-date which is up to 24 hours precise");
+            expire_milliseconds = expire_milliseconds_from_expiredate;
+        } else {
+            logger.info("Failed to find any expire-date at all");
         }
         if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
             /* Expired premium or no expire date given --> It is usually a Free Account */
             account.setType(AccountType.FREE);
-            account.setMaxSimultanDownloads(1);
             account.setConcurrentUsePossible(false);
+            account.setMaxSimultanDownloads(1);
         } else {
             /* Expire date is in the future --> It is a premium account */
             ai.setValidUntil(expire_milliseconds);
             account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(6);
             account.setConcurrentUsePossible(true);
+            account.setMaxSimultanDownloads(this.getMaxSimultanPremiumDownloadNum());
         }
         return ai;
     }

@@ -20,6 +20,7 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
@@ -32,7 +33,9 @@ import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -44,7 +47,7 @@ import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deepbrid.com" }, urls = { "" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deepbrid.com" }, urls = { "https?://(?:www\\.)?deepbrid\\.com/dl\\?f=([a-f0-9]{32})" })
 public class DeepbridCom extends antiDDoSForHost {
     private static final String          API_BASE            = "https://www.deepbrid.com/backend-dl/index.php";
     private static final String          NICE_HOST           = "deepbrid.com";
@@ -73,14 +76,34 @@ public class DeepbridCom extends antiDDoSForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws PluginException {
-        return AvailableStatus.UNCHECKABLE;
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        getPage(link.getPluginPatternMatcher());
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Wrong request code")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String filename_url = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        String filename = br.getRegex("<b>File Name:?\\s*?</b></font><font[^>]+>([^<>\"]+)<").getMatch(0);
+        if (StringUtils.isEmpty(filename)) {
+            filename = filename_url;
+        }
+        String filesize = br.getRegex("<b>File Size:?\\s*?</b></font><font[^>]+>([^<>\"]+)<").getMatch(0);
+        filename = Encoding.htmlDecode(filename).trim();
+        link.setName(filename);
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public boolean canHandle(final DownloadLink downloadLink, final Account account) throws Exception {
-        if (account == null) {
-            /* without account its not possible to download the link */
+        if (account == null && downloadLink.getPluginPatternMatcher() != null && new Regex(downloadLink.getPluginPatternMatcher(), this.getSupportedLinks()).matches()) {
+            /* Without account itis only possible to download URLs for files which are on the server of this multihost! */
+            return true;
+        } else if (account == null) {
+            /* Without account its not possible to download links from other filehosts */
             return false;
         }
         return true;
@@ -88,13 +111,59 @@ public class DeepbridCom extends antiDDoSForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        requestFileInformation(downloadLink);
+        final String directlinkproperty = "directurl";
+        String dllink = checkDirectLink(downloadLink, directlinkproperty);
+        if (dllink == null) {
+            String ticketurl = downloadLink.getStringProperty("ticketurl", null);
+            if (ticketurl != null) {
+                getPage(ticketurl);
+            } else {
+                final Form dlform = br.getFormbyKey("download");
+                if (dlform == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                dlform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                final InputField dlfield = dlform.getInputField("download");
+                if (dlfield != null && dlfield.getValue() == null) {
+                    dlform.put("download", "");
+                }
+                submitForm(dlform);
+                /* Store that URL as we can use it multiple times to generate new directurls for that particular file! */
+                downloadLink.setProperty("ticketurl", br.getURL());
+            }
+            dllink = br.getRegex("(https?://[^\"\\']+/dl/[^\"\\']+)").getMatch(0);
+            if (StringUtils.isEmpty(dllink)) {
+                dllink = br.getRegex("href=\"(https?://[^\"]+)\">DOWNLOAD NOW\\!").getMatch(0);
+            }
+            if (StringUtils.isEmpty(dllink)) {
+                if (ticketurl != null) {
+                    /* Trash stored ticket-URL and try again! */
+                    downloadLink.setProperty("ticketurl", Property.NULL);
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            }
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        downloadLink.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
+        dl.startDownload();
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         /* handle premium should never be called */
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        handleFree(link);
     }
 
     private void handleDL(final Account account, final DownloadLink link) throws Exception {

@@ -623,14 +623,12 @@ public class EasylinkzNet extends antiDDoSForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         try {
             login(account, true);
         } catch (final PluginException e) {
-            account.setValid(false);
             throw e;
         }
         if (!br.containsHTML("class=\"badge badge\\-success\">(?:PAID USER|USUARIO DE PAGO|VIP)</span>")) {
@@ -648,7 +646,6 @@ public class EasylinkzNet extends antiDDoSForHost {
                 expire = br.getRegex(">[\t\n\r ]*?(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})[\t\n\r ]*?<").getMatch(0);
             }
             if (expire == null) {
-                account.setValid(false);
                 return ai;
             }
             long expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "MM/dd/yyyy hh:mm:ss", Locale.ENGLISH);
@@ -665,7 +662,6 @@ public class EasylinkzNet extends antiDDoSForHost {
                 ai.setStatus("Premium account");
             }
         }
-        account.setValid(true);
         ai.setUnlimitedTraffic();
         return ai;
     }

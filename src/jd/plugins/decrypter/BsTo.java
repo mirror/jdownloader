@@ -27,6 +27,7 @@ import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -50,12 +51,14 @@ public class BsTo extends PluginForDecrypt {
             br.setFollowRedirects(false);
             br.getPage(parameter);
             if (br.getRedirectLocation() == null || br.containsHTML("g-recaptcha")) {
-                final Form form = br.getForm(0);
+                Form form = br.getFormbyProperty("id", "gateway");
                 if (form == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    form = new Form();
+                    form.setMethod(MethodType.GET);
+                    form.setAction(br.getURL());
                 }
                 final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
-                form.put("response", recaptchaV2Response);
+                form.put("t", recaptchaV2Response);
                 br.submitForm(form);
             }
             final String finallink = br.getRedirectLocation();
