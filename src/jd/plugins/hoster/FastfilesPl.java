@@ -219,7 +219,7 @@ public class FastfilesPl extends PluginForHost {
         }
     }
 
-    @SuppressWarnings({ "deprecation", "unchecked" })
+    @SuppressWarnings({ "unchecked" })
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         this.setConstants(account, null);
@@ -243,16 +243,21 @@ public class FastfilesPl extends PluginForHost {
             account.setType(AccountType.FREE);
             ai.setStatus("Registered (free) account");
         }
+        boolean trafficleft_set = false;
         if (!StringUtils.isEmpty(trafficleft) && trafficleft.matches("\\d+")) {
+            trafficleft_set = true;
             ai.setTrafficLeft(trafficleft);
         }
         if (!StringUtils.isEmpty(traffic_max) && traffic_max.matches("\\d+")) {
+            if (!trafficleft_set) {
+                /* Set traffic_max also as traffic_left */
+                ai.setTrafficLeft(traffic_max);
+            }
             ai.setTrafficMax(traffic_max);
         }
         this.getAPISafe(API_BASE + "?request=hostlist&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
         final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         final ArrayList<String> supportedhostslist = (ArrayList<String>) entries.get("supported_hosts");
-        account.setValid(true);
         account.setConcurrentUsePossible(true);
         account.setMaxSimultanDownloads(defaultMAXDOWNLOADS);
         ai.setMultiHostSupport(this, supportedhostslist);

@@ -22,6 +22,14 @@ import java.util.LinkedHashMap;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.gui.swing.components.linkbutton.JLink;
@@ -41,14 +49,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zevera.com" }, urls = { "https?://[^/]+\\.zeveracdn\\.com/dl/.+|zeveradecrypted://.+" })
 public class ZeveraCom extends UseNet {
@@ -350,6 +350,10 @@ public class ZeveraCom extends UseNet {
         final String status = PluginJSonUtils.getJson(br, "status");
         if (!"success".equalsIgnoreCase(status)) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "API-Key / PIN invalid! Make sure you entered your current API-Key / PIN which can be found here: " + account.getHoster() + "/account", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        if (account.getHoster().equalsIgnoreCase("premiumize.me")) {
+            /* 2019-02-10: Workaround for their Usenet support. Their Usenet login-servers only accept APIKEY:APIKEY. */
+            account.setUser(account.getPass());
         }
     }
 

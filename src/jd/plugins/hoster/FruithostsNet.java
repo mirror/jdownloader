@@ -352,7 +352,7 @@ public class FruithostsNet extends antiDDoSForHost {
                     handleErrorsAPI();
                 } catch (final PluginException e) {
                     /* Typically error 403 */
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Wrong login!\r\nMake sure that you are using your API/FTP login credentials which can be found here:\r\nfruithosts.net/account#usersettings", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {

@@ -144,7 +144,7 @@ public class Publish2Me extends K2SApi {
         correctDownloadLink(link);
         this.setBrowserExclusive();
         super.prepBrowserForWebsite(this.br);
-        getPage(link.getDownloadURL());
+        getPage(link.getPluginPatternMatcher());
         if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

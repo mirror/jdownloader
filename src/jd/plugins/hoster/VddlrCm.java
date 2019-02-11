@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -32,9 +31,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDHexUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "viddler.com" }, urls = { "http://(www\\.)?viddler\\.com/(explore/\\w+/videos/\\d+|(player|simple)/\\w+(/)?(.+)?)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "viddler.com" }, urls = { "http://(www\\.)?viddler\\.com/(explore/\\w+/videos/\\d+|(player|simple|v)/\\w+(/)?(.+)?)" })
 public class VddlrCm extends PluginForHost {
-
     private String              DLURL = null;
     private final static String KEY1  = "a2x1Y3p5aw==";
     private final static String KEY2  = "NDYzNzc5MDRjNmM4";
@@ -142,7 +140,7 @@ public class VddlrCm extends PluginForHost {
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(405);
         br.getPage(dllink);
-        if (!new Regex(dllink, "/(player|simple)/").matches()) {
+        if (!new Regex(dllink, "/(player|simple|v)/").matches()) {
             if (br.containsHTML("Video not found") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -157,12 +155,11 @@ public class VddlrCm extends PluginForHost {
                 value = br.getRegex("viewToken=(.*?)\\&").getMatch(0);
             }
         } else {
-            key = new Regex(dllink, "(player|simple)/(\\w+)/?").getMatch(1);
+            key = new Regex(dllink, "(player|simple|v)/(\\w+)/?").getMatch(1);
         }
         if (key == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-
         final String postdata = getAMFRequest(key, value);
         final String url = "http://www.viddler.com/amfgateway.action";
         br.getHeaders().put("Content-Type", "application/x-amf");
@@ -185,11 +182,16 @@ public class VddlrCm extends PluginForHost {
             filename = new Regex(a, "title[#]+(.*?)[#]+").getMatch(0);
         }
         final String path = new Regex(a, "path[#]+\\??(.*?)[#]+").getMatch(0);
+        if (path == null) {
+            /* 2019-02-10: Probably offline */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         DLURL = getLink(path);
         if (DLURL == null || !br.containsHTML("onResult") || filename == null) {
             if (new Regex(a, "errorCode#@\\d+").matches() || br.getHttpConnection().getCompleteContentLength() <= 100) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            /* Either offline or plugin broken */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setName(filename + ".flv");
@@ -207,5 +209,4 @@ public class VddlrCm extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
-
 }
