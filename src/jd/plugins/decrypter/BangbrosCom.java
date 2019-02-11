@@ -60,7 +60,7 @@ public class BangbrosCom extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        final String parameter = param.toString().replace("bangbrothers.com", "bangbros.com");
         final String fid;
         final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
         final boolean is_logged_in = getUserLogin(false);
@@ -77,7 +77,7 @@ public class BangbrosCom extends PluginForDecrypt {
         }
         String title = null;
         if (parameter.matches(type_userinput_video_couldbe_trailer)) {
-            final String url_name = new Regex(parameter, "([a-z0-9\\-]+)").getMatch(0);
+            final String url_name = new Regex(parameter, "([a-z0-9\\-]+$)").getMatch(0);
             fid = new Regex(parameter, "/video(\\d+)").getMatch(0);
             if (!is_logged_in) {
                 /* Trailer / MOCH download */
