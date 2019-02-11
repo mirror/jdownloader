@@ -179,6 +179,7 @@ public class IndiShareMe extends antiDDoSForHost {
             link.setMD5Hash(fileInfo[2].trim());
         }
         fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
+        fileInfo[0] = Encoding.htmlDecode(fileInfo[0]);
         link.setName(fileInfo[0].trim());
         if (fileInfo[1] == null) {
             logger.info("Filesize not available, trying altAvailablecheck");
@@ -222,7 +223,8 @@ public class IndiShareMe extends antiDDoSForHost {
         if (fileInfo[1] == null) {
             fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
             if (fileInfo[1] == null) {
-                fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
+                // fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
+                fileInfo[1] = new Regex(correctedBR, "Size : <[^<>]+>([^<>]+)<").getMatch(0);
                 // next two are details from sharing box
                 if (fileInfo[1] == null) {
                     fileInfo[1] = new Regex(correctedBR, sharebox0).getMatch(1);
