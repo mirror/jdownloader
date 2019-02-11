@@ -1894,7 +1894,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             /* premium users the Mb value isn't provided for some reason... */
             ai.setUsedSpace(space[0] + "Mb");
         }
-        String availabletraffic = getTrafficLeft();
+        String availabletraffic = regExTrafficLeft();
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
             availabletraffic.trim();
             /* need to set 0 traffic left, as getSize returns positive result, even when negative value supplied. */
@@ -2017,12 +2017,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return loginform;
     }
 
-    public String getTrafficLeft() {
-        return getTrafficLeft(this.correctedBR);
+    public String regExTrafficLeft() {
+        return regExTrafficLeft(this.correctedBR);
     }
 
     /** Tries to find available traffic for RegEx. */
-    public String getTrafficLeft(final String source) {
+    public String regExTrafficLeft(final String source) {
         /* Traffic can also be negative! */
         String availabletraffic = new Regex(source, "Traffic available[^<>]*?:?</TD><TD><b>([^<>\"']+)</b>").getMatch(0);
         if (availabletraffic == null) {

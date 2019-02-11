@@ -171,8 +171,8 @@ public class TakefileLink extends XFileSharingProBasic {
     }
 
     @Override
-    public String getTrafficLeft() {
-        String trafficleft = super.getTrafficLeft();
+    public String regExTrafficLeft() {
+        String trafficleft = super.regExTrafficLeft();
         if (StringUtils.isEmpty(trafficleft)) {
             trafficleft = new Regex(correctedBR, "Traffic available today</TD></TR>\\s*?</thead>\\s*?<TR><TD><b>([^<>\"]+)</b><").getMatch(0);
         }
