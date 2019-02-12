@@ -28,12 +28,14 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 import jd.plugins.hoster.WduploadCom;
 import jd.utils.JDUtilities;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wdupload.com" }, urls = { "https?://(?:www\\.)?wdupload\\.com/folder/.+" })
-public class WduploadComFolder extends PluginForDecrypt {
+public class WduploadComFolder extends antiDDoSForDecrypt {
     public WduploadComFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -44,9 +46,14 @@ public class WduploadComFolder extends PluginForDecrypt {
         final Account aa = AccountController.getInstance().getValidAccount(JDUtilities.getPluginForHost(this.getHost()));
         if (aa != null) {
             logger.info("Account available, logging in ...");
-            WduploadCom.login(this.br, null, false);
+            final PluginForHost plugin = JDUtilities.getNewPluginForHostInstance(getHost());
+            if (plugin != null) {
+                plugin.setBrowser(br);
+                plugin.setLogger(getLogger());
+                ((WduploadCom) plugin).login(br, null, false);
+            }
         }
-        br.getPage(parameter);
+        getPage(parameter);
         /* Keep this errorhandling although, if an account is available, we should be logged in at this stage! */
         if (br.containsHTML(">This link only for premium")) {
             final DownloadLink link = createOfflinelink(parameter);
