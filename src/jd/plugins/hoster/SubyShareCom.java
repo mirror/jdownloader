@@ -83,7 +83,6 @@ public class SubyShareCom extends PluginForHost {
     private static AtomicInteger           totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
     /* don't touch the following! */
     private static AtomicInteger           maxFree                      = new AtomicInteger(1);
-    private static Object                  LOCK                         = new Object();
     private String                         fuid                         = null;
 
     /* DEV NOTES */
@@ -948,12 +947,7 @@ public class SubyShareCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (final PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account, true);
         if (!br.getURL().contains("/?op=my_account")) {
             getPage("/?op=my_account");
         }
@@ -977,11 +971,17 @@ public class SubyShareCom extends PluginForHost {
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
             availabletraffic = availabletraffic.trim();
             /* need to set 0 traffic left, as getSize returns positive result, even when negative value supplied. */
+            long trafficLeft = 0;
             if (!availabletraffic.startsWith("-")) {
-                ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
+                trafficLeft = (SizeFormatter.getSize(availabletraffic));
             } else {
-                ai.setTrafficLeft(0);
+                trafficLeft = 0;
             }
+            final String usableBandwidth = br.getRegex("Usable Bandwidth\\s*<span.*?>\\s*([0-9\\.]+\\s*[TGMKB]+)\\s*/\\s*[0-9\\.]+\\s*[TGMKB]+\\s*<").getMatch(0);
+            if (usableBandwidth != null) {
+                trafficLeft += Math.max(0, SizeFormatter.getSize(usableBandwidth));
+            }
+            ai.setTrafficLeft(trafficLeft);
         } else {
             ai.setUnlimitedTraffic();
         }
@@ -1013,7 +1013,7 @@ public class SubyShareCom extends PluginForHost {
     }
 
     private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             final boolean ifr = br.isFollowingRedirects();
             try {
                 br.setCookiesExclusive(true);
@@ -1098,7 +1098,9 @@ public class SubyShareCom extends PluginForHost {
                 }
                 account.saveCookies(br.getCookies(br.getURL()), "");
             } catch (final PluginException e) {
-                account.clearCookies("");
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             } finally {
                 br.setFollowRedirects(ifr);

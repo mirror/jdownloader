@@ -50,21 +50,21 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
     private static final String[]     domains                    = { "arabtvlink.com", "medche.com", "go-urls.tk", "btc4link.com", "topklink.com", "shorts-link.com", "rawabbet.com", "easy4earn.com", "linkat4all.com", "linkdrop.net", "shrtz.me", "ctkings.com", "linksad.net", "paylink.pro", "123link.pro", "donia2link.com", "cutpaid.com", "shortadz.org", "itiurl.co", "shortli.net", "cutearn.ca", "icutit.ca", "cut-one.com", "cll.press", "link-zero.com", "linktor.io", "cash4url.com", "cashat.net", "shortit.ca", "123short.com", "skip-url.me", "msms4.com", "empireshort.com", "loadurl.com", "shortmony.me", "geistlink.com", "cutt.us.com", "arabdollar.com", "shortenow.com", "kingurl.net", "best3link.com", "solo-link.com", "best5link.com", "lkky.co", "win4cut.com", "coinlink.co", "adlink.guru", "short.es", "tmearn.com", "ibly.co", "urle.co", "mitly.us", "zlshorte.net", "igram.im", "gram.im",
-        "bit-url.com", "adbilty.me", "linclik.com", "oke.io", "vivads.net", "pnd.tl", "met.bz", "urlcloud.us",
-        /** safelinku.com domains */
-        "safelinku.com", "idsly.bid", "idsly.net",
-        /** clicksfly.com domains */
-        "clicksfly.com", "gifsis.com", "blogginggyanbox.com", "buyitonline.store", "clk.ink", "counsellingresult2016.in", "yourtechguider.com", "1921681254.tech",
-        /** eglink.info domains */
-        "eglink.info", "egyptiangy.net", "egypt-mix.com",
-        /** cut-urls.com domains */
-        "cut-urls.com", "curs.io", "cuon.io", "cuus.io",
-        /** wicr.me domains */
-        "wicr.me", "wi.cr",
-        /** cutwin.com domains */
-        "cutwin.com", "cutwin.us",
-        /** adshort.co domains */
-        "adshort.co", "adsrt.com", "adsrt.me", "adshort.me", "adshort.im" };
+            "bit-url.com", "adbilty.me", "linclik.com", "oke.io", "vivads.net", "pnd.tl", "met.bz", "urlcloud.us",
+            /** safelinku.com domains */
+            "safelinku.com", "idsly.bid", "idsly.net",
+            /** clicksfly.com domains */
+            "clicksfly.com", "gifsis.com", "blogginggyanbox.com", "buyitonline.store", "clk.ink", "counsellingresult2016.in", "yourtechguider.com", "1921681254.tech", "iitjeemainguide.in",
+            /** eglink.info domains */
+            "eglink.info", "egyptiangy.net", "egypt-mix.com",
+            /** cut-urls.com domains */
+            "cut-urls.com", "curs.io", "cuon.io", "cuus.io",
+            /** wicr.me domains */
+            "wicr.me", "wi.cr",
+            /** cutwin.com domains */
+            "cutwin.com", "cutwin.us",
+            /** adshort.co domains */
+            "adshort.co", "adsrt.com", "adsrt.me", "adshort.me", "adshort.im" };
     /** List of services for which waittime is skippable. */
     private static final List<String> domains_waittime_skippable = Arrays.asList(new String[] {});
     // /** List of services for which captcha is skippable or not required. */

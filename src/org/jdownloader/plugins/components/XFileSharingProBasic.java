@@ -27,16 +27,6 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -52,6 +42,7 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountRequiredException;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
@@ -60,6 +51,16 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.hoster.RTMPDownload;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 public class XFileSharingProBasic extends antiDDoSForHost {
     public XFileSharingProBasic(PluginWrapper wrapper) {
@@ -75,6 +76,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     public String getPremiumLink() {
         return getMainPage() + "/premium.html";
     }
+
     // private static String[] domains = new String[] { "xvideosharing.com" };
     //
     // public static String[] getAnnotationNames() {
@@ -110,7 +112,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     // }
     // return pattern.toString();
     // }
-
     /* Used variables */
     public String                correctedBR                  = "";
     protected String             fuid                         = null;
@@ -120,7 +121,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
     /* don't touch the following! */
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
-    private static Object        LOCK                         = new Object();
 
     /**
      * DEV NOTES XfileSharingProBasic Version 4.0.0.3<br />
@@ -316,8 +316,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * See also function getFilesizeViaAvailablecheckAlt! <br />
      * <b> Enabling this will eventually lead to at least one additional website-request! </b>
      *
-     * @return true: Implies that website supports getFilesizeViaAvailablecheckAlt call as an alternative source for filesize-parsing.
-     *         <br />
+     * @return true: Implies that website supports getFilesizeViaAvailablecheckAlt call as an alternative source for filesize-parsing. <br />
      *         false: Implies that website does NOT support getFilesizeViaAvailablecheckAlt. <br />
      *         default: true
      */
@@ -998,7 +997,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
         /* 6, do we have an imagehost? */
         if (dllink == null && this.isImagehoster()) {
-            checkErrors(link, false);
+            checkErrors(link, account, false);
             Form imghost_next_form = null;
             do {
                 imghost_next_form = br.getFormbyKey("next");
@@ -1006,7 +1005,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     imghost_next_form.remove("method_premium");
                     /* end of backward compatibility */
                     submitForm(imghost_next_form);
-                    checkErrors(link, false);
+                    checkErrors(link, account, false);
                     dllink = getDllink();
                     /* For imagehosts, filenames are often not given until we can actually see/download the image! */
                     final String image_filename = new Regex(correctedBR, "class=\"pic\" alt=\"([^<>\"]*?)\"").getMatch(0);
@@ -1022,7 +1021,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
              * Check errors here because if we don't and a link is premiumonly, download1 Form will be present, plugin will send it and most
              * likely end up with error "Fatal countdown error (countdown skipped)"
              */
-            checkErrors(link, false);
+            checkErrors(link, account, false);
             final Form download1 = br.getFormByInputFieldKeyValue("op", "download1");
             if (download1 != null) {
                 download1.remove("method_premium");
@@ -1036,7 +1035,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 }
                 /* end of backward compatibility */
                 submitForm(download1);
-                checkErrors(link, false);
+                checkErrors(link, account, false);
                 dllink = getDllink();
             }
         }
@@ -1058,7 +1057,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             Form dlForm = findFormF1();
             if (dlForm == null) {
                 /* Last chance - maybe our errorhandling kicks in here. */
-                checkErrors(link, false);
+                checkErrors(link, account, false);
                 /* Okay we finally have no idea what happened ... */
                 handlePluginBroken(link, "dlform_f1_null", 3);
             }
@@ -1084,7 +1083,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 }
                 submitForm(dlForm);
                 logger.info("Submitted DLForm");
-                checkErrors(link, true);
+                checkErrors(link, account, true);
                 dllink = getDllink();
                 if (dllink == null && (!br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"") || i == repeat)) {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
@@ -1730,7 +1729,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * Checks for (-& handles) all kinds of errors e.g. wrong captcha, wrong downloadpassword, waittimes and server error-responsecodes such
      * as 403, 404 and 503.
      */
-    public void checkErrors(final DownloadLink theLink, final boolean checkAll) throws NumberFormatException, PluginException {
+    public void checkErrors(final DownloadLink theLink, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
         if (checkAll) {
             if (isPasswordProtected() && correctedBR.contains("Wrong password")) {
                 final String userEnteredPassword = theLink.getDownloadPassword();
@@ -1763,7 +1762,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             String tmpdays = new Regex(wait, "\\s+(\\d+)\\s+days?").getMatch(0);
             if (tmphrs == null && tmpmin == null && tmpsec == null && tmpdays == null) {
                 logger.info("Waittime regexes seem to be broken");
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
+                if (account != null) {
+                    throw new AccountUnavailableException("Download limit reached", 60 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
+                }
             } else {
                 int minutes = 0, seconds = 0, hours = 0, days = 0;
                 if (tmphrs != null) {
@@ -1784,7 +1787,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 if (waittime < 180000) {
                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait until new downloads can be started", waittime);
                 }
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
+                if (account != null) {
+                    throw new AccountUnavailableException("Download limit reached", waittime);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
+                }
             }
         }
         if (correctedBR.contains("You're using all download slots for IP")) {
@@ -1877,11 +1884,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (final PluginException e) {
-            throw e;
-        }
+        login(account, true);
         /* Only access URL if we haven't accessed it before already. */
         if (br.getURL() == null || !br.getURL().contains("/?op=my_account")) {
             getPage(this.getMainPage() + "/?op=my_account");
@@ -1898,11 +1901,17 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
             availabletraffic.trim();
             /* need to set 0 traffic left, as getSize returns positive result, even when negative value supplied. */
+            long trafficLeft = 0;
             if (!availabletraffic.startsWith("-")) {
-                ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
+                trafficLeft = (SizeFormatter.getSize(availabletraffic));
             } else {
-                ai.setTrafficLeft(0);
+                trafficLeft = 0;
             }
+            final String usableBandwidth = br.getRegex("Usable Bandwidth\\s*<span.*?>\\s*([0-9\\.]+\\s*[TGMKB]+)\\s*/\\s*[0-9\\.]+\\s*[TGMKB]+\\s*<").getMatch(0);
+            if (usableBandwidth != null) {
+                trafficLeft += Math.max(0, SizeFormatter.getSize(usableBandwidth));
+            }
+            ai.setTrafficLeft(trafficLeft);
         } else {
             ai.setUnlimitedTraffic();
         }
@@ -2041,7 +2050,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     public void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 /* Load cookies */
                 br.setCookiesExclusive(true);
@@ -2105,7 +2114,9 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 }
                 account.saveCookies(br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
-                account.clearCookies("");
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
@@ -2131,12 +2142,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     if (dlform != null && isPasswordProtected()) {
                         handlePassword(dlform, link);
                     }
-                    checkErrors(link, true);
+                    checkErrors(link, account, true);
                     if (dlform == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     submitForm(dlform);
-                    checkErrors(link, true);
+                    checkErrors(link, account, true);
                     dllink = getDllink();
                 }
             }

@@ -15,6 +15,10 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -47,7 +51,7 @@ public class PorntrexCom extends PluginForHost {
     private static final int      free_maxdownloads = -1;
     private String                dllink            = null;
     private boolean               server_issues     = false;
-    private static final String[] FORMATS           = new String[] { "Best available", "720p", "480p", "360p" };
+    private static final String[] FORMATS           = new String[] { "Best available", "2160p", "1440p", "1080p", "720p", "480p", "360p" };
 
     @Override
     public String getAGBLink() {
@@ -72,39 +76,26 @@ public class PorntrexCom extends PluginForHost {
         final SubConfiguration cfg = getPluginConfig();
         final int Preferred_format = cfg.getIntegerProperty("Preferred_format", 0);
         logger.info("Debug info: Preferred_format: " + Preferred_format);
-        /* Preferred_format 0 = best, 1 = 720p, 2 = 480p, 3 = 360p */
-        String pf = "";
-        switch (Preferred_format) {
-        case 0:
-            pf = "best";
-            break;
-        case 1:
-            pf = "720p";
-            break;
-        case 2:
-            pf = "480p";
-            break;
-        case 3:
-            pf = "360p";
-            break;
-        default:
-            pf = "best";
-        }
-        logger.info("Debug info: Preferred_format: " + pf);
-        String vqs[] = { "720p", "480p", "360p" };
-        for (final String vq : vqs) {
-            dllink = br.getRegex("video[^']+url\\d?:\\s*'(http[^']+)'\\,[^\\,]+" + vq).getMatch(0);
-            logger.info("Debug info: Preferred_format: " + pf + ", checking format: " + vq + " ,dllink: " + dllink);
-            if (dllink != null && pf == "best" || pf == "720p" && vq.equals("720p") || pf == "480p" && vq.equals("480p") || pf == "360p" && vq.equals("360p")) {
-                logger.info("Debug info: checking dllink: " + dllink);
+        final List<String> qualities = Arrays.asList(new String[] { "2160p", "1440p", "1080p", "720p", "480p", "360p" });
+        final List<String> foundQualities = new ArrayList<String>();
+        for (final String quality : qualities) {
+            dllink = br.getRegex("video[^']+url\\d?:\\s*'(https?[^']+)'\\,[^\\,]+" + quality).getMatch(0);
+            logger.info("Debug info: Preferred_format: " + Preferred_format + ", checking format: " + quality + " ,dllink: " + dllink);
+            if (dllink != null) {
                 checkDllink(link);
                 if (dllink == null) {
                     continue;
-                } else {
-                    logger.info("Debug info: Preferred_format " + pf + ", found: " + vq);
+                }
+                foundQualities.add(dllink);
+                if (Preferred_format == 0) {
+                    break;
+                } else if (Preferred_format - 1 == qualities.indexOf(quality)) {
                     break;
                 }
             }
+        }
+        if (dllink == null && foundQualities.size() > 0) {
+            dllink = foundQualities.get(0);
         }
         if (filename == null || dllink == null) {
             logger.info("filename: " + filename + ", dllink: " + dllink);
