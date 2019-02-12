@@ -16,15 +16,12 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 import jd.PluginWrapper;
 import jd.config.Property;
-import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
@@ -110,67 +107,20 @@ public class SuperLoadCz extends antiDDoSForHost {
         return false;
     }
 
-    public boolean checkLinks(final DownloadLink[] urls) {
-        Browser br = prepBrowser(new Browser());
-        if (urls == null || urls.length == 0) {
-            return false;
-        }
-        try {
-            List<Account> accs = AccountController.getInstance().getValidAccounts(this.getHost());
-            if (accs == null || accs.size() == 0) {
-                logger.info("No account present, Please add a premium" + mName + "account.");
-                for (DownloadLink dl : urls) {
-                    /* no check possible */
-                    dl.setAvailableStatus(AvailableStatus.UNCHECKABLE);
-                }
-                return false;
-            }
-            br.setFollowRedirects(true);
-            for (DownloadLink dl : urls) {
-                URLConnectionAdapter con = null;
-                try {
-                    con = br.openGetConnection(dl.getDownloadURL());
-                    if (con.isContentDisposition()) {
-                        dl.setFinalFileName(getFileNameFromHeader(con));
-                        dl.setDownloadSize(con.getLongContentLength());
-                        dl.setAvailable(true);
-                    } else {
-                        dl.setAvailable(false);
-                    }
-                } finally {
-                    try {
-                        /* make sure we close connection */
-                        con.disconnect();
-                    } catch (final Throwable e) {
-                    }
-                }
-            }
-        } catch (Exception e) {
-            return false;
-        }
-        return true;
-    }
-
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws PluginException {
-        checkLinks(new DownloadLink[] { link });
-        if (!link.isAvailable()) {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        br.getPage(link.getPluginPatternMatcher());
+        br.followRedirect();
+        final String fileName[] = br.getRegex("class=\"files-item file\"\\s*>\\s*<h.*?>\\s*(.*?)\\s*<span>\\s*(.*?)\\s*<").getRow(0);
+        if (fileName == null || fileName.length == 0) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        return getAvailableStatus(link);
-    }
-
-    private AvailableStatus getAvailableStatus(final DownloadLink link) {
-        try {
-            final Field field = link.getClass().getDeclaredField("availableStatus");
-            field.setAccessible(true);
-            Object ret = field.get(link);
-            if (ret != null && ret instanceof AvailableStatus) {
-                return (AvailableStatus) ret;
-            }
-        } catch (final Throwable e) {
+        link.setName(fileName[0] + fileName[1]);
+        final String fileSize = br.getRegex("class=\"file-info-item-value file-info-item-value-high\"\\s*>\\s*([0-9\\.]+\\s*[kbmtg]+)\\s*<").getMatch(0);
+        if (fileSize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(fileSize));
         }
-        return AvailableStatus.UNCHECKED;
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -198,10 +148,13 @@ public class SuperLoadCz extends antiDDoSForHost {
         showMessage(downloadLink, "Task 1: Check URL validity!");
         requestFileInformation(downloadLink);
         showMessage(downloadLink, "Task 2: Download begins!");
-        handleDL(account, downloadLink, downloadLink.getDownloadURL());
+        handleMultiHost(downloadLink, account);
     }
 
     private void handleDL(final Account account, final DownloadLink link, final String dllink) throws Exception {
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         boolean updateCredits = true;
         try {
             /* we want to follow redirects in final stage */
@@ -240,13 +193,13 @@ public class SuperLoadCz extends antiDDoSForHost {
         mhm.runCheck(account, link);
         prepBrowser(br);
         final String pass = link.getStringProperty("pass", null);
-        String dllink = checkDirectLink(link, "superloadczdirectlink");
-        if (dllink == null) {
+        String downloadURL = checkDirectLink(link, "superloadczdirectlink");
+        if (downloadURL == null) {
             showMessage(link, "Task 1: Generating Link");
             /* request Download */
             postPageSafe(account, mAPI + "/download-url", "url=" + Encoding.urlEncode(link.getDownloadURL()) + (pass != null ? "&password=" + Encoding.urlEncode(pass) : "") + "&token=");
-            dllink = PluginJSonUtils.getJsonValue(br, "link");
-            if (dllink == null) {
+            downloadURL = PluginJSonUtils.getJsonValue(br, "link");
+            if (downloadURL == null) {
                 final String error = PluginJSonUtils.getJsonValue(br, "error");
                 if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -276,7 +229,7 @@ public class SuperLoadCz extends antiDDoSForHost {
                     mhm.putError(account, link, 60 * 60 * 1000l, "Invalid Link");
                 } else if (StringUtils.containsIgnoreCase(error, "Unable to download the file")) {
                     handleErrorRetries(null, link, "Unable to download file", 10, 10 * 60 * 1000l);
-                } else if (dllink == null) {
+                } else if (downloadURL == null) {
                     // this will allow statserv to pick up these errors, and we can improve the plugin.
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unhandled Error Type");
                 }
@@ -284,7 +237,7 @@ public class SuperLoadCz extends antiDDoSForHost {
             showMessage(link, "Task 2: Download begins!");
         }
         // might need a sleep here hoster seems to have troubles with new links.
-        handleDL(account, link, dllink);
+        handleDL(account, link, downloadURL);
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {

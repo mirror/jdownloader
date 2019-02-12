@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mp3-red.ru" }, urls = { "https?://(?:www\\.)?(red-?mp3|mp3-?red)\\.(su|co|me|cc|ru)/album/\\d+/[a-z0-9\\-]+\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mp3-red.ru" }, urls = { "https?://(?:www\\.)?(red-?mp3|mp3-?red)\\.(cc|co|su|ru|me)/album/\\d+/[a-z0-9\\-]+\\.html" })
 public class Redmp3Su extends PluginForDecrypt {
     public Redmp3Su(PluginWrapper wrapper) {
         super(wrapper);

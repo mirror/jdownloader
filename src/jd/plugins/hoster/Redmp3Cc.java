@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "redmp3.cc" }, urls = { "https?://(?:www\\.)?(?:red-?mp3|mp3-?red)\\.(?:cc|su|ru)/\\d+/[a-z0-9\\-]+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "redmp3.cc" }, urls = { "https?://(?:www\\.)?(?:red-?mp3|mp3-?red)\\.(?:cc|co|su|ru|me)/\\d+/[a-z0-9\\-]+\\.html" })
 public class Redmp3Cc extends PluginForHost {
     public Redmp3Cc(PluginWrapper wrapper) {
         super(wrapper);

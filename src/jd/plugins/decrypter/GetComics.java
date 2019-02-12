@@ -17,8 +17,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.Regex;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Request;
@@ -29,7 +27,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 39909 $", interfaceVersion = 3, names = { "getcomics.info" }, urls = { "https://getcomics\\.info/[A-Za-z0-9_\\-]+/[A-Za-z0-9_\\-]+" })
+import org.appwork.utils.Regex;
+
+@DecrypterPlugin(revision = "$Revision: 39909 $", interfaceVersion = 3, names = { "getcomics.info" }, urls = { "https?://getcomics\\.info/(?!share/)[A-Za-z0-9_\\-]+/[A-Za-z0-9_\\-]+" })
 public class GetComics extends PluginForDecrypt {
     public GetComics(PluginWrapper wrapper) {
         super(wrapper);
