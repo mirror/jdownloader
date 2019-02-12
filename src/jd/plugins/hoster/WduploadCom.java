@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.Locale;
 
 import jd.PluginWrapper;
@@ -34,7 +33,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.StringUtils;
@@ -42,9 +40,10 @@ import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wdupload.com" }, urls = { "https?://(?:www\\.)?wdupload\\.com/file/[A-Za-z0-9\\-_]+(/.+)?" })
-public class WduploadCom extends PluginForHost {
+public class WduploadCom extends antiDDoSForHost {
     public WduploadCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.wdupload.com/premium");
@@ -77,9 +76,9 @@ public class WduploadCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
+        getPage(link.getDownloadURL());
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -126,7 +125,7 @@ public class WduploadCom extends PluginForHost {
             /* 2018-10-18: Captcha is skippable */
             final boolean skipCaptcha = true;
             if (!skipCaptcha) {
-                br.getPage("/api/" + userid + "/ddelay?userid=" + userid);
+                getPage("/api/" + userid + "/ddelay?userid=" + userid);
                 /* Usually 45 seconds */
                 final String waittimeStr = PluginJSonUtils.getJson(this.br, "");
                 if (StringUtils.isEmpty(waittimeStr)) {
@@ -139,7 +138,7 @@ public class WduploadCom extends PluginForHost {
                 if (timePassed < waittime) {
                     this.sleep(waittime - timePassed, downloadLink);
                 }
-                br.postPage("/captcha/php/checkGoogleCaptcha.php", "response=" + Encoding.urlEncode(recaptchaV2Response));
+                postPage(br, "/captcha/php/checkGoogleCaptcha.php", "response=" + Encoding.urlEncode(recaptchaV2Response));
                 if (!br.toString().equals("1")) {
                     /* Rare case */
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
@@ -195,10 +194,8 @@ public class WduploadCom extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    public static Object LOCK = new Object();
-
-    public static void login(final Browser br, final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+    public void login(final Browser br, final Account account, final boolean force) throws Exception {
+        synchronized (account) {
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
@@ -207,13 +204,14 @@ public class WduploadCom extends PluginForHost {
                     br.setCookies(account.getHoster(), cookies);
                     return;
                 }
+                getPage("https://www." + getHost());
                 final boolean use_static_access_token = false;
                 final String access_token;
                 if (use_static_access_token) {
                     /* 2018-10-19 */
                     access_token = "br68ufmo5ej45ue1q10w68781069v666l2oh1j2ijt94";
                 } else {
-                    br.getPage("https://www." + account.getHoster() + "/java/mycloud.js");
+                    getPage("https://www." + account.getHoster() + "/java/mycloud.js");
                     access_token = br.getRegex("app:\\s*?\\'([^<>\"\\']+)\\'").getMatch(0);
                 }
                 if (StringUtils.isEmpty(access_token)) {
@@ -221,7 +219,7 @@ public class WduploadCom extends PluginForHost {
                 }
                 br.getHeaders().put("Origin", "https://www." + account.getHoster());
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.postPage("https://www." + account.getHoster() + "/api/0/signmein?useraccess=&access_token=" + access_token, "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&keep=1");
+                postPage(br, "https://www." + account.getHoster() + "/api/0/signmein?useraccess=&access_token=" + access_token, "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&keep=1");
                 final String result = PluginJSonUtils.getJson(br, "result");
                 String userdata = PluginJSonUtils.getJson(br, "doz");
                 if (!"ok".equals(result) || StringUtils.isEmpty(userdata)) {
@@ -231,7 +229,9 @@ public class WduploadCom extends PluginForHost {
                 br.setCookie(br.getHost(), "userdata", userdata);
                 account.saveCookies(br.getCookies(account.getHoster()), "");
             } catch (final PluginException e) {
-                account.clearCookies("");
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
@@ -241,14 +241,9 @@ public class WduploadCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(this.br, account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
-        br.getPage("/me");
-        final String accounttype = br.getRegex("<label>Your Plan</label>\\s*?<span class=\"known_values\"><div [^>]+></div>([^<>]+)</span>").getMatch(0);
+        login(this.br, account, true);
+        getPage("/me");
+        final String accounttype = br.getRegex("<label>Your Plan</label>\\s*?<span class=\"known_values\"><div [^>]+></div>\\s*([^<>]+)\\s*</span>").getMatch(0);
         /* E.g. Lifetime Free Account */
         if (accounttype == null || accounttype.contains("Free")) {
             account.setType(AccountType.FREE);
@@ -292,13 +287,13 @@ public class WduploadCom extends PluginForHost {
         requestFileInformation(link);
         login(this.br, account, false);
         if (account.getType() == AccountType.FREE) {
-            br.getPage(link.getPluginPatternMatcher());
+            getPage(link.getPluginPatternMatcher());
             doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
         } else {
             String dllink = this.checkDirectLink(link, "premium_directlink_2");
             if (dllink == null) {
                 br.setFollowRedirects(false);
-                br.getPage(link.getPluginPatternMatcher());
+                getPage(link.getPluginPatternMatcher());
                 /* First check if user has direct download enabled */
                 dllink = br.getRedirectLocation();
                 /* Direct download disabled? We have to find the final downloadurl. */
