@@ -711,7 +711,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
         try {
             final Browser br = new Browser();
-            this.prepBrowser(br, this.getHost());
+            this.prepBrowser(br, getMainPage());
             br.setCookiesExclusive(true);
             final StringBuilder sb = new StringBuilder();
             final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
@@ -2057,7 +2057,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 final Cookies cookies = account.loadCookies("");
                 boolean loggedInViaCookies = false;
                 if (cookies != null) {
-                    br.setCookies(this.getHost(), cookies);
+                    br.setCookies(getMainPage(), cookies);
                     if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l && !force) {
                         /* We trust these cookies as they're not that old --> Do not check them */
                         return;
@@ -2071,7 +2071,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     logger.info("Successfully logged in via cookies");
                 } else {
                     logger.info("Performing full login");
-                    br.clearCookies(br.getHost());
+                    br.clearCookies(getMainPage());
                     getPage(getLoginURL());
                     if (br.getHttpConnection().getResponseCode() == 404) {
                         /* Required for some XFS setups. */
@@ -2112,7 +2112,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         }
                     }
                 }
-                account.saveCookies(br.getCookies(this.getHost()), "");
+                account.saveCookies(br.getCookies(getMainPage()), "");
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");

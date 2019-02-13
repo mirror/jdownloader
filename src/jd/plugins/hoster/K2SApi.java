@@ -38,6 +38,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -977,13 +978,22 @@ public abstract class K2SApi extends PluginForHost {
                     account.setProperty("PROPERTY_TEMP_DISABLED_TIMEOUT", 31 * 60 * 1000l);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + msg, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 case 73:
-                case 74:
                     // ERROR_NO_ALLOW_ACCESS_FROM_NETWORK = 73;
+                    if (account != null) {
+                        throw new AccountUnavailableException("No allow access from network", 6 * 60 * 60 * 1000l);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_FATAL, msg);
+                    }
+                case 74:
                     // ERROR_UNKNOWN_LOGIN_ERROR = 74;
-                    throw new PluginException(LinkStatus.ERROR_FATAL, msg);
+                    if (account != null) {
+                        throw new AccountInvalidException("Account has been banned");
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_FATAL, msg);
+                    }
                 case 76:
                     // ERROR_ACCOUNT_STOLEN = 76;
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, msg, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new AccountInvalidException(msg);
                 default:
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }

@@ -1255,11 +1255,9 @@ public class FileuploadCc extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (final PluginException e) {
-            account.setValid(false);
-            throw e;
+        login(account, true);
+        if (br.getURL() == null || !br.getURL().contains("/?op=my_account")) {
+            getPage(COOKIE_HOST + "/?op=my_account");
         }
         final String space[] = new Regex(correctedBR, ">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
         if ((space != null && space.length != 0) && (space[0] != null && space[1] != null)) {
@@ -1305,16 +1303,29 @@ public class FileuploadCc extends PluginForHost {
         return ai;
     }
 
-    private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+    public boolean isLoggedinHTML() {
+        return br.containsHTML("op=logout");
+    }
+
+    private void login(final Account account, boolean force) throws Exception {
+        synchronized (account) {
             try {
                 /* Load cookies */
                 this.br.setCookiesExclusive(true);
                 prepBrowser(this.br);
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null && !force) {
-                    this.br.setCookies(this.getHost(), cookies);
-                    return;
+                if (cookies != null) {
+                    br.setCookies(COOKIE_HOST, cookies);
+                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l && !force) {
+                        /* We trust these cookies as they're not that old --> Do not check them */
+                        return;
+                    }
+                    logger.info("Verifying login-cookies");
+                    getPage(COOKIE_HOST + "/");
+                    if (isLoggedinHTML()) {
+                        account.saveCookies(this.br.getCookies(COOKIE_HOST), "");
+                        return;
+                    }
                 }
                 getPage(COOKIE_HOST + "/login.html");
                 final Form loginform = this.br.getFormbyProperty("name", "FL");
@@ -1347,9 +1358,11 @@ public class FileuploadCc extends PluginForHost {
                 } else {
                     account.setType(AccountType.PREMIUM);
                 }
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                account.saveCookies(this.br.getCookies(COOKIE_HOST), "");
             } catch (final PluginException e) {
-                account.clearCookies("");
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
