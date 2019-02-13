@@ -241,7 +241,7 @@ public class SubyShareCom extends PluginForHost {
     @SuppressWarnings("unused")
     public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         if (checkShowFreeDialog(getHost())) {
-            super.showFreeDialog(getHost());
+            showFreeDialog(getHost());
         }
         checkForPremiumonlyNew();
         br.setFollowRedirects(false);
