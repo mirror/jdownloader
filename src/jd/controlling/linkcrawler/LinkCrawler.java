@@ -2377,63 +2377,68 @@ public class LinkCrawler {
             }
             List<LazyCrawlerPlugin> ret = sortedLazyCrawlerPlugins.get();
             if (ret == null) {
-                /* sort cHosts according to their usage */
-                ret = new ArrayList<LazyCrawlerPlugin>(unsortedLazyCrawlerPlugins.size());
-                try {
-                    final List<LazyCrawlerPlugin> allPlugins = new ArrayList<LazyCrawlerPlugin>(unsortedLazyCrawlerPlugins);
-                    final Map<String, Object> pluginMap = new HashMap<String, Object>();
-                    for (final LazyCrawlerPlugin plugin : allPlugins) {
-                        final Object entry = pluginMap.get(plugin.getDisplayName());
-                        if (entry == null) {
-                            pluginMap.put(plugin.getDisplayName(), plugin);
-                        } else if (entry instanceof List) {
-                            ((List<LazyCrawlerPlugin>) entry).add(plugin);
-                        } else {
-                            final ArrayList<LazyCrawlerPlugin> list = new ArrayList<LazyCrawlerPlugin>();
-                            list.add((LazyCrawlerPlugin) entry);
-                            list.add(plugin);
-                            pluginMap.put(plugin.getDisplayName(), list);
-                        }
-                    }
-                    Collections.sort(allPlugins, new Comparator<LazyCrawlerPlugin>() {
-                        public final int compare(final long x, final long y) {
-                            return (x < y) ? 1 : ((x == y) ? 0 : -1);
-                        }
-
-                        public final int compare(final boolean x, final boolean y) {
-                            return (x == y) ? 0 : (x ? 1 : -1);
-                        }
-
-                        @Override
-                        public int compare(LazyCrawlerPlugin o1, LazyCrawlerPlugin o2) {
-                            final int ret = compare(o1.getPluginUsage(), o2.getPluginUsage());
-                            if (ret == 0) {
-                                return compare(o1.hasFeature(FEATURE.GENERIC), o2.hasFeature(FEATURE.GENERIC));
-                            } else {
-                                return ret;
+                synchronized (sortedLazyCrawlerPlugins) {
+                    ret = sortedLazyCrawlerPlugins.get();
+                    if (ret == null) {
+                        /* sort cHosts according to their usage */
+                        ret = new ArrayList<LazyCrawlerPlugin>(unsortedLazyCrawlerPlugins.size());
+                        try {
+                            final List<LazyCrawlerPlugin> allPlugins = new ArrayList<LazyCrawlerPlugin>(unsortedLazyCrawlerPlugins);
+                            final Map<String, Object> pluginMap = new HashMap<String, Object>();
+                            for (final LazyCrawlerPlugin plugin : allPlugins) {
+                                final Object entry = pluginMap.get(plugin.getDisplayName());
+                                if (entry == null) {
+                                    pluginMap.put(plugin.getDisplayName(), plugin);
+                                } else if (entry instanceof List) {
+                                    ((List<LazyCrawlerPlugin>) entry).add(plugin);
+                                } else {
+                                    final ArrayList<LazyCrawlerPlugin> list = new ArrayList<LazyCrawlerPlugin>();
+                                    list.add((LazyCrawlerPlugin) entry);
+                                    list.add(plugin);
+                                    pluginMap.put(plugin.getDisplayName(), list);
+                                }
                             }
-                        }
-                    });
-                    for (final LazyCrawlerPlugin plugin : allPlugins) {
-                        final Object entry = pluginMap.remove(plugin.getDisplayName());
-                        if (entry == null) {
-                            if (pluginMap.isEmpty()) {
-                                break;
-                            } else {
-                                continue;
+                            Collections.sort(allPlugins, new Comparator<LazyCrawlerPlugin>() {
+                                public final int compare(final long x, final long y) {
+                                    return (x < y) ? 1 : ((x == y) ? 0 : -1);
+                                }
+
+                                public final int compare(final boolean x, final boolean y) {
+                                    return (x == y) ? 0 : (x ? 1 : -1);
+                                }
+
+                                @Override
+                                public int compare(LazyCrawlerPlugin o1, LazyCrawlerPlugin o2) {
+                                    final int ret = compare(o1.getPluginUsage(), o2.getPluginUsage());
+                                    if (ret == 0) {
+                                        return compare(o1.hasFeature(FEATURE.GENERIC), o2.hasFeature(FEATURE.GENERIC));
+                                    } else {
+                                        return ret;
+                                    }
+                                }
+                            });
+                            for (final LazyCrawlerPlugin plugin : allPlugins) {
+                                final Object entry = pluginMap.remove(plugin.getDisplayName());
+                                if (entry == null) {
+                                    if (pluginMap.isEmpty()) {
+                                        break;
+                                    } else {
+                                        continue;
+                                    }
+                                } else if (entry instanceof LazyCrawlerPlugin) {
+                                    ret.add((LazyCrawlerPlugin) entry);
+                                } else {
+                                    final List<LazyCrawlerPlugin> list = (List<LazyCrawlerPlugin>) entry;
+                                    sortLazyCrawlerPluginByInterfaceVersion(list);
+                                    ret.addAll(list);
+                                }
                             }
-                        } else if (entry instanceof LazyCrawlerPlugin) {
-                            ret.add((LazyCrawlerPlugin) entry);
-                        } else {
-                            final List<LazyCrawlerPlugin> list = (List<LazyCrawlerPlugin>) entry;
-                            sortLazyCrawlerPluginByInterfaceVersion(list);
-                            ret.addAll(list);
+                        } catch (final Throwable e) {
+                            LogController.CL(true).log(e);
                         }
+                        sortedLazyCrawlerPlugins.compareAndSet(null, ret);
                     }
-                } catch (final Throwable e) {
-                    LogController.CL(true).log(e);
                 }
-                sortedLazyCrawlerPlugins.compareAndSet(null, ret);
             }
             return ret;
         }
@@ -2464,27 +2469,32 @@ public class LinkCrawler {
             /* sort pHosts according to their usage */
             List<LazyHostPlugin> ret = sortedLazyHostPlugins.get();
             if (ret == null) {
-                ret = new ArrayList<LazyHostPlugin>();
-                for (final LazyHostPlugin lazyHostPlugin : HostPluginController.getInstance().list()) {
-                    if (!HTTP_LINKS.equals(lazyHostPlugin.getDisplayName()) && !"ftp".equals(lazyHostPlugin.getDisplayName()) && !DIRECT_HTTP.equals(lazyHostPlugin.getDisplayName())) {
-                        ret.add(lazyHostPlugin);
+                synchronized (sortedLazyHostPlugins) {
+                    ret = sortedLazyHostPlugins.get();
+                    if (ret == null) {
+                        ret = new ArrayList<LazyHostPlugin>();
+                        for (final LazyHostPlugin lazyHostPlugin : HostPluginController.getInstance().list()) {
+                            if (!HTTP_LINKS.equals(lazyHostPlugin.getDisplayName()) && !"ftp".equals(lazyHostPlugin.getDisplayName()) && !DIRECT_HTTP.equals(lazyHostPlugin.getDisplayName())) {
+                                ret.add(lazyHostPlugin);
+                            }
+                        }
+                        try {
+                            Collections.sort(ret, new Comparator<LazyHostPlugin>() {
+                                public final int compare(long x, long y) {
+                                    return (x < y) ? 1 : ((x == y) ? 0 : -1);
+                                }
+
+                                @Override
+                                public final int compare(LazyHostPlugin o1, LazyHostPlugin o2) {
+                                    return compare(o1.getPluginUsage(), o2.getPluginUsage());
+                                }
+                            });
+                        } catch (final Throwable e) {
+                            LogController.CL(true).log(e);
+                        }
+                        sortedLazyHostPlugins.compareAndSet(null, ret);
                     }
                 }
-                try {
-                    Collections.sort(ret, new Comparator<LazyHostPlugin>() {
-                        public final int compare(long x, long y) {
-                            return (x < y) ? 1 : ((x == y) ? 0 : -1);
-                        }
-
-                        @Override
-                        public final int compare(LazyHostPlugin o1, LazyHostPlugin o2) {
-                            return compare(o1.getPluginUsage(), o2.getPluginUsage());
-                        }
-                    });
-                } catch (final Throwable e) {
-                    LogController.CL(true).log(e);
-                }
-                sortedLazyHostPlugins.compareAndSet(null, ret);
             }
             return ret;
         }

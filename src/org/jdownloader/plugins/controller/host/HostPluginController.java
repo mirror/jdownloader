@@ -302,6 +302,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
                                 if (list != null) {
                                     final LazyHostPlugin previousLazyHostPlugin = list.get(lazyHostPlugin.getDisplayName());
                                     if (previousLazyHostPlugin != null) {
+                                        // forward PluginUsage
                                         lazyHostPlugin.setPluginUsage(previousLazyHostPlugin.getPluginUsage());
                                     }
                                 }

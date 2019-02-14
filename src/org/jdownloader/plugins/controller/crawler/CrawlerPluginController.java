@@ -3,7 +3,9 @@ package org.jdownloader.plugins.controller.crawler;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -27,7 +29,6 @@ import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 
 public class CrawlerPluginController extends PluginController<PluginForDecrypt> {
-
     private static final Object                                           INSTANCELOCK      = new Object();
     private static volatile MinTimeWeakReference<CrawlerPluginController> INSTANCE          = null;
     private static final AtomicBoolean                                    CACHE_INVALIDATED = new AtomicBoolean(false);
@@ -177,8 +178,21 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
         }
     }
 
+    protected Map<String, LazyCrawlerPlugin> buildFastAccessCache(final List<LazyCrawlerPlugin> updateCache) {
+        if (updateCache != null && updateCache.size() > 0) {
+            final Map<String, LazyCrawlerPlugin> ret = new HashMap<String, LazyCrawlerPlugin>();
+            for (final LazyCrawlerPlugin cachedPlugin : updateCache) {
+                ret.put(cachedPlugin.getID(), cachedPlugin);
+            }
+            return ret;
+        } else {
+            return null;
+        }
+    }
+
     private List<LazyCrawlerPlugin> update(final LogSource logger, final List<LazyCrawlerPlugin> updateCache, final AtomicLong lastFolderModification) throws Exception {
         final ArrayList<LazyCrawlerPlugin> retList = new ArrayList<LazyCrawlerPlugin>();
+        final Map<String, LazyCrawlerPlugin> fastAccessCache = buildFastAccessCache(updateCache);
         for (final PluginInfo<PluginForDecrypt> pluginInfo : scan(logger, "jd/plugins/decrypter", updateCache, lastFolderModification)) {
             if (pluginInfo.getLazyPlugin() != null) {
                 final LazyCrawlerPlugin plugin = (LazyCrawlerPlugin) pluginInfo.getLazyPlugin();
@@ -222,6 +236,13 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                             LazyCrawlerPlugin lazyCrawlerPlugin = null;
                             try {
                                 lazyCrawlerPlugin = new LazyCrawlerPlugin(pluginInfo.getLazyPluginClass(), new String(patterns[i]), new String(names[i]), pluginInfo.getClazz(), classLoader);
+                                if (fastAccessCache != null) {
+                                    final LazyCrawlerPlugin previousLazyCrawlerPlugin = fastAccessCache.get(lazyCrawlerPlugin.getID());
+                                    if (previousLazyCrawlerPlugin != null) {
+                                        // forward PluginUsage
+                                        lazyCrawlerPlugin.setPluginUsage(previousLazyCrawlerPlugin.getPluginUsage());
+                                    }
+                                }
                                 try {
                                     /* check for stable compatibility */
                                     classLoader.setPluginClass(simpleName);
@@ -364,5 +385,4 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
         }
         return null;
     }
-
 }
