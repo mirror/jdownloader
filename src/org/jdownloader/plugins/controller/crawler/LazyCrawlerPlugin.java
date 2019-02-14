@@ -11,9 +11,7 @@ import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.translate._JDT;
 
 public class LazyCrawlerPlugin extends LazyPlugin<PluginForDecrypt> {
-
     public static enum FEATURE implements LabelInterface, TooltipInterface {
-
         GENERIC {
             @Override
             public String getLabel() {
@@ -37,7 +35,6 @@ public class LazyCrawlerPlugin extends LazyPlugin<PluginForDecrypt> {
             }
             return false;
         }
-
     }
 
     public LazyCrawlerPlugin(LazyPluginClass lazyPluginClass, String pattern, String displayName, Class<PluginForDecrypt> pluginClass, PluginClassLoaderChild classLoaderChild) {
@@ -51,7 +48,6 @@ public class LazyCrawlerPlugin extends LazyPlugin<PluginForDecrypt> {
     private int           maxConcurrentInstances = Integer.MAX_VALUE;
     private boolean       hasConfig              = false;
     private String        configInterface        = null;
-
     private FEATURE[]     features               = null;
 
     public FEATURE[] getFeatures() {
