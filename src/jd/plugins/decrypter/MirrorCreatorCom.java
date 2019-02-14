@@ -91,7 +91,7 @@ public class MirrorCreatorCom extends PluginForDecrypt {
                 }
             }
             /* Error handling */
-            if (br.containsHTML("(>Unfortunately, the link you have clicked is not available|>Error - Link disabled or is invalid|>Links Unavailable as the File Belongs to Suspended Account\\. <|>Links Unavailable\\.<|>Sorry, an error occured)")) {
+            if (br.containsHTML("(>Unfortunately, the link you have clicked is not available|>Error - Link disabled or is invalid|>Links Unavailable as the File Belongs to Suspended Account\\. <|>Links Unavailable|>Sorry, an error occured)")) {
                 logger.info("The following link should be offline: " + param.toString());
                 decryptedLinks.add(createOfflinelink(parameter));
                 return decryptedLinks;
