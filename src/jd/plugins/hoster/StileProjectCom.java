@@ -52,7 +52,7 @@ public class StileProjectCom extends PluginForHost {
         br.getHeaders().put("Referer", "http://www.stileproject.com/");
         br.setReadTimeout(3 * 60 * 1000);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">404 Error Page") || br.containsHTML("video_removed_dmca\\.jpg\"")) {
+        if (br.containsHTML(">404 Error Page") || br.containsHTML("video_removed_dmca\\.jpg\"|error\">We're sorry")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>([^<>\"]*?) \\- StileProject\\.com</title>").getMatch(0);
