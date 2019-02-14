@@ -2382,8 +2382,8 @@ public class LinkCrawler {
                     if (ret == null) {
                         /* sort cHosts according to their usage */
                         ret = new ArrayList<LazyCrawlerPlugin>(unsortedLazyCrawlerPlugins.size());
+                        final List<LazyCrawlerPlugin> allPlugins = new ArrayList<LazyCrawlerPlugin>(unsortedLazyCrawlerPlugins);
                         try {
-                            final List<LazyCrawlerPlugin> allPlugins = new ArrayList<LazyCrawlerPlugin>(unsortedLazyCrawlerPlugins);
                             final Map<String, Object> pluginMap = new HashMap<String, Object>();
                             for (final LazyCrawlerPlugin plugin : allPlugins) {
                                 final Object entry = pluginMap.get(plugin.getDisplayName());
@@ -2435,6 +2435,9 @@ public class LinkCrawler {
                             }
                         } catch (final Throwable e) {
                             LogController.CL(true).log(e);
+                        }
+                        if (ret == null || ret.size() == 0) {
+                            ret = allPlugins;
                         }
                         sortedLazyCrawlerPlugins.compareAndSet(null, ret);
                     }
