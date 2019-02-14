@@ -21,10 +21,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -41,6 +37,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixiv.net" }, urls = { "https?://(?:www\\.)?pixiv\\.net/(?:member_illust\\.php\\?mode=[a-z]+\\&illust_id=\\d+|member(_illust)?\\.php\\?id=\\d+)" })
 public class PixivNet extends PluginForDecrypt {
@@ -144,7 +144,10 @@ public class PixivNet extends PluginForDecrypt {
                     brc.getPage("https://www.pixiv.net/ajax/illust/" + lid + "/ugoira_meta");
                     add(links, brc, "(https?.*?)\"");
                 }
-                if (links.isEmpty() && isAdultImageLoginRequired(lid) && !loggedIn) {
+                if (links.isEmpty() && isOffline(br)) {
+                    decryptedLinks.add(this.createOfflinelink(parameter));
+                    return decryptedLinks;
+                } else if (links.isEmpty() && isAdultImageLoginRequired(lid) && !loggedIn) {
                     logger.info("Adult content: Account required");
                     return decryptedLinks;
                 } else if (links.isEmpty()) {
