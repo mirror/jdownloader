@@ -8,6 +8,7 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.hoster.DirectHTTP;
 
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
@@ -29,6 +30,7 @@ public class PornTubeClubCom extends antiDDoSForDecrypt {
             downloadLink.setProperty("Referer", param.getCryptedUrl());
             if (title != null) {
                 downloadLink.setFinalFileName(title + ".mp4");
+                downloadLink.setProperty(DirectHTTP.FIXNAME, downloadLink.getFinalFileName());
             }
             final String access = new Regex(video, "(\\d+)\\.mp4").getMatch(0);
             if (access != null) {
