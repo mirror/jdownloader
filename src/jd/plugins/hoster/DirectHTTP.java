@@ -813,12 +813,20 @@ public class DirectHTTP extends antiDDoSForHost {
                 downloadLink.setProperty("tryoldref", true);
                 return this.requestFileInformation(downloadLink, retry + 1);
             } else {
+                final String finalFileName = downloadLink.getFinalFileName();
                 resetDownloadlink(downloadLink);
+                if (finalFileName != null) {
+                    downloadLink.setFinalFileName(finalFileName);
+                }
                 throw e2;
             }
         } catch (IOException e) {
             logger.log(e);
+            final String finalFileName = downloadLink.getFinalFileName();
             resetDownloadlink(downloadLink);
+            if (finalFileName != null) {
+                downloadLink.setFinalFileName(finalFileName);
+            }
             if (!isConnectionOffline(e)) {
                 final int nextIOExceptions = ioExceptions + 1;
                 if (nextIOExceptions > 2) {
