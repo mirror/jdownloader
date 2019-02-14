@@ -121,7 +121,8 @@ public class AniLinkzCom extends antiDDoSForDecrypt {
                 String pages = br.getRegex("pages: (\\d+),").getMatch(0);
                 String txtPrefix = br.getRegex("hrefTextPrefix: '(/series/[^\\?]+\\?page=)").getMatch(0);
                 String nextPage = (pages != null && Integer.parseInt(pages) >= (p + 1) ? txtPrefix + (p + 1) : null);
-                String[] links = br.getRegex("href=\"(/[^\"]+)\">[^<]+</a>\\s*</span>\\s*Series:").getColumn(0);
+                // String[] links = br.getRegex("href=\"(/[^\"]+)\">[^<]+</a>\\s*</span>\\s*Series:").getColumn(0);
+                String[] links = br.getRegex("href=\"(/[^\"]+)\"> <span class=\"img\"").getColumn(0);
                 if (links == null || links.length == 0) {
                     logger.warning("Could not find series 'links' : " + parameter);
                     return null;
