@@ -869,13 +869,10 @@ public class LinkCrawler {
         final boolean finished;
         final boolean stopped;
         synchronized (CRAWLER) {
-            if (crawler.decrementAndGet() == 0 && runningState.compareAndSet(true, false)) {
+            final boolean crawling = crawler.get() > 0 && crawler.decrementAndGet() > 0;
+            if (!crawling && runningState.compareAndSet(true, false)) {
                 stopped = true;
-                if (CRAWLER.get() > 0) {
-                    finished = CRAWLER.decrementAndGet() == 0;
-                } else {
-                    finished = false;
-                }
+                finished = CRAWLER.get() > 0 && CRAWLER.decrementAndGet() == 0;
             } else {
                 return;
             }
