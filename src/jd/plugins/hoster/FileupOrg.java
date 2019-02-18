@@ -17,62 +17,43 @@ package jd.plugins.hoster;
 
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class ImgbaronCom extends XFileSharingProBasic {
-    public ImgbaronCom(final PluginWrapper wrapper) {
+public class FileupOrg extends XFileSharingProBasic {
+    public FileupOrg(final PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium(super.getPremiumLink());
+        this.enablePremium(super.getPremiumLink());
     }
 
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
      * limit-info:<br />
-     * captchatype-info: 2019-02-08: null<br />
+     * captchatype-info: 2019-02-18: reCaptchaV2<br />
      * other:<br />
      */
-    private static String[] domains = new String[] { "imgbaron.com" };
-
-    /** Enable mass-linkchecking feature as this filehost usually has filenames inside their URLs. */
-    @Override
-    public boolean checkLinks(final DownloadLink[] urls) {
-        return super.massLinkchecker(urls);
-    }
-
-    @Override
-    public boolean supports_https() {
-        return true;
-    }
-
-    @Override
-    public boolean supports_availablecheck_filesize_html() {
-        return false;
-    }
-
-    @Override
-    public boolean isImagehoster() {
-        return true;
-    }
+    private static String[] domains = new String[] { "file-up.org", "file-up.io", "file-up.cc", "file-up.com", "file-upload.org", "file-upload.io", "file-upload.cc", "file-upload.com" };
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return false;
+            return true;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return false;
+            return true;
         } else {
             /* Free(anonymous) and unknown account type */
-            return false;
+            return true;
         }
     }
 
@@ -80,13 +61,13 @@ public class ImgbaronCom extends XFileSharingProBasic {
     public int getDownloadModeMaxChunks(final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return 1;
+            return 0;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return 1;
+            return 0;
         } else {
             /* Free(anonymous) and unknown account type */
-            return 1;
+            return 0;
         }
     }
 
@@ -105,6 +86,75 @@ public class ImgbaronCom extends XFileSharingProBasic {
         return -1;
     }
 
+    @Override
+    public boolean supports_https() {
+        return super.supports_https();
+    }
+
+    @Override
+    public boolean fetchAccountInfo_PreferExactExpireDate() {
+        return super.fetchAccountInfo_PreferExactExpireDate();
+    }
+
+    @Override
+    public boolean isAudiohoster() {
+        return super.isAudiohoster();
+    }
+
+    @Override
+    public boolean isVideohoster() {
+        return super.isVideohoster();
+    }
+
+    @Override
+    public boolean isVideohoster_2() {
+        return super.isVideohoster_2();
+    }
+
+    @Override
+    public boolean isVideohoster_enforce_video_filename() {
+        return super.isVideohoster_enforce_video_filename();
+    }
+
+    @Override
+    public boolean isImagehoster() {
+        return super.isImagehoster();
+    }
+
+    @Override
+    public boolean supports_availablecheck_alt() {
+        return super.supports_availablecheck_alt();
+    }
+
+    @Override
+    public boolean supports_availablecheck_filesize_alt_fast() {
+        return super.supports_availablecheck_filesize_alt_fast();
+    }
+
+    @Override
+    public boolean prefer_availablecheck_filesize_alt_type_old() {
+        return super.prefer_availablecheck_filesize_alt_type_old();
+    }
+
+    @Override
+    public boolean supports_availablecheck_filename_abuse() {
+        return super.supports_availablecheck_filename_abuse();
+    }
+
+    @Override
+    public boolean supports_availablecheck_filesize_html() {
+        return super.supports_availablecheck_filesize_html();
+    }
+
+    @Override
+    public String regexWaittime() {
+        String ttt = super.regexWaittime();
+        if (StringUtils.isEmpty(ttt)) {
+            ttt = new Regex(correctedBR, "<span id=\"countdown\">[^<>]*?<span class=\"label label\\-danger seconds\">(\\d+)</span>").getMatch(0);
+        }
+        return ttt;
+    }
+
     public static String[] getAnnotationNames() {
         return new String[] { domains[0] };
     }
@@ -121,7 +171,7 @@ public class ImgbaronCom extends XFileSharingProBasic {
     public static String[] getAnnotationUrls() {
         // construct pattern
         final String host = getHostsPattern();
-        return new String[] { host + "/(?:embed\\-)?[a-z0-9]{12}(?:/[^/]+\\.html)?" };
+        return new String[] { host + "/(?:embed\\-)?[a-z0-9]{12}" };
     }
 
     /** returns 'https?://(?:www\\.)?(?:domain1|domain2)' */

@@ -27,6 +27,16 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -51,16 +61,6 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.hoster.RTMPDownload;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 public class XFileSharingProBasic extends antiDDoSForHost {
     public XFileSharingProBasic(PluginWrapper wrapper) {
@@ -316,7 +316,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * See also function getFilesizeViaAvailablecheckAlt! <br />
      * <b> Enabling this will eventually lead to at least one additional website-request! </b>
      *
-     * @return true: Implies that website supports getFilesizeViaAvailablecheckAlt call as an alternative source for filesize-parsing. <br />
+     * @return true: Implies that website supports getFilesizeViaAvailablecheckAlt call as an alternative source for filesize-parsing.
+     *         <br />
      *         false: Implies that website does NOT support getFilesizeViaAvailablecheckAlt. <br />
      *         default: true
      */
@@ -325,7 +326,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /**
-     * See also function getFilesizeViaAvailablecheckAlt!
+     * Only works when getFilesizeViaAvailablecheckAlt returns true!See getFilesizeViaAvailablecheckAlt!
      *
      * @return true: Implies that website supports getFilesizeViaAvailablecheckAlt call without Form-handling (one call less than usual) as
      *         an alternative source for filesize-parsing. <br />
@@ -514,9 +515,14 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return br.getHttpConnection().getResponseCode() == 404 || new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches();
     }
 
+    /** Returns empty StringArra for filename, filesize, filehash, [more information in he future?] */
+    protected String[] getFileInfoArray() {
+        return new String[3];
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        final String[] fileInfo = new String[3];
+        final String[] fileInfo = getFileInfoArray();
         final String fallback_filename = this.getFallbackFilename(link);
         Browser altbr = null;
         fuid = null;
@@ -790,7 +796,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /**
-     * Get filename via abuse-URL.<br />
+     * Try to find filename via '/?op=report_file&id=<fuid>'. Only call this function if supports_availablecheck_filename_abuse() is
+     * enabled!<br />
      * E.g. needed if officially only logged in users can see filename or filename is missing in html code for whatever reason.<br />
      * Often needed for <b><u>IMAGEHOSTER</u> ' s</b>.<br />
      * Important: Only call this if <b><u>SUPPORTS_AVAILABLECHECK_ABUSE</u></b> is <b>true</b> (meaning omly try this if website supports
@@ -1491,6 +1498,26 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return new Regex(url, Pattern.compile(String.format(getGenericDownloadlinkRegExFile(), "[A-Za-z0-9\\-\\.]+"), Pattern.CASE_INSENSITIVE)).matches();
     }
 
+    /** Returns pre-download-waittime (seconds) from inside HTML. */
+    public String regexWaittime() {
+        /* Ticket Time */
+        String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(0);
+        if (ttt == null) {
+            ttt = new Regex(correctedBR, "id=\"countdown_str\" style=\"[^<>\"]+\">Wait <span id=\"[A-Za-z0-9]+\">(\\d+)</span>").getMatch(0);
+        }
+        if (ttt == null) {
+            ttt = new Regex(correctedBR, "id=\"countdown_str\">Wait <span id=\"[A-Za-z0-9]+\">(\\d+)</span>").getMatch(0);
+        }
+        if (ttt == null) {
+            ttt = new Regex(correctedBR, "class=\"seconds\"[^>]*?>\\s*?(\\d+)\\s*?</span>").getMatch(0);
+        }
+        if (ttt == null) {
+            /* More open RegEx */
+            ttt = new Regex(correctedBR, "class=\"seconds\">\\s*?(\\d+)\\s*?<").getMatch(0);
+        }
+        return ttt;
+    }
+
     public String getGenericDownloadlinkRegExFile() {
         return "https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|(?:[\\w\\-\\.]+\\.)?%s)(?::\\d{1,4})?/(?:files|d|cgi\\-bin/dl\\.cgi)/(?:\\d+/)?[a-z0-9]+/[^<>\"/]*?";
     }
@@ -1565,20 +1592,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         int wait = 0;
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /* Ticket Time */
-        String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(0);
-        if (ttt == null) {
-            ttt = new Regex(correctedBR, "id=\"countdown_str\" style=\"[^<>\"]+\">Wait <span id=\"[A-Za-z0-9]+\">(\\d+)</span>").getMatch(0);
-        }
-        if (ttt == null) {
-            ttt = new Regex(correctedBR, "id=\"countdown_str\">Wait <span id=\"[A-Za-z0-9]+\">(\\d+)</span>").getMatch(0);
-        }
-        if (ttt == null) {
-            ttt = new Regex(correctedBR, "class=\"seconds\"[^>]*?>\\s*?(\\d+)\\s*?</span>").getMatch(0);
-        }
-        if (ttt == null) {
-            /* More open RegEx */
-            ttt = new Regex(correctedBR, "class=\"seconds\">\\s*?(\\d+)\\s*?<").getMatch(0);
-        }
+        String ttt = regexWaittime();
         if (ttt != null) {
             logger.info("Found waittime: " + ttt);
             wait = Integer.parseInt(ttt);
@@ -1907,6 +1921,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             } else {
                 trafficLeft = 0;
             }
+            /* 2019-02-19: Users can buy additional traffic packages: Example(s): subyshare.com */
             final String usableBandwidth = br.getRegex("Usable Bandwidth\\s*<span.*?>\\s*([0-9\\.]+\\s*[TGMKB]+)\\s*/\\s*[0-9\\.]+\\s*[TGMKB]+\\s*<").getMatch(0);
             if (usableBandwidth != null) {
                 trafficLeft += Math.max(0, SizeFormatter.getSize(usableBandwidth));
@@ -1923,15 +1938,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         if (expire != null) {
             expire_milliseconds_from_expiredate = TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH);
         }
-        /**
-         * TODO: Rename this settings' name, improve this handling to always use it as a fallback on missing expiredate, make sure that the
-         * value we get is near the other value if we have both.
-         */
         final boolean useAltExpire = this.fetchAccountInfo_PreferExactExpireDate();
         if (expire_milliseconds_from_expiredate == 0 || useAltExpire) {
             /*
              * A more accurate expire time, down to the second. Usually shown on 'extend premium account' page. Case[0] e.g. 'flashbit.cc',
-             * Case [1] e.g. takefile.link
+             * Case [1] e.g. takefile.link, example website which has no precise expiredate at all: anzfile.net
              */
             final String[] paymentURLs = new String[] { "/?op=payments", "/upgrade" };
             for (final String paymentURL : paymentURLs) {
@@ -1945,7 +1956,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     expireSecond = new Regex(correctedBR, Pattern.compile("Premium(-| )Account expires?:([^\\s]+)", Pattern.CASE_INSENSITIVE)).getMatch(1);
                 }
                 if (StringUtils.isEmpty(expireSecond)) {
-                    /* Last attempt - wider RegEx but we expect the 'second(s)' value to always be present!! */
+                    /*
+                     * Last attempt - wider RegEx but we expect the 'second(s)' value to always be present!! Example: file-up.org:
+                     * "<p style="direction: ltr; display: inline-block;">1 year, 352 days, 22 hours, 36 minutes, 45 seconds</p>"
+                     */
                     expireSecond = new Regex(correctedBR, Pattern.compile("(\\d+ years?, )?(\\d+ days?, )?(\\d+ hours?, )?(\\d+ minutes?, )?\\d+ seconds", Pattern.CASE_INSENSITIVE)).getMatch(-1);
                 }
                 if (!inValidate(expireSecond)) {
