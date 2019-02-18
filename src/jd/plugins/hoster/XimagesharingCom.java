@@ -22,7 +22,6 @@ import org.jdownloader.plugins.components.XFileSharingProBasic;
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
-import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
@@ -132,10 +131,5 @@ public class XimagesharingCom extends XFileSharingProBasic {
             pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
         }
         return pattern.toString();
-    }
-
-    @Override
-    public SiteTemplate siteTemplateType() {
-        return SiteTemplate.SibSoft_XFileShare;
     }
 }
