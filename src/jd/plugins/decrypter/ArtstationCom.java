@@ -18,10 +18,15 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.LinkCrawler;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
@@ -32,9 +37,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "artstation.com" }, urls = { "https?://(?:www\\.)?artstation\\.com/((?:artist|artwork)/[^/]+|(?!about|marketplace|jobs|contests|blogs|users)[^/]+)" })
 public class ArtstationCom extends antiDDoSForDecrypt {
@@ -84,9 +86,24 @@ public class ArtstationCom extends antiDDoSForDecrypt {
                     final String[] results = HTMLParser.getHttpLinks(playerEmbedded, null);
                     if (results != null) {
                         for (final String result : results) {
-                            final DownloadLink dl = this.createDownloadlink(result);
-                            fp.add(dl);
-                            decryptedLinks.add(dl);
+                            // Handle Marmoset 3D content
+                            if (result.endsWith(fid) && StringUtils.containsIgnoreCase(url, "/marmosets/")) {
+                                final Browser br2 = br.cloneBrowser();
+                                String pageMarmo = br2.getPage(result);
+                                if (br2.containsHTML("\"asset_type\":\"marmoset\"") && br2.containsHTML("\"attachment_content_type\":\"application/octet-stream\"")) {
+                                    String assetURLRoot = br2.getRegex("\"(https?://[^\"]+original/)").getMatch(0).toString().replace("/images/", "/attachments/");
+                                    String assetFileName = br2.getRegex("\"attachment_file_name\":\"([^\"]+)\"").getMatch(0).toString();
+                                    String assetFileTimeStamp = br2.getRegex("\"attachment_updated_at\":([0-9]+)").getMatch(0).toString();
+                                    String assetURL = assetURLRoot + assetFileName + "?" + assetFileTimeStamp;
+                                    final DownloadLink dl2 = this.createDownloadlink(assetURL);
+                                    fp.add(dl2);
+                                    decryptedLinks.add(dl2);
+                                }
+                            } else {
+                                final DownloadLink dl = this.createDownloadlink(result);
+                                fp.add(dl);
+                                decryptedLinks.add(dl);
+                            }
                         }
                     }
                 }
