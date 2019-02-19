@@ -57,7 +57,7 @@ public class AnzfileNet extends XFileSharingProBasic {
     }
 
     @Override
-    public int getDownloadModeMaxChunks(final Account account) {
+    public int getMaxChunks(final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
             return 1;
