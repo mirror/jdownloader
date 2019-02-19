@@ -15,6 +15,8 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.HTMLEntities;
@@ -26,9 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "slutload.com" }, urls = { "http://(www\\.)?slutload\\.com/(video/[A-Za-z0-9\\-_]+/[A-Za-z0-9]+|(embed_player|watch)/[A-Za-z0-9]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "slutload.com" }, urls = { "https?://(www\\.)?slutload\\.com/(video/[A-Za-z0-9\\-_]+/[A-Za-z0-9]+|(embed_player|watch)/[A-Za-z0-9]+)" })
 public class SlutLoadCom extends PluginForHost {
     public SlutLoadCom(PluginWrapper wrapper) {
         super(wrapper);
