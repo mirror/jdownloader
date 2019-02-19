@@ -56,7 +56,7 @@ public class UploadrarCom extends XFileSharingProBasic {
     }
 
     @Override
-    public int getDownloadModeMaxChunks(final Account account) {
+    public int getMaxChunks(final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
             return 0;
@@ -154,13 +154,13 @@ public class UploadrarCom extends XFileSharingProBasic {
     }
 
     /**
-     * returns the annotation pattern array: 'https?://(?:www\\.)?(?:domain1|domain2)/(?:embed\\-)?[a-z0-9]{12}'
+     * returns the annotation pattern array, usually: 'https?://(?:www\\.)?(?:domain1|domain2)/(?:embed\\-)?[a-z0-9]{12}(?:/[^/]+\\.html)?'
      *
      */
     public static String[] getAnnotationUrls() {
         // construct pattern
         final String host = getHostsPattern();
-        return new String[] { host + "/(?:embed\\-)?[a-z0-9]{12}" };
+        return new String[] { host + "/(?:embed\\-)?[a-z0-9]{12}(?:/[^/]+\\.html)?" };
     }
 
     /** returns 'https?://(?:www\\.)?(?:domain1|domain2)' */

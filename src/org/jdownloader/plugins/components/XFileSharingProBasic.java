@@ -74,7 +74,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     public String getPremiumLink() {
-        return getMainPage() + "/premium.html";
+        return this.getMainPage() + "/premium.html";
     }
 
     // private static String[] domains = new String[] { "xvideosharing.com" };
@@ -123,7 +123,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 4.0.0.3<br />
+     * DEV NOTES XfileSharingProBasic Version 4.0.0.4<br />
      ****************************
      * NOTES from raztoki <br/>
      * - no need to set setfollowredirect true. <br />
@@ -169,7 +169,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * Returns how many max. chunks per file are allowed for current download mode based on account availability and account type. <br />
      * Override this function to set chunks settings!
      */
-    public int getDownloadModeMaxChunks(final Account account) {
+    public int getMaxChunks(final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
             return 0;
@@ -249,7 +249,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /**
-     * <b> Enabling this will eventually lead to at least one additional website-request! </b>
+     * <b> Enabling this may lead to at least one additional website-request! </b>
      *
      * @return true: Implies that the hoster only allows audio-content to be uploaded. Enabling this will make plugin try to find
      *         audio-downloadlinks via '/mp3embed-<fuid>'. Also sets mime-hint via CompiledFiletypeFilter.ImageExtensions.JPG. <br />
@@ -261,7 +261,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /**
-     * <b> Enabling this will eventually lead to at least one additional website-request! </b> <br />
+     * <b> Enabling this may lead to at least one additional website-request! </b> <br />
      * Enable this for websites using <a href="https://sibsoft.net/xvideosharing.html">XVideosharing</a>. <br />
      * Demo-Website: <a href="http://xvideosharing.com">xvideosharing.com</a>
      *
@@ -274,7 +274,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /**
-     * <b> Enabling this will eventually lead to at least one additional website-request! </b> <br />
+     * <b> Enabling this may lead to at least one additional website-request! </b> <br />
      * Enable this for websites using <a href="https://sibsoft.net/xvideosharing.html">XVideosharing</a>. <br />
      * Demo-Website: <a href="http://xvideosharing.com">xvideosharing.com</a>
      *
@@ -451,7 +451,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /** Returns https?://host.tld */
-    public String getMainPage() {
+    protected String getMainPage() {
         final String[] hosts = this.siteSupportedNames();
         return ("http://" + hosts[0]).replaceFirst("https?://", this.supports_https() ? "https://" : "http://");
     }
@@ -1007,7 +1007,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             checkErrors(link, account, false);
             Form imghost_next_form = null;
             do {
-                imghost_next_form = br.getFormbyKey("next");
+                imghost_next_form = findImageForm(this.br);
                 if (imghost_next_form != null) {
                     imghost_next_form.remove("method_premium");
                     /* end of backward compatibility */
@@ -1681,9 +1681,18 @@ public class XFileSharingProBasic extends antiDDoSForHost {
          * available via html
          */
         if (fuid == null) {
+            /*
+             * E.g. for hosts which migrate from other scripts such as YetiShare to XFS (example: hugesharing.net) and still have their old
+             * URLs without XFS-fuid redirecting to the typical XFS URLs containing our fuid.
+             */
             logger.info("fuid not given inside URL, trying to find it inside html");
             fuid = new Regex(correctedBR, "type=\"hidden\" name=\"id\" value=\"([a-z0-9]{12})\"").getMatch(0);
             if (fuid == null) {
+                /* Last chance fallback */
+                fuid = new Regex(br.getURL(), "https?://[^/]+/([a-z0-9]{12})").getMatch(0);
+            }
+            if (fuid == null) {
+                /* fuid is crucial for us to have!! */
                 logger.warning("Failed to find fuid inside html");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -2040,11 +2049,16 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return loginform;
     }
 
+    /** Returns Form required to click on 'continue to image' for image-hosts. */
+    public Form findImageForm(final Browser br) {
+        return br.getFormbyKey("next");
+    }
+
     public String regExTrafficLeft() {
         return regExTrafficLeft(this.correctedBR);
     }
 
-    /** Tries to find available traffic for RegEx. */
+    /** Tries to find available traffic via RegEx. */
     public String regExTrafficLeft(final String source) {
         /* Traffic can also be negative! */
         String availabletraffic = new Regex(source, "Traffic available[^<>]*?:?</TD><TD><b>([^<>\"']+)</b>").getMatch(0);
@@ -2055,6 +2069,13 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return availabletraffic;
     }
 
+    /**
+     * Checks logged-in state via given HTML code.
+     *
+     * @return true: Implies that user is logged-in. <br />
+     *         false: Implies that user is not logged-in. <br />
+     *         default: true
+     */
     public boolean isLoggedinHTML() {
         return br.containsHTML("op=logout");
     }
@@ -2175,7 +2196,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final boolean resume = this.isResumeable(link, account);
-        final int maxChunks = getDownloadModeMaxChunks(account);
+        final int maxChunks = getMaxChunks(account);
         final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
         logger.info("Final downloadlink = " + dllink + " starting the download...");
         if (dllink.startsWith("rtmp")) {
@@ -2272,7 +2293,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         /* Set fallback_filename */
         link.setName(weak_fallback_filename);
         /* TODO: Find better way to determine whether a String contains a file-extension or not. */
-        final boolean fallback_filename_contains_file_extension = weak_fallback_filename.contains(".");
+        final boolean fallback_filename_contains_file_extension = weak_fallback_filename != null && weak_fallback_filename.contains(".");
         if (!fallback_filename_contains_file_extension) {
             /* Only setMimeHint if weak filename does not contain filetype. */
             if (this.isAudiohoster()) {
