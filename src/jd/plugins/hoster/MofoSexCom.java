@@ -27,6 +27,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.components.PluginJSonUtils;
 
 /**
  * DEV NOTES:<br/>
@@ -35,7 +36,7 @@ import jd.plugins.PluginException;
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mofosex.com" }, urls = { "https?://(www\\.)?mofosex\\.com/(videos/\\d+/[a-z0-9\\-]+\\.html|embed\\?videoid=\\d+|embed_player\\.php\\?id=\\d+)" })
 public class MofoSexCom extends antiDDoSForHost {
-    private String DLLINK = null;
+    private String dllink = null;
 
     public MofoSexCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -56,7 +57,7 @@ public class MofoSexCom extends antiDDoSForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        DLLINK = null;
+        dllink = null;
         setBrowserExclusive();
         br.setFollowRedirects(true);
         if (downloadLink.getDownloadURL().matches(TYPE_EMBED)) {
@@ -90,22 +91,33 @@ public class MofoSexCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }
-        String filename = br.getRegex("flashvars\\.video_title = \"([^<>\"]*?)\"").getMatch(0);
+        String filename = br.getRegex("video_title\":\"([^<>\"]*?)\"").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>(.*?) Videos \\- Mofosex\\.com</title>").getMatch(0);
+            filename = br.getRegex("<title>(.*?) - Mofosex\\.com</title>").getMatch(0);
         }
         String fid = br.getRegex("\\?v=([a-z0-9_\\-]+)%2").getMatch(0);
         if (fid != null) {
             getPage("http://www.mofosex.com/playlist.php?v=" + fid);
-            DLLINK = br.getRegex("<url>(http://.*?)</url>").getMatch(0);
+            dllink = br.getRegex("<url>(http://.*?)</url>").getMatch(0);
         } else {
             fid = br.getRegex("flashvars\\.video_url = \'(.*?)\'").getMatch(0);
-            DLLINK = fid != null ? fid : null;
+            dllink = fid != null ? fid : null;
         }
-        if (filename == null || DLLINK == null) {
+        if (dllink == null) {
+            String flashvars = br.getRegex("window.flashvars = (\\{[^\\}]+\\})").getMatch(0);
+            dllink = PluginJSonUtils.getJsonValue(flashvars, "quality_720p");
+            if (dllink == null) {
+                dllink = PluginJSonUtils.getJsonValue(flashvars, "quality_480p");
+            }
+            if (dllink == null) {
+                dllink = PluginJSonUtils.getJsonValue(flashvars, "video_url");
+            }
+        }
+        if (filename == null || dllink == null) {
+            logger.info("filename: " + filename + ", dllink: " + dllink);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = filename.trim();
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".mp4");
         final Browser br2 = br.cloneBrowser();
@@ -113,11 +125,11 @@ public class MofoSexCom extends antiDDoSForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openHeadConnection(DLLINK);
+            con = br2.openHeadConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             }
             return AvailableStatus.TRUE;
         } finally {
@@ -131,7 +143,7 @@ public class MofoSexCom extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
