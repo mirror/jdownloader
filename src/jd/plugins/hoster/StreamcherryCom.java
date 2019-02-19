@@ -23,16 +23,11 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fruithosts.net", "streamango.com" }, urls = { "https?://(?:www\\.)?fruithosts\\.net/(?:f|embed)/([a-z0-9]+)(/[^/]+)?", "https?://(?:www\\.)?streamango\\.com/(?:f|embed)/([a-z0-9]+)(/[^/]+)?" })
-public class FruithostsNet extends FruithostedCDN {
-    public FruithostsNet(final PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "streamcherry.com" }, urls = { "https?://(?:www\\.)?streamcherry\\.com/(?:f|embed)/([a-z0-9]+)(/[^/]+)?" })
+public class StreamcherryCom extends FruithostedCDN {
+    public StreamcherryCom(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://fruithosts.net/register");
-    }
-
-    @Override
-    public String getAPIBase() {
-        return "https://api.fruithosted.net";
     }
 
     @Override

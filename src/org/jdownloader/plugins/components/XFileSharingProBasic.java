@@ -148,7 +148,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /**
-     * Returns whether resume is supported or not for current download mode based on account availibility and account type. <br />
+     * Returns whether resume is supported or not for current download mode based on account availability and account type. <br />
      * Override this function to set resume settings!
      */
     @Override
@@ -166,7 +166,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /**
-     * Returns how many max. chunks per file are allowed for current download mode based on account availibility and account type. <br />
+     * Returns how many max. chunks per file are allowed for current download mode based on account availability and account type. <br />
      * Override this function to set chunks settings!
      */
     public int getDownloadModeMaxChunks(final Account account) {
@@ -201,7 +201,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     public int getMaxSimultaneousFreeAnonymousDownloads() {
-        return 20;
+        return -1;
     }
 
     public int getMaxSimultaneousFreeAccountDownloads() {

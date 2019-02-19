@@ -21,22 +21,6 @@ import java.util.List;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
-import jd.PluginWrapper;
-import jd.config.Property;
-import jd.gui.swing.components.linkbutton.JLink;
-import jd.http.Browser;
-import jd.parser.Regex;
-import jd.plugins.Account;
-import jd.plugins.AccountInfo;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginConfigPanelNG;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.components.MultiHosterManagement;
-
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.MigPanel;
@@ -44,6 +28,7 @@ import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.components.ZeveraCore;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetConfigPanel;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
@@ -52,32 +37,75 @@ import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.translate._JDT;
 
+import jd.PluginWrapper;
+import jd.gui.swing.components.linkbutton.JLink;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
+import jd.plugins.PluginConfigPanelNG;
+import jd.plugins.PluginForHost;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumize.me" }, urls = { "premiumizedecrypted://.+" })
-public class PremiumizeMe extends ZeveraCom {
-    private static final String          NICE_HOST                 = "premiumize.me";
-    private static final String          NICE_HOSTproperty         = NICE_HOST.replaceAll("(\\.|\\-)", "");
-    /* Connection limits */
-    private static final boolean         ACCOUNT_PREMIUM_RESUME    = true;
-    private static final int             ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    private final String                 client_id                 = "616325511";
-    // private static Object LOCK = new Object();
-    private static MultiHosterManagement mhm                       = new MultiHosterManagement("premiumize.me");
+public class PremiumizeMe extends ZeveraCore {
+    public PremiumizeMe(PluginWrapper wrapper) {
+        super(wrapper);
+        this.enablePremium("https://www." + this.getHost() + "/premium");
+    }
 
     @Override
-    public void correctDownloadLink(final DownloadLink link) {
-        if (isDirectURL(link.getDownloadLink())) {
-            final String new_url = link.getPluginPatternMatcher().replaceAll("[a-z0-9]+decrypted://", "https://");
-            link.setPluginPatternMatcher(new_url);
+    public String getClientID() {
+        return "616325511";
+    }
+
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        if (account != null && account.getType() == AccountType.FREE) {
+            /* Free Account */
+            return true;
+        } else if (account != null && account.getType() == AccountType.PREMIUM) {
+            /* Premium account */
+            return true;
+        } else {
+            /* Free(anonymous) and unknown account type */
+            return true;
         }
     }
 
-    /*
-     * IMPORTANT INFORMATION: According to their support we can 'hammer' their API every 5 minutes so we could even make an
-     * "endless retries" mode which, on fatal errors, waits 5 minutes, then tries again.
-     */
-    public PremiumizeMe(PluginWrapper wrapper) {
-        super(wrapper);
-        this.enablePremium(getProtocol() + "premiumize.me");
+    @Override
+    public int getDownloadModeMaxChunks(final Account account) {
+        if (account != null && account.getType() == AccountType.FREE) {
+            /* Free Account */
+            return 0;
+        } else if (account != null && account.getType() == AccountType.PREMIUM) {
+            /* Premium account */
+            return 0;
+        } else {
+            /* Free(anonymous) and unknown account type */
+            return 0;
+        }
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public int getMaxSimultaneousFreeAccountDownloads() {
+        /* 2019-02-19: premiumize.me/free */
+        return 1;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void setFreeAccountTraffic(final AccountInfo ai) {
+        ai.setTrafficLeft(5000000000l);
     }
 
     @Override
@@ -125,35 +153,8 @@ public class PremiumizeMe extends ZeveraCom {
     };
 
     @Override
-    public String getAGBLink() {
-        return getProtocol() + this.getHost() + "/?show=tos";
-    }
-
-    @Override
     public AccountBuilderInterface getAccountFactory(InputChangedCallbackInterface callback) {
         return new PremiumizeAccountFactory(callback);
-    }
-
-    @Override
-    public boolean isSpeedLimited(DownloadLink link, Account account) {
-        return false;
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        if (isUsenetLink(link)) {
-            return super.requestFileInformation(link);
-        } else {
-            return requestFileInformationDirectURL(this.br, link);
-        }
-    }
-
-    public static String getCloudID(final String url) {
-        if (url.contains("folder_id")) {
-            return new Regex(url, "folder_id=([a-zA-Z0-9\\-_]+)").getMatch(0);
-        } else {
-            return new Regex(url, "id=([a-zA-Z0-9\\-_]+)").getMatch(0);
-        }
     }
 
     @Override
@@ -166,107 +167,9 @@ public class PremiumizeMe extends ZeveraCom {
         }
     }
 
-    public boolean isDirectURL(final DownloadLink downloadLink) {
-        return StringUtils.equals(getHost(), downloadLink.getHost());
-    }
-
-    @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 0;
-    }
-
-    @Override
-    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        if (!isDirectURL(link)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else {
-            handleDL_DIRECT(null, link);
-        }
-    }
-
-    @Override
-    public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        if (isUsenetLink(link)) {
-            super.handleMultiHost(link, account);
-            return;
-        } else if (isDirectURL(link)) {
-            handleDL_DIRECT(account, link);
-        } else {
-            this.br = prepBR(this.br);
-            mhm.runCheck(account, link);
-            login(this.br, account, false, client_id);
-            String dllink = getDllink(this.br, account, link, client_id, this);
-            if (StringUtils.isEmpty(dllink)) {
-                mhm.handleErrorGeneric(account, link, "dllinknull", 2, 5 * 60 * 1000l);
-            }
-            handleDL_MOCH(account, link, dllink);
-        }
-    }
-
-    private void handleDL_MOCH(final Account account, final DownloadLink link, final String dllink) throws Exception {
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        link.setProperty(NICE_HOSTproperty + "directlink", dllink);
-        try {
-            antiCloudflare(br, dllink);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-            final String contenttype = dl.getConnection().getContentType();
-            if (contenttype.contains("html")) {
-                br.followConnection();
-                updatestatuscode();
-                handleAPIErrors(this.br);
-                mhm.handleErrorGeneric(account, link, "unknowndlerror", 2, 5 * 60 * 1000l);
-            }
-            this.dl.startDownload();
-        } catch (final Exception e) {
-            link.setProperty(NICE_HOSTproperty + "directlink", Property.NULL);
-            throw e;
-        }
-    }
-
-    /** Account is not required */
-    private void handleDL_DIRECT(final Account account, final DownloadLink link) throws Exception {
-        antiCloudflare(br, link.getPluginPatternMatcher());
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-        final String contenttype = dl.getConnection().getContentType();
-        if (contenttype.contains("html")) {
-            br.followConnection();
-            // updatestatuscode();
-            // handleAPIErrors(this.br);
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
-        }
-        this.dl.startDownload();
-    }
-
     @Override
     public FEATURE[] getFeatures() {
         return new FEATURE[] { FEATURE.MULTIHOST, FEATURE.USENET };
-    }
-
-    @Override
-    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        return fetchAccountInfoAPI(this, this.br, client_id, account);
-    }
-
-    private static String getProtocol() {
-        return "https://";
-    }
-
-    // private void login(final Account account, final boolean force) throws Exception {
-    // ZeveraCom.login(this.br, account, force, client_id);
-    // }
-    /** Keep this for possible future API implementation */
-    private void updatestatuscode() {
-    }
-
-    /** Keep this for possible future API implementation */
-    private void handleAPIErrors(final Browser br) throws PluginException {
     }
 
     @Override
@@ -275,14 +178,6 @@ public class PremiumizeMe extends ZeveraCom {
         ret.addAll(UsenetServer.createServerList("usenet.premiumize.me", false, 119));
         ret.addAll(UsenetServer.createServerList("usenet.premiumize.me", true, 563));
         return ret;
-    }
-
-    @Override
-    public void reset() {
-    }
-
-    @Override
-    public void resetDownloadlink(DownloadLink link) {
     }
 
     public static class PremiumizeAccountFactory extends MigPanel implements AccountBuilderInterface {
