@@ -50,7 +50,7 @@ public class GogoanimeCom extends antiDDoSForDecrypt {
         String[] a = new String[getAnnotationNames().length];
         int i = 0;
         for (final String domain : getAnnotationNames()) {
-            a[i] = "http://(?:\\w+\\.)?" + Pattern.quote(domain) + "/(?:embed/[a-f0-9]+|embed(\\.php)?\\?.*?vid(?:eo)?=.+|gogo/\\?.*?file=.+|(?!flowplayer)(?:[a-z\\-]+\\-(drama|movie|episode)/)?[a-z0-9\\-_\\-?=]+(?:/[\\d\\-_\\-]+)?)";
+            a[i] = "http://(?!videozoo\\.me/embed)(?:\\w+\\.)?" + Pattern.quote(domain) + "/(?:embed/[a-f0-9]+|embed(\\.php)?\\?.*?vid(?:eo)?=.+|gogo/\\?.*?file=.+|(?!flowplayer)(?:[a-z\\-]+\\-(drama|movie|episode)/)?[a-z0-9\\-_\\-?=]+(?:/[\\d\\-_\\-]+)?)";
             i++;
         }
         return a;
