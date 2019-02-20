@@ -72,7 +72,7 @@ public class ServePornCom extends antiDDoSForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         getPage(downloadLink.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<source src=\"https:///videos/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("content=(\"|')([^<>\"]*?)\\1 property=(\"|')og:title\\3\\s*/\\s*>").getMatch(1);
