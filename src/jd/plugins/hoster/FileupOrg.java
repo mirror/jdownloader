@@ -31,7 +31,7 @@ import jd.plugins.HostPlugin;
 public class FileupOrg extends XFileSharingProBasic {
     public FileupOrg(final PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(super.getPremiumLink());
+        this.enablePremium(super.getPurchasePremiumURL());
     }
 
     /**

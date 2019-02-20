@@ -28,7 +28,6 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPlugin
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -52,79 +51,64 @@ import jd.plugins.components.UserAgents;
 public class YetiShareCore extends antiDDoSForHost {
     public YetiShareCore(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium(mainpage + "/upgrade." + type);
+        // this.enablePremium(getPurchasePremiumURL());
     }
 
-    /* 1st domain = current domain! */
-    public static String[] domains = new String[] { "dummyhost.tld" };
-
-    public static String[] getAnnotationNames() {
-        return new String[] { domains[0] };
-    }
-
-    /**
-     * returns the annotation pattern array: 'https?://(?:www\\.)?(?:domain1|domain2)/[A-Za-z0-9]+'
-     *
-     */
-    public static String[] getAnnotationUrls() {
-        // construct pattern
-        final String host = getHostsPattern();
-        return new String[] { host + "/[A-Za-z0-9]+" };
-    }
-
-    /** Returns '(?:domain1|domain2)' */
-    private static String getHostsPatternPart() {
-        final StringBuilder pattern = new StringBuilder();
-        for (final String name : domains) {
-            pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
-        }
-        return pattern.toString();
-    }
-
-    /** returns 'https?://(?:www\\.)?(?:domain1|domain2)' */
-    private static String getHostsPattern() {
-        final String hosts = "https?://(?:www\\.)?" + "(?:" + getHostsPatternPart() + ")";
-        return hosts;
-    }
-
-    @Override
-    public String[] siteSupportedNames() {
-        return domains;
-    }
-
+    // /* 1st domain = current domain! */
+    // public static String[] domains = new String[] { "dummyhost.tld" };
+    //
+    // public static String[] getAnnotationNames() {
+    // return new String[] { domains[0] };
+    // }
+    //
+    // /**
+    // * returns the annotation pattern array: 'https?://(?:www\\.)?(?:domain1|domain2)/[A-Za-z0-9]+'
+    // *
+    // */
+    // public static String[] getAnnotationUrls() {
+    // // construct pattern
+    // final String host = getHostsPattern();
+    // return new String[] { host + "/[A-Za-z0-9]+" };
+    // }
+    //
+    // /** Returns '(?:domain1|domain2)' */
+    // private static String getHostsPatternPart() {
+    // final StringBuilder pattern = new StringBuilder();
+    // for (final String name : domains) {
+    // pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
+    // }
+    // return pattern.toString();
+    // }
+    //
+    // /** returns 'https?://(?:www\\.)?(?:domain1|domain2)' */
+    // private static String getHostsPattern() {
+    // final String hosts = "https?://(?:www\\.)?" + "(?:" + getHostsPatternPart() + ")";
+    // return hosts;
+    // }
+    //
+    // @Override
+    // public String[] siteSupportedNames() {
+    // return domains;
+    // }
     /**
      * For sites which use this script: http://www.yetishare.com/<br />
-     * YetiShareCore Version 2.0.0.0-psp<br />
-     * mods:<br />
+     * YetiShareCore Version 2.0.0.2-psp<br />
+     * mods: see overridden functions in host plugins<br />
      * limit-info:<br />
      * captchatype: null, solvemedia, reCaptchaV2<br />
-     * other: <br />
+     * other: Last compatible YetiShareBasic Version: YetiShareBasic 1.2.0-psp<br />
      */
     @Override
     public String getAGBLink() {
-        return mainpage + "/terms." + type;
+        return this.getMainPage() + "/terms.html";
     }
 
-    /* Basic constants */
-    private final String                   mainpage                                     = ("http://" + domains[0]).replaceFirst("https?://", supports_https() ? "https://" : "http://");
-    private final String                   type                                         = "html";
-    private static final int               wait_BETWEEN_DOWNLOADS_LIMIT_MINUTES_DEFAULT = 10;
-    private static final int               additional_WAIT_SECONDS                      = 3;
-    private static final int               directlinkfound_WAIT_SECONDS                 = 10;
-    private static final boolean           requiresWWW                                  = true;
-    /* In case there is no information when accessing the main link */
-    private static final boolean           useOldLoginMethod                            = false;
-    private static final boolean           enable_RANDOM_UA                             = false;
-    private static final boolean           enable_regex_stream_url                      = true;
-    /* Known urlErrors */
-    private static final String            url_ERROR_SIMULTANDLSLIMIT                   = ".*?e=You\\+have\\+reached\\+the\\+maximum\\+concurrent\\+downloads.*?";
-    private static final String            url_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT       = ".*?e=You\\+must\\+wait\\+.*?";
-    /* E.g. You+must+register+for+a+premium+account+to+download+files+of+this+size */
-    /* E.g. You+must+register+for+a+premium+account+to+see+or+download+files.+Please+use+the+links+above+to+register+or+login. */
-    private static final String            url_ERROR_PREMIUMONLY                        = "(.+e=You\\+must\\+register\\+for\\+a\\+premium\\+account\\+to.+|.+/register\\..+)";
-    /* Texts for the known errors */
-    private static final String            errortext_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT = "You must wait between downloads!";
-    private static AtomicReference<String> agent                                        = new AtomicReference<String>(null);
+    public String getPurchasePremiumURL() {
+        return this.getMainPage() + "/register.html";
+    }
+
+    // private static final boolean enable_regex_stream_url = true;
+    private static AtomicReference<String> agent = new AtomicReference<String>(null);
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
@@ -137,7 +121,7 @@ public class YetiShareCore extends antiDDoSForHost {
         } else {
             protocol = "http";
         }
-        link.setUrlDownload(String.format("%s://%s/%s", protocol, this.getHost(), fid));
+        link.setPluginPatternMatcher(String.format("%s://%s/%s", protocol, this.getHost(), fid));
     }
 
     /**
@@ -222,14 +206,43 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     /**
-     * <b> Enabling this may lead to at least one additional website-request! </b>
+     * @return true: Implies that website requires 'www.' in all URLs. <br />
+     *         false: Implies that website does NOT require 'www.' in all URLs. <br />
+     *         default: true
+     */
+    public boolean requires_WWW() {
+        return true;
+    }
+
+    /**
+     * @return true: Use random User-Agent. <br />
+     *         false: Use Browsers' default User-Agent. <br />
+     *         default: false
+     */
+    public boolean enable_random_user_agent() {
+        return false;
+    }
+
+    /**
+     * <b> Enabling this may lead to at least one additional website-request! </b><br />
+     * TODO: 2019-02-20: Find website which supports video streaming!
      *
      * @return true: Implies that website supports embedding videos. <br />
      *         false: Implies that website does NOT support embedding videos. <br />
-     *         default: true
+     *         default: false
      */
-    public boolean supports_embed_stream_download() {
+    protected boolean supports_embed_stream_download() {
         return false;
+    }
+
+    /**
+     * When checking previously generated direct-URLs, this will count as an open connection so if the host only supports one connection at
+     * a time, trying to download such an URL immediately after the check will result in an error so this is the time we wait before trying
+     * to start the download with this URL.<br />
+     * default: 8
+     */
+    public int getWaitTimeSecondsAfterDirecturlCheck() {
+        return 8;
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -272,17 +285,17 @@ public class YetiShareCore extends antiDDoSForHost {
             }
         } else {
             getPage(link.getPluginPatternMatcher());
-            if (new Regex(br.getURL(), Pattern.compile(url_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT, Pattern.CASE_INSENSITIVE)).matches()) {
+            if (isWaitBetweenDownloadsURL()) {
                 link.setName(getFID(link));
                 return AvailableStatus.TRUE;
             } else if (new Regex(br.getURL(), Pattern.compile(".*?e=Error%3A\\+Could\\+not\\+open\\+file\\+for\\+reading.*?", Pattern.CASE_INSENSITIVE)).matches()) {
                 link.setName(getFID(link));
                 return AvailableStatus.TRUE;
-            } else if (new Regex(br.getURL(), Pattern.compile(url_ERROR_PREMIUMONLY, Pattern.CASE_INSENSITIVE)).matches()) {
+            } else if (isPremiumOnlyURL()) {
                 return AvailableStatus.TRUE;
             }
             final boolean isFileWebsite = br.containsHTML("class=\"downloadPageTable(V2)?\"") || br.containsHTML("class=\"download\\-timer\"");
-            final boolean isErrorPage = br.getURL().contains("/error." + type) || br.getURL().contains("/index." + type);
+            final boolean isErrorPage = br.getURL().contains("/error.html") || br.getURL().contains("/index.html");
             final boolean isOffline = br.getHttpConnection().getResponseCode() == 404;
             if (!isFileWebsite || isErrorPage || isOffline) {
                 handleErrors();
@@ -296,10 +309,11 @@ public class YetiShareCore extends antiDDoSForHost {
             }
         }
         if (filename == null) {
-            handleErrors();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /* Final fallback - this should never happen! */
+            filename = fid;
         }
-        link.setName(Encoding.htmlDecode(filename).trim());
+        filename = Encoding.htmlDecode(filename).trim();
+        link.setName(filename);
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize.replace(",", "")).trim()));
         }
@@ -330,18 +344,18 @@ public class YetiShareCore extends antiDDoSForHost {
              * checked the directlink before and return an error.
              */
             if ((System.currentTimeMillis() - timeBeforeDirectlinkCheck) > 1500) {
-                sleep(directlinkfound_WAIT_SECONDS * 1000l, link);
+                sleep(getWaitTimeSecondsAfterDirecturlCheck() * 1000l, link);
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, resume, maxchunks);
         } else {
-            if (supports_embed_stream_download()) {
-                try {
-                    final Browser br2 = this.br.cloneBrowser();
-                    getPage(br2, String.format("/embed/u=%s/", this.getFID(link)));
-                    continue_link = this.getStreamUrl(br2);
-                } catch (final BrowserException e) {
-                }
-            }
+            // if (supports_embed_stream_download()) {
+            // try {
+            // final Browser br2 = this.br.cloneBrowser();
+            // getPage(br2, String.format("/embed/u=%s/", this.getFID(link)));
+            // continue_link = this.getStreamUrl(br2);
+            // } catch (final BrowserException e) {
+            // }
+            // }
             if (supports_availablecheck_over_info_page() && continue_link == null) {
                 getPage(link.getPluginPatternMatcher());
                 /* For premium mode, we might get our final downloadurl here already. */
@@ -350,7 +364,7 @@ public class YetiShareCore extends antiDDoSForHost {
                     continue_link = br.getRedirectLocation();
                 } else if (redirect != null) {
                     /* Follow redirect */
-                    br.getPage(redirect);
+                    getPage(redirect);
                 }
             }
             if (continue_link == null) {
@@ -398,8 +412,10 @@ public class YetiShareCore extends antiDDoSForHost {
                     waitTime(link, timeBeforeCaptchaInput, skipWaittime);
                     continue_form.put("capcode", "false");
                     continue_form.put("g-recaptcha-response", recaptchaV2Response);
+                    continue_form.setMethod(MethodType.POST);
                     dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_form, resume, maxchunks);
                 } else if (rcID != null) {
+                    /* Dead end! */
                     captcha = true;
                     success = false;
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Website uses reCaptchaV1 which has been shut down by Google. Contact website owner!");
@@ -425,6 +441,7 @@ public class YetiShareCore extends antiDDoSForHost {
                     waitTime(link, timeBeforeCaptchaInput, skipWaittime);
                     continue_form.put("adcopy_challenge", Encoding.urlEncode(chid));
                     continue_form.put("adcopy_response", Encoding.urlEncode(code));
+                    continue_form.setMethod(MethodType.POST);
                     dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_form, resume, maxchunks);
                 } else {
                     success = true;
@@ -444,6 +461,11 @@ public class YetiShareCore extends antiDDoSForHost {
                 }
             }
         }
+        /*
+         * Save directurl before download-attempt as it should be valid even if it e.g. fails because of server issue 503 (= too many
+         * connections) --> Should work fine after the next try.
+         */
+        link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         checkResponseCodeErrors(dl.getConnection());
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
@@ -453,8 +475,6 @@ public class YetiShareCore extends antiDDoSForHost {
             handleErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        continue_link = dl.getConnection().getURL().toString();
-        link.setProperty(directlinkproperty, continue_link);
         dl.startDownload();
     }
 
@@ -467,35 +487,35 @@ public class YetiShareCore extends antiDDoSForHost {
             continue_link = br.getRegex("<div class=\"captchaPageTable\">[\t\n\r ]+<form method=\"POST\" action=\"(https?://[^<>\"]*?)\"").getMatch(0);
         }
         if (continue_link == null) {
-            continue_link = br.getRegex("(?:\"|\\')(https?://(www\\.)?" + getHostsPatternPart() + "/[^<>\"]*?pt=[^<>\"]*?)(?:\"|\\')").getMatch(0);
+            continue_link = br.getRegex("(?:\"|\\')(https?://(?:www\\.)?[^/]+/[^<>\"]*?pt=[^<>\"]*?)(?:\"|\\')").getMatch(0);
         }
         if (continue_link == null) {
             continue_link = getDllink();
         }
-        if (continue_link == null && enable_regex_stream_url) {
-            continue_link = getStreamUrl();
-        }
+        /** 2019-02-21: TODO: Find website which embeds videos / has video streaming activated! */
+        // if (continue_link == null && enable_regex_stream_url) {
+        // continue_link = getStreamUrl();
+        // }
         return continue_link;
     }
 
+    // private String getStreamUrl() {
+    // return getStreamUrl(this.br);
+    // }
+    //
+    // private String getStreamUrl(final Browser br) {
+    // return br.getRegex("file\\s*?:\\s*?\"(https?://[^<>\"]+)\"").getMatch(0);
+    // }
     private String getDllink() {
         return getDllink(this.br);
     }
 
     private String getDllink(final Browser br) {
-        return br.getRegex("\"(https?://(?:www\\.)?(?:[A-Za-z0-9\\.\\-]+\\.)?" + getHostsPatternPart() + "/[^<>\"\\?]*?\\?download_token=[A-Za-z0-9]+)\"").getMatch(0);
+        return br.getRegex("\"(https?://(?:www\\.)?(?:[A-Za-z0-9\\.\\-]+\\.)?[^/]+/[^<>\"\\?]*?\\?download_token=[A-Za-z0-9]+)\"").getMatch(0);
     }
 
     private boolean isDllink(final String url) {
         return url.matches(".+download_token=.+");
-    }
-
-    private String getStreamUrl() {
-        return getStreamUrl(this.br);
-    }
-
-    private String getStreamUrl(final Browser br) {
-        return br.getRegex("file\\s*?:\\s*?\"(https?://[^<>\"]+)\"").getMatch(0);
     }
 
     private boolean isDownloadlink(final String url) {
@@ -537,14 +557,11 @@ public class YetiShareCore extends antiDDoSForHost {
             int wait = 0;
             int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
             /* Ticket Time */
-            String ttt = this.br.getRegex("\\$\\(\\'\\.download\\-timer\\-seconds\\'\\)\\.html\\((\\d+)\\);").getMatch(0);
-            if (ttt == null) {
-                /* Special */
-                ttt = this.br.getRegex("var\\s*?seconds\\s*?= (\\d+);").getMatch(0);
-            }
+            final String ttt = regexWaittime();
             if (ttt != null) {
                 logger.info("Found waittime, parsing waittime: " + ttt);
-                wait = Integer.parseInt(ttt) + additional_WAIT_SECONDS;
+                /* Wait 3 additional seconds */
+                wait = Integer.parseInt(ttt) + 3;
                 wait -= passedTime;
                 if (wait > 0) {
                     logger.info("Waittime minus captcha input time: " + wait);
@@ -561,17 +578,18 @@ public class YetiShareCore extends antiDDoSForHost {
     private void handleErrors() throws PluginException {
         if (br.containsHTML("Error: Too many concurrent download requests")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 3 * 60 * 1000l);
-        } else if (new Regex(br.getURL(), Pattern.compile(url_ERROR_SIMULTANDLSLIMIT, Pattern.CASE_INSENSITIVE)).matches()) {
+        } else if (new Regex(br.getURL(), Pattern.compile(".*?e=You\\+have\\+reached\\+the\\+maximum\\+concurrent\\+downloads.*?", Pattern.CASE_INSENSITIVE)).matches()) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Max. simultan downloads limit reached, wait to start more downloads", 1 * 60 * 1000l);
         } else if (br.getURL().contains("error.php?e=Error%3A+Could+not+open+file+for+reading")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
-        } else if (new Regex(br.getURL(), Pattern.compile(url_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT, Pattern.CASE_INSENSITIVE)).matches()) {
+        } else if (isWaitBetweenDownloadsURL()) {
             final String wait_minutes = new Regex(br.getURL(), "wait\\+(\\d+)\\+minutes?").getMatch(0);
+            final String errormessage = "You must wait between downloads!";
             if (wait_minutes != null) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errortext_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT, Integer.parseInt(wait_minutes) * 60 * 1001l);
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errormessage, Integer.parseInt(wait_minutes) * 60 * 1001l);
             }
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errortext_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT, wait_BETWEEN_DOWNLOADS_LIMIT_MINUTES_DEFAULT * 60 * 1001l);
-        } else if (new Regex(br.getURL(), Pattern.compile(url_ERROR_PREMIUMONLY, Pattern.CASE_INSENSITIVE)).matches()) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errormessage, 10 * 60 * 1001l);
+        } else if (isPremiumOnlyURL()) {
             throw new AccountRequiredException();
         } else if (br.getURL().contains("You+have+reached+the+maximum+permitted+downloads+in")) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily limit reached", 3 * 60 * 60 * 1001l);
@@ -597,6 +615,35 @@ public class YetiShareCore extends antiDDoSForHost {
         }
     }
 
+    /**
+     * Checks premiumonly status via current Browser-URL.
+     *
+     * @return true: Link only downloadable for premium users (sometimes also for registered users). <br />
+     *         false: Link is downloadable for all users.
+     */
+    public boolean isPremiumOnlyURL() {
+        return br.getURL() != null && new Regex(br.getURL(), Pattern.compile("(.+e=You\\+must\\+register\\+for\\+a\\+premium\\+account\\+to.+|.+/register\\..+)", Pattern.CASE_INSENSITIVE)).matches();
+    }
+
+    /**
+     * Checks 'wait between downloads' status via current Browser-URL.
+     *
+     * @return true: User has to wait before new downloads can be started. <br />
+     *         false: User can start new downloads right away.
+     */
+    public boolean isWaitBetweenDownloadsURL() {
+        return br.getURL() != null && new Regex(br.getURL(), Pattern.compile(".*?e=You\\+must\\+wait\\+.*?", Pattern.CASE_INSENSITIVE)).matches();
+    }
+
+    /** Returns pre-download-waittime (seconds) from inside HTML. */
+    public String regexWaittime() {
+        String ttt = this.br.getRegex("\\$\\(\\'\\.download\\-timer\\-seconds\\'\\)\\.html\\((\\d+)\\);").getMatch(0);
+        if (ttt == null) {
+            ttt = this.br.getRegex("var\\s*?seconds\\s*?=\\s*?(\\d+);").getMatch(0);
+        }
+        return ttt;
+    }
+
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
         String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
@@ -605,6 +652,14 @@ public class YetiShareCore extends antiDDoSForHost {
             URLConnectionAdapter con = null;
             try {
                 con = br2.openHeadConnection(dllink);
+                if (br2.getHttpConnection().getResponseCode() == 429) {
+                    /*
+                     * Too many connections but that does not mean that our downloadlink is valid. Accept it and if it still returns 429 on
+                     * download-attempt this error will get displayed to the user.
+                     */
+                    logger.info("Stored directurl lead to 429 | too many connections");
+                    return dllink;
+                }
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
@@ -622,11 +677,11 @@ public class YetiShareCore extends antiDDoSForHost {
         return dllink;
     }
 
-    private String getFID(final DownloadLink dl) {
+    protected String getFID(final DownloadLink dl) {
         return new Regex(dl.getPluginPatternMatcher(), "([A-Za-z0-9]+)$").getMatch(0);
     }
 
-    private String getProtocol() {
+    protected String getProtocol() {
         if ((this.br.getURL() != null && this.br.getURL().contains("https://")) || supports_https()) {
             return "https://";
         } else {
@@ -634,9 +689,9 @@ public class YetiShareCore extends antiDDoSForHost {
         }
     }
 
-    private Browser prepBrowser(final Browser br) {
+    protected Browser prepBrowser(final Browser br) {
         br.setAllowedResponseCodes(new int[] { 416, 429 });
-        if (enable_RANDOM_UA) {
+        if (enable_random_user_agent()) {
             if (agent.get() == null) {
                 agent.set(UserAgents.stringUserAgent());
             }
@@ -662,7 +717,7 @@ public class YetiShareCore extends antiDDoSForHost {
                         return;
                     }
                     logger.info("Verifying login-cookies");
-                    getPage("https://" + this.getHost() + "/");
+                    getPage(this.getMainPage() + "/account_home.html");
                     loggedInViaCookies = br.containsHTML("/logout.html");
                 }
                 if (loggedInViaCookies) {
@@ -670,24 +725,16 @@ public class YetiShareCore extends antiDDoSForHost {
                     logger.info("Successfully logged in via cookies");
                 } else {
                     logger.info("Performing full login");
-                    getPage(this.getProtocol() + this.getHost() + "/");
-                    final String lang = System.getProperty("user.language");
+                    getPage(this.getProtocol() + this.getHost() + "/login.html");
                     final String loginstart = new Regex(br.getURL(), "(https?://(www\\.)?)").getMatch(0);
-                    if (useOldLoginMethod) {
-                        postPage(this.getProtocol() + this.getHost() + "/login." + type, "submit=Login&submitme=1&loginUsername=" + Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()));
-                        if (br.containsHTML(">Your username and password are invalid<") || !br.containsHTML("/logout\\.html\">")) {
-                            if ("de".equalsIgnoreCase(lang)) {
-                                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                            } else {
-                                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                            }
-                        }
-                    } else {
-                        getPage(this.getProtocol() + this.getHost() + "/login." + type);
-                        final String loginpostpage = loginstart + this.getHost() + "/ajax/_account_login.ajax.php";
+                    Form loginform;
+                    if (br.containsHTML("flow\\-login\\.js")) {
+                        /* New (ajax) login method - mostly used - example: iosddl.net */
+                        logger.info("Using new login method");
+                        /* These headers are important! */
                         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-                        Form loginform = br.getFormbyProperty("id", "form_login");
+                        loginform = br.getFormbyProperty("id", "form_login");
                         if (loginform == null) {
                             logger.info("Fallback to custom built loginform");
                             loginform = new Form();
@@ -695,7 +742,8 @@ public class YetiShareCore extends antiDDoSForHost {
                         }
                         loginform.put("username", Encoding.urlEncode(account.getUser()));
                         loginform.put("password", Encoding.urlEncode(account.getPass()));
-                        loginform.setAction(loginpostpage);
+                        final String action = loginstart + this.getHost() + "/ajax/_account_login.ajax.php";
+                        loginform.setAction(action);
                         if (loginform.containsHTML("class=\"g\\-recaptcha\"")) {
                             final DownloadLink dlinkbefore = this.getDownloadLink();
                             if (dlinkbefore == null) {
@@ -709,15 +757,28 @@ public class YetiShareCore extends antiDDoSForHost {
                         }
                         submitForm(loginform);
                         if (!br.containsHTML("\"login_status\":\"success\"")) {
-                            if ("de".equalsIgnoreCase(lang)) {
-                                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                            } else {
-                                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                            }
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
+                    } else {
+                        /* Old login method - rare case! Example: udrop.net */
+                        logger.info("Using old login method");
+                        loginform = br.getFormbyProperty("id", "form_login");
+                        if (loginform == null) {
+                            logger.info("Fallback to custom built loginform");
+                            loginform = new Form();
+                            loginform.put("submit", "Login");
+                            loginform.put("submitme", "1");
+                        }
+                        loginform.put("username", Encoding.urlEncode(account.getUser()));
+                        loginform.put("password", Encoding.urlEncode(account.getPass()));
+                        submitForm(loginform);
+                        // postPage(this.getProtocol() + this.getHost() + "/login.html", "submit=Login&submitme=1&loginUsername=" +
+                        // Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()));
+                        if (br.containsHTML(">Your username and password are invalid<") || !br.containsHTML("/logout\\.html\">")) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                         }
                     }
                 }
-                getPage("/account_home." + type);
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
@@ -734,6 +795,9 @@ public class YetiShareCore extends antiDDoSForHost {
         } catch (final PluginException e) {
             throw e;
         }
+        if (br.getURL() == null || !br.getURL().contains("/account_home.html")) {
+            getPage("/account_home.html");
+        }
         if (!br.containsHTML("class=\"badge badge\\-success\">(?:PAID USER|USUARIO DE PAGO|VIP)</span>")) {
             account.setType(AccountType.FREE);
             account.setMaxSimultanDownloads(this.getMaxSimultaneousFreeAccountDownloads());
@@ -741,7 +805,7 @@ public class YetiShareCore extends antiDDoSForHost {
             account.setConcurrentUsePossible(false);
             ai.setStatus("Registered (free) account");
         } else {
-            getPage("/upgrade." + type);
+            getPage("/upgrade.html");
             /* If the premium account is expired we'll simply accept it as a free account. */
             String expire = br.getRegex("Reverts To Free Account:[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
             if (expire == null) {
@@ -753,6 +817,7 @@ public class YetiShareCore extends antiDDoSForHost {
             }
             long expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "MM/dd/yyyy hh:mm:ss", Locale.ENGLISH);
             if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
+                /* Expired premium == FREE */
                 account.setType(AccountType.FREE);
                 account.setMaxSimultanDownloads(this.getMaxSimultaneousFreeAccountDownloads());
                 /* All accounts get the same (IP-based) downloadlimits --> Simultan free account usage makes no sense! */
@@ -802,16 +867,16 @@ public class YetiShareCore extends antiDDoSForHost {
         super.postPage(br, page, postdata);
     }
 
-    private String correctProtocol(String url) {
+    protected String correctProtocol(String url) {
         if (supports_https()) {
             /* Prefer https whenever possible */
             url = url.replaceFirst("http://", "https://");
         } else {
             url = url.replaceFirst("https://", "http://");
         }
-        if (requiresWWW && !url.contains("www.")) {
+        if (this.requires_WWW() && !url.contains("www.")) {
             url = url.replace("//", "//www.");
-        } else if (!requiresWWW) {
+        } else if (!this.requires_WWW()) {
             url = url.replace("www.", "");
         }
         return url;

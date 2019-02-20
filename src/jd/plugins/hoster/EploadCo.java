@@ -30,7 +30,7 @@ import jd.plugins.HostPlugin;
 public class EploadCo extends XFileSharingProBasic {
     public EploadCo(final PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(super.getPremiumLink());
+        this.enablePremium(super.getPurchasePremiumURL());
     }
 
     /**

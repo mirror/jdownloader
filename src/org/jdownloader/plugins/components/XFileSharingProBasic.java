@@ -68,15 +68,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         // this.enablePremium(super.getPremiumLink());
     }
 
-    @Override
-    public String getAGBLink() {
-        return this.getMainPage() + "/tos.html";
-    }
-
-    public String getPremiumLink() {
-        return this.getMainPage() + "/premium.html";
-    }
-
     // private static String[] domains = new String[] { "xvideosharing.com" };
     //
     // public static String[] getAnnotationNames() {
@@ -133,9 +124,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * mods: See overridden functions<br />
      * limit-info:<br />
      * captchatype-info: null 4dignum solvemedia reCaptchaV2<br />
-     * Last compatible XFileSharingProBasic template: Version 2.7.8.7 in revision 40351 (renamed to XFileSharingProBasicOLD and deleted in
-     * rev: TODO) <br />
-     * other:<br />
+     * Last compatible XFileSharingProBasic template: Version 2.7.8.7 in revision 40351 other:<br />
      */
     @Override
     public void init() {
@@ -145,6 +134,15 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         } else {
             totalMaxSimultanFreeDownload.set(getMaxSimultaneousFreeAnonymousDownloads());
         }
+    }
+
+    @Override
+    public String getAGBLink() {
+        return this.getMainPage() + "/tos.html";
+    }
+
+    public String getPurchasePremiumURL() {
+        return this.getMainPage() + "/premium.html";
     }
 
     /**
@@ -1301,7 +1299,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                      * Too many connections but that does not mean that our downloadlink is valid. Accept it and if it still returns 503 on
                      * download-attempt this error will get displayed to the user.
                      */
-                    logger.info("Stored directurl lead to 503");
+                    logger.info("Stored directurl lead to 503 | too many connections");
                     return dllink;
                 } else if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);

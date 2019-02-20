@@ -239,21 +239,22 @@ public class FastfilesPl extends PluginForHost {
             ai.setValidUntil(timestamp_validuntil, this.br);
             account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium account");
+            boolean trafficleft_set = false;
+            if (!StringUtils.isEmpty(trafficleft) && trafficleft.matches("\\d+")) {
+                trafficleft_set = true;
+                ai.setTrafficLeft(trafficleft);
+            }
+            if (!StringUtils.isEmpty(traffic_max) && traffic_max.matches("\\d+")) {
+                if (!trafficleft_set) {
+                    /* Set traffic_max also as traffic_left */
+                    ai.setTrafficLeft(traffic_max);
+                }
+                ai.setTrafficMax(traffic_max);
+            }
         } else {
             account.setType(AccountType.FREE);
             ai.setStatus("Registered (free) account");
-        }
-        boolean trafficleft_set = false;
-        if (!StringUtils.isEmpty(trafficleft) && trafficleft.matches("\\d+")) {
-            trafficleft_set = true;
-            ai.setTrafficLeft(trafficleft);
-        }
-        if (!StringUtils.isEmpty(traffic_max) && traffic_max.matches("\\d+")) {
-            if (!trafficleft_set) {
-                /* Set traffic_max also as traffic_left */
-                ai.setTrafficLeft(traffic_max);
-            }
-            ai.setTrafficMax(traffic_max);
+            ai.setTrafficLeft(0);
         }
         this.getAPISafe(API_BASE + "?request=hostlist&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
         final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());

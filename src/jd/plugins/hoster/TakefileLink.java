@@ -31,7 +31,7 @@ import jd.plugins.HostPlugin;
 public class TakefileLink extends XFileSharingProBasic {
     public TakefileLink(final PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(super.getPremiumLink());
+        this.enablePremium(super.getPurchasePremiumURL());
     }
 
     /**
