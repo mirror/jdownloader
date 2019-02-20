@@ -279,7 +279,7 @@ public class DeviantArtCom extends PluginForHost {
             if (dlLink != null) {
                 try {
                     con = br2.openGetConnection(dlLink);
-                    if (con.getContentType().contains("html") && !HTMLALLOWED) {
+                    if (con.getResponseCode() == 404 || (con.getContentType().contains("html") && !HTMLALLOWED)) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     } else {
                         link.setDownloadSize(con.getLongContentLength());
