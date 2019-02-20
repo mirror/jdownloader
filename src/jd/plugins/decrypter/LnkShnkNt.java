@@ -18,6 +18,9 @@ package jd.plugins.decrypter;
 import java.io.File;
 import java.util.ArrayList;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -29,9 +32,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  * Earn money sharing shrinked links<br />
@@ -72,6 +72,7 @@ public class LnkShnkNt extends antiDDoSForDecrypt {
                 }
             }
             decryptedLinks.add(this.createDownloadlink(finallink));
+            logger.info("Creating: " + finallink);
             return decryptedLinks;
         }
         br.setCookie(getHost(), "s32", "1");
@@ -88,6 +89,10 @@ public class LnkShnkNt extends antiDDoSForDecrypt {
             link = br.getRedirectLocation();
             if (link != null && (link.contains("linkshrink.net/") || link.contains("lnkshrnk.net/"))) {
                 getPage(link);
+                if (br.containsHTML(">Link does not exist")) {
+                    decryptedLinks.add(createOfflinelink(parameter));
+                    return decryptedLinks;
+                }
                 link = null;
             }
             if (link == null) {
