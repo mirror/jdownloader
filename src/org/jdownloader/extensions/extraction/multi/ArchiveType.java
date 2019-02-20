@@ -187,10 +187,10 @@ public enum ArchiveType {
         }
     },
     /**
-     * Multipart RAR Archive (.rar, .r00, .r01...) 00-999 -> max 1000 parts
+     * Multipart RAR Archive (.rar, .r00, .r01...,.s00....), 1(rar) + 9(r,s,t...z)*100(00-99) Parts = 901 parts
      */
     RAR_MULTI3 {
-        private final Pattern patternPart  = Pattern.compile("(?i)(.*)\\.r(\\d{2,3})$");
+        private final Pattern patternPart  = Pattern.compile("(?i)(.*)\\.((?:r|s|t|u|v|w|x|y|z)\\d{2})$");
         private final Pattern patternStart = Pattern.compile("(?i)(.*)\\.rar$");
 
         @Override
@@ -208,7 +208,7 @@ public enum ArchiveType {
             if (Boolean.FALSE.equals(isMultiPart)) {
                 return null;
             } else {
-                return "\\.(?i)(r\\d{2,}|rar)";
+                return "\\.(?i)((?:r|s|t|u|v|w|x|y|z)\\d{2,}|rar)";
             }
         }
 
@@ -245,7 +245,9 @@ public enum ArchiveType {
             if (partNumberString == null) {
                 return 0;
             } else {
-                return Integer.parseInt(partNumberString) + 1;
+                final String number = partNumberString.substring(1);
+                final int base = partNumberString.charAt(0) - 'r';
+                return (base * 100) + Integer.parseInt(number) + 1;
             }
         }
 
@@ -278,7 +280,15 @@ public enum ArchiveType {
             if (partIndex == 0) {
                 return matches[0] + ".rar";
             } else {
-                return matches[0] + ".r" + String.format(Locale.US, "%0" + partStringLength + "d", (partIndex - 1));
+                int start = 'r';
+                int index = partIndex - 1;
+                while (true) {
+                    if (index < 100) {
+                        return matches[0] + "." + String.valueOf((char) start) + String.format(Locale.US, "%02d", (index));
+                    }
+                    index -= 100;
+                    start = start + 1;
+                }
             }
         }
 

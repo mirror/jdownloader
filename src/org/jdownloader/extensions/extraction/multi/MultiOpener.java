@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package org.jdownloader.extensions.extraction.multi;
 
 import java.io.Closeable;
@@ -41,7 +40,6 @@ import org.jdownloader.extensions.extraction.ArchiveFile;
 
 class MultiOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICryptoGetTextPassword, Closeable {
     private final class RandomAcessFileStats {
-
         private final RandomAccessFile raf;
         private long                   bytesRead = 0;
         private long                   bytesSeek = 0;
@@ -49,7 +47,6 @@ class MultiOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, I
         private RandomAcessFileStats(RandomAccessFile raf) {
             this.raf = raf;
         }
-
     }
 
     private final Map<String, RandomAcessFileStats> openedRandomAccessFileList = new HashMap<String, RandomAcessFileStats>();
@@ -57,7 +54,6 @@ class MultiOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, I
     private final String                            password;
     private String                                  name                       = null;
     private final Archive                           archive;
-
     private final LogInterface                      logger;
 
     MultiOpener(Archive archive, LogInterface logger) {
@@ -99,7 +95,12 @@ class MultiOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, I
                 if (af == null) {
                     af = archive.getBestArchiveFileMatch(fileName);
                     if (af != null) {
-                        map.put(fileName, af);
+                        if (!map.values().contains(af)) {
+                            map.put(fileName, af);
+                        } else {
+                            // don't open the same file twice
+                            throw new FileNotFoundException(fileName);
+                        }
                     }
                 }
                 final File file;
@@ -135,7 +136,6 @@ class MultiOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, I
                     }
                     return seek;
                 }
-
             };
         } catch (FileNotFoundException e) {
             if (af != null) {
@@ -170,6 +170,7 @@ class MultiOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, I
                 it.remove();
             }
         }
+        map.clear();
     }
 
     public String cryptoGetTextPassword() throws SevenZipException {
