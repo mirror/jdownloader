@@ -47,7 +47,7 @@ import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dz4up.com" }, urls = { "https?://(?:www\\.)?dz4up\\.com/[A-Za-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dz4up.com" }, urls = { "https?://(?:www\\.)?dz4up1?\\.com/[A-Za-z0-9]+" })
 public class Dz4upCom extends antiDDoSForHost {
     public Dz4upCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -69,8 +69,8 @@ public class Dz4upCom extends antiDDoSForHost {
     }
 
     /* Basic constants */
-    private final String                   mainpage                                     = "http://dz4up.com";
-    private final String                   domains                                      = "(dz4up\\.com)";
+    private final String                   mainpage                                     = "http://dz4up1.com";
+    private final String                   domains                                      = "(dz4up1?\\.com)";
     private final String                   type                                         = "html";
     private static final int               wait_BETWEEN_DOWNLOADS_LIMIT_MINUTES_DEFAULT = 10;
     private static final int               additional_WAIT_SECONDS                      = 3;
