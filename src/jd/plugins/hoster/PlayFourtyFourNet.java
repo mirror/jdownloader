@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -34,11 +33,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "play44.net" }, urls = { "http://(www\\.)?play44\\.net/embed\\.php\\?.+|http://gateway\\d*\\.play44\\.net(/?:at/.+|/videos/.+|:\\d+/.+|/.+\\.(?:mp4|flv).*)|http://(www\\.)?video44\\.net/gogo/\\?.+|http://(www\\.)?videofun\\.me/(embed/[a-f0-9]{32}|embed\\?.+)|http://gateway.*\\.videofun\\.me/videos/.+|http://(www\\.)?(?:videobug\\.net|vidzur\\.com)/embed\\.php\\?.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "play44.net" }, urls = { "https?://(?:www\\.)?play44\\.net/embed\\.php\\?.+|https?://gateway\\d*\\.play44\\.net(/?:at/.+|/videos/.+|:\\d+/.+|/.+\\.(?:mp4|flv).*)|http://(www\\.)?video44\\.net/gogo/\\?.+|http://(www\\.)?videofun\\.me/(embed/[a-f0-9]{32}|embed\\?.+)|http://gateway.*\\.videofun\\.me/videos/.+|http://(www\\.)?(?:videobug\\.net|vidzur\\.com)/embed\\.php\\?.+|https?://videozoo\\.gogoanime\\.to/index\\.php\\?vid=.+|https?://videozoo\\.me/embed\\.php\\?.+" })
 public class PlayFourtyFourNet extends antiDDoSForHost {
-
     // raztoki embed video player template.
-
     private String dllink = null;
 
     public PlayFourtyFourNet(PluginWrapper wrapper) {
@@ -70,11 +67,10 @@ public class PlayFourtyFourNet extends antiDDoSForHost {
         dl.startDownload();
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         correctDownloadLink(downloadLink);
-        final String filename = downloadLink.isNameSet() ? downloadLink.getName() : new Regex(dllink, "[\\?&](?:file|vid(?:eo)?)=(?:[^/]*/){0,}([^&]+)").getMatch(0);
+        String filename = downloadLink.isNameSet() ? downloadLink.getName() : new Regex(dllink, "[\\?&](?:file|vid(?:eo)?)=(?:[^/]*/){0,}([^&]+)").getMatch(0);
         if (!downloadLink.isNameSet() && filename != null) {
             // Offline links should also have nice filenames
             downloadLink.setName(filename);
@@ -117,8 +113,18 @@ public class PlayFourtyFourNet extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
         }
         dllink = br.getRedirectLocation();
+        if (dllink != null && dllink.contains("videozoo")) {
+            /* 2019-02-20: Special handling for videozoo URLs */
+            br.setFollowRedirects(true);
+            br.getPage(dllink);
+            dllink = null;
+        }
         if (dllink == null) {
             dllink = br.getRegex("playlist:.*?url: '(http[^']+)'").getMatch(0);
+            if (dllink == null) {
+                /* 2019-02-20: For videozoo URLs */
+                dllink = br.getRegex("file\\s*?:\\s*?\"(http[^\"]+)\"").getMatch(0);
+            }
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -235,5 +241,4 @@ public class PlayFourtyFourNet extends antiDDoSForHost {
         // same as gogoanime disabled, test just times out anyway...
         return Boolean.TRUE;
     }
-
 }
