@@ -19,8 +19,9 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -52,9 +53,12 @@ import jd.plugins.components.UserAgents;
 import jd.plugins.download.HashInfo;
 import jd.utils.locale.JDL;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mediafire.com" }, urls = { "https?://(www\\.|m\\.|download\\d+\\.)?mediafire\\.com/(download/[a-z0-9]+|(download\\.php\\?|\\?JDOWNLOADER(?!sharekey)|file/|file\\?|download/?).*?(?=http:|$|\r|\n))" })
 public class MediafireCom extends PluginForHost {
@@ -73,6 +77,8 @@ public class MediafireCom extends PluginForHost {
         return UserAgents.hbbtvUserAgent();
     }
 
+    // ?9579576935451
+    // Referer: http://www.mediafire.com/file/nw1lc2pyrtp043c/1972+Fritz+the+Cat+-+Fritz+Bugs+Out%7BSirReal.rar
     /* End of HbbTV agents */
     /** end of random agents **/
     private static final String PRIVATEFILE           = JDL.L("plugins.hoster.mediafirecom.errors.privatefile", "Private file: Only downloadable for registered users");
@@ -633,8 +639,10 @@ public class MediafireCom extends PluginForHost {
             final StringBuilder sb = new StringBuilder();
             final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
             int index = 0;
+            final Map<String, DownloadLink> linkMap = new HashMap<String, DownloadLink>();
             while (true) {
                 links.clear();
+                linkMap.clear();
                 while (true) {
                     // maximum number of quickkeys allowed is 500.
                     if (links.size() > 100 || index == urls.length) {
@@ -645,12 +653,17 @@ public class MediafireCom extends PluginForHost {
                 }
                 sb.delete(0, sb.capacity());
                 sb.append("quick_key=");
+                boolean addDelimiter = false;
                 for (final DownloadLink dl : links) {
-                    sb.append(getFUID(dl));
-                    sb.append(",");
+                    if (addDelimiter) {
+                        sb.append(",");
+                    } else {
+                        addDelimiter = true;
+                    }
+                    final String id = getFUID(dl);
+                    linkMap.put(id, dl);
+                    sb.append(id);
                 }
-                // lets remove last ","
-                sb.replace(sb.length() - 1, sb.length(), "");
                 if (account != null) {
                     apiCommand(account, "file/get_info.php", sb.toString());
                 } else {
@@ -661,23 +674,19 @@ public class MediafireCom extends PluginForHost {
                     api.getPage("https://www.mediafire.com/api/1.4/file/get_info.php" + "?r=" + getRandomFourLetters() + "&" + sb.toString() + "&response_format=json");
                     handleApiError(account);
                 }
-                final String apiResponse = api.toString();
-                String json = PluginJSonUtils.getJsonArray(apiResponse, "file_infos");
-                if (json == null) {
-                    json = PluginJSonUtils.getJsonNested(apiResponse, "file_info");
-                    if (json != null) {
-                        json = "[{" + json + "}]";
-                    }
+                final Map<String, Object> apiResponse = JSonStorage.restoreFromString(api.toString(), TypeRef.HASHMAP);
+                final List<Map<String, Object>> file_infos;
+                Object infos = JavaScriptEngineFactory.walkJson(apiResponse, "response/file_infos");
+                if (infos == null) {
+                    infos = JavaScriptEngineFactory.walkJson(apiResponse, "response/file_info");
                 }
-                final String[] jsonResults = PluginJSonUtils.getJsonResultsFromArray(json);
-                // because they have a shite api and do things illogically...
-                final String skipped = PluginJSonUtils.getJsonValue(apiResponse, "skipped");
-                final HashSet<String> offline = new HashSet<String>();
-                if (skipped != null) {
-                    offline.addAll(Arrays.asList(skipped));
-                }
-                for (final DownloadLink dl : links) {
-                    if (json == null && jsonResults == null && links.size() == 1) {
+                if (infos != null && infos instanceof List) {
+                    file_infos = (List<Map<String, Object>>) infos;
+                } else if (infos != null && infos instanceof Map) {
+                    file_infos = new ArrayList<Map<String, Object>>();
+                } else {
+                    if (links.size() == 1) {
+                        final DownloadLink dl = links.get(0);
                         // for invalid uid in arraylist.size == 1;
                         if (handleLinkcheckingApiError(account)) {
                             // we know that single result must be false!
@@ -689,54 +698,49 @@ public class MediafireCom extends PluginForHost {
                         return true;
                     } else if (handleLinkcheckingApiError(account) && links.size() > 1) {
                         // all uids teh array are invalid.
-                        dl.setAvailableStatus(AvailableStatus.FALSE);
-                        continue;
+                        file_infos = null;
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    final String fuid = getFUID(dl);
-                    if (offline.contains(fuid)) {
-                        dl.setAvailableStatus(AvailableStatus.FALSE);
-                        continue;
-                    }
-                    boolean online = false;
-                    for (final String result : jsonResults) {
-                        final String quickkey = PluginJSonUtils.getJsonValue(result, "quickkey");
-                        if (StringUtils.equals(quickkey, fuid)) {
-                            dl.setAvailableStatus(AvailableStatus.TRUE);
-                            final String name = PluginJSonUtils.getJsonValue(result, "filename");
-                            final String size = PluginJSonUtils.getJsonValue(result, "size");
-                            final String hash = PluginJSonUtils.getJsonValue(result, "hash");
-                            final String privacy = PluginJSonUtils.getJsonValue(result, "privacy");
-                            final String pass = PluginJSonUtils.getJsonValue(result, "password_protected");
+                }
+                if (file_infos != null) {
+                    for (final Map<String, Object> file_info : file_infos) {
+                        final DownloadLink item = linkMap.remove(file_info.get("quickkey"));
+                        if (item != null) {
+                            item.setAvailableStatus(AvailableStatus.TRUE);
+                            final String name = (String) file_info.get("filename");
+                            final Long size = JavaScriptEngineFactory.toLong(file_info.get("size"), -1);
+                            final String hash = (String) file_info.get("hash");
+                            final String privacy = (String) file_info.get("privacy");
+                            final String pass = (String) file_info.get("password_protected");
                             if (StringUtils.isNotEmpty(name)) {
-                                dl.setFinalFileName(name);
+                                item.setFinalFileName(name);
                             }
-                            if (size != null && size.matches("^\\d+$")) {
-                                dl.setVerifiedFileSize(Long.parseLong(size));
+                            if (size != null && size >= 0) {
+                                item.setVerifiedFileSize(size);
                             }
                             if (StringUtils.isNotEmpty(hash)) {
-                                dl.setHashInfo(HashInfo.parse(hash));
+                                item.setHashInfo(HashInfo.parse(hash));
                             }
                             if (privacy != null) {
-                                dl.setProperty("privacy", privacy);
+                                item.setProperty("privacy", privacy);
                             }
                             if (pass != null) {
-                                dl.setProperty("passwordRequired", PluginJSonUtils.parseBoolean(pass));
+                                item.setProperty("passwordRequired", PluginJSonUtils.parseBoolean(pass));
                             }
-                            online = true;
-                            break;
                         }
                     }
-                    if (!online) {
-                        // if some uids are invalid with valid results, invalids just don't return.. we can then set them as offline!
-                        dl.setAvailableStatus(AvailableStatus.FALSE);
-                        continue;
-                    }
+                }
+                for (final DownloadLink offline : linkMap.values()) {
+                    // if some uids are invalid with valid results, invalids just don't return.. we can then set them as offline!
+                    offline.setAvailableStatus(AvailableStatus.FALSE);
                 }
                 if (index == urls.length) {
                     break;
                 }
             }
         } catch (final Exception e) {
+            getLogger().log(e);
             return false;
         }
         return true;

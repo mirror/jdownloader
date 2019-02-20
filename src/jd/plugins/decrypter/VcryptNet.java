@@ -17,9 +17,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -32,7 +29,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vcrypt.net" }, urls = { "https?://(?:www\\.)?vcrypt\\.(?:net|pw)/(?:[^/]+/([a-z0-9]+)|[a-z0-9]{6})" })
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vcrypt.net" }, urls = { "https?://(?:www\\.)?vcrypt\\.(?:net|pw)/(?:[^/]+/([a-z0-9\\_]+)|[a-z0-9]{6})" })
 public class VcryptNet extends antiDDoSForDecrypt {
     public VcryptNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -67,7 +67,7 @@ public class VcryptNet extends antiDDoSForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
         }
-        if (parameter.matches("https?://[^/]+/[^/]+/[a-zA-Z0-9]+")) {
+        if (parameter.matches("https?://[^/]+/[^/]+/[a-zA-Z0-9\\_]+")) {
             Form continueForm = br.getFormByInputFieldKeyValue("submit", "Continue");
             if (continueForm == null) {
                 continueForm = br.getFormBySubmitvalue("Continue");
@@ -89,10 +89,18 @@ public class VcryptNet extends antiDDoSForDecrypt {
                 // redirect can be meta redirect within html
                 redirect = br.getRegex("<meta http-equiv='refresh' content=(|'|\")\\d+;\\s*url=(.*)\\1").getMatch(1);
             }
+            if (redirect != null && redirect.contains("/opencryptz")) {
+                // leads to final redirect
+                br.getPage(redirect);
+                redirect = br.getRedirectLocation();
+            }
             if (redirect != null && !redirect.contains(this.getHost() + "/")) {
                 decryptedLinks.add(createDownloadlink(redirect));
             } else if (redirect != null && redirect.contains("/banned")) {
                 logger.info("Reconnect required to continue decryption");
+            } else if (redirect != null && redirect.contains("/fastshield")) {
+                // an additional step
+                decryptedLinks.add(createDownloadlink(redirect));
             } else {
                 // can be a list of links
                 final String button = br.getRegex("<button id=\"tt\" class=\"clickme\" value=\"(.*?)\"").getMatch(0);

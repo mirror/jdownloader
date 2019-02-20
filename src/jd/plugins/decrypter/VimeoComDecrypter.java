@@ -247,6 +247,14 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                         }
                     }
                 }
+                if (br.getHttpConnection().getResponseCode() == 403 && br.containsHTML("Because of its privacy settings, this video cannot be played here")) {
+                    if (StringUtils.containsIgnoreCase(vimeo_forced_referer, "/review/")) {
+                        br = new Browser();
+                        setBrowserExclusive();
+                        prepBrowser(br);
+                        br.getPage(vimeo_forced_referer);
+                    }
+                }
                 if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404 || "This video does not exist\\.".equals(PluginJSonUtils.getJsonValue(br, "message"))) {
                     decryptedLinks.add(createOfflinelink(orgParam, videoID, null));
                     return decryptedLinks;

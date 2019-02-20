@@ -105,8 +105,11 @@ public class OuoIo extends antiDDoSForDecrypt {
             captchaForm.put("s_width", Integer.toString(new Random().nextInt(1000)));
             captchaForm.put("s_height", Integer.toString(new Random().nextInt(1000)));
         }
-        final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
-        captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+        final CaptchaHelperCrawlerPluginRecaptchaV2 helper = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br);
+        if (helper.getSiteKey() != null) {
+            final String recaptchaV2Response = helper.getToken();
+            captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+        }
         br.setFollowRedirects(true);
         br.submitForm(captchaForm);
         final String finallink = getFinalLink();

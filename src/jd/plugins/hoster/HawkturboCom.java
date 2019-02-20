@@ -36,18 +36,18 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hawkturbo.com" }, urls = { "" })
-public class HawkturboCom extends PluginForHost {
+public class HawkturboCom extends antiDDoSForHost {
     private static final String                            NICE_HOST                 = "hawkturbo.com";
     private static final String                            NICE_HOSTproperty         = NICE_HOST.replaceAll("(\\.|\\-)", "");
     /* Connection limits */
@@ -76,6 +76,7 @@ public class HawkturboCom extends PluginForHost {
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.setFollowRedirects(true);
+        br.addAllowedResponseCodes(422);// login
         return br;
     }
 
@@ -142,7 +143,7 @@ public class HawkturboCom extends PluginForHost {
         handleDL(account, link, dllink);
     }
 
-    private String getDllink(final DownloadLink link) throws IOException, PluginException {
+    private String getDllink(final DownloadLink link) throws Exception {
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null) {
             if (USE_API) {
@@ -158,8 +159,8 @@ public class HawkturboCom extends PluginForHost {
         return null;
     }
 
-    private String getDllinkWebsite(final DownloadLink link) throws IOException, PluginException {
-        br.postPage("https://www." + this.getHost() + "/user/download", "links=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
+    private String getDllinkWebsite(final DownloadLink link) throws Exception {
+        postPage(br, "https://www." + this.getHost() + "/user/download", "links=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
         final String dllink = PluginJSonUtils.getJsonValue(this.br, "link_generated");
         return dllink;
     }
@@ -189,7 +190,7 @@ public class HawkturboCom extends PluginForHost {
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
-                con = br2.openHeadConnection(dllink);
+                con = openAntiDDoSRequestConnection(br2, br2.createHeadRequest(dllink));
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
@@ -250,7 +251,7 @@ public class HawkturboCom extends PluginForHost {
     }
 
     private void parseSupportedHosts(final AccountInfo ai, final boolean isPremium) throws Exception {
-        br.getPage("/api/host-list");
+        getPage("/api/host-list");
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         LinkedHashMap<String, Object> entries = null;
         final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
@@ -296,7 +297,7 @@ public class HawkturboCom extends PluginForHost {
                 /*
                  * Even though login is forced first check if our cookies are still valid to avoid login captcha --> If not, force login!
                  */
-                br.getPage("https://www." + this.getHost() + "/user/account");
+                getPage("https://www." + this.getHost() + "/user/account");
                 if (isLoggedinHTML()) {
                     account.saveCookies(this.br.getCookies(this.getHost()), "");
                     return;
@@ -304,7 +305,7 @@ public class HawkturboCom extends PluginForHost {
                 /* Clear cookies to prevent unknown errors as we'll perform a full login below now. */
                 this.br = prepBR(new Browser());
             }
-            br.getPage("https://www." + this.getHost() + "/login");
+            getPage("https://www." + this.getHost() + "/login");
             final String token = br.getRegex("<meta name=\"csrf\\-token\" content=\"([^<>\"]+)\">").getMatch(0);
             if (StringUtils.isEmpty(token)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -317,12 +318,12 @@ public class HawkturboCom extends PluginForHost {
             if (dlinkbefore != null) {
                 this.setDownloadLink(dlinkbefore);
             }
-            String postData = "_token=" + Encoding.urlEncode(token) + "&name=" + Encoding.urlEncode(currentAcc.getUser()) + "&password=" + Encoding.urlEncode(currentAcc.getPass()) + "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response);
-            br.postPage("/login", postData);
+            String postData = "_token=" + Encoding.urlEncode(token) + "&identity=" + Encoding.urlEncode(currentAcc.getUser()) + "&password=" + Encoding.urlEncode(currentAcc.getPass()) + "&remember=1&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response);
+            postPage("/login", postData);// responseCode may be 422
             final String success = PluginJSonUtils.getJson(br, "success");
             if (!StringUtils.isEmpty(success)) {
                 /* Login should be okay and we should get the cookies now! */
-                br.getPage("/user/account");
+                getPage("/user/account");
             }
             if (!isLoggedinHTML()) {
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -333,7 +334,9 @@ public class HawkturboCom extends PluginForHost {
             }
             account.saveCookies(this.br.getCookies(this.getHost()), "");
         } catch (final PluginException e) {
-            account.clearCookies("");
+            if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                account.clearCookies("");
+            }
             throw e;
         }
     }

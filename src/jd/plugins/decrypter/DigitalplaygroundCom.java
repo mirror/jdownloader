@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -34,21 +33,21 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "digitalplayground.com" }, urls = { "https?://ma\\.digitalplayground\\.com/(?!model/)[a-z]+(?:/[a-z]+)?/\\d+(?:/[a-z0-9\\-_]+/?)?|https?://ma\\.digitalplayground\\.com/[^/]+/galleries/\\d+(?:/[a-z0-9\\-_]+/?)?|https?://www\\.digitalplayground\\.com/[a-z]+(?:/[a-z]+)?/trailer/\\d+/[a-z0-9\\-_]+/?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "digitalplayground.com" }, urls = { "https?://(?:site-ma|ma)\\.digitalplayground\\.com/(?!model/)[a-z]+(?:/[a-z]+)?/\\d+(?:/[a-z0-9\\-_]+/?)?|https?://(?:site-ma|ma)\\.digitalplayground\\.com/[^/]+/galleries/\\d+(?:/[a-z0-9\\-_]+/?)?|https?://www\\.digitalplayground\\.com/[a-z]+(?:/[a-z]+)?/trailer/\\d+/[a-z0-9\\-_]+/?" })
 public class DigitalplaygroundCom extends PluginForDecrypt {
-
     public DigitalplaygroundCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public static String DOMAIN_BASE           = "digitalplayground.com";
-    public static String DOMAIN_PREFIX_PREMIUM = "ma.";
+    public static String DOMAIN_BASE = "digitalplayground.com";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -66,16 +65,13 @@ public class DigitalplaygroundCom extends PluginForDecrypt {
         String ext = ".mp4";
         final boolean isPhotoUrl = parameter.matches(".+/galleries/\\d+(?:/[a-z0-9\\-_]+/?)?");
         final boolean isTrailerUrl = isTrailerUrl(parameter);
-
         if (!isPhotoUrl && !isTrailerUrl) {
             /* Current contenttype is a movie --> We have the required ID already. */
             fid_movie = fid_of_current_contenttype;
         }
-
         final PluginForHost hostPlugin = JDUtilities.getPluginForHost(this.getHost());
         final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
         final List<Account> moch_accounts = AccountController.getInstance().getMultiHostAccounts(this.getHost());
-
         if (aa == null && (moch_accounts == null || moch_accounts.size() == 0)) {
             logger.info("Account needed to use this crawler for this linktype (videos)");
             return decryptedLinks;
@@ -112,7 +108,7 @@ public class DigitalplaygroundCom extends PluginForDecrypt {
         final boolean grabMovies = !grabPictures || cfg.getBooleanProperty("AUTO_MOVIES", false);
         String linkid = null;
         if (grabPictures) {
-            br.getPage(getPicUrl(fid_of_current_contenttype));
+            br.getPage(getPicUrl(aa, fid_of_current_contenttype));
             if (isOffline(this.br)) {
                 final DownloadLink offline = this.createOfflinelink(parameter);
                 decryptedLinks.add(offline);
@@ -169,21 +165,20 @@ public class DigitalplaygroundCom extends PluginForDecrypt {
             }
         }
         if (grabMovies && fid_movie != null) {
-            br.getPage(getVideoUrlPremium(fid_movie));
+            br.getPage(getVideoUrlPremium(aa, fid_movie));
             if (isOffline(this.br)) {
                 final DownloadLink offline = this.createOfflinelink(parameter);
                 decryptedLinks.add(offline);
                 return decryptedLinks;
             }
             /* 2016-11-03: Videos are not officially downloadable --> Download http streams */
+            // TODO: add support /scene/ and /movie/ and also add support for downloads if available
             title = getTitleVideo(this.br, fid_of_current_contenttype);
             final String json = jd.plugins.decrypter.BrazzersCom.getVideoJson(this.br);
             if (json == null) {
                 return null;
             }
-
             final LinkedHashMap<String, Object> entries = jd.plugins.decrypter.WickedCom.getVideoMapHttpStream(json);
-
             final Iterator<Entry<String, Object>> it = entries.entrySet().iterator();
             while (it.hasNext()) {
                 final Entry<String, Object> entry = it.next();
@@ -207,11 +202,9 @@ public class DigitalplaygroundCom extends PluginForDecrypt {
                 decryptedLinks.add(dl);
             }
         }
-
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
         fp.addLinks(decryptedLinks);
-
         return decryptedLinks;
     }
 
@@ -255,7 +248,7 @@ public class DigitalplaygroundCom extends PluginForDecrypt {
             final String urlpart = urlinfo.getMatch(0);
             final String url_ending = urlinfo.getMatch(1);
             if (urlpart != null && fid != null) {
-                videourl_free = "http://www." + DOMAIN_BASE + "/" + urlpart + "/trailer/" + fid;
+                videourl_free = "https://www." + DOMAIN_BASE + "/" + urlpart + "/trailer/" + fid;
                 if (url_ending != null) {
                     videourl_free += url_ending;
                 }
@@ -267,12 +260,26 @@ public class DigitalplaygroundCom extends PluginForDecrypt {
         return videourl_free;
     }
 
-    public static String getVideoUrlPremium(final String fid) {
-        return "http://" + DOMAIN_PREFIX_PREMIUM + DOMAIN_BASE + "/watch/" + fid + "/";
+    public static String getVideoUrlPremium(final Account account, final String fid) throws PluginException {
+        if (account == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String digitalPlaygroundDomain = account.getStringProperty("digitalPlaygroundDomain", null);
+        if (digitalPlaygroundDomain == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        return "https://" + digitalPlaygroundDomain + "/watch/" + fid + "/";
     }
 
-    public static String getPicUrl(final String fid) {
-        return "http://" + DOMAIN_PREFIX_PREMIUM + DOMAIN_BASE + "/gallery/" + fid + "/";
+    public static String getPicUrl(final Account account, final String fid) throws PluginException {
+        if (account == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String digitalPlaygroundDomain = account.getStringProperty("digitalPlaygroundDomain", null);
+        if (digitalPlaygroundDomain == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        return "https://" + digitalPlaygroundDomain + "/gallery/" + fid + "/";
     }
 
     public static boolean isOffline(final Browser br) {
@@ -292,5 +299,4 @@ public class DigitalplaygroundCom extends PluginForDecrypt {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.PornPortal;
     }
-
 }

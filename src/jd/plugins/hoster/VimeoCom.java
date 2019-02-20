@@ -25,17 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.containers.VimeoContainer;
-import org.jdownloader.plugins.components.containers.VimeoContainer.Quality;
-import org.jdownloader.plugins.components.containers.VimeoContainer.Source;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -60,6 +49,17 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.locale.JDL;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.containers.VimeoContainer;
+import org.jdownloader.plugins.components.containers.VimeoContainer.Quality;
+import org.jdownloader.plugins.components.containers.VimeoContainer.Source;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "decryptedforVimeoHosterPlugin://.+" })
 public class VimeoCom extends PluginForHost {
@@ -250,7 +250,12 @@ public class VimeoCom extends PluginForHost {
         final String videoID = getVideoID(downloadLink);
         final String specialVideoID = getSpecialVideoID(downloadLink);
         if (usePrivateHandling(downloadLink)) {
-            br.getPage("https://player.vimeo.com/video/" + videoID);
+            final String forcedReferer = getForcedReferer(downloadLink);
+            if (StringUtils.containsIgnoreCase(forcedReferer, "/review/")) {
+                br.getPage(forcedReferer);
+            } else {
+                br.getPage("https://player.vimeo.com/video/" + videoID);
+            }
             if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404 || "This video does not exist\\.".equals(PluginJSonUtils.getJsonValue(br, "message"))) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -496,6 +501,9 @@ public class VimeoCom extends PluginForHost {
         if (configURL == null) {
             // can be within json on the given page now.. but this is easy to just request again raz20151215
             configURL = PluginJSonUtils.getJsonValue(ibr, "config_url");
+            if (configURL == null) {
+                configURL = PluginJSonUtils.getJsonValue(ibr, "configUrl");
+            }
         }
         final ArrayList<VimeoContainer> results = new ArrayList<VimeoContainer>();
         if (download && ibr.containsHTML("download_config\"\\s*?:\\s*?\\[")) {

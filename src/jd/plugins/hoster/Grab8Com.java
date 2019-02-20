@@ -74,7 +74,6 @@ public class Grab8Com extends antiDDoSForHost {
     private static MultiHosterManagement mhm                            = new MultiHosterManagement("grab8.com");
     private Account                      currAcc                        = null;
     private DownloadLink                 currDownloadLink               = null;
-    private static Object                LOCK                           = new Object();
     private Browser                      ajax                           = null;
 
     public Grab8Com(PluginWrapper wrapper) {
@@ -131,7 +130,7 @@ public class Grab8Com extends antiDDoSForHost {
         }
         this.br = new Browser();
         setConstants(account, link);
-        login(true, false);
+        login(account, true, false);
         br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
@@ -182,7 +181,7 @@ public class Grab8Com extends antiDDoSForHost {
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         // no need to linkcheck before download!
         setConstants(account, link);
-        login(true, false);
+        login(account, true, false);
         handleDL(account, link, link.getDownloadURL());
     }
 
@@ -196,7 +195,7 @@ public class Grab8Com extends antiDDoSForHost {
         mhm.runCheck(account, link);
         br = new Browser();
         setConstants(account, link);
-        login(true, false);
+        login(account, true, false);
         final String url = link.getDefaultPlugin().buildExternalDownloadURL(link, this);
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null) {
@@ -382,7 +381,7 @@ public class Grab8Com extends antiDDoSForHost {
             try {
                 if (this.dl.startDownload()) {
                     if (deleteAfterDownload) {
-                        deleteFileFromServer(dllink);
+                        deleteFileFromServer(account, dllink);
                     }
                 } else {
                     try {
@@ -421,10 +420,10 @@ public class Grab8Com extends antiDDoSForHost {
         }
     }
 
-    private boolean deleteFileFromServer(final String dllink) {
+    private boolean deleteFileFromServer(final Account account, final String dllink) {
         try {
             final Browser del = new Browser();
-            loadCookies(del);
+            loadCookies(account, del);
             getPage(del, "https://" + getHost() + "/account");
             String md5 = null;
             // find the md5checksum
@@ -477,7 +476,7 @@ public class Grab8Com extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         setConstants(account, null);
-        return login(true, true);
+        return login(account, true, true);
     }
 
     private Long getExpire(final Browser br) {
@@ -504,16 +503,16 @@ public class Grab8Com extends antiDDoSForHost {
      *
      * @throws Exception
      */
-    private AccountInfo login(final boolean cachedLogin, final boolean fetchAccountInfo) throws Exception {
-        synchronized (LOCK) {
+    private AccountInfo login(final Account account, final boolean cachedLogin, final boolean fetchAccountInfo) throws Exception {
+        synchronized (account) {
             AccountInfo ai = new AccountInfo();
             try {
                 // new browser
                 Browser superbrbefore = this.br;
                 final Browser br = new Browser();
-                if (!fetchAccountInfo && cachedLogin && loadCookies(this.br)) {
+                if (!fetchAccountInfo && cachedLogin && loadCookies(account, this.br)) {
                     return currAcc.getAccountInfo();
-                } else if (cachedLogin && loadCookies(br)) {
+                } else if (cachedLogin && loadCookies(account, br)) {
                     // empty
                 } else {
                     getPage(br, "https://" + getHost() + "/");
@@ -523,8 +522,8 @@ public class Grab8Com extends antiDDoSForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     // https request, login action seems to be to http.
-                    login.put("username", Encoding.urlEncode(currAcc.getUser()));
-                    login.put("password", Encoding.urlEncode(currAcc.getPass()));
+                    login.put("username", Encoding.urlEncode(account.getUser()));
+                    login.put("password", Encoding.urlEncode(account.getPass()));
                     login.put("rememberme", "true");
                     // on https request, images are http (hard coded).
                     final String url_ordinary_captcha = login.getRegex("(?:https?:)?(?://(?:www\\.)?[^/]+)?/captcha\\.php\\?tp=login[^<>\"']+").getMatch(-1);
@@ -587,26 +586,26 @@ public class Grab8Com extends antiDDoSForHost {
                 boolean freeAccount = isAccountFree(br);
                 final Long expire = getExpire(br);
                 if (!freeAccount && expire != null && ai.setValidUntil(expire, br) && !ai.isExpired()) {
-                    currAcc.setType(AccountType.PREMIUM);
+                    account.setType(AccountType.PREMIUM);
                     ai.setStatus("Premium Account");
                 } else {
-                    currAcc.setType(AccountType.FREE);
+                    account.setType(AccountType.FREE);
                     ai.setStatus("Free Account");
                 }
-                currAcc.setValid(true);
+                account.setValid(true);
                 // get hostmap from /hosts, this shows if host is available to free mode and if its up and down...
                 getPage(br, "/hosts");
                 final ArrayList<String> supportedHosts = new ArrayList<String>();
-                final String[] tableRow = br.getRegex("<tr>\\s*<td>.*?</tr>").getColumn(-1);
-                freeAccount = currAcc.getType() == AccountType.FREE;
+                final String[] tableRow = br.getRegex("<tr>\\s*<(?:!--<)?td>.*?</tr>").getColumn(-1);
+                freeAccount = account.getType() == AccountType.FREE;
                 for (final String row : tableRow) {
                     // we should be left with two cleanuped up lines. -not anymore... can be 3, but 3rd is useless info
                     final String cleanup = row.replaceAll("[ ]*<[^>]+>[ ]*", " ").replaceAll("[\r\n\t]+", "\r\n").trim();
                     final boolean free = new Regex(row, ".*/themes/images/free\\.gif").matches() || StringUtils.contains(cleanup.split("\r\n")[0].trim(), "Only Premium");
                     // now can be, 'host' or 'host & Only Premium'
-                    final String host = cleanup.split("\r\n")[0].trim().replaceAll("\\s*Only Premium\\s*", "");
+                    final String host = cleanup.split("\r\n")[0].trim().replaceAll("\\s*Only Premium\\s*", "").replaceAll("\\s*//-->\\s*", "");
                     // can be, online, offline, unstable, fixing
-                    final String online = cleanup.split("\r\n")[1].trim();
+                    final String online = cleanup.split("\r\n")[1].trim().replaceAll("\\s*//-->\\s*", "");
                     if (host == null || online == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
@@ -620,15 +619,15 @@ public class Grab8Com extends antiDDoSForHost {
                 }
                 // note: on the account page, they do have array of hosts but it only shows ones with traffic limits.
                 ai.setMultiHostSupport(this, supportedHosts);
-                currAcc.setProperty("name", Encoding.urlEncode(currAcc.getUser()));
-                currAcc.setProperty("pass", Encoding.urlEncode(currAcc.getPass()));
-                currAcc.setProperty("cookies", fetchCookies(br, getHost()));
+                account.setProperty("name", Encoding.urlEncode(currAcc.getUser()));
+                account.setProperty("pass", Encoding.urlEncode(currAcc.getPass()));
+                account.setProperty("cookies", fetchCookies(br, getHost()));
                 // load cookies to this.br
-                loadCookies(this.br);
+                loadCookies(account, this.br);
                 return ai;
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    currAcc.setProperty("cookies", Property.NULL);
+                    account.setProperty("cookies", Property.NULL);
                 }
                 throw e;
             }
@@ -668,29 +667,32 @@ public class Grab8Com extends antiDDoSForHost {
         return result;
     }
 
-    private boolean loadCookies(final Browser br) {
-        synchronized (LOCK) {
-            // Load cookies
-            br.setCookiesExclusive(true);
-            final Object ret = currAcc.getProperty("cookies", null);
-            boolean acmatch = Encoding.urlEncode(currAcc.getUser()).equals(currAcc.getStringProperty("name", Encoding.urlEncode(currAcc.getUser())));
-            if (acmatch) {
-                acmatch = Encoding.urlEncode(currAcc.getPass()).equals(currAcc.getStringProperty("pass", Encoding.urlEncode(currAcc.getPass())));
-            }
-            if (acmatch && ret != null && ret instanceof HashMap<?, ?>) {
-                final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                if (currAcc.isValid()) {
-                    for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                        final String key = cookieEntry.getKey();
-                        final String value = cookieEntry.getValue();
-                        br.setCookie(getHost(), key, value);
-                    }
-                    // perform a test?
-                    return true;
+    private boolean loadCookies(final Account account, final Browser br) {
+        if (account != null) {
+            synchronized (account) {
+                // Load cookies
+                br.setCookiesExclusive(true);
+                final Object ret = account.getProperty("cookies", null);
+                boolean acmatch = Encoding.urlEncode(currAcc.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
                 }
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?>) {
+                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                    if (account.isValid()) {
+                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                            final String key = cookieEntry.getKey();
+                            final String value = cookieEntry.getValue();
+                            br.setCookie(getHost(), key, value);
+                        }
+                        // perform a test?
+                        return true;
+                    }
+                }
+                return false;
             }
-            return false;
         }
+        return false;
     }
 
     private void getAPISafe(final String url) throws Exception {
