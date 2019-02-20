@@ -22,10 +22,11 @@ import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
+
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filecheck.link", "container.cool", "redirect.codes" }, urls = { "https?://(?:www\\.)?filecheck\\.link/d/[A-Za-z0-9]+", "https?://(?:www\\.)?container\\.cool/d/[A-Za-z0-9]+", "https?://(?:www\\.)?redirect\\.codes/d/[A-Za-z0-9]+" })
-public class FilecheckLink extends PluginForDecrypt {
+public class FilecheckLink extends antiDDoSForDecrypt {
     public FilecheckLink(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -33,7 +34,7 @@ public class FilecheckLink extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        br.getPage(parameter);
+        getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<h1>File Not Found</h1><br>")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;

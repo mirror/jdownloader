@@ -17,9 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -33,7 +30,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "coolrom.com" }, urls = { "https?://(?:www\\.)?coolrom\\.com/roms/[^/]+/\\d+/[^/]+\\.php" })
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "coolrom.com" }, urls = { "https?://(?:www\\.)?coolrom\\.com(\\.au)?/roms/[^/]+/\\d+/[^/]+\\.php" })
 public class CoolromCom extends PluginForHost {
     public CoolromCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -92,7 +92,7 @@ public class CoolromCom extends PluginForHost {
         if (dllink == null) {
             final String romID = new Regex(downloadLink.getDownloadURL(), "/roms/[^/]+/(\\d+)/").getMatch(0);
             br.getPage("/dlpop.php?id=" + romID);
-            dllink = br.getRegex("(https?://[A-Za-z0-9]+\\.coolrom\\.com/dli?/\\d+/[^<>\"]+)").getMatch(0);
+            dllink = br.getRegex("(https?://[A-Za-z0-9]+\\.coolrom\\.com(?:\\.au)?/dli?/\\d+/[^<>\"]+)").getMatch(0);
             if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

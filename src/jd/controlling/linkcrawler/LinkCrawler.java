@@ -3213,7 +3213,7 @@ public class LinkCrawler {
                                  * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on
                                  * plugin waiting for linkcrawler results
                                  */
-                                if (!checkStartNotify(generation)) {
+                                if (!generation.isValid()) {
                                     /* LinkCrawler got aborted! */
                                     return;
                                 }

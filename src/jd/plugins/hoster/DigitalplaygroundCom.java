@@ -15,11 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.io.IOException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -42,12 +38,14 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "digitalplayground.com" }, urls = { "http://digitalplaygrounddecrypted.+" })
-public class DigitalplaygroundCom extends PluginForHost {
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "digitalplayground.com" }, urls = { "https?://digitalplaygrounddecrypted.+" })
+public class DigitalplaygroundCom extends PluginForHost {
     public DigitalplaygroundCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://join.digitalplayground.com/signup/signup.php");
+        this.enablePremium("https://join.digitalplayground.com/signup/signup.php");
         setConfigElements();
     }
 
@@ -70,11 +68,11 @@ public class DigitalplaygroundCom extends PluginForHost {
     private boolean              server_issues                = false;
 
     public static Browser prepBR(final Browser br) {
-        return jd.plugins.hoster.BrazzersCom.pornportalPrepBR(br, jd.plugins.decrypter.WickedCom.DOMAIN_PREFIX_PREMIUM + jd.plugins.decrypter.WickedCom.DOMAIN_BASE);
+        return jd.plugins.hoster.BrazzersCom.pornportalPrepBR(br, jd.plugins.decrypter.WickedCom.DOMAIN_BASE);
     }
 
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("http://digitalplaygrounddecrypted", "http://"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("https?://digitalplaygrounddecrypted", "https://"));
     }
 
     @SuppressWarnings("deprecation")
@@ -96,7 +94,7 @@ public class DigitalplaygroundCom extends PluginForHost {
             con = br.openHeadConnection(dllink);
             if (con.getContentType().contains("html")) {
                 /* Refresh directurl */
-                refreshDirecturl(link);
+                refreshDirecturl(aa, link);
                 con = br.openHeadConnection(dllink);
                 if (con.getContentType().contains("html")) {
                     server_issues = true;
@@ -116,7 +114,7 @@ public class DigitalplaygroundCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private void refreshDirecturl(final DownloadLink link) throws PluginException, IOException {
+    private void refreshDirecturl(final Account account, final DownloadLink link) throws PluginException, IOException {
         final String fid = link.getStringProperty("fid", null);
         if (fid == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -127,7 +125,7 @@ public class DigitalplaygroundCom extends PluginForHost {
                 /* User added url without decrypter --> Impossible to refresh this directurl! */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            this.br.getPage(jd.plugins.decrypter.DigitalplaygroundCom.getPicUrl(fid));
+            this.br.getPage(jd.plugins.decrypter.DigitalplaygroundCom.getPicUrl(account, fid));
             if (jd.plugins.decrypter.DigitalplaygroundCom.isOffline(this.br)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -139,7 +137,7 @@ public class DigitalplaygroundCom extends PluginForHost {
                 }
             }
         } else if (link.getDownloadURL().matches(type_premium_pic_archive)) {
-            this.br.getPage(jd.plugins.decrypter.DigitalplaygroundCom.getPicUrl(fid));
+            this.br.getPage(jd.plugins.decrypter.DigitalplaygroundCom.getPicUrl(account, fid));
             if (jd.plugins.decrypter.DigitalplaygroundCom.isOffline(this.br)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -154,7 +152,7 @@ public class DigitalplaygroundCom extends PluginForHost {
                 /* This should never happen. */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            this.br.getPage(jd.plugins.decrypter.DigitalplaygroundCom.getVideoUrlPremium(fid));
+            this.br.getPage(jd.plugins.decrypter.DigitalplaygroundCom.getVideoUrlPremium(account, fid));
             if (jd.plugins.decrypter.DigitalplaygroundCom.isOffline(this.br)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -182,10 +180,8 @@ public class DigitalplaygroundCom extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    private static Object LOCK = new Object();
-
     public void login(Browser br, final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
                 prepBR(br);
@@ -196,30 +192,39 @@ public class DigitalplaygroundCom extends PluginForHost {
                      * when the user logs in via browser.
                      */
                     br.setCookies(account.getHoster(), cookies);
-                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l) {
+                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l && !force) {
                         /* Trust cookies without verifying them. */
                         return;
                     }
-                    br.getPage("http://" + jd.plugins.decrypter.DigitalplaygroundCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/");
-                    if (br.containsHTML(html_loggedin)) {
-                        logger.info("Cookie login successful");
-                        return;
+                    final String digitalPlaygroundDomain = account.getStringProperty("digitalPlaygroundDomain", null);
+                    if (digitalPlaygroundDomain != null) {
+                        br.getPage("https://" + digitalPlaygroundDomain + "/");
+                        if (br.getHostCookie("instance_token", Cookies.NOTDELETEDPATTERN) != null && br.getHostCookie("access_token_ma", Cookies.NOTDELETEDPATTERN) != null) {
+                            account.saveCookies(br.getCookies(account.getHoster()), "");
+                            logger.info("Cookie login successful");
+                            return;
+                        }
                     }
                     logger.info("Cookie login failed --> Performing full login");
                     br = prepBR(new Browser());
                 }
-                br.getPage("http://" + jd.plugins.decrypter.DigitalplaygroundCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/access/login/");
+                br.getPage("https://ma." + account.getHoster() + "/access/login/");
                 String postdata = "rememberme=on&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
-                if (br.containsHTML("api\\.recaptcha\\.net|google\\.com/recaptcha/api/")) {
-                    final Recaptcha rc = new Recaptcha(br, this);
-                    rc.findID();
-                    rc.load();
-                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final DownloadLink dummyLink = new DownloadLink(this, "Account", account.getHoster(), "http://" + jd.plugins.decrypter.DigitalplaygroundCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/", true);
-                    final String code = getCaptchaCode("recaptcha", cf, dummyLink);
-                    postdata += "&recaptcha_challenge_field=" + Encoding.urlEncode(rc.getChallenge()) + "&recaptcha_response_field=" + Encoding.urlEncode(code);
+                if (br.containsHTML("recaptcha_image")) {
+                    final DownloadLink dlinkbefore = this.getDownloadLink();
+                    if (dlinkbefore == null) {
+                        this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "http://" + account.getHoster(), true));
+                    }
+                    try {
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                        postdata += "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response);
+                    } finally {
+                        if (dlinkbefore != null) {
+                            this.setDownloadLink(dlinkbefore);
+                        }
+                    }
                 }
-                br.postPage("http://" + jd.plugins.decrypter.DigitalplaygroundCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/access/submit/", postdata);
+                br.postPage("/access/submit/", postdata);
                 final Form continueform = br.getFormbyKey("response");
                 if (continueform != null) {
                     /* Redirect from probiller.com to main website --> Login complete */
@@ -229,16 +234,18 @@ public class DigitalplaygroundCom extends PluginForHost {
                         br.getPage("/home/");
                     }
                 }
-                if (!br.containsHTML(html_loggedin)) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername,Passwort und/oder login Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password/login captcha!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                if (br.getHostCookie("instance_token", Cookies.NOTDELETEDPATTERN) == null) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else if (br.getHostCookie("access_token_ma", Cookies.NOTDELETEDPATTERN) == null) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
+                account.setProperty("digitalPlaygroundDomain", br._getURL().getHost());
                 account.saveCookies(br.getCookies(account.getHoster()), "");
             } catch (final PluginException e) {
-                account.clearCookies("");
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                    account.removeProperty("digitalPlaygroundDomain");
+                }
                 throw e;
             }
         }
@@ -247,12 +254,7 @@ public class DigitalplaygroundCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(this.br, account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(this.br, account, true);
         ai.setUnlimitedTraffic();
         account.setType(AccountType.PREMIUM);
         account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);

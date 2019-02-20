@@ -10,7 +10,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 38667 $", interfaceVersion = 3, names = { "vimeo.com" }, urls = { "https?://(?:www\\.)?vimeo\\.com/user\\d+/review/\\d+/[a-f0-9]+" })
+@DecrypterPlugin(revision = "$Revision: 38667 $", interfaceVersion = 3, names = { "vimeo.com" }, urls = { "https?://(?:www\\.)?vimeo\\.com/[a-z0-9]+/review/\\d+/[a-f0-9]+" })
 public class VimeoComReviewDecrypter extends PluginForDecrypt {
     public VimeoComReviewDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -18,7 +18,7 @@ public class VimeoComReviewDecrypter extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final String videoID = new Regex(param.getCryptedUrl(), "user\\d+/review/(\\d+)").getMatch(0);
+        final String videoID = new Regex(param.getCryptedUrl(), "[a-z0-9]+/review/(\\d+)").getMatch(0);
         final DownloadLink link = createDownloadlink(VimeoComDecrypter.createPrivateVideoUrlWithReferer(videoID, param.getCryptedUrl()));
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         ret.add(link);
