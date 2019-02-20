@@ -25,6 +25,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.containers.VimeoContainer;
+import org.jdownloader.plugins.components.containers.VimeoContainer.Quality;
+import org.jdownloader.plugins.components.containers.VimeoContainer.Source;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -49,17 +60,6 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.locale.JDL;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.containers.VimeoContainer;
-import org.jdownloader.plugins.components.containers.VimeoContainer.Quality;
-import org.jdownloader.plugins.components.containers.VimeoContainer.Source;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "decryptedforVimeoHosterPlugin://.+" })
 public class VimeoCom extends PluginForHost {
@@ -87,14 +87,14 @@ public class VimeoCom extends PluginForHost {
 
     public VimeoCom(final PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://vimeo.com/join");
+        this.enablePremium("https://vimeo.com/join");
         setConfigElements();
     }
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        String url = link.getDownloadURL().replaceFirst("decryptedforVimeoHosterPlugin://", "https://");
-        link.setUrlDownload(url);
+        final String url = link.getPluginPatternMatcher().replaceFirst("decryptedforVimeoHosterPlugin://", "https://");
+        link.setPluginPatternMatcher(url);
     }
 
     @Override
@@ -127,7 +127,7 @@ public class VimeoCom extends PluginForHost {
             }
             prepBr.getHeaders().put("User-Agent", userAgent.get());
         }
-        prepBr.setAllowedResponseCodes(418);
+        prepBr.setAllowedResponseCodes(new int[] { 418, 451 });
         return prepBr;
     }
 
@@ -161,16 +161,29 @@ public class VimeoCom extends PluginForHost {
                 }
             }
         }
-        final String videoID = downloadLink.getStringProperty("videoID", null);
+        final String videoID = getVideoID(downloadLink);
         if (videoID == null) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Run decrypter again!");
+            /* Fatal failure */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         setBrowserExclusive();
         br = prepBrGeneral(downloadLink, new Browser());
         br.setFollowRedirects(true);
-        accessVimeoURL(downloadLink);
-        // because names can often change by the uploader, like youtube.
-        final String name = getTitle(br);
+        final boolean is_private_link = downloadLink.getBooleanProperty("private_player_link", false);
+        final String forced_referer = getForcedReferer(downloadLink);
+        accessVimeoURL(this.br, downloadLink.getPluginPatternMatcher(), forced_referer, is_private_link);
+        if (br.containsHTML(containsPass)) {
+            handlePW(downloadLink, br, "https://vimeo.com/" + videoID + "/password");
+        }
+        /* Video titles can be changed afterwards by the puloader - make sure that we always got the currrent title! */
+        String videoTitle = null;
+        try {
+            final String json = jd.plugins.decrypter.VimeoComDecrypter.getJsonFromHTML(this.br);
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "vimeo_esi/config/clipData");
+            videoTitle = (String) entries.get("title");
+        } catch (final Throwable e) {
+        }
         // now we nuke linkids for videos.. crazzy... only remove the last one, _ORIGINAL comes from variant system
         final String downloadlinkId = downloadLink.getLinkID().replaceFirst("_ORIGINAL$", "");
         final String videoQuality = downloadLink.getStringProperty("videoQuality", null);
@@ -233,54 +246,98 @@ public class VimeoCom extends PluginForHost {
         default:
             break;
         }
-        downloadLink.setProperty("videoTitle", name);
+        if (!StringUtils.isEmpty(videoTitle)) {
+            downloadLink.setProperty("videoTitle", videoTitle);
+        }
         downloadLink.setFinalFileName(getFormattedFilename(downloadLink));
         return AvailableStatus.TRUE;
     }
 
-    private String getVideoID(final DownloadLink dl) {
+    public static String getVideoID(final DownloadLink dl) {
         return dl.getStringProperty("videoID", null);
     }
 
-    private String getSpecialVideoID(final DownloadLink dl) {
+    private String getUnlistedHash(final DownloadLink dl) {
         return dl.getStringProperty("specialVideoID", null);
     }
 
-    private void accessVimeoURL(final DownloadLink downloadLink) throws Exception {
-        final String videoID = getVideoID(downloadLink);
-        final String specialVideoID = getSpecialVideoID(downloadLink);
-        if (usePrivateHandling(downloadLink)) {
-            final String forcedReferer = getForcedReferer(downloadLink);
-            if (StringUtils.containsIgnoreCase(forcedReferer, "/review/")) {
-                br.getPage(forcedReferer);
-            } else {
-                br.getPage("https://player.vimeo.com/video/" + videoID);
-            }
-            if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404 || "This video does not exist\\.".equals(PluginJSonUtils.getJsonValue(br, "message"))) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-        } else if (specialVideoID != null) {
-            br.getPage(String.format("https://vimeo.com/%s/%s", videoID, specialVideoID));
-            if (jd.plugins.decrypter.VimeoComDecrypter.iranWorkaround(this.br, videoID) && br.getHttpConnection().getResponseCode() == 404) {
+    /** Use this to access a vimeo URL for the first time! Make sure to call password handling afterwards! */
+    public static void accessVimeoURL(final Browser br, final String url_source, final String forced_referer, final boolean is_private_link) throws Exception {
+        final String videoID = jd.plugins.decrypter.VimeoComDecrypter.getVideoidFromURL(url_source);
+        final String unlistedHash = jd.plugins.decrypter.VimeoComDecrypter.getUnlistedHashFromURL(url_source);
+        // final String reviewHash = jd.plugins.decrypter.VimeoComDecrypter.getReviewHashFromURL(url_source);
+        if (url_source.matches("https?://.*?vimeo\\.com.*?/review/.+")) {
+            /*
+             * 2019-02-20: Special: We have to access 'review' URLs same way as via browser - if we don't, we will get response 403/404!
+             * Review-URLs may contain a reviewHash which is required! If then, inside their json, the unlistedHash is present, reviewURLs
+             * can in theory be changed to normal URLs.
+             */
+            br.getPage(url_source);
+        } else if (usePrivateHandling(forced_referer, is_private_link)) {
+            /*
+             * Referer given/required? We HAVE TO access the url via player.vimeo.com (with the correct Referer) otherwise we will only
+             * receive 403/404!
+             */
+            br.getPage("https://player.vimeo.com/video/" + videoID);
+            /* TODO: 2019-02-20: Check if this old decrypter-handling is still required! */
+            // if (vimeo_forced_referer == null && br.getHttpConnection().getResponseCode() == 403) {
+            // CrawledLink check = getCurrentLink().getSourceLink();
+            // while (check != null) {
+            // vimeo_forced_referer = check.getURL();
+            // if (check == check.getSourceLink() || !StringUtils.equalsIgnoreCase(Browser.getHost(vimeo_forced_referer), "vimeo.com")) {
+            // break;
+            // } else {
+            // check = check.getSourceLink();
+            // }
+            // }
+            // if (!StringUtils.equalsIgnoreCase(Browser.getHost(vimeo_forced_referer), "vimeo.com")) {
+            // br.getHeaders().put("Referer", vimeo_forced_referer);
+            // br.getPage("https://player.vimeo.com/video/" + videoID);
+            // }
+            // if (br.getHttpConnection().getResponseCode() == 403) {
+            // if (SubConfiguration.getConfig("vimeo.com").getBooleanProperty("ASK_REF", Boolean.TRUE)) {
+            // try {
+            // vimeo_forced_referer = getUserInput("Please enter referer for this link", param);
+            // } catch (DecrypterException e) {
+            // vimeo_forced_referer = null;
+            // }
+            // if (StringUtils.isNotEmpty(vimeo_forced_referer) && !StringUtils.equalsIgnoreCase(Browser.getHost(vimeo_forced_referer),
+            // "vimeo.com")) {
+            // br.getHeaders().put("Referer", vimeo_forced_referer);
+            // br.getPage("https://player.vimeo.com/video/" + videoID);
+            // }
+            // }
+            // }
+            // }
+        } else if (unlistedHash != null) {
+            br.getPage(String.format("https://vimeo.com/%s/%s", videoID, unlistedHash));
+            if (jd.plugins.decrypter.VimeoComDecrypter.iranWorkaround(br, videoID) && br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         } else {
             br.getPage("https://vimeo.com/" + videoID);
-            if (jd.plugins.decrypter.VimeoComDecrypter.iranWorkaround(this.br, videoID) && br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (br.getHttpConnection().getResponseCode() == 404) {
-                /* 2016-12-26: Workaround related for forum report 72025 */
-                br.getPage("//player.vimeo.com/video/" + videoID);
-            }
-            if (br.containsHTML(containsPass)) {
-                handlePW(downloadLink, br, "https://vimeo.com/" + videoID + "/password");
-            }
+        }
+        // final boolean privateContent = br.getHttpConnection().getResponseCode() == 403;
+        if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404 || "This video does not exist\\.".equals(PluginJSonUtils.getJsonValue(br, "message"))) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 451) {
+            // HTTP/1.1 451 Unavailable For Legal Reasons
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("<title>Private Video on Vimeo</title>")) {
+            // logger.info("Cannot crawl this link without account");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML(">There was a problem loading this video")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String vuid = br.getRegex("document\\.cookie\\s*=\\s*'vuid='\\s*\\+\\s*encodeURIComponent\\('(\\d+\\.\\d+)'\\)").getMatch(0);
         if (vuid != null) {
             br.setCookie(br.getURL(), "vuid", vuid);
         }
+    }
+
+    public static boolean usePrivateHandling(final String forced_referer, final boolean is_private_link) {
+        final boolean use_private_handling = (is_private_link || forced_referer != null);
+        return use_private_handling;
     }
 
     @Override
@@ -312,13 +369,6 @@ public class VimeoCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private boolean usePrivateHandling(final DownloadLink dl) {
-        final boolean is_private_link = dl.getBooleanProperty("private_player_link", false);
-        final boolean has_forced_referer = getForcedReferer(dl) != null;
-        final boolean use_private_handling = (is_private_link || has_forced_referer);
-        return use_private_handling;
-    }
-
     @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
@@ -330,9 +380,11 @@ public class VimeoCom extends PluginForHost {
         requestFileInformation(link);
         login(account, false);
         br.setFollowRedirects(false);
-        final boolean isPrivateLink = usePrivateHandling(link);
+        final boolean is_private_link = link.getBooleanProperty("private_player_link", false);
+        final String forced_referer = getForcedReferer(link);
+        final boolean isPrivateLink = usePrivateHandling(forced_referer, is_private_link);
         if (!isPrivateLink) {
-            br.getPage(link.getDownloadURL());
+            br.getPage(link.getPluginPatternMatcher());
         }
         if (isPrivateLink || br.containsHTML("\">Sorry, not available for download")) {
             /* Premium / account users cannot download private URLs. */
@@ -498,13 +550,18 @@ public class VimeoCom extends PluginForHost {
         Thread.sleep(1000);
         boolean debug = false;
         String configURL = ibr.getRegex("data-config-url=\"(https?://player\\.vimeo\\.com/(v2/)?video/\\d+/config.*?)\"").getMatch(0);
-        if (configURL == null) {
-            // can be within json on the given page now.. but this is easy to just request again raz20151215
+        if (StringUtils.isEmpty(configURL)) {
+            /* can be within json on the given page now.. but this is easy to just request again raz20151215 */
             configURL = PluginJSonUtils.getJsonValue(ibr, "config_url");
-            if (configURL == null) {
-                configURL = PluginJSonUtils.getJsonValue(ibr, "configUrl");
-            }
         }
+        if (StringUtils.isEmpty(configURL)) {
+            /* 2019-02-20 */
+            configURL = PluginJSonUtils.getJsonValue(ibr, "configUrl");
+        }
+        // if (StringUtils.isEmpty(configURL)) {
+        // /* 2019-02-20 */
+        // configURL = PluginJSonUtils.getJsonValue(ibr, "configUrlMobile");
+        // }
         final ArrayList<VimeoContainer> results = new ArrayList<VimeoContainer>();
         if (download && ibr.containsHTML("download_config\"\\s*?:\\s*?\\[")) {
             results.addAll(handleDownloadConfig(plugin, ibr, ID));
@@ -858,43 +915,6 @@ public class VimeoCom extends PluginForHost {
         // bitrate
         formattedFilename = formattedFilename.replace("*videoBitrate*", videoBitrate);
         return formattedFilename;
-    }
-
-    public String getTitle(final Browser ibr) throws PluginException {
-        String title = ibr.getRegex("\"title\":\"([^\"]+)\"").getMatch(0);
-        if (title == null) {
-            title = ibr.getRegex("<meta property=\"og:title\" content=\"([^<>\"]+)\">").getMatch(0);
-        }
-        if (title == null) {
-            logger.warning("Decrypter broken for link: " + ibr.getURL());
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        title = getFormattedString(title);
-        return title;
-    }
-
-    public String getFormattedString(final String s) {
-        String format = s;
-        format = Encoding.unicodeDecode(format);
-        format = Encoding.htmlDecode(format);
-        format = charRemoval(format);
-        return format.trim();
-    }
-
-    private String charRemoval(final String s) {
-        String output = s;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        // not illegal
-        // output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     private String getForcedReferer(final DownloadLink dl) {
