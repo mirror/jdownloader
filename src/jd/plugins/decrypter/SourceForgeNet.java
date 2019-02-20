@@ -48,7 +48,7 @@ public class SourceForgeNet extends PluginForDecrypt {
         br.setLoadLimit(br.getLoadLimit() * 5);
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML(">This folder has no files")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">This folder has no files")) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
