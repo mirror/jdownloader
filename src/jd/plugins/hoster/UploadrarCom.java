@@ -29,7 +29,7 @@ import jd.plugins.HostPlugin;
 public class UploadrarCom extends XFileSharingProBasic {
     public UploadrarCom(final PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(super.getPremiumLink());
+        this.enablePremium(super.getPurchasePremiumURL());
     }
 
     /**
