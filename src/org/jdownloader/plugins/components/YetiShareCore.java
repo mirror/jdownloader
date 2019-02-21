@@ -97,6 +97,7 @@ public class YetiShareCore extends antiDDoSForHost {
      * limit-info:<br />
      * captchatype: null, solvemedia, reCaptchaV2<br />
      * other: Last compatible YetiShareBasic Version: YetiShareBasic 1.2.0-psp<br />
+     * Another alternative method of linkchecking (displays filename only): host.tld/<fid>~s (statistics)
      */
     @Override
     public String getAGBLink() {
@@ -278,10 +279,6 @@ public class YetiShareCore extends antiDDoSForHost {
                     filesize = tableData[1];
                 }
             } catch (final Throwable e) {
-            }
-            if (filename == null || inValidate(Encoding.htmlDecode(filename).trim()) || Encoding.htmlDecode(filename).trim().equals("  ")) {
-                /* Filename might not be available here either */
-                filename = fid;
             }
         } else {
             getPage(link.getPluginPatternMatcher());
@@ -487,7 +484,7 @@ public class YetiShareCore extends antiDDoSForHost {
             continue_link = br.getRegex("<div class=\"captchaPageTable\">[\t\n\r ]+<form method=\"POST\" action=\"(https?://[^<>\"]*?)\"").getMatch(0);
         }
         if (continue_link == null) {
-            continue_link = br.getRegex("(?:\"|\\')(https?://(?:www\\.)?[^/]+/[^<>\"]*?pt=[^<>\"]*?)(?:\"|\\')").getMatch(0);
+            continue_link = br.getRegex("(?:\"|\\')(https?://(?:www\\.)?[^/]+/[^<>\"\\']*?pt=[^<>\"\\']*?)(?:\"|\\')").getMatch(0);
         }
         if (continue_link == null) {
             continue_link = getDllink();

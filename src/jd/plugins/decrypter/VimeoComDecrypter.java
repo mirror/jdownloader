@@ -277,7 +277,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 /* Fallback */
                 title = videoID;
             }
-            if (br.containsHTML(containsPass())) {
+            if (isPasswordProtected(this.br)) {
                 try {
                     password = handlePW(param, videoID, this.br);
                 } catch (final DecrypterException edc) {
@@ -528,9 +528,8 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         return false;
     }
 
-    private String containsPass() throws PluginException {
-        pluginLoaded();
-        return jd.plugins.hoster.VimeoCom.containsPass;
+    public static boolean isPasswordProtected(final Browser br) throws PluginException {
+        return br.containsHTML("\\d+/password");
     }
 
     private Browser prepBrowser(final Browser ibr) throws PluginException {
@@ -597,7 +596,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     }
                 }
             }
-            if (br.containsHTML(containsPass()) || br.getHttpConnection().getResponseCode() == 405 || "false".equalsIgnoreCase(br.toString())) {
+            if (isPasswordProtected(br) || br.getHttpConnection().getResponseCode() == 405 || "false".equalsIgnoreCase(br.toString())) {
                 br.getPage(videourl);
                 continue retry;
             }

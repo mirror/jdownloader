@@ -114,7 +114,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 4.0.0.5<br />
+     * DEV NOTES XfileSharingProBasic Version 4.0.0.6<br />
      ****************************
      * NOTES from raztoki <br/>
      * - no need to set setfollowredirect true. <br />
@@ -371,6 +371,17 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /**
+     * A correct setting increases linkcheck-speed as unnecessary redirects will be avoided.
+     *
+     * @return true: Implies that website requires 'www.' in all URLs. <br />
+     *         false: Implies that website does NOT require 'www.' in all URLs. <br />
+     *         default: false
+     */
+    public boolean requires_WWW() {
+        return false;
+    }
+
+    /**
      * <b>Reduces the chances of fatal plugin failure due to lack of filename!</b> <br />
      * <b> Keep in mind: If isImagehoster() is enabled, it has its own fallback for missing filenames as imagehosts often don't show
      * filenames until we start the download. </b>
@@ -451,7 +462,17 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     /** Returns https?://host.tld */
     protected String getMainPage() {
         final String[] hosts = this.siteSupportedNames();
-        return ("http://" + hosts[0]).replaceFirst("https?://", this.supports_https() ? "https://" : "http://");
+        String mainpage;
+        final String protocol;
+        if (this.supports_https()) {
+            protocol = "https://";
+        } else {
+            protocol = "http://";
+        }
+        mainpage = protocol;
+        mainpage += "www.";
+        mainpage += hosts[0];
+        return mainpage;
     }
 
     /**
