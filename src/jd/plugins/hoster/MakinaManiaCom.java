@@ -63,7 +63,7 @@ public class MakinaManiaCom extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 con = br.openGetConnection(link.getDownloadURL());
-                if (!con.getContentType().contains("html")) {
+                if (con.isOK() && !con.getContentType().contains("html")) {
                     link.setDownloadSize(con.getLongContentLength());
                     link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
                 } else {
@@ -171,24 +171,32 @@ public class MakinaManiaCom extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
-        br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        br.setFollowRedirects(false);
-        String dllink = br.getRegex("\"javascript:download\\(\\'(http://[^<>\"]*?)\\'\\)").getMatch(0);
-        if (dllink == null) {
-            dllink = br.getRegex("(\"|\\')(http://machines\\.makinamania\\.(?:com|net)/descargas/descarga\\.php\\?id=[^<>\"]*?)(\"|\\')").getMatch(1);
+        String dllink = null;
+        if (link.getDownloadURL().matches(ATTACHEDFILELINK)) {
+            dllink = link.getDownloadURL();
+        } else {
+            br.setFollowRedirects(true);
+            br.getPage(link.getDownloadURL());
+            br.setFollowRedirects(false);
+            dllink = br.getRegex("\"javascript:download\\(\\'(https?://[^<>\"]*?)\\'\\)").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("(\"|\\')(https?://machines\\.makinamania\\.(?:com|net)/descargas/descarga\\.php\\?id=[^<>\"]*?)(\"|\\')").getMatch(1);
+            }
+            if (dllink == null) {
+                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.getPage(dllink);
+            if (br.containsHTML("No se ha encontrado el archivo")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            dllink = br.getRedirectLocation();
+            if (dllink == null) {
+                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         if (dllink == null) {
-            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        br.getPage(dllink);
-        if (br.containsHTML("No se ha encontrado el archivo")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        dllink = br.getRedirectLocation();
-        if (dllink == null) {
-            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         int chunks = 0;
