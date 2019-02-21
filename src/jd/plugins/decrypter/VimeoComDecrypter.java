@@ -223,9 +223,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     return decryptedLinks;
                 }
             }
-            /* TODO: Check this boolean! */
-            final boolean private_player_link = false;
-            jd.plugins.hoster.VimeoCom.accessVimeoURL(this.br, parameter, vimeo_forced_referer, private_player_link);
+            jd.plugins.hoster.VimeoCom.accessVimeoURL(this.br, parameter, vimeo_forced_referer);
             final String cleanVimeoURL = br.getURL();
             /*
              * We used to simply change the vimeo.com/player/XXX links to normal vimeo.com/XXX links but in some cases, videos can only be
@@ -247,6 +245,18 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     if (StringUtils.isEmpty(reviewHash)) {
                         reviewHash = (String) entries.get("reviewHash");
                     }
+                    channelName = (String) owner.get("name");
+                } else if (entries.containsKey("video")) {
+                    /* player.vimeo.com */
+                    owner = (LinkedHashMap<String, Object>) entries.get("owner");
+                    entries = (LinkedHashMap<String, Object>) entries.get("video");
+                    title = (String) entries.get("title");
+                    if (StringUtils.isEmpty(unlistedHash)) {
+                        unlistedHash = (String) entries.get("unlisted_hash");
+                    }
+                    // if (StringUtils.isEmpty(reviewHash)) {
+                    // reviewHash = (String) entries.get("review_hash");
+                    // }
                     channelName = (String) owner.get("name");
                 } else {
                     /* E.g. normal URLs */
@@ -304,9 +314,6 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 link.setContentUrl(cleanVimeoURL);
                 if (password != null) {
                     link.setProperty("pass", password);
-                }
-                if (parameter.matches(type_player_private_forced_referer)) {
-                    link.setProperty("private_player_link", true);
                 }
                 if (vimeo_forced_referer != null) {
                     link.setProperty("vimeo_forced_referer", vimeo_forced_referer);
@@ -390,7 +397,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
     }
 
     public static String getUnlistedHashFromURL(final String url) {
-        final String ret = new Regex(url, "https?://[^/]+/(?:(?:video|review)/)?(\\d+)/([a-f0-9]+)").getMatch(0);
+        final String ret = new Regex(url, "https?://[^/]+/(?:(?:video|review)/)?(\\d+)/([a-f0-9]+)").getMatch(1);
         return ret;
     }
 
@@ -403,6 +410,10 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         String ret = br.getRegex("window\\.vimeo\\.clip_page_config = (\\{.*?\\});").getMatch(0);
         if (ret == null) {
             ret = br.getRegex("window = _extend\\(window, (\\{.*?\\})\\);").getMatch(0);
+        }
+        if (ret == null) {
+            /* player.vimeo.com */
+            ret = br.getRegex("var config = (\\{.*?\\});").getMatch(0);
         }
         return ret;
     }

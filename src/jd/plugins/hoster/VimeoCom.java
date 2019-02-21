@@ -169,9 +169,8 @@ public class VimeoCom extends PluginForHost {
         setBrowserExclusive();
         br = prepBrGeneral(downloadLink, new Browser());
         br.setFollowRedirects(true);
-        final boolean is_private_link = downloadLink.getBooleanProperty("private_player_link", false);
         final String forced_referer = getForcedReferer(downloadLink);
-        accessVimeoURL(this.br, downloadLink.getPluginPatternMatcher(), forced_referer, is_private_link);
+        accessVimeoURL(this.br, downloadLink.getPluginPatternMatcher(), forced_referer);
         if (br.containsHTML(containsPass)) {
             handlePW(downloadLink, br, "https://vimeo.com/" + videoID + "/password");
         }
@@ -262,7 +261,7 @@ public class VimeoCom extends PluginForHost {
     }
 
     /** Use this to access a vimeo URL for the first time! Make sure to call password handling afterwards! */
-    public static void accessVimeoURL(final Browser br, final String url_source, final String forced_referer, final boolean is_private_link) throws Exception {
+    public static void accessVimeoURL(final Browser br, final String url_source, final String forced_referer) throws Exception {
         final String videoID = jd.plugins.decrypter.VimeoComDecrypter.getVideoidFromURL(url_source);
         final String unlistedHash = jd.plugins.decrypter.VimeoComDecrypter.getUnlistedHashFromURL(url_source);
         // final String reviewHash = jd.plugins.decrypter.VimeoComDecrypter.getReviewHashFromURL(url_source);
@@ -273,11 +272,12 @@ public class VimeoCom extends PluginForHost {
              * can in theory be changed to normal URLs.
              */
             br.getPage(url_source);
-        } else if (usePrivateHandling(forced_referer, is_private_link)) {
+        } else if (forced_referer != null) {
             /*
              * Referer given/required? We HAVE TO access the url via player.vimeo.com (with the correct Referer) otherwise we will only
              * receive 403/404!
              */
+            br.getHeaders().put("Referer", forced_referer);
             br.getPage("https://player.vimeo.com/video/" + videoID);
             /* TODO: 2019-02-20: Check if this old decrypter-handling is still required! */
             // if (vimeo_forced_referer == null && br.getHttpConnection().getResponseCode() == 403) {
@@ -335,11 +335,6 @@ public class VimeoCom extends PluginForHost {
         }
     }
 
-    public static boolean usePrivateHandling(final String forced_referer, final boolean is_private_link) {
-        final boolean use_private_handling = (is_private_link || forced_referer != null);
-        return use_private_handling;
-    }
-
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
@@ -372,7 +367,7 @@ public class VimeoCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        // TODO: review this method, for now everything ports into free, as every link will have directURL.
+        /* TODO: review this method, for now everything ports into free, as every link will have directURL. */
         if (true) {
             handleFree(link);
             return;
@@ -382,11 +377,8 @@ public class VimeoCom extends PluginForHost {
         br.setFollowRedirects(false);
         final boolean is_private_link = link.getBooleanProperty("private_player_link", false);
         final String forced_referer = getForcedReferer(link);
-        final boolean isPrivateLink = usePrivateHandling(forced_referer, is_private_link);
-        if (!isPrivateLink) {
-            br.getPage(link.getPluginPatternMatcher());
-        }
-        if (isPrivateLink || br.containsHTML("\">Sorry, not available for download")) {
+        accessVimeoURL(this.br, link.getPluginPatternMatcher(), forced_referer);
+        if (br.containsHTML("\">Sorry, not available for download")) {
             /* Premium / account users cannot download private URLs. */
             logger.info("No download available for link: " + link.getDownloadURL() + " , downloading as unregistered user...");
             doFree(link);

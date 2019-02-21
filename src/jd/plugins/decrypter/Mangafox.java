@@ -23,6 +23,7 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -31,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangafox.me" }, urls = { "https?://[\\w\\.]*?(?:mangafox\\.(com|me|mobi|la)|fanfox\\.net)/manga/.*?/(v[A-Za-z0-9]+/c[\\d\\.]+|c[\\d\\.]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangafox.me" }, urls = { "https?://[\\w\\.]*?(?:mangafox\\.(com|me|mobi|la)|fanfox\\.net)/manga/[A-Za-z0-9\\-_]+/((v[A-Za-z0-9]+/c[\\d\\.]+|c[\\d\\.]+))?" })
 public class Mangafox extends PluginForDecrypt {
     public Mangafox(PluginWrapper wrapper) {
         super(wrapper);
@@ -42,12 +43,36 @@ public class Mangafox extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
+        /* Change URL to current domain */
         String url = parameter.toString().replaceAll("://[\\w\\.]*?mangafox\\.(com|me|mobi|la)/", "://fanfox.net/");
+        br.setCookie(new URL(url).getHost(), "isAdult", "1");
+        if (url.matches("^https?://[^/]+/manga/[^/]+/?$")) {
+            /* Manga overview page - find chapter-URLs which then go back into decrypter. */
+            br.getPage(url);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                decryptedLinks.add(this.createOfflinelink(url));
+                return decryptedLinks;
+            }
+            /* Try to only grab relevant chapters! */
+            String chapter_html = br.getRegex("onclick=\"showList\\(\\d+\\);.*?class=\"detail-main-list-more\"").getMatch(-1);
+            if (chapter_html == null) {
+                /* Fallback */
+                chapter_html = br.toString();
+            }
+            final String[] chapters = new Regex(chapter_html, "\"(/manga/[^\"]+/c\\d+/\\d+\\.html)\"").getColumn(0);
+            if (chapters == null || chapters.length == 0) {
+                return null;
+            }
+            for (String chapterurl : chapters) {
+                chapterurl = "http://" + br.getHost() + chapterurl;
+                decryptedLinks.add(this.createDownloadlink(chapterurl));
+            }
+            return decryptedLinks;
+        }
         if (url.endsWith("/")) {
             url = url.substring(0, url.length() - 1);
         }
         /* Access URL of first picture */
-        br.setCookie(new URL(url).getHost(), "isAdult", "1");
         br.getPage(url + "/1.html");
         if (jd.plugins.hoster.Mangafox.isOffline(br)) {
             if (br.containsHTML("Caution to under-aged viewers") || br.containsHTML("\"id\\s*=\\s*\"checkAdult\"")) {
