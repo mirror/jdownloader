@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -33,11 +32,9 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sextvx.com" }, urls = { "http://(?:www\\.)?sextvx\\.com/[a-z]{2}/video/\\d+/[a-z0-9\\-]+" })
 public class SextvxCom extends PluginForHost {
-
     public SextvxCom(PluginWrapper wrapper) {
         super(wrapper);
     }
-
     /* DEV NOTES */
     // Tags:
     // protocol: no https
@@ -47,7 +44,6 @@ public class SextvxCom extends PluginForHost {
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = 5;
-
     private String               dllink            = null;
 
     @Override
@@ -100,19 +96,20 @@ public class SextvxCom extends PluginForHost {
             path = path.replace(".", ",").replace("/", ",");
             flux = "/flux?d=web.flv&s=" + server + "&p=" + path;
         }
-        if (filename == null || flux == null) {
+        String source = br.getRegex("<source[^<>']+src='([^']+)'").getMatch(0);
+        if (filename == null || source == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        this.br.setFollowRedirects(false);
-        br.getPage(flux);
+        br.setFollowRedirects(false);
+        br.getPage(source);
         /* 2017-01-05: 2 different types. */
-        final String redirect = this.br.getRedirectLocation();
+        final String redirect = br.getRedirectLocation();
         if (redirect != null) {
             dllink = redirect;
         } else {
-            dllink = this.br.toString();
+            dllink = br.toString();
         }
-        this.br.setFollowRedirects(true);
+        br.setFollowRedirects(true);
         if (dllink == null || !dllink.startsWith("http") || dllink.length() > 500) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
