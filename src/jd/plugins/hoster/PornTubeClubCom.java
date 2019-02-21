@@ -15,6 +15,10 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -24,10 +28,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porn-tube-club.com" }, urls = { "https?://(?:www\\.)?porn\\-tube\\-club\\.com/(v\\d+/\\d+|play/\\d+)" })
 public class PornTubeClubCom extends antiDDoSForHost {
@@ -110,7 +110,7 @@ public class PornTubeClubCom extends antiDDoSForHost {
             try {
                 // con = br.openHeadConnection(dllink);
                 /* 2019-02-21: Try GetConnection RE SVN ticket 86649 */
-                con = br.openGetConnection(dllink);
+                con = this.openAntiDDoSRequestConnection(br, br.createGetRequest(dllink));
                 if (con.isOK() && !con.getContentType().contains("html")) {
                     link.setDownloadSize(con.getLongContentLength());
                 } else if (con.getResponseCode() == 404) {
