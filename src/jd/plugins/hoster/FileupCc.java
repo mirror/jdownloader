@@ -17,19 +17,17 @@ package jd.plugins.hoster;
 
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class TakefileLink extends XFileSharingProBasic {
-    public TakefileLink(final PluginWrapper wrapper) {
+public class FileupCc extends XFileSharingProBasic {
+    public FileupCc(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
     }
@@ -37,23 +35,23 @@ public class TakefileLink extends XFileSharingProBasic {
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
-     * limit-info:<br />
-     * captchatype-info: 2019-02-11: null<br />
+     * limit-info: 2019-02-21: untested, set FREE account limits <br />
+     * captchatype-info: 2019-02-21: null<br />
      * other:<br />
      */
-    private static String[] domains = new String[] { "takefile.link" };
+    private static String[] domains = new String[] { "fileup.cc" };
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return true;
+            return false;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return true;
+            return false;
         } else {
             /* Free(anonymous) and unknown account type */
-            return true;
+            return false;
         }
     }
 
@@ -61,29 +59,29 @@ public class TakefileLink extends XFileSharingProBasic {
     public int getMaxChunks(final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return -2;
+            return 1;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
             return 1;
         } else {
             /* Free(anonymous) and unknown account type */
-            return -2;
+            return 1;
         }
     }
 
     @Override
     public int getMaxSimultaneousFreeAnonymousDownloads() {
-        return 1;
+        return -1;
     }
 
     @Override
     public int getMaxSimultaneousFreeAccountDownloads() {
-        return 1;
+        return -1;
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 10;
+        return -1;
     }
 
     @Override
@@ -93,7 +91,8 @@ public class TakefileLink extends XFileSharingProBasic {
 
     @Override
     public boolean supports_precise_expire_date() {
-        return super.supports_precise_expire_date();
+        /* 2019-02-21: Special */
+        return false;
     }
 
     @Override
@@ -146,38 +145,6 @@ public class TakefileLink extends XFileSharingProBasic {
         return super.supports_availablecheck_filesize_html();
     }
 
-    @Override
-    public boolean isOffline(final DownloadLink link) {
-        final String fuid = super.getFUIDFromURL(link);
-        boolean isOffline = super.isOffline(this.br, link);
-        if (!br.getURL().contains(fuid) || (br.getRedirectLocation() != null && !br.getRedirectLocation().contains(fuid))) {
-            /* 2018-11-15: Special - redirect to: https://takefile.link/upgrade */
-            isOffline = true;
-        }
-        return isOffline;
-    }
-
-    @Override
-    public String getLoginURL() {
-        return getMainPage() + "/user_login";
-    }
-
-    @Override
-    public boolean isLoggedinHTML() {
-        boolean isLoggedinHTML = super.isLoggedinHTML();
-        isLoggedinHTML = br.containsHTML("/user_logout");
-        return isLoggedinHTML;
-    }
-
-    @Override
-    public String regExTrafficLeft() {
-        String trafficleft = super.regExTrafficLeft();
-        if (StringUtils.isEmpty(trafficleft)) {
-            trafficleft = new Regex(correctedBR, "Traffic available today</TD></TR>\\s*?</thead>\\s*?<TR><TD><b>([^<>\"]+)</b><").getMatch(0);
-        }
-        return trafficleft;
-    }
-
     public static String[] getAnnotationNames() {
         return new String[] { domains[0] };
     }
@@ -194,7 +161,7 @@ public class TakefileLink extends XFileSharingProBasic {
     public static String[] getAnnotationUrls() {
         // construct pattern
         final String host = getHostsPattern();
-        return new String[] { host + "/(?:embed\\-)?[a-z0-9]{12}" };
+        return new String[] { host + "/(?:embed\\-)?[a-z0-9]{12}(?:/[^/]+\\.html)?" };
     }
 
     /** returns 'https?://(?:www\\.)?(?:domain1|domain2)' */

@@ -90,8 +90,8 @@ public class CentfileCom extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean fetchAccountInfo_PreferExactExpireDate() {
-        return super.fetchAccountInfo_PreferExactExpireDate();
+    public boolean supports_precise_expire_date() {
+        return super.supports_precise_expire_date();
     }
 
     @Override

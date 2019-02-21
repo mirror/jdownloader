@@ -114,7 +114,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 4.0.0.4<br />
+     * DEV NOTES XfileSharingProBasic Version 4.0.0.5<br />
      ****************************
      * NOTES from raztoki <br/>
      * - no need to set setfollowredirect true. <br />
@@ -235,14 +235,14 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /**
-     * Relevant only for premium accounts.
+     * Relevant for accounts.
      *
      * @return true: Try to find more exact (down to the second instead of day) expire date via '/?op=payments'. <br />
      *         false: For premium accounts: Do NOT try to find more exact expire date via '?op=payments'. Rely on given date string
      *         (yyyy-MM-dd) which is less precise. <br />
      *         default: true
      */
-    public boolean fetchAccountInfo_PreferExactExpireDate() {
+    public boolean supports_precise_expire_date() {
         return true;
     }
 
@@ -1945,8 +1945,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         if (expire != null) {
             expire_milliseconds_from_expiredate = TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH);
         }
-        final boolean useAltExpire = this.fetchAccountInfo_PreferExactExpireDate();
-        if (expire_milliseconds_from_expiredate == 0 || useAltExpire) {
+        final boolean supports_precise_expire_date = this.supports_precise_expire_date();
+        if (supports_precise_expire_date) {
             /*
              * A more accurate expire time, down to the second. Usually shown on 'extend premium account' page. Case[0] e.g. 'flashbit.cc',
              * Case [1] e.g. takefile.link, example website which has no precise expiredate at all: anzfile.net
@@ -1966,6 +1966,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     /*
                      * Last attempt - wider RegEx but we expect the 'second(s)' value to always be present!! Example: file-up.org:
                      * "<p style="direction: ltr; display: inline-block;">1 year, 352 days, 22 hours, 36 minutes, 45 seconds</p>"
+                     */
+                    /**
+                     * TODO: 2019-02-21: This may lead to false-positives thus it may happen that free accounts get recognized as premium!
+                     * Maybe change RegEx like this: 'blabla, minutes, seconds' (minutes AND seconds required) ...
                      */
                     expireSecond = new Regex(correctedBR, Pattern.compile("(\\d+ years?, )?(\\d+ days?, )?(\\d+ hours?, )?(\\d+ minutes?, )?\\d+ seconds", Pattern.CASE_INSENSITIVE)).getMatch(-1);
                 }
