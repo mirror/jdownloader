@@ -69,6 +69,7 @@ public class PornTubeClubCom extends antiDDoSForHost {
         dllink = null;
         server_issues = false;
         this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36");
         br.setFollowRedirects(true);
         getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("id=\"myvideo\"")) {
@@ -106,6 +107,10 @@ public class PornTubeClubCom extends antiDDoSForHost {
             dllink = Encoding.htmlDecode(dllink);
             link.setFinalFileName(filename);
             URLConnectionAdapter con = null;
+            br.getHeaders().put("accept-encoding", "identity;q=1, *;q=0");
+            br.getHeaders().put("accept", "*/*");
+            br.getHeaders().put("accept-language", "de-DE,de;q=0.9,en-US;q=0.8,en;q=0.7");
+            br.getHeaders().put("range", "bytes=0-");
             try {
                 // con = br.openHeadConnection(dllink);
                 /* 2019-02-21: Try GetConnection RE SVN ticket 86649 */
