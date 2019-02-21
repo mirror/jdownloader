@@ -25,6 +25,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.containers.VimeoContainer;
+import org.jdownloader.plugins.components.containers.VimeoContainer.Quality;
+import org.jdownloader.plugins.components.containers.VimeoContainer.Source;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -49,17 +60,6 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.locale.JDL;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.containers.VimeoContainer;
-import org.jdownloader.plugins.components.containers.VimeoContainer.Quality;
-import org.jdownloader.plugins.components.containers.VimeoContainer.Source;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "decryptedforVimeoHosterPlugin://.+" })
 public class VimeoCom extends PluginForHost {
@@ -171,9 +171,7 @@ public class VimeoCom extends PluginForHost {
         br.setFollowRedirects(true);
         final String forced_referer = getForcedReferer(downloadLink);
         accessVimeoURL(this.br, downloadLink.getPluginPatternMatcher(), forced_referer);
-        if (br.containsHTML(containsPass)) {
-            handlePW(downloadLink, br, "https://vimeo.com/" + videoID + "/password");
-        }
+        handlePW(downloadLink, br, "https://vimeo.com/" + videoID + "/password");
         /* Video titles can be changed afterwards by the puloader - make sure that we always got the currrent title! */
         String videoTitle = null;
         try {
@@ -512,10 +510,12 @@ public class VimeoCom extends PluginForHost {
         return xsrft;
     }
 
-    public static final String containsPass = "<title>Private Video on Vimeo</title>|To watch this video, please provide the correct password";
+    public static boolean isPasswordProtected(final Browser br) throws PluginException {
+        return br.containsHTML("\\d+/password");
+    }
 
     private void handlePW(final DownloadLink downloadLink, final Browser br, final String url) throws Exception {
-        if (br.containsHTML(containsPass)) {
+        if (isPasswordProtected(br)) {
             final String xsrft = getXsrft(br);
             String passCode = downloadLink.getStringProperty("pass", null);
             if (passCode == null) {
@@ -525,7 +525,7 @@ public class VimeoCom extends PluginForHost {
                 }
             }
             br.postPage(br.getURL(), "password=" + Encoding.urlEncode(passCode) + "&token=" + xsrft);
-            if (br.containsHTML(containsPass)) {
+            if (isPasswordProtected(br)) {
                 downloadLink.setProperty("pass", null);
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Password needed!");
             }
