@@ -19,6 +19,7 @@ import java.util.ArrayList;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -28,10 +29,9 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 40169 $", interfaceVersion = 2, names = { "openloadtvstream.me" }, urls = { "https?://(www\\.)?openloadtvstream\\.me/(tvshows|movies|episodes)/.+" })
-public class OpenloadTVStream extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision: 40396 $", interfaceVersion = 2, names = { "openloadtvstream.me" }, urls = { "https?://(www\\.)?openloadtvstream\\.me/(tvshows|movies|episodes)/.+" })
+public class OpenloadTVStream extends antiDDoSForDecrypt {
     public OpenloadTVStream(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -40,7 +40,8 @@ public class OpenloadTVStream extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(true);
-        String page = br.getPage(parameter);
+        getPage(parameter);
+        String page = br.toString();
         String fpName = br.getRegex("<title>([^<]+) \\| Just Watch").getMatch(0);
         String itemName = new Regex(parameter, "/(?:tvshows|movies|episodes)/([^/]+)").getMatch(0);
         // Handle TV show overview pages

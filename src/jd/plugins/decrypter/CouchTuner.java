@@ -17,6 +17,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -24,10 +26,9 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 40019 $", interfaceVersion = 2, names = { "couchtuner.cloud" }, urls = { "https?://(www\\.)?(?:freetvonline\\.xyz|watch-online\\.xyz|couchtuner\\.(?:cloud|click))/.*" })
-public class CouchTuner extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision: 40396 $", interfaceVersion = 2, names = { "couchtuner.cloud" }, urls = { "https?://(www\\.)?(?:freetvonline\\.xyz|watch-online\\.xyz|couchtuner\\.(?:cloud|click))/.*" })
+public class CouchTuner extends antiDDoSForDecrypt {
     public CouchTuner(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -36,7 +37,8 @@ public class CouchTuner extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(true);
-        String page = br.getPage(parameter);
+        getPage(parameter);
+        String page = br.toString();
         String fpName = br.getRegex("<meta (?:name|property)=\"og:(?:title|description)\" content=[\"'](?:Watch ?)?(?:Couchtuner ?)?(?:Series ?)?([^<>\"]*?)(?: ?(?:online for free|Online Free at|Online \\|))").getMatch(0);
         String[][] links = br.getRegex("<strong>Watch it here[\r\t\n ]*:</strong>[\r\t\n ]*</span>[\r\t\n ]*<a href=\"([^\"\']+)\"").getMatches();
         if (links == null || links.length == 0) {
