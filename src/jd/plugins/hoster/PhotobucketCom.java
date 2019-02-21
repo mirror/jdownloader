@@ -29,7 +29,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "photobucket.com" }, urls = { "http://(?:www\\.)?(media\\.photobucket\\.com/.+|gs\\d+\\.photobucket\\.com/groups/[A-Za-z0-9]+/[A-Za-z0-9]+/\\?action=view\\&current=[^<>\"/]+|s\\d+\\.photobucket\\.com/user/[A-Za-z0-9\\-_]+/media/[^<>\"]+\\.[a-z0-9]{3,4}\\.html)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "photobucket.com" }, urls = { "https?://(?:www\\.)?(media\\.photobucket\\.com/.+|gs\\d+\\.photobucket\\.com/groups/[A-Za-z0-9]+/[A-Za-z0-9]+/\\?action=view\\&current=[^<>\"/]+|(?:[A-Za-z0-9]+\\.)?photobucket\\.com/.*?/media/[^/]+(?:\\.html)?)" })
 public class PhotobucketCom extends PluginForHost {
     public PhotobucketCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -46,7 +46,6 @@ public class PhotobucketCom extends PluginForHost {
         return "http://photobucket.com/terms";
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         dllink = null;
@@ -54,9 +53,9 @@ public class PhotobucketCom extends PluginForHost {
         br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br.openGetConnection(downloadLink.getDownloadURL());
+            con = br.openGetConnection(downloadLink.getPluginPatternMatcher());
             if (!con.getContentType().contains("html")) {
-                dllink = downloadLink.getDownloadURL();
+                dllink = downloadLink.getPluginPatternMatcher();
                 downloadLink.setDownloadSize(con.getLongContentLength());
                 downloadLink.setFinalFileName(getFileNameFromHeader(con));
                 return AvailableStatus.TRUE;
@@ -69,7 +68,7 @@ public class PhotobucketCom extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
-        if (br.getHttpConnection().getResponseCode() == 404 || !this.br.containsHTML("class=\"detailWrapper\"")) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         dllink = PluginJSonUtils.getJsonValue(br, "originalUrl");
@@ -95,13 +94,13 @@ public class PhotobucketCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             downloadLink.setProperty("directlink", dllink);
-            return AvailableStatus.TRUE;
         } finally {
             try {
                 con.disconnect();
             } catch (final Throwable e) {
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override
