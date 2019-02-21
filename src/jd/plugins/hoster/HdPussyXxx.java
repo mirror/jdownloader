@@ -13,12 +13,12 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -28,9 +28,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hdpussy.xxx" }, urls = { "http://(www\\.)?hdpussy\\.xxx/video/[a-f0-9]{32}/" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hdpussy.xxx" }, urls = { "https?://(?:www\\.)?hdpussy\\.xxx/video/([a-f0-9]{32})/" })
 public class HdPussyXxx extends PluginForHost {
-
     public HdPussyXxx(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -42,13 +41,40 @@ public class HdPussyXxx extends PluginForHost {
         return "http://hdpussy.xxx/";
     }
 
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        if (linkid != null) {
+            return linkid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">This page not found")) {
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(downloadLink.getPluginPatternMatcher());
+            dllink = downloadLink.getPluginPatternMatcher();
+            if (!con.getContentType().contains("html")) {
+                /* 2019-02-21: Directurl */
+                downloadLink.setDownloadSize(con.getLongContentLength());
+                downloadLink.setFinalFileName(getLinkID(downloadLink) + ".mp4");
+                return AvailableStatus.TRUE;
+            } else {
+                br.followConnection();
+            }
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">This page not found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<div class=\"title\\-box\">([^<>\"]*?)<b>").getMatch(0);
