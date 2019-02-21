@@ -329,7 +329,7 @@ public class CompiledFiletypeFilter {
         RAR,
         ZIP,
         SevenZIP("7ZIP"),
-        R_NUM("r\\d{1,4}"),
+        R_NUM("[r-z]\\d{2}"),
         NUM("\\d{1,4}"),
         MultiZip("z\\d{1,4}"),
         ACE("(ace|c\\d{2,4})"),

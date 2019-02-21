@@ -17,10 +17,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Request;
@@ -29,6 +25,10 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "8muses.com" }, urls = { "https?://(?:www\\.)?8muses\\.com/(?:comix/|comics/)?(?:index/category/[a-z0-9\\-_]+|album(?:/[a-z0-9\\-_]+){1,6})" })
 public class EightMusesComDecrypter extends antiDDoSForDecrypt {
@@ -55,8 +55,8 @@ public class EightMusesComDecrypter extends antiDDoSForDecrypt {
         }
         final String[] links = br.getRegex("(/picture/[^<>\"]*?)\"").getColumn(0);
         if ((links == null || links.length == 0) && (categories == null || categories.length == 0)) {
-            String[] issues = br.getRegex("href=\"([^<>\"]+/Issue-\\d+)\">").getColumn(0);
-            if (issues != null || issues.length > 0) {
+            final String[] issues = br.getRegex("href=\"([^<>\"]+/Issue-\\d+)\">").getColumn(0);
+            if (issues != null && issues.length > 0) {
                 for (String issue : issues) {
                     issue = Request.getLocation(issue, br.getRequest());
                     final DownloadLink dl = createDownloadlink(issue);
