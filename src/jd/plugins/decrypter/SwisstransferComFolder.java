@@ -18,10 +18,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
@@ -29,6 +25,10 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "swisstransfer.com" }, urls = { "https?://(?:www\\.)?swisstransfer\\.com/d/([a-z0-9\\-]+)" })
 public class SwisstransferComFolder extends antiDDoSForDecrypt {
@@ -73,7 +73,7 @@ public class SwisstransferComFolder extends antiDDoSForDecrypt {
                 entries = (LinkedHashMap<String, Object>) fileO;
                 final String filename = (String) entries.get("fileName");
                 final String fileid = (String) entries.get("UUID");
-                final long filesize = JavaScriptEngineFactory.toLong(entries.get("fileSizeInBytes"), 0);
+                final Long filesize = JavaScriptEngineFactory.toLong(entries.get("fileSizeInBytes"), -1);
                 if (StringUtils.isEmpty(filename) || StringUtils.isEmpty(fileid)) {
                     continue;
                 }
@@ -85,6 +85,11 @@ public class SwisstransferComFolder extends antiDDoSForDecrypt {
                 dl.setAvailable(true);
                 if (fp != null) {
                     dl._setFilePackage(fp);
+                }
+                if (ressourcelist.size() > 1) {
+                    dl.setContainerUrl(parameter);
+                } else {
+                    dl.setContentUrl(parameter);
                 }
                 decryptedLinks.add(dl);
                 distribute(dl);
