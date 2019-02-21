@@ -23,7 +23,6 @@ import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-import org.jdownloader.plugins.components.ZeveraCore;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;

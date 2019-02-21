@@ -190,7 +190,7 @@ public enum ArchiveType {
      * Multipart RAR Archive (.rar, .r00, .r01...,.s00....), 1(rar) + 9(r,s,t...z)*100(00-99) Parts = 901 parts
      */
     RAR_MULTI3 {
-        private final Pattern patternPart  = Pattern.compile("(?i)(.*)\\.((?:r|s|t|u|v|w|x|y|z)\\d{2})$");
+        private final Pattern patternPart  = Pattern.compile("(?i)(.*)\\.([r-z]\\d{2})$");
         private final Pattern patternStart = Pattern.compile("(?i)(.*)\\.rar$");
 
         @Override
@@ -208,7 +208,7 @@ public enum ArchiveType {
             if (Boolean.FALSE.equals(isMultiPart)) {
                 return null;
             } else {
-                return "\\.(?i)((?:r|s|t|u|v|w|x|y|z)\\d{2,}|rar)";
+                return "\\.(?i)([r-z]\\d{2}|rar)";
             }
         }
 

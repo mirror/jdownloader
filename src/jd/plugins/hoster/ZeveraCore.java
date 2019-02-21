@@ -1,4 +1,4 @@
-package org.jdownloader.plugins.components;
+package jd.plugins.hoster;
 
 //jDownloader - Downloadmanager
 //Copyright (C) 2013  JD-Team support@jdownloader.org
@@ -19,10 +19,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -41,9 +37,13 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
-import jd.plugins.hoster.UseNet;
 
-public class ZeveraCore extends UseNet {
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+//IMPORTANT: this class must stay in jd.plugins.hoster because it extends another plugin (UseNet) which is only available through PluginClassLoader
+abstract public class ZeveraCore extends UseNet {
     /* Connection limits */
     private static final boolean  ACCOUNT_PREMIUM_RESUME    = true;
     private static final int      ACCOUNT_PREMIUM_MAXCHUNKS = 0;

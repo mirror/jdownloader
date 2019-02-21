@@ -28,7 +28,6 @@ import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-import org.jdownloader.plugins.components.ZeveraCore;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetConfigPanel;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
