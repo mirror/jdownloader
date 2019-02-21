@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fotoalbum.ee" }, urls = { "http://(www\\.)?(pseudaholic\\.|nastazzy\\.)?fotoalbum\\.ee/photos/[^<>\"\\'/]+(/sets|/[0-9]+)?(/[0-9]+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fotoalbum.ee" }, urls = { "https?://(?:www\\.)?(?:[a-z0-9]+\\.)?fotoalbum\\.ee/photos/[^<>\"\\'/]+(/sets|/[0-9]+)?(/[0-9]+)?" })
 public class FotoAlbumEE extends PluginForDecrypt {
     public FotoAlbumEE(PluginWrapper wrapper) {
         super(wrapper);
@@ -40,14 +40,17 @@ public class FotoAlbumEE extends PluginForDecrypt {
         br.setFollowRedirects(true);
         final String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML(">Pilti ei leitud v\\&otilde;i on see kustutatud|\"/img/404\\.png\"")) {
-            logger.info("Link offline: " + parameter);
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Pilti ei leitud v\\&otilde;i on see kustutatud|\"/img/404\\.png\"")) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
         String nextPage = null;
         String[] sets = null;
-        final String setName = br.getRegex("<a href=\"/photos/[^<>\"/]*?/sets/\\d+[^<>]+>[^<>\"]*?</a> &raquo; ([^<>\"]*?)</h1>").getMatch(0);
+        String setName = br.getRegex("<a href=\"/photos/[^<>\"/]*?/sets/\\d+[^<>]+>[^<>\"]*?</a> &raquo; ([^<>\"]*?)</h1>").getMatch(0);
+        if (setName == null) {
+            /* Fallback */
+            setName = new Regex(parameter, "https?://[^/]+/(.+)").getMatch(0);
+        }
         FilePackage fp = null;
         if (setName != null) {
             fp = FilePackage.getInstance();
@@ -67,14 +70,14 @@ public class FotoAlbumEE extends PluginForDecrypt {
             // effective
             String[] thumbnails = null;
             do {
-                thumbnails = br.getRegex("\"(http://static\\d+\\.fotoalbum\\.ee/fotoalbum/\\d+/\\d+/[a-z0-9]+\\.jpg)\"").getColumn(0);
+                thumbnails = br.getRegex("(static\\d+\\.fotoalbum\\.ee/fotoalbum/\\d+/\\d+/[a-z0-9]+\\.jpg)\"").getColumn(0);
                 if (thumbnails == null || thumbnails.length == 0) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
                 for (String thumbnail : thumbnails) {
-                    final Regex linkParts = new Regex(thumbnail, "(http://static\\d+\\.fotoalbum\\.ee/fotoalbum/\\d+/\\d+/)(.+)");
-                    final DownloadLink dl = createDownloadlink("directhttp://" + linkParts.getMatch(0) + "0" + linkParts.getMatch(1));
+                    final Regex linkParts = new Regex(thumbnail, "(static\\d+\\.fotoalbum\\.ee/fotoalbum/\\d+/\\d+/)(.+)");
+                    final DownloadLink dl = createDownloadlink("directhttp://http://" + linkParts.getMatch(0) + "0" + linkParts.getMatch(1));
                     dl.setAvailable(true);
                     if (fp != null) {
                         fp.add(dl);

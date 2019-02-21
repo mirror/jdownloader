@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -23,8 +22,12 @@ import java.util.Arrays;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -36,16 +39,11 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDHexUtils;
 
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rtve.es" }, urls = { "http://(www\\.)?rtve\\.es/(?:alacarta/(audios|videos)/[\\w\\-]+/[\\w\\-]+/\\d+/?(\\?modl=COMTS)?|infantil/serie/[^/]+/video/[^/]+/\\d+/)|https?://rio2016\\.rtve\\.es/video/article/[a-z0-9\\-]+.html" })
 public class RtveEs extends PluginForHost {
-
     private static final String TYPE_NORMAL  = "http://(?:www\\.)?rtve\\.es/alacarta/(?:audios|videos)/[\\w\\-]+/[\\w\\-]+/\\d+/?(?:\\?modl=COMTS)?";
     private static final String TYPE_SERIES  = "http://(?:www\\.)?rtve\\.es/infantil/serie/[^/]+/video/[^/]+/\\d+/";
     private static final String TYPE_RIO2016 = "https?://rio2016\\.rtve\\.es/video/article/[a-z0-9\\-]+.html";
-
     private String              dllink       = null;
     private String              BLOWFISHKEY  = "eWVMJmRhRDM=";
     private String              dl_now_now   = null;
@@ -98,7 +96,7 @@ public class RtveEs extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestVideo(downloadLink);
+        requestFileInformation(downloadLink);
         if (geo_blocked) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked");
         } else if (dl_now_now != null) {
@@ -107,7 +105,7 @@ public class RtveEs extends PluginForHost {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (dllink.contains("/manifest")) {
+        if (dllink.contains("/manifest") || dllink.contains("m3u8")) {
             /* HLS download */
             this.br.getPage(dllink);
             if (this.br.getHttpConnection().getResponseCode() == 403) {
@@ -137,20 +135,25 @@ public class RtveEs extends PluginForHost {
         geo_blocked = false;
         requestVideo(downloadLink);
         setBrowserExclusive();
-        if (dl_now_now != null) {
-            return AvailableStatus.TRUE;
-        }
+        /* 2019-02-21: Removed this as we need to check the downloadurl always to detect GEO-blocked conditions!! */
+        // if (dl_now_now != null) {
+        // return AvailableStatus.TRUE;
+        // }
         if (!dllink.contains("/manifest")) {
+            URLConnectionAdapter con = null;
             try {
-                if (!br.openGetConnection(dllink).getContentType().contains("html")) {
+                con = br.openGetConnection(dllink);
+                if (con.getResponseCode() == 403) {
+                    geo_blocked = true;
+                } else if (!con.getContentType().contains("html")) {
                     downloadLink.setDownloadSize(br.getHttpConnection().getLongContentLength());
                     br.getHttpConnection().disconnect();
                 } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             } finally {
-                if (br.getHttpConnection() != null) {
-                    br.getHttpConnection().disconnect();
+                if (con != null) {
+                    con.disconnect();
                 }
             }
         }
@@ -207,7 +210,6 @@ public class RtveEs extends PluginForHost {
                 downloadLink.setName(filename + ".mp4");
                 return AvailableStatus.TRUE;
             }
-
             String[] flashVars = br.getRegex("assetID=(\\d+)_([a-z]{2,3})_(audios|videos)\\&location=alacarta").getRow(0);
             if (flashVars == null || flashVars.length != 3) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -224,11 +226,13 @@ public class RtveEs extends PluginForHost {
             /* decrypt response body */
             dllink = getLink(JDHexUtils.toString(JDHexUtils.getHexString(getBlowfish(org.appwork.utils.encoding.Base64.decode(enc.toString()), true))));
         }
-
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
+        String ext = getFileNameExtensionFromString(dllink, ".mp4");
+        if (ext == null || ext.contains("m3u8")) {
+            ext = ".mp4";
+        }
         downloadLink.setName(filename + ext);
         return AvailableStatus.TRUE;
     }
@@ -244,5 +248,4 @@ public class RtveEs extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
-
 }

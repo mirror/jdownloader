@@ -107,7 +107,9 @@ public class PornTubeClubCom extends antiDDoSForHost {
             link.setFinalFileName(filename);
             URLConnectionAdapter con = null;
             try {
-                con = br.openHeadConnection(dllink);
+                // con = br.openHeadConnection(dllink);
+                /* 2019-02-21: Try GetConnection RE SVN ticket 86649 */
+                con = br.openGetConnection(dllink);
                 if (!con.getContentType().contains("html")) {
                     link.setDownloadSize(con.getLongContentLength());
                 } else {

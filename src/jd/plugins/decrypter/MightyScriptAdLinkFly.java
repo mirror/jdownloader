@@ -21,6 +21,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -34,10 +38,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  *
@@ -58,7 +58,7 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
             /** eglink.info domains */
             "eglink.info", "egyptiangy.net", "egypt-mix.com",
             /** cut-urls.com domains */
-            "cut-urls.com", "curs.io", "cuon.io", "cuus.io",
+            "cut-urls.com", "curs.io", "cuon.io", "cuus.io", "cuto.io",
             /** wicr.me domains */
             "wicr.me", "wi.cr",
             /** cutwin.com domains */
@@ -128,6 +128,12 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
         if (input.contains("linkdrop.net")) {
             /* 2018-12-11: Their https is broken */
             output = input.replace("https://", "http://");
+        } else if (input.contains("curs.io")) {
+            /*
+             * 2019-02-21: curs.io is a cut-urls.com domain which is down but the URLs can still be online so we need to replace it with one
+             * of their working domains.
+             */
+            output = input.replace("curs.io", "cuto.io");
         } else {
             output = input;
         }
