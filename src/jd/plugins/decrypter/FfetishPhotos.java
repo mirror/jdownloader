@@ -26,10 +26,11 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
+
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ffetish.photos" }, urls = { "https?://(?:www\\.)?ffetish\\.photos/\\d+[a-z0-9\\-]+\\.html" })
-public class FfetishPhotos extends PluginForDecrypt {
+public class FfetishPhotos extends antiDDoSForDecrypt {
     public FfetishPhotos(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -39,7 +40,7 @@ public class FfetishPhotos extends PluginForDecrypt {
         final String parameter = param.toString();
         final String dl_id = new Regex(parameter, "photos/(\\d+)").getMatch(0);
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
@@ -49,7 +50,7 @@ public class FfetishPhotos extends PluginForDecrypt {
             br.getHeaders().put("x-requested-with", "XMLHttpRequest");
             for (int i = 0; i <= 3; i++) {
                 final String code = this.getCaptchaCode("https://" + this.getHost() + "/engine/modules/antibot/antibot.php?rndval=" + System.currentTimeMillis(), param);
-                br.postPage("https://" + this.getHost() + "/engine/ajax/getlink.php", "sec_code=" + Encoding.urlEncode(code) + "&id=" + dl_id + "&skin=ffphotos");
+                postPage("https://" + this.getHost() + "/engine/ajax/getlink.php", "sec_code=" + Encoding.urlEncode(code) + "&id=" + dl_id + "&skin=ffphotos");
                 if (br.toString().length() > 100) {
                     success = true;
                     break;
@@ -65,7 +66,7 @@ public class FfetishPhotos extends PluginForDecrypt {
             return null;
         }
         br.setFollowRedirects(false);
-        br.getPage(finallink);
+        getPage(finallink);
         finallink = br.getRedirectLocation();
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + parameter);
