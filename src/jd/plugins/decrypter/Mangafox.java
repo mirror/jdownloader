@@ -47,25 +47,34 @@ public class Mangafox extends PluginForDecrypt {
         String url = parameter.toString().replaceAll("://[\\w\\.]*?mangafox\\.(com|me|mobi|la)/", "://fanfox.net/");
         br.setCookie(new URL(url).getHost(), "isAdult", "1");
         if (url.matches("^https?://[^/]+/manga/[^/]+/?$")) {
-            /* Manga overview page - find chapter-URLs which then go back into decrypter. */
+            /* Manga overview page - find chapters/volumes which then go back into decrypter. */
             br.getPage(url);
             if (br.getHttpConnection().getResponseCode() == 404) {
                 decryptedLinks.add(this.createOfflinelink(url));
                 return decryptedLinks;
             }
-            /* Try to only grab relevant chapters! */
-            String chapter_html = br.getRegex("onclick=\"showList\\(\\d+\\);.*?class=\"detail-main-list-more\"").getMatch(-1);
-            if (chapter_html == null) {
+            /* Try to only grab relevant chapters / Volumes! */
+            String[] htmls = br.getRegex("id=\"list\\-\\d+\".*?class=\"detail-main-list-more\"").getColumn(-1);
+            if (htmls == null || htmls.length == 0) {
                 /* Fallback */
-                chapter_html = br.toString();
+                htmls = new String[] { br.toString() };
             }
-            final String[] chapters = new Regex(chapter_html, "\"(/manga/[^\"]+/c\\d+/\\d+\\.html)\"").getColumn(0);
-            if (chapters == null || chapters.length == 0) {
-                return null;
-            }
-            for (String chapterurl : chapters) {
-                chapterurl = "http://" + br.getHost() + chapterurl;
-                decryptedLinks.add(this.createDownloadlink(chapterurl));
+            for (final String html : htmls) {
+                if (htmls.length > 1) {
+                    /* E.g. class="">VOL<span>（1251）</span> */
+                    final String listname = new Regex(html, "class=\"\">([^<>\"]+)<span>").getMatch(0);
+                    if (listname != null) {
+                        logger.info("Crawling list: " + listname);
+                    }
+                }
+                final String[] chapters = new Regex(html, "\"(/manga/[^\"]+/c\\d+/\\d+\\.html)\"").getColumn(0);
+                if (chapters == null || chapters.length == 0) {
+                    return null;
+                }
+                for (String chapterurl : chapters) {
+                    chapterurl = "http://" + br.getHost() + chapterurl;
+                    decryptedLinks.add(this.createDownloadlink(chapterurl));
+                }
             }
             return decryptedLinks;
         }

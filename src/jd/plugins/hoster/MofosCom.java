@@ -22,6 +22,7 @@ import java.util.Map.Entry;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -47,7 +48,6 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mofos.com" }, urls = { "https?://members2\\.mofos\\.com/download/\\d+/[A-Za-z0-9\\-_]+/|mofosdecrypted://.+" })
 public class MofosCom extends PluginForHost {
-
     public MofosCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.mofos.com/tour/signup/");
@@ -87,6 +87,7 @@ public class MofosCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         link.setName(getFID(link));
+        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa == null && !jd.plugins.decrypter.MofosCom.isFreeVideoUrl(link.getDownloadURL())) {
             link.getLinkStatus().setStatusText("Cannot check links without valid premium account");
@@ -94,7 +95,7 @@ public class MofosCom extends PluginForHost {
         }
         if (aa != null) {
             this.login(this.br, aa, false);
-            dllink = link.getDownloadURL();
+            dllink = link.getPluginPatternMatcher();
         } else {
             /* Trailer download */
             this.br.getPage(this.getMainlink(link));
@@ -105,6 +106,11 @@ public class MofosCom extends PluginForHost {
                 return AvailableStatus.TRUE;
             }
             final String json_source = this.br.getRegex("JSON\\.parse\\(\\'(.*?)\'\\)").getMatch(0);
+            if (StringUtils.isEmpty(json_source) && br.containsHTML("ideoParams\\s*?:\\s*?JSON\\.parse\\(\\'\\'\\)")) {
+                /* 2019-02-22: Non-playable video which is supposed to be online! */
+                server_issues = true;
+                return AvailableStatus.TRUE;
+            }
             LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source);
             entries = jd.plugins.decrypter.BrazzersCom.getVideoMapHttpStreams(entries);
             /* Find highest quality */
@@ -323,7 +329,6 @@ public class MofosCom extends PluginForHost {
     }
 
     public static interface MofosConfigInterface extends PluginConfigInterface {
-
         @DefaultBooleanValue(true)
         @Order(9)
         boolean isFastLinkcheckEnabled();
