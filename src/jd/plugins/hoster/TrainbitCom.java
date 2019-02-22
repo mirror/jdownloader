@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -34,9 +33,8 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "trainbit.com" }, urls = { "http://(?:www\\.)?trainbit\\.com/files/\\d+/[^/]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "trainbit.com" }, urls = { "https?://(?:www\\.)?trainbit\\.com/files/\\d+/[^/]+" })
 public class TrainbitCom extends PluginForHost {
-
     public TrainbitCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -61,7 +59,6 @@ public class TrainbitCom extends PluginForHost {
     //
     // /* don't touch the following! */
     // private static AtomicInteger maxPrem = new AtomicInteger(1);
-
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -106,9 +103,9 @@ public class TrainbitCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             this.br.submitForm(dlform);
-            dllink = br.getRegex("\"(http[^<>\"]*?)\" id=\"downloadlink\"").getMatch(0);
+            dllink = br.getRegex("\"(https?[^<>\"]*?)\" id=\"downloadlink\"").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("href=\"(http[^<>\"]*?)\">Download</a>").getMatch(0);
+                dllink = br.getRegex("href=\"(https?[^<>\"]*?)\">Download</a>").getMatch(0);
             }
             if (dllink == null) {
                 dllink = br.getRegex("\"(https?://[^/]+/files/\\d+/[^<>\"]*?)\"").getMatch(0);
@@ -173,5 +170,4 @@ public class TrainbitCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
