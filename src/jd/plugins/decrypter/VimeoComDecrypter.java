@@ -223,7 +223,24 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     return decryptedLinks;
                 }
             }
-            jd.plugins.hoster.VimeoCom.accessVimeoURL(this.br, parameter, vimeo_forced_referer);
+            try {
+                jd.plugins.hoster.VimeoCom.accessVimeoURL(this.br, parameter, vimeo_forced_referer);
+            } catch (final PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
+                    decryptedLinks.add(createOfflinelink(parameter, videoID, null));
+                    return decryptedLinks;
+                }
+                throw e;
+            }
+            if (isPasswordProtected(this.br)) {
+                try {
+                    password = handlePW(param, videoID, this.br);
+                } catch (final DecrypterException edc) {
+                    logger.info("User entered too many wrong passwords --> Cannot decrypt link: " + parameter);
+                    decryptedLinks.add(createOfflinelink(parameter, videoID, null));
+                    return decryptedLinks;
+                }
+            }
             final String cleanVimeoURL = br.getURL();
             /*
              * We used to simply change the vimeo.com/player/XXX links to normal vimeo.com/XXX links but in some cases, videos can only be
@@ -277,15 +294,6 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 /* Fallback */
                 title = videoID;
             }
-            if (isPasswordProtected(this.br)) {
-                try {
-                    password = handlePW(param, videoID, this.br);
-                } catch (final DecrypterException edc) {
-                    logger.info("User entered too many wrong passwords --> Cannot decrypt link: " + parameter);
-                    decryptedLinks.add(createOfflinelink(parameter, videoID, null));
-                    return decryptedLinks;
-                }
-            }
             final List<VimeoContainer> containers = jd.plugins.hoster.VimeoCom.find(this, br, videoID, true, qALL || qMOBILE || qMOBILE || qHD, qALL || qMOBILE || qMOBILE || qHD, subtitle);
             if (containers == null) {
                 return null;
@@ -313,7 +321,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 link.setProperty("videoTitle", title);
                 link.setContentUrl(cleanVimeoURL);
                 if (password != null) {
-                    link.setProperty("pass", password);
+                    link.setDownloadPassword(password);
                 }
                 if (vimeo_forced_referer != null) {
                     link.setProperty("vimeo_forced_referer", vimeo_forced_referer);
@@ -567,8 +575,8 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         }
         final String videourl = br.getURL();
         retry: for (int i = 0; i < 3; i++) {
-            final Form pwForm = getPasswordForm(br);
-            pwForm.put("token", getXsrft(br));
+            final Form pwpwform = getPasswordForm(br);
+            pwpwform.put("token", getXsrft(br));
             final String password;
             if (passwords.size() > 0) {
                 i -= 1;
@@ -580,9 +588,9 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 // empty pass?? not good...
                 throw new DecrypterException(DecrypterException.PASSWORD);
             }
-            pwForm.put("password", Encoding.urlEncode(password));
+            pwpwform.put("password", Encoding.urlEncode(password));
             try {
-                br.submitForm(pwForm);
+                br.submitForm(pwpwform);
             } catch (final Throwable e) {
                 /* HTTP/1.1 418 I'm a teapot --> lol */
                 if (br.getHttpConnection().getResponseCode() == 401 || br.getHttpConnection().getResponseCode() == 418) {
@@ -606,7 +614,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         throw new DecrypterException(DecrypterException.PASSWORD);
     }
 
-    private Form getPasswordForm(final Browser br) throws PluginException {
+    public static Form getPasswordForm(final Browser br) throws PluginException {
         final Form pwForm = br.getFormbyProperty("id", "pw_form");
         if (pwForm == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

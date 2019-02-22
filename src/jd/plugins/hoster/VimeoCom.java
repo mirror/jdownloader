@@ -163,7 +163,7 @@ public class VimeoCom extends PluginForHost {
         }
         final String videoID = getVideoID(downloadLink);
         if (videoID == null) {
-            /* Fatal failure */
+            /* This should never happen! */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         setBrowserExclusive();
@@ -171,7 +171,7 @@ public class VimeoCom extends PluginForHost {
         br.setFollowRedirects(true);
         final String forced_referer = getForcedReferer(downloadLink);
         accessVimeoURL(this.br, downloadLink.getPluginPatternMatcher(), forced_referer);
-        handlePW(downloadLink, br, "https://vimeo.com/" + videoID + "/password");
+        handlePW(downloadLink, br);
         /* Video titles can be changed afterwards by the puloader - make sure that we always got the currrent title! */
         String videoTitle = null;
         try {
@@ -258,7 +258,10 @@ public class VimeoCom extends PluginForHost {
         return dl.getStringProperty("specialVideoID", null);
     }
 
-    /** Use this to access a vimeo URL for the first time! Make sure to call password handling afterwards! */
+    /**
+     * Use this to access a vimeo URL for the first time! Make sure to call password handling afterwards! <br />
+     * Important: Execute password handling afterwards!!
+     */
     public static void accessVimeoURL(final Browser br, final String url_source, final String forced_referer) throws Exception {
         final String videoID = jd.plugins.decrypter.VimeoComDecrypter.getVideoidFromURL(url_source);
         final String unlistedHash = jd.plugins.decrypter.VimeoComDecrypter.getUnlistedHashFromURL(url_source);
@@ -314,14 +317,14 @@ public class VimeoCom extends PluginForHost {
         } else {
             br.getPage("https://vimeo.com/" + videoID);
         }
-        // final boolean privateContent = br.getHttpConnection().getResponseCode() == 403;
-        if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404 || "This video does not exist\\.".equals(PluginJSonUtils.getJsonValue(br, "message"))) {
+        if (br.getHttpConnection().getResponseCode() == 403) {
+            /* Hmm offline or account required */
+            /** TODO: Maybe add better handling for this case */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getHttpConnection().getResponseCode() == 404 || "This video does not exist\\.".equals(PluginJSonUtils.getJsonValue(br, "message"))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 451) {
             // HTTP/1.1 451 Unavailable For Legal Reasons
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML("<title>Private Video on Vimeo</title>")) {
-            // logger.info("Cannot crawl this link without account");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML(">There was a problem loading this video")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -514,22 +517,29 @@ public class VimeoCom extends PluginForHost {
         return br.containsHTML("\\d+/password");
     }
 
-    private void handlePW(final DownloadLink downloadLink, final Browser br, final String url) throws Exception {
+    /** Handles password protected URLs - usually correct password will already be given via decrypter handling! */
+    private void handlePW(final DownloadLink downloadLink, final Browser br) throws Exception {
         if (isPasswordProtected(br)) {
             final String xsrft = getXsrft(br);
-            String passCode = downloadLink.getStringProperty("pass", null);
+            final Form pwform = jd.plugins.decrypter.VimeoComDecrypter.getPasswordForm(br);
+            if (pwform == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            String passCode = downloadLink.getDownloadPassword();
             if (passCode == null) {
                 passCode = Plugin.getUserInput("Password?", downloadLink);
                 if (passCode == null) {
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Password needed!");
                 }
             }
-            br.postPage(br.getURL(), "password=" + Encoding.urlEncode(passCode) + "&token=" + xsrft);
+            pwform.put("token", xsrft);
+            pwform.put("password", Encoding.urlEncode(passCode));
+            br.submitForm(pwform);
             if (isPasswordProtected(br)) {
-                downloadLink.setProperty("pass", null);
+                downloadLink.setDownloadPassword(null);
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Password needed!");
             }
-            downloadLink.setProperty("pass", passCode);
+            downloadLink.setDownloadPassword(passCode);
         }
     }
 
