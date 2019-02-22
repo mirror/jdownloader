@@ -70,7 +70,7 @@ public class CamwhoresTv extends PluginForHost {
     }
 
     @Override
-    public String getMirrorID(DownloadLink link) {
+    public String getMirrorID(final DownloadLink link) {
         if (link != null) {
             final String id = new Regex(link.getDownloadURL(), "/(?:videos|embed)/(\\d+)").getMatch(0);
             if (id != null) {
@@ -85,7 +85,7 @@ public class CamwhoresTv extends PluginForHost {
         return "http://www.camwhores.tv/terms/";
     }
 
-    private String getVideoID(final String url) {
+    private static String getVideoID(final String url) {
         return new Regex(url, "/(?:videos|embed)/(\\d+)").getMatch(0);
     }
 
@@ -97,7 +97,7 @@ public class CamwhoresTv extends PluginForHost {
         br.setFollowRedirects(true);
         br.setCookie(getCurrentDomain(), "kt_tcookie", "1");
         br.setCookie(getCurrentDomain(), "kt_is_visited", "1");
-        final String videoID = getVideoID(link.getDownloadURL());
+        final String videoID = getVideoID(link.getPluginPatternMatcher());
         if (videoID != null && StringUtils.equals(videoID, getVideoID(link.getContentUrl()))) {
             br.getPage(link.getContentUrl());
         } else if (videoID != null) {
@@ -125,12 +125,9 @@ public class CamwhoresTv extends PluginForHost {
         getDllink(link);
         if (dllink != null) {
             link.setFinalFileName(filename);
-            final Browser br2 = br.cloneBrowser();
-            // In case the link redirects to the finallink
-            br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
-                con = br2.openHeadConnection(dllink);
+                con = br.openHeadConnection(dllink);
                 if (!con.getContentType().contains("html")) {
                     link.setDownloadSize(con.getLongContentLength());
                     link.setProperty("directlink", dllink);
@@ -293,15 +290,29 @@ public class CamwhoresTv extends PluginForHost {
         return ACCOUNT_FREE_MAXDOWNLOADS;
     }
 
-    public static String getTitle(final Browser br, final String url) {
+    public static String getTitle(final Browser br, final String url_source) {
         // String title = br.getRegex("<title>(?:Watch Free )?([^<>\"]*?)( / Embed Player| Webcam Porn Video \\-
         // CamWhores\\.TV)?</title>").getMatch(0);
         // if (title == null) {
         // /* Fallback to URL-title */
         // title = new Regex(url, "/videos/\\d+/(.+)").getMatch(0);
         // }
+        String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
         /* 2018-12-04: Website does not contain better titles than URL --> Always use title we find in our URLs */
-        return new Regex(url, "/videos/\\d+/([^/]+)").getMatch(0);
+        final String urlregex = "/videos/\\d+/([^/]+)";
+        String filename_url = new Regex(url_source, urlregex).getMatch(0);
+        if (StringUtils.isEmpty(filename_url)) {
+            filename_url = new Regex(br.getURL(), urlregex).getMatch(0);
+        }
+        if (StringUtils.isEmpty(filename)) {
+            /* Fallback */
+            filename = filename_url;
+        }
+        if (filename == null) {
+            /* Final fallback */
+            filename = getVideoID(url_source);
+        }
+        return filename;
     }
 
     public static boolean isOffline(final Browser br) {
