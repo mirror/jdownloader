@@ -86,23 +86,26 @@ public class ArtstationCom extends antiDDoSForDecrypt {
                     final String[] results = HTMLParser.getHttpLinks(playerEmbedded, null);
                     if (results != null) {
                         for (final String result : results) {
-                            // Handle Marmoset 3D content
-                            if (result.endsWith(fid) && StringUtils.containsIgnoreCase(url, "/marmosets/")) {
+                            String assetURL = result;
+                            if (result.endsWith(fid) && StringUtils.containsIgnoreCase(playerEmbedded, "<iframe")) {
                                 final Browser br2 = br.cloneBrowser();
-                                String pageMarmo = br2.getPage(result);
-                                if (br2.containsHTML("\"asset_type\":\"marmoset\"") && br2.containsHTML("\"attachment_content_type\":\"application/octet-stream\"")) {
+                                getPage(br2, result);
+                                String pageDetail = br2.toString();
+                                if (StringUtils.containsIgnoreCase(url, "/marmosets/") && br2.containsHTML("\"asset_type\":\"marmoset\"") && br2.containsHTML("\"attachment_content_type\":\"application/octet-stream\"")) {
+                                    // Handle Marmoset 3D content
                                     String assetURLRoot = br2.getRegex("\"(https?://[^\"]+original/)").getMatch(0).toString().replace("/images/", "/attachments/");
                                     String assetFileName = br2.getRegex("\"attachment_file_name\":\"([^\"]+)\"").getMatch(0).toString();
                                     String assetFileTimeStamp = br2.getRegex("\"attachment_updated_at\":([0-9]+)").getMatch(0).toString();
-                                    String assetURL = assetURLRoot + assetFileName + "?" + assetFileTimeStamp;
-                                    final DownloadLink dl2 = this.createDownloadlink(assetURL);
-                                    fp.add(dl2);
-                                    decryptedLinks.add(dl2);
+                                    assetURL = assetURLRoot + assetFileName + "?" + assetFileTimeStamp;
+                                } else if (br2.containsHTML("\"asset_type\":\"pano\"")) {
+                                    // Handle 3D panorama images
+                                    assetURL = br2.getRegex("\"[a-z]+_image_url\":\"([^\"]+)\"").getMatch(0);
                                 }
-                            } else {
-                                final DownloadLink dl = this.createDownloadlink(result);
-                                fp.add(dl);
-                                decryptedLinks.add(dl);
+                            }
+                            if (assetURL != null) {
+                                final DownloadLink dl2 = this.createDownloadlink(assetURL);
+                                fp.add(dl2);
+                                decryptedLinks.add(dl2);
                             }
                         }
                     }
