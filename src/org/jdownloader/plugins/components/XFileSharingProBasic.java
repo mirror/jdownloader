@@ -114,7 +114,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 4.0.0.6<br />
+     * DEV NOTES XfileSharingProBasic Version 4.0.0.7<br />
      ****************************
      * NOTES from raztoki <br/>
      * - no need to set setfollowredirect true. <br />
@@ -2161,6 +2161,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     final boolean loginFormOkay = findLoginform(this.br) == null;
                     final boolean loginURLOkay = br.getURL().contains("op=") && !br.getURL().contains("op=login");
                     if (!loginCookieOkay && !loginFormOkay && !loginURLOkay) {
+                        if (correctedBR.contains("op=resend_activation")) {
+                            /* User entered correct logindata but has not activated his account ... */
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYour account has not yet been activated!\r\nActivate it via the URL you should have received via E-Mail and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
                         if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                         } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -2308,8 +2312,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /**
-     * Use this to set filename from inside URL or fuid as filename either before a linkcheck happens so that there is a readable filename
-     * displayed in the linkgrabber or also for mass-linkchecking as in this case these is no filename given inside HTML.
+     * Use this to set filename based on filename inside URL or fuid as filename either before a linkcheck happens so that there is a
+     * readable filename displayed in the linkgrabber or also for mass-linkchecking as in this case these is no filename given inside HTML.
      */
     protected void setWeakFilename(final DownloadLink link) {
         final String weak_fallback_filename = this.getFallbackFilename(link);

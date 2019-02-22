@@ -35,7 +35,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 @SuppressWarnings("deprecation")
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "XFileShareProFolder" }, urls = {
-        "https?://(www\\.)?(subyshare\\.com|brupload\\.net|(exclusivefaile\\.com|exclusiveloader\\.com)|ex-load\\.com|hulkload\\.com|koofile\\.com|bestreams\\.net|powvideo\\.net|lunaticfiles\\.com|youwatch\\.org|streamratio\\.com|vshare\\.eu|up\\.media1fire\\.com|salefiles\\.com|ortofiles\\.com|restfile\\.ca|restfilee\\.com|storagely\\.com|free\\-uploading\\.com|rapidfileshare\\.net|fireget\\.com|ishareupload\\.com|gorillavid\\.in|mixshared\\.com|longfiles\\.com|novafile\\.com|orangefiles\\.me|qtyfiles\\.com|free\\-uploading\\.com|free\\-uploading\\.com|uppit\\.com|downloadani\\.me|movdivx\\.com|faststore\\.org|clicknupload\\.org|isra\\.cloud|(up\\-4\\.net|up\\-4ever\\.com))/(users/[a-z0-9_]+/[^\\?\r\n]+|folder/\\d+/[^\\?\r\n]+)|https?://(?:www\\.)?users(?:files|cloud)\\.com/go/[a-zA-Z0-9]{12}/?|https?://(www\\.)?(hotlink\\.cc|ex-load\\.com)/folder/[a-f0-9\\-]+|https?://(?:www\\.)?imgbaron\\.com/g/[A-Za-z0-9]+" })
+        "https?://(?:www\\.)?(?:subyshare\\.com|brupload\\.net|(?:exclusivefaile\\.com|exclusiveloader\\.com)|ex-load\\.com|hulkload\\.com|koofile\\.com|bestreams\\.net|powvideo\\.net|lunaticfiles\\.com|youwatch\\.org|streamratio\\.com|vshare\\.eu|up\\.media1fire\\.com|salefiles\\.com|ortofiles\\.com|restfile\\.ca|restfilee\\.com|storagely\\.com|free\\-uploading\\.com|rapidfileshare\\.net|fireget\\.com|ishareupload\\.com|gorillavid\\.in|mixshared\\.com|longfiles\\.com|novafile\\.com|orangefiles\\.me|qtyfiles\\.com|free\\-uploading\\.com|free\\-uploading\\.com|uppit\\.com|downloadani\\.me|movdivx\\.com|faststore\\.org|clicknupload\\.org|isra\\.cloud|(?:up\\-4\\.net|up\\-4ever\\.com))/(users/[a-z0-9_]+(?:/[^\\?\r\n]+)?|folder/\\d+/[^\\?\r\n]+)|https?://(?:www\\.)?users(?:files|cloud)\\.com/go/[a-zA-Z0-9]{12}/?|https?://(www\\.)?(hotlink\\.cc|ex-load\\.com)/folder/[a-f0-9\\-]+|https?://(?:www\\.)?imgbaron\\.com/g/[A-Za-z0-9]+" })
 public class XFileShareProFolder extends antiDDoSForDecrypt {
     // DONT FORGET TO MAINTAIN HERE ALSO!
     public String[] siteSupportedNames() {
@@ -80,11 +80,13 @@ public class XFileShareProFolder extends antiDDoSForDecrypt {
         br.setCookie("https://" + host, "lang", "english");
         br.setFollowRedirects(true);
         getPage(parameter);
-        if (br.containsHTML("No such user exist")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("No such user exist")) {
             logger.warning("Incorrect URL or Invalid user : " + parameter);
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         // name isn't needed, other than than text output for fpName.
+        final String username = new Regex(parameter, "/users/([^/]+)").getMatch(0);
         String fpName = new Regex(parameter, "(folder/\\d+/|f/[a-z0-9]+/|go/[a-z0-9]+/)[^/]+/(.+)").getMatch(1); // name
         if (fpName == null) {
             fpName = new Regex(parameter, "(folder/\\d+/|f/[a-z0-9]+/|go/[a-z0-9]+/)(.+)").getMatch(1); // id
@@ -111,6 +113,10 @@ public class XFileShareProFolder extends antiDDoSForDecrypt {
                 fpName = br.getRegex("<H1>\\s*?(.*?)\\s*?</H1>").getMatch(0);
             }
         }
+        if (fpName == null) {
+            /* Final fallback */
+            fpName = username;
+        }
         if (fpName != null) {
             fpName = Encoding.htmlDecode(fpName);
             fp = FilePackage.getInstance();
@@ -130,15 +136,35 @@ public class XFileShareProFolder extends antiDDoSForDecrypt {
         final String[] links = br.getRegex("href=(\"|')(https?://(?:www\\.)?" + Pattern.quote(host) + "/[a-z0-9]{12}(?:/.*?)?)\\1").getColumn(1);
         if (links != null && links.length > 0) {
             for (final String link : links) {
-                final String linkid = new Regex(link, "https?://(?:www\\.)?[^/]+/([a-z0-9]{12})").getMatch(0);
+                final String linkid = new Regex(link, Pattern.compile("https?://(?:www\\.)?[^/]+/([a-z0-9]{12})", Pattern.CASE_INSENSITIVE)).getMatch(0);
                 if (dupe.add(linkid)) {
                     /**
-                     * TODO: Consider adding support for "fast linkcheck" --> Set links as available here - maybe only if filename is given
-                     * inside URL (which is often the case). In general, files inside a folder should be online!
+                     * TODO: Consider adding support for "fast linkcheck" option via XFS core (superclass) --> Set links as available here -
+                     * maybe only if filename is given inside URL (which is often the case). In general, files inside a folder should be
+                     * online!
                      */
                     final DownloadLink dl = createDownloadlink(link);
                     /* Set ContentURL - VERY important for XFS (Mass-)Linkchecking! */
                     dl.setContentUrl(link);
+                    String url_filename = new Regex(link, "[a-z0-9]{12}/(.+)\\.html$").getMatch(0);
+                    /* E.g. up-4.net */
+                    final String html_filename = br.getRegex("<a href=\"[^\"]+" + linkid + "\" target=\"_blank\">([^<>\"]+)</a>").getMatch(0);
+                    String filename;
+                    if (html_filename != null) {
+                        filename = html_filename;
+                    } else {
+                        filename = url_filename;
+                    }
+                    if (filename != null) {
+                        if (filename.endsWith("&#133;")) {
+                            /*
+                             * Indicates that this is not the complete filename but there is nothing we can do at this stage - full
+                             * filenames should be displayed once a full linkcheck is performed or at least once a download starts.
+                             */
+                            filename = filename.replace("&#133;", "");
+                        }
+                        dl.setName(filename);
+                    }
                     if (fast_linkcheck) {
                         dl.setAvailable(true);
                     }
@@ -176,14 +202,18 @@ public class XFileShareProFolder extends antiDDoSForDecrypt {
             return true;
         }
         if (postData == null) {
-            /* pagination ? */
+            /* Pagination ? */
             final String pagination = br.getRegex("setPagination\\('\\.files_paging',.*?\\);").getMatch(-1);
             if (pagination == null) {
                 return false;
             }
             final String op = new Regex(pagination, "op:\\s*'(\\w+)'").getMatch(0);
             final String usr_login = new Regex(pagination, "usr_login:\\s*'(\\w+)'").getMatch(0);
-            final String fld_id = new Regex(pagination, "fld_id:\\s*'(\\w+)'").getMatch(0);
+            String fld_id = new Regex(pagination, "fld_id:\\s*'(\\w+)'").getMatch(0);
+            if ("user_public".equalsIgnoreCase(op) && fld_id == null) {
+                /* Decrypt all files of a user --> No folder_id given/required! Example: up-4-net */
+                fld_id = "";
+            }
             if (op == null || usr_login == null || fld_id == null) {
                 return false;
             }
