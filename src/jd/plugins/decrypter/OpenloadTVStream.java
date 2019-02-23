@@ -30,7 +30,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision: 40396 $", interfaceVersion = 2, names = { "openloadtvstream.me" }, urls = { "https?://(www\\.)?openloadtvstream\\.me/(tvshows|movies|episodes)/.+" })
+@DecrypterPlugin(revision = "$Revision: 40416 $", interfaceVersion = 2, names = { "openloadtvstream.me" }, urls = { "https?://(www\\.)?openloadtvstream\\.me/(tvshows|movies|episodes)/.+" })
 public class OpenloadTVStream extends antiDDoSForDecrypt {
     public OpenloadTVStream(PluginWrapper wrapper) {
         super(wrapper);
@@ -46,7 +46,7 @@ public class OpenloadTVStream extends antiDDoSForDecrypt {
         String itemName = new Regex(parameter, "/(?:tvshows|movies|episodes)/([^/]+)").getMatch(0);
         // Handle TV show overview pages
         if (StringUtils.containsIgnoreCase(parameter, "/tvshows/")) {
-            String[][] links = br.getRegex("<a href=\"([^\"]+/(?:tvshows|films|episodes)/" + Regex.escape(itemName) + "[^\"]+)\"").getMatches();
+            String[][] links = br.getRegex("<a href=[\"\']([^\"\']+/(?:tvshows|films|episodes)/" + Regex.escape(itemName) + "[^\"\']+)[\"\']").getMatches();
             if (links != null && links.length > 0) {
                 for (String[] link : links) {
                     if (!new Regex(link[0], Regex.escape(parameter) + "/?").matches()) {
