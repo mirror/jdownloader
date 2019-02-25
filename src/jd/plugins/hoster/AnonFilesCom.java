@@ -28,6 +28,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anonfiles.com" }, urls = { "https?://(?:www\\.)?anonfiles?\\.com/(?:file/)?[A-Za-z0-9]+" })
 public class AnonFilesCom extends PluginForHost {
     public AnonFilesCom(PluginWrapper wrapper) {
@@ -64,16 +66,25 @@ public class AnonFilesCom extends PluginForHost {
         br.setCookie(this.getHost(), "lang", "us");
         br.getPage("https://anonfiles.com/api/v2/file/" + new Regex(link.getPluginPatternMatcher(), "([A-Za-z0-9]+)$").getMatch(0) + "/info");
         if (!br.containsHTML("\"status\":true") || br.getHttpConnection().getResponseCode() == 404) {
+            br.getPage(link.getPluginPatternMatcher());
+            final String filename = br.getRegex("<h1 class=\"text-center text-wordwrap\"\\s*>\\s*(.*?)\\s*</h1>").getMatch(0);
+            final String filesize = br.getRegex(">\\s*Download\\s*\\(([0-9\\.]+\\s*[TBKMG]+)\\)\\s*<").getMatch(0);
+            if (filename != null && filesize != null) {
+                link.setName(Encoding.htmlDecode(filename.trim()));
+                link.setDownloadSize(SizeFormatter.getSize(filesize));
+                return AvailableStatus.TRUE;
+            }
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else {
+            final String filename = PluginJSonUtils.getJson(br, "name");
+            final String filesize = PluginJSonUtils.getJson(br, "bytes");
+            if (filename == null || filesize == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            link.setName(Encoding.htmlDecode(filename.trim()));
+            link.setDownloadSize(Long.parseLong(filesize));
+            return AvailableStatus.TRUE;
         }
-        final String filename = PluginJSonUtils.getJson(br, "name");
-        final String filesize = PluginJSonUtils.getJson(br, "bytes");
-        if (filename == null || filesize == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(Long.parseLong(filesize));
-        return AvailableStatus.TRUE;
     }
 
     @SuppressWarnings("deprecation")
