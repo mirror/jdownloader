@@ -684,6 +684,7 @@ public class MediafireCom extends PluginForHost {
                     file_infos = (List<Map<String, Object>>) infos;
                 } else if (infos != null && infos instanceof Map) {
                     file_infos = new ArrayList<Map<String, Object>>();
+                    file_infos.add((Map<String, Object>) infos);
                 } else {
                     if (links.size() == 1) {
                         final DownloadLink dl = links.get(0);
