@@ -19,6 +19,7 @@ interaction_shutdown_dialog_msg_shutdown=<h2><font color="red">系统将会关�
 interaction_shutdown_dialog_msg_standby=<h2><font color="red">系统将会进入待机模式!</font></h2>
 interaction_shutdown_dialog_title_closejd=关闭 JDownloader 吗?
 interaction_shutdown_dialog_title_hibernate=休眠吗?
+interaction_shutdown_dialog_title_logoff=注销？
 interaction_shutdown_dialog_title_shutdown=关机吗?
 interaction_shutdown_dialog_title_standby=待机吗?
 jd_plugins_optional_jdshutdown=JD 关机
