@@ -25,17 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.containers.VimeoContainer;
-import org.jdownloader.plugins.components.containers.VimeoContainer.Quality;
-import org.jdownloader.plugins.components.containers.VimeoContainer.Source;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -60,6 +49,17 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.locale.JDL;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.containers.VimeoContainer;
+import org.jdownloader.plugins.components.containers.VimeoContainer.Quality;
+import org.jdownloader.plugins.components.containers.VimeoContainer.Source;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "decryptedforVimeoHosterPlugin://.+" })
 public class VimeoCom extends PluginForHost {
@@ -170,7 +170,7 @@ public class VimeoCom extends PluginForHost {
         br = prepBrGeneral(downloadLink, new Browser());
         br.setFollowRedirects(true);
         final String forced_referer = getForcedReferer(downloadLink);
-        accessVimeoURL(this.br, downloadLink.getPluginPatternMatcher(), forced_referer);
+        accessVimeoURL(this.br, downloadLink.getPluginPatternMatcher(), forced_referer, getVimeoUrlType(downloadLink));
         handlePW(downloadLink, br);
         /* Video titles can be changed afterwards by the puloader - make sure that we always got the currrent title! */
         String videoTitle = null;
@@ -258,21 +258,30 @@ public class VimeoCom extends PluginForHost {
         return dl.getStringProperty("specialVideoID", null);
     }
 
+    public static enum VIMEO_URL_TYPE {
+        RAW,
+        PLAYER,
+        UNLISTED,
+        NORMAL
+    }
+
     /**
      * Use this to access a vimeo URL for the first time! Make sure to call password handling afterwards! <br />
      * Important: Execute password handling afterwards!!
      */
-    public static void accessVimeoURL(final Browser br, final String url_source, final String forced_referer) throws Exception {
+    public static VIMEO_URL_TYPE accessVimeoURL(final Browser br, final String url_source, final String forced_referer, final VIMEO_URL_TYPE urlType) throws Exception {
         final String videoID = jd.plugins.decrypter.VimeoComDecrypter.getVideoidFromURL(url_source);
         final String unlistedHash = jd.plugins.decrypter.VimeoComDecrypter.getUnlistedHashFromURL(url_source);
         // final String reviewHash = jd.plugins.decrypter.VimeoComDecrypter.getReviewHashFromURL(url_source);
-        if (url_source.matches("https?://.*?vimeo\\.com.*?/review/.+")) {
+        final VIMEO_URL_TYPE ret;
+        if (urlType == VIMEO_URL_TYPE.RAW || (urlType == null && url_source.matches("https?://.*?vimeo\\.com.*?/review/.+"))) {
             /*
              * 2019-02-20: Special: We have to access 'review' URLs same way as via browser - if we don't, we will get response 403/404!
              * Review-URLs may contain a reviewHash which is required! If then, inside their json, the unlistedHash is present,
              */
             br.getPage(url_source);
-        } else if (forced_referer != null) {
+            ret = VIMEO_URL_TYPE.RAW;
+        } else if (urlType == VIMEO_URL_TYPE.PLAYER || (urlType == null && forced_referer != null)) {
             /*
              * Referer given/required? We HAVE TO access the url via player.vimeo.com (with the correct Referer) otherwise we will only
              * receive 403/404!
@@ -309,13 +318,19 @@ public class VimeoCom extends PluginForHost {
             // }
             // }
             // }
-        } else if (unlistedHash != null) {
+            ret = VIMEO_URL_TYPE.PLAYER;
+        } else if (urlType == VIMEO_URL_TYPE.UNLISTED || (urlType == null && unlistedHash != null)) {
+            if (unlistedHash == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             br.getPage(String.format("https://vimeo.com/%s/%s", videoID, unlistedHash));
             if (jd.plugins.decrypter.VimeoComDecrypter.iranWorkaround(br, videoID) && br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            ret = VIMEO_URL_TYPE.UNLISTED;
         } else {
             br.getPage("https://vimeo.com/" + videoID);
+            ret = VIMEO_URL_TYPE.NORMAL;
         }
         if (br.getHttpConnection().getResponseCode() == 403) {
             /* Hmm offline or account required */
@@ -333,6 +348,7 @@ public class VimeoCom extends PluginForHost {
         if (vuid != null) {
             br.setCookie(br.getURL(), "vuid", vuid);
         }
+        return ret;
     }
 
     @Override
@@ -364,6 +380,20 @@ public class VimeoCom extends PluginForHost {
         dl.startDownload();
     }
 
+    public static final String VIMEOURLTYPE = "VIMEOURLTYPE";
+
+    protected VIMEO_URL_TYPE getVimeoUrlType(DownloadLink link) {
+        final String urlType = link.getStringProperty(VIMEOURLTYPE, null);
+        if (urlType != null) {
+            try {
+                return VIMEO_URL_TYPE.valueOf(urlType);
+            } catch (Throwable ignore) {
+                logger.log(ignore);
+            }
+        }
+        return null;
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
@@ -377,7 +407,7 @@ public class VimeoCom extends PluginForHost {
         br.setFollowRedirects(false);
         final boolean is_private_link = link.getBooleanProperty("private_player_link", false);
         final String forced_referer = getForcedReferer(link);
-        accessVimeoURL(this.br, link.getPluginPatternMatcher(), forced_referer);
+        accessVimeoURL(this.br, link.getPluginPatternMatcher(), forced_referer, getVimeoUrlType(link));
         if (br.containsHTML("\">Sorry, not available for download")) {
             /* Premium / account users cannot download private URLs. */
             logger.info("No download available for link: " + link.getDownloadURL() + " , downloading as unregistered user...");

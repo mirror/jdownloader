@@ -27,15 +27,6 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -61,10 +52,19 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class UploadproperCom extends antiDDoSForHost {
     /* 1st domain = current domain! */
-    public static String[] domains = new String[] { "uploadproper.com" };
+    public static String[] domains = new String[] { "uploadproper.net", "uploadproper.com" };
 
     public static String[] getAnnotationNames() {
         return new String[] { domains[0] };
@@ -192,6 +192,16 @@ public class UploadproperCom extends antiDDoSForHost {
             link.setPluginPatternMatcher(COOKIE_HOST + "/" + fuid);
             link.setLinkID(getHost() + "://" + fuid);
         }
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if ("uploadproper.net".equals(getHost())) {
+            if (host == null || "uploadproper.com".equals(host)) {
+                return "uploadproper.net";
+            }
+        }
+        return super.rewriteHost(host);
     }
 
     @Override
