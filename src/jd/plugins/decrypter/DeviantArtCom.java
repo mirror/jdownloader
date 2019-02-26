@@ -118,18 +118,33 @@ public class DeviantArtCom extends PluginForDecrypt {
             } catch (final Throwable e) {
             }
         }
-        br.getPage(parameter);
-        if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("The page you were looking for doesn\\'t exist\\.") || br.getURL().matches("https?://([A-Za-z0-9]+\\.)?deviantart\\.com/browse/.+")) {
-            distribute(this.createOfflinelink(this.parameter));
-            return decryptedLinks;
-        }
         if (parameter.matches(TYPE_JOURNAL)) {
+            br.getPage(parameter);
+            if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("The page you were looking for doesn\\'t exist\\.")) {
+                distribute(this.createOfflinelink(this.parameter));
+                return decryptedLinks;
+            }
             decryptJournals();
         } else if (new Regex(parameter, Pattern.compile(TYPE_COLLECTIONS, Pattern.CASE_INSENSITIVE)).matches()) {
+            br.getPage(parameter);
+            if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("The page you were looking for doesn\\'t exist\\.")) {
+                distribute(this.createOfflinelink(this.parameter));
+                return decryptedLinks;
+            }
             decryptCollections();
         } else if (parameter.matches(TYPE_BLOG)) {
+            br.getPage(parameter);
+            if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("The page you were looking for doesn\\'t exist\\.")) {
+                distribute(this.createOfflinelink(this.parameter));
+                return decryptedLinks;
+            }
             decryptBlog();
-        } else if (parameter.contains("/gallery/") || parameter.contains("/favourites/")) {
+        } else if (StringUtils.containsIgnoreCase(parameter, "/gallery/") || StringUtils.containsIgnoreCase(parameter, "/favourites/")) {
+            br.getPage(parameter);
+            if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("The page you were looking for doesn\\'t exist\\.")) {
+                distribute(this.createOfflinelink(this.parameter));
+                return decryptedLinks;
+            }
             decryptStandard();
         } else {
             logger.info("Link unsupported: " + parameter);
