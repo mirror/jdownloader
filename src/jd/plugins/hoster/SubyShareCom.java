@@ -979,7 +979,7 @@ public class SubyShareCom extends PluginForHost {
             }
             final String usableBandwidth = br.getRegex("Usable Bandwidth\\s*<span.*?>\\s*([0-9\\.]+\\s*[TGMKB]+)\\s*/\\s*[0-9\\.]+\\s*[TGMKB]+\\s*<").getMatch(0);
             if (usableBandwidth != null) {
-                trafficLeft += Math.max(0, SizeFormatter.getSize(usableBandwidth));
+                trafficLeft = Math.max(trafficLeft, SizeFormatter.getSize(usableBandwidth));
             }
             ai.setTrafficLeft(trafficLeft);
         } else {
