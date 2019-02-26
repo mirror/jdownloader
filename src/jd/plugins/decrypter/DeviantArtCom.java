@@ -35,6 +35,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/(?!(?:[^/]+/)?art/|status/)[^<>\"]+" })
@@ -437,6 +438,7 @@ public class DeviantArtCom extends PluginForDecrypt {
                     timesNoItems = 0;
                 }
                 for (final String artlink : links) {
+                    final String artlinkClass = new Regex(grab, "<span\\s*class\\s*=\\s*\"([^<>]*?)\"[^<>]*href\\s*=\\s*\"" + Pattern.quote(artlink) + "\"").getMatch(0);
                     final DownloadLink fina = createDownloadlink(artlink);
                     if (fastLinkCheck) {
                         fina.setAvailable(true);
@@ -446,7 +448,10 @@ public class DeviantArtCom extends PluginForDecrypt {
                     if (fp != null) {
                         fina._setFilePackage(fp);
                     }
-                    if (forceHtmlDownload) {
+                    if (StringUtils.containsIgnoreCase(artlinkClass, "literature")) {
+                        fina.setName(fina.getName() + ".html");
+                        fina.setMimeHint(CompiledFiletypeFilter.DocumentExtensions.HTML);
+                    } else if (forceHtmlDownload) {
                         fina.setMimeHint(CompiledFiletypeFilter.DocumentExtensions.HTML);
                     } else {
                         fina.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
