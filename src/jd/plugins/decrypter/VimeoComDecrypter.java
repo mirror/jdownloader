@@ -29,6 +29,7 @@ import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -54,12 +55,12 @@ import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.plugins.components.containers.VimeoContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vimeo.com" }, urls = { "https?://(?:www\\.)?vimeo\\.com/(\\d+(?:/[a-f0-9]+)?|(?:[a-z]{2}/)?channels/[a-z0-9\\-_]+/\\d+|[A-Za-z0-9\\-_]+/videos|ondemand/[A-Za-z0-9\\-_]+|groups/[A-Za-z0-9\\-_]+(?:/videos/\\d+)?)|https?://player\\.vimeo.com/(?:video|external)/\\d+.+|https?://(?:www\\.)?vimeo\\.com/[a-z0-9]+/review/\\d+/[a-f0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vimeo.com" }, urls = { "https?://(?:www\\.)?vimeo\\.com/(\\d+(?:/[a-f0-9]+)?|(?:[a-z]{2}/)?channels/[a-z0-9\\-_]+/\\d+|[A-Za-z0-9\\-_]+/videos|ondemand/[A-Za-z0-9\\-_]+|groups/[A-Za-z0-9\\-_]+(?:/videos/\\d+)?)|https?://player\\.vimeo.com/(?:video|external)/\\d+((\\?|#).+)?|https?://(?:www\\.)?vimeo\\.com/[a-z0-9]+/review/\\d+/[a-f0-9]+" })
 public class VimeoComDecrypter extends PluginForDecrypt {
     private static final String type_player_private_external_direct = "https?://player\\.vimeo.com/external/\\d+\\.[A-Za-z]{1,5}\\.mp4.+";
     private static final String type_player_private_external_m3u8   = "https?://player\\.vimeo.com/external/\\d+\\.*?\\.m3u8.+";
-    private static final String type_player_private_external        = "https?://player\\.vimeo.com/external/\\d+((\\&|\\?)forced_referer=[A-Za-z0-9=]+)?";
-    private static final String type_player_private_forced_referer  = "https?://player\\.vimeo.com/video/\\d+.*?(\\&|\\?)forced_referer=[A-Za-z0-9=]+";
+    private static final String type_player_private_external        = "https?://player\\.vimeo.com/external/\\d+((\\&|\\?|#)forced_referer=[A-Za-z0-9=]+)?";
+    private static final String type_player_private_forced_referer  = "https?://player\\.vimeo.com/video/\\d+.*?(\\&|\\?|#)forced_referer=[A-Za-z0-9=]+";
     /*
      * 2018-03-26: Such URLs will later have an important parameter "s" inside player.vimeo.com URL. Without this String, we cannot
      * watch/download them!!
@@ -73,6 +74,36 @@ public class VimeoComDecrypter extends PluginForDecrypt {
 
     private static final String LINKTYPE_USER  = "https?://(?:www\\.)?vimeo\\.com/[A-Za-z0-9\\-_]+/videos";
     private static final String LINKTYPE_GROUP = "https?://(?:www\\.)?vimeo\\.com/groups/[A-Za-z0-9\\-_]+(?!videos/\\d+)";
+
+    private String guessReferer(CryptedLink param) {
+        CrawledLink check = getCurrentLink().getSourceLink();
+        while (check != null) {
+            final String ret = check.getURL();
+            if (check == check.getSourceLink() || !StringUtils.equalsIgnoreCase(Browser.getHost(ret), "vimeo.com")) {
+                return ret;
+            } else {
+                check = check.getSourceLink();
+            }
+        }
+        return null;
+    }
+
+    private String getForcedRefererFromURLParam(final String urlParam) {
+        final String value = new Regex(urlParam, "forced_referer=([A-Za-z0-9=]+)").getMatch(0);
+        if (value != null) {
+            String ret = null;
+            if (value.matches("^[a-fA-F0-9]+$") && value.length() % 2 == 0) {
+                final byte[] bytes = HexFormatter.hexToByteArray(value);
+                ret = bytes != null ? new String(bytes) : null;
+            }
+            if (ret == null) {
+                ret = Encoding.Base64Decode(value);
+            }
+            return ret;
+        } else {
+            return null;
+        }
+    }
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
@@ -176,18 +207,18 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         } else {
             /* Check if we got a forced Referer - if so, extract it, clean url, use it and set it on our DownloadLinks for later usage. */
             String vimeo_forced_referer = null;
-            final String vimeo_forced_referer_url_part = new Regex(parameter, "((\\&|\\?)forced_referer=.+)").getMatch(0);
+            final String vimeo_forced_referer_url_part = new Regex(parameter, "((\\&|\\?|#)forced_referer=.+)").getMatch(0);
             if (vimeo_forced_referer_url_part != null) {
                 parameter = parameter.replace(vimeo_forced_referer_url_part, "");
-                final String forced_referer = new Regex(vimeo_forced_referer_url_part, "forced_referer=([A-Za-z0-9=]+)").getMatch(0);
-                if (forced_referer != null) {
-                    if (forced_referer.matches("^[a-fA-F0-9]+$") && forced_referer.length() % 2 == 0) {
-                        final byte[] bytes = HexFormatter.hexToByteArray(forced_referer);
-                        vimeo_forced_referer = bytes != null ? new String(bytes) : null;
-                    }
-                    if (vimeo_forced_referer == null) {
-                        vimeo_forced_referer = Encoding.Base64Decode(forced_referer);
-                    }
+                vimeo_forced_referer = getForcedRefererFromURLParam(vimeo_forced_referer_url_part);
+                if (vimeo_forced_referer != null) {
+                    logger.info("Use *forced* referer:" + vimeo_forced_referer);
+                }
+            }
+            if (vimeo_forced_referer == null) {
+                vimeo_forced_referer = guessReferer(param);
+                if (vimeo_forced_referer != null) {
+                    logger.info("Use *guessed* referer:" + vimeo_forced_referer);
                 }
             }
             final String videoID = getVideoidFromURL(parameter);
@@ -239,6 +270,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     }
                 }
             } catch (final PluginException e2) {
+                // TODO: ask for referer if required and vimeo_forced_referer not set
                 if (e2.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
                     decryptedLinks.add(createOfflinelink(parameter, videoID, null));
                     return decryptedLinks;
