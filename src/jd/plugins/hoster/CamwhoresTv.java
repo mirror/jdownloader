@@ -17,9 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -35,6 +34,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "camwhores.tv" }, urls = { "https?://(?:www\\.)?camwhoresdecrypted\\.tv/.+|https?://(?:www\\.)?camwhores(tv)?\\.(?:tv|video|biz|sc|io|adult|cc|co|org)/embed/\\d+" })
 public class CamwhoresTv extends PluginForHost {
@@ -123,12 +124,14 @@ public class CamwhoresTv extends PluginForHost {
             return AvailableStatus.TRUE;
         }
         getDllink(link);
-        if (dllink != null) {
+        if (dllink != null && !(Thread.currentThread() instanceof SingleDownloadController)) {
             link.setFinalFileName(filename);
+            final Browser br2 = br.cloneBrowser();
+            br.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
-                con = br.openHeadConnection(dllink);
-                if (!con.getContentType().contains("html")) {
+                con = br2.openHeadConnection(dllink);
+                if (con.isOK() && !con.getContentType().contains("html")) {
                     link.setDownloadSize(con.getLongContentLength());
                     link.setProperty("directlink", dllink);
                 } else {

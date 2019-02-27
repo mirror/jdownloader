@@ -270,7 +270,7 @@ public class DeviantArtCom extends PluginForHost {
         }
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", "")));
-        } else {
+        } else if (this.getPluginConfig().getBooleanProperty(SKIP_FILESIZECHECK, default_SKIP_FILESIZECHECK) == false && !DOWNLOADS_STARTED) {
             final Browser br2 = br.cloneBrowser();
             /* Workaround for old downloadcore bug that can lead to incomplete files */
             br2.getHeaders().put("Accept-Encoding", "identity");
@@ -660,6 +660,8 @@ public class DeviantArtCom extends PluginForHost {
 
     private static final boolean default_FASTLINKCHECK_2                  = true;
     private static final boolean default_FASTLINKCHECK_ALL                = false;
+    private static final String  SKIP_FILESIZECHECK                       = "SKIP_FILESIZECHECK";
+    private static final boolean default_SKIP_FILESIZECHECK               = true;
     private static final boolean default_FORCEHTMLDOWNLOAD                = false;
     public static final boolean  default_CRAWL_GIVEN_OFFSETS_INDIVIDUALLY = false;
     private static final String  FASTLINKCHECK_ALL                        = "FASTLINKCHECK_ALL";
@@ -689,6 +691,7 @@ public class DeviantArtCom extends PluginForHost {
         }
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK_2, fastlinkchecktext).setDefaultValue(default_FASTLINKCHECK_2));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK_ALL, fastlinkcheck_all_text).setDefaultValue(default_FASTLINKCHECK_ALL));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SKIP_FILESIZECHECK, "Avoid additional requests to check file size?").setDefaultValue(default_SKIP_FILESIZECHECK));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "FilenameFromServer", "Choose file name from download link with unique identifier?").setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FORCEHTMLDOWNLOAD, forcehtmldownloadtext).setDefaultValue(default_FORCEHTMLDOWNLOAD));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CRAWL_GIVEN_OFFSETS_INDIVIDUALLY, decryptOffsetsIndividually).setDefaultValue(default_CRAWL_GIVEN_OFFSETS_INDIVIDUALLY));
