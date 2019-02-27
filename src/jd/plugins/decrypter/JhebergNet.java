@@ -13,35 +13,31 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.controlling.ProgressController;
-import jd.gui.UserIO;
 import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
-import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jheberg.net" }, urls = { "https?://(?:www\\.)?jheberg\\.net/(captcha|download|mirrors)/[A-Z0-9a-z\\.\\-_]+" })
-public class JhebergNet extends PluginForDecrypt {
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jheberg.net" }, urls = { "https?://(?:www\\.|download\\.)?jheberg\\.net/(captcha|download|mirrors|go|redirect)/[A-Z0-9a-z\\.\\-_]+" })
+public class JhebergNet extends antiDDoSForDecrypt {
     public JhebergNet(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -52,11 +48,7 @@ public class JhebergNet extends PluginForDecrypt {
         return 1;
     }
 
-    private final String  COOKIE_HOST  = "http://jheberg.net/";
-    /* must be static so all plugins share same lock */
-    private static Object LOCK         = new Object();
-    private final Integer MAXCOOKIEUSE = 50;
-    private String        agent        = null;
+    private String agent = null;
 
     private Browser prepBrowser(Browser prepBr) {
         prepBr.setFollowRedirects(true);
@@ -65,184 +57,88 @@ public class JhebergNet extends PluginForDecrypt {
         }
         prepBr.getHeaders().put("User-Agent", agent);
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
-        prepBr.setCookie("http://jheberg.net/", "npqf_unique_user", "1");
+        prepBr.setCookie("https://jheberg.net/", "npqf_unique_user", "1");
         return prepBr;
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        HashSet<String> filter = new HashSet<String>();
-
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         prepBrowser(br);
-        // boolean loggedIn = false;
-        // Login function is probably broken, maybe not even needed anymore
-        // if (!this.getPluginConfig().getBooleanProperty("skiplogin")) loggedIn = getUserLogin();
-        br.getPage(parameter);
-        if (br.containsHTML(">Oh non, vous avez tué Kenny|>Dommage, la page demandée n'existe pas")) {
-            logger.info("Link offline: " + parameter);
-            return decryptedLinks;
-        } else if (br.containsHTML("<div class=\"title\">Erreur 404</div>|<div id=\"http-error\">404\\.</div>")) {
-            logger.info("Invalid link: " + parameter);
-            return decryptedLinks;
-        }
-
-        final String fpName = br.getRegex("file-?name\">([^<>\"]+)</h1>").getMatch(0);
-        final String linkID = new Regex(parameter, "/(captcha|download|mirrors)/(.*)").getMatch(1);
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(linkID);
-        if (fpName != null) {
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-        }
-
-        // br.getPage(parameter.replaceFirst("/(captcha|download)/", "/mirrors/") + (!parameter.endsWith("/") ? "/" : ""));
-        br.getPage("http://www.jheberg.net/mirrors/" + linkID + "/");
-        String[] results = br.getRegex("\"(/redirect/[^<>\"]*?)\"").getColumn(0);
-        if (results == null || results.length == 0) {
-            if (br.containsHTML("Débrider maintenant \\!<|>Hébergeur indisponible</")) {
-                logger.info("Link offline: " + parameter);
-                return decryptedLinks;
-            } else if (br.containsHTML(">Votre fichier est en attente d'upload\\.<|>Il devrait être disponible sous peu, veuillez patienter\\.<")) {
-                logger.info("Still been uploaded");
-                return decryptedLinks;
+        if (StringUtils.contains(parameter, "/redirect/")) {
+            br.setFollowRedirects(false);
+            getPage(parameter);
+            final String finallink = br.getRedirectLocation();
+            if (finallink != null) {
+                final DownloadLink dl = createDownloadlink(finallink.replace("\\", ""));
+                ret.add(dl);
             }
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        for (final String result : results) {
-            final String hoster = result;
-            if (filter.add(hoster) == false) {
-                continue;
+            return ret;
+        } else if (StringUtils.contains(parameter, "/go/") || StringUtils.contains(parameter, "/captcha/")) {
+            final String linkID = new Regex(parameter, "/(go|captcha)/(.*)").getMatch(1);
+            getPage("https://download.jheberg.net/go/" + linkID);
+            final String fileInfos[] = br.getRegex("<h4>\\s*(.*?)\\s*\\(\\s*<strong>\\s*([0-9\\.]+\\s*[^<]+)\\s*</").getRow(0);
+            if (br.getHttpConnection().getResponseCode() == 404 || fileInfos == null || fileInfos.length == 0) {
+                return ret;
             }
-            final Browser br2 = br.cloneBrowser();
-            br2.setFollowRedirects(false);
-            br2.getPage(hoster);
-            String finallink = br2.getRedirectLocation();
-            if (finallink == null) {
-                final Regex data = new Regex(result, "redirect/([a-z0-9\\-_]+)/([a-z0-9\\-_]+)/");
-                final String slug = data.getMatch(0);
-                final String currenthoster = data.getMatch(1);
-                if (slug == null || currenthoster == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
-                }
-                /* Waittime is not (yet) checked */
-                this.sleep(5 * 1001l, param);
-                br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br2.getHeaders().put("Accept", "*/*");
-                br2.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-                br2.postPage("http://www.jheberg.net/get/link/", "slug=" + slug + "&hoster=" + currenthoster);
-                finallink = br2.getRegex("\"url\": \"(http[^<>\"]*?)\"").getMatch(0);
-            }
-            // not sure of best action here, but seems some are either down or require account?. Continue with the results
-            if (br2.containsHTML("url\"\\s*:\\s*\"not authorized\"") || br2.containsHTML("\"url\"\\s*:\\s*\"\"") || br2.containsHTML("<title>404 Not Found</title>")) {
-                continue;
-            }
-            if (finallink == null) {
-                logger.info("Failed to decrypt single link: " + hoster);
-                continue;
-            }
-            final DownloadLink dl = createDownloadlink(finallink.replace("\\", ""));
-            fp.add(dl);
-            distribute(dl);
-            decryptedLinks.add(dl);
-        }
-        if (decryptedLinks.size() == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-
-        this.sleep(5000l, param);
-
-        return decryptedLinks;
-    }
-
-    @SuppressWarnings("unchecked")
-    private boolean getUserLogin() throws Exception {
-        br.setFollowRedirects(true);
-        String username = null;
-        String password = null;
-        synchronized (LOCK) {
-            int loginCounter = this.getPluginConfig().getIntegerProperty("logincounter");
-            // Only login every x th time to prevent getting banned | else just
-            // set cookies (re-use them)
-            if (loginCounter > MAXCOOKIEUSE || loginCounter == -1) {
-                username = this.getPluginConfig().getStringProperty("user", null);
-                password = this.getPluginConfig().getStringProperty("pass", null);
-                for (int i = 0; i < 3; i++) {
-                    if (username == null || password == null) {
-                        username = UserIO.getInstance().requestInputDialog(JDL.L("plugins.decrypter.jbergcom.login", "Enter login for jheberg.com or enter nothing if you don't wish to use an account."));
-                        if (username == null) {
-                            return false;
-                        }
-                        /**
-                         * User doesn't want login, skip it completely next time
-                         */
-                        if (username.equals("")) {
-                            this.getPluginConfig().setProperty("skiplogin", "true");
-                            return false;
-                        }
-                        password = UserIO.getInstance().requestInputDialog(JDL.L("plugins.decrypter.jbergcom.password", "Enter password for jheberg.com:"));
-                        if (password == null) {
-                            return false;
-                        }
-                    }
-                    if (!loginSite(username, password)) {
-                        break;
-                    } else {
-                        if (loginCounter > MAXCOOKIEUSE) {
-                            loginCounter = 0;
-                        } else {
-                            loginCounter++;
-                        }
-                        this.getPluginConfig().setProperty("user", username);
-                        this.getPluginConfig().setProperty("pass", password);
-                        this.getPluginConfig().setProperty("logincounter", loginCounter);
-                        final HashMap<String, String> cookies = new HashMap<String, String>();
-                        final Cookies add = this.br.getCookies(COOKIE_HOST);
-                        for (final Cookie c : add.getCookies()) {
-                            cookies.put(c.getKey(), c.getValue());
-                        }
-                        this.getPluginConfig().setProperty("cookies", cookies);
-                        this.getPluginConfig().save();
-                        return true;
-                    }
-
-                }
+            getPage("https://api.jheberg.net/file/" + linkID);
+            final Map<String, Object> map = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final String id = (String) map.get("id");
+            final Number size = JavaScriptEngineFactory.toLong(map.get("size"), -1);
+            final FilePackage fp;
+            if (id != null) {
+                fp = FilePackage.getInstance();
+                fp.setName(id);
             } else {
-                final Object ret = this.getPluginConfig().getProperty("cookies", null);
-                if (ret != null && ret instanceof HashMap<?, ?>) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    for (Map.Entry<String, String> entry : cookies.entrySet()) {
-                        this.br.setCookie(COOKIE_HOST, entry.getKey(), entry.getValue());
+                fp = null;
+            }
+            final List<Map<String, Object>> links = (List<Map<String, Object>>) map.get("links");
+            for (final Map<String, Object> link : links) {
+                if (isAbort()) {
+                    break;
+                }
+                final String status = (String) link.get("status");
+                final Number hosterID = JavaScriptEngineFactory.toLong(link.get("hosterId"), -1);
+                if (StringUtils.equalsIgnoreCase("SUCCESS", status) && hosterID != null && hosterID.longValue() != -1) {
+                    final Browser br2 = br.cloneBrowser();
+                    br2.setFollowRedirects(false);
+                    try {
+                        sleep(1000, param);
+                    } catch (InterruptedException e) {
+                        if (isAbort()) {
+                            return ret;
+                        } else {
+                            throw e;
+                        }
                     }
-                    loginCounter++;
-                    this.getPluginConfig().setProperty("logincounter", loginCounter);
-                    this.getPluginConfig().save();
-                    return true;
+                    getPage(br2, "https://download.jheberg.net/redirect/" + linkID + "-" + hosterID);
+                    final String finalLink = br2.getRedirectLocation();
+                    if (finalLink != null) {
+                        final DownloadLink dl = createDownloadlink(finalLink.replace("\\", ""));
+                        if (!StringUtils.isEmpty(fileInfos[0])) {
+                            dl.setName(fileInfos[0]);
+                        } else if (id != null) {
+                            dl.setName(id);
+                        }
+                        if (size != null && size.longValue() != -1) {
+                            dl.setDownloadSize(size.longValue());
+                        } else if (!StringUtils.isEmpty(fileInfos[1])) {
+                            dl.setDownloadSize(SizeFormatter.getSize(fileInfos[1]));
+                        }
+                        if (fp != null) {
+                            fp.add(dl);
+                        }
+                        distribute(dl);
+                        ret.add(dl);
+                    }
                 }
             }
         }
-        this.getPluginConfig().setProperty("user", Property.NULL);
-        this.getPluginConfig().setProperty("pass", Property.NULL);
-        this.getPluginConfig().setProperty("logincounter", "-1");
-        this.getPluginConfig().setProperty("cookies", Property.NULL);
-        this.getPluginConfig().save();
-        throw new DecrypterException("Login or/and password for " + COOKIE_HOST + " is wrong!");
-    }
-
-    private boolean loginSite(String username, String password) throws Exception {
-        br.postPage("http://www.jheberg.net/login.html", "pseudo=" + Encoding.urlEncode(username) + "&password=" + Encoding.urlEncode(password));
-        br.getPage("http://www.jheberg.net/account.html");
-        if (!br.containsHTML("<h1>Bonjour " + username)) {
-            return false;
-        }
-        return true;
+        return ret;
     }
 
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return true;
     }
-
 }
