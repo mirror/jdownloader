@@ -19,7 +19,6 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -27,10 +26,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.components.UserAgents;
-import jd.plugins.components.UserAgents.BrowserName;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "naughtyblog.org" }, urls = { "https?://(www\\.)?naughtyblog\\.org/(?!webmasters|contact|images|site|trending-videos|.*?popular-alltime)[a-z0-9\\-]+/?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 5, names = { "naughtyblog.org" }, urls = { "https?://(www\\.)?naughtyblog\\.org/(?!webmasters|contact)[a-z0-9\\-]+" })
 public class NaughtyBlgOrg extends PluginForDecrypt {
     private enum Category {
         UNDEF,
@@ -43,33 +40,43 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private Category category;
+    private Category            CATEGORY;
+    private static final String INVALIDLINKS = "https://(www\\.)?naughtyblog\\.org/(category|linkex|feed|\\d{4}|tag|free\\-desktop\\-strippers|list\\-of\\-.+|contact\\-us|how\\-to\\-download\\-files|siterips)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        category = Category.UNDEF;
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        br = new Browser();
+        CATEGORY = Category.UNDEF;
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        String parameter = param.toString();
         br.setFollowRedirects(true);
-        br.getHeaders().put("User-Agent", UserAgents.stringUserAgent(BrowserName.Chrome));
+        if (parameter.matches(INVALIDLINKS)) {
+            logger.info("Invalid link: " + parameter);
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
         br.getPage(parameter);
-        if (br.getRequest().getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Page not found \\(404\\)<|>403 Forbidden<") || br.containsHTML("No htmlCode read") || br.containsHTML(">Deleted due DMCA report<")) {
-            decryptedLinks.add(createOfflinelink(parameter));
+        if (br.getRequest().getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Page not found \\(404\\)<|>403 Forbidden<") || br.containsHTML("No htmlCode read")) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        } else if (br.containsHTML(">Deleted due DMCA report<")) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String contentReleaseName = br.getRegex("<h2 class=\"post-title.*?\">(.*?)</h2>").getMatch(0);
+        this.br.getPage(parameter);
+        // String content = this.br.getRegex(Pattern.compile("<div id=\"main\\-content\" class=\"main\\-content\\-single\">(.*?)<h3
+        // class=\"comments\"", 34)).getMatch(0);
+        String contentReleaseName = br.getRegex("<h1 class=\"post\\-title entry\\-title\">(.*?)</h1>").getMatch(0);
         if (contentReleaseName == null) {
-            contentReleaseName = br.getRegex("<h1 class=\"post-title.*?\">([^<>\"]*?)</h1>").getMatch(0);
+            // contentReleaseName = br.getRegex("<h1 class=\"post\\-title\">([^<>\"]*?)</h1>").getMatch(0);
+            contentReleaseName = br.getRegex("<h1 class=\"post\\-title(.*?)</h1>").getMatch(0);
         }
         if (contentReleaseName == null) {
-            // easier to return offline than throw error.
-            decryptedLinks.add(createOfflinelink(parameter));
-            return decryptedLinks;
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
         }
         // replace en-dash with a real dash
         contentReleaseName = contentReleaseName.replace("&#8211;", "-");
         contentReleaseName = Encoding.htmlDecode(contentReleaseName).trim();
-        String contentReleaseNamePrecise = br.getRegex("<p>\\s*<strong>(.*?)</strong>\\s*<br[/\\s]+>\\s*<em>Released:").getMatch(0);
+        String contentReleaseNamePrecise = br.getRegex("<p>[\\r\\n\\s]*<strong>(.*?)</strong>[\\r\\n\\s]*<br[/\\s]+>[\\r\\n\\s]*<em>Released:").getMatch(0);
         if (contentReleaseNamePrecise != null) {
             // remove possible link to tag-cloud
             contentReleaseNamePrecise = contentReleaseNamePrecise.replaceAll("<.*?>", "");
@@ -82,49 +89,66 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
                 contentReleaseName = contentReleaseName + " - " + contentReleaseNamePrecise;
             }
         }
+        String contentReleaseNamePreciseSceneRelease = br.getRegex("<p>[\\r\\n\\s]*<strong>(.*?)</strong>[\\r\\n\\s]*<br[/\\s]+>[\\r\\n\\s]*<em>").getMatch(0);
+        if (contentReleaseNamePreciseSceneRelease != null && contentReleaseNamePrecise == null) {
+            // remove possible link to tag-cloud
+            contentReleaseNamePreciseSceneRelease = contentReleaseNamePreciseSceneRelease.replaceAll("<.*?>", "");
+            // contentReleaseNamePreciseSceneRelease = Encoding.htmlDecode(contentReleaseNamePreciseSceneRelease).trim();
+            contentReleaseName = contentReleaseNamePreciseSceneRelease;
+        }
         // check if DL is from the 'clips' section
-        if (br.getRegex("<div id=\"post-\\d+\" class=\".*category-clips.*\">").matches()) {
-            category = Category.CLIP;
-        } else if (br.getRegex("<div id=\"post-\\d+\" class=\".*category-movies.*\">").matches()) {
-            // check if DL is from the 'movies' section
-            category = Category.MOVIE;
-        } else if (br.getRegex("<div id=\"post-\\d+\" class=\".*category-siterips.*\">").matches()) {
-            // check if DL is from the 'siterips' section
-            category = Category.SITERIP;
+        Regex categoryCheck = null;
+        categoryCheck = br.getRegex("<div id=\"post-\\d+\" class=\".*category\\-clips.*\">");
+        if (categoryCheck.matches()) {
+            CATEGORY = Category.CLIP;
+        }
+        // check if DL is from the 'movies' section
+        categoryCheck = br.getRegex("<div id=\"post-\\d+\" class=\".*category\\-movies.*\">");
+        if (categoryCheck.matches()) {
+            CATEGORY = Category.MOVIE;
+        }
+        // check if DL is from the 'siterips' section
+        categoryCheck = br.getRegex("<div id=\"post-\\d+\" class=\".*category\\-siterips.*\">");
+        if (categoryCheck.matches()) {
+            CATEGORY = Category.SITERIP;
         }
         String contentReleaseLinks = null;
-        if (category != Category.SITERIP) {
+        if (CATEGORY != Category.SITERIP) {
             contentReleaseLinks = br.getRegex(">Download:?</(.*?)</div>").getMatch(0);
             // Nothing found? Get all links from title till comment field
             if (contentReleaseLinks == null) {
-                contentReleaseLinks = br.getRegex("<h[12] class=\"post-title.*?\">(.*?)function validatecomment\\(form\\)\\{").getMatch(0);
+                contentReleaseLinks = br.getRegex("<h(1|2) class=\"post\\-title\">(.*?)function validatecomment\\(form\\)\\{").getMatch(1);
             }
             if (contentReleaseLinks == null) {
-                contentReleaseLinks = br.getRegex("<h[12] class=\"post-title.*?\">(.*?)class=\"comments\">Comments are closed").getMatch(0);
+                contentReleaseLinks = br.getRegex("<h(1|2) class=\"post\\-title\">(.*?)class=\"comments\">Comments are closed").getMatch(1);
             }
         } else {
             // Get all links from title till comment field
-            contentReleaseLinks = br.getRegex("<h2 class=\"post-title.*?\">(.*?)function validatecomment\\(form\\)\\{").getMatch(0);
+            contentReleaseLinks = br.getRegex("<h2 class=\"post\\-title\">(.*?)function validatecomment\\(form\\)\\{").getMatch(0);
             if (contentReleaseLinks == null) {
-                contentReleaseLinks = br.getRegex("<h\\d+ class=\"post-title.*?\">(.*?)class=\"comments\">").getMatch(0);
+                contentReleaseLinks = br.getRegex("<h\\d+ class=\"post\\-title\">(.*?)class=\"comments\">").getMatch(0);
             }
         }
         if (contentReleaseLinks == null) {
             logger.warning("contentReleaseLinks == null");
             return null;
         }
-        final String[] links = new Regex(contentReleaseLinks, "<a[^>]*\\s+href=(\"|')(https?://(www\\.)?[^\"]*?)\\1").getColumn(1);
+        // final String[] links = new Regex(contentReleaseLinks, "<a href=\"(https?://(www\\.)?[^\"]*?)\"").getColumn(0);
+        final String[] links = new Regex(contentReleaseLinks, "<a href=(.*?) title").getColumn(0);
         if (links == null || links.length == 0) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
         for (final String link : links) {
-            if (!link.matches("https?://(www\\.)?naughtyblog\\.org/.+")) {
-                final DownloadLink dl = createDownloadlink(link);
+            if (!new Regex(link, this.getSupportedLinks()).matches()) {
+                String cleanedRegExString = link.replace("<a href=", "");
+                cleanedRegExString = link.replace(" title", "");
+                final DownloadLink dl = createDownloadlink(cleanedRegExString);
                 decryptedLinks.add(dl);
             }
         }
-        final String[] imgs = br.getRegex("(https?://([\\w\\.]+)?pixhost\\.(?:org|to)/show/[^\"]+)").getColumn(0);
+        // final String[] imgs = br.getRegex("(https://([\\w\\.]+)?pixhost\\.to/show/[^\"]+)").getColumn(0);
+        final String[] imgs = br.getRegex("(https?://(?:[\\w\\.]+)?pixhost\\.to/show/[^\"\\'<>]+)").getColumn(0);
         if (links != null && links.length != 0) {
             for (final String img : imgs) {
                 final DownloadLink dl = createDownloadlink(img);
@@ -138,7 +162,7 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
     }
 
     private String getFpName(String filePackageName) {
-        switch (category) {
+        switch (CATEGORY) {
         case CLIP:
             final int firstOccurrenceOfSeparator = filePackageName.indexOf(" - ");
             if (firstOccurrenceOfSeparator > -1) {
@@ -148,7 +172,7 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
             }
             break;
         case MOVIE:
-            filePackageName += " - Movie";
+            // filePackageName += " - Movie";
             break;
         case SITERIP:
             if (!filePackageName.toLowerCase().contains("siterip")) {

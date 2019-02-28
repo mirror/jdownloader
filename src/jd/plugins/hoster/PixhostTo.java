@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixhost.to" }, urls = { "https?://(?:www\\.)?pixhost\\.to/show/((\\d+)/([^/]+))" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixhost.to" }, urls = { "https?://(?:www\\.)?pixhost\\.to/show/((\\d+)/([^/<>]+))" })
 public class PixhostTo extends PluginForHost {
     public PixhostTo(PluginWrapper wrapper) {
         super(wrapper);
