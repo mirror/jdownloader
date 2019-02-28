@@ -19,18 +19,29 @@ import jd.plugins.PluginException;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "news.astraweb.com" }, urls = { "" }) public class NewsAstraWebCom extends UseNet {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "astraweb.com" }, urls = { "" })
+public class NewsAstraWebCom extends UseNet {
     public NewsAstraWebCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www.news.astraweb.com/signup.html");
+        this.enablePremium("http://www.astraweb.com/signup.html");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.news.astraweb.com/aup.html";
+        return "http://www.astraweb.com/aup.html";
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if (host == null || "news.astraweb.com".equals(host)) {
+            return "astraweb.com";
+        } else {
+            return super.rewriteHost(host);
+        }
     }
 
     private final String USENET_USERNAME = "USENET_USERNAME";
@@ -52,7 +63,7 @@ import org.jdownloader.plugins.components.usenet.UsenetServer;
         br.setFollowRedirects(true);
         final Cookies cookies = account.loadCookies("");
         try {
-            Form login = null;
+            boolean freshLogin = true;
             if (cookies != null) {
                 final Cookie expiredCookie = cookies.get(EXPIREDCOOKIE);
                 if (expiredCookie != null && "true".equalsIgnoreCase(expiredCookie.getValue())) {
@@ -65,38 +76,40 @@ import org.jdownloader.plugins.components.usenet.UsenetServer;
                     }
                 }
                 br.setCookies(getHost(), cookies);
-                br.getPage("http://www.news.astraweb.com/members_v2/viewdetails.cgi");
-                login = br.getFormbyActionRegex("viewdetails.cgi");
+                br.getPage("https://www.astraweb.com/members_v2/viewdetails.cgi");
+                final Form login = br.getFormbyActionRegex("viewdetails.cgi");
                 if (login != null && login.containsHTML("user") && login.containsHTML("pass")) {
-                    br.getCookies(getHost()).clear();
-                } else if (br.getCookie(getHost(), "astralogin") == null) {
-                    br.getCookies(getHost()).clear();
-                } else if (br.containsHTML("Session expired")) {
-                    if (AccountCheckerThread.isForced() == false && account.getError() == null) {
-                        cookies.add(new Cookie(getHost(), EXPIREDCOOKIE, "true"));
-                        account.saveCookies(cookies, "");
-                        return account.getAccountInfo();
-                    }
-                    br.getCookies(getHost()).clear();
+                    freshLogin = true;
+                } else if (br.getCookie(getHost(), "astralogin", Cookies.NOTDELETEDPATTERN) == null) {
+                    freshLogin = true;
+                } else {
+                    freshLogin = false;
                 }
             }
-            if (br.getCookie(getHost(), "astralogin") == null) {
+            if (freshLogin || br.getCookie(getHost(), "astralogin", Cookies.NOTDELETEDPATTERN) == null) {
                 account.clearCookies("");
                 final String userName = account.getUser();
-                br.getPage("http://www.news.astraweb.com/members_v2.cgi");
-                login = br.getFormbyActionRegex("viewdetails.cgi");
+                br.getPage("https://www.astraweb.com/members_v2.cgi");
+                Form login = br.getFormbyActionRegex("viewdetails.cgi");
+                if (login == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 login.put("user", Encoding.urlEncode(userName));
                 login.put("pass", Encoding.urlEncode(account.getPass()));
-                if (login.containsHTML("encrypted")) {
-                    final String captcha = br.getRegex("img src=\"(https?://customers\\.astraweb\\.com/captcha/index\\.cgi.*?)\"").getMatch(0);
-                    if (captcha != null) {
+                if (login.containsHTML("g-recaptcha")) {
+                    final DownloadLink before = getDownloadLink();
+                    try {
                         final DownloadLink dummyLink = new DownloadLink(this, "Account", getHost(), null, true);
-                        final String code = getCaptchaCode(captcha, dummyLink);
+                        setDownloadLink(dummyLink);
+                        final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br);
+                        final String code = rc2.getToken();
                         if (StringUtils.isEmpty(code)) {
                             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                         } else {
-                            login.put("reply", Encoding.urlEncode(code));
+                            login.put("g-recaptcha-response", Encoding.urlEncode(code));
                         }
+                    } finally {
+                        setDownloadLink(before);
                     }
                 }
                 br.submitForm(login);
@@ -106,7 +119,7 @@ import org.jdownloader.plugins.components.usenet.UsenetServer;
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "The verification words you entered did not match", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else if (br.getCookie(getHost(), "astralogin") == null) {
+                } else if (br.getCookie(getHost(), "astralogin", Cookies.NOTDELETEDPATTERN) == null) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             }
@@ -118,7 +131,7 @@ import org.jdownloader.plugins.components.usenet.UsenetServer;
                 account.setProperty(USENET_USERNAME, userName.trim());
             }
             final String accountStatus = br.getRegex("Account Status:</font>.*?<font.*?>(.*?)</font").getMatch(0);
-            // final String bytesDownloaded = br.getRegex("Bytes Downloaded:</font>.*?<font.*?>(.*?)</font").getMatch(0);
+            final String bytesDownloaded = br.getRegex("Bytes Downloaded:</font>.*?<font.*?>(.*?)</font").getMatch(0);
             final String downloadsLeft = br.getRegex("Downloads Left:</font>.*?<font.*?>(.*?)</font").getMatch(0);
             final String packageType = br.getRegex("Your Account:</font>.*?<font.*?>(.*?)</font").getMatch(0);
             final String maxConnections = br.getRegex("Maximum Connections:.*?\\s*(\\d+)\\s*connections").getMatch(0);
@@ -147,6 +160,7 @@ import org.jdownloader.plugins.components.usenet.UsenetServer;
             }
             throw e;
         }
+        account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 5 * 60 * 60 * 1000l);
         ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
         return ai;
     }
@@ -155,8 +169,8 @@ import org.jdownloader.plugins.components.usenet.UsenetServer;
     public List<UsenetServer> getAvailableUsenetServer() {
         final List<UsenetServer> ret = new ArrayList<UsenetServer>();
         ret.addAll(UsenetServer.createServerList("news.astraweb.com", false, 119, 23, 1818, 8080));
-        ret.addAll(UsenetServer.createServerList("eu.news.astraweb.com", false, 119, 23, 1818, 8080));
         ret.addAll(UsenetServer.createServerList("us.news.astraweb.com", false, 119, 23, 1818, 8080));
+        ret.addAll(UsenetServer.createServerList("eu.news.astraweb.com", false, 119, 23, 1818, 8080));
         ret.addAll(UsenetServer.createServerList("ssl.astraweb.com", true, 563, 443));
         ret.addAll(UsenetServer.createServerList("ssl-eu.astraweb.com", true, 563, 443));
         ret.addAll(UsenetServer.createServerList("ssl-us.astraweb.com", true, 563, 443));

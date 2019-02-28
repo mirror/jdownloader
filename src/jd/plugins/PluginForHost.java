@@ -1405,8 +1405,9 @@ public abstract class PluginForHost extends Plugin {
     public String rewriteHost(String host) {
         if (host != null && host.equals(getHost())) {
             return getHost();
+        } else {
+            return null;
         }
-        return null;
     }
 
     public boolean assignPlugin(final DownloadLink link) {
