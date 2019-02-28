@@ -19,6 +19,10 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -37,10 +41,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 //IMPORTANT: this class must stay in jd.plugins.hoster because it extends another plugin (UseNet) which is only available through PluginClassLoader
 abstract public class ZeveraCore extends UseNet {
@@ -291,7 +291,20 @@ abstract public class ZeveraCore extends UseNet {
             // br.getPage("https://www." + account.getHoster() + "/api/cache/check?client_id=" + client_id + "&pin=" +
             // Encoding.urlEncode(account.getPass()) + "&items%5B%5D=" +
             // Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, hostPlugin)));
-            getPage(br, "https://www." + account.getHoster() + "/api/transfer/directdl?client_id=" + client_id + "&pin=" + Encoding.urlEncode(account.getPass()) + "&src=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, hostPlugin)));
+            final String hash_md5 = link.getMD5Hash();
+            final String hash_sha1 = link.getSha1Hash();
+            final String hash_sha256 = link.getSha256Hash();
+            String getdata = "?client_id=" + client_id + "&pin=" + Encoding.urlEncode(account.getPass()) + "&src=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, hostPlugin));
+            if (hash_md5 != null) {
+                getdata += "&hash_md5=" + hash_md5;
+            }
+            if (hash_sha1 != null) {
+                getdata += "&hash_sha1=" + hash_sha1;
+            }
+            if (hash_sha256 != null) {
+                getdata += "&hash_sha256=" + hash_sha256;
+            }
+            getPage(br, "https://www." + account.getHoster() + "/api/transfer/directdl" + getdata);
             dllink = PluginJSonUtils.getJsonValue(br, "location");
         }
         return dllink;

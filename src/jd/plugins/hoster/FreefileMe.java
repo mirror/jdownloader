@@ -56,7 +56,7 @@ public class FreefileMe extends YetiShareCore {
     public static String[] getAnnotationUrls() {
         // construct pattern
         final String host = getHostsPattern();
-        return new String[] { host + "/[A-Za-z0-9]+(?:/[^/]+)?" };
+        return new String[] { host + "/[A-Za-z0-9]+(?:/[^/<>]+)?" };
     }
 
     /** Returns '(?:domain1|domain2)' */

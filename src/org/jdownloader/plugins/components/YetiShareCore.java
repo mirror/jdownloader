@@ -55,7 +55,6 @@ public class YetiShareCore extends antiDDoSForHost {
         super(wrapper);
         // this.enablePremium(getPurchasePremiumURL());
     }
-
     // /* 1st domain = current domain! */
     // public static String[] domains = new String[] { "dummyhost.tld" };
     //
@@ -67,11 +66,16 @@ public class YetiShareCore extends antiDDoSForHost {
     // * returns the annotation pattern array: 'https?://(?:www\\.)?(?:domain1|domain2)/[A-Za-z0-9]+'
     // *
     // */
+    // /**
+    // * returns the annotation pattern array: 'https?://(?:www\\.)?(?:domain1|domain2)/[A-Za-z0-9]+(?:/[^/]+)?'
+    // *
+    // */
     // public static String[] getAnnotationUrls() {
     // // construct pattern
     // final String host = getHostsPattern();
-    // return new String[] { host + "/[A-Za-z0-9]+" };
+    // return new String[] { host + "/[A-Za-z0-9]+(?:/[^/<>]+)?" };
     // }
+
     //
     // /** Returns '(?:domain1|domain2)' */
     // private static String getHostsPatternPart() {
