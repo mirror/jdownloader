@@ -24,7 +24,6 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Request;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -33,8 +32,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pic5you.ru", "image2you.ru", "picsee.net", "imagecurl.com", "twitpic.com", "pic4you.ru", "postimage.org", "turboimagehost.com", "imagebam.com", "freeimagehosting.net", "girlswithmuscle.com" }, urls = { "http://pic5you\\.ru/\\d+/\\d+/", "http://(?:www\\.)?image2you\\.ru/\\d+/\\d+/", "http://(www\\.)?picsee\\.net/\\d{4}-\\d{2}-\\d{2}/.*?\\.html", "http://(?:www\\.)?imagecurl\\.com/viewer\\.php\\?file=[\\w-]+\\.[a-z]{2,4}", "https?://(www\\.)?twitpic\\.com/show/[a-z]+/[a-z0-9]+", "http://(?:www\\.)?pic4you\\.ru/\\d+/\\d+/", "https?://((?:www\\.)?postim(age|g)\\.org/image/[a-z0-9]+|s\\d{1,2}\\.postimg\\.org/[a-z0-9]+/[^/]*\\.(?-i)[a-z]{3,4})", "https?://(?:www\\.)?turboimagehost\\.com/p/\\d+/.*?\\.html", "https?://[\\w\\.]*imagebam\\.com/(image|gallery)/[a-z0-9]+",
-        "http://[\\w\\.]*?freeimagehosting\\.net/image\\.php\\?.*?\\..{3,4}", "https?://(www.)?girlswithmuscle\\.com/\\d+/?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pic5you.ru", "image2you.ru", "picsee.net", "imagecurl.com", "twitpic.com", "pic4you.ru", "postimage.org", "turboimagehost.com", "imagebam.com", "freeimagehosting.net", "girlswithmuscle.com" }, urls = { "http://pic5you\\.ru/\\d+/\\d+/", "http://(?:www\\.)?image2you\\.ru/\\d+/\\d+/", "http://(www\\.)?picsee\\.net/\\d{4}-\\d{2}-\\d{2}/.*?\\.html", "http://(?:www\\.)?imagecurl\\.com/viewer\\.php\\?file=[\\w-]+\\.[a-z]{2,4}", "https?://(www\\.)?twitpic\\.com/show/[a-z]+/[a-z0-9]+", "http://(?:www\\.)?pic4you\\.ru/\\d+/\\d+/", "https?://(?:www\\.)?turboimagehost\\.com/p/\\d+/.*?\\.html", "https?://[\\w\\.]*imagebam\\.com/(image|gallery)/[a-z0-9]+", "http://[\\w\\.]*?freeimagehosting\\.net/image\\.php\\?.*?\\..{3,4}", "https?://(www.)?girlswithmuscle\\.com/\\d+/?" })
 public class ImageHosterDecrypter extends antiDDoSForDecrypt {
     public ImageHosterDecrypter(final PluginWrapper wrapper) {
         super(wrapper);
@@ -148,46 +146,6 @@ public class ImageHosterDecrypter extends antiDDoSForDecrypt {
         } else if (parameter.contains("picsapart.com/")) {
             finallink = parameter.replace("/photo/", "/download/");
             finalfilename = new Regex(parameter, "picsapart\\.com/photo/(\\d+)").getMatch(0) + ".jpg";
-        } else if (new Regex(parameter, ".+postim(age|g)\\.org/.+").matches()) {
-            // they use cloudflare
-            if (new Regex(parameter, ".+://s\\d{1,2}\\.postimg\\.org/.+").matches()) {
-                // these could be either direct downloadable OR contain redirects...
-                br.setFollowRedirects(false);
-                final URLConnectionAdapter con = openAntiDDoSRequestConnection(br, br.createGetRequest(parameter));
-                if (con.getContentType().startsWith("image/")) {
-                    finallink = parameter;
-                } else {
-                    br.followConnection();
-                    // this will redirect within html (old fashion meta refresh or javascript to the proper uid
-                    final String newparm = br.getRegex("http-equiv=('|\")refresh\\1 content=('|\")\\d+; url=(.*?)\\2").getMatch(2);
-                    if (newparm != null) {
-                        parameter = newparm;
-                    }
-                }
-            }
-            if (finallink == null) {
-                br.setFollowRedirects(true);
-                if (parameter.matches("https?://s\\d+\\.postim(age|g)\\.org/[a-z0-9]+/.+")) {
-                    decryptedLinks.add(createDownloadlink("directhttp://" + parameter));
-                    return decryptedLinks;
-                }
-                getPage(parameter.replace("postimage/", "postimg/") + (parameter.endsWith("/") ? "" : "/") + "full/");
-                if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
-                    return decryptedLinks;
-                }
-                finallink = br.getRegex("rel=\"image_src\" href=\"(http[^<>\"]*?)\"").getMatch(0);
-                if (finallink == null) {
-                    finallink = br.getRegex("<img (?:id=('|\")main-image\\1 )?src=('|\")(https?://[^<>\"]*?)\\2").getMatch(2);
-                }
-                if (finallink == null) {
-                    finallink = br.getRegex("('|\")(https?://s\\d+\\.postim(age|g)\\.org/[a-z0-9]+/[^<>/]+)\\1").getMatch(1);
-                }
-                if (finallink != null) {
-                    String fuid = new Regex(parameter, "([a-z0-9]+)$").getMatch(0);
-                    String filename = new Regex(finallink, "/([^/]+)$").getMatch(0);
-                    finalfilename = fuid + "-" + filename;
-                }
-            }
         } else if (parameter.contains("pic4you.ru/")) {
             br.getPage(parameter);
             finallink = br.getRegex("\"(http://s\\d+\\.pic4you\\.ru/[^<>\"]+\\-thumb\\.[A-Za-z]+)\"").getMatch(0);
