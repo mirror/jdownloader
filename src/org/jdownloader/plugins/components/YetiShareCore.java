@@ -16,6 +16,8 @@ package org.jdownloader.plugins.components;
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
@@ -92,7 +94,7 @@ public class YetiShareCore extends antiDDoSForHost {
     // }
     /**
      * For sites which use this script: http://www.yetishare.com/<br />
-     * YetiShareCore Version 2.0.0.2-psp<br />
+     * YetiShareCore Version 2.0.0.3-psp<br />
      * mods: see overridden functions in host plugins<br />
      * limit-info:<br />
      * captchatype: null, solvemedia, reCaptchaV2<br />
@@ -114,7 +116,7 @@ public class YetiShareCore extends antiDDoSForHost {
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         /* link cleanup, but respect users protocol choosing or forced protocol */
-        final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), "^(https?)://.+(?:/|=)([A-Za-z0-9]+)$");
+        final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), "^https?://[^/]+/([A-Za-z0-9]+)");
         final String fid = urlinfo.getMatch(1);
         final String protocol;
         if (supports_https()) {
@@ -123,6 +125,7 @@ public class YetiShareCore extends antiDDoSForHost {
             protocol = "http";
         }
         link.setPluginPatternMatcher(String.format("%s://%s/%s", protocol, this.getHost(), fid));
+        link.setLinkID(fid);
     }
 
     /**
@@ -247,72 +250,76 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        setWeakFilename(link);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         prepBrowser(this.br);
-        final String fid = getFID(link);
-        link.setLinkID(fid);
-        String filename;
+        final String fallback_filename = this.getFallbackFilename(link);
+        String filename = null;
         String filesize;
-        if (supports_availablecheck_over_info_page()) {
-            getPage(link.getPluginPatternMatcher() + "~i");
-            if (!br.getURL().contains("~i") || br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            final String[] tableData = this.br.getRegex("class=\"responsiveInfoTable\">([^<>\"/]*?)<").getColumn(0);
-            /* Sometimes we get crippled results with the 2nd RegEx so use this one first */
-            filename = this.br.getRegex("data\\-animation\\-delay=\"\\d+\">(?:Information about|Informacion) ([^<>\"]*?)</div>").getMatch(0);
-            if (filename == null) {
-                /* "Information about"-filename-trait without the animation(delay). */
-                filename = this.br.getRegex("class=\"description\\-1\">Information about ([^<>\"]+)<").getMatch(0);
-            }
-            if (filename == null) {
-                filename = this.br.getRegex("(?:Filename|Dateiname|اسم الملف|Nome|Dosya Adı):[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
-            }
-            filesize = br.getRegex("(?:Filesize|Dateigröße|حجم الملف|Tamanho|Boyut):[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
-            try {
-                /* Language-independant attempt ... */
+        try {
+            if (supports_availablecheck_over_info_page()) {
+                getPage(link.getPluginPatternMatcher() + "~i");
+                if (!br.getURL().contains("~i") || br.getHttpConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                final String[] tableData = this.br.getRegex("class=\"responsiveInfoTable\">([^<>\"/]*?)<").getColumn(0);
+                /* Sometimes we get crippled results with the 2nd RegEx so use this one first */
+                filename = this.br.getRegex("data\\-animation\\-delay=\"\\d+\">(?:Information about|Informacion) ([^<>\"]*?)</div>").getMatch(0);
                 if (filename == null) {
-                    filename = tableData[0];
+                    /* "Information about"-filename-trait without the animation(delay). */
+                    filename = this.br.getRegex("class=\"description\\-1\">Information about ([^<>\"]+)<").getMatch(0);
                 }
+                if (filename == null) {
+                    filename = this.br.getRegex("(?:Filename|Dateiname|اسم الملف|Nome|Dosya Adı):[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
+                }
+                filesize = br.getRegex("(?:Filesize|Dateigröße|حجم الملف|Tamanho|Boyut):[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
+                try {
+                    /* Language-independant attempt ... */
+                    if (filename == null) {
+                        filename = tableData[0];
+                    }
+                    if (filesize == null) {
+                        filesize = tableData[1];
+                    }
+                } catch (final Throwable e) {
+                }
+            } else {
+                getPage(link.getPluginPatternMatcher());
+                if (isWaitBetweenDownloadsURL()) {
+                    return AvailableStatus.TRUE;
+                } else if (new Regex(br.getURL(), Pattern.compile(".*?e=Error%3A\\+Could\\+not\\+open\\+file\\+for\\+reading.*?", Pattern.CASE_INSENSITIVE)).matches()) {
+                    return AvailableStatus.TRUE;
+                } else if (isPremiumOnlyURL()) {
+                    return AvailableStatus.TRUE;
+                }
+                final boolean isFileWebsite = br.containsHTML("class=\"downloadPageTable(V2)?\"") || br.containsHTML("class=\"download\\-timer\"");
+                final boolean isErrorPage = br.getURL().contains("/error.html") || br.getURL().contains("/index.html");
+                final boolean isOffline = br.getHttpConnection().getResponseCode() == 404;
+                if (!isFileWebsite || isErrorPage || isOffline) {
+                    checkErrors();
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                final Regex fInfo = br.getRegex("<strong>([^<>\"]*?) \\((\\d+(?:,\\d+)?(?:\\.\\d+)? (?:KB|MB|GB))\\)<");
+                filename = fInfo.getMatch(0);
+                filesize = fInfo.getMatch(1);
                 if (filesize == null) {
-                    filesize = tableData[1];
+                    filesize = br.getRegex("(\\d+(?:,\\d+)?(\\.\\d+)? (?:KB|MB|GB))").getMatch(0);
                 }
-            } catch (final Throwable e) {
             }
-        } else {
-            getPage(link.getPluginPatternMatcher());
-            if (isWaitBetweenDownloadsURL()) {
-                link.setName(getFID(link));
-                return AvailableStatus.TRUE;
-            } else if (new Regex(br.getURL(), Pattern.compile(".*?e=Error%3A\\+Could\\+not\\+open\\+file\\+for\\+reading.*?", Pattern.CASE_INSENSITIVE)).matches()) {
-                link.setName(getFID(link));
-                return AvailableStatus.TRUE;
-            } else if (isPremiumOnlyURL()) {
-                return AvailableStatus.TRUE;
+            if (StringUtils.isEmpty(filename)) {
+                /* Final fallback - this should never happen! */
+                filename = fallback_filename;
             }
-            final boolean isFileWebsite = br.containsHTML("class=\"downloadPageTable(V2)?\"") || br.containsHTML("class=\"download\\-timer\"");
-            final boolean isErrorPage = br.getURL().contains("/error.html") || br.getURL().contains("/index.html");
-            final boolean isOffline = br.getHttpConnection().getResponseCode() == 404;
-            if (!isFileWebsite || isErrorPage || isOffline) {
-                handleErrors();
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            filename = Encoding.htmlDecode(filename).trim();
+            link.setName(filename);
+            if (filesize != null) {
+                link.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize.replace(",", "")).trim()));
             }
-            final Regex fInfo = br.getRegex("<strong>([^<>\"]*?) \\((\\d+(?:,\\d+)?(?:\\.\\d+)? (?:KB|MB|GB))\\)<");
-            filename = fInfo.getMatch(0);
-            filesize = fInfo.getMatch(1);
-            if (filesize == null) {
-                filesize = br.getRegex("(\\d+(?:,\\d+)?(\\.\\d+)? (?:KB|MB|GB))").getMatch(0);
+        } finally {
+            if (StringUtils.isEmpty(filename)) {
+                link.setName(getFallbackFilename(link));
             }
-        }
-        if (filename == null) {
-            /* Final fallback - this should never happen! */
-            filename = fid;
-        }
-        filename = Encoding.htmlDecode(filename).trim();
-        link.setName(filename);
-        if (filesize != null) {
-            link.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize.replace(",", "")).trim()));
         }
         return AvailableStatus.TRUE;
     }
@@ -365,7 +372,7 @@ public class YetiShareCore extends antiDDoSForHost {
                 }
             }
             if (continue_link == null) {
-                handleErrors();
+                checkErrors();
             }
             /* Passwords are usually before waittime. */
             handlePassword(link);
@@ -451,7 +458,7 @@ public class YetiShareCore extends antiDDoSForHost {
                     break;
                 }
                 br.followConnection();
-                handleErrors();
+                checkErrors();
                 if (captcha && br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
                     logger.info("Wrong captcha");
                     continue;
@@ -469,7 +476,7 @@ public class YetiShareCore extends antiDDoSForHost {
             if (captcha && !success) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-            handleErrors();
+            checkErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -523,6 +530,46 @@ public class YetiShareCore extends antiDDoSForHost {
         return isdownloadlink;
     }
 
+    /** Returns unique id from inside URL - usually with this pattern: [A-Za-z0-9]+ */
+    protected String getFUIDFromURL(final DownloadLink dl) {
+        try {
+            final String result = new Regex(new URL(dl.getPluginPatternMatcher()).getPath(), "^/([A-Za-z0-9]+)").getMatch(0);
+            return result;
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    /**
+     * In some cases, URL may contain filename which can be used as fallback e.g. 'https://host.tld/<fuid>/<filename>'. Example host which
+     * has URLs that contain filenames: freefile.me
+     */
+    public String getFilenameFromURL(final DownloadLink dl) {
+        try {
+            String result = null;
+            if (dl.getContentUrl() != null) {
+                result = new Regex(new URL(dl.getContentUrl()).getPath(), "[^/]+/(.+)$").getMatch(0);
+            }
+            if (result == null) {
+                result = new Regex(new URL(dl.getPluginPatternMatcher()).getPath(), "[^/]+/(.+)$").getMatch(0);
+            }
+            return result;
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    /** Tries to get filename from URL and if this fails, will return <fuid> filename. */
+    public String getFallbackFilename(final DownloadLink dl) {
+        String fallback_filename = this.getFilenameFromURL(dl);
+        if (fallback_filename == null) {
+            fallback_filename = this.getFUIDFromURL(dl);
+        }
+        return fallback_filename;
+    }
+
     private void handlePassword(final DownloadLink dl) throws Exception {
         if (br.getURL().contains("/file_password.html")) {
             logger.info("Current link is password protected");
@@ -531,15 +578,15 @@ public class YetiShareCore extends antiDDoSForHost {
                 passCode = Plugin.getUserInput("Password?", dl);
                 if (passCode == null || passCode.equals("")) {
                     logger.info("User has entered blank password, exiting handlePassword");
-                    dl.setProperty("pass", Property.NULL);
+                    dl.setDownloadPassword(null);
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
                 }
-                dl.setProperty("pass", passCode);
+                dl.setDownloadPassword(passCode);
             }
-            postPage(br.getURL(), "submit=access+file&submitme=1&file=" + this.getFID(dl) + "&filePassword=" + Encoding.urlEncode(passCode));
+            postPage(br.getURL(), "submit=access+file&submitme=1&file=" + this.getFUIDFromURL(dl) + "&filePassword=" + Encoding.urlEncode(passCode));
             if (br.getURL().contains("/file_password.html")) {
                 logger.info("User entered incorrect password --> Retrying");
-                dl.setProperty("pass", Property.NULL);
+                dl.setDownloadPassword(null);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
             }
             logger.info("User entered correct password --> Continuing");
@@ -572,7 +619,7 @@ public class YetiShareCore extends antiDDoSForHost {
         }
     }
 
-    private void handleErrors() throws PluginException {
+    public void checkErrors() throws PluginException {
         if (br.containsHTML("Error: Too many concurrent download requests")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 3 * 60 * 1000l);
         } else if (new Regex(br.getURL(), Pattern.compile(".*?e=You\\+have\\+reached\\+the\\+maximum\\+concurrent\\+downloads.*?", Pattern.CASE_INSENSITIVE)).matches()) {
@@ -672,10 +719,6 @@ public class YetiShareCore extends antiDDoSForHost {
             }
         }
         return dllink;
-    }
-
-    protected String getFID(final DownloadLink dl) {
-        return new Regex(dl.getPluginPatternMatcher(), "([A-Za-z0-9]+)$").getMatch(0);
     }
 
     protected String getProtocol() {
@@ -883,6 +926,24 @@ public class YetiShareCore extends antiDDoSForHost {
     protected String getMainPage() {
         final String[] hosts = this.siteSupportedNames();
         return ("http://" + hosts[0]).replaceFirst("https?://", this.supports_https() ? "https://" : "http://");
+    }
+
+    /**
+     * Use this to set filename based on filename inside URL or fuid as filename either before a linkcheck happens so that there is a
+     * readable filename displayed in the linkgrabber.
+     */
+    protected void setWeakFilename(final DownloadLink link) {
+        final String weak_fallback_filename = this.getFallbackFilename(link);
+        /* Set fallback_filename */
+        link.setName(weak_fallback_filename);
+        /// * TODO: Find better way to determine whether a String contains a file-extension or not. */
+        // final boolean fallback_filename_contains_file_extension = weak_fallback_filename != null && weak_fallback_filename.contains(".");
+        // if (!fallback_filename_contains_file_extension) {
+        // /* Only setMimeHint if weak filename does not contain filetype. */
+        // if (this.isAudiohoster()) {
+        // link.setMimeHint(CompiledFiletypeFilter.AudioExtensions.MP3);
+        // }
+        // }
     }
 
     @Override
