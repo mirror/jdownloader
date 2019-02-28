@@ -19,9 +19,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map.Entry;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -29,7 +31,10 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -47,7 +52,7 @@ public class MultiupOrg extends PluginForHost {
     private static final String          API_BASE            = "http://multiup.org/api";
     private static MultiHosterManagement mhm                 = new MultiHosterManagement("multiup.org");
     /** TODO: Set correct limits */
-    private static final int             defaultMAXDOWNLOADS = 1;
+    private static final int             defaultMAXDOWNLOADS = 20;
     private static final int             defaultMAXCHUNKS    = -2;
     private static final boolean         defaultRESUME       = true;
 
@@ -98,17 +103,29 @@ public class MultiupOrg extends PluginForHost {
         String dllink = checkDirectLink(link, this.getHost() + "directlink");
         br.setFollowRedirects(true);
         if (dllink == null) {
-            /** TODO: Find better way to login */
-            fetchAccountInfo(account);
-            final UrlQuery dlQuery = new UrlQuery();
-            dlQuery.add("link", link.getPluginPatternMatcher());
-            final String passCode = link.getDownloadPassword();
-            if (passCode != null) {
-                dlQuery.add("password", passCode);
+            final boolean use_website_workaround = true;
+            if (use_website_workaround) {
+                /*
+                 * 2019-02-28: That is just ridiculous as it even works without account (issue reported to owner). Also, API will return
+                 * exactly what this returns ...
+                 */
+                loginWebsite(account);
+                br.setFollowRedirects(false);
+                final String urlDoubleB64 = Encoding.Base64Encode(Encoding.Base64Encode(link.getPluginPatternMatcher()));
+                dllink = "https://debrid.multiup.org/" + urlDoubleB64;
+            } else {
+                /** TODO: Find better way to login */
+                fetchAccountInfo(account);
+                final UrlQuery dlQuery = new UrlQuery();
+                dlQuery.add("link", link.getPluginPatternMatcher());
+                final String passCode = link.getDownloadPassword();
+                if (passCode != null) {
+                    dlQuery.add("password", passCode);
+                }
+                /** TODO: WTF this also works without login */
+                br.postPage(API_BASE + "/generate-debrid-link", dlQuery);
+                dllink = PluginJSonUtils.getJsonValue(br, "debrid_link");
             }
-            /** TODO: WTF this also works without login */
-            br.postPage(API_BASE + "/generate-debrid-link", dlQuery);
-            dllink = PluginJSonUtils.getJsonValue(br, "debrid_link");
             if (StringUtils.isEmpty(dllink)) {
                 mhm.handleErrorGeneric(account, link, "dllinknull", 10, 5 * 60 * 1000l);
             }
@@ -173,23 +190,43 @@ public class MultiupOrg extends PluginForHost {
             /* E.g. {"error":"bad username OR bad password"} */
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
-        /** TODO: 2019-02-22: Waiting for an API can to get account status (free/premium) - accept all accounts as premium for now */
-        final boolean is_premium = true;
+        boolean is_premium = false;
+        long validuntil = 0;
+        String validuntilStr = null;
+        /** TODO: 2019-02-22: API does not have any way to find out account-type and expiredate --> We need the website :( */
+        final boolean website_workaround_required = true;
+        if (website_workaround_required) {
+            loginWebsite(account);
+            if (br.getURL() == null || !br.getURL().contains("/profile/my-profile")) {
+                br.getPage("https://" + account.getHoster() + "/en/profile/my-profile");
+            }
+            validuntilStr = br.getRegex("<td>(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})</td>\\s*?<td>\\d+</td>\\s*?<td>\\+\\d+ days?</td").getMatch(0);
+            if (validuntilStr != null) {
+                validuntil = TimeFormatter.getMilliSeconds(validuntilStr, "dd/MM/yyyy HH:mm:ss", Locale.ENGLISH);
+            }
+            is_premium = validuntil > System.currentTimeMillis();
+            if (!is_premium) {
+                is_premium = br.containsHTML("class=\"role\">\\s*?Premium user");
+            }
+        } else {
+            is_premium = false;
+        }
         if (!is_premium) {
             account.setType(AccountType.FREE);
-            /* No downloads possible via free account */
-            ai.setTrafficLeft(0);
-            account.setMaxSimultanDownloads(0);
+            ai.setStatus("Free account");
+            account.setMaxSimultanDownloads(1);
+            // ai.setTrafficLeft(0);
         } else {
             account.setType(AccountType.PREMIUM);
+            ai.setStatus("Premium account");
             account.setMaxSimultanDownloads(defaultMAXDOWNLOADS);
-            final String validuntil = PluginJSonUtils.getJsonValue(br, "premium_end_time");
-            if (validuntil != null && validuntil.matches("\\d+")) {
-                ai.setStatus("Premium time");
-                ai.setValidUntil(Long.parseLong(validuntil) * 1000l, this.br);
+            /* Expiredate may not always be found! */
+            if (validuntil > System.currentTimeMillis()) {
+                ai.setValidUntil(validuntil, this.br);
             }
             ai.setUnlimitedTraffic();
         }
+        /* Continue via API */
         this.getAPISafe(API_BASE + "/get-list-hosts", account, null);
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         entries = (LinkedHashMap<String, Object>) entries.get("hosts");
@@ -203,6 +240,54 @@ public class MultiupOrg extends PluginForHost {
         account.setConcurrentUsePossible(true);
         ai.setMultiHostSupport(this, supportedhostslist);
         return ai;
+    }
+
+    private static Object acclock = new Object();
+
+    /**
+     * Only use this if the API fails or is buggy at some point. THIS IS ONLY A WORKAROUND!
+     *
+     * @throws PluginException
+     */
+    private void loginWebsite(final Account account) throws IOException, PluginException {
+        synchronized (acclock) {
+            try {
+                br.setFollowRedirects(true);
+                br.setCookiesExclusive(true);
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    this.br.setCookies(this.getHost(), cookies);
+                    br.getPage("https://" + account.getHoster() + "/en/profile/my-profile");
+                    if (isLoggedinHTML(this.br)) {
+                        return;
+                    }
+                }
+                /* Perform full login */
+                br.getPage("https://" + account.getHoster() + "/en/login");
+                final Form loginform = br.getFormbyProperty("id", "frmSignIn");
+                if (loginform == null) {
+                    logger.warning("Failed to find loginform");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                loginform.put("_username", Encoding.urlEncode(account.getUser()));
+                loginform.put("_password", Encoding.urlEncode(account.getPass()));
+                loginform.put("_remember_me", "on");
+                br.submitForm(loginform);
+                if (!isLoggedinHTML(this.br)) {
+                    // throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    logger.info("Website login failed");
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                }
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
+            } catch (final PluginException e) {
+                account.clearCookies("");
+                throw e;
+            }
+        }
+    }
+
+    private boolean isLoggedinHTML(final Browser br) {
+        return br.containsHTML("/logout");
     }
 
     private void getAPISafe(final String accesslink, final Account account, final DownloadLink link) throws IOException, PluginException, InterruptedException {
