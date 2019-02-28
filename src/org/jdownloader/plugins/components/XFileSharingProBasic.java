@@ -1733,7 +1733,13 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     /** In some cases, URL may contain filename which can be used as fallback e.g. 'https://host.tld/<fuid>/<filename>.html'. */
     public String getFilenameFromURL(final DownloadLink dl) {
         try {
-            final String result = new Regex(new URL(dl.getContentUrl()).getPath(), "[a-z0-9]{12}/(.+)\\.html$").getMatch(0);
+            String result = null;
+            if (dl.getContentUrl() != null) {
+                result = new Regex(new URL(dl.getContentUrl()).getPath(), "[a-z0-9]{12}/(.+)\\.html$").getMatch(0);
+            }
+            if (result == null) {
+                result = new Regex(new URL(dl.getPluginPatternMatcher()).getPath(), "[a-z0-9]{12}/(.+)\\.html$").getMatch(0);
+            }
             return result;
         } catch (MalformedURLException e) {
             e.printStackTrace();
