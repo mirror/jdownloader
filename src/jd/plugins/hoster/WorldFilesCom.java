@@ -35,8 +35,8 @@ public class WorldFilesCom extends XFileSharingProBasic {
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
-     * limit-info:<br />
-     * captchatype-info: null 4dignum solvemedia reCaptchaV2<br />
+     * limit-info: 2019-03-01: premium untested, set FREE account limits<br />
+     * captchatype-info: 2019-03-01: null<br />
      * other:<br />
      */
     private static String[] domains = new String[] { "world-files.com" };
@@ -45,13 +45,13 @@ public class WorldFilesCom extends XFileSharingProBasic {
     public boolean isResumeable(final DownloadLink link, final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return true;
+            return false;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return true;
+            return false;
         } else {
             /* Free(anonymous) and unknown account type */
-            return true;
+            return false;
         }
     }
 
@@ -65,13 +65,13 @@ public class WorldFilesCom extends XFileSharingProBasic {
             return 0;
         } else {
             /* Free(anonymous) and unknown account type */
-            return 0;
+            return 1;
         }
     }
 
     @Override
     public int getMaxSimultaneousFreeAnonymousDownloads() {
-        return -1;
+        return 1;
     }
 
     @Override

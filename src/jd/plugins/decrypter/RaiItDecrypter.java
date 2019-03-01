@@ -296,6 +296,10 @@ public class RaiItDecrypter extends PluginForDecrypt {
             if (content_id_from_html != null) {
                 /* Easiest way to find videoinfo */
                 this.br.getPage("http://www.rai.tv/dl/RaiTV/programmi/media/ContentItem" + content_id_from_html + ".html?json");
+                if (br.getHttpConnection().getResponseCode() == 404) {
+                    decryptedLinks.add(this.createOfflinelink(this.parameter));
+                    return;
+                }
                 entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             }
             if (entries == null) {

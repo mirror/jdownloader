@@ -48,9 +48,8 @@ import jd.plugins.components.SiteType.SiteTemplate;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megarapido.net" }, urls = { "" })
 public class MegarapidoNet extends antiDDoSForHost {
     /* Tags: conexaomega.com.br, megarapido.net, superdown.com.br */
-    private final String                 DOMAIN                       = "megarapido.net";
-    private final String                 PRIMARYURL                   = "https://" + DOMAIN;
-    private final String                 NICE_HOSTproperty            = DOMAIN.replaceAll("(\\.|-)", "") + "_";
+    private final String                 PRIMARYURL                   = "https://" + this.getHost();
+    private final String                 NICE_HOSTproperty            = this.getHost().replaceAll("(\\.|-)", "") + "_";
     private final String                 DIRECTLINK                   = NICE_HOSTproperty + "DIRECTLINK";
     /* Connection limits */
     private static final boolean         ACCOUNT_PREMIUM_RESUME       = true;
@@ -253,6 +252,14 @@ public class MegarapidoNet extends antiDDoSForHost {
                     // should have json...
                     if (!isCookiesSessionInvalid()) {
                         /* Existing cookies are valid --> Save new timestamp */
+                        try {
+                            /*
+                             * 2019-03-01: Attempt to solve issues with quickly expiring cookies resulting in frequent login captchas:
+                             * Access website (not via API) to get cookies which eventually only browsers would get.
+                             */
+                            getAPISafe("/gerador-premium");
+                        } catch (final Throwable e) {
+                        }
                         currAcc.saveCookies(br.getCookies(PRIMARYURL), "");
                         return;
                     }
@@ -264,7 +271,7 @@ public class MegarapidoNet extends antiDDoSForHost {
                 f.setAction("/api/login/sign_in");
                 f.put("email", Encoding.urlEncode(currAcc.getUser()));
                 f.put("password", Encoding.urlEncode(currAcc.getPass()));
-                final DownloadLink dummyLink = new DownloadLink(this, "Account", DOMAIN, DOMAIN, true);
+                final DownloadLink dummyLink = new DownloadLink(this, "Account", this.getHost(), this.getHost(), true);
                 this.setDownloadLink(dummyLink);
                 final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6Lel6CQUAAAAANRfiz7Kh8rdyzHgh4An39DbHb67").getToken();
                 f.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
@@ -281,7 +288,7 @@ public class MegarapidoNet extends antiDDoSForHost {
     }
 
     private boolean isCookiesSessionInvalid() {
-        final boolean result = br.getCookie(DOMAIN, "key") == null || "deleted".equals(br.getCookie(DOMAIN, "key")) || (br.getHttpConnection().getResponseCode() == 401 && "Usuário deslogado".equals(br.toString()));
+        final boolean result = br.getCookie(this.getHost(), "key") == null || "deleted".equals(br.getCookie(this.getHost(), "key")) || (br.getHttpConnection().getResponseCode() == 401 && "Usuário deslogado".equals(br.toString()));
         return result;
     }
 
