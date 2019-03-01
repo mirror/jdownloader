@@ -186,7 +186,7 @@ public class XFileShareProFolder extends antiDDoSForDecrypt {
                     if (!StringUtils.isEmpty(html_filesize)) {
                         dl.setDownloadSize(SizeFormatter.getSize(html_filesize));
                     }
-                    if (fast_linkcheck || true) {
+                    if (fast_linkcheck) {
                         dl.setAvailable(true);
                     }
                     decryptedLinks.add(dl);
