@@ -252,14 +252,14 @@ public class MegarapidoNet extends antiDDoSForHost {
                     // should have json...
                     if (!isCookiesSessionInvalid()) {
                         /* Existing cookies are valid --> Save new timestamp */
-                        try {
-                            /*
-                             * 2019-03-01: Attempt to solve issues with quickly expiring cookies resulting in frequent login captchas:
-                             * Access website (not via API) to get cookies which eventually only browsers would get.
-                             */
-                            getAPISafe("/gerador-premium");
-                        } catch (final Throwable e) {
-                        }
+                        // try {
+                        // /*
+                        // * 2019-03-01: Attempt to solve issues with quickly expiring cookies resulting in frequent login captchas:
+                        // * Access website (not via API) to get cookies which eventually only browsers would get.
+                        // */
+                        // getAPISafe("/gerador-premium");
+                        // } catch (final Throwable e) {
+                        // }
                         currAcc.saveCookies(br.getCookies(PRIMARYURL), "");
                         return;
                     }
