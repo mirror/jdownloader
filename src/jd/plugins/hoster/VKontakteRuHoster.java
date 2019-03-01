@@ -779,7 +779,7 @@ public class VKontakteRuHoster extends PluginForHost {
             } else {
                 con = br2.openGetConnection(finalUrl);
             }
-            if (!con.getContentType().contains("html")) {
+            if (!con.getContentType().contains("html") && con.isOK()) {
                 final long foundFilesize = con.getLongContentLength();
                 if (!downloadLink.isNameSet()) {
                     if (finalfilename == null) {
@@ -885,12 +885,14 @@ public class VKontakteRuHoster extends PluginForHost {
             }
         } catch (final BrowserException ebr) {
             logger.info("BrowserException on directlink: " + finalUrl);
+            logger.log(ebr);
             if (isLast) {
                 throw ebr;
             }
             return false;
         } catch (final ConnectException ec) {
             logger.info("Directlink timed out: " + finalUrl);
+            logger.log(ec);
             if (isLast) {
                 throw ec;
             }
@@ -902,6 +904,7 @@ public class VKontakteRuHoster extends PluginForHost {
             // required for file exists on disk (standard).
             throw s;
         } catch (final Exception e) {
+            logger.log(e);
             if (isLast) {
                 throw e;
             }
@@ -914,12 +917,14 @@ public class VKontakteRuHoster extends PluginForHost {
         }
     }
 
-    private boolean isResumeSupported(DownloadLink downloadLink, String finalUrl2) {
+    private boolean isResumeSupported(final DownloadLink downloadLink, final String downloadURL) {
         if (downloadLink.getDownloadURL().matches(VKontakteRuHoster.TYPE_VIDEOLINK)) {
             return true;
         } else if (downloadLink.getDownloadURL().matches(VKontakteRuHoster.TYPE_VIDEOLINK) && StringUtils.containsIgnoreCase(downloadLink.getDownloadURL(), ".mp4")) {
             return true;
-        } else if (finalUrl2 != null && finalUrl2.matches(".+\\.(jpe?g|png|gif|bmp)$")) {
+        } else if (downloadURL != null && downloadURL.matches(".+\\.(mp3|aac|m4a)$")) {
+            return true;
+        } else if (downloadURL != null && downloadURL.matches(".+\\.(jpe?g|png|gif|bmp)$")) {
             return false;
         } else {
             return false;
