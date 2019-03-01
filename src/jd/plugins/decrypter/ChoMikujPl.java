@@ -273,13 +273,16 @@ public class ChoMikujPl extends PluginForDecrypt {
             getPage(br.getRedirectLocation());
         }
         /* Get needed values */
-        String fpName = br.getRegex("<meta name=\"keywords\" content=\"(.+?)\" />").getMatch(0);
+        String fpName = br.getRegex(">\\s*([^<]*?)\\s*</a>\\s*</h1>\\s*<div[^<]*id\\s*=\\s*\"folderOptionsTitle\"\\s*>").getMatch(0);
         if (fpName == null) {
-            br.getRegex("<title>(.*?) \\- .*? \\- Chomikuj\\.pl.*?</title>").getMatch(0);
+            fpName = br.getRegex("<meta name=\"keywords\" content=\"(.+?)\" />").getMatch(0);
             if (fpName == null) {
-                fpName = br.getRegex("class=\"T_selected\">(.*?)</span>").getMatch(0);
+                br.getRegex("<title>(.*?) \\- .*? \\- Chomikuj\\.pl.*?</title>").getMatch(0);
                 if (fpName == null) {
-                    fpName = br.getRegex("<span id=\"ctl00_CT_FW_SelectedFolderLabel\" style=\"font\\-weight:bold;\">(.*?)</span>").getMatch(0);
+                    fpName = br.getRegex("class=\"T_selected\">(.*?)</span>").getMatch(0);
+                    if (fpName == null) {
+                        fpName = br.getRegex("<span id=\"ctl00_CT_FW_SelectedFolderLabel\" style=\"font\\-weight:bold;\">(.*?)</span>").getMatch(0);
+                    }
                 }
             }
         }
@@ -326,9 +329,13 @@ public class ChoMikujPl extends PluginForDecrypt {
             File downloadDirectory = new File(fp.getDownloadDirectory(), serverPath != null ? serverPath : "");
             String downloadDirectoryStr = downloadDirectory.getPath();
             fp.setDownloadDirectory(downloadDirectoryStr);
-            String packageName = serverPath.replace("/", ",");
-            fp.setName(packageName);
-        } else {
+            if (fpName != null) {
+                fp.setName(fpName);
+            } else {
+                String packageName = serverPath.replace("/", ",");
+                fp.setName(packageName);
+            }
+        } else if (fpName != null) {
             fp.setName(fpName);
         }
         decryptedLinks = decryptAll(parameter, postdata, param, fp, chomikID);
