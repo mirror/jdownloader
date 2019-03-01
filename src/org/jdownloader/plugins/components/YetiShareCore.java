@@ -98,7 +98,7 @@ public class YetiShareCore extends antiDDoSForHost {
     // }
     /**
      * For sites which use this script: http://www.yetishare.com/<br />
-     * YetiShareCore Version 2.0.0.3-psp<br />
+     * YetiShareCore Version 2.0.0.4-psp<br />
      * mods: see overridden functions in host plugins<br />
      * limit-info:<br />
      * captchatype: null, solvemedia, reCaptchaV2<br />
@@ -301,7 +301,7 @@ public class YetiShareCore extends antiDDoSForHost {
                 final boolean isErrorPage = br.getURL().contains("/error.html") || br.getURL().contains("/index.html");
                 final boolean isOffline = br.getHttpConnection().getResponseCode() == 404;
                 if (!isFileWebsite || isErrorPage || isOffline) {
-                    checkErrors();
+                    checkErrors(link, null);
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 final Regex fInfo = br.getRegex("<strong>([^<>\"]*?) \\((\\d+(?:,\\d+)?(?:\\.\\d+)? (?:KB|MB|GB))\\)<");
@@ -376,7 +376,7 @@ public class YetiShareCore extends antiDDoSForHost {
                 }
             }
             if (continue_link == null) {
-                checkErrors();
+                checkErrors(link, account);
             }
             /* Passwords are usually before waittime. */
             handlePassword(link);
@@ -462,7 +462,7 @@ public class YetiShareCore extends antiDDoSForHost {
                     break;
                 }
                 br.followConnection();
-                checkErrors();
+                checkErrors(link, account);
                 if (captcha && br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
                     logger.info("Wrong captcha");
                     continue;
@@ -480,7 +480,7 @@ public class YetiShareCore extends antiDDoSForHost {
             if (captcha && !success) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-            checkErrors();
+            checkErrors(link, account);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -623,7 +623,7 @@ public class YetiShareCore extends antiDDoSForHost {
         }
     }
 
-    public void checkErrors() throws PluginException {
+    public void checkErrors(final DownloadLink link, final Account account) throws PluginException {
         if (br.containsHTML("Error: Too many concurrent download requests")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 3 * 60 * 1000l);
         } else if (new Regex(br.getURL(), Pattern.compile(".*?e=You\\+have\\+reached\\+the\\+maximum\\+concurrent\\+downloads.*?", Pattern.CASE_INSENSITIVE)).matches()) {
@@ -842,7 +842,9 @@ public class YetiShareCore extends antiDDoSForHost {
         if (br.getURL() == null || !br.getURL().contains("/account_home.html")) {
             getPage("/account_home.html");
         }
-        if (!br.containsHTML("class=\"badge badge\\-success\">(?:PAID USER|USUARIO DE PAGO|VIP)</span>")) {
+        /* 2019-03-01: Bad german translation, example: freefile.me */
+        boolean isPremium = br.containsHTML("class=\"badge badge\\-success\">(?:BEZAHLT(er)? BENUTZER|PAID USER|USUARIO DE PAGO|VIP)</span>");
+        if (!isPremium) {
             account.setType(AccountType.FREE);
             account.setMaxSimultanDownloads(this.getMaxSimultaneousFreeAccountDownloads());
             /* All accounts get the same (IP-based) downloadlimits --> Simultaneous free account usage makes no sense! */
@@ -851,16 +853,22 @@ public class YetiShareCore extends antiDDoSForHost {
         } else {
             getPage("/upgrade.html");
             /* If the premium account is expired we'll simply accept it as a free account. */
-            String expire = br.getRegex("Reverts To Free Account:[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
-            if (expire == null) {
-                /* More wide RegEx to be more language independant */
-                expire = br.getRegex(">[\t\n\r ]*?(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})[\t\n\r ]*?<").getMatch(0);
+            String expireStr = br.getRegex("Reverts To Free Account:[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
+            if (expireStr == null) {
+                /* More wide RegEx to be more language independant (e.g. required for freefile.me) */
+                expireStr = br.getRegex(">[\t\n\r ]*?(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})[\t\n\r ]*?<").getMatch(0);
             }
-            if (expire == null) {
+            if (expireStr == null) {
+                /*
+                 * 2019-03-01: As far as we know, EVERY premium account will have an expire-date given but we will still accept accounts for
+                 * which we fail to find the expire-date.
+                 */
+                logger.info("Failed to find expire-date");
                 return ai;
             }
-            long expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "MM/dd/yyyy hh:mm:ss", Locale.ENGLISH);
-            if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
+            long expire_milliseconds = TimeFormatter.getMilliSeconds(expireStr, "MM/dd/yyyy hh:mm:ss", Locale.ENGLISH);
+            isPremium = expire_milliseconds > System.currentTimeMillis();
+            if (!isPremium) {
                 /* Expired premium == FREE */
                 account.setType(AccountType.FREE);
                 account.setMaxSimultanDownloads(this.getMaxSimultaneousFreeAccountDownloads());
@@ -868,7 +876,7 @@ public class YetiShareCore extends antiDDoSForHost {
                 account.setConcurrentUsePossible(false);
                 ai.setStatus("Registered (free) user");
             } else {
-                ai.setValidUntil(expire_milliseconds);
+                ai.setValidUntil(expire_milliseconds, this.br);
                 account.setType(AccountType.PREMIUM);
                 account.setMaxSimultanDownloads(this.getMaxSimultanPremiumDownloadNum());
                 ai.setStatus("Premium account");

@@ -15,8 +15,12 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.UniqueAlltimeID;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -33,9 +37,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.UniqueAlltimeID;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spankbang.com" }, urls = { "https?://(www\\.)?([a-z]{2}\\.)?spankbang\\.com/([a-z0-9]+/video/\\?quality=[\\w\\d]+|[a-z0-9]+/(?:video|embed)/)" })
 public class SpankBangCom extends PluginForDecrypt {
@@ -160,36 +163,30 @@ public class SpankBangCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    public static LinkedHashMap<String, String> findQualities(final Browser br, final String source_url) throws DecrypterException, PluginException {
+    public static LinkedHashMap<String, String> findQualities(final Browser br, final String source_url) throws DecrypterException, PluginException, IOException {
         final LinkedHashMap<String, String> foundQualities = new LinkedHashMap<String, String>();
-        final String fid = getFid(source_url);
-        final String streamkey = br.getRegex("var stream_key  = \\'([^<>\"]*?)\\'").getMatch(0);
-        // qualities 'super = 1080p', 'high = 720p', 'medium = 480p', 'low = 240p' they do this in javascript
-        // String[] qualities = br.getRegex("class=\"q_(\\w+)\"").getColumn(0);
-        String[] qualities = { "1080p", "720p", "480p", "320p", "240p" };
-        if (qualities == null || qualities.length == 0) {
-            // this is typically within <source
-            final String source = br.getRegex("<source src=\"(.*?)\"").getMatch(0);
-            if (source != null) {
-                qualities = new String[1];
-                qualities[0] = parseSingleQuality(source);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        }
-        if (qualities == null || qualities.length == 0 || streamkey == null) {
+        // final String fid = getFid(source_url);
+        final String videoid = br.getRegex("var ana_video_id = \\'(\\d+)\\';").getMatch(0);
+        if (videoid == null) {
             return null;
         }
+        final String x_csrftoken = br.getCookie(br.getURL(), "sb_csrf_session");
+        br.getHeaders().put("accept", "application/json, text/javascript, */*; q=0.01");
+        br.getHeaders().put("x-requested-with", "XMLHttpRequest");
+        if (x_csrftoken != null) {
+            br.getHeaders().put("x-csrftoken", x_csrftoken);
+        }
+        br.postPage("/api/videos/stream", "data=0&id=" + videoid + "&sb_csrf_session=" + x_csrftoken);
+        // final String streamkey = br.getRegex("var stream_key = \\'([^<>\"]*?)\\'").getMatch(0);
+        String[] qualities = new String[] { "1080p", "720p", "480p", "320p", "240p" };
         for (final String q : qualities) {
             final String quality = getQuality(q);
             // final String directlink = "http://spankbang.com/_" + fid + "/" + streamkey + "/title/" + quality + "__mp4";
-            final String directlink = br.getRegex("var stream_url_" + quality + "  = '(.*?)'").getMatch(0);
-            if (directlink == null) {
+            final String directlink = PluginJSonUtils.getJson(br, "stream_url_" + q);
+            if (StringUtils.isEmpty(directlink)) {
                 continue;
             }
-            if (!directlink.equals("")) {
-                foundQualities.put(quality, directlink);
-            }
+            foundQualities.put(quality, directlink);
         }
         return foundQualities;
     }

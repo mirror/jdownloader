@@ -83,41 +83,41 @@ public class FreefileMe extends YetiShareCore {
     public boolean isResumeable(final DownloadLink link, final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return true;
+            return false;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
             return true;
         } else {
             /* Free(anonymous) and unknown account type */
-            return true;
+            return false;
         }
     }
 
     public int getMaxChunks(final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return 0;
+            return 1;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return 0;
+            return 1;
         } else {
             /* Free(anonymous) and unknown account type */
-            return 0;
+            return 1;
         }
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 1;
     }
 
     public int getMaxSimultaneousFreeAccountDownloads() {
-        return -1;
+        return 1;
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return 1;
     }
 
     public boolean supports_https() {
@@ -129,10 +129,11 @@ public class FreefileMe extends YetiShareCore {
     }
 
     @Override
-    public void checkErrors() throws PluginException {
-        super.checkErrors();
-        if (br.containsHTML("miner=new CoinHive\\.User\\(")) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "CoinHive 'captcha' is not supported");
+    public void checkErrors(final DownloadLink link, final Account account) throws PluginException {
+        super.checkErrors(link, account);
+        /* 2019-03-01: They use crypto-loot.com for FREE and FREE ACCOUNT download-modes which we do not (yet) support */
+        if (account == null || account.getType() != AccountType.PREMIUM) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "crypto-loot.com 'captcha' is not supported");
         }
     }
 
