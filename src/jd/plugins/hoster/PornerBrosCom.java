@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -36,7 +37,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornerbros.com" }, urls = { "https?://(?:www\\.)?pornerbros\\.com/videos/[a-z0-9\\-_]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornerbros.com" }, urls = { "https?://(?:www\\.)?pornerbros\\.com/videos/[a-z0-9\\-_]+(\\d+)$" })
 public class PornerBrosCom extends PluginForHost {
     /* DEV NOTES */
     /* Porn_plugin */
@@ -45,6 +46,16 @@ public class PornerBrosCom extends PluginForHost {
 
     public PornerBrosCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = new Regex(link.getContentUrl(), this.getSupportedLinks()).getMatch(0);
+        if (linkid != null) {
+            return linkid;
+        } else {
+            return super.getLinkID(link);
+        }
     }
 
     private String decryptUrl(String encrypted) {
@@ -78,12 +89,14 @@ public class PornerBrosCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("/videos?error=")) {
+        final String linkid = getLinkID(link);
+        br.getPage(link.getDownloadURL());
+        if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("/videos?error=") || !br.getURL().contains(linkid)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (br.getURL().equals("http://www.pornerbros.com/")) {
@@ -91,9 +104,8 @@ public class PornerBrosCom extends PluginForHost {
         }
         String filename = br.getRegex("property=\"og:title\" content=\"([^<>]*?)\\| PornerBros\"").getMatch(0);
         if (filename == null) {
-            filename = new Regex(downloadLink.getDownloadURL(), "videos/(?:\\d+/)?([a-z0-9\\-_]+)/?$").getMatch(0);
-            /* Make it look a bit better by using spaces instead of '-' which is always used inside their URLs. */
-            filename = filename.replace("-", " ");
+            /* Fallback */
+            filename = linkid;
         }
         filename = filename.trim().replaceAll("\\.$", "");
         // both downloadmethods are still in use
@@ -115,9 +127,9 @@ public class PornerBrosCom extends PluginForHost {
             }
             String fileExtension = new Regex(dllink, "https?://[\\w\\/\\-\\.]+(\\.[a-zA-Z0-9]{0,4})\\?.*").getMatch(0);
             if (fileExtension == ".") {
-                downloadLink.setFinalFileName(Encoding.htmlDecode(filename + ".flv"));
+                link.setFinalFileName(Encoding.htmlDecode(filename + ".flv"));
             } else if (fileExtension != "." && fileExtension != null) {
-                downloadLink.setFinalFileName(Encoding.htmlDecode(filename + fileExtension));
+                link.setFinalFileName(Encoding.htmlDecode(filename + fileExtension));
             }
         }
         if (dllink == null) {
@@ -215,7 +227,7 @@ public class PornerBrosCom extends PluginForHost {
             if (!ext.startsWith(".")) {
                 ext = "." + ext;
             }
-            downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
+            link.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         }
         Browser br2 = br.cloneBrowser();
         URLConnectionAdapter con = null;
@@ -223,7 +235,7 @@ public class PornerBrosCom extends PluginForHost {
             br2.getHeaders().put("Accept", "video/webm,video/ogg,video/*;q=0.9,application/ogg;q=0.7,audio/*;q=0.6,*/*;q=0.5");
             con = br2.openHeadConnection(dllink);
             if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
+                link.setDownloadSize(con.getLongContentLength());
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }

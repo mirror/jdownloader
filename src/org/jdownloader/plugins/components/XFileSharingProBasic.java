@@ -1779,13 +1779,13 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * Checks for (-& handles) all kinds of errors e.g. wrong captcha, wrong downloadpassword, waittimes and server error-responsecodes such
      * as 403, 404 and 503.
      */
-    public void checkErrors(final DownloadLink theLink, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
+    public void checkErrors(final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
         if (checkAll) {
             if (isPasswordProtected() && correctedBR.contains("Wrong password")) {
-                final String userEnteredPassword = theLink.getDownloadPassword();
+                final String userEnteredPassword = link.getDownloadPassword();
                 /* handle password has failed in the past, additional try catching / resetting values */
                 logger.warning("Wrong password, the entered password \"" + userEnteredPassword + "\" is wrong, retrying...");
-                theLink.setDownloadPassword(null);
+                link.setDownloadPassword(null);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
             }
             if (correctedBR.contains("Wrong captcha")) {
