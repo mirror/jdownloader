@@ -366,15 +366,15 @@ public class ProDjCm extends PluginForDecrypt {
         if (!grabThis.matches(".+/prelisten/\\d+/.+\\.mp3.*")) {
             grabThis += "/";
         }
-        DownloadLink link = createDownloadlink("directhttp://" + grabThis);
-        Browser br2 = br.cloneBrowser();
+        final DownloadLink link = createDownloadlink("directhttp://" + grabThis);
+        final Browser br2 = br.cloneBrowser();
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(grabThis);
             if (!con.isOK() || con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                 link.setAvailable(false);
             } else {
-                String filename = new Regex(grabThis, "/prelisten/\\d+/([^\\?]+)").getMatch(0);
+                final String filename = new Regex(grabThis, "/prelisten/\\d+/([^\\?]+)").getMatch(0);
                 link.setFinalFileName(filename.replaceFirst("\\.mp3$", "(promodj.com).mp3"));
                 link.setDownloadSize(con.getLongContentLength());
                 link.setAvailable(true);
