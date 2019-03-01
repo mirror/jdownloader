@@ -214,7 +214,7 @@ public class ProDjCm extends PluginForDecrypt {
         if (dllink == null) {
             dllink = br.getRegex("<a id=\"download_flasher\" href=\"(https?://" + HOSTS + "/download/\\d+/[^\"<>]+)").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("\"URL\":\"(http:[^<>\"]*?)\"").getMatch(0);
+                dllink = br.getRegex("\"URL\":\"(https?:[^<>\"]*?)\"").getMatch(0);
                 if (dllink != null) {
                     dllink = Encoding.htmlDecode(dllink.replace("\\", ""));
                 }
@@ -246,18 +246,24 @@ public class ProDjCm extends PluginForDecrypt {
                     // lets add current dllink to the HashSet because the finallink is actually dynamically created each time you request.
                     if (filter.add(dllink) == true) {
                         linksFound.add(dllink);
+                        Browser br2 = br.cloneBrowser();
+                        URLConnectionAdapter con = null;
                         try {
                             // like apple trailers they have the final url inside so called video...
-                            Browser br2 = br.cloneBrowser();
-                            URLConnectionAdapter con = br2.openGetConnection(dllink);
+                            con = br2.openGetConnection(dllink);
                             long test = con.getContentLength();
                             if (con.getContentType().contains("video/") && test < 51200) {
                                 br2.followConnection();
-                                dllink = br2.getRegex("URL=(http[^\r\n\t ]+)").getMatch(0);
+                                dllink = br2.getRegex("URL=(https?[^\r\n\t ]+)").getMatch(0);
                             }
                             con.disconnect();
                         } catch (Exception e) {
+                            logger.log(e);
                             dllink = null;
+                        } finally {
+                            if (con != null) {
+                                con.disconnect();
+                            }
                         }
                         // the following is not really needed.. though might be good to send it anyway.
                         customHeaders.add(new String[] { "Referer", br.getURL() });
@@ -295,10 +301,11 @@ public class ProDjCm extends PluginForDecrypt {
         }
         for (String link : linksFound) {
             if (filter.add(link) == true) {
-                DownloadLink dl = createDownloadlink(link);
+                final DownloadLink dl = createDownloadlink(link);
                 if (customHeaders.size() != 0) {
                     dl.setProperty("customHeader", customHeaders);
                 }
+                dl.setContentUrl(grabThis);
                 ret.add(dl);
             }
         }
@@ -327,9 +334,9 @@ public class ProDjCm extends PluginForDecrypt {
                 fuid = new Regex(result, "link: '.+/foto/\\d+/(\\d+)").getMatch(0);
             }
             // Original is best!
-            String[] bestImg = new Regex(result, "originalURL: ?'(http://[^\\']+(\\.[a-z]+))").getRow(0);
+            String[] bestImg = new Regex(result, "originalURL: ?'(https?://[^\\']+(\\.[a-z]+))").getRow(0);
             if (bestImg == null) {
-                bestImg = new Regex(result, "bigURL: ?'(http://[^\\']+(\\.[a-z]+))").getRow(0);
+                bestImg = new Regex(result, "bigURL: ?'(https?://[^\\']+(\\.[a-z]+))").getRow(0);
             }
             String fileName = null;
             String title = new Regex(result, "title: '(.+)',").getMatch(0);
@@ -353,21 +360,22 @@ public class ProDjCm extends PluginForDecrypt {
         }
     }
 
-    private void handlePrelisten(ArrayList<DownloadLink> ret, HashSet<String> filter, String grabThis) {
+    private void handlePrelisten(ArrayList<DownloadLink> ret, HashSet<String> filter, String grabThis) throws IOException {
         final String fid = new Regex(grabThis, "prelisten/(\\d+)").getMatch(0);
         // dl wont start unless you have trailing /
         if (!grabThis.matches(".+/prelisten/\\d+/.+\\.mp3.*")) {
             grabThis += "/";
         }
         DownloadLink link = createDownloadlink("directhttp://" + grabThis);
+        Browser br2 = br.cloneBrowser();
+        URLConnectionAdapter con = null;
         try {
-            Browser br2 = br.cloneBrowser();
-            URLConnectionAdapter con = br2.openGetConnection(grabThis);
-            if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+            con = br2.openGetConnection(grabThis);
+            if (!con.isOK() || con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                 link.setAvailable(false);
             } else {
-                String filename = "Prelisten_" + fid + "-" + new Regex(grabThis, "/prelisten/\\d+/([^\\?]+)").getMatch(0);
-                link.setFinalFileName(filename);
+                String filename = new Regex(grabThis, "/prelisten/\\d+/([^\\?]+)").getMatch(0);
+                link.setFinalFileName(filename.replaceFirst("\\.mp3$", "(promodj.com).mp3"));
                 link.setDownloadSize(con.getLongContentLength());
                 link.setAvailable(true);
                 // links seem to generate each time you hit downloadlink! I will assume short time to live!
@@ -375,7 +383,12 @@ public class ProDjCm extends PluginForDecrypt {
             }
             con.disconnect();
         } catch (Exception e) {
+            logger.log(e);
             link.setAvailable(false);
+        } finally {
+            if (con != null) {
+                con.disconnect();
+            }
         }
         link.setLinkID(fid);
         ret.add(link);
