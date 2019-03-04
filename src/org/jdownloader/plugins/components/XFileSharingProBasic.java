@@ -27,16 +27,6 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -61,6 +51,16 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.hoster.RTMPDownload;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 public class XFileSharingProBasic extends antiDDoSForHost {
     public XFileSharingProBasic(PluginWrapper wrapper) {
@@ -151,15 +151,16 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      */
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
-        if (account != null && account.getType() == AccountType.FREE) {
+        final AccountType type = account != null ? account.getType() : null;
+        if (AccountType.FREE.equals(type)) {
             /* Free Account */
             return true;
-        } else if (account != null && account.getType() == AccountType.PREMIUM) {
+        } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
             return true;
         } else {
             /* Free(anonymous) and unknown account type */
-            return true;
+            return false;
         }
     }
 
@@ -168,15 +169,16 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * Override this function to set chunks settings!
      */
     public int getMaxChunks(final Account account) {
-        if (account != null && account.getType() == AccountType.FREE) {
+        final AccountType type = account != null ? account.getType() : null;
+        if (AccountType.FREE.equals(type)) {
             /* Free Account */
-            return 0;
-        } else if (account != null && account.getType() == AccountType.PREMIUM) {
+            return 1;
+        } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
             return 0;
         } else {
             /* Free(anonymous) and unknown account type */
-            return 0;
+            return 1;
         }
     }
 
@@ -199,11 +201,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     public int getMaxSimultaneousFreeAnonymousDownloads() {
-        return -1;
+        return 1;
     }
 
     public int getMaxSimultaneousFreeAccountDownloads() {
-        return -1;
+        return 1;
     }
 
     @Override
@@ -213,10 +215,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     /** Returns direct-link-property-String for current download mode based on account availibility and account type. */
     protected static String getDownloadModeDirectlinkProperty(final Account account) {
-        if (account != null && account.getType() == AccountType.FREE) {
+        final AccountType type = account != null ? account.getType() : null;
+        if (AccountType.FREE.equals(type)) {
             /* Free Account */
             return "freelink2";
-        } else if (account != null && account.getType() == AccountType.PREMIUM) {
+        } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
             return "premlink";
         } else {
@@ -314,8 +317,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * See also function getFilesizeViaAvailablecheckAlt! <br />
      * <b> Enabling this will eventually lead to at least one additional website-request! </b>
      *
-     * @return true: Implies that website supports getFilesizeViaAvailablecheckAlt call as an alternative source for filesize-parsing.
-     *         <br />
+     * @return true: Implies that website supports getFilesizeViaAvailablecheckAlt call as an alternative source for filesize-parsing. <br />
      *         false: Implies that website does NOT support getFilesizeViaAvailablecheckAlt. <br />
      *         default: true
      */
@@ -1348,16 +1350,13 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     @Override
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        }
-        if (acc.getType() == AccountType.FREE) {
+        if (acc == null || acc.getType() == AccountType.FREE) {
             /* Free accounts can have captchas */
             return true;
+        } else {
+            /* Premium accounts do not have captchas */
+            return false;
         }
-        /* Premium accounts do not have captchas */
-        return false;
     }
 
     /* Removes HTML code which could break the plugin */
@@ -1931,6 +1930,14 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
     }
 
+    protected boolean supports_lifetime_account() {
+        return false;
+    }
+
+    protected boolean is_lifetime_account() {
+        return new Regex(correctedBR, ">Premium account expire</TD><TD><b>Lifetime</b>").matches();
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
@@ -1966,100 +1973,107 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         } else {
             ai.setUnlimitedTraffic();
         }
-        /* If the premium account is expired or we cannot find an expire-date we'll simply accept it as a free account. */
-        final String expire = new Regex(correctedBR, "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
-        long expire_milliseconds = 0;
-        long expire_milliseconds_from_expiredate = 0;
-        long expire_milliseconds_precise_to_the_second = 0;
-        if (expire != null) {
-            expire_milliseconds_from_expiredate = TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH);
-        }
-        final boolean supports_precise_expire_date = this.supports_precise_expire_date();
-        if (supports_precise_expire_date) {
-            /*
-             * A more accurate expire time, down to the second. Usually shown on 'extend premium account' page. Case[0] e.g. 'flashbit.cc',
-             * Case [1] e.g. takefile.link, example website which has no precise expiredate at all: anzfile.net
-             */
-            final String[] paymentURLs = new String[] { "/?op=payments", "/upgrade" };
-            for (final String paymentURL : paymentURLs) {
-                try {
-                    getPage(paymentURL);
-                } catch (final Throwable e) {
-                    continue;
-                }
-                String expireSecond = new Regex(correctedBR, Pattern.compile("<div class=\"accexpire\">.*?</div>", Pattern.CASE_INSENSITIVE)).getMatch(-1);
-                if (StringUtils.isEmpty(expireSecond)) {
-                    expireSecond = new Regex(correctedBR, Pattern.compile("Premium(-| )Account expires?:([^\\s]+)", Pattern.CASE_INSENSITIVE)).getMatch(1);
-                }
-                if (StringUtils.isEmpty(expireSecond)) {
-                    /*
-                     * Last attempt - wider RegEx but we expect the 'second(s)' value to always be present!! Example: file-up.org:
-                     * "<p style="direction: ltr; display: inline-block;">1 year, 352 days, 22 hours, 36 minutes, 45 seconds</p>"
-                     */
-                    /**
-                     * TODO: 2019-02-21: This may lead to false-positives thus it may happen that free accounts get recognized as premium!
-                     * Maybe change RegEx like this: 'blabla, minutes, seconds' (minutes AND seconds required) ...
-                     */
-                    expireSecond = new Regex(correctedBR, Pattern.compile("(\\d+ years?, )?(\\d+ days?, )?(\\d+ hours?, )?(\\d+ minutes?, )?\\d+ seconds", Pattern.CASE_INSENSITIVE)).getMatch(-1);
-                }
-                if (!inValidate(expireSecond)) {
-                    String tmpYears = new Regex(expireSecond, "(\\d+)\\s+years?").getMatch(0);
-                    String tmpdays = new Regex(expireSecond, "(\\d+)\\s+days?").getMatch(0);
-                    String tmphrs = new Regex(expireSecond, "(\\d+)\\s+hours?").getMatch(0);
-                    String tmpmin = new Regex(expireSecond, "(\\d+)\\s+minutes?").getMatch(0);
-                    String tmpsec = new Regex(expireSecond, "(\\d+)\\s+seconds?").getMatch(0);
-                    long years = 0, days = 0, hours = 0, minutes = 0, seconds = 0;
-                    if (!inValidate(tmpYears)) {
-                        years = Integer.parseInt(tmpYears);
+        if (supports_lifetime_account() && is_lifetime_account()) {
+            ai.setValidUntil(-1);
+            account.setType(AccountType.LIFETIME);
+            account.setMaxSimultanDownloads(getMaxSimultanPremiumDownloadNum());
+            account.setConcurrentUsePossible(true);
+        } else {
+            /* If the premium account is expired or we cannot find an expire-date we'll simply accept it as a free account. */
+            final String expire = new Regex(correctedBR, "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
+            long expire_milliseconds = 0;
+            long expire_milliseconds_from_expiredate = 0;
+            long expire_milliseconds_precise_to_the_second = 0;
+            if (expire != null) {
+                expire_milliseconds_from_expiredate = TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH);
+            }
+            final boolean supports_precise_expire_date = this.supports_precise_expire_date();
+            if (supports_precise_expire_date) {
+                /*
+                 * A more accurate expire time, down to the second. Usually shown on 'extend premium account' page. Case[0] e.g.
+                 * 'flashbit.cc', Case [1] e.g. takefile.link, example website which has no precise expiredate at all: anzfile.net
+                 */
+                final String[] paymentURLs = new String[] { "/?op=payments", "/upgrade" };
+                for (final String paymentURL : paymentURLs) {
+                    try {
+                        getPage(paymentURL);
+                    } catch (final Throwable e) {
+                        continue;
                     }
-                    if (!inValidate(tmpdays)) {
-                        days = Integer.parseInt(tmpdays);
+                    String expireSecond = new Regex(correctedBR, Pattern.compile("<div class=\"accexpire\">.*?</div>", Pattern.CASE_INSENSITIVE)).getMatch(-1);
+                    if (StringUtils.isEmpty(expireSecond)) {
+                        expireSecond = new Regex(correctedBR, Pattern.compile("Premium(-| )Account expires?:([^\\s]+)", Pattern.CASE_INSENSITIVE)).getMatch(1);
                     }
-                    if (!inValidate(tmphrs)) {
-                        hours = Integer.parseInt(tmphrs);
+                    if (StringUtils.isEmpty(expireSecond)) {
+                        /*
+                         * Last attempt - wider RegEx but we expect the 'second(s)' value to always be present!! Example: file-up.org:
+                         * "<p style="direction: ltr; display: inline-block;">1 year, 352 days, 22 hours, 36 minutes, 45 seconds</p>"
+                         */
+                        /**
+                         * TODO: 2019-02-21: This may lead to false-positives thus it may happen that free accounts get recognized as
+                         * premium! Maybe change RegEx like this: 'blabla, minutes, seconds' (minutes AND seconds required) ...
+                         */
+                        expireSecond = new Regex(correctedBR, Pattern.compile("(\\d+ years?, )?(\\d+ days?, )?(\\d+ hours?, )?(\\d+ minutes?, )?\\d+ seconds", Pattern.CASE_INSENSITIVE)).getMatch(-1);
                     }
-                    if (!inValidate(tmpmin)) {
-                        minutes = Integer.parseInt(tmpmin);
+                    if (!inValidate(expireSecond)) {
+                        String tmpYears = new Regex(expireSecond, "(\\d+)\\s+years?").getMatch(0);
+                        String tmpdays = new Regex(expireSecond, "(\\d+)\\s+days?").getMatch(0);
+                        String tmphrs = new Regex(expireSecond, "(\\d+)\\s+hours?").getMatch(0);
+                        String tmpmin = new Regex(expireSecond, "(\\d+)\\s+minutes?").getMatch(0);
+                        String tmpsec = new Regex(expireSecond, "(\\d+)\\s+seconds?").getMatch(0);
+                        long years = 0, days = 0, hours = 0, minutes = 0, seconds = 0;
+                        if (!inValidate(tmpYears)) {
+                            years = Integer.parseInt(tmpYears);
+                        }
+                        if (!inValidate(tmpdays)) {
+                            days = Integer.parseInt(tmpdays);
+                        }
+                        if (!inValidate(tmphrs)) {
+                            hours = Integer.parseInt(tmphrs);
+                        }
+                        if (!inValidate(tmpmin)) {
+                            minutes = Integer.parseInt(tmpmin);
+                        }
+                        if (!inValidate(tmpsec)) {
+                            seconds = Integer.parseInt(tmpsec);
+                        }
+                        expire_milliseconds_precise_to_the_second = ((years * 86400000 * 365) + (days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000)) + System.currentTimeMillis();
                     }
-                    if (!inValidate(tmpsec)) {
-                        seconds = Integer.parseInt(tmpsec);
+                    if (expire_milliseconds_precise_to_the_second > 0) {
+                        logger.info("Successfully found expire_milliseconds_precise_to_the_second via paymentURL: " + paymentURL);
+                        break;
+                    } else {
+                        logger.info("Failed to find expire_milliseconds_precise_to_the_second via paymentURL: " + paymentURL);
                     }
-                    expire_milliseconds_precise_to_the_second = ((years * 86400000 * 365) + (days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000)) + System.currentTimeMillis();
-                }
-                if (expire_milliseconds_precise_to_the_second > 0) {
-                    logger.info("Successfully found expire_milliseconds_precise_to_the_second via paymentURL: " + paymentURL);
-                    break;
-                } else {
-                    logger.info("Failed to find expire_milliseconds_precise_to_the_second via paymentURL: " + paymentURL);
                 }
             }
-        }
-        // final boolean trust_expire_milliseconds_from_expiredate = expire_milliseconds_from_expiredate > 0;
-        final boolean trust_expire_milliseconds_precise_to_the_second = expire_milliseconds_from_expiredate - expire_milliseconds_precise_to_the_second <= 24 * 60 * 60 * 1000;
-        if (trust_expire_milliseconds_precise_to_the_second) {
-            /*
-             * Prefer more precise expire-date as long as it is max. 48 hours shorter than the other expire-date which is only exact up to
-             * 24 hours (up to the last day).
-             */
-            logger.info("Using precise expire-date");
-            expire_milliseconds = expire_milliseconds_precise_to_the_second;
-        } else if (expire_milliseconds_from_expiredate > 0) {
-            logger.info("Using expire-date which is up to 24 hours precise");
-            expire_milliseconds = expire_milliseconds_from_expiredate;
-        } else {
-            logger.info("Failed to find any expire-date at all");
-        }
-        if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
-            /* Expired premium or no expire date given --> It is usually a Free Account */
-            account.setType(AccountType.FREE);
-            account.setConcurrentUsePossible(false);
-            account.setMaxSimultanDownloads(getMaxSimultaneousFreeAccountDownloads());
-        } else {
-            /* Expire date is in the future --> It is a premium account */
-            ai.setValidUntil(expire_milliseconds);
-            account.setType(AccountType.PREMIUM);
-            account.setConcurrentUsePossible(true);
-            account.setMaxSimultanDownloads(this.getMaxSimultanPremiumDownloadNum());
+            // final boolean trust_expire_milliseconds_from_expiredate = expire_milliseconds_from_expiredate > 0;
+            final boolean trust_expire_milliseconds_precise_to_the_second = expire_milliseconds_from_expiredate - expire_milliseconds_precise_to_the_second <= 24 * 60 * 60 * 1000;
+            if (trust_expire_milliseconds_precise_to_the_second) {
+                /*
+                 * Prefer more precise expire-date as long as it is max. 48 hours shorter than the other expire-date which is only exact up
+                 * to 24 hours (up to the last day).
+                 */
+                logger.info("Using precise expire-date");
+                expire_milliseconds = expire_milliseconds_precise_to_the_second;
+            } else if (expire_milliseconds_from_expiredate > 0) {
+                logger.info("Using expire-date which is up to 24 hours precise");
+                expire_milliseconds = expire_milliseconds_from_expiredate;
+            } else {
+                logger.info("Failed to find any expire-date at all");
+            }
+            if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
+                /* Expired premium or no expire date given --> It is usually a Free Account */
+                account.setType(AccountType.FREE);
+                account.setConcurrentUsePossible(false);
+                account.setMaxSimultanDownloads(getMaxSimultaneousFreeAccountDownloads());
+            } else {
+                /* Expire date is in the future --> It is a premium account */
+                ai.setValidUntil(expire_milliseconds);
+                account.setType(AccountType.PREMIUM);
+                account.setConcurrentUsePossible(true);
+                account.setMaxSimultanDownloads(this.getMaxSimultanPremiumDownloadNum());
+            }
         }
         return ai;
     }
@@ -2198,7 +2212,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         requestFileInformation(link);
         login(account, false);
         final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
-        if (account.getType() == AccountType.FREE) {
+        if (AccountType.FREE.equals(account.getType())) {
             /* Perform linkcheck after logging in */
             requestFileInformation(link);
             doFree(link, account);
