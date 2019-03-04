@@ -711,10 +711,15 @@ public class VKontakteRu extends PluginForDecrypt {
                 logger.info("Video seems to be offline");
                 throw new DecrypterException(EXCEPTION_LINKOFFLINE);
             }
+            final String author = PluginJSonUtils.getJsonValue(br, "md_author");
             filename = PluginJSonUtils.getJsonValue(br, "md_title");
-            if (filename == null) {
-                /* Fallback */
-                filename = oid_and_id;
+            if (filename == null || filename.length() > 100) {
+                /* fallback or avoid too long filenames */
+                if (author != null) {
+                    filename = author + "_" + oid_and_id;
+                } else {
+                    filename = oid_and_id;
+                }
             }
             final FilePackage fp = FilePackage.getInstance();
             /* Find needed information */
