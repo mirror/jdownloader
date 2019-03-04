@@ -1,6 +1,7 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -77,7 +78,8 @@ public class YourPornSexy extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (link.getVerifiedFileSize() == -1) {
-            final URLConnectionAdapter con = br.cloneBrowser().openHeadConnection(dllink);
+            final Browser brc = br.cloneBrowser();
+            final URLConnectionAdapter con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(dllink));
             try {
                 if (con.isOK() && StringUtils.containsIgnoreCase(con.getContentType(), "video")) {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
