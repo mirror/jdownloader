@@ -18,8 +18,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -32,7 +30,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pic5you.ru", "image2you.ru", "picsee.net", "imagecurl.com", "twitpic.com", "pic4you.ru", "postimage.org", "turboimagehost.com", "imagebam.com", "freeimagehosting.net", "girlswithmuscle.com" }, urls = { "http://pic5you\\.ru/\\d+/\\d+/", "http://(?:www\\.)?image2you\\.ru/\\d+/\\d+/", "http://(www\\.)?picsee\\.net/\\d{4}-\\d{2}-\\d{2}/.*?\\.html", "http://(?:www\\.)?imagecurl\\.com/viewer\\.php\\?file=[\\w-]+\\.[a-z]{2,4}", "https?://(www\\.)?twitpic\\.com/show/[a-z]+/[a-z0-9]+", "http://(?:www\\.)?pic4you\\.ru/\\d+/\\d+/", "https?://(?:www\\.)?turboimagehost\\.com/p/\\d+/.*?\\.html", "https?://[\\w\\.]*imagebam\\.com/(image|gallery)/[a-z0-9]+", "http://[\\w\\.]*?freeimagehosting\\.net/image\\.php\\?.*?\\..{3,4}", "https?://(www.)?girlswithmuscle\\.com/\\d+/?" })
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pic5you.ru", "image2you.ru", "picsee.net", "imagecurl.com", "twitpic.com", "pic4you.ru", "turboimagehost.com", "imagebam.com", "freeimagehosting.net", "girlswithmuscle.com" }, urls = { "http://pic5you\\.ru/\\d+/\\d+/", "http://(?:www\\.)?image2you\\.ru/\\d+/\\d+/", "http://(www\\.)?picsee\\.net/\\d{4}-\\d{2}-\\d{2}/.*?\\.html", "http://(?:www\\.)?imagecurl\\.com/viewer\\.php\\?file=[\\w-]+\\.[a-z]{2,4}", "https?://(www\\.)?twitpic\\.com/show/[a-z]+/[a-z0-9]+", "http://(?:www\\.)?pic4you\\.ru/\\d+/\\d+/", "https?://(?:www\\.)?turboimagehost\\.com/p/\\d+/.*?\\.html", "https?://[\\w\\.]*imagebam\\.com/(image|gallery)/[a-z0-9]+", "http://[\\w\\.]*?freeimagehosting\\.net/image\\.php\\?.*?\\..{3,4}", "https?://(www.)?girlswithmuscle\\.com/\\d+/?" })
 public class ImageHosterDecrypter extends antiDDoSForDecrypt {
     public ImageHosterDecrypter(final PluginWrapper wrapper) {
         super(wrapper);

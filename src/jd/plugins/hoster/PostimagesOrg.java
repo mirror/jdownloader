@@ -17,9 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -32,7 +29,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "postimages.org" }, urls = { "https?://(?:www\\.)?postimg\\.cc/(?!gallery)([A-Za-z0-9]+)" })
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "postimages.org" }, urls = { "https?://(?:www\\.)?(postimg\\.cc|postimages\\.org)/(?!gallery)([A-Za-z0-9]+)" })
 public class PostimagesOrg extends PluginForHost {
     public PostimagesOrg(PluginWrapper wrapper) {
         super(wrapper);
