@@ -19,13 +19,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.UniqueAlltimeID;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -39,6 +37,9 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.UniqueAlltimeID;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spankbang.com" }, urls = { "https?://(www\\.)?([a-z]{2}\\.)?spankbang\\.com/([a-z0-9]+/video/\\?quality=[\\w\\d]+|[a-z0-9]+/(?:video|embed)/)" })
 public class SpankBangCom extends PluginForDecrypt {
@@ -166,17 +167,18 @@ public class SpankBangCom extends PluginForDecrypt {
     public static LinkedHashMap<String, String> findQualities(final Browser br, final String source_url) throws DecrypterException, PluginException, IOException {
         final LinkedHashMap<String, String> foundQualities = new LinkedHashMap<String, String>();
         // final String fid = getFid(source_url);
-        final String videoid = br.getRegex("var ana_video_id = \\'(\\d+)\\';").getMatch(0);
-        if (videoid == null) {
-            return null;
+        final String dataStreamKey = br.getRegex("data-streamkey\\s*=\\s*\"(.*?)\"").getMatch(0);
+        if (dataStreamKey == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String x_csrftoken = br.getCookie(br.getURL(), "sb_csrf_session");
-        br.getHeaders().put("accept", "application/json, text/javascript, */*; q=0.01");
-        br.getHeaders().put("x-requested-with", "XMLHttpRequest");
+        Request request = br.createPostRequest("/api/videos/stream", "data=0&id=" + dataStreamKey + "&sb_csrf_session=" + x_csrftoken);
+        request.getHeaders().put("accept", "application/json, text/javascript, */*; q=0.01");
+        request.getHeaders().put("x-requested-with", "XMLHttpRequest");
         if (x_csrftoken != null) {
-            br.getHeaders().put("x-csrftoken", x_csrftoken);
+            request.getHeaders().put("x-csrftoken", x_csrftoken);
         }
-        br.postPage("/api/videos/stream", "data=0&id=" + videoid + "&sb_csrf_session=" + x_csrftoken);
+        br.getPage(request);
         // final String streamkey = br.getRegex("var stream_key = \\'([^<>\"]*?)\\'").getMatch(0);
         String[] qualities = new String[] { "1080p", "720p", "480p", "320p", "240p" };
         for (final String q : qualities) {
