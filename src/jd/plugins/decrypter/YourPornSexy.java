@@ -2,20 +2,19 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourporn.sexy" }, urls = { "https?://(www\\.)?yourporn\\.sexy/[^/]*?\\.html(\\?page=\\d+)?" })
-public class YourPornSexy extends PluginForDecrypt {
-
+public class YourPornSexy extends antiDDoSForDecrypt {
     public YourPornSexy(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -23,7 +22,7 @@ public class YourPornSexy extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        br.getPage(parameter.getCryptedUrl());
+        getPage(parameter.getCryptedUrl());
         final String[][] hits = br.getRegex("<a href=(?:\"|')(/post/[a-fA-F0-9]{13}\\.html)\\?sk=.*?title='(.*?)'").getMatches();
         for (final String[] hit : hits) {
             final DownloadLink link = createDownloadlink(br.getURL(hit[0]).toString());
@@ -45,5 +44,4 @@ public class YourPornSexy extends PluginForDecrypt {
         fp.addLinks(ret);
         return ret;
     }
-
 }

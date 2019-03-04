@@ -1,8 +1,5 @@
 package jd.plugins.hoster;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
@@ -10,11 +7,14 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourporn.sexy" }, urls = { "https?://(www\\.)?yourporn\\.sexy/post/[a-fA-F0-9]{13}\\.html" })
-public class YourPornSexy extends PluginForHost {
+public class YourPornSexy extends antiDDoSForHost {
     public YourPornSexy(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -38,7 +38,7 @@ public class YourPornSexy extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        getPage(link.getDownloadURL());
         final String title = br.getRegex("name\" content=\"(.*?)\"").getMatch(0);
         if (title == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

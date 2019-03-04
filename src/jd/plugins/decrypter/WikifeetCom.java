@@ -42,7 +42,7 @@ public class WikifeetCom extends PluginForDecrypt {
     public static final String type_wikifeet = "https?://(?:\\w+\\.)?wikifeetx?\\.com/[a-zA-Z%0-9\\-\\_]+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         this.br.getPage(parameter);
         if (isOffline(this.br)) {
@@ -57,20 +57,22 @@ public class WikifeetCom extends PluginForDecrypt {
         title = Encoding.htmlDecode(title).trim();
         if (parameter.matches(type_wikifeet)) {
             final String gData = this.br.getRegex("messanger\\[\\'gdata\\'\\] = ([\\s\\S]*?);").getMatch(0);
-            List<Object> data = (List<Object>) JavaScriptEngineFactory.jsonToJavaObject(gData);
+            final List<Object> data = (List<Object>) JavaScriptEngineFactory.jsonToJavaObject(gData);
             if (data.size() == 0) {
                 return decryptedLinks;
             }
             for (final Object entry : data) {
-                Map<String, Object> entryMap = (Map<String, Object>) entry;
-                String pid = (String) entryMap.get("pid");
-                final String dlurl = "directhttp://http://pics.wikifeet.com/" + cfName + "-Feet-" + pid + ".jpg";
-                final DownloadLink dl = this.createDownloadlink(dlurl);
-                dl.setName(cfName + "_" + pid);
-                dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
-                dl.setAvailable(true);
-                dl.setProperty("fid", cfName + pid);
-                decryptedLinks.add(dl);
+                final Map<String, Object> entryMap = (Map<String, Object>) entry;
+                if (entryMap.containsKey("pid")) {
+                    final String pid = String.valueOf(entryMap.get("pid"));
+                    final String dlurl = "directhttp://http://pics.wikifeet.com/" + cfName + "-Feet-" + pid + ".jpg";
+                    final DownloadLink dl = this.createDownloadlink(dlurl);
+                    dl.setName(cfName + "_" + pid);
+                    dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
+                    dl.setAvailable(true);
+                    dl.setProperty("fid", cfName + pid);
+                    decryptedLinks.add(dl);
+                }
             }
         }
         final FilePackage fp = FilePackage.getInstance();
