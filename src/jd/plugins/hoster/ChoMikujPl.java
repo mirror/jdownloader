@@ -484,10 +484,11 @@ public class ChoMikujPl extends antiDDoSForHost {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (!free_resume) {
+        final boolean resumeSupported = free_resume || StringUtils.containsIgnoreCase(dllink, "/Audio.ashx");
+        if (!resumeSupported) {
             free_maxchunks = 1;
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumeSupported, free_maxchunks);
         dl.setFilenameFix(true);
         final URLConnectionAdapter con = dl.getConnection();
         if (!con.isContentDisposition() && ((StringUtils.containsIgnoreCase(con.getContentType(), "text") && con.getResponseCode() == 200) || !con.isOK())) {
@@ -540,10 +541,11 @@ public class ChoMikujPl extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         sleep(2 * 1000l, link);
-        if (!account_resume) {
+        final boolean resumeSupported = account_resume || StringUtils.containsIgnoreCase(dllink, "/Audio.ashx");
+        if (!resumeSupported) {
             account_maxchunks = 1;
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, account_resume, account_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumeSupported, account_maxchunks);
         dl.setFilenameFix(true);
         final URLConnectionAdapter con = dl.getConnection();
         if (!con.isContentDisposition() && ((StringUtils.containsIgnoreCase(con.getContentType(), "text") && con.getResponseCode() == 200) || !con.isOK())) {
