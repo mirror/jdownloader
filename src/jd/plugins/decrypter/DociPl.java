@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.regex.Matcher;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -57,10 +58,13 @@ public class DociPl extends PluginForDecrypt {
             return decryptedLinks;
         }
         /* Crawl subfolders */
-        final String[] folders = br.getRegex("class=\"CssTreeValue\"[^>]*?><a href=\"(/[^<>\"]+)\"").getColumn(0);
-        for (String singleLink : folders) {
-            singleLink = "http://" + this.br.getHost() + singleLink;
-            decryptedLinks.add(createDownloadlink(singleLink));
+        final String[] folders = br.getRegex("<article\\s*class\\s*=\\s*\"elem\"\\s*>\\s*<header>\\s*<img[^<>]*?dir[^<>]*?>\\s*<p[^<>]*?>\\s*<a href=\"(/[^<>\"]+)\"").getColumn(0);
+        for (final String singleLink : folders) {
+            if (isAbort()) {
+                break;
+            }
+            final String url = br.getURL(singleLink).toString();
+            decryptedLinks.add(createDownloadlink(url));
         }
         /* Crawl files */
         final String[][] files = br.getRegex("class=\"text\\-ellipsis elipsis\\-file\"[^>]*?><a href=\"(/[^<>\"]+)\"\\s*>\\s*(.*?)\\s*<.*?Rozmiar\\s*:\\s*([0-9\\.]+\\s*[GKM]*B)").getMatches();
@@ -71,8 +75,11 @@ public class DociPl extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        for (String singleLink[] : files) {
-            final String url = host_plugin_string + this.br.getHost() + singleLink[0];
+        for (final String singleLink[] : files) {
+            if (isAbort()) {
+                break;
+            }
+            final String url = br.getURL(singleLink[0]).toString().replaceFirst("https?://", Matcher.quoteReplacement(host_plugin_string));
             final DownloadLink link = createDownloadlink(url);
             link.setAvailable(true);
             link.setMimeHint(CompiledFiletypeFilter.DocumentExtensions.PDF);
@@ -80,7 +87,7 @@ public class DociPl extends PluginForDecrypt {
             link.setDownloadSize(SizeFormatter.getSize(singleLink[2]));
             decryptedLinks.add(link);
         }
-        if (decryptedLinks.size() == 0) {
+        if (decryptedLinks.size() == 0 && !isAbort()) {
             logger.info("Possible empty folder");
         }
         if (fpName != null) {
