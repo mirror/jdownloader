@@ -1,4 +1,4 @@
-AboutDialog_actionPerformed_clipboard_=클립 보드에 정보를 복사: %s1
+﻿AboutDialog_actionPerformed_clipboard_=클립 보드에 정보를 복사: %s1
 AbstractBugFinderWindow_createHeader_esc=[ESC]로 취소
 AbstractCaptchaDialog_AbstractCaptchaDialog_cancel=건너뛰기
 AbstractCaptchaDialog_AbstractCaptchaDialog_continue=전송
