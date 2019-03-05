@@ -1,1 +1,4 @@
+interaction_batchreconnect_batch=배치 스크립트
 interaction_batchreconnect_executein=(어플리케이션 폴더)에서 시작
+interaction_batchreconnect_terminal=해석 프로그램
+jd_controlling_reconnect_plugins_batch_ExternBatchReconnectPlugin_getName=외부 일괄 재연결

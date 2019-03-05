@@ -1,0 +1,6 @@
+Translator=번역
+TranslatorExtensionGuiToggleAction_deselected=번역 열기
+TranslatorExtensionGuiToggleAction_deselected_tt=번역 탭 열기
+TranslatorExtensionGuiToggleAction_selected=번역 닫기
+TranslatorExtensionGuiToggleAction_selected_tt=번역 탭 닫기
+description=이 확장 기능을 사용하여 JDownloader의 번역을 편집 할 수 있습니다. 이 확장 기능을 이용하려면 개발자 계정이 필요합니다.
