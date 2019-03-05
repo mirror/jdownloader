@@ -1,0 +1,10 @@
+LogAction_actionPerformed_wait_=잠시만 기다려주십시오...\n
+LogAction_actionPerformed_zip_title_=로그 패키지를 만드는 중
+LogAction_getString_uploading_=로그 준비 중
+LogModel_getStringValue_between_=%s1와 %s2사이
+LogModel_initColumns_time_=시간
+LogModel_initColumns_x_=확인
+LogTable_onContextMenu_disable_=선택 해제
+LogTable_onContextMenu_enable_=선택
+SendLogDialog_SendLogDialog_title_=버그 리포트 보내기
+SendLogDialog_layoutDialogContent_desc_=문제가 언제 발생 했습니까? 고려할 수 있는 모든 가능성을 확인하세요!

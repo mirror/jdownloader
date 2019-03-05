@@ -1,14 +1,28 @@
-addons_jdshutdown_statusmessage_disabled=JDownloader가 시스템을 종료하지 않습니다.
-addons_jdshutdown_statusmessage_enabled=다운로드완료 후 자동종료됩니다.
+action_tooltip=다운로드가 완료되면 시스템을 종료합니다
+addons_jdshutdown_statusmessage_disabled=이 시스템은 JDownloader로 종료 할 수 없습니다!
+addons_jdshutdown_statusmessage_enabled=JDownloader 다운로드가 완료된 후 시스템을 종료합니다.
+config_active_by_default=종료 설정을 유지
+config_toolbarbutton=툴바 버튼을 표시
 gui_config_jdshutdown_close=JDownloader 닫기
-gui_config_jdshutdown_forceshutdown=강제 종료
-gui_config_jdshutdown_hibernate=최대 절전 모드 (모든 OS에서 사용가능하지 않음)
+gui_config_jdshutdown_forceshutdown=강제 종료 (일부 OS만 해당)
+gui_config_jdshutdown_hibernate=최대 절전 모드 (일부 OS만 해당)
 gui_config_jdshutdown_mode=모드:
-gui_config_jdshutdown_shutdown=시스템 종료
-gui_config_jdshutdown_standby=절전 (모든 OS에서 사용가능하지 않음)
-interaction_shutdown_dialog_msg_shutdown=<h2><font color="red">시스템이 종료됩니다!</font></h2>
-interaction_shutdown_dialog_msg_standby=<h2><font color="red">시스템이 절전모드로 진입합니다!</font></h2>
-interaction_shutdown_dialog_title_closejd=JDownloader를 종료하시겠습니까?
-interaction_shutdown_dialog_title_shutdown=종료?
-interaction_shutdown_dialog_title_standby=절전?
-jd_plugins_optional_jdshutdown=JDownloader 종료
+gui_config_jdshutdown_shutdown=종료
+gui_config_jdshutdown_standby=대기 (일부 OS만 해당)
+install_force=강제로 종료
+install_msg=강제 종료 기능을 위해 시스템 설정을 하시겠습니까?
+install_title=강제로 종료
+interaction_shutdown_dialog_msg_closejd=<h2><font color="red">JDownloader를 종료합니다!</font></h2>
+interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">시스템이 최대 절전 모드로 전환합니다!</font></h2>
+interaction_shutdown_dialog_msg_shutdown=<h2><font color="red">시스템을 종료합니다!</font></h2>
+interaction_shutdown_dialog_msg_standby=<h2><font color="red">시스템을 대기 모드로 합니다!</font></h2>
+interaction_shutdown_dialog_title_closejd=JDownloader을 종료 하시겠습니까?
+interaction_shutdown_dialog_title_hibernate=ㅍ최대 절전 모드로 하시겠습니까?
+interaction_shutdown_dialog_title_shutdown=종료 하시겠습니까?
+interaction_shutdown_dialog_title_standby=대기 하시겠습니까?
+jd_plugins_optional_jdshutdown=JD 종료
+jd_plugins_optional_jdshutdown_description=다운로드 완료 후 자동으로 PC를 종료 / 최대 절전 모드로 전환하거나 JDownloader를 종료합니다.
+lit_shutdownn=종료
+show_admin=최대 절전 모드나 대기 모드로 JDownloader를 설정하려면 관리자 권한이 필요합니다
+shutdown_toggle_action_disabled2=다운로드 후 종료
+shutdown_toggle_action_enabled2=다운로드 후 종료

@@ -1,1 +1,5 @@
-jd_plugins_optional_antistandby_jdantistandby=안티 스탠바이
+gui_config_antistandby_whiledl2=다운로드 중
+gui_config_antistandby_whilejd2=JDownloader실행 중
+jd_plugins_optional_antistandby_jdantistandby=안티 대기
+jd_plugins_optional_antistandby_jdantistandby_description=다운로드 진행을 유지하기 위해 대기 및 절전 모드로의 전환을 방지합니다.
+mode=다음의 경우 대기 / 절전 모드를 방지:
