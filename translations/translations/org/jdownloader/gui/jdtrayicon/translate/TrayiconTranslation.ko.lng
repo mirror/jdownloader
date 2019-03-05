@@ -1,4 +1,4 @@
-JDGui_windowClosing_try_answer_totaskbar=작업 표시줄로 최소화
+﻿JDGui_windowClosing_try_answer_totaskbar=작업 표시줄로 최소화
 JDGui_windowClosing_try_answer_tray=트레이로 숨기기
 JDGui_windowClosing_try_asnwer_close=JDownloader 끝내기
 JDGui_windowClosing_try_msg_2=다음 세 가지 중 선택하세요 \r\n   - JDownloader 끝내기 (실행중인 다운로드 등은 취소)\r\n   - 작업 표시줄로 최소화 (다운로드는 지속)\r\n   - 트레이로 숨기기 (다운로드는 백그라운드에서 지속)

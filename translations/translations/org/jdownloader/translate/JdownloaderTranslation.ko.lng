@@ -1,4 +1,4 @@
-AccountController_updateAccountInfo_no_gateway=검출 게이트웨이 / 프록시 없음
+﻿AccountController_updateAccountInfo_no_gateway=검출 게이트웨이 / 프록시 없음
 AccountController_updateAccountInfo_status_logins_wrong=로그인 실패
 AccountController_updateAccountInfo_status_plugin_defect=플러그인 만료
 AccountController_updateAccountInfo_status_traffic_reached=나머지 용량 없음
