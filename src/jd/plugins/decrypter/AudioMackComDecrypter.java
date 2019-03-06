@@ -60,7 +60,7 @@ public class AudioMackComDecrypter extends PluginForDecrypt {
             }
             boolean embedMode = new Regex(ogurl, ".+?/embed/(?:album|playlist)/.+?/.+$").matches();
             br.getPage(AudioMa.getOAuthQueryString(br));
-            if (br.getHttpConnection().getResponseCode() == 404) {
+            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("\"track_count\":0,")) {
                 decryptedLinks.add(createOfflinelink(parameter, new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0), null));
                 return decryptedLinks;
             }
