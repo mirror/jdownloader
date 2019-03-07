@@ -86,7 +86,10 @@ public class FrancetelevisionsCom extends PluginForDecrypt {
             }
             String videoid = br.getRegex("data\\-main\\-video=\"(.*?)\"").getMatch(0);
             if (videoid == null) {
-                videoid = br.getRegex("videoId\\s*:\\s*'(.*?)'").getMatch(0);
+                videoid = br.getRegex("videoId(?:\"|')?\\s*:\\s*'(.*?)'").getMatch(0);
+                if (videoid == null) {
+                    videoid = br.getRegex("videoId(?:\"|')?\\s*:\\s*\"(.*?)\"").getMatch(0);
+                }
             }
             if (videoid == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
