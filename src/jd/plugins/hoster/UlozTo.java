@@ -21,10 +21,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -39,6 +35,7 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountRequiredException;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -46,6 +43,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to", "ulozto.net", "pornfile.cz" }, urls = { "https?://(?:www\\.)?(?:uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)/(?!soubory/)[\\!a-zA-Z0-9]+/[^\\?\\s]+", "https?://(?:www\\.)?ulozto\\.net/(?!soubory/)[\\!a-zA-Z0-9]+(?:/[^\\?\\s]+)?", "https?://(?:www\\.)?(?:pornfile\\.cz|pornfile\\.ulozto\\.net)/[\\!a-zA-Z0-9]+/[^\\?\\s]+" })
 public class UlozTo extends PluginForHost {
@@ -62,7 +63,6 @@ public class UlozTo extends PluginForHost {
     /* don't touch the following! */
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
     private static Object        CTRLLOCK                     = new Object();
-    private static Object        ACCLOCK                      = new Object();
 
     public UlozTo(PluginWrapper wrapper) {
         super(wrapper);
@@ -535,7 +535,7 @@ public class UlozTo extends PluginForHost {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                if (!!con.isOK() || con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
                 }
@@ -581,7 +581,7 @@ public class UlozTo extends PluginForHost {
                     logger.log(e);
                 }
                 if (br.containsHTML("Pro rychlé stažení") || br.containsHTML("You do not have  enough") || br.containsHTML("Nie masz wystarczającego")) {
-                    throw new AccountRequiredException("Not enough premium traffic available");
+                    throw new AccountUnavailableException("Not enough premium traffic available", 1 * 60 * 60 * 1000l);
                 }
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -607,8 +607,8 @@ public class UlozTo extends PluginForHost {
         return false;
     }
 
-    private void loginAPI(final Account account, final AccountInfo aa) throws Exception {
-        synchronized (ACCLOCK) {
+    private void loginAPI(Account account, final AccountInfo aa) throws Exception {
+        synchronized (account) {
             try {
                 final AccountInfo ai = aa != null ? aa : account.getAccountInfo();
                 setBrowserExclusive();
@@ -629,6 +629,11 @@ public class UlozTo extends PluginForHost {
                 if (aa == null) {
                     account.setAccountInfo(ai);
                 }
+            } catch (final PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
+                throw e;
             } finally {
                 setBasicAuthHeader(account);
             }
@@ -636,7 +641,7 @@ public class UlozTo extends PluginForHost {
     }
 
     private void loginWebsite(final Account account, final boolean force) throws Exception {
-        synchronized (ACCLOCK) {
+        synchronized (account) {
             try {
                 setBrowserExclusive();
                 br.setFollowRedirects(true);
@@ -662,6 +667,11 @@ public class UlozTo extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(br.getCookies(account.getHoster()), "");
+            } catch (final PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
+                throw e;
             } finally {
                 // setBasicAuthHeader(account);
             }
@@ -707,15 +717,13 @@ public class UlozTo extends PluginForHost {
 
     public AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        try {
-            loginWebsite(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
+        loginWebsite(account, true);
         String trafficleft = br.getRegex("<em>[^<]+</em>\\s*?\\(([^<>\"\\']+)\\)\\s*?</span>").getMatch(0);
         if (trafficleft == null) {
             trafficleft = br.getRegex("\"fi fi-user\">\\s*</i>\\s*<em>.*?</em>\\s*\\((.*?)\\)\\s*<").getMatch(0);
+            if (trafficleft == null) {
+                trafficleft = br.getRegex("\"t-header-username\">\\s*<em[^<]*>.*?</em>\\s*<em[^<]*>\\s*\\(([0-9\\.,]\\s*[BMTGK]+)\\)\\s*<").getMatch(0);
+            }
         }
         if (trafficleft != null) {
             ai.setTrafficLeft(SizeFormatter.getSize(trafficleft));

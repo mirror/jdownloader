@@ -65,10 +65,10 @@ public class OneFichierCom extends PluginForHost {
     private static final String  MAINPAGE                     = "https://1fichier.com/";
     private boolean              pwProtected                  = false;
     private DownloadLink         currDownloadLink             = null;
-    /* Max total connections for premium = 50 (RE: admin) */
+    /* Max total connections for premium = 30 (RE: admin, updated 07.03.2019) */
     private static final boolean resume_account_premium       = true;
-    private static final int     maxchunks_account_premium    = -4;
-    private static final int     maxdownloads_account_premium = 12;
+    private static final int     maxchunks_account_premium    = -3;
+    private static final int     maxdownloads_account_premium = 10;
     /* 2015-07-10: According to admin, resume is free mode is not possible anymore. On attempt this will lead to 404 server error! */
     private static final int     maxchunks_free               = 1;
     private static final boolean resume_free                  = true;
