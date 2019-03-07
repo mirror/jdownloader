@@ -938,7 +938,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
             // loadAPIWorkAround(br);
             br.setFollowRedirects(true);
             br.setKeepResponseContentBytes(true);
-            getPage(userProtocolApi() + "://api.share-online.biz/cgi-bin?q=linkdata&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&lid=" + linkID);
+            getPage(userProtocolApi() + "://api.share-online.biz/cgi-bin?q=linkdata&username=" + URLEncode.encodeURIComponent(account.getUser()) + "&password=" + URLEncode.encodeURIComponent(account.getPass()) + "&lid=" + linkID);
             final byte[] responseBytes = br.getRequest().getResponseBytes();
             final String responseUTF8 = new String(responseBytes, "UTF-8");
             final String responseISO88591 = new String(responseBytes, "ISO-8859-1");

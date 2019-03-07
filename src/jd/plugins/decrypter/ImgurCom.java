@@ -192,6 +192,9 @@ public class ImgurCom extends PluginForDecrypt {
                         return createOfflineLink(parameter);
                     }
                     author = br.getRegex("property=\"author\" content=\"([^<>\"]*?)\"").getMatch(0);
+                    if (author != null && StringUtils.equalsIgnoreCase(author, "Imgur")) {
+                        author = null;
+                    }
                     galleryTitle = br.getRegex("<title>([^<>\"]*?) \\-(?: Album on)? Imgur</title>").getMatch(0);
                     if (galleryTitle == null) {
                         galleryTitle = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
@@ -254,6 +257,9 @@ public class ImgurCom extends PluginForDecrypt {
             return;
         }
         author = (String) JavaScriptEngineFactory.walkJson(data, "data/account_url");
+        if (author != null && StringUtils.equalsIgnoreCase(author, "Imgur")) {
+            author = null;
+        }
         /*
          * using links (i.imgur.com/imgUID(s)?.extension) seems to be problematic, it can contain 's' (imgUID + s + .extension), but not
          * always! imgUid.endswith("s") is also a valid uid, so you can't strip them!
