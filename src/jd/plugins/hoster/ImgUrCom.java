@@ -517,7 +517,7 @@ public class ImgUrCom extends PluginForHost {
         if (title != null) {
             formattedFilename = formattedFilename.replace("*title*", title);
         }
-        formattedFilename = formattedFilename.replaceFirst("^([ -_]+)", "").trim();
+        formattedFilename = formattedFilename.replaceFirst("^([ \\-_]+)", "").trim();
         return formattedFilename.trim();
     }
 
@@ -545,7 +545,7 @@ public class ImgUrCom extends PluginForHost {
         if (title != null) {
             formattedFilename = formattedFilename.replace("*title*", title);
         }
-        formattedFilename = formattedFilename.replaceFirst("^([ -_]+)", "").trim();
+        formattedFilename = formattedFilename.replaceFirst("^([ \\-_]+)", "").trim();
         return formattedFilename;
     }
 
