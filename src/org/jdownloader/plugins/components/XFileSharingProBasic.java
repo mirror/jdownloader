@@ -1522,7 +1522,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     /** Returns pre-download-waittime (seconds) from inside HTML. */
     public String regexWaittime() {
         /* Ticket Time */
-        // id=\"countdown_str\"><span id=\"[a-z0-9]+\">(\\d+)</span>
         String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]*?<span id=\"[^<>\"]+\"(?:[^<>]+)?>(?:\\s+)?(\\d+)(?:\\s+)?</span>").getMatch(0);
         if (ttt == null) {
             ttt = new Regex(correctedBR, "id=\"countdown_str\" style=\"[^<>\"]+\">Wait <span id=\"[A-Za-z0-9]+\">(\\d+)</span>").getMatch(0);
