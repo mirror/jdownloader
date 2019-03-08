@@ -25,6 +25,7 @@ import jd.controlling.captcha.CaptchaSettings;
 import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogEvent;
 import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForHost;
@@ -45,7 +46,6 @@ import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.IfFileExistsAction;
 
 public class DownloadSession extends Property {
-
     public static enum STOPMARK {
         /* no stopmark is set */
         NONE,
@@ -216,36 +216,36 @@ public class DownloadSession extends Property {
     }
 
     private final CopyOnWriteArraySet<SingleDownloadController> controllers        = new CopyOnWriteArraySet<SingleDownloadController>() {
-                                                                                       /**
+        /**
          *
          */
-                                                                                       private static final long serialVersionUID = -3897088297641777499L;
+        private static final long serialVersionUID = -3897088297641777499L;
 
-                                                                                       public boolean add(SingleDownloadController e) {
-                                                                                           downloadsStarted.incrementAndGet();
-                                                                                           e.getDownloadLinkCandidate().getLink().setDownloadLinkController(e);
-                                                                                           return super.add(e);
-                                                                                       };
+        public boolean add(SingleDownloadController e) {
+            downloadsStarted.incrementAndGet();
+            e.getDownloadLinkCandidate().getLink().setDownloadLinkController(e);
+            return super.add(e);
+        };
 
-                                                                                       @Override
-                                                                                       public boolean remove(Object e) {
-                                                                                           final boolean ret = super.remove(e);
-                                                                                           if (ret) {
-                                                                                               try {
-                                                                                                   getDiskSpaceManager().freeAllReservationsBy(e);
-                                                                                               } catch (final Throwable ignore) {
-                                                                                               }
-                                                                                               try {
-                                                                                                   getFileAccessManager().unlockAllHeldby(e);
-                                                                                               } finally {
-                                                                                                   if (e instanceof SingleDownloadController) {
-                                                                                                       ((SingleDownloadController) e).getDownloadLinkCandidate().getLink().setDownloadLinkController(null);
-                                                                                                   }
-                                                                                               }
-                                                                                           }
-                                                                                           return ret;
-                                                                                       };
-                                                                                   };
+        @Override
+        public boolean remove(Object e) {
+            final boolean ret = super.remove(e);
+            if (ret) {
+                try {
+                    getDiskSpaceManager().freeAllReservationsBy(e);
+                } catch (final Throwable ignore) {
+                }
+                try {
+                    getFileAccessManager().unlockAllHeldby(e);
+                } finally {
+                    if (e instanceof SingleDownloadController) {
+                        ((SingleDownloadController) e).getDownloadLinkCandidate().getLink().setDownloadLinkController(null);
+                    }
+                }
+            }
+            return ret;
+        };
+    };
     private final long                                          createTime;
     private static volatile WeakReference<FileBytesCache>       downloadWriteCache = null;
 
@@ -427,18 +427,22 @@ public class DownloadSession extends Property {
                 try {
                     if (true) {
                         /* temp hotfix for candidate issues losing premium candidate */
-                        boolean hasPremiumorMultiAccount = false;
+                        boolean removeNoneWithCaptcha = false;
                         checkLoop: for (CachedAccount cachedAccount : newCache) {
+                            final Account account = cachedAccount.getAccount();
                             switch (cachedAccount.getType()) {
                             case ORIGINAL:
-                                if (cachedAccount.getAccount().isEnabled() && cachedAccount.getAccount().isValid()) {
-                                    hasPremiumorMultiAccount = true;
-                                    break checkLoop;
+                                if (account.isEnabled() && account.isValid()) {
+                                    final AccountInfo ai = account.getAccountInfo();
+                                    if (ai == null || ai.isSpecialTraffic() || ai.isUnlimitedTraffic() || ai.isTrafficRefill()) {
+                                        removeNoneWithCaptcha = true;
+                                        break checkLoop;
+                                    }
                                 }
                                 break;
                             }
                         }
-                        if (hasPremiumorMultiAccount) {
+                        if (removeNoneWithCaptcha) {
                             final Iterator<CachedAccount> it = newCache.iterator();
                             while (it.hasNext()) {
                                 final CachedAccount next = it.next();
@@ -449,7 +453,6 @@ public class DownloadSession extends Property {
                         }
                     }
                     Collections.sort(newCache, new Comparator<CachedAccount>() {
-
                         private int compare(boolean x, boolean y) {
                             return (x == y) ? 0 : (x ? 1 : -1);
                         }
@@ -513,7 +516,6 @@ public class DownloadSession extends Property {
                 return true;
             } else {
                 return Boolean.TRUE.equals(DownloadController.getInstance().getQueue().addWait(new QueueAction<Boolean, RuntimeException>(QueuePriority.HIGH) {
-
                     @Override
                     protected Boolean run() throws RuntimeException {
                         final FilePackage fp = link.getParentNode();
@@ -524,7 +526,6 @@ public class DownloadSession extends Property {
         } else if (stop instanceof FilePackage) {
             final FilePackage fp = (FilePackage) stop;
             final Boolean fpResult = DownloadController.getInstance().getQueue().addWait(new QueueAction<Boolean, RuntimeException>(QueuePriority.HIGH) {
-
                 @Override
                 protected Boolean run() throws RuntimeException {
                     return FilePackage.isDefaultFilePackage(fp) || fp == null || DownloadController.getInstance() != fp.getControlledBy();
@@ -655,5 +656,4 @@ public class DownloadSession extends Property {
     public synchronized void clearPluginCache() {
         getActivationPluginCache().clear();
     }
-
 }

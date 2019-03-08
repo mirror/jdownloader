@@ -40,9 +40,10 @@ public class WaitForAccountTrafficSkipReason implements ConditionalSkipReason, I
         if (ai != null) {
             if (ai.isSpecialTraffic() || ai.isUnlimitedTraffic() || !ai.isTrafficRefill()) {
                 return true;
+            } else {
+                final long trafficLeft = ai.getTrafficLeft();
+                return trafficLeft > 0 && trafficLeft >= trafficRequired;
             }
-            final long trafficLeft = ai.getTrafficLeft();
-            return trafficLeft > 0 && trafficLeft >= trafficRequired;
         } else {
             return true;
         }
