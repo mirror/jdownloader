@@ -426,7 +426,10 @@ public class DownloadSession extends Property {
                 newCache.add(new CachedAccount(host, null, defaulPlugin));
                 try {
                     if (true) {
-                        /* temp hotfix for candidate issues losing premium candidate */
+                        // FIXME: TODO:
+                        // here we remove the NONE(free) account to avoid captchas when there is a temp. issue with original(from hoster)
+                        // account
+                        // this can lead to *not downloading* situations when the original account has no/not enough traffic left
                         boolean removeNoneWithCaptcha = false;
                         checkLoop: for (CachedAccount cachedAccount : newCache) {
                             final Account account = cachedAccount.getAccount();
@@ -439,6 +442,8 @@ public class DownloadSession extends Property {
                                         break checkLoop;
                                     }
                                 }
+                                break;
+                            default:
                                 break;
                             }
                         }
