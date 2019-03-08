@@ -208,10 +208,12 @@ public class BackupCreateAction extends CustomizableAppAction {
                                 if (addFile.exists() == false) {
                                     if (throwExceptionOnFileGone(addFile)) {
                                         throw e;
+                                    } else {
+                                        return;
                                     }
-                                    return;
+                                } else {
+                                    throw e;
                                 }
-                                throw e;
                             } finally {
                                 if (zipEntryAdded) {
                                     this.zipStream.closeEntry();
