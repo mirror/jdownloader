@@ -284,7 +284,7 @@ public class PluralsightCom extends PluginForHost {
             br.getPage(request);
             while (waitMax > 0) {
                 if (request.getHttpConnection().getResponseCode() == 429 || (StringUtils.containsIgnoreCase(request.getHttpConnection().getContentType(), "json") && new Regex(request.getHtmlCode(), "\"status\"\\s*:\\s*429").matches())) {
-                    Thread.currentThread().sleep(15000);
+                    Thread.sleep(15000);
                     waitMax -= 15000;
                     br.getPage(request);
                 } else {
