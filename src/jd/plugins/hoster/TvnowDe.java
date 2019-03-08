@@ -635,18 +635,18 @@ public class TvnowDe extends PluginForHost {
                 String authtoken = account.getStringProperty("authtoken", null);
                 String userID = account.getStringProperty("userid", null);
                 /* Always try to re-use sessions! */
-                // if (cookies != null && authtoken != null && userID != null) {
-                // this.br.setCookies(this.getHost(), cookies);
-                // setLoginHeaders(this.br, authtoken);
-                // /* Only request the fields we need to verify whether stored headers&cookies are valid or not. */
-                // br.getPage(API_BASE + "/users/" + userID + "/transactions?fields=id,status");
-                // final String useridTmp = PluginJSonUtils.getJson(br, "id");
-                // if (useridTmp != null && useridTmp.matches("\\d+") && br.getHttpConnection().getResponseCode() != 401) {
-                // return;
-                // }
-                // /* Full login required - cleanup old cookies / headers */
-                // br = new Browser();
-                // }
+                if (cookies != null && authtoken != null && userID != null) {
+                    this.br.setCookies(this.getHost(), cookies);
+                    setLoginHeaders(this.br, authtoken);
+                    /* Only request the fields we need to verify whether stored headers&cookies are valid or not. */
+                    br.getPage(API_BASE + "/users/" + userID + "/transactions?fields=id,status");
+                    final String useridTmp = PluginJSonUtils.getJson(br, "id");
+                    if (useridTmp != null && useridTmp.matches("\\d+") && br.getHttpConnection().getResponseCode() != 401) {
+                        return;
+                    }
+                    /* Full login required - cleanup old cookies / headers */
+                    br = new Browser();
+                }
                 /* 2019-01-16: This is skippable */
                 // br.getPage("https://my." + this.getHost() + "/login");
                 prepBRAPI(br);
