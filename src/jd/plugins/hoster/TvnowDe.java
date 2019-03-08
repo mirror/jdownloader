@@ -79,6 +79,7 @@ public class TvnowDe extends PluginForHost {
 
     public static Browser prepBRAPI(final Browser br) {
         br.getHeaders().put("Accept", "application/json, text/plain, */*");
+        br.getHeaders().put("Content-Type", "application/json");
         /* 400-bad request for invalid API requests */
         br.setAllowedResponseCodes(new int[] { 400 });
         br.setFollowRedirects(false);
@@ -634,22 +635,25 @@ public class TvnowDe extends PluginForHost {
                 String authtoken = account.getStringProperty("authtoken", null);
                 String userID = account.getStringProperty("userid", null);
                 /* Always try to re-use sessions! */
-                if (cookies != null && authtoken != null && userID != null) {
-                    this.br.setCookies(this.getHost(), cookies);
-                    setLoginHeaders(this.br, authtoken);
-                    /* Only request the fields we need to verify whether stored headers&cookies are valid or not. */
-                    br.getPage(API_BASE + "/users/" + userID + "/transactions?fields=id,status");
-                    final String useridTmp = PluginJSonUtils.getJson(br, "id");
-                    if (useridTmp != null && useridTmp.matches("\\d+") && br.getHttpConnection().getResponseCode() != 401) {
-                        return;
-                    }
-                    /* Full login required - cleanup old cookies / headers */
-                    br = new Browser();
-                }
+                // if (cookies != null && authtoken != null && userID != null) {
+                // this.br.setCookies(this.getHost(), cookies);
+                // setLoginHeaders(this.br, authtoken);
+                // /* Only request the fields we need to verify whether stored headers&cookies are valid or not. */
+                // br.getPage(API_BASE + "/users/" + userID + "/transactions?fields=id,status");
+                // final String useridTmp = PluginJSonUtils.getJson(br, "id");
+                // if (useridTmp != null && useridTmp.matches("\\d+") && br.getHttpConnection().getResponseCode() != 401) {
+                // return;
+                // }
+                // /* Full login required - cleanup old cookies / headers */
+                // br = new Browser();
+                // }
                 /* 2019-01-16: This is skippable */
                 // br.getPage("https://my." + this.getHost() + "/login");
                 prepBRAPI(br);
-                final PostRequest loginReq = br.createJSonPostRequest(API_BASE + "/backend/login?fields=[%22*%22,%22user%22,[%22receiveInsiderEmails%22,%22receiveMarketingEmails%22,%22marketingsettingsDone%22,%22receiveGroupMarketingEmails%22,%22receiveRTLIIMarketingEmails%22]]", "{\"email\":\"" + account.getUser() + "\",\"password\":\"" + account.getPass() + "\"}");
+                br.getHeaders().put("Origin", "https://my.tvnow.de");
+                /* 2019-03-04: Workaround for backslashes inside passwords */
+                final String postdata = "{\"email\":\"" + account.getUser() + "\",\"password\":\"" + account.getPass().replace("\\", "\\\\") + "\"}";
+                final PostRequest loginReq = br.createJSonPostRequest(API_BASE + "/backend/login?fields=[%22*%22,%22user%22,[%22receiveInsiderEmails%22,%22receiveMarketingEmails%22,%22marketingsettingsDone%22,%22receiveGroupMarketingEmails%22,%22receiveRTLIIMarketingEmails%22]]", postdata);
                 br.openRequestConnection(loginReq);
                 br.loadConnection(null);
                 /*

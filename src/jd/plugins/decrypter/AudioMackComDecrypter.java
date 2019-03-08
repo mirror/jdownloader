@@ -54,6 +54,7 @@ public class AudioMackComDecrypter extends PluginForDecrypt {
             br.setFollowRedirects(true);
             br.getPage(parameter);
             String ogurl = br.getRegex("\"og:url\" content=\"([^\"]+)\"").getMatch(0);
+            final String title_url = new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0);
             final String musicType = new Regex(ogurl, ".+?/(?:embed/)?(album|playlist)/.+?/.+$").getMatch(0);
             if (musicType == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -61,7 +62,7 @@ public class AudioMackComDecrypter extends PluginForDecrypt {
             boolean embedMode = new Regex(ogurl, ".+?/embed/(?:album|playlist)/.+?/.+$").matches();
             br.getPage(AudioMa.getOAuthQueryString(br));
             if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("\"track_count\":0,")) {
-                decryptedLinks.add(createOfflinelink(parameter, new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0), null));
+                decryptedLinks.add(createOfflinelink(parameter, title_url, null));
                 return decryptedLinks;
             }
             final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);

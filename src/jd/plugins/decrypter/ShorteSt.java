@@ -21,6 +21,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
@@ -30,6 +31,7 @@ import jd.http.Browser;
 import jd.http.Request;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -66,7 +68,7 @@ public class ShorteSt extends antiDDoSForDecrypt {
             parameter = parameter.replace("!", "a");
         }
         getPage(parameter);
-        final String redirect = br.getRegex("<meta http-equiv=\"refresh\" content=\"\\d+\\;url=(.*?)\" \\/>").getMatch(0);
+        String redirect = br.getRegex("<meta http-equiv=\"refresh\" content=\"\\d+\\;url=(.*?)\" \\/>").getMatch(0);
         if (containsLoginRedirect(redirect) || br.containsHTML(">link removed<")) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
@@ -83,43 +85,68 @@ public class ShorteSt extends antiDDoSForDecrypt {
         }
         br.setFollowRedirects(true);
         handleSiteVerification(parameter);
+        String finallink = null;
         if (br.containsHTML("g-recaptcha\"|google\\.com/recaptcha/")) {
             Form captchaForm = br.getForm(0);
             if (captchaForm == null) {
-                return null;
+                /* 2019-03-08: Form might not necessarily be present in html anymore */
+                captchaForm = new Form();
+                captchaForm.setMethod(MethodType.POST);
+                if (br.getURL().contains("?r=")) {
+                    captchaForm.setAction(br.getURL());
+                } else {
+                    captchaForm.setAction(br.getURL() + "?r=");
+                }
             }
             final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
             captchaForm.put("g-recaptcha-response", recaptchaV2Response);
+            /* 2019-03-08: Finallink may also be given via direct-redirect */
+            br.setFollowRedirects(false);
             submitForm(captchaForm);
-            handleSiteVerification(parameter);
+            redirect = br.getRedirectLocation();
+            if (redirect != null) {
+                if (new Regex(redirect, this.getSupportedLinks()).matches()) {
+                    br.setFollowRedirects(true);
+                    getPage(redirect);
+                    /* Additional captcha might be required. */
+                    handleSiteVerification(parameter);
+                } else {
+                    finallink = redirect;
+                }
+            }
         }
-        final String timer = PluginJSonUtils.getJsonValue(br, "seconds");
-        final String cb = PluginJSonUtils.getJsonValue(br, "callbackUrl");
-        final String sid = PluginJSonUtils.getJsonValue(br, "sessionId");
-        if (cb == null || sid == null) {
-            final String destinationURL = br.getRegex("destinationUrl\\s*:\\s*'(https?://.*?)'").getMatch(0);
-            if (destinationURL != null) {
-                decryptedLinks.add(createDownloadlink(destinationURL.replaceAll(" ", "%20")));
+        if (finallink == null) {
+            final String timer = PluginJSonUtils.getJsonValue(br, "seconds");
+            final String cb = PluginJSonUtils.getJsonValue(br, "callbackUrl");
+            final String sid = PluginJSonUtils.getJsonValue(br, "sessionId");
+            if (cb == null || sid == null) {
+                finallink = br.getRegex("destinationUrl\\s*:\\s*'(https?://.*?)'").getMatch(0);
+                // destinationURL = PluginJSonUtils.getJson(br, "destinationUrl");
+                if (StringUtils.isEmpty(finallink)) {
+                    return null;
+                }
+                finallink = finallink.replaceAll(" ", "%20");
+                decryptedLinks.add(createDownloadlink(finallink));
                 return decryptedLinks;
             }
-            return null;
+            int t = 5;
+            if (timer != null) {
+                t = Integer.parseInt(timer);
+            }
+            sleep(t * 1001, param);
+            final Browser br2 = br.cloneBrowser();
+            br2.getHeaders().put("Accept", "application/json, text/javascript");
+            br2.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
+            br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            postPage(br2, cb, "adSessionId=" + sid + "&callback=reqwest_" + new Regex(String.valueOf(new Random().nextLong()), "(\\d{10})$").getMatch(0));
+            finallink = PluginJSonUtils.getJsonValue(br2, "destinationUrl");
+            if (finallink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            finallink = finallink.replaceAll(" ", "%20");
         }
-        int t = 5;
-        if (timer != null) {
-            t = Integer.parseInt(timer);
-        }
-        sleep(t * 1001, param);
-        final Browser br2 = br.cloneBrowser();
-        br2.getHeaders().put("Accept", "application/json, text/javascript");
-        br2.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
-        br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        postPage(br2, cb, "adSessionId=" + sid + "&callback=reqwest_" + new Regex(String.valueOf(new Random().nextLong()), "(\\d{10})$").getMatch(0));
-        final String finallink = PluginJSonUtils.getJsonValue(br2, "destinationUrl");
-        if (finallink == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        decryptedLinks.add(createDownloadlink(finallink.replaceAll(" ", "%20")));
+        decryptedLinks.add(createDownloadlink(finallink));
         return decryptedLinks;
     }
 

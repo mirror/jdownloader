@@ -13,11 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.regex.Pattern;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
@@ -37,12 +37,42 @@ import jd.plugins.DownloadLink;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "safelinkconverter.com" }, urls = { "https?://(?:\\w+\\.)?(?:safelinkconverter\\.com/(?:index\\.php|review\\.php|noadsense\\.php|decrypt(?:-2)?/)?|safelinkreview\\.com/[a-z]{2}/\\w+/|getcomics\\.ga/[a-z]{2}/\\w+/[^\\?]+)\\?(?:.*?&)?id=([a-zA-Z0-9_/\\+\\=\\-%]+)[^\\s%]*" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SfLnkCnvCm extends antiDDoSForDecrypt {
+    private static String[] domains = new String[] { "safelinkconverter.com", "safelinkreview.com", "getcomics.ga", "safelinkreviewx.com", "1safe.link" };
+
+    public static String[] getAnnotationNames() {
+        return new String[] { domains[0] };
+    }
 
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "safelinkconverter.com", "safelinkreview.com", "getcomics.ga" };
+        return domains;
+    }
+
+    /**
+     * returns the annotation pattern array: 'https?://(?:www\\.)?(?:domain1|domain2)/.+'
+     *
+     */
+    public static String[] getAnnotationUrls() {
+        // construct pattern
+        final String host = getHostsPattern();
+        return new String[] { host + "/.+" };
+    }
+
+    /** returns 'https?://(?:www\\.)?(?:domain1|domain2)' */
+    private static String getHostsPattern() {
+        final String hosts = "https?://(?:www\\.)?" + "(?:" + getHostsPatternPart() + ")";
+        return hosts;
+    }
+
+    /** Returns '(?:domain1|domain2)' */
+    public static String getHostsPatternPart() {
+        final StringBuilder pattern = new StringBuilder();
+        for (final String name : domains) {
+            pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
+        }
+        return pattern.toString();
     }
 
     public SfLnkCnvCm(final PluginWrapper wrapper) {
@@ -53,8 +83,20 @@ public class SfLnkCnvCm extends antiDDoSForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         br = new Browser();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        final String b64 = Encoding.htmlDecode(new Regex(parameter, this.getSupportedLinks()).getMatch(0));
+        String parameter = param.toString();
+        if (parameter.matches(".+1safe\\.link/.+")) {
+            /* Redirect-URLs which may redirect to URLs containing e.g. base64 encrypted string(s) */
+            br.setFollowRedirects(false);
+            getPage(parameter);
+            parameter = br.getRedirectLocation();
+            if (parameter == null) {
+                /* Probably offline */
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
+            }
+        }
+        br.setFollowRedirects(true);
+        final String b64 = Encoding.htmlDecode(new Regex(parameter, "\\?id=([a-zA-Z0-9_/\\+\\=\\-%]+)").getMatch(0));
         if (b64 == null) {
             return null;
         }
@@ -103,5 +145,4 @@ public class SfLnkCnvCm extends antiDDoSForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

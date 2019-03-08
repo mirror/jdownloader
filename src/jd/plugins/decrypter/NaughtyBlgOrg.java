@@ -124,7 +124,7 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
             }
         } else {
             // Get all links from title till comment field
-            contentReleaseLinks = br.getRegex("<h2 class=\"post\\-title\">(.*?)function validatecomment\\(form\\)\\{").getMatch(0);
+            contentReleaseLinks = br.getRegex("<h(?:1|2) class=\"post\\-title[^\"]*?\">(.*?)function validatecomment\\(form\\)\\{").getMatch(0);
             if (contentReleaseLinks == null) {
                 contentReleaseLinks = br.getRegex("<h\\d+ class=\"post\\-title\">(.*?)class=\"comments\">").getMatch(0);
             }
