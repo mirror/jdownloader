@@ -995,26 +995,38 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public boolean enoughTrafficFor(DownloadLink downloadLink, Account account) throws Exception {
-        AccountInfo ai = null;
+        final AccountInfo ai;
         if (account != null && (ai = account.getAccountInfo()) != null) {
             if (ai.isUnlimitedTraffic() || ai.isSpecialTraffic()) {
                 return true;
-            }
-            final long left = ai.getTrafficLeft();
-            if (left == 0) {
-                if (ai.isTrafficRefill()) {
-                    throw new ConditionalSkipReasonException(new WaitForAccountTrafficSkipReason(account, -1));
-                }
-                return false;
             } else {
-                final long size = downloadLink.getView().getBytesTotalEstimated();
-                if (size >= 0) {
-                    final long required = Math.max(0, size - downloadLink.getView().getBytesLoaded());
-                    if (left - required <= 0) {
-                        if (ai.isTrafficRefill()) {
-                            throw new ConditionalSkipReasonException(new WaitForAccountTrafficSkipReason(account, required - left));
+                final long trafficLeft = ai.getTrafficLeft();
+                final long minimum = 1024;
+                if (trafficLeft == 0) {
+                    if (ai.isTrafficRefill()) {
+                        final long downloadSize = downloadLink.getView().getBytesTotalEstimated();
+                        final long downloadLeft;
+                        if (downloadSize >= 0) {
+                            downloadLeft = Math.max(minimum, downloadSize - downloadLink.getView().getBytesLoaded());
+                        } else {
+                            downloadLeft = minimum;
                         }
+                        throw new ConditionalSkipReasonException(new WaitForAccountTrafficSkipReason(account, downloadLeft));
+                    } else {
                         return false;
+                    }
+                } else {
+                    final long downloadSize = downloadLink.getView().getBytesTotalEstimated();
+                    if (downloadSize >= 0) {
+                        final long downloadLeft = Math.max(0, downloadSize - downloadLink.getView().getBytesLoaded());
+                        if (trafficLeft - downloadLeft <= 0) {
+                            if (ai.isTrafficRefill()) {
+                                final long required = Math.max(minimum, downloadLeft - trafficLeft);
+                                throw new ConditionalSkipReasonException(new WaitForAccountTrafficSkipReason(account, required));
+                            } else {
+                                return false;
+                            }
+                        }
                     }
                 }
             }

@@ -283,11 +283,11 @@ public class UlozTo extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
-        doFree(downloadLink);
+        doFree(downloadLink, null);
     }
 
     @SuppressWarnings("deprecation")
-    public void doFree(final DownloadLink downloadLink) throws Exception {
+    public void doFree(final DownloadLink downloadLink, final Account account) throws Exception {
         this.getPluginConfig().setProperty(REPEAT_CAPTCHA, false);
         AvailableStatus status = requestFileInformation(downloadLink);
         if (downloadLink.getDownloadURL().matches(QUICKDOWNLOAD)) {
@@ -401,6 +401,11 @@ public class UlozTo extends PluginForHost {
                     } catch (final IOException e) {
                         logger.log(e);
                     }
+                    if (account != null) {
+                        if (br.containsHTML("Pro rychlé stažení") || br.containsHTML("You do not have  enough") || br.containsHTML("Nie masz wystarczającego")) {
+                            throw new AccountUnavailableException("Not enough premium traffic available", 1 * 60 * 60 * 1000l);
+                        }
+                    }
                     if (br.containsHTML("Stránka nenalezena")) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     } else if (br.containsHTML("dla_backend/uloz\\.to\\.overloaded\\.html")) {
@@ -430,6 +435,11 @@ public class UlozTo extends PluginForHost {
                     continue;
                 }
             }
+            if (account != null) {
+                if (br.containsHTML("Pro rychlé stažení") || br.containsHTML("You do not have  enough") || br.containsHTML("Nie masz wystarczającego")) {
+                    throw new AccountUnavailableException("Not enough premium traffic available", 1 * 60 * 60 * 1000l);
+                }
+            }
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else if (dllink.contains("/error404/?fid=file_not_found")) {
@@ -447,6 +457,11 @@ public class UlozTo extends PluginForHost {
                 br.followConnection();
             } catch (final IOException e) {
                 logger.log(e);
+            }
+            if (account != null) {
+                if (br.containsHTML("Pro rychlé stažení") || br.containsHTML("You do not have  enough") || br.containsHTML("Nie masz wystarczającego")) {
+                    throw new AccountUnavailableException("Not enough premium traffic available", 1 * 60 * 60 * 1000l);
+                }
             }
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -558,7 +573,7 @@ public class UlozTo extends PluginForHost {
         login(account, false);
         if (account.getType() == AccountType.FREE) {
             /* Free Account */
-            doFree(link);
+            doFree(link, account);
         } else {
             /* Premium Account */
             requestFileInformation(link);
@@ -703,15 +718,9 @@ public class UlozTo extends PluginForHost {
 
     public AccountInfo fetchAccountInfoAPI(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        try {
-            loginAPI(account, ai);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
+        loginAPI(account, ai);
         ai.setStatus("Premium Account");
         account.setType(AccountType.PREMIUM);
-        account.setValid(true);
         return ai;
     }
 
@@ -725,12 +734,17 @@ public class UlozTo extends PluginForHost {
                 trafficleft = br.getRegex("\"t-header-username\">\\s*<em[^<]*>.*?</em>\\s*<em[^<]*>\\s*\\(([0-9\\.,]\\s*[BMTGK]+)\\)\\s*<").getMatch(0);
             }
         }
+        ai.setTrafficRefill(false);
         if (trafficleft != null) {
             ai.setTrafficLeft(SizeFormatter.getSize(trafficleft));
         }
-        ai.setStatus("Premium Account");
-        account.setType(AccountType.PREMIUM);
-        account.setValid(true);
+        if (ai.getTrafficLeft() > 0) {
+            ai.setStatus("Premium Account");
+            account.setType(AccountType.PREMIUM);
+        } else {
+            ai.setStatus("Free Account");
+            account.setType(AccountType.FREE);
+        }
         return ai;
     }
 
