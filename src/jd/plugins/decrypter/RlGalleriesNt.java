@@ -29,7 +29,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "urlgalleries.net" }, urls = { "https?://(www\\.)?[a-z0-9_]+\\.urlgalleries\\.net/porn-gallery-\\d+/.*" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "urlgalleries.net" }, urls = { "https?://(?:[a-z0-9_]+\\.)?urlgalleries\\.net/porn-gallery-\\d+/.*" })
 public class RlGalleriesNt extends PluginForDecrypt {
     private static String agent = null;
 

@@ -26,20 +26,20 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class RestFileCom extends XFileSharingProBasic {
-    public RestFileCom(final PluginWrapper wrapper) {
+public class VidobaNet extends XFileSharingProBasic {
+    public VidobaNet(final PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(super.getPurchasePremiumURL());
+        // this.enablePremium(super.getPurchasePremiumURL());
     }
 
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
-     * limit-info: 2019-03-08: premium untested, set FREE account limits<br />
+     * limit-info:<br />
      * captchatype-info: 2019-03-08: null<br />
      * other:<br />
      */
-    private static String[] domains = new String[] { "restfilee.com", "restfile.ws", "restfile.ca", "restfile.co", "restfile.com", "restfile.bz", "restfile.cc", "restfile.net" };
+    private static String[] domains = new String[] { "vidoba.net" };
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
@@ -59,29 +59,29 @@ public class RestFileCom extends XFileSharingProBasic {
     public int getMaxChunks(final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return 0;
+            return -2;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return 0;
+            return -2;
         } else {
             /* Free(anonymous) and unknown account type */
-            return 0;
+            return -2;
         }
     }
 
     @Override
     public int getMaxSimultaneousFreeAnonymousDownloads() {
-        return -1;
+        return 1;
     }
 
     @Override
     public int getMaxSimultaneousFreeAccountDownloads() {
-        return -1;
+        return 1;
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return 1;
     }
 
     @Override
@@ -106,12 +106,12 @@ public class RestFileCom extends XFileSharingProBasic {
 
     @Override
     public boolean isVideohoster_2() {
-        return super.isVideohoster_2();
+        return true;
     }
 
     @Override
     public boolean isVideohoster_enforce_video_filename() {
-        return super.isVideohoster_enforce_video_filename();
+        return true;
     }
 
     @Override
@@ -121,12 +121,12 @@ public class RestFileCom extends XFileSharingProBasic {
 
     @Override
     public boolean supports_availablecheck_alt() {
-        return super.supports_availablecheck_alt();
+        return false;
     }
 
     @Override
     public boolean supports_availablecheck_filesize_alt_fast() {
-        return super.supports_availablecheck_filesize_alt_fast();
+        return false;
     }
 
     @Override
@@ -136,17 +136,17 @@ public class RestFileCom extends XFileSharingProBasic {
 
     @Override
     public boolean supports_availablecheck_filename_abuse() {
-        return super.supports_availablecheck_filename_abuse();
+        return false;
     }
 
     @Override
     public boolean supports_availablecheck_filesize_html() {
-        return super.supports_availablecheck_filesize_html();
+        return false;
     }
 
     @Override
     public boolean requires_WWW() {
-        return true;
+        return super.requires_WWW();
     }
 
     public static String[] getAnnotationNames() {
