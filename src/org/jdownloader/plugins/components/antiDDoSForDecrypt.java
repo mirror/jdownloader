@@ -704,13 +704,24 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                             // 503 response code with javascript math section && with 5 second pause
                             final String[] line1 = ibr.getRegex("var (?:t,r,a,f,|s,t,o,[a-z,]+) (\\w+)=\\{\"(\\w+)\":([^\\}]+)").getRow(0);
                             String line2 = ibr.getRegex("(\\;" + line1[0] + "." + line1[1] + ".*?t\\.length\\;)").getMatch(0);
-                            StringBuilder sb = new StringBuilder();
+                            if (line2 == null) {
+                                // new 14.03.2019
+                                line2 = ibr.getRegex("(\\;" + line1[0] + "." + line1[1] + ".*?t\\.length.*?;)").getMatch(0);
+                            }
+                            if (line2 == null) {
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
+                            final StringBuilder sb = new StringBuilder();
                             sb.append("var a={};\r\nvar t=\"" + Browser.getHost(ibr.getURL(), true) + "\";\r\n");
                             sb.append("var " + line1[0] + "={\"" + line1[1] + "\":" + line1[2] + "}\r\n");
                             sb.append(line2);
-                            ScriptEngineManager mgr = JavaScriptEngineFactory.getScriptEngineManager(this);
-                            ScriptEngine engine = mgr.getEngineByName("JavaScript");
-                            String answer = (engine.eval(sb.toString())).toString();
+                            final ScriptEngineManager mgr = JavaScriptEngineFactory.getScriptEngineManager(this);
+                            final ScriptEngine engine = mgr.getEngineByName("JavaScript");
+                            final Object result = engine.eval(sb.toString());
+                            if (result == null) {
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
+                            final String answer = result.toString();
                             cloudflare.getInputFieldByName("jschl_answer").setValue(answer + "");
                             Thread.sleep(5500);
                             // if it works, there should be a redirect.

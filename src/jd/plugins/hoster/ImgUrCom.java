@@ -393,7 +393,22 @@ public class ImgUrCom extends PluginForHost {
     }
 
     public static String getFiletype(final DownloadLink dl) {
-        return dl.getStringProperty("filetype", null);
+        final String ret = dl.getStringProperty("filetype", null);
+        if (ret != null) {
+            final String image = new Regex(ret, "images/(.+)").getMatch(0);
+            if (image != null) {
+                if (StringUtils.equals("jpeg", image)) {
+                    return "jpg";
+                }
+                return image;
+            }
+            final String video = new Regex(ret, "video/(.+)").getMatch(0);
+            if (video != null) {
+                return video;
+            }
+            return ret;
+        }
+        return ".unknown";
     }
 
     public static String getFiletypeForUrl(final DownloadLink dl) {

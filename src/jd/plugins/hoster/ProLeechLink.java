@@ -83,6 +83,7 @@ public class ProLeechLink extends antiDDoSForHost {
                 }
                 if (!checkCookies(cookies)) {
                     br.clearCookies(getHost());
+                    getPage("https://proleech.link");
                     getPage("https://proleech.link/login/index");
                     final Form login = br.getFormbyAction("/login");
                     if (login == null) {

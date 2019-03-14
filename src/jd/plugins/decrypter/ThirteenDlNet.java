@@ -19,7 +19,7 @@ public class ThirteenDlNet extends antiDDoSForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         getPage(parameter.getCryptedUrl());
-        int loop = 2;
+        int loop = 4;
         while (loop >= 0) {
             final String redirect = br.getRedirectLocation();
             if (redirect != null) {

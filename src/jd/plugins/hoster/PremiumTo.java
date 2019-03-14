@@ -325,31 +325,26 @@ public class PremiumTo extends UseNet {
                 connections = 1;
             }
             String finalURL = API_BASE + "getfile.php?link=" + url;
-            final DownloadLinkDownloadable downloadable;
-            if (link.getName().matches(".+(rar|r\\d+)$")) {
-                final Browser brc = br.cloneBrowser();
-                brc.setFollowRedirects(true);
-                final URLConnectionAdapter con = brc.openGetConnection(finalURL);
-                try {
-                    if (con.isOK() && con.isContentDisposition() && con.getLongContentLength() > 0) {
-                        finalURL = con.getRequest().getUrl();
-                        if (link.getVerifiedFileSize() != -1 && link.getVerifiedFileSize() != con.getLongContentLength()) {
-                            logger.info("Workaround for size missmatch(rar padding?!)!");
-                            link.setVerifiedFileSize(con.getLongContentLength());
-                        }
+            final Browser brc = br.cloneBrowser();
+            brc.setFollowRedirects(true);
+            final URLConnectionAdapter con = brc.openGetConnection(finalURL);
+            try {
+                if (con.isOK() && con.isContentDisposition() && con.getLongContentLength() > 0) {
+                    finalURL = con.getRequest().getUrl();
+                    if (link.getVerifiedFileSize() != -1 && link.getVerifiedFileSize() != con.getLongContentLength()) {
+                        logger.info("Workaround for size missmatch(rar padding?!)!");
+                        link.setVerifiedFileSize(con.getLongContentLength());
                     }
-                } finally {
-                    con.disconnect();
                 }
-                downloadable = new DownloadLinkDownloadable(link) {
-                    @Override
-                    public boolean isHashCheckEnabled() {
-                        return false;
-                    }
-                };
-            } else {
-                downloadable = new DownloadLinkDownloadable(link);
+            } finally {
+                con.disconnect();
             }
+            final DownloadLinkDownloadable downloadable = new DownloadLinkDownloadable(link) {
+                @Override
+                public boolean isHashCheckEnabled() {
+                    return false;
+                }
+            };
             dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadable, br.createGetRequest(finalURL), true, connections);
             if (dl.getConnection().getResponseCode() == 404) {
                 /* file offline */
