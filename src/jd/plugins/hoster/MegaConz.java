@@ -263,14 +263,19 @@ public class MegaConz extends PluginForHost {
                         if (StringUtils.isEmpty(saltString)) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
-                        final byte[] pbkdf2Data;
+                        byte[] pbkdf2Data = null;
                         final byte[] saltBytes = aLong_to_aByte(Base64_to_aLong(saltString));
                         if (JVMVersion.isMinimum(JVMVersion.JAVA18)) {
                             // java >=1.8
-                            final SecretKeyFactory skf = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA512");
-                            final PBEKeySpec spec = new PBEKeySpec(password.toCharArray(), saltBytes, 100000, 256);
-                            pbkdf2Data = skf.generateSecret(spec).getEncoded();
-                        } else {
+                            try {
+                                final SecretKeyFactory skf = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA512");
+                                final PBEKeySpec spec = new PBEKeySpec(password.toCharArray(), saltBytes, 100000, 256);
+                                pbkdf2Data = skf.generateSecret(spec).getEncoded();
+                            } catch (NoSuchAlgorithmException e) {
+                                getLogger().log(e);
+                            }
+                        }
+                        if (pbkdf2Data == null) {
                             // bouncy castle
                             final PBEParametersGenerator generator = new PKCS5S2ParametersGenerator(new SHA512Digest());
                             generator.init(PBEParametersGenerator.PKCS5PasswordToUTF8Bytes(password.toCharArray()), saltBytes, 100000);
