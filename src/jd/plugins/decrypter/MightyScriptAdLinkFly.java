@@ -21,10 +21,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -38,6 +34,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  *
@@ -55,7 +55,7 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
             /** shrinkearn.com domains */
             "shrinkearn.com", "wishes2.com",
             /** safelinku.com domains */
-            "safelinku.com", "idsly.bid", "idsly.net",
+            "safelinku.com", "idsly.bid", "idsly.net", "updatetribun.org",
             /** uii.io domains */
             "uii.io", "szs.pw",
             /** short.pe domains */
@@ -63,7 +63,7 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
             /** urlcero.us domains */
             "urlcero.us", "urlcero.com",
             /** clicksfly.com domains */
-            "clicksfly.com", "gifsis.com", "blogginggyanbox.com", "buyitonline.store", "clk.ink", "counsellingresult2016.in", "yourtechguider.com", "1921681254.tech", "iitjeemainguide.in", "yesmoviesapp.info",
+            "clicksfly.com", "gifsis.com", "blogginggyanbox.com", "buyitonline.store", "clk.ink", "counsellingresult2016.in", "yourtechguider.com", "1921681254.tech", "iitjeemainguide.in", "yesmoviesapp.info", "newskart.xyz",
             /** eglink.info domains */
             "eglink.info", "egyptiangy.net", "egypt-mix.com",
             /** cut-urls.com domains */
