@@ -25,11 +25,13 @@ import java.util.zip.ZipEntry;
 
 import javax.swing.filechooser.FileFilter;
 
+import org.appwork.loggingv3.LogV3;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.utils.Application;
 import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -78,11 +80,10 @@ public class BackupCreateAction extends CustomizableAppAction {
                     Dialog.getInstance().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.lit_restart(), _GUI.T.BackupCreateAction_run_restart_ask(), null, _GUI.T.lit_continue(), null);
                     Dialog.getInstance().showDialog(d);
                     File file = d.getSelectedFile();
-                    if (!file.getName().endsWith(".jd2backup")) {
-                        file = new File(file.getAbsolutePath() + ".jd2backup");
-                    }
                     if (file == null) {
                         return;
+                    } else if (!file.getName().endsWith(".jd2backup")) {
+                        file = new File(file.getAbsolutePath() + ".jd2backup");
                     }
                     if (file.exists()) {
                         Dialog.getInstance().showConfirmDialog(0, _GUI.T.lit_overwrite(), _GUI.T.file_exists_want_to_overwrite_question(file.getName()));
@@ -90,8 +91,9 @@ public class BackupCreateAction extends CustomizableAppAction {
                     }
                     final File backupFile = file;
                     ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
-                        private final AtomicBoolean running  = new AtomicBoolean(true);
-                        private final AtomicLong    progress = new AtomicLong(0);
+                        private final AtomicBoolean runningFlag  = new AtomicBoolean(true);
+                        private final AtomicLong    progress     = new AtomicLong(0);
+                        private final AtomicBoolean activityFlag = new AtomicBoolean(false);
                         {
                             setHookPriority(Integer.MIN_VALUE);
                         }
@@ -109,18 +111,18 @@ public class BackupCreateAction extends CustomizableAppAction {
                         @Override
                         protected void waitFor() {
                             long last = progress.get();
-                            int noProgress = 30;
-                            while (running.get() && noProgress > 0) {
-                                if (progress.get() == last) {
-                                    noProgress--;
+                            int noProgressCheck = 30;
+                            while (runningFlag.get() && noProgressCheck > 0) {
+                                if (progress.get() == last && !activityFlag.get()) {
+                                    noProgressCheck--;
                                 } else {
                                     last = progress.get();
-                                    noProgress = 30;
+                                    noProgressCheck = 30;
                                 }
-                                synchronized (running) {
-                                    if (running.get()) {
+                                synchronized (runningFlag) {
+                                    if (runningFlag.get()) {
                                         try {
-                                            running.wait(1000);
+                                            runningFlag.wait(1000);
                                         } catch (InterruptedException e) {
                                         }
                                     }
@@ -131,15 +133,15 @@ public class BackupCreateAction extends CustomizableAppAction {
                         @Override
                         public void onShutdown(ShutdownRequest shutdownRequest) {
                             try {
-                                running.set(true);
-                                create(backupFile, progress);
+                                runningFlag.set(true);
+                                create(backupFile, progress, activityFlag);
                             } catch (Throwable e) {
-                                org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
+                                LogV3.defaultLogger().log(e);
                                 Dialog.getInstance().showExceptionDialog(_GUI.T.lit_error_occured(), e.getMessage(), e);
                             } finally {
-                                synchronized (running) {
-                                    running.set(false);
-                                    running.notifyAll();
+                                synchronized (runningFlag) {
+                                    runningFlag.set(false);
+                                    runningFlag.notifyAll();
                                 }
                             }
                         }
@@ -154,119 +156,110 @@ public class BackupCreateAction extends CustomizableAppAction {
         }.start();
     }
 
-    public static void create(File auto, final AtomicLong createAlive) throws IOException {
+    public static void create(File auto, final AtomicLong createAlive, final AtomicBoolean activityFlag) throws IOException {
         ZipIOWriter zipper = null;
         boolean bad = true;
-        final long cacheAddFileThreshold = 1024 * 1024 * 5;
         try {
             if (!auto.getParentFile().exists()) {
                 auto.getParentFile().mkdirs();
             }
-            if (createAlive != null) {
-                zipper = new ZipIOWriter(auto) {
-                    @Override
-                    protected void notify(ZipEntry entry, long bytesWrite, long bytesProcessed) {
+            zipper = new ZipIOWriter(auto) {
+                @Override
+                protected void notify(ZipEntry entry, long bytesWrite, long bytesProcessed) {
+                    if (createAlive != null) {
                         if (entry.isDirectory()) {
                             createAlive.incrementAndGet();
                         } else {
                             createAlive.addAndGet(bytesWrite);
                         }
                     }
+                }
 
-                    @Override
-                    protected boolean throwExceptionOnFileGone(File file) {
+                @Override
+                protected boolean throwExceptionOnFileGone(File file) {
+                    return false;
+                }
+
+                private boolean isFiltered(final File file) {
+                    final String name = file.getName();
+                    if (StringUtils.startsWithCaseInsensitive(name, "RememberRelativeLocator-")) {
+                        return true;
+                    } else if (StringUtils.startsWithCaseInsensitive(name, "RememberLastDimensor-")) {
+                        return true;
+                    } else if (StringUtils.startsWithCaseInsensitive(name, "RememberAbsoluteLocator-")) {
+                        return true;
+                    } else if (StringUtils.startsWithCaseInsensitive(name, "CaptchaDialogDimensions_")) {
+                        return true;
+                    } else {
                         return false;
                     }
+                }
 
-                    @Override
-                    public synchronized void addFile(final File addFile, final boolean compress, final String fullPath) throws ZipIOException, IOException, FileNotFoundException {
-                        if (addFile == null) {
-                            throw new ZipIOException("addFile invalid:null");
-                        }
-                        if (compress || addFile.length() > cacheAddFileThreshold) {
-                            super.addFile(addFile, compress, fullPath);
-                        } else {
-                            boolean zipEntryAdded = false;
-                            try {
-                                final byte[] bytes = IO.readBytes(addFile);
-                                final ZipEntry zipAdd = new ZipEntry(fullPath);
-                                final long size = bytes.length;
-                                zipAdd.setSize(size);
-                                if (compress) {
-                                    zipAdd.setMethod(ZipEntry.DEFLATED);
-                                } else {
-                                    zipAdd.setMethod(ZipEntry.STORED);
-                                    zipAdd.setCompressedSize(size);
-                                    /* STORED must have a CRC32! */
-                                    zipAdd.setCrc(Hash.getCRC32(bytes));
-                                }
-                                this.zipStream.putNextEntry(zipAdd);
-                                this.zipStream.write(bytes);
-                                notify(zipAdd, size, size);
-                                zipEntryAdded = true;
-                            } catch (FileNotFoundException e) {
-                                if (addFile.exists() == false) {
-                                    if (throwExceptionOnFileGone(addFile)) {
-                                        throw e;
-                                    } else {
-                                        return;
-                                    }
-                                } else {
-                                    throw e;
-                                }
-                            } finally {
-                                if (zipEntryAdded) {
-                                    this.zipStream.closeEntry();
-                                }
-                            }
-                        }
+                @Override
+                public synchronized void addFile(final File addFile, final boolean compress, final String fullPath) throws ZipIOException, IOException, FileNotFoundException {
+                    if (addFile == null) {
+                        throw new ZipIOException("addFile invalid:null");
                     }
-                };
-            } else {
-                zipper = new ZipIOWriter(auto) {
-                    @Override
-                    public synchronized void addFile(final File addFile, final boolean compress, final String fullPath) throws ZipIOException, IOException, FileNotFoundException {
-                        if (addFile == null) {
-                            throw new ZipIOException("addFile invalid:null");
+                    if (isFiltered(addFile)) {
+                        createAlive.incrementAndGet();
+                        return;
+                    }
+                    boolean zipEntryAdded = false;
+                    try {
+                        if (activityFlag != null) {
+                            activityFlag.set(true);
                         }
-                        if (compress || addFile.length() > cacheAddFileThreshold) {
-                            super.addFile(addFile, compress, fullPath);
-                        } else {
-                            boolean zipEntryAdded = false;
-                            try {
-                                final byte[] bytes = IO.readBytes(addFile);
-                                final ZipEntry zipAdd = new ZipEntry(fullPath);
-                                final long size = bytes.length;
-                                zipAdd.setSize(size);
-                                if (compress) {
-                                    zipAdd.setMethod(ZipEntry.DEFLATED);
-                                } else {
-                                    zipAdd.setMethod(ZipEntry.STORED);
-                                    zipAdd.setCompressedSize(size);
-                                    /* STORED must have a CRC32! */
-                                    zipAdd.setCrc(Hash.getCRC32(bytes));
-                                }
-                                this.zipStream.putNextEntry(zipAdd);
-                                this.zipStream.write(bytes);
-                                notify(zipAdd, size, size);
-                                zipEntryAdded = true;
-                            } catch (FileNotFoundException e) {
-                                if (addFile.exists() == false) {
-                                    if (throwExceptionOnFileGone(addFile)) {
-                                        throw e;
-                                    }
-                                    return;
-                                }
+                        final byte[] bytes;
+                        try {
+                            bytes = IO.readBytes(addFile);
+                        } catch (final FileNotFoundException e) {
+                            throw e;
+                        } catch (final IOException e) {
+                            if (!addFile.exists()) {
+                                throw new FileNotFoundException(addFile.getAbsolutePath());
+                            } else {
                                 throw e;
-                            } finally {
-                                if (zipEntryAdded) {
-                                    this.zipStream.closeEntry();
-                                }
                             }
                         }
+                        final ZipEntry zipAdd = new ZipEntry(fullPath);
+                        final long size = bytes.length;
+                        zipAdd.setSize(size);
+                        if (compress) {
+                            zipAdd.setMethod(ZipEntry.DEFLATED);
+                        } else {
+                            zipAdd.setMethod(ZipEntry.STORED);
+                            zipAdd.setCompressedSize(size);
+                            /* STORED must have a CRC32! */
+                            zipAdd.setCrc(Hash.getCRC32(bytes));
+                        }
+                        this.zipStream.putNextEntry(zipAdd);
+                        zipEntryAdded = true;
+                        this.zipStream.write(bytes);
+                        notify(zipAdd, size, size);
+                    } catch (FileNotFoundException e) {
+                        LogV3.defaultLogger().log(e);
+                        if (addFile.exists() == false) {
+                            if (throwExceptionOnFileGone(addFile)) {
+                                throw e;
+                            } else {
+                                return;
+                            }
+                        } else {
+                            throw e;
+                        }
+                    } catch (IOException e) {
+                        LogV3.defaultLogger().log(e);
+                        throw e;
+                    } finally {
+                        if (activityFlag != null) {
+                            activityFlag.set(false);
+                        }
+                        if (zipEntryAdded) {
+                            this.zipStream.closeEntry();
+                        }
                     }
-                };
-            }
+                }
+            };
             zipper.addDirectory(Application.getResource("cfg"), false, null);
             bad = false;
         } finally {

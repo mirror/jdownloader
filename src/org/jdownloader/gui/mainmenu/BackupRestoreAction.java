@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package org.jdownloader.gui.mainmenu;
 
 import java.awt.event.ActionEvent;
@@ -29,6 +28,7 @@ import java.util.zip.ZipEntry;
 
 import javax.swing.filechooser.FileFilter;
 
+import org.appwork.loggingv3.LogV3;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
@@ -52,13 +52,11 @@ import org.jdownloader.updatev2.ForcedRestartRequest;
 import org.jdownloader.updatev2.RestartController;
 
 public class BackupRestoreAction extends CustomizableAppAction implements ActionContext {
-
     public BackupRestoreAction() {
         super();
         setIconKey(IconKey.ICON_LOAD);
         setName(_GUI.T.BackupRestoreAction_BackupRestoreAction());
         setTooltipText(_GUI.T.BackupRestoreAction_BackupRestoreAction_tt());
-
     }
 
     private int maxAutoBackupFiles = -1;
@@ -96,7 +94,6 @@ public class BackupRestoreAction extends CustomizableAppAction implements Action
             return;
         }
         File[] files = Application.getResource("autobackup").getParentFile().listFiles(new FilenameFilter() {
-
             @Override
             public boolean accept(File dir, String name) {
                 return name.matches("^cfg_backup_\\d+$") && new File(dir, name).isDirectory();
@@ -108,18 +105,14 @@ public class BackupRestoreAction extends CustomizableAppAction implements Action
                 list.add(f);
             }
             Collections.sort(list, new Comparator<File>() {
-
                 @Override
                 public int compare(File o1, File o2) {
                     long i1 = Long.parseLong(new Regex(o1.getName(), "cfg_backup_(\\d+)").getMatch(0));
                     long i2 = Long.parseLong(new Regex(o2.getName(), "cfg_backup_(\\d+)").getMatch(0));
-
                     return Long.compare(i2, i1);
                 }
-
             });
             for (int i = maxCFGBackupFolders; i < list.size(); i++) {
-
                 try {
                     Files.deleteRecursiv(list.get(i));
                 } catch (IOException e) {
@@ -134,7 +127,6 @@ public class BackupRestoreAction extends CustomizableAppAction implements Action
             return;
         }
         File[] files = Application.getResource("autobackup").listFiles(new FilenameFilter() {
-
             @Override
             public boolean accept(File dir, String name) {
                 return name.matches("^backup_\\d+\\.jd2backup$");
@@ -146,22 +138,17 @@ public class BackupRestoreAction extends CustomizableAppAction implements Action
                 list.add(f);
             }
             Collections.sort(list, new Comparator<File>() {
-
                 @Override
                 public int compare(File o1, File o2) {
                     int i1 = Integer.parseInt(new Regex(o1.getName(), "backup_(\\d+)\\.jd2backup").getMatch(0));
                     int i2 = Integer.parseInt(new Regex(o2.getName(), "backup_(\\d+)\\.jd2backup").getMatch(0));
-
                     return Integer.compare(i2, i1);
                 }
-
             });
             for (int i = maxAutoBackupFiles; i < list.size(); i++) {
                 list.get(i).delete();
             }
-
         }
-
     }
 
     @Override
@@ -172,7 +159,6 @@ public class BackupRestoreAction extends CustomizableAppAction implements Action
                 cleanupCFGBackFolders(3);
                 ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI.T.BackupCreateAction_actionPerformed_filechooser_title(), _GUI.T.lit_open(), null);
                 d.setFileFilter(new FileFilter() {
-
                     @Override
                     public String getDescription() {
                         return "*.jd2backup";
@@ -183,11 +169,9 @@ public class BackupRestoreAction extends CustomizableAppAction implements Action
                         return f.isDirectory() || f.getName().endsWith(".jd2backup");
                     }
                 });
-
                 d.setFileSelectionMode(FileChooserSelectionMode.FILES_ONLY);
                 d.setMultiSelection(false);
                 d.setType(FileChooserType.OPEN_DIALOG);
-
                 try {
                     int i = 1;
                     File auto = Application.getResource("autobackup/backup_" + i + ".jd2backup");
@@ -198,17 +182,13 @@ public class BackupRestoreAction extends CustomizableAppAction implements Action
                     final File fauto = auto;
                     Dialog.getInstance().showConfirmDialog(0, _GUI.T.lit_restart(), _GUI.T.BackupRestoreAction_run_restart_ask(auto.getAbsolutePath()), null, _GUI.T.lit_continue(), null);
                     Dialog.getInstance().showDialog(d);
-
                     final File file = d.getSelectedFile();
-
                     if (file == null || !file.exists()) {
                         return;
                     }
-
                     ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
                         {
                             setHookPriority(Integer.MIN_VALUE);
-
                         }
 
                         @Override
@@ -216,24 +196,25 @@ public class BackupRestoreAction extends CustomizableAppAction implements Action
                             return "ShutdownHook: Restore Backup";
                         }
 
-                        private final AtomicBoolean running  = new AtomicBoolean(true);
-                        private final AtomicLong    progress = new AtomicLong(0);
+                        private final AtomicBoolean runningFlag  = new AtomicBoolean(true);
+                        private final AtomicLong    progress     = new AtomicLong(0);
+                        private final AtomicBoolean activityFlag = new AtomicBoolean(false);
 
                         @Override
                         protected void waitFor() {
                             long last = progress.get();
-                            int noProgress = 30;
-                            while (running.get() && noProgress > 0) {
-                                if (progress.get() == last) {
-                                    noProgress--;
+                            int noProgressCheck = 30;
+                            while (runningFlag.get() && noProgressCheck > 0) {
+                                if (progress.get() == last && !activityFlag.get()) {
+                                    noProgressCheck--;
                                 } else {
                                     last = progress.get();
-                                    noProgress = 30;
+                                    noProgressCheck = 30;
                                 }
-                                synchronized (running) {
-                                    if (running.get()) {
+                                synchronized (runningFlag) {
+                                    if (runningFlag.get()) {
                                         try {
-                                            running.wait(1000);
+                                            runningFlag.wait(1000);
                                         } catch (InterruptedException e) {
                                         }
                                     }
@@ -245,9 +226,9 @@ public class BackupRestoreAction extends CustomizableAppAction implements Action
                         public void onShutdown(ShutdownRequest shutdownRequest) {
                             ZipIOReader zip = null;
                             try {
-                                running.set(true);
+                                runningFlag.set(true);
                                 if (getMaxAutoBackupFiles() > 0) {
-                                    BackupCreateAction.create(fauto, progress);
+                                    BackupCreateAction.create(fauto, progress, activityFlag);
                                 }
                                 if (getMaxAutoBackupFiles() >= 0) {
                                     cleanupAutoBackups(getMaxAutoBackupFiles());
@@ -266,13 +247,11 @@ public class BackupRestoreAction extends CustomizableAppAction implements Action
                                 while (tmp.exists()) {
                                     tmp = Application.getTempResource("restorebackup_" + System.currentTimeMillis());
                                 }
-
                                 File backup = Application.getResource("cfg_backup_" + System.currentTimeMillis());
                                 while (backup.exists()) {
                                     backup = Application.getResource("cfg_backup_" + System.currentTimeMillis());
                                 }
                                 zip.extractTo(tmp);
-
                                 Application.getResource("cfg").renameTo(backup);
                                 if (getMaxCFGBackupFolders() >= 0) {
                                     cleanupCFGBackFolders(getMaxCFGBackupFolders());
@@ -281,22 +260,22 @@ public class BackupRestoreAction extends CustomizableAppAction implements Action
                                     throw new Exception("Could not delete " + Application.getResource("cfg"));
                                 }
                                 new File(tmp, "cfg").renameTo(Application.getResource("cfg"));
-
                             } catch (Exception e) {
-                                e.printStackTrace();
+                                LogV3.defaultLogger().log(e);
                                 Dialog.getInstance().showExceptionDialog(_GUI.T.lit_error_occured(), e.getMessage() + "\r\nPlease try to close JDownloader, and extract the file\r\n" + file.getAbsolutePath() + "\r\nto " + Application.getResource("cfg").getParent() + "\r\nusing an application like WinZip, 7Zip or Winrar.\r\nIf this does not work, feel free to contact our support.", e);
                             } finally {
-                                try {
-                                    zip.close();
-                                } catch (Throwable e) {
+                                if (zip != null) {
+                                    try {
+                                        zip.close();
+                                    } catch (Throwable e) {
+                                    }
                                 }
-                                synchronized (running) {
-                                    running.set(false);
-                                    running.notifyAll();
+                                synchronized (runningFlag) {
+                                    runningFlag.set(false);
+                                    runningFlag.notifyAll();
                                 }
                             }
                         }
-
                     });
                     RestartController.getInstance().directRestart(new ForcedRestartRequest());
                 } catch (DialogClosedException e1) {
@@ -307,5 +286,4 @@ public class BackupRestoreAction extends CustomizableAppAction implements Action
             }
         }.start();
     }
-
 }
