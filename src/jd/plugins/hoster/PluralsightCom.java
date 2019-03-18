@@ -78,25 +78,28 @@ public class PluralsightCom extends PluginForHost {
             getRequest(br, this, br.createGetRequest("https://app.pluralsight.com/web-analytics/api/v1/users/current"));
         }
         final Map<String, Object> map = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        final List<Map<String, Object>> userSubscriptions = (List<Map<String, Object>>) map.get("userSubscriptions");
+        List<Map<String, Object>> subscriptions = (List<Map<String, Object>>) map.get("userSubscriptions");
+        if (subscriptions == null) {
+            subscriptions = (List<Map<String, Object>>) map.get("subscriptions");
+        }
         final AccountInfo ai = new AccountInfo();
-        if (userSubscriptions == null) {
+        if (subscriptions == null) {
             account.setType(AccountType.UNKNOWN);
             ai.setStatus("Unknown");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Something went wrong with account verification type.");
-        } else if (userSubscriptions.size() == 0) {
+        } else if (subscriptions.size() == 0) {
             account.setType(AccountType.FREE);
             ai.setStatus("Free Account");
         } else {
             boolean isPremium = false;
-            for (Map<String, Object> userSubscription : userSubscriptions) {
-                final String expiresAt = userSubscription.get("expiresAt") != null ? (String) userSubscription.get("expiresAt") : null;
+            for (Map<String, Object> subscription : subscriptions) {
+                final String expiresAt = subscription.get("expiresAt") != null ? (String) subscription.get("expiresAt") : null;
                 if (expiresAt != null) {
                     final long validUntil = TimeFormatter.getMilliSeconds(expiresAt.replace("Z", "+0000"), "yyyy-MM-dd'T'HH:mm:ss.SSSZ", null);
                     if (validUntil > System.currentTimeMillis()) {
                         isPremium = true;
                         account.setType(AccountType.PREMIUM);
-                        ai.setStatus("Premium Account");
+                        ai.setStatus("Premium Account:" + subscription.get("name"));
                         ai.setValidUntil(validUntil);
                         break;
                     }

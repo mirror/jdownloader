@@ -27,12 +27,12 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wlnk.ec" }, urls = { "https?://(?:www\\.)?wlnk\\.ec/[A-Za-z0-9]+" })
-public class WlnkEc extends PluginForDecrypt {
+public class WlnkEc extends antiDDoSForDecrypt {
     public WlnkEc(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -41,7 +41,7 @@ public class WlnkEc extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("text\\-center error")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
@@ -51,10 +51,11 @@ public class WlnkEc extends PluginForDecrypt {
         final String captchaCode;
         if (captchaImage != null) {
             captchaCode = getCaptchaCode(captchaImage, param);
+            postPage(this.br.getURL(), "submit=unlock&cr-nvar=" + Encoding.urlEncode(captchaCode.toUpperCase(Locale.ENGLISH)));
         } else {
             captchaCode = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+            postPage(this.br.getURL(), "submit=unlock&captcha-response-newvar=" + Encoding.urlEncode(captchaCode.toUpperCase(Locale.ENGLISH)));
         }
-        this.br.postPage(this.br.getURL(), "submit=unlock&captcha-response-newvar=" + Encoding.urlEncode(captchaCode.toUpperCase(Locale.ENGLISH)));
         if (br.containsHTML("Captcha invalide")) {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
