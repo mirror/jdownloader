@@ -15,24 +15,24 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import org.jdownloader.plugins.components.FruithostedCDN;
-
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
+import org.jdownloader.plugins.components.FruithostedCDN;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "streamcherry.com" }, urls = { "https?://(?:www\\.)?streamcherry\\.com/(?:f|embed)/([a-z0-9]+)(/[^/]+)?" })
 public class StreamcherryCom extends FruithostedCDN {
     public StreamcherryCom(final PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://fruithosts.net/register");
+        this.enablePremium("https://streamcherry.com/register");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://fruithosts.net/tos";
+        return "https://streamcherry.com/tos";
     }
 
     @Override

@@ -108,7 +108,7 @@ public class AvxHmeW extends PluginForDecrypt {
                     }
                 }
             }
-            final String[] covers = br.getRegex("\"((?:https?:)?//pi?xhst\\.(com|co)[^<>\"]*?)\"").getColumn(0);
+            final String[] covers = br.getRegex("\"((?:https?:)?//(pi?xhst|pixhost)\\.(com|co|icu)[^<>\"]*?)\"").getColumn(0);
             if (covers != null && covers.length != 0) {
                 for (String coverlink : covers) {
                     coverlink = Request.getLocation(coverlink, br.getRequest());
