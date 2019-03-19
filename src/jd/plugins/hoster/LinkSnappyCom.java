@@ -28,6 +28,7 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -348,6 +349,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
                 }
             }
         } catch (final PluginException e) {
+            logger.log(e);
             if (e.getMessage() != null && e.getMessage().contains("java.lang.ArrayIndexOutOfBoundsException")) {
                 if ((tt / 10) > currentLink.getView().getBytesTotal()) {
                     // this is when linksnappy dls text as proper filename
@@ -465,8 +467,9 @@ public class LinkSnappyCom extends antiDDoSForHost {
         }
         dlResponseCode = -1;
         try {
+            br.setConnectTimeout(60 * 1000);
             dl = new jd.plugins.BrowserAdapter().openDownload(br, currentLink, dllink, resumes, chunks);
-            return handleAttemptResponseCode();
+            return handleAttemptResponseCode(br, dl.getConnection());
         } catch (final SocketTimeoutException e) {
             // if (currentLink.getHost() == "uploaded.to" || currentLink.getHost() == "rapidgator.net") {
             // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Waiting for download", 30 * 1000l);
@@ -479,18 +482,22 @@ public class LinkSnappyCom extends antiDDoSForHost {
             currentLink.setProperty("sockettimeout", true);
             throw new PluginException(LinkStatus.ERROR_RETRY);
         } catch (final BrowserException ebr) {
+            logger.log(ebr);
             logger.info("Attempt failed: Got BrowserException for link: " + dllink);
             // this will happen when response codes are outside of allowable
-            return handleAttemptResponseCode();
+            return handleAttemptResponseCode(br, dl.getConnection());
         }
     }
 
-    private boolean handleAttemptResponseCode() throws IOException, PluginException {
-        dlResponseCode = dl.getConnection().getResponseCode();
-        if ((dlResponseCode == 200 || dlResponseCode == 206) && (dl.getConnection().isContentDisposition() || StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "octet-stream"))) {
+    private boolean handleAttemptResponseCode(final Browser br, final URLConnectionAdapter connection) throws IOException, PluginException {
+        if (connection == null) {
+            return false;
+        }
+        dlResponseCode = connection.getResponseCode();
+        if ((dlResponseCode == 200 || dlResponseCode == 206) && (connection.isContentDisposition() || StringUtils.containsIgnoreCase(connection.getContentType(), "octet-stream"))) {
             return true;
         }
-        dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
+        connection.setAllowedResponseCodes(new int[] { connection.getResponseCode() });
         br.followConnection();
         if (dlResponseCode == 509) {
             /* out of traffic should not retry! throw exception on first response! */

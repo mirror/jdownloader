@@ -556,7 +556,7 @@ public class RealDebridCom extends PluginForHost {
                         }
                         if (loginForm.containsHTML("g-recaptcha")) {
                             logger.info("Login requires Recaptcha");
-                            final DownloadLink dummyLink = new DownloadLink(RealDebridCom.this, "Account:" + getAccount().getPass(), getHost(), "https://real-debrid.com", true);
+                            final DownloadLink dummyLink = new DownloadLink(RealDebridCom.this, "Account:" + getAccount().getUser(), getHost(), "https://real-debrid.com", true);
                             RealDebridCom.this.setDownloadLink(dummyLink);
                             final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(RealDebridCom.this, autoSolveBr).getToken();
                             loginForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
@@ -577,7 +577,7 @@ public class RealDebridCom extends PluginForHost {
                             }
                             if (loginForm.containsHTML("g-recaptcha")) {
                                 logger.info("Login requires Recaptcha");
-                                final DownloadLink dummyLink = new DownloadLink(RealDebridCom.this, "Account:" + getAccount().getPass(), getHost(), "https://real-debrid.com", true);
+                                final DownloadLink dummyLink = new DownloadLink(RealDebridCom.this, "Account:" + getAccount().getUser(), getHost(), "https://real-debrid.com", true);
                                 RealDebridCom.this.setDownloadLink(dummyLink);
                                 final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(RealDebridCom.this, autoSolveBr).getToken();
                                 loginForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
