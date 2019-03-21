@@ -88,7 +88,7 @@ public class XnXxCom extends PluginForHost {
         // work at all!
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL() + "/");
-        if (br.containsHTML("(Page not found|This page may be in preparation, please check back in a few minutes)")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(Page not found|This page may be in preparation, please check back in a few minutes)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename_url = new Regex(downloadLink.getDownloadURL(), "/video([a-z0-9\\-]+)").getMatch(0);
