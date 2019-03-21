@@ -50,7 +50,7 @@ public class StreamcherryCom extends FruithostedCDN {
     }
 
     @Override
-    public int getDownloadModeMaxChunks(final Account account) {
+    public int getDownloadModeMaxChunks(final Account account, DownloadLink downloadlink) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
             return 0;

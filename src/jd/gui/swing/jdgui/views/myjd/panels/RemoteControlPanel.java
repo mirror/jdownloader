@@ -47,7 +47,7 @@ public class RemoteControlPanel extends AbstractConfigPanel {
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
-                    CrossSystem.openURLOrShowMessage("http://update3.jdownloader.org/jdserv/RedirectInterface/redirect?" + Encoding.urlEncode(url));
+                    CrossSystem.openURL("http://update3.jdownloader.org/jdserv/RedirectInterface/redirect?" + Encoding.urlEncode(url));
                 } catch (StorageException e1) {
                     e1.printStackTrace();
                 }

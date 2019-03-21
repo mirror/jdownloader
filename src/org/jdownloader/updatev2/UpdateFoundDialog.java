@@ -11,6 +11,8 @@ import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 
+import net.miginfocom.swing.MigLayout;
+
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
@@ -18,8 +20,6 @@ import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.DefaultButtonPanel;
 import org.jdownloader.images.JDIconRef;
-
-import net.miginfocom.swing.MigLayout;
 
 public class UpdateFoundDialog extends ConfirmDialog {
     private AbstractAction laterAction = null;
@@ -31,8 +31,8 @@ public class UpdateFoundDialog extends ConfirmDialog {
         if (later != null) {
             this.laterAction = new AbstractAction(_UPDATE.T.update_dialog_later()) {
                 /**
-                * 
-                */
+                 *
+                 */
                 private static final long serialVersionUID = 1L;
 
                 public void actionPerformed(final ActionEvent e) {
@@ -45,8 +45,8 @@ public class UpdateFoundDialog extends ConfirmDialog {
         if (now != null) {
             this.nowAction = new AbstractAction(_UPDATE.T.update_dialog_yes()) {
                 /**
-                * 
-                */
+                 *
+                 */
                 private static final long serialVersionUID = 1L;
 
                 public void actionPerformed(final ActionEvent e) {
@@ -80,7 +80,7 @@ public class UpdateFoundDialog extends ConfirmDialog {
             @Override
             public void actionPerformed(final ActionEvent e) {
                 UpdateFoundDialog.this.cancel();
-                CrossSystem.openURLOrShowMessage(_UPDATE.T.update_dialog_news_button_url());
+                CrossSystem.openURL(_UPDATE.T.update_dialog_news_button_url());
             }
         });
         btn.setContentAreaFilled(false);

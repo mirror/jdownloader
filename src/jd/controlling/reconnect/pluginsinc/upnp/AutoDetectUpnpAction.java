@@ -46,7 +46,6 @@ public class AutoDetectUpnpAction extends BasicAction {
 
     public void actionPerformed(ActionEvent e) {
         LogSource logger = LogController.getInstance().getLogger("UPNPReconnect");
-
         final ConfirmDialog confirm = new ConfirmDialog(0, _GUI.T.AutoSetupAction_actionPerformed_warn_title(), _GUI.T.AutoSetupAction_actionPerformed_warn_message(), new AbstractIcon(IconKey.ICON_WARNING, 32), _GUI.T.AutoSetupAction_actionPerformed_warn_message_continue(), null) {
             @Override
             protected int getPreferredWidth() {
@@ -57,11 +56,8 @@ public class AutoDetectUpnpAction extends BasicAction {
             public boolean isRemoteAPIEnabled() {
                 return false;
             }
-
         };
-
         try {
-
             UIOManager.I().show(ConfirmDialogInterface.class, confirm).throwCloseExceptions();
         } catch (Throwable e2) {
             logger.log(e2);
@@ -83,32 +79,25 @@ public class AutoDetectUpnpAction extends BasicAction {
                 });
                 try {
                     Dialog.getInstance().showDialog(d);
-
                     if (modemChoose) {
                         Dialog.getInstance().showErrorDialog(_GUI.T.AutoSetupAction_actionPerformed_noautoformodem());
-                        CrossSystem.openURLOrShowMessage("http://jdownloader.org/knowledge/wiki/reconnect/modem");
+                        CrossSystem.openURL("http://jdownloader.org/knowledge/wiki/reconnect/modem");
                         return;
                     }
-                    CrossSystem.openURLOrShowMessage("http://jdownloader.org/knowledge/wiki/reconnect/modem");
+                    CrossSystem.openURL("http://jdownloader.org/knowledge/wiki/reconnect/modem");
                     // don't know
                 } catch (DialogCanceledException e1) {
                     // router
-
                 }
-
             }
         } catch (Throwable e1) {
-
         }
         logger.info("RUN");
         ReconnectFindDialog d = new ReconnectFindDialog() {
-
             @Override
             public void run() throws InterruptedException {
-
                 final AtomicBoolean methodConfirmEnabled = new AtomicBoolean(true);
                 final java.util.List<ReconnectResult> scripts = plugin.runDetectionWizard(new ProcessCallBack() {
-
                     public void setStatusString(Object caller, String string) {
                         setBarText(string);
                     }
@@ -130,29 +119,22 @@ public class AutoDetectUpnpAction extends BasicAction {
                         return methodConfirmEnabled.get();
                     }
                 });
-
                 if (scripts != null && scripts.size() > 0) {
-
                     if (JsonConfig.create(ReconnectConfig.class).getOptimizationRounds() > 1) {
-
                         long bestTime = Long.MAX_VALUE;
                         long optiduration = 0;
                         for (ReconnectResult found : scripts) {
-
                             bestTime = Math.min(bestTime, found.getSuccessDuration());
                             optiduration += found.getSuccessDuration() * (JsonConfig.create(ReconnectConfig.class).getOptimizationRounds() - 1) * 1.5;
                         }
                         try {
-
                             UIOManager.I().show(ConfirmDialogInterface.class, new ConfirmDialog(0, _GUI.T.AutoDetectAction_actionPerformed_dooptimization_title(), _GUI.T.AutoDetectAction_actionPerformed_dooptimization_msg(scripts.size(), TimeFormatter.formatMilliSeconds(optiduration, 0), TimeFormatter.formatMilliSeconds(bestTime, 0)), new AbstractIcon("ok", 32), _GUI.T.AutoDetectAction_run_optimization(), _GUI.T.AutoDetectAction_skip_optimization())).throwCloseExceptions();
-
                             setBarProgress(0);
                             for (int ii = 0; ii < scripts.size(); ii++) {
                                 ReconnectResult found = scripts.get(ii);
                                 setBarText(_GUI.T.AutoDetectAction_run_optimize(found.getInvoker().getName()));
                                 final int step = ii;
                                 found.optimize(new ProcessCallBackAdapter() {
-
                                     public void setProgress(Object caller, int percent) {
                                         setBarProgress((step) * (100 / (scripts.size())) + percent / (scripts.size()));
                                     }
@@ -160,37 +142,27 @@ public class AutoDetectUpnpAction extends BasicAction {
                                     public void setStatusString(Object caller, String string) {
                                         setBarText(_GUI.T.AutoDetectAction_run_optimize(string));
                                     }
-
                                 });
-
                             }
                         } catch (DialogNoAnswerException e) {
-
                         }
                     }
                     Collections.sort(scripts, new Comparator<ReconnectResult>() {
-
                         public int compare(ReconnectResult o1, ReconnectResult o2) {
                             return new Long(o2.getAverageSuccessDuration()).compareTo(new Long(o1.getAverageSuccessDuration()));
                         }
                     });
                     System.out.println("Scripts " + scripts);
                     scripts.get(0).getInvoker().getPlugin().setSetup(scripts.get(0));
-
                 } else {
                     UIOManager.I().showErrorMessage(T.T.AutoDetectAction_run_failed2());
-
                 }
-
             }
-
         };
         try {
             UIOManager.I().show(null, d);
-
         } finally {
             System.out.println("CLOSED");
         }
     }
-
 }

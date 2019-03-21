@@ -17,7 +17,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 
 public class WizardUtils {
-
     /**
      * checks if the user has a modem connection, and asks the user if he want to do a reconnect wizard run either. returns true if not.
      *
@@ -40,33 +39,26 @@ public class WizardUtils {
                 });
                 try {
                     Dialog.getInstance().showDialog(d);
-
                     if (modemChoose[0]) {
                         Dialog.getInstance().showErrorDialog(_GUI.T.AutoSetupAction_actionPerformed_noautoformodem());
-                        CrossSystem.openURLOrShowMessage("http://jdownloader.org/knowledge/wiki/reconnect/modem");
+                        CrossSystem.openURL("http://jdownloader.org/knowledge/wiki/reconnect/modem");
                         return true;
                     }
-                    CrossSystem.openURLOrShowMessage("http://jdownloader.org/knowledge/wiki/reconnect/modem");
+                    CrossSystem.openURL("http://jdownloader.org/knowledge/wiki/reconnect/modem");
                     // don't know
                 } catch (DialogCanceledException e1) {
                     // router
-
                 }
-
             }
         } catch (Throwable e1) {
-
         }
         return false;
     }
 
     public static boolean vpnCheck() {
-
         try {
-
             InetAddress routerAdress = RouterUtils.getAddress(false);
             InetAddress gateway = RouterUtils.getWindowsGateway();
-
             if (!routerAdress.equals(gateway)) {
                 // ouch. if gateway is not routerIp, we might be in a VPN
                 try {
@@ -78,9 +70,7 @@ public class WizardUtils {
                 }
             }
         } catch (Throwable t) {
-
         }
         return false;
     }
-
 }

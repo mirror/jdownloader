@@ -236,7 +236,7 @@ public class GoogleHelper {
                 if (br.containsHTML("Please change your password")) {
                     Form changePassword = br.getFormbyAction("https://accounts.google.com/ChangePassword");
                     if (changePassword != null) {
-                        CrossSystem.openURLOrShowMessage("http://www.google.com/support/accounts/bin/answer.py?answer=46526");
+                        CrossSystem.openURL("http://www.google.com/support/accounts/bin/answer.py?answer=46526");
                         NewPasswordDialog d = new NewPasswordDialog(UIOManager.LOGIC_COUNTDOWN, _JDT.T.google_password_change_title(), _JDT.T.google_password_change_message(account.getUser()), null, _GUI.T.lit_continue(), null);
                         d.setTimeout(5 * 60 * 1000);
                         NewPasswordDialogInterface handler = UIOManager.I().show(NewPasswordDialogInterface.class, d);
@@ -260,7 +260,7 @@ public class GoogleHelper {
                 if (verifyItsYouByEmail != null) {
                     String example = br.getRegex("<label.*?id=\"RecoveryEmailChallengeLabel\">.*?<span.*?>([^<]+)</span>.*?</label>").getMatch(0);
                     if (example == null) {
-                        CrossSystem.openURLOrShowMessage(br.getURL());
+                        CrossSystem.openURL(br.getURL());
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "Verify it's you: Email", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                     } else {
                         InputDialog d = new InputDialog(0, _JDT.T.google_email_verification_title(), _JDT.T.google_email_verification_message(example.trim()), null, null, _GUI.T.lit_continue(), null) {
@@ -283,14 +283,14 @@ public class GoogleHelper {
                 }
                 if (br.containsHTML("privacyreminder")) {
                     // google wants you to accept the new privacy policy
-                    CrossSystem.openURLOrShowMessage("https://accounts.google.com/ServiceLogin?uilel=3&service=" + Encoding.urlEncode(getService().serviceName) + "&passive=true&continue=" + Encoding.urlEncode(getService().continueAfterServiceLogin) + "&hl=en_US&ltmpl=sso");
+                    CrossSystem.openURL("https://accounts.google.com/ServiceLogin?uilel=3&service=" + Encoding.urlEncode(getService().serviceName) + "&passive=true&continue=" + Encoding.urlEncode(getService().continueAfterServiceLogin) + "&hl=en_US&ltmpl=sso");
                     if (!UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, _JDT.T.google_helper_privacy_update_title(), _JDT.T.google_helper_privacy_update_message(account.getUser()), null, _GUI.T.lit_continue(), null)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "Privacy Reminder Required", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                     }
                     while (true) {
                         postPageFollowRedirects(br, "https://accounts.google.com/ServiceLoginAuth", post);
                         if (br.containsHTML("privacyreminder")) {
-                            CrossSystem.openURLOrShowMessage("https://accounts.google.com/ServiceLogin?uilel=3&service=" + Encoding.urlEncode(getService().serviceName) + "&passive=true&continue=" + Encoding.urlEncode(getService().continueAfterServiceLogin) + "&hl=en_US&ltmpl=sso");
+                            CrossSystem.openURL("https://accounts.google.com/ServiceLogin?uilel=3&service=" + Encoding.urlEncode(getService().serviceName) + "&passive=true&continue=" + Encoding.urlEncode(getService().continueAfterServiceLogin) + "&hl=en_US&ltmpl=sso");
                             if (!UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, _JDT.T.google_helper_privacy_update_title(), _JDT.T.google_helper_privacy_update_message_retry(account.getUser()), null, _GUI.T.lit_continue(), null)) {
                                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Privacy Reminder Required", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                             }

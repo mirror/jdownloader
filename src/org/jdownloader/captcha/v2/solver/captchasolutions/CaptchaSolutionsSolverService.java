@@ -81,7 +81,7 @@ public class CaptchaSolutionsSolverService extends AbstractSolverService impleme
 
                     @Override
                     public void actionPerformed(ActionEvent e) {
-                        CrossSystem.openURLOrShowMessage("http://www.captchasolutions.com/?aff=71ff976c");
+                        CrossSystem.openURL("http://www.captchasolutions.com/?aff=71ff976c");
                     }
                 }), "gapleft 37,spanx,pushx,growx");
                 username = new TextInput(CFG_CAPTCHA_SOLUTIONS.USER_NAME);
