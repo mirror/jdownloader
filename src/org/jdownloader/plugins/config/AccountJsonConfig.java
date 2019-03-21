@@ -21,13 +21,14 @@ import org.appwork.storage.config.annotations.CryptedStorage;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.storage.config.handler.ListHandler;
 import org.appwork.storage.config.handler.StorageHandler;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.IO;
 import org.appwork.utils.encoding.Base64;
+import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.logging.LogController;
 
 public class AccountJsonConfig {
     private static final WeakHashMap<ClassLoader, HashMap<String, WeakReference<ConfigInterface>>> CONFIG_CACHE     = new WeakHashMap<ClassLoader, HashMap<String, WeakReference<ConfigInterface>>>();
-
     private final static boolean                                                                   DEBUG            = false;
     private final static String                                                                    PREFIX_PRIMITIVE = "configInterface.primitive.";
     private final static String                                                                    PREFIX_OBJECT    = "configInterface.object.";
@@ -63,7 +64,6 @@ public class AccountJsonConfig {
             }
         }
         final Storage storage = new Storage() {
-
             @Override
             public void clear() throws StorageException {
                 for (final String key : account.getProperties().keySet()) {
@@ -137,7 +137,6 @@ public class AccountJsonConfig {
                     } catch (final Throwable e) {
                         if (e instanceof IllegalArgumentException) {
                             LogController.CL().info("Could not restore the enum. There is no value for " + ret + " in " + ((Enum<?>) def).getDeclaringClass());
-
                         }
                         LogController.CL().log(e);
                         ret = def;
@@ -247,10 +246,20 @@ public class AccountJsonConfig {
                 }
                 return size;
             }
-
         };
-
         final StorageHandler<T> storageHandler = new StorageHandler<T>(configInterface) {
+            @Override
+            protected void error(Throwable e) {
+                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                    new Thread("ERROR THROWER") {
+                        @Override
+                        public void run() {
+                            Dialog.getInstance().showExceptionDialog(e.getClass().getSimpleName(), e.getMessage(), e);
+                        }
+                    }.start();
+                }
+            }
+
             @Override
             protected void requestSave() {
             }

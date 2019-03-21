@@ -30,7 +30,9 @@ import org.appwork.storage.config.annotations.CryptedStorage;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.storage.config.handler.StorageHandler;
 import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 
 public class PluginJsonConfig {
@@ -44,7 +46,6 @@ public class PluginJsonConfig {
                                                                                                                      }
                                                                                                                  };
     private final static boolean                                                                   DEBUG         = false;
-
     static {
         File pluginsFolder = Application.getResource("cfg/plugins/");
         if (!pluginsFolder.exists()) {
@@ -158,6 +159,18 @@ public class PluginJsonConfig {
             STORAGE_CACHE.put(ID, storage);
         }
         final StorageHandler<T> storageHandler = new StorageHandler<T>(storage, configInterface) {
+            @Override
+            protected void error(Throwable e) {
+                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                    new Thread("ERROR THROWER") {
+                        @Override
+                        public void run() {
+                            Dialog.getInstance().showExceptionDialog(e.getClass().getSimpleName(), e.getMessage(), e);
+                        }
+                    }.start();
+                }
+            }
+
             @Override
             protected void requestSave() {
                 PluginJsonConfig.SAVEDELAYER.resetAndStart();
