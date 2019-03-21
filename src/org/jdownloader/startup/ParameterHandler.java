@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.appwork.app.launcher.parameterparser.CommandSwitch;
-import org.appwork.app.launcher.parameterparser.CommandSwitchListener;
 import org.appwork.app.launcher.parameterparser.ParameterParser;
 import org.appwork.utils.Application;
 import org.appwork.utils.logging2.LogSource;
@@ -32,7 +31,7 @@ import org.jdownloader.updatev2.RestartController;
 
 import jd.SecondLevelLaunch;
 
-public class ParameterHandler implements InstanceMessageListener, CommandSwitchListener {
+public class ParameterHandler implements InstanceMessageListener {
     private HashMap<String, StartupCommand> commandMap;
     private LogSource                       logger;
     private ArrayList<StartupCommand>       commands;
@@ -94,17 +93,18 @@ public class ParameterHandler implements InstanceMessageListener, CommandSwitchL
     public void parseMessage(String[] args) {
         logger.info("Sent: " + Arrays.toString(args));
         ParameterParser pp = new ParameterParser(args);
-        pp.getEventSender().addListener(this);
         pp.parse(null);
+        execute(pp, false);
     }
 
-    @Override
-    public void executeCommandSwitch(CommandSwitch event) {
-        StartupCommand command = commandMap.get(event.getSwitchCommand());
-        if (command != null && command.isRunningInstanceEnabled()) {
-            command.run(event.getSwitchCommand(), event.getParameters());
-        } else {
-            logger.warning("Invalid Command: " + event.getSwitchCommand() + " - " + Arrays.toString(event.getParameters()));
+    protected void execute(ParameterParser pp, boolean startup) {
+        for (CommandSwitch cmd : pp.getList()) {
+            StartupCommand command = commandMap.get(cmd.getSwitchCommand());
+            if (command != null && (command.isRunningInstanceEnabled() || startup)) {
+                command.run(cmd.getSwitchCommand(), cmd.getParameters());
+            } else {
+                logger.warning("Invalid Command: " + cmd.getSwitchCommand() + " - " + Arrays.toString(cmd.getParameters()));
+            }
         }
     }
 
@@ -116,14 +116,7 @@ public class ParameterHandler implements InstanceMessageListener, CommandSwitchL
         logger.info("Startup: " + Arrays.toString(args));
         startupParameters = RestartController.getInstance().getParameterParser(args);
         startupParameters.parse(null);
-        for (CommandSwitch cmd : startupParameters.getList()) {
-            StartupCommand command = commandMap.get(cmd.getSwitchCommand());
-            if (command != null) {
-                command.run(cmd.getSwitchCommand(), cmd.getParameters());
-            } else {
-                logger.warning("Invalid Command: " + cmd.getSwitchCommand() + " - " + Arrays.toString(cmd.getParameters()));
-            }
-        }
+        execute(startupParameters, true);
         if (!startupParameters.hasCommandSwitch("console") && Application.isJared(SecondLevelLaunch.class)) {
             logger.info("Remove ConsoleHandler");
             LogController.getInstance().removeConsoleHandler();
