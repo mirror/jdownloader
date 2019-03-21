@@ -134,7 +134,7 @@ public class DefineBabeCom extends PluginForHost {
     }
 
     public static boolean isOffline(final Browser br) {
-        return br.getHttpConnection().getResponseCode() == 404;
+        return (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Error with fetching video"));
     }
 
     @Override
