@@ -12,10 +12,11 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.storage.config.handler.StorageHandler;
 import org.appwork.swing.synthetica.SyntheticaSettings;
 import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
+import org.appwork.utils.swing.dialog.Dialog;
 
 public class LAFSettingsStorageHandlerFactory implements StorageHandlerFactory<LAFSettings> {
-
     private static boolean equals(Object a, Object b) {
         return (a == b) || (a != null && a.equals(b));
     }
@@ -23,11 +24,21 @@ public class LAFSettingsStorageHandlerFactory implements StorageHandlerFactory<L
     @Override
     public StorageHandler<LAFSettings> create(File path, Class<LAFSettings> configInterface) {
         final StorageHandler<LAFSettings> ret = new StorageHandler<LAFSettings>(path, configInterface) {
+            @Override
+            protected void error(Throwable e) {
+                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                    new Thread("ERROR THROWER") {
+                        @Override
+                        public void run() {
+                            Dialog.getInstance().showExceptionDialog(e.getClass().getSimpleName(), e.getMessage(), e);
+                        }
+                    }.start();
+                }
+            }
 
             @Override
             protected void preInit(File path, Class<LAFSettings> configInterfac) {
                 setDefaultFactory(new DefaultFactoryInterface() {
-
                     @Override
                     public Object getDefaultValue(KeyHandler<?> handler, Object o) {
                         Object def = o;
@@ -37,7 +48,6 @@ public class LAFSettingsStorageHandlerFactory implements StorageHandlerFactory<L
                             LoggerFactory.getDefaultLogger().log(e);
                         }
                         return def;
-
                     }
                 });
             }
@@ -74,5 +84,4 @@ public class LAFSettingsStorageHandlerFactory implements StorageHandlerFactory<L
     public StorageHandler<LAFSettings> create(String urlPath, Class<LAFSettings> configInterface) {
         throw new WTFException("Not Implemented");
     }
-
 }
