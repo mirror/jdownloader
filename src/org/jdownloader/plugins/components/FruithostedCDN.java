@@ -19,12 +19,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -42,6 +36,12 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 public class FruithostedCDN extends antiDDoSForHost {
     public FruithostedCDN(PluginWrapper wrapper) {
@@ -75,8 +75,11 @@ public class FruithostedCDN extends antiDDoSForHost {
     /**
      * Returns how many max. chunks per file are allowed for current download mode based on account availability and account type. <br />
      * Override this function to set chunks settings!
+     *
+     * @param downloadlink
+     *            TODO
      */
-    public int getDownloadModeMaxChunks(final Account account) {
+    public int getDownloadModeMaxChunks(final Account account, DownloadLink downloadlink) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
             return 0;
@@ -207,6 +210,7 @@ public class FruithostedCDN extends antiDDoSForHost {
             try {
                 dllink = getDllinkWebsite(downloadLink, acc, directlinkproperty);
             } catch (final Throwable e) {
+                logger.log(e);
             }
             if (StringUtils.isEmpty(dllink)) {
                 dllink = getDllinkAPI(downloadLink, null);
@@ -265,7 +269,7 @@ public class FruithostedCDN extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final boolean resume = isResumeable(downloadLink, account);
-        final int maxchunks = 1;
+        final int maxchunks = getDownloadModeMaxChunks(account, downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
@@ -334,33 +338,37 @@ public class FruithostedCDN extends antiDDoSForHost {
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+        final String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                con = openAntiDDoSRequestConnection(br2, br2.createHeadRequest(dllink));
+                if (con.isOK() && con.isContentDisposition()) {
+                    return dllink;
+                } else if (!con.isOK() || con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                    return null;
+                } else {
+                    return dllink;
                 }
             } catch (final Exception e) {
+                logger.log(e);
                 downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
             } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
+                if (con != null) {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
                 }
             }
         }
-        return dllink;
+        return null;
     }
 
-    private static Object account_lock = new Object();
-
     private void login(final Account acc, final boolean force) throws Exception {
-        synchronized (account_lock) {
+        synchronized (acc) {
             try {
                 /** TODO: Check if cookie-login even works */
                 br.setFollowRedirects(true);
@@ -378,12 +386,15 @@ public class FruithostedCDN extends antiDDoSForHost {
                 try {
                     handleErrorsAPI();
                 } catch (final PluginException e) {
+                    logger.log(e);
                     /* Typically error 403 */
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Wrong login!\r\nMake sure that you are using your API/FTP login credentials which can be found here:\r\nfruithosts.net/account#usersettings", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Wrong login!\r\nMake sure that you are using your API/FTP login credentials which can be found here:\r\nhttps://" + getHost() + "/account#usersettings", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 acc.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
-                acc.clearCookies("");
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    acc.clearCookies("");
+                }
                 throw e;
             }
         }
@@ -392,11 +403,7 @@ public class FruithostedCDN extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (final PluginException e) {
-            throw e;
-        }
+        login(account, true);
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         entries = (LinkedHashMap<String, Object>) entries.get("result");
         final String date_account_created = (String) entries.get("signup_at");

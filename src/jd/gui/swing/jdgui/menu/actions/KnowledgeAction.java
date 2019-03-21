@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
@@ -24,21 +23,16 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 
 public class KnowledgeAction extends CustomizableAppAction {
-
     private static final long serialVersionUID = 2227665710503234763L;
 
     public KnowledgeAction() {
-
         setIconKey(IconKey.ICON_HELP);
         setName(_GUI.T.action_help());
         setTooltipText(_GUI.T.action_help_tooltip());
-
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        CrossSystem.openURLOrShowMessage("http://jdownloader.org/knowledge/index");
-
+        CrossSystem.openURL("http://jdownloader.org/knowledge/index");
     }
-
 }

@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.controlling.reconnect.pluginsinc.liveheader.recorder;
 
 import java.awt.event.ActionEvent;
@@ -56,23 +55,14 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
 
 public class Gui extends AbstractDialog<Object> {
-
     public class JDRRInfoPopup extends AbstractDialog<Object> {
-
         public class RRStatus extends JLabel {
-
             private static final long serialVersionUID = -3280613281656283625L;
-
             private final Icon        imageProgress;
-
             private final Icon        imageBad;
-
             private final Icon        imageGood;
-
             private final String      strProgress;
-
             private final String      strBad;
-
             private final String      strGood;
 
             public RRStatus() {
@@ -87,10 +77,8 @@ public class Gui extends AbstractDialog<Object> {
 
             public void setStatus(final int state) {
                 new EDTRunner() {
-
                     @Override
                     protected void runInEDT() {
-
                         if (state == 0) {
                             setIcon(imageProgress);
                             setText(strProgress);
@@ -108,16 +96,13 @@ public class Gui extends AbstractDialog<Object> {
 
         private static final long serialVersionUID = 1L;
         private long              reconnect_timer  = 0;
-
         private RRStatus          statusicon;
 
         public JDRRInfoPopup() {
             super(UserIO.NO_ICON | UserIO.NO_OK_OPTION, T.T.gui_config_jdrr_status_title(), null, null, T.T.gui_btn_abort());
-
         }
 
         public void closePopup(final Boolean validate) {
-
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
                     JDRRInfoPopup.this.cancelButton.setEnabled(false);
@@ -161,7 +146,6 @@ public class Gui extends AbstractDialog<Object> {
             this.setMinimumSize(null);
             this.setResizable(false);
             this.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
-
             this.startCheck();
         }
 
@@ -189,7 +173,6 @@ public class Gui extends AbstractDialog<Object> {
                                 Thread.sleep(Gui.CHECK_INTERVAL);
                             } catch (final Exception e) {
                             }
-
                             if (!IPController.getInstance().validate() && JDRRInfoPopup.this.reconnect_timer == 0) {
                                 JDRRInfoPopup.this.reconnect_timer = System.currentTimeMillis();
                             }
@@ -213,31 +196,25 @@ public class Gui extends AbstractDialog<Object> {
     private JTextField        routerip;
     private JCheckBox         rawmode;
     public boolean            saved              = false;
-
     public String             ip                 = null;
     public String             methode            = null;
     public String             user               = null;
     public String             pass               = null;
-
     private static long       CHECK_INTERVAL     = 5000;
-
     private static long       RECONNECT_DURATION = 0;
 
     public Gui(final String ip) {
         super(UserIO.NO_ICON, T.T.gui_config_jdrr_title(), null, T.T.gui_btn_start(), T.T.gui_btn_cancel());
         this.ip = ip;
-
     }
 
     @Override
     protected void addButtons(final JPanel buttonBar) {
         final JButton help = new JButton(T.T.gui_btn_help());
         help.addActionListener(new ActionListener() {
-
             public void actionPerformed(final ActionEvent e) {
-                CrossSystem.openURLOrShowMessage("http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder");
+                CrossSystem.openURL("http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder");
             }
-
         });
         buttonBar.add(help, "tag help, sizegroup confirms");
     }
@@ -251,11 +228,9 @@ public class Gui extends AbstractDialog<Object> {
     @Override
     public JComponent layoutDialogContent() {
         this.routerip = new JTextField(this.ip);
-
         this.rawmode = new JCheckBox(T.T.gui_config_jdrr_rawmode());
         this.rawmode.setSelected(false);
         this.rawmode.setHorizontalTextPosition(SwingConstants.LEADING);
-
         final StringBuilder sb = new StringBuilder();
         sb.append("<html>");
         sb.append(T.T.jd_nrouter_recorder_Gui_info1());
@@ -264,7 +239,6 @@ public class Gui extends AbstractDialog<Object> {
         sb.append("<br>");
         sb.append(T.T.jd_nrouter_recorder_Gui_info3());
         sb.append("</html>");
-
         final JPanel panel = new JPanel(new MigLayout("wrap 3, ins 5", "[][grow]10[]"));
         panel.add(new JLabel(T.T.gui_fengshuiconfig_routerip() + ":"));
         panel.add(this.routerip, "growx");
@@ -276,35 +250,28 @@ public class Gui extends AbstractDialog<Object> {
     private void save() {
         final int ret = UserIO.getInstance().requestConfirmDialog(0, T.T.gui_config_jdrr_success(), T.T.gui_config_jdrr_savereconnect(), UserIO.getInstance().getIcon(UserIO.ICON_QUESTION), T.T.gui_btn_yes(), T.T.gui_btn_no());
         if (JDFlags.hasSomeFlags(ret, UserIO.RETURN_OK, UserIO.RETURN_COUNTDOWN_TIMEOUT)) {
-
             final StringBuilder b = new StringBuilder();
             final String br = System.getProperty("line.separator");
             for (final String element : ReconnectRecorder.steps) {
                 b.append(element).append(br);
             }
             this.methode = b.toString().trim();
-
             if (ReconnectRecorder.AUTH != null) {
                 this.user = new Regex(ReconnectRecorder.AUTH, "(.+?):").getMatch(0);
                 this.pass = new Regex(ReconnectRecorder.AUTH, ".+?:(.+)").getMatch(0);
-
                 JsonConfig.create(LiveHeaderReconnectSettings.class).setUserName(this.user);
                 JsonConfig.create(LiveHeaderReconnectSettings.class).setPassword(this.pass);
             }
             // TODO
             // btnCancel.setText(JDL.L("gui.btn_close", "Close"));
-
             JsonConfig.create(LiveHeaderReconnectSettings.class).setRouterIP(this.routerip.getText().trim());
             // changed script.reset router sender state
             if (methode != null && methode.equals(JsonConfig.create(LiveHeaderReconnectSettings.class).getScript())) {
                 JsonConfig.create(LiveHeaderReconnectSettings.class).setAlreadySendToCollectServer3(false);
             }
             JsonConfig.create(LiveHeaderReconnectSettings.class).setScript(this.methode);
-
             DataCompareDialog dcd = new DataCompareDialog(routerip.getText().trim(), null, null, null, null, null);
-
             RouterData rd = new RouterData();
-
             try {
                 dcd.setNoLogins(true);
                 Dialog.getInstance().showDialog(dcd);
@@ -317,7 +284,6 @@ public class Gui extends AbstractDialog<Object> {
                 e.printStackTrace();
             }
             JsonConfig.create(LiveHeaderReconnectSettings.class).setRouterData(rd);
-
             ReconnectPluginController.getInstance().setActivePlugin(LiveHeaderReconnect.ID);
             if (Gui.RECONNECT_DURATION <= 2000) {
                 Gui.RECONNECT_DURATION = 2000;
@@ -331,17 +297,14 @@ public class Gui extends AbstractDialog<Object> {
             if (ab < 30) {
                 ab = 5;
             }
-
             JsonConfig.create(ReconnectConfig.class).setSecondsToWaitForIPChange(aa);
             JsonConfig.create(ReconnectConfig.class).setSecondsBeforeFirstIPCheck(ab);
-
             this.saved = true;
             this.dispose();
         }
     }
 
     protected void setReturnmask(final boolean b) {
-
         super.setReturnmask(b);
         if (b && !ReconnectRecorder.running) {
             if (this.routerip.getText() != null && !this.routerip.getText().matches("\\s*")) {
@@ -362,9 +325,9 @@ public class Gui extends AbstractDialog<Object> {
                 }.start();
                 ReconnectRecorder.startServer(host, this.rawmode.isSelected());
                 if (startwithhttps) {
-                    CrossSystem.openURLOrShowMessage("http://localhost:" + (SubConfiguration.getConfig("ReconnectRecorder").getIntegerProperty(ReconnectRecorder.PROPERTY_PORT, 8972) + 1));
+                    CrossSystem.openURL("http://localhost:" + (SubConfiguration.getConfig("ReconnectRecorder").getIntegerProperty(ReconnectRecorder.PROPERTY_PORT, 8972) + 1));
                 } else {
-                    CrossSystem.openURLOrShowMessage("http://localhost:" + SubConfiguration.getConfig("ReconnectRecorder").getIntegerProperty(ReconnectRecorder.PROPERTY_PORT, 8972));
+                    CrossSystem.openURL("http://localhost:" + SubConfiguration.getConfig("ReconnectRecorder").getIntegerProperty(ReconnectRecorder.PROPERTY_PORT, 8972));
                 }
                 try {
                     Dialog.getInstance().showDialog(new JDRRInfoPopup());
@@ -376,6 +339,5 @@ public class Gui extends AbstractDialog<Object> {
                 return;
             }
         }
-
     }
 }

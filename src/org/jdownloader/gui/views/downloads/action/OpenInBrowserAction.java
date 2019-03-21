@@ -21,9 +21,7 @@ import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.images.NewTheme;
 
 public class OpenInBrowserAction extends CustomizableTableContextAppAction<FilePackage, DownloadLink> {
-
     private static final long   serialVersionUID = 7911375550836173693L;
-
     private final static String NAME             = _GUI.T.gui_table_contextmenu_browselink();
 
     public OpenInBrowserAction() {
@@ -51,7 +49,6 @@ public class OpenInBrowserAction extends CustomizableTableContextAppAction<FileP
             }
         }
         setEnabled(false);
-
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -70,7 +67,7 @@ public class OpenInBrowserAction extends CustomizableTableContextAppAction<FileP
                             } catch (InterruptedException e) {
                                 return;
                             }
-                            CrossSystem.openURLOrShowMessage(url);
+                            CrossSystem.openURL(url);
                         }
                         return;
                     }
@@ -83,7 +80,7 @@ public class OpenInBrowserAction extends CustomizableTableContextAppAction<FileP
                             total = urls.size();
                             current = 0;
                             for (String url : urls) {
-                                CrossSystem.openURLOrShowMessage(url);
+                                CrossSystem.openURL(url);
                                 current++;
                                 Thread.sleep(1000);
                             }
@@ -108,7 +105,6 @@ public class OpenInBrowserAction extends CustomizableTableContextAppAction<FileP
                             return null;
                         }
                     }, 0, _GUI.T.OpenInBrowserAction_actionPerformed_open_in_browser__multi(), _GUI.T.OpenInBrowserAction_actionPerformed_open_in_browser__multi_msg(urls.size()), NewTheme.I().getIcon(IconKey.ICON_BROWSE, 32), null, null);
-
                     try {
                         Dialog.getInstance().showDialog(pg);
                     } catch (DialogClosedException e) {

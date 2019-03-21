@@ -275,18 +275,6 @@ public class SecondLevelLaunch {
             LoggerFactory.getDefaultLogger().warning("Javacheck: JDownloader needs at least Java 1.5 or higher!");
             System.exit(0);
         }
-        if (Application.isOutdatedJavaVersion(true)) {
-            try {
-                LoggerFactory.getDefaultLogger().severe("BUGGY Java Version detected: " + Application.getJavaVersion());
-                if (CrossSystem.isMac() && Application.getJavaVersion() >= 17005000l && Application.getJavaVersion() <= 17006000l) {
-                    /* TODO: remove me after we've upgraded mac installer */
-                    return;
-                }
-                Dialog.getInstance().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, _JDT.T.gui_javacheck_newerjavaavailable_title(Application.getJavaVersion()), _JDT.T.gui_javacheck_newerjavaavailable_msg(), new AbstractIcon(IconKey.ICON_WARNING, 32), null, null);
-                CrossSystem.openURLOrShowMessage("http://jdownloader.org/download/index?updatejava=1");
-            } catch (DialogNoAnswerException e) {
-            }
-        }
     }
 
     /**

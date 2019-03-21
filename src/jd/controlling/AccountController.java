@@ -80,11 +80,11 @@ public class AccountController implements AccountControllerListener, AccountProp
     private final HashMap<String, List<Account>>                                 MULTIHOSTER_ACCOUNTS;
     private static AccountController                                             INSTANCE         = new AccountController();
     private final Eventsender<AccountControllerListener, AccountControllerEvent> broadcaster      = new Eventsender<AccountControllerListener, AccountControllerEvent>() {
-                                                                                                      @Override
-                                                                                                      protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
-                                                                                                          listener.onAccountControllerEvent(event);
-                                                                                                      }
-                                                                                                  };
+        @Override
+        protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
+            listener.onAccountControllerEvent(event);
+        }
+    };
 
     public Eventsender<AccountControllerListener, AccountControllerEvent> getEventSender() {
         return broadcaster;
@@ -919,7 +919,7 @@ public class AccountController implements AccountControllerListener, AccountProp
             }
             refURL = AccountController.createFullBuyPremiumUrl(buyPremium, source);
         }
-        CrossSystem.openURLOrShowMessage(refURL);
+        CrossSystem.openURL(refURL);
     }
 
     @Override

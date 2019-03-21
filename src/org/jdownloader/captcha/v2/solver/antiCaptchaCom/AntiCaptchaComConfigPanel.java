@@ -46,7 +46,7 @@ public final class AntiCaptchaComConfigPanel extends AbstractCaptchaSolverConfig
 
             @Override
             public void actionPerformed(ActionEvent e) {
-                CrossSystem.openURLOrShowMessage("http://getcaptchasolution.com/pue5rd7req");
+                CrossSystem.openURL("http://getcaptchasolution.com/pue5rd7req");
             }
         }), "gapleft 37,spanx,pushx,growx");
         apiKey = new TextInput(CFG_ANTICAPTCHA_COM.API_KEY);

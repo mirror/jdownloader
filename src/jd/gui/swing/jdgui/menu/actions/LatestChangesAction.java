@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
@@ -24,7 +23,6 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 
 public class LatestChangesAction extends CustomizableAppAction {
-
     private static final long serialVersionUID = 2705114922279833817L;
 
     public LatestChangesAction() {
@@ -35,7 +33,6 @@ public class LatestChangesAction extends CustomizableAppAction {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        CrossSystem.openURLOrShowMessage("https://svn.jdownloader.org/projects/jd/activity");
+        CrossSystem.openURL("https://svn.jdownloader.org/projects/jd/activity");
     }
-
 }

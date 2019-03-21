@@ -10,6 +10,8 @@ import javax.swing.JLabel;
 import javax.swing.JSeparator;
 import javax.swing.JTextField;
 
+import jd.controlling.reconnect.pluginsinc.liveheader.translate.T;
+
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtTextArea;
 import org.appwork.swing.components.ExtTextField;
@@ -20,13 +22,9 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 
-import jd.controlling.reconnect.pluginsinc.liveheader.translate.T;
-
 public class DataCompareDialog extends AbstractDialog<Object> {
-
     private static final int ICONSIZE = 32;
     private String           hostName;
-
     private String           manufactor;
 
     public String getHostName() {
@@ -59,7 +57,6 @@ public class DataCompareDialog extends AbstractDialog<Object> {
     private JTextField txtName;
     private JTextField txtManufactor;
     private JTextField txtFirmware;
-
     private JTextField txtUser;
     private JTextField txtPassword;
     private String     firmware;
@@ -77,7 +74,6 @@ public class DataCompareDialog extends AbstractDialog<Object> {
         this.username = username;
         this.password = password;
         loginDesc = T.T.DataCompareDialog_layoutDialogContent_webinterface_desc();
-
     }
 
     @Override
@@ -95,7 +91,7 @@ public class DataCompareDialog extends AbstractDialog<Object> {
             }
 
             public void actionPerformed(ActionEvent e) {
-                CrossSystem.openURLOrShowMessage("http://" + txtIP.getText());
+                CrossSystem.openURL("http://" + txtIP.getText());
             }
         });
         ExtTextArea desc = new ExtTextArea();
@@ -111,7 +107,6 @@ public class DataCompareDialog extends AbstractDialog<Object> {
         if (!noLogins) {
             p.add(header(NewTheme.I().getIcon(org.jdownloader.gui.IconKey.ICON_BASICAUTH, ICONSIZE), T.T.DataCompareDialog_layoutDialogContent_webinterface(), loginDesc), "spanx");
             txtIP = addField(p, T.T.DataCompareDialog_layoutDialogContent_ip(), hostName, T.T.DataCompareDialog_layoutDialogContent_ip_help(), btnWebinterface);
-
             txtUser = addField(p, T.T.DataCompareDialog_layoutDialogContent_user(), username, T.T.DataCompareDialog_layoutDialogContent_user_help(), null);
             txtPassword = addField(p, T.T.DataCompareDialog_layoutDialogContent_password(), password, T.T.DataCompareDialog_layoutDialogContent_password_help(), null);
         }
@@ -130,7 +125,6 @@ public class DataCompareDialog extends AbstractDialog<Object> {
             p.add(txt);
             p.add(comp);
         }
-
         return txt;
     }
 

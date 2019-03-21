@@ -615,8 +615,10 @@ public class PremiumTo extends UseNet {
     @Override
     public List<UsenetServer> getAvailableUsenetServer() {
         final List<UsenetServer> ret = new ArrayList<UsenetServer>();
+        ret.addAll(UsenetServer.createServerList("usenet.premium.to", false, 119, 81));
+        ret.addAll(UsenetServer.createServerList("usenet.premium.to", true, 444, 563));
         ret.addAll(UsenetServer.createServerList("usenet2.premium.to", false, 119, 81));
-        ret.addAll(UsenetServer.createServerList("usenet2.premium.to", true, 563, 444));
+        ret.addAll(UsenetServer.createServerList("usenet2.premium.to", true, 444, 563));
         return ret;
     }
 }

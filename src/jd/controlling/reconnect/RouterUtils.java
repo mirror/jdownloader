@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.controlling.reconnect;
 
 import java.io.File;
@@ -44,6 +43,8 @@ import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.IPVERSION;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyUtils;
 import org.appwork.utils.os.CrossSystem;
@@ -52,18 +53,16 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.updatev2.InternetConnectionSettings;
 
 public class RouterUtils {
-
-    private static final String    PATTERN_WIN_ARP = "..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?";
-    private static final LogSource LOGGER          = LogController.getInstance().getLogger("RouterUtils");
-    private static InetAddress     ADDRESS_CACHE;
-
+    private static final String         PATTERN_WIN_ARP = "..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?";
+    private static final LogSource      LOGGER          = LogController.getInstance().getLogger("RouterUtils");
+    private static volatile InetAddress ADDRESS_CACHE;
     /**
      * Runs throw a predefined Host Table (multithreaded) and checks if there is a service on port 80. returns the ip if there is a
      * webservice on any adress. See {@link #updateHostTable()}
      *
      * @return
      */
-    private static InetAddress     ASYNCH_RETURN;
+    private static volatile InetAddress ASYNCH_RETURN;
 
     private static String callArpTool(final String ipAddress) throws IOException, InterruptedException {
         if (CrossSystem.isWindows()) {
@@ -75,7 +74,8 @@ public class RouterUtils {
 
     private static String callArpToolDefault(final String ipAddress) throws IOException, InterruptedException {
         String out = null;
-        final InetAddress hostAddress = InetAddress.getByName(ipAddress);
+        final InetAddress hostAddress = HTTPConnectionUtils.resolvHostIP(ipAddress, IPVERSION.IPV4_ONLY)[0];
+        // TODO: Check/Add IPv6 Support. We speak IPv4-Only with Router
         ProcessBuilder pb = null;
         try {
             pb = ProcessBuilderFactory.create(new String[] { "ping", ipAddress });
@@ -116,7 +116,6 @@ public class RouterUtils {
     private static String callArpToolWindows(final String ipAddress) throws IOException, InterruptedException {
         final ProcessBuilder pb = ProcessBuilderFactory.create(new String[] { "ping", ipAddress });
         pb.start();
-
         final String[] parts = JDUtilities.runCommand("arp", new String[] { "-a" }, null, 10).split(System.getProperty("line.separator"));
         pb.directory();
         for (final String part : parts) {
@@ -286,7 +285,8 @@ public class RouterUtils {
                                     if (ASYNCH_RETURN != null) {
                                         return;
                                     }
-                                    RouterUtils.ASYNCH_RETURN = InetAddress.getByName(host);
+                                    RouterUtils.ASYNCH_RETURN = HTTPConnectionUtils.resolvHostIP(host, IPVERSION.IPV4_ONLY)[0];
+                                    // TODO: Check/Add IPv6 Support. We speak IPv4-Only with Router
                                     threadPool.shutdown();
                                 }
                             }
@@ -310,7 +310,6 @@ public class RouterUtils {
      * @throws UnsupportedEncodingException
      */
     public static InetAddress getIPFormNetStat() throws InterruptedException, UnsupportedEncodingException, IOException {
-
         final Pattern pat = Pattern.compile("^\\s*(?:0\\.0\\.0\\.0\\s*){1,2}((?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)).*");
         ProcessBuilder pb = ProcessBuilderFactory.create("netstat", "-rn");
         pb.redirectErrorStream(true);
@@ -322,7 +321,6 @@ public class RouterUtils {
         // System.out.println(0);
         // exec.start();
         // exec.waitTimeout();
-
         final String[] out = Regex.getLines(result);
         for (final String string : out) {
             System.out.println("NetStat: " + string);
@@ -335,10 +333,8 @@ public class RouterUtils {
                 if (checkPort(m)) {
                     return InetAddress.getByName(m);
                 }
-
             }
         }
-
         return null;
     }
 
@@ -391,7 +387,6 @@ public class RouterUtils {
                     exec.waitTimeout();
                     String routingt = exec.getOutputStream() + " \r\n " + exec.getErrorStream();
                     routingt = routingt.replaceFirst(".*\n.*", "");
-
                     final Pattern pattern = Pattern.compile("\\d+\\.\\d+\\.\\d+\\.\\d+.*?(\\d+\\.\\d+\\.\\d+\\.\\d+).*?G", Pattern.CASE_INSENSITIVE);
                     final Matcher matcher = pattern.matcher(routingt);
                     while (matcher.find()) {
@@ -407,7 +402,6 @@ public class RouterUtils {
                                 if (RouterUtils.checkPort(hostname)) {
                                     return ia;
                                 }
-
                             } catch (final Exception e) {
                                 LogController.CL().log(e);
                             }
@@ -432,7 +426,6 @@ public class RouterUtils {
         final String[] d = rd.split("[:\\-]");
         final StringBuilder ret = new StringBuilder(18);
         for (final String string : d) {
-
             if (string.length() < 2) {
                 ret.append('0');
             }
@@ -452,7 +445,6 @@ public class RouterUtils {
      * @throws InterruptedException
      */
     public static String getMacAddress(final String ip) throws UnknownHostException, IOException, InterruptedException {
-
         final String ret = RouterUtils.getMacAddress(InetAddress.getByName(ip));
         if (ret != null) {
             return ret.replace(":", "").replace("-", "").toUpperCase();
@@ -471,7 +463,6 @@ public class RouterUtils {
             final String[] ret = new String[1];
             final Executer exec = new Executer("tracert ");
             exec.addProcessListener(new ProcessListener() {
-
                 private int counter = 0;
 
                 public void onProcess(Executer exec, String latestLine, DynByteBuffer totalBuffer) {
@@ -491,7 +482,6 @@ public class RouterUtils {
                             }
                         }
                     }
-
                 }
 
                 public void onBufferChanged(Executer exec, DynByteBuffer totalBuffer, int latestReadNum) {
@@ -507,11 +497,9 @@ public class RouterUtils {
             } catch (Throwable e) {
                 return null;
             }
-
         } else {
             throw new IllegalStateException("OS not supported");
         }
-
     }
 
     /**
@@ -522,7 +510,6 @@ public class RouterUtils {
     public static boolean isWindowsModemConnection() {
         if (CrossSystem.isWindows()) {
             // tested on win7
-
             final Executer exec = new Executer("tracert ");
             exec.addParameters(new String[] { "-d", "-h", "1", "-4", "-w", "500", "jdownloader.org" });
             exec.setRunin("/");
@@ -533,7 +520,6 @@ public class RouterUtils {
             String[] lines = Regex.getLines(routingt.trim());
             if (lines.length >= 2) {
                 for (int i = 1; i < lines.length; i++) {
-
                     final Matcher matcher = Pattern.compile(IP.IP_PATTERN, Pattern.CASE_INSENSITIVE | Pattern.DOTALL).matcher(lines[i]);
                     if (matcher.find()) {
                         String firstRouteIP = matcher.group(0);
@@ -542,13 +528,11 @@ public class RouterUtils {
                         } else {
                             return true;
                         }
-
                     }
                 }
             } else {
                 throw new IllegalStateException("Not available (Offline?) Exception");
             }
-
         } else {
             throw new IllegalStateException("OS not supported");
         }
@@ -621,5 +605,4 @@ public class RouterUtils {
         }
         return ret;
     }
-
 }
