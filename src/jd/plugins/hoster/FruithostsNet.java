@@ -15,13 +15,13 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import org.jdownloader.plugins.components.FruithostedCDN;
-
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.jdownloader.plugins.components.FruithostedCDN;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fruithosts.net", "streamango.com" }, urls = { "https?://(?:www\\.)?fruithosts\\.net/(?:f|embed)/([a-z0-9]+)(/[^/]+)?", "https?://(?:www\\.)?streamango\\.com/(?:f|embed)/([a-z0-9]+)(/[^/]+)?" })
 public class FruithostsNet extends FruithostedCDN {
@@ -54,7 +54,6 @@ public class FruithostsNet extends FruithostedCDN {
         }
     }
 
-    @Override
     public int getDownloadModeMaxChunks(final Account account, DownloadLink downloadlink) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
