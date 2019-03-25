@@ -337,22 +337,25 @@ public class WorldBytezCom extends antiDDoSForHost {
         final String sharebox1 = "copy\\(this\\);.+\\](.+) - ([\\d\\.]+ (?:B|KB|MB|GB))\\[/URL\\]";
         /* standard traits from base page */
         if (inValidate(fileInfo[0])) {
-            fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + getHostsPatternPart() + "/" + fuid + "/(.*?)</font>").getMatch(1);
+            fileInfo[0] = new Regex(correctedBR, "<b>\\s*Download File\\s*:?\\s*</b>\\s*(.*?)\\s*</").getMatch(0);
             if (inValidate(fileInfo[0])) {
-                fileInfo[0] = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
+                fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + getHostsPatternPart() + "/" + fuid + "/(.*?)</font>").getMatch(1);
                 if (inValidate(fileInfo[0])) {
-                    fileInfo[0] = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
-                    /* traits from download1 page below */
+                    fileInfo[0] = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
                     if (inValidate(fileInfo[0])) {
-                        fileInfo[0] = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"']+)").getMatch(1);
-                        // next two are details from sharing box
+                        fileInfo[0] = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
+                        /* traits from download1 page below */
                         if (inValidate(fileInfo[0])) {
-                            fileInfo[0] = new Regex(correctedBR, sharebox0).getMatch(0);
+                            fileInfo[0] = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"']+)").getMatch(1);
+                            // next two are details from sharing box
                             if (inValidate(fileInfo[0])) {
-                                fileInfo[0] = new Regex(correctedBR, sharebox1).getMatch(0);
+                                fileInfo[0] = new Regex(correctedBR, sharebox0).getMatch(0);
                                 if (inValidate(fileInfo[0])) {
-                                    /* Link of the box without filesize */
-                                    fileInfo[0] = new Regex(correctedBR, "onFocus=\"copy\\(this\\);\">http://(www\\.)?" + getHostsPatternPart() + "/" + fuid + "/([^<>\"]*?)</textarea").getMatch(1);
+                                    fileInfo[0] = new Regex(correctedBR, sharebox1).getMatch(0);
+                                    if (inValidate(fileInfo[0])) {
+                                        /* Link of the box without filesize */
+                                        fileInfo[0] = new Regex(correctedBR, "onFocus=\"copy\\(this\\);\">http://(www\\.)?" + getHostsPatternPart() + "/" + fuid + "/([^<>\"]*?)</textarea").getMatch(1);
+                                    }
                                 }
                             }
                         }
@@ -415,7 +418,10 @@ public class WorldBytezCom extends antiDDoSForHost {
         }
         String filename = br.getRegex("<b>Filename\\s*:?\\s*</b></td><td>([^<>\"]*?)</td>").getMatch(0);
         if (filename == null) {
-            filename = fallbackFilename;
+            filename = br.getRegex("<b>Filename\\s*:?\\s*</b>\\s*<br\\s*/>\\s*([^<>\"]*?)\\s*</td>").getMatch(0);
+            if (filename == null) {
+                filename = fallbackFilename;
+            }
         }
         return filename;
     }
