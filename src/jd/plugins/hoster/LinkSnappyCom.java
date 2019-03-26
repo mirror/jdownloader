@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map.Entry;
 
 import jd.PluginWrapper;
@@ -48,6 +49,7 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
@@ -160,7 +162,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + message, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             }
-            final ArrayList<String> supportedHosts = new ArrayList<String>();
+            List<String> supportedHosts = new ArrayList<String>();
             /* connection info map */
             final HashMap<String, HashMap<String, Object>> con = new HashMap<String, HashMap<String, Object>>();
             LinkedHashMap<String, Object> hosterInformation;
@@ -225,7 +227,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
                 supportedHosts.add(host);
             }
             currentAcc.setProperty("accountProperties", con);
-            ac.setMultiHostSupport(this, supportedHosts);
+            supportedHosts = ac.setMultiHostSupport(this, supportedHosts);
             return ac;
         }
     }
@@ -235,6 +237,11 @@ public class LinkSnappyCom extends antiDDoSForHost {
             return true;
         }
         return false;
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.MULTIHOST };
     }
 
     private void dailyLimitReached() throws PluginException {
