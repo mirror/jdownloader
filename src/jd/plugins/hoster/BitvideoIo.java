@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Map;
 
@@ -73,6 +74,19 @@ public class BitvideoIo extends PluginForHost {
         return super.rewriteHost(host);
     }
 
+    private boolean handleConfirm(Browser br) throws IOException {
+        final Form f = br.getForm(0);
+        if (f != null) {
+            if (f.hasInputFieldByName("confirm") && "image".equals(f.getInputField("confirm").getType())) {
+                f.put("confirm.x", "62");
+                f.put("confirm.y", "70");
+            }
+            br.submitForm(f);
+            return true;
+        }
+        return false;
+    }
+
     /** 2016-05-18: playernaut.com uses crypted js, bitporno.sx doesn't! */
     @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     @Override
@@ -104,6 +118,9 @@ public class BitvideoIo extends PluginForHost {
                 }
             }
             json_source = br.getRegex("\"sources\"\\s*?:\\s*?(\\[.*?\\])").getMatch(0);
+            if (handleConfirm(br)) {
+                json_source = br.getRegex("\"sources\"\\s*?:\\s*?(\\[.*?\\])").getMatch(0);
+            }
         } else {
             /* Only use one of their domains */
             br.getPage("https://www.bitporno.com/?v=" + fid);
@@ -131,14 +148,7 @@ public class BitvideoIo extends PluginForHost {
             }
             // from iframe
             br.getPage("/embed/" + fid);
-            final Form f = br.getForm(0);
-            if (f != null) {
-                if (f.hasInputFieldByName("confirm") && "image".equals(f.getInputField("confirm").getType())) {
-                    f.put("confirm.x", "62");
-                    f.put("confirm.y", "70");
-                }
-                br.submitForm(f);
-            }
+            handleConfirm(br);
             final String decode = new org.jdownloader.encoding.AADecoder(br.toString()).decode();
             json_source = new Regex(decode != null ? decode : br.toString(), "sources(?:\")?[\t\n\r ]*?:[\t\n\r ]*?(\\[.*?\\])").getMatch(0);
         }
@@ -209,6 +219,7 @@ public class BitvideoIo extends PluginForHost {
                     if (br.containsHTML("q=" + q) && q.equals(userPreferredVideoquality)) {
                         embed = link.getDownloadURL().replace("/v/", "/e/") + "&q=" + userPreferredVideoquality;
                         br.getPage(embed);
+                        handleConfirm(br);
                         break;
                     }
                 }
@@ -217,6 +228,7 @@ public class BitvideoIo extends PluginForHost {
                         if (br.containsHTML("q=" + q)) {
                             embed = link.getDownloadURL().replace("/v/", "/e/") + "&q=" + q;
                             br.getPage(embed);
+                            handleConfirm(br);
                             break;
                         }
                     }
