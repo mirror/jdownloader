@@ -711,10 +711,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                             if (inValidate(fileInfo[1])) {
                                 fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
                             }
-                            // generic failover#2
-                            if (inValidate(fileInfo[1])) {
-                                fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(?:B(?:ytes?)?))").getMatch(0);
-                            }
                         }
                     }
                 }
