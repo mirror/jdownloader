@@ -72,6 +72,13 @@ public class The7skyInfo extends XFileSharingProBasic {
     }
 
     @Override
+    public String[] scanInfo(String[] fileInfo) {
+        final String[] ret = super.scanInfo(fileInfo);
+        ret[1] = null;
+        return ret;
+    }
+
+    @Override
     public int getMaxSimultaneousFreeAnonymousDownloads() {
         return 1;
     }
