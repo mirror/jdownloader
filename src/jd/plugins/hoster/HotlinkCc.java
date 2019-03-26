@@ -23,6 +23,7 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.PluginException;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
@@ -115,6 +116,14 @@ public class HotlinkCc extends XFileSharingProBasic {
     public boolean supports_precise_expire_date() {
         // remove after next full core update, pattern changes pending in XFileSharingPro
         return false;
+    }
+
+    @Override
+    public void doFree(DownloadLink link, Account account) throws Exception, PluginException {
+        if (checkShowFreeDialog(getHost())) {
+            showFreeDialog(getHost());
+        }
+        super.doFree(link, account);
     }
 
     @Override
