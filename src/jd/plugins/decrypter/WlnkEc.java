@@ -28,6 +28,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
+import org.appwork.utils.Regex;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
@@ -47,19 +48,20 @@ public class WlnkEc extends antiDDoSForDecrypt {
             return decryptedLinks;
         }
         String fpName = null;
-        final String captchaImage = br.getRegex("<img\\s*src\\s*=\\s*\"([^\"]*?)\"\\s*onclick=").getMatch(0);
+        final String removeCommentPage = br.toString().replaceAll("(?s)(<!--.*?-->)", "");
+        final String captchaImage = new Regex(removeCommentPage, "<img\\s*src\\s*=\\s*\"([^\"]*?)\"\\s*onclick=").getMatch(0);
         final String captchaCode;
         if (captchaImage != null) {
             captchaCode = getCaptchaCode(captchaImage, param);
-            postPage(this.br.getURL(), "submit=unlock&cr-nvar=" + Encoding.urlEncode(captchaCode.toUpperCase(Locale.ENGLISH)));
+            postPage(this.br.getURL(), "subform=unlock&cr-nvar=" + Encoding.urlEncode(captchaCode.toUpperCase(Locale.ENGLISH)));
         } else {
             captchaCode = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
-            postPage(this.br.getURL(), "submit=unlock&captcha-response-newvar=" + Encoding.urlEncode(captchaCode.toUpperCase(Locale.ENGLISH)));
+            postPage(this.br.getURL(), "subform=unlock&g-recaptcha-response=" + Encoding.urlEncode(captchaCode.toUpperCase(Locale.ENGLISH)));
         }
         if (br.containsHTML("Captcha invalide")) {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-        final String[] links = br.getRegex("\"(http[^<>\"\\']+)\" rel=\"external nofollow\"").getColumn(0);
+        final String[] links = br.getRegex("\"(https?[^<>\"\\']+)\" rel=\"external nofollow\"").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
