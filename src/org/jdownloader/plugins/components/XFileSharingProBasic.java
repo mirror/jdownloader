@@ -27,16 +27,6 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -61,6 +51,16 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.hoster.RTMPDownload;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 public class XFileSharingProBasic extends antiDDoSForHost {
     public XFileSharingProBasic(PluginWrapper wrapper) {
@@ -317,8 +317,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * See also function getFilesizeViaAvailablecheckAlt! <br />
      * <b> Enabling this will eventually lead to at least one additional website-request! </b>
      *
-     * @return true: Implies that website supports getFilesizeViaAvailablecheckAlt call as an alternative source for filesize-parsing.
-     *         <br />
+     * @return true: Implies that website supports getFilesizeViaAvailablecheckAlt call as an alternative source for filesize-parsing. <br />
      *         false: Implies that website does NOT support getFilesizeViaAvailablecheckAlt. <br />
      *         default: true
      */
@@ -516,7 +515,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      *         false: Link is downloadable for all users.
      */
     public boolean isPremiumOnlyHTML() {
-        return new Regex(correctedBR, "( can download files up to |>Upgrade your account to download (?:larger|bigger) files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit|>This file is available for Premium Users only)").matches();
+        return new Regex(correctedBR, "( can download files up to |>\\s*Upgrade your account to download (?:larger|bigger) files|>\\s*The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit|>\\s*This file is available for Premium Users only|>\\s*Available Only for Premium Members)").matches();
     }
 
     /**
@@ -524,7 +523,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      *         false: Website is not in maintenance mode and should usually work fine.
      */
     public boolean isWebsiteUnderMaintenance() {
-        return br.getHttpConnection().getResponseCode() == 500 || new Regex(correctedBR, "\">This server is in maintenance mode").matches();
+        return br.getHttpConnection().getResponseCode() == 500 || new Regex(correctedBR, "\">\\s*This server is in maintenance mode").matches();
     }
 
     public boolean isOffline(final DownloadLink link) {
@@ -969,6 +968,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         String dllink = checkDirectLink(link, directlinkproperty);
         /* 2, check for streaming/direct links on the first page */
         if (dllink == null) {
+            checkErrors(link, account, false);
             dllink = getDllink();
         }
         /* 3, do they provide audio hosting? */
@@ -1314,13 +1314,15 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * [NOT html]).
      */
     public String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+        final String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                con = br2.openHeadConnection(dllink);
-                if (con.getResponseCode() == 503) {
+                con = openAntiDDoSRequestConnection(br2, br2.createHeadRequest(dllink));
+                if (con.isOK() && con.isContentDisposition()) {
+                    return dllink;
+                } else if (con.getResponseCode() == 503) {
                     /*
                      * Too many connections but that does not mean that our downloadlink is valid. Accept it and if it still returns 503 on
                      * download-attempt this error will get displayed to the user.
@@ -1329,11 +1331,14 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     return dllink;
                 } else if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                    return null;
+                } else {
+                    return dllink;
                 }
             } catch (final Exception e) {
+                logger.log(e);
                 downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+                return null;
             } finally {
                 try {
                     con.disconnect();
@@ -1341,7 +1346,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 }
             }
         }
-        return dllink;
+        return null;
     }
 
     @Override
@@ -2003,7 +2008,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     }
                     String expireSecond = new Regex(correctedBR, Pattern.compile("<div class=\"accexpire\">.*?</div>", Pattern.CASE_INSENSITIVE)).getMatch(-1);
                     if (StringUtils.isEmpty(expireSecond)) {
-                        expireSecond = new Regex(correctedBR, Pattern.compile("Premium(-| )Account expires?:([^\\s]+)", Pattern.CASE_INSENSITIVE)).getMatch(1);
+                        expireSecond = new Regex(correctedBR, Pattern.compile("Premium(-| )Account expires?\\s*:\\s*(?:</span>)?\\s*(?:<span>)?\\s*([a-zA-Z0-9, ]+)\\s*</", Pattern.CASE_INSENSITIVE)).getMatch(1);
                     }
                     if (StringUtils.isEmpty(expireSecond)) {
                         /*
@@ -2014,7 +2019,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                          * TODO: 2019-02-21: This may lead to false-positives thus it may happen that free accounts get recognized as
                          * premium! Maybe change RegEx like this: 'blabla, minutes, seconds' (minutes AND seconds required) ...
                          */
-                        expireSecond = new Regex(correctedBR, Pattern.compile("(\\d+ years?, )?(\\d+ days?, )?(\\d+ hours?, )?(\\d+ minutes?, )?\\d+ seconds", Pattern.CASE_INSENSITIVE)).getMatch(-1);
+                        expireSecond = new Regex(correctedBR, Pattern.compile(">\\s*(\\d+ years?, )?(\\d+ days?, )?(\\d+ hours?, )?(\\d+ minutes?, )?\\d+ seconds\\s*<", Pattern.CASE_INSENSITIVE)).getMatch(-1);
                     }
                     if (!inValidate(expireSecond)) {
                         String tmpYears = new Regex(expireSecond, "(\\d+)\\s+years?").getMatch(0);
