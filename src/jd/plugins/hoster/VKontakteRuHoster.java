@@ -63,13 +63,13 @@ import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 //Links are coming from a decrypter
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://vkontaktedecrypted\\.ru/(picturelink/(?:\\-)?\\d+_\\d+(\\?tag=[\\d\\-]+)?|audiolink/(?:\\-)?\\d+_\\d+|videolink/[\\d\\-]+)|https?://(?:new\\.)?vk\\.com/doc[\\d\\-]+_[\\d\\-]+(\\?hash=[a-z0-9]+)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me|vkuservideo\\.net|vkuseraudio\\.net)/[^<>\"]+\\.(?:mp[34]|(?:rar|zip).+|[rz][0-9]{2}.+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://vkontaktedecrypted\\.ru/(picturelink/(?:\\-)?\\d+_\\d+(\\?tag=[\\d\\-]+)?|audiolink/(?:\\-)?\\d+_\\d+|videolink/[\\d\\-]+)|https?://(?:new\\.)?vk\\.com/doc[\\d\\-]+_[\\d\\-]+(\\?hash=[a-z0-9]+)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me|vkuservideo\\.net|vkuseraudio\\.net)/[^<>\"]+\\.(?:mp[34]|(?:rar|zip).+|[rz][0-9]{2}.+)" })
 public class VKontakteRuHoster extends PluginForHost {
     private static final String DOMAIN                                          = "vk.com";
-    private static final String TYPE_AUDIOLINK                                  = "http://vkontaktedecrypted\\.ru/audiolink/((?:\\-)?\\d+)_(\\d+)";
-    private static final String TYPE_VIDEOLINK                                  = "http://vkontaktedecrypted\\.ru/videolink/[\\d\\-]+";
+    private static final String TYPE_AUDIOLINK                                  = "https?://vkontaktedecrypted\\.ru/audiolink/((?:\\-)?\\d+)_(\\d+)";
+    private static final String TYPE_VIDEOLINK                                  = "https?://vkontaktedecrypted\\.ru/videolink/[\\d\\-]+";
     private static final String TYPE_DIRECT                                     = "https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me|vkuservideo\\.net|vkuseraudio\\.net)/[^<>\"]+\\.(?:[A-Za-z0-9]{1,5})(?:.*)";
-    private static final String TYPE_PICTURELINK                                = "http://vkontaktedecrypted\\.ru/picturelink/((?:\\-)?\\d+)_(\\d+)(\\?tag=[\\d\\-]+)?";
+    private static final String TYPE_PICTURELINK                                = "https?://vkontaktedecrypted\\.ru/picturelink/((?:\\-)?\\d+)_(\\d+)(\\?tag=[\\d\\-]+)?";
     private static final String TYPE_DOCLINK                                    = "https?://(?:new\\.)?vk\\.com/doc[\\d\\-]+_\\d+(\\?hash=[a-z0-9]+)?";
     public static final long    trust_cookie_age                                = 300000l;
     private static final String TEMPORARILYBLOCKED                              = jd.plugins.decrypter.VKontakteRu.TEMPORARILYBLOCKED;
@@ -306,7 +306,7 @@ public class VKontakteRuHoster extends PluginForHost {
                         /*
                          * No way to easily get the needed info directly --> Load the complete audio album and find a fresh directlink for
                          * our ID.
-                         *
+                         * 
                          * E.g. get-play-link: https://vk.com/audio?id=<ownerID>&audio_id=<contentID>
                          */
                         /*
@@ -917,14 +917,16 @@ public class VKontakteRuHoster extends PluginForHost {
         }
     }
 
-    private boolean isResumeSupported(final DownloadLink downloadLink, final String downloadURL) {
+    private boolean isResumeSupported(final DownloadLink downloadLink, final String downloadURL) throws IOException {
         if (downloadLink.getDownloadURL().matches(VKontakteRuHoster.TYPE_VIDEOLINK)) {
             return true;
         } else if (downloadLink.getDownloadURL().matches(VKontakteRuHoster.TYPE_VIDEOLINK) && StringUtils.containsIgnoreCase(downloadLink.getDownloadURL(), ".mp4")) {
             return true;
-        } else if (downloadURL != null && downloadURL.matches(".+\\.(mp3|aac|m4a)$")) {
+        } else if (downloadURL != null && (downloadURL.matches(".+\\.(mp4)$") || new URL(downloadURL).getFile().matches(".+\\.(mp4)$"))) {
             return true;
-        } else if (downloadURL != null && downloadURL.matches(".+\\.(jpe?g|png|gif|bmp)$")) {
+        } else if (downloadURL != null && (downloadURL.matches(".+\\.(mp3|aac|m4a)$") || new URL(downloadURL).getFile().matches(".+\\.(mp3|aac|m4a)$"))) {
+            return true;
+        } else if (downloadURL != null && (downloadURL.matches(".+\\.(jpe?g|png|gif|bmp)$") || new URL(downloadURL).getFile().matches(".+\\.(jpe?g|png|gif|bmp)$"))) {
             return false;
         } else {
             return false;

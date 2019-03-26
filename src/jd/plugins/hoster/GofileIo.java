@@ -16,15 +16,11 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
-import jd.config.Property;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
+import jd.http.requests.PostRequest;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -33,7 +29,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gofile.io" }, urls = { "https?://(?:www\\.)?gofile\\.io/\\?c=[A-Za-z0-9]+" })
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.HTTPHeader;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gofile.io" }, urls = { "https?://(?:www\\.)?gofile\\.io/\\?c=[A-Za-z0-9]+#index=\\d+&id=\\d+" })
 public class GofileIo extends PluginForHost {
     public GofileIo(PluginWrapper wrapper) {
         super(wrapper);
@@ -44,13 +47,20 @@ public class GofileIo extends PluginForHost {
         return "https://gofile.io/";
     }
 
-    @Override
-    public String getLinkID(final DownloadLink link) {
-        final String linkid = new Regex(link.getPluginPatternMatcher(), "([A-Za-z0-9]+)$").getMatch(0);
-        if (linkid != null) {
-            return linkid;
+    private String getC(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), "c=([A-Za-z0-9]+)").getMatch(0);
+    }
+
+    private String getFileID(final DownloadLink link) throws PluginException {
+        final String ret = new Regex(link.getPluginPatternMatcher(), "id=(\\d+)").getMatch(0);
+        if (ret == null) {
+            if (link.getPluginPatternMatcher().contains("#index=")) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         } else {
-            return super.getLinkID(link);
+            return ret;
         }
     }
 
@@ -58,92 +68,76 @@ public class GofileIo extends PluginForHost {
     private static final boolean FREE_RESUME       = true;
     private static final int     FREE_MAXCHUNKS    = 0;
     private static final int     FREE_MAXDOWNLOADS = 20;
+    private int                  fileIndex         = -1;
 
-    // private static final boolean ACCOUNT_FREE_RESUME = true;
-    // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
-    // private static final boolean ACCOUNT_PREMIUM_RESUME = true;
-    // private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-    //
-    // /* don't touch the following! */
-    // private static AtomicInteger maxPrem = new AtomicInteger(1);
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("This download doesn")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final String c = getC(link);
+        br.getPage("https://gofile.io/?c=" + c);
+        final PostRequest post = br.createPostRequest("https://api.gofile.io/getUpload.php?c=" + c, "");
+        post.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ORIGIN, "https://gofile.io"));
+        br.getPage(post);
+        final Map<String, Object> response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        if ("ok".equals(response.get("status"))) {
+            final String fileID = getFileID(link);
+            final List<Map<String, Object>> data = (List<Map<String, Object>>) response.get("data");
+            int index = 0;
+            for (Map<String, Object> entry : data) {
+                final Number id = JavaScriptEngineFactory.toLong(entry.get("id"), -1);
+                if (id.toString().equals(fileID)) {
+                    fileIndex = index;
+                    final Number size = JavaScriptEngineFactory.toLong(entry.get("size"), -1);
+                    if (size.longValue() >= 0) {
+                        // not verified!
+                        link.setDownloadSize(size.longValue());
+                    }
+                    final String name = (String) entry.get("name");
+                    if (name != null) {
+                        link.setFinalFileName(name);
+                    }
+                    return AvailableStatus.TRUE;
+                }
+                index++;
+            }
         }
-        String filename = br.getRegex("class=\"alert alert\\-info\">([^<>\"]+)</h3>").getMatch(0);
-        if (StringUtils.isEmpty(filename)) {
-            /* Fallback */
-            filename = this.getLinkID(link);
-        }
-        String filesize = br.getRegex("id=\"files_size\">([^<>\"]+)<").getMatch(0);
-        if (StringUtils.isEmpty(filename)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        filename = Encoding.htmlDecode(filename).trim();
-        link.setFinalFileName(filename + ".zip");
-        if (filesize != null) {
-            filesize = filesize.replace("Mo", "MB");
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
-        }
-        return AvailableStatus.TRUE;
+        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS);
     }
 
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        String dllink = checkDirectLink(downloadLink, directlinkproperty);
-        if (dllink == null) {
-            dllink = br.getRegex("id=\"download_all_link\" href=\"(https[^\"]+)\"").getMatch(0);
-            if (StringUtils.isEmpty(dllink)) {
+    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks) throws Exception, PluginException {
+        final String c = getC(downloadLink);
+        final PostRequest post = br.createPostRequest("https://api.gofile.io/createLink.php?c=" + c, "");
+        post.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ORIGIN, "https://gofile.io"));
+        br.getPage(post);
+        final Map<String, Object> response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final String downloadURL;
+        if ("ok".equals(response.get("status"))) {
+            final List<Map<String, Object>> data = (List<Map<String, Object>>) response.get("data");
+            final Map<String, Object> entry = data.get(fileIndex);
+            downloadURL = (String) entry.get("link");
+            if (StringUtils.isEmpty(downloadURL)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            }
-            br.followConnection();
+        } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
-        dl.startDownload();
-    }
-
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadURL, true, 0);
+        if (dl.getConnection().isOK() && (dl.getConnection().isContentDisposition() || StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "application"))) {
+            dl.startDownload();
+        } else {
             try {
-                final Browser br2 = br.cloneBrowser();
-                br2.setFollowRedirects(true);
-                con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
-                }
-            } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
+                br.followConnection();
+            } catch (final IOException e) {
+                logger.log(e);
             }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        return dllink;
     }
 
     @Override
