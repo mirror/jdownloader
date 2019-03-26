@@ -847,7 +847,6 @@ public class MegaConz extends PluginForHost {
                     br.followConnection();
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                link.setProperty("usedPlugin", getHost());
                 if (dl.startDownload()) {
                     if (link.getLinkStatus().hasStatus(LinkStatus.FINISHED) && link.getDownloadCurrent() > 0) {
                         decrypt(path, encryptionDone, link, keyString);
@@ -859,6 +858,10 @@ public class MegaConz extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is Busy", 1 * 60 * 1000l);
                 }
                 throw e;
+            } finally {
+                if (link.getDownloadCurrent() > 0) {
+                    link.setProperty("usedPlugin", getHost());
+                }
             }
         } finally {
             free(link, reservation);
@@ -1095,6 +1098,7 @@ public class MegaConz extends PluginForHost {
                     }
                     deleteDst = false;
                     link.getLinkStatus().setStatusText("Finished");
+                    link.removeProperty("usedPlugin");
                     try {
                         link.setInternalTmpFilenameAppend(null);
                         link.setInternalTmpFilename(null);
@@ -1345,6 +1349,8 @@ public class MegaConz extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-        link.setProperty("usedPlugin", Property.NULL);
+        if (link != null) {
+            link.removeProperty("usedPlugin");
+        }
     }
 }

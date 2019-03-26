@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -35,14 +34,13 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livemixtapes.com" }, urls = { "http://(www\\.)?(livemixtap\\.es/[a-z0-9]+|(\\w+\\.)?livemixtapes\\.com/(download(/mp3)?|mixtapes)/\\d+/.*?\\.html)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livemixtapes.com" }, urls = { "https?://(www\\.)?(livemixtap\\.es/[a-z0-9]+|(\\w+\\.)?livemixtapes\\.com/(download(/mp3)?|mixtapes)/\\d+/.*?\\.html)" })
 public class LiveMistapesComDecrypter extends PluginForDecrypt {
-
     public LiveMistapesComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String REDIRECTLINK           = "http://(www\\.)?livemixtap\\.es/[a-z0-9]+";
+    private static final String REDIRECTLINK           = "https?://(www\\.)?livemixtap\\.es/[a-z0-9]+";
     private static final String MUSTBELOGGEDIN         = ">You must be logged in to access this page";
     private static final String ONLYREGISTEREDUSERTEXT = "Download is only available for registered users";
 
@@ -50,7 +48,6 @@ public class LiveMistapesComDecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("/mixtapes/", "/download/");
         br.getHeaders().put("Accept-Encoding", "gzip,deflate");
-
         /** If link is a short link correct it */
         if (parameter.matches(REDIRECTLINK)) {
             br.setFollowRedirects(false);
@@ -78,7 +75,6 @@ public class LiveMistapesComDecrypter extends PluginForDecrypt {
                     logger.info("Failed to decrypt link because of server error 503: " + parameter);
                     return decryptedLinks;
                 }
-
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
@@ -89,7 +85,7 @@ public class LiveMistapesComDecrypter extends PluginForDecrypt {
         }
         // Check for embedded video(s)
         if (br.containsHTML("function videoEmbed")) {
-            final String finallink = br.getRegex("videoEmbed\\(\\'(http://[^<>\"]*?)\\'").getMatch(0);
+            final String finallink = br.getRegex("videoEmbed\\(\\'(https?://[^<>\"]*?)\\'").getMatch(0);
             if (finallink != null) {
                 decryptedLinks.add(createDownloadlink(finallink));
                 return decryptedLinks;
@@ -114,7 +110,6 @@ public class LiveMistapesComDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(mainlink);
                 return decryptedLinks;
             }
-
             final Regex fileInfo = br.getRegex("<td height=\"35\"><div[^>]+>(.*?)</div></td>[\t\n\r ]+<td align=\"center\">((\\d+(\\.\\d+)? ?(KB|MB|GB)))</td>");
             filename = fileInfo.getMatch(0);
             filesize = fileInfo.getMatch(1);
@@ -126,7 +121,6 @@ public class LiveMistapesComDecrypter extends PluginForDecrypt {
             mainlink.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         decryptedLinks.add(mainlink);
-
         return decryptedLinks;
     }
 
@@ -147,11 +141,9 @@ public class LiveMistapesComDecrypter extends PluginForDecrypt {
         try {
             ((jd.plugins.hoster.LiveMixTapesCom) hostPlugin).login(this.br, aa);
         } catch (final PluginException e) {
-
             aa.setValid(false);
             return false;
         }
         return true;
     }
-
 }
