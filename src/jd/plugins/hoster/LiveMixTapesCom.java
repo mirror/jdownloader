@@ -35,14 +35,14 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livemixtapes.com" }, urls = { "http://(\\w+\\.)?(livemixtapesdecrypted\\.com/download(/mp3)?/\\d+/.*?\\.html|club\\.livemixtapes\\.com/play/\\d+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livemixtapes.com" }, urls = { "https?://(\\w+\\.)?(livemixtapesdecrypted\\.com/download(/mp3)?/\\d+/.*?\\.html|club\\.livemixtapes\\.com/play/\\d+)" })
 public class LiveMixTapesCom extends PluginForHost {
     private static final String CAPTCHATEXT            = "/captcha/captcha\\.gif\\?";
     private static final String MAINPAGE               = "http://www.livemixtapes.com/";
     private static final String MUSTBELOGGEDIN         = ">You must be logged in to access this page";
     private static final String ONLYREGISTEREDUSERTEXT = "Download is only available for registered users";
-    private static final String TYPE_REDIRECTLINK      = "http://(www\\.)?livemixtap\\.es/[a-z0-9]+";
-    private static final String TYPE_DIRECTLINK        = "http://(www\\.)?club\\.livemixtapes\\.com/play/\\d+";
+    private static final String TYPE_REDIRECTLINK      = "https?://(www\\.)?livemixtap\\.es/[a-z0-9]+";
+    private static final String TYPE_DIRECTLINK        = "https?://(www\\.)?club\\.livemixtapes\\.com/play/\\d+";
 
     public LiveMixTapesCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -126,7 +126,7 @@ public class LiveMixTapesCom extends PluginForHost {
             if (br.containsHTML(MUSTBELOGGEDIN)) {
                 final Browser br2 = br.cloneBrowser();
                 try {
-                    br2.getPage("http://www.livemixtapes.com/play/" + new Regex(downloadLink.getDownloadURL(), "download(/mp3)?/(\\d+)").getMatch(1));
+                    br2.getPage("https://www.livemixtapes.com/play/" + new Regex(downloadLink.getDownloadURL(), "download(/mp3)?/(\\d+)").getMatch(1));
                     dllink = br2.getRedirectLocation();
                 } catch (final Exception e) {
                 }
