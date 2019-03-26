@@ -64,7 +64,8 @@ public class The7skyInfo extends XFileSharingProBasic {
             return 1;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return -2;
+            // 5 downloads per IP, so 1 connection with max 5 downloads
+            return 1;
         } else {
             /* Free(anonymous) and unknown account type */
             return 1;
@@ -90,7 +91,7 @@ public class The7skyInfo extends XFileSharingProBasic {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return 5;
     }
 
     @Override
