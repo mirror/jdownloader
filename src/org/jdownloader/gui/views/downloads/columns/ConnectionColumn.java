@@ -211,13 +211,13 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                 labels[index].setVisible(true);
                 index++;
             }
-            if (dlLink.isResumeable()) {
+            if (dlLink.isResumeable() && !dlLink.getFinalLinkState().isFinished()) {
                 labels[index].setIcon(resumeIndicator);
                 labels[index].setVisible(true);
                 index++;
             }
             if (dli != null && sdc != null) {
-                HTTPProxy proxy = sdc.getUsedProxy();
+                final HTTPProxy proxy = sdc.getUsedProxy();
                 if (proxy != null && proxy.isRemote()) {
                     labels[index].setIcon(proxyConnection);
                     labels[index].setVisible(true);
@@ -299,8 +299,7 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                     SwingUtils.setOpaque(lbl, false);
                     lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
                 }
-                /* is the Link resumeable */
-                if (link.isResumeable()) {
+                if (link.isResumeable() && !link.getFinalLinkState().isFinished()) {
                     panel.add(lbl = new JLabel(_GUI.T.ConnectionColumn_DownloadIsResumeable(), resumeIndicator, JLabel.LEADING));
                     SwingUtils.setOpaque(lbl, false);
                     lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
@@ -309,9 +308,11 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
             if (sdc != null) {
                 {
                     /* connection? */
-                    HTTPProxy proxy = sdc.getUsedProxy();
-                    if (proxy == null) {
+                    final HTTPProxy proxy;
+                    if (sdc.getUsedProxy() == null) {
                         proxy = HTTPProxy.NONE;
+                    } else {
+                        proxy = sdc.getUsedProxy();
                     }
                     final SelectedProxy selectedProxy = ProxyController.getSelectedProxy(proxy);
                     final String proxyString;
