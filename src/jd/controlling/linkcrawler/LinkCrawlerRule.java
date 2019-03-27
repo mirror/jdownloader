@@ -19,6 +19,15 @@ public class LinkCrawlerRule {
     protected boolean        enabled       = true;
     protected List<String[]> cookies       = null;
     protected boolean        updateCookies = true;
+    protected boolean        logging       = false;
+
+    public boolean isLogging() {
+        return logging;
+    }
+
+    public void setLogging(boolean logging) {
+        this.logging = logging;
+    }
 
     public boolean isUpdateCookies() {
         return updateCookies;

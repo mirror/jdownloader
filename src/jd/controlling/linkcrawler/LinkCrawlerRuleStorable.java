@@ -29,6 +29,7 @@ public class LinkCrawlerRuleStorable extends LinkCrawlerRule implements Storable
         this.setCookies(rule.getCookies());
         this.setPasswordPattern(rule.getPasswordPattern());
         this.setUpdateCookies(rule.isUpdateCookies());
+        this.setLogging(rule.isLogging());
         this.setId(rule.getId());
     }
 
@@ -45,6 +46,7 @@ public class LinkCrawlerRuleStorable extends LinkCrawlerRule implements Storable
         ret.setRewriteReplaceWith(getRewriteReplaceWith());
         ret.setCookies(getCookies());
         ret.setUpdateCookies(isUpdateCookies());
+        ret.setLogging(isLogging());
         ret.setPasswordPattern(getPasswordPattern());
         return ret;
     }
