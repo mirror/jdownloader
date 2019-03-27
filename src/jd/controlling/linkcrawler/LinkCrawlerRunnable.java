@@ -6,22 +6,37 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.controlling.linkcrawler.LinkCrawler.LinkCrawlerGeneration;
+import jd.controlling.linkcrawler.LinkCrawler.LinkCrawlerTask;
 
 public abstract class LinkCrawlerRunnable implements Runnable {
-    private final LinkCrawlerGeneration                               generation;
+    private final LinkCrawlerGeneration generation;
+
+    public LinkCrawlerGeneration getGeneration() {
+        return generation;
+    }
+
     private final LinkCrawler                                         crawler;
+    private final LinkCrawlerTask                                     task;
     static final HashMap<Object, java.util.List<LinkCrawlerRunnable>> SEQ_RUNNABLES = new HashMap<Object, java.util.List<LinkCrawlerRunnable>>();
     static final HashMap<Object, AtomicInteger>                       SEQ_COUNTER   = new HashMap<Object, AtomicInteger>();
 
-    protected LinkCrawlerRunnable(LinkCrawler crawler, final LinkCrawlerGeneration generation) {
+    protected LinkCrawlerRunnable(LinkCrawler crawler, final LinkCrawlerGeneration generation, final LinkCrawlerTask task) {
         if (crawler == null) {
             throw new IllegalArgumentException("crawler==null?");
         }
         if (generation == null) {
             throw new IllegalArgumentException("generation==null?");
         }
+        if (task == null) {
+            throw new IllegalArgumentException("task==null?");
+        }
         this.crawler = crawler;
         this.generation = generation;
+        this.task = task;
+    }
+
+    public LinkCrawlerTask getTask() {
+        return task;
     }
 
     public LinkCrawler getLinkCrawler() {
@@ -99,11 +114,11 @@ public abstract class LinkCrawlerRunnable implements Runnable {
      */
     protected void run_now() {
         try {
-            if (generation.isValid()) {
+            if (getGeneration().isValid()) {
                 crawling();
             }
         } finally {
-            crawler.checkFinishNotify();
+            LinkCrawler.checkFinishNotify(getTask());
         }
     }
 

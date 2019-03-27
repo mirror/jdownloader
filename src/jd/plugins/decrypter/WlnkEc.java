@@ -20,6 +20,7 @@ import java.util.Locale;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -50,14 +51,16 @@ public class WlnkEc extends antiDDoSForDecrypt {
         String fpName = null;
         final String removeCommentPage = br.toString().replaceAll("(?s)(<!--.*?-->)", "");
         final String captchaImage = new Regex(removeCommentPage, "<img\\s*src\\s*=\\s*\"([^\"]*?)\"\\s*onclick=").getMatch(0);
-        final String captchaCode;
+        final PostRequest post = br.createPostRequest(parameter, "");
+        post.getHeaders().put("Origin", "https://wlnk.ec");
         if (captchaImage != null) {
-            captchaCode = getCaptchaCode(captchaImage, param);
-            postPage(this.br.getURL(), "subform=unlock&cr-nvar=" + Encoding.urlEncode(captchaCode.toUpperCase(Locale.ENGLISH)));
+            final String captchaCode = getCaptchaCode(captchaImage, param);
+            post.setPostDataString("subform=unlock&cr-nvar=" + Encoding.urlEncode(captchaCode.toUpperCase(Locale.ENGLISH)));
         } else {
-            captchaCode = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
-            postPage(this.br.getURL(), "subform=unlock&g-recaptcha-response=" + Encoding.urlEncode(captchaCode.toUpperCase(Locale.ENGLISH)));
+            final String captchaCode = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+            post.setPostDataString("subform=unlock&g-recaptcha-response=" + Encoding.urlEncode(captchaCode));
         }
+        sendRequest(post);
         if (br.containsHTML("Captcha invalide")) {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
