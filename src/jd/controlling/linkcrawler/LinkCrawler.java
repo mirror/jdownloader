@@ -1146,7 +1146,7 @@ public class LinkCrawler {
     public CrawledLink createDirectHTTPCrawledLink(CrawledLink source, URLConnectionAdapter con) {
         final Request request = con.getRequest();
         final String startURL;
-        if (source == null || source.getSourceLink() == null) {
+        if (source == null || source.getSourceLink() == null || (request instanceof PostRequest)) {
             startURL = request.getUrl();
         } else {
             // previous URL is leading/redirecting to this download, so let's use this URL instead
