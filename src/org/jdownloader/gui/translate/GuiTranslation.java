@@ -115,7 +115,7 @@ public interface GuiTranslation extends TranslateInterface {
     String gui_plugin_settings_share_online_shared_ip_workaround();
 
     @Default(lngs = { "en", "de" }, values = { "<html>Enable traffic workaround?<br /><p style=\"color:#808080\">Share-online has a premium fair-use-limit of 100 GB per day - if exceeded you can continue downloading but with limited speed.<br />Usually JDownloader disables accounts 'without traffic' - if you activate this setting, share-online accounts will still get used in this case.<br />If you only own a single premium account to download from share-online, it makes sense to use this setting.</p></html>",
-            "<html>Aktiviere traffic workaround?<br /><p style=\"color:#808080\">Share-Online hat ein premium fair-use-Limit von 100 GB pro Tag - danach kann man nur gedrosselt weiter herunterladen.<br />Normalerweise deaktiviert JDownloader Accounts 'ohne Traffic' - aktiviert man diese Einstellung, werden betroffene share-online Accounts in diesem Fall trotzdem weiter verwendet.<br />Sofern du nur einen premium Account zum Download von share-online besitzt ist es sinnvoll, diese Einstellung zu verwenden.</p></html>" })
+    "<html>Aktiviere traffic workaround?<br /><p style=\"color:#808080\">Share-Online hat ein premium fair-use-Limit von 100 GB pro Tag - danach kann man nur gedrosselt weiter herunterladen.<br />Normalerweise deaktiviert JDownloader Accounts 'ohne Traffic' - aktiviert man diese Einstellung, werden betroffene share-online Accounts in diesem Fall trotzdem weiter verwendet.<br />Sofern du nur einen premium Account zum Download von share-online besitzt ist es sinnvoll, diese Einstellung zu verwenden.</p></html>" })
     String gui_plugin_settings_share_online_traffic_workaround();
 
     @Default(lngs = { "en", "de" }, values = { "Prefer HTTPS communication?\r\nOnly available for premium users.", "Bevorzuge sichere Kommunikation per HTTPS?\r\nNur für Premium Nutzer verfügbar!" })
@@ -6267,6 +6267,9 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Filetype" })
     String YOUTUBE_CONFIG_PANEL_TABLE_FILETYPE();
+
+    @Default(lngs = { "en" }, values = { "Container" })
+    String YOUTUBE_CONFIG_PANEL_TABLE_CONTAINER();
 
     @Default(lngs = { "en" }, values = { "3D/360°" })
     String YOUTUBE_CONFIG_PANEL_TABLE_PROJECTION();

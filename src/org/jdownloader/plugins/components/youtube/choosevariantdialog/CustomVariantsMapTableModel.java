@@ -75,7 +75,7 @@ public class CustomVariantsMapTableModel extends VariantsMapTableModel {
         }
     }
 
-    protected void addContainerColumn() {
+    protected void addFileTypeColumn() {
         addColumn(new AutoResizingTextColumn(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_FILETYPE()) {
             {
                 rendererField.setHorizontalAlignment(SwingConstants.LEFT);
