@@ -592,10 +592,6 @@ public class UpdateController implements UpdateCallbackInterface {
         handler.waitForUpdate();
     }
 
-    public String[] listExtensionIds() throws IOException, InterruptedException {
-        return handler.getOptionalsList();
-    }
-
     @Override
     public HTTPProxy updateProxyAuth(int retries, HTTPProxy usedProxy, List<String> proxyAuths, URL url) {
         return ProxyController.getInstance().updateProxyAuthForUpdater(retries, usedProxy, proxyAuths, url);

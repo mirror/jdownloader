@@ -6,16 +6,6 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 
-import jd.controlling.AccountController;
-import jd.http.Browser;
-import jd.http.Request;
-import jd.http.URLConnectionAdapter;
-import jd.plugins.Account;
-import jd.plugins.DownloadLink;
-import jd.plugins.PluginForHost;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.DownloadInterfaceFactory;
-
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.utils.Application;
 import org.appwork.utils.io.streamingio.Streaming;
@@ -26,8 +16,17 @@ import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.plugins.controller.PluginClassLoader;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 
-public class StreamingProvider {
+import jd.controlling.AccountController;
+import jd.http.Browser;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
+import jd.plugins.Account;
+import jd.plugins.DownloadLink;
+import jd.plugins.PluginForHost;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.DownloadInterfaceFactory;
 
+public class StreamingProvider {
     private StreamingExtension extension;
 
     public StreamingProvider(StreamingExtension extension) {
@@ -56,7 +55,6 @@ public class StreamingProvider {
                             final PluginForHost plugin = remoteLink.getDefaultPlugin().getLazyP().newInstance(cl);
                             plugin.setBrowser(new Browser());
                             plugin.setCustomizedDownloadFactory(new DownloadInterfaceFactory() {
-
                                 @Override
                                 public DownloadInterface getDownloadInterface(DownloadLink downloadLink, Request request) throws Exception {
                                     return new StreamingDownloadInterface(downloadLink.getLivePlugin(), downloadLink, request);
@@ -83,7 +81,7 @@ public class StreamingProvider {
                             /* TODO: needs to be rewritten */
                             final URLConnectionAdapter con = null;
                             // getDownloadInstance().getConnection();
-                            if (con.getResponseCode() == 200 || con.getResponseCode() == 206) {
+                            if (con != null && (con.getResponseCode() == 200 || con.getResponseCode() == 206)) {
                                 if (remoteLink.getView().getBytesTotalVerified() < 0) {
                                     /* we don't have a verified filesize yet, let's check if we have it now! */
                                     if (con.getRange() != null) {
@@ -94,7 +92,6 @@ public class StreamingProvider {
                                         remoteLink.setVerifiedFileSize(con.getLongContentLength());
                                     }
                                 }
-
                                 if (fileSize == -1) {
                                     fileSize = con.getCompleteContentLength();
                                 }
@@ -141,7 +138,6 @@ public class StreamingProvider {
                                 return false;
                             }
                         } catch (final Throwable e) {
-
                             throw new IOException(e);
                         } finally {
                         }
@@ -150,7 +146,6 @@ public class StreamingProvider {
                     @Override
                     protected synchronized void closeInputStream(StreamingInputStream streamingInputStream) {
                         final StreamingOutputStream outputStream = findLastStreamingOutputStreamFor(streamingInputStream);
-
                         super.closeInputStream(streamingInputStream);
                         if (outputStream != null) {
                             DelayedRunnable delayedOutputStreamCloser = new DelayedRunnable(10000) {
@@ -170,7 +165,6 @@ public class StreamingProvider {
                             };
                             delayedOutputStreamCloser.resetAndStart();
                         }
-
                     }
 
                     @Override
@@ -187,7 +181,6 @@ public class StreamingProvider {
                         }
                         return fileSize;
                     }
-
                 };
                 streaming.put(remoteLink, stream);
             }

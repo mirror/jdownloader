@@ -20,8 +20,6 @@ public interface UpdateHandler {
     // List<File> getFileList(File awfFile) throws InterruptedException, IOException;
     Window getGuiFrame();
 
-    public String[] getOptionalsList() throws IOException, InterruptedException;
-
     void installPendingUpdates(InstallLog log);
 
     boolean hasPendingUpdates();
