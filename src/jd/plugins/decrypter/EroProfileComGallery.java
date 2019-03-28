@@ -32,7 +32,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eroprofile.com" }, urls = { "http://(www\\.)?eroprofile\\.com/m/photos/album/[A-Za-z0-9\\-_]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eroprofile.com" }, urls = { "https?://(www\\.)?eroprofile\\.com/m/photos/album/[A-Za-z0-9\\-_]+" })
 public class EroProfileComGallery extends PluginForDecrypt {
     public EroProfileComGallery(PluginWrapper wrapper) {
         super(wrapper);
@@ -54,6 +54,7 @@ public class EroProfileComGallery extends PluginForDecrypt {
             // force login to see if that solves problems
             loggedin = getUserLogin(true);
         }
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         // Check if account needed but none account entered
         if (br.containsHTML(jd.plugins.hoster.EroProfileCom.NOACCESS) && !loggedin) {
@@ -100,7 +101,7 @@ public class EroProfileComGallery extends PluginForDecrypt {
                 return null;
             }
             for (final String singleLink[] : links) {
-                final DownloadLink dl = createDownloadlink("http://www.eroprofile.com" + singleLink[0]);
+                final DownloadLink dl = createDownloadlink("https://www.eroprofile.com" + singleLink[0]);
                 // final filename is set later in hosterplugin
                 dl.setName(singleLink[1] + ".jpg");
                 dl.setAvailable(true);

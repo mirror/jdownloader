@@ -17,6 +17,10 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 
+import jd.controlling.proxy.ProxyController;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.components.IconedProcessIndicator;
+
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.ConfigInterface;
@@ -41,10 +45,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
-
-import jd.controlling.proxy.ProxyController;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.components.IconedProcessIndicator;
 
 public class UpdateController implements UpdateCallbackInterface {
     private static final UpdateController INSTANCE = new UpdateController();

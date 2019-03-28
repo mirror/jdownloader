@@ -35,7 +35,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eroprofile.com" }, urls = { "http://(www\\.)?eroprofile\\.com/m/(videos|photos)/view/[A-Za-z0-9\\-_]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eroprofile.com" }, urls = { "https?://(www\\.)?eroprofile\\.com/m/(videos|photos)/view/[A-Za-z0-9\\-_]+" })
 public class EroProfileCom extends PluginForHost {
     public EroProfileCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -51,9 +51,9 @@ public class EroProfileCom extends PluginForHost {
         return "http://www.eroprofile.com/p/help/termsOfUse";
     }
 
-    private static final String VIDEOLINK   = "(?i)http://(www\\.)?eroprofile\\.com/m/videos/view/[A-Za-z0-9\\-_]+";
+    private static final String VIDEOLINK   = "(?i)https?://(www\\.)?eroprofile\\.com/m/videos/view/[A-Za-z0-9\\-_]+";
     private static Object       LOCK        = new Object();
-    private static final String MAINPAGE    = "http://eroprofile.com";
+    private static final String MAINPAGE    = "https://eroprofile.com";
     public static final String  NOACCESS    = "(>You do not have the required privileges to view this page|>No access<)";
     private static final String PREMIUMONLY = "The video could not be processed";
 
@@ -78,9 +78,9 @@ public class EroProfileCom extends PluginForHost {
                 downloadLink.getLinkStatus().setStatusText("This file is only available to premium members");
                 return AvailableStatus.TRUE;
             }
-            dllink = br.getRegex("file:\\'(http://[^<>\"]*?)\\'").getMatch(0);
+            dllink = br.getRegex("file:\\'(https?://[^<>\"]*?)\\'").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("<source src=(?:'|\")(http[^<>\"]*?)/?(?:'|\")").getMatch(0);
+                dllink = br.getRegex("<source src=(?:'|\")(https?[^<>\"]*?)/?(?:'|\")").getMatch(0);
             }
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -179,10 +179,10 @@ public class EroProfileCom extends PluginForHost {
                     }
                 }
                 br.getHeaders().put("Accept-Language", "en-us,en;q=0.5");
-                br.setCookie("http://eroprofile.com/", "lang", "en");
+                br.setCookie("https://eroprofile.com/", "lang", "en");
                 br.setFollowRedirects(false);
                 br.getHeaders().put("X_REQUESTED_WITH", "XMLHttpRequest");
-                br.postPage("http://www.eroprofile.com/process.php?0." + System.currentTimeMillis(), "a=login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                br.postPage("https://www.eroprofile.com/process.php?0." + System.currentTimeMillis(), "a=login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (br.getCookie(MAINPAGE, "memberID") == null || !br.toString().trim().equals("OK")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
