@@ -44,6 +44,7 @@ import org.jdownloader.plugins.components.youtube.variants.AudioInterface;
 import org.jdownloader.plugins.components.youtube.variants.ImageVariant;
 import org.jdownloader.plugins.components.youtube.variants.SubtitleVariant;
 import org.jdownloader.plugins.components.youtube.variants.VariantBase;
+import org.jdownloader.plugins.components.youtube.variants.VideoInterface;
 import org.jdownloader.plugins.components.youtube.variants.VideoVariant;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
 import org.jdownloader.translate._JDT;
@@ -390,7 +391,7 @@ public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper>
     protected void initColumns() {
         addCheckBoxColumn();
         addTypeColumn();
-        addContainerColumn();
+        addFileTypeColumn();
         addColumn(projectionColumn = new AutoResizingTextColumn(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_PROJECTION()) {
             @Override
             public String getStringValue(AbstractVariantWrapper value) {
@@ -457,6 +458,37 @@ public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper>
             }
         });
         addGroupingColumn();
+        addContainerColumn();
+    }
+
+    protected void addContainerColumn() {
+        addColumn(new AutoResizingTextColumn(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_CONTAINER()) {
+            @Override
+            public boolean isDefaultVisible() {
+                return false;
+            }
+
+            @Override
+            public String getStringValue(AbstractVariantWrapper value) {
+                final List<String> rawContainer = new ArrayList<String>();
+                if (value.variant instanceof VideoInterface) {
+                    rawContainer.add(value.variant.getiTagVideo().getRawContainer().name());
+                }
+                if (value.variant instanceof AudioInterface) {
+                    final String container = value.variant.getiTagAudioOrVideoItagEquivalent().getRawContainer().name();
+                    if (!rawContainer.contains(container)) {
+                        rawContainer.add(container);
+                    }
+                }
+                if (value.variant.getBaseVariant().getiTagData() != null) {
+                    final String container = value.variant.getBaseVariant().getiTagData().getRawContainer().name();
+                    if (!rawContainer.contains(container)) {
+                        rawContainer.add(container);
+                    }
+                }
+                return rawContainer.toString();
+            }
+        });
     }
 
     protected void addGroupingColumn() {
@@ -558,7 +590,7 @@ public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper>
         });
     }
 
-    protected void addContainerColumn() {
+    protected void addFileTypeColumn() {
         addColumn(new AutoResizingTextColumn(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_FILETYPE()) {
             @Override
             public String getStringValue(AbstractVariantWrapper value) {
