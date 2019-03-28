@@ -528,7 +528,7 @@ public class FourSharedCom extends PluginForHost {
                         return;
                     }
                 }
-                br.forceDebug(true);
+                br.setDebug(true);
                 br.setReadTimeout(3 * 60 * 1000);
                 // stable does not send this header with post request!!!!!
                 String protocol = "https://";

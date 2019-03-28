@@ -24,6 +24,7 @@ import jd.http.Cookies;
 import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -73,7 +74,7 @@ public class FreeDiscPlFolder extends PluginForDecrypt {
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         prepBR(this.br);
-        getPage(parameter);
+        getPage(parameter, param);
         if (this.br.getHttpConnection().getResponseCode() == 410) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
@@ -160,17 +161,38 @@ public class FreeDiscPlFolder extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private void getPage(final String url) throws Exception {
+    private void getPage(final String url, final CryptedLink param) throws Exception {
         this.br.getPage(url);
-        handleAntiBot(br);
+        handleAntiBot(br, param);
     }
 
-    private void handleAntiBot(final Browser br) throws Exception {
+    private void handleAntiBot(final Browser br, final CryptedLink param) throws Exception {
         if (isBotBlocked()) {
             /* Process anti-bot captcha */
             logger.info("Spam protection detected");
-            final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
-            br.postPage(br.getURL(), "g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
+            final Request request = br.getRequest();
+            // remove uncomment code
+            request.setHtmlCode(request.getHtmlCode().replaceAll("(?s)(<!--.*?-->)", ""));
+            Form captchaForm = br.getFormByRegex("name\\s*=\\s*\"captcha\"");
+            if (captchaForm == null) {
+                captchaForm = br.getFormByRegex("value\\s*=\\s*\"Wchodzę\"");
+                if (captchaForm == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+            if (request.containsHTML("class\\s*=\\s*\"g-recaptcha\"")) {
+                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+                captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                br.submitForm(captchaForm);
+            } else {
+                final String captcha = br.getRegex("\"([^\"]*captcha\\.png)").getMatch(0);
+                if (captcha == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final String code = getCaptchaCode(captcha, param);
+                captchaForm.put("captcha", Encoding.urlEncode(code));
+                br.submitForm(captchaForm);
+            }
             if (isBotBlocked()) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA, "Anti-Bot block", 5 * 60 * 1000l);
             }
