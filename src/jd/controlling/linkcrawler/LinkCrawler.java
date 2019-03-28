@@ -1143,9 +1143,17 @@ public class LinkCrawler {
         }
     }
 
-    public CrawledLink createDirectHTTPCrawledLink(URLConnectionAdapter con) {
+    public CrawledLink createDirectHTTPCrawledLink(CrawledLink source, URLConnectionAdapter con) {
         final Request request = con.getRequest();
-        final DownloadLink link = new DownloadLink(null, null, "DirectHTTP", "directhttp://" + request.getUrl(), true);
+        final String startURL;
+        if (source == null || source.getSourceLink() == null) {
+            startURL = request.getUrl();
+        } else {
+            // previous URL is leading/redirecting to this download, so let's use this URL instead
+            // for example the current URL might expire
+            startURL = source.getSourceLink().getURL();
+        }
+        final DownloadLink link = new DownloadLink(null, null, "DirectHTTP", "directhttp://" + startURL, true);
         final String cookie = con.getRequestProperty("Cookie");
         if (StringUtils.isNotEmpty(cookie)) {
             link.setProperty("cookies", cookie);
@@ -1172,7 +1180,9 @@ public class LinkCrawler {
         }
         link.setAvailable(true);
         final String requestRef = request.getHeaders().getValue(HTTPConstants.HEADER_REQUEST_REFERER);
-        link.setProperty("refURL", requestRef);
+        if (!StringUtils.equals(requestRef, startURL)) {
+            link.setProperty("refURL", requestRef);
+        }
         if (request instanceof PostRequest) {
             final String postString = ((PostRequest) request).getPostDataString();
             if (postString != null) {
@@ -1277,10 +1287,14 @@ public class LinkCrawler {
                     } else {
                         br = new Browser();
                         br.addAllowedResponseCodes(500);
-                        if (matchingRule.isLogging() || LogController.getInstance().isDebugMode()) {
+                        if ((matchingRule != null && matchingRule.isLogging()) || LogController.getInstance().isDebugMode()) {
                             br.setDebug(true);
                             br.setVerbose(true);
-                            br.setLogger(LogController.getFastPluginLogger("LinkCrawlerRule." + matchingRule.getId()));
+                            if (matchingRule != null) {
+                                br.setLogger(LogController.getFastPluginLogger("LinkCrawlerRule." + matchingRule.getId()));
+                            } else {
+                                br.setLogger(LogController.getFastPluginLogger("LinkCrawlerDeep." + CrossSystem.alleviatePathParts(source.getHost())));
+                            }
                         }
                         final List<String[]> setCookies = matchingRule != null ? getLinkCrawlerRuleCookies(matchingRule.getId()) : null;
                         if (setCookies != null) {
@@ -1363,7 +1377,7 @@ public class LinkCrawler {
                                                     formLinks.add(crawledLinkFactorybyURL(redirect));
                                                 } else if (lDeepInspector.looksLikeDownloadableContent(con)) {
                                                     con.disconnect();
-                                                    final CrawledLink formLink = createDirectHTTPCrawledLink(con);
+                                                    final CrawledLink formLink = createDirectHTTPCrawledLink(deeperSource, con);
                                                     if (formLink != null) {
                                                         formLinks.add(formLink);
                                                     }
@@ -3876,7 +3890,7 @@ public class LinkCrawler {
                         } catch (Throwable e) {
                         }
                         final ArrayList<CrawledLink> ret = new ArrayList<CrawledLink>();
-                        final CrawledLink direct = createDirectHTTPCrawledLink(urlConnection);
+                        final CrawledLink direct = createDirectHTTPCrawledLink(link, urlConnection);
                         if (direct != null) {
                             ret.add(direct);
                         }

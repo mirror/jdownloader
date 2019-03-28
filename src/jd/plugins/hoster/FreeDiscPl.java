@@ -21,9 +21,11 @@ import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookies;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -291,8 +293,29 @@ public class FreeDiscPl extends PluginForHost {
                     downloadlinkToUse = new DownloadLink(this, "Account Login " + this.getHost(), this.getHost(), MAINPAGE, true);
                 }
                 this.setDownloadLink(downloadlinkToUse);
-                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                br.postPage(br.getURL(), "g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
+                final Request request = br.getRequest();
+                // remove uncomment code
+                request.setHtmlCode(request.getHtmlCode().replaceAll("(?s)(<!--.*?-->)", ""));
+                Form captchaForm = br.getFormByRegex("name\\s*=\\s*\"captcha\"");
+                if (captchaForm == null) {
+                    captchaForm = br.getFormByRegex("value\\s*=\\s*\"Wchodzę\"");
+                    if (captchaForm == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                }
+                if (request.containsHTML("class\\s*=\\s*\"g-recaptcha\"")) {
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    br.submitForm(captchaForm);
+                } else {
+                    final String captcha = br.getRegex("\"([^\"]*captcha\\.png)").getMatch(0);
+                    if (captcha == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    final String code = getCaptchaCode(captcha, getDownloadLink());
+                    captchaForm.put("captcha", Encoding.urlEncode(code));
+                    br.submitForm(captchaForm);
+                }
                 if (isBotBlocked(this.br)) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Anti-Bot block", 5 * 60 * 1000l);
                 }
