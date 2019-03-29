@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
@@ -707,6 +708,21 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                             if (line2 == null) {
                                 // new 14.03.2019
                                 line2 = ibr.getRegex("(\\;" + line1[0] + "." + line1[1] + ".*?t\\.length.*?;)").getMatch(0);
+                                if (line2 == null) {
+                                    // new 29.03.2019
+                                    line2 = ibr.getRegex("(\\;" + line1[0] + "." + line1[1] + ".*?\\.toFixed\\(.*?;)").getMatch(0);
+                                    final String k = ibr.getRegex("[a-z]\\s*=\\s*'(cf-.*?)'").getMatch(0);
+                                    if (k != null) {
+                                        final String kValue = ibr.getRegex("id\\s*=\\s*\"" + Pattern.quote(k) + "\"\\s*>\\s*(.*?)\\s*</").getMatch(0);
+                                        if (kValue == null) {
+                                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                                        }
+                                        // replace document.elementById(k)... with direct value
+                                        line2 = line2.replaceFirst("=(\\s*function.*?\\(\\));", "=" + Matcher.quoteReplacement(kValue + ";"));
+                                    }
+                                    // replace with t.charCodeAt
+                                    line2 = line2.replaceFirst("(function\\(.*?\\})", "function(p){return t.charCodeAt(p);}");
+                                }
                             }
                             if (line2 == null) {
                                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -717,7 +733,13 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                             sb.append(line2);
                             final ScriptEngineManager mgr = JavaScriptEngineFactory.getScriptEngineManager(this);
                             final ScriptEngine engine = mgr.getEngineByName("JavaScript");
-                            final Object result = engine.eval(sb.toString());
+                            final Object result;
+                            try {
+                                result = engine.eval(sb.toString());
+                            } catch (Throwable e) {
+                                logger.log(e);
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
+                            }
                             if (result == null) {
                                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                             }
