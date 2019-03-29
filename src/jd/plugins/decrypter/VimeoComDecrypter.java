@@ -221,7 +221,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     logger.info("Use *guessed* referer:" + vimeo_forced_referer);
                 }
             }
-            final String videoID = getVideoidFromURL(parameter);
+            String videoID = getVideoidFromURL(parameter);
             if (videoID == null && !parameter.contains("ondemand")) {
                 /* This should never happen but can happen when adding support for new linktypes. */
                 return null;
@@ -333,7 +333,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     // reviewHash = (String) entries.get("review_hash");
                     // }
                     channelName = (String) owner.get("display_name");
-                } else {
+                } else if (StringUtils.containsIgnoreCase(parameter, "/ondemand/")) {
                     List<Map<String, Object>> clips = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "clips/extras_groups/{0}/clips");
                     if (clips != null) {
                         for (final Map<String, Object> clip : clips) {
@@ -346,6 +346,9 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     if (StringUtils.isEmpty(title)) {
                         clips = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "clips/main_groups/{0}/clips");
                         if (clips != null) {
+                            if (videoID == null && clips.size() == 1) {
+                                videoID = String.valueOf(clips.get(0).get("id"));
+                            }
                             for (final Map<String, Object> clip : clips) {
                                 if (StringUtils.equals(videoID, String.valueOf(clip.get("id")))) {
                                     title = (String) clip.get("name");
