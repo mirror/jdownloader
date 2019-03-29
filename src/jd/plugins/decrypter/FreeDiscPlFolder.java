@@ -167,7 +167,11 @@ public class FreeDiscPlFolder extends PluginForDecrypt {
     }
 
     private void handleAntiBot(final Browser br, final CryptedLink param) throws Exception {
-        if (isBotBlocked()) {
+        int retry = 0;
+        while (isBotBlocked()) {
+            if (isAbort()) {
+                throw new InterruptedException();
+            }
             /* Process anti-bot captcha */
             logger.info("Spam protection detected");
             final Request request = br.getRequest();
@@ -183,7 +187,6 @@ public class FreeDiscPlFolder extends PluginForDecrypt {
             if (request.containsHTML("class\\s*=\\s*\"g-recaptcha\"")) {
                 final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
                 captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                br.submitForm(captchaForm);
             } else {
                 final String captcha = br.getRegex("\"([^\"]*captcha\\.png)").getMatch(0);
                 if (captcha == null) {
@@ -191,14 +194,18 @@ public class FreeDiscPlFolder extends PluginForDecrypt {
                 }
                 final String code = getCaptchaCode(captcha, param);
                 captchaForm.put("captcha", Encoding.urlEncode(code));
-                br.submitForm(captchaForm);
             }
+            br.submitForm(captchaForm);
             if (isBotBlocked()) {
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA, "Anti-Bot block", 5 * 60 * 1000l);
-            }
-            // save the session!
-            synchronized (botSafeCookies) {
-                botSafeCookies = br.getCookies(this.getHost());
+                if (++retry == 5) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA, "Anti-Bot block", 5 * 60 * 1000l);
+                }
+            } else {
+                // save the session!
+                synchronized (botSafeCookies) {
+                    botSafeCookies = br.getCookies(this.getHost());
+                }
+                break;
             }
         }
     }
