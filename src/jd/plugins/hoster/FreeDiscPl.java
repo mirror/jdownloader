@@ -220,13 +220,17 @@ public class FreeDiscPl extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                 }
             } else {
-                String downloadUrlJson = PluginJSonUtils.getJsonNested(br, "download_data");
-                dllink = PluginJSonUtils.getJsonValue(downloadUrlJson, "download_url") + PluginJSonUtils.getJsonValue(downloadUrlJson, "item_id") + "/" + PluginJSonUtils.getJsonValue(downloadUrlJson, "time");
-                // dllink = "http://freedisc.pl/download/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+                final String downloadUrlJson = PluginJSonUtils.getJsonNested(br, "download_data");
+                final String download_url = PluginJSonUtils.getJsonValue(downloadUrlJson, "download_url");
+                final String item_id = PluginJSonUtils.getJsonValue(downloadUrlJson, "item_id");
+                final String time = PluginJSonUtils.getJsonValue(downloadUrlJson, "time");
+                if (StringUtils.isAllNotEmpty(download_url, item_id, time)) {
+                    dllink = download_url + item_id + "/" + time;
+                }
+                if (dllink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 downloadLink.setProperty("isvideo", false);
-            }
-            if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumable, maxchunks);
