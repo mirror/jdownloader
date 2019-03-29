@@ -55,7 +55,7 @@ import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.plugins.components.containers.VimeoContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vimeo.com" }, urls = { "https?://(?:www\\.)?vimeo\\.com/(\\d+(?:/[a-f0-9]+)?|(?:[a-z]{2}/)?channels/[a-z0-9\\-_]+/\\d+|[A-Za-z0-9\\-_]+/videos|ondemand/[A-Za-z0-9\\-_]+|groups/[A-Za-z0-9\\-_]+(?:/videos/\\d+)?)|https?://player\\.vimeo.com/(?:video|external)/\\d+((\\?|#).+)?|https?://(?:www\\.)?vimeo\\.com/[a-z0-9]+/review/\\d+/[a-f0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vimeo.com" }, urls = { "https?://(?:www\\.)?vimeo\\.com/(\\d+(?:/[a-f0-9]+)?|(?:[a-z]{2}/)?channels/[a-z0-9\\-_]+/\\d+|[A-Za-z0-9\\-_]+/videos|ondemand/[A-Za-z0-9\\-_]+(/\\d+)?|groups/[A-Za-z0-9\\-_]+(?:/videos/\\d+)?)|https?://player\\.vimeo.com/(?:video|external)/\\d+((\\?|#).+)?|https?://(?:www\\.)?vimeo\\.com/[a-z0-9]+/review/\\d+/[a-f0-9]+" })
 public class VimeoComDecrypter extends PluginForDecrypt {
     private static final String type_player_private_external_direct = "https?://player\\.vimeo.com/external/\\d+\\.[A-Za-z]{1,5}\\.mp4.+";
     private static final String type_player_private_external_m3u8   = "https?://player\\.vimeo.com/external/\\d+\\.*?\\.m3u8.+";
@@ -321,7 +321,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     // reviewHash = (String) entries.get("review_hash");
                     // }
                     channelName = (String) owner.get("name");
-                } else {
+                } else if (entries.containsKey("clip")) {
                     /* E.g. normal URLs */
                     owner = (LinkedHashMap<String, Object>) entries.get("owner");
                     entries = (LinkedHashMap<String, Object>) entries.get("clip");
@@ -333,8 +333,33 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     // reviewHash = (String) entries.get("review_hash");
                     // }
                     channelName = (String) owner.get("display_name");
+                } else {
+                    List<Map<String, Object>> clips = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "clips/extras_groups/{0}/clips");
+                    if (clips != null) {
+                        for (final Map<String, Object> clip : clips) {
+                            if (StringUtils.equals(videoID, String.valueOf(clip.get("id")))) {
+                                title = (String) clip.get("name");
+                                break;
+                            }
+                        }
+                    }
+                    if (StringUtils.isEmpty(title)) {
+                        clips = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "clips/main_groups/{0}/clips");
+                        if (clips != null) {
+                            for (final Map<String, Object> clip : clips) {
+                                if (StringUtils.equals(videoID, String.valueOf(clip.get("id")))) {
+                                    title = (String) clip.get("name");
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (StringUtils.isEmpty(title)) {
+                        title = (String) entries.get("name");
+                    }
                 }
             } catch (final Throwable e) {
+                logger.log(e);
             }
             if (StringUtils.isEmpty(title)) {
                 /* Fallback */
@@ -464,13 +489,16 @@ public class VimeoComDecrypter extends PluginForDecrypt {
     }
 
     public static String getJsonFromHTML(final Browser br) {
-        String ret = br.getRegex("window\\.vimeo\\.clip_page_config = (\\{.*?\\});").getMatch(0);
+        String ret = br.getRegex("window\\.vimeo\\.clip_page_config\\s*=\\s*(\\{.*?\\});").getMatch(0);
         if (ret == null) {
-            ret = br.getRegex("window = _extend\\(window, (\\{.*?\\})\\);").getMatch(0);
-        }
-        if (ret == null) {
-            /* player.vimeo.com */
-            ret = br.getRegex("var config = (\\{.*?\\});").getMatch(0);
+            ret = br.getRegex("window\\.vimeo\\.vod_title_page_config\\s*=\\s*(\\{.*?\\});").getMatch(0);
+            if (ret == null) {
+                ret = br.getRegex("window = _extend\\(window, (\\{.*?\\})\\);").getMatch(0);
+                if (ret == null) {
+                    /* player.vimeo.com */
+                    ret = br.getRegex("var config = (\\{.*?\\});").getMatch(0);
+                }
+            }
         }
         return ret;
     }
