@@ -178,7 +178,9 @@ public class VimeoCom extends PluginForHost {
             final String json = jd.plugins.decrypter.VimeoComDecrypter.getJsonFromHTML(this.br);
             LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
             entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "vimeo_esi/config/clipData");
-            videoTitle = (String) entries.get("title");
+            if (entries != null) {
+                videoTitle = (String) entries.get("title");
+            }
         } catch (final Throwable e) {
         }
         // now we nuke linkids for videos.. crazzy... only remove the last one, _ORIGINAL comes from variant system
