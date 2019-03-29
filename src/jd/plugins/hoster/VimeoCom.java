@@ -275,8 +275,11 @@ public class VimeoCom extends PluginForHost {
         final String videoID = jd.plugins.decrypter.VimeoComDecrypter.getVideoidFromURL(url_source);
         final String unlistedHash = jd.plugins.decrypter.VimeoComDecrypter.getUnlistedHashFromURL(url_source);
         // final String reviewHash = jd.plugins.decrypter.VimeoComDecrypter.getReviewHashFromURL(url_source);
+        if (forced_referer != null) {
+            br.getHeaders().put("Referer", forced_referer);
+        }
         final VIMEO_URL_TYPE ret;
-        if (urlType == VIMEO_URL_TYPE.RAW || (urlType == null && url_source.matches("https?://.*?vimeo\\.com.*?/review/.+"))) {
+        if (urlType == VIMEO_URL_TYPE.RAW || (urlType == null && url_source.matches("https?://.*?vimeo\\.com.*?/review/.+")) || videoID == null) {
             /*
              * 2019-02-20: Special: We have to access 'review' URLs same way as via browser - if we don't, we will get response 403/404!
              * Review-URLs may contain a reviewHash which is required! If then, inside their json, the unlistedHash is present,
@@ -288,7 +291,6 @@ public class VimeoCom extends PluginForHost {
              * Referer given/required? We HAVE TO access the url via player.vimeo.com (with the correct Referer) otherwise we will only
              * receive 403/404!
              */
-            br.getHeaders().put("Referer", forced_referer);
             br.getPage("https://player.vimeo.com/video/" + videoID);
             /* TODO: 2019-02-20: Check if this old decrypter-handling is still required! */
             // if (vimeo_forced_referer == null && br.getHttpConnection().getResponseCode() == 403) {
