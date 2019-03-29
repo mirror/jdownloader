@@ -284,33 +284,36 @@ public class FreeDiscPl extends PluginForHost {
     }
 
     private void handleAntiBot(final Browser br) throws Exception {
-        if (isBotBlocked(this.br)) {
+        int retry = 0;
+        while (isBotBlocked(this.br)) {
+            if (isAbort()) {
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
             /* Process anti-bot captcha */
             logger.info("Login captcha / spam protection detected");
             final DownloadLink originalDownloadLink = this.getDownloadLink();
             final DownloadLink downloadlinkToUse;
-            try {
-                if (originalDownloadLink != null) {
-                    downloadlinkToUse = originalDownloadLink;
-                } else {
-                    /* E.g. for login process */
-                    downloadlinkToUse = new DownloadLink(this, "Account Login " + this.getHost(), this.getHost(), MAINPAGE, true);
-                }
-                this.setDownloadLink(downloadlinkToUse);
-                final Request request = br.getRequest();
-                // remove uncomment code
-                request.setHtmlCode(request.getHtmlCode().replaceAll("(?s)(<!--.*?-->)", ""));
-                Form captchaForm = br.getFormByRegex("name\\s*=\\s*\"captcha\"");
+            if (originalDownloadLink != null) {
+                downloadlinkToUse = originalDownloadLink;
+            } else {
+                /* E.g. for login process */
+                downloadlinkToUse = new DownloadLink(this, "Account Login " + this.getHost(), this.getHost(), MAINPAGE, true);
+            }
+            final Request request = br.getRequest();
+            // remove uncomment code
+            request.setHtmlCode(request.getHtmlCode().replaceAll("(?s)(<!--.*?-->)", ""));
+            Form captchaForm = br.getFormByRegex("name\\s*=\\s*\"captcha\"");
+            if (captchaForm == null) {
+                captchaForm = br.getFormByRegex("value\\s*=\\s*\"Wchodzę\"");
                 if (captchaForm == null) {
-                    captchaForm = br.getFormByRegex("value\\s*=\\s*\"Wchodzę\"");
-                    if (captchaForm == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+            }
+            try {
+                this.setDownloadLink(downloadlinkToUse);
                 if (request.containsHTML("class\\s*=\\s*\"g-recaptcha\"")) {
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                     captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                    br.submitForm(captchaForm);
                 } else {
                     final String captcha = br.getRegex("\"([^\"]*captcha\\.png)").getMatch(0);
                     if (captcha == null) {
@@ -318,19 +321,23 @@ public class FreeDiscPl extends PluginForHost {
                     }
                     final String code = getCaptchaCode(captcha, getDownloadLink());
                     captchaForm.put("captcha", Encoding.urlEncode(code));
-                    br.submitForm(captchaForm);
-                }
-                if (isBotBlocked(this.br)) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Anti-Bot block", 5 * 60 * 1000l);
                 }
             } finally {
                 if (originalDownloadLink != null) {
                     this.setDownloadLink(originalDownloadLink);
                 }
             }
-            // save the session!
-            synchronized (botSafeCookies) {
-                botSafeCookies = br.getCookies(this.getHost());
+            br.submitForm(captchaForm);
+            if (isBotBlocked(this.br)) {
+                if (++retry == 5) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Anti-Bot block", 5 * 60 * 1000l);
+                }
+            } else {
+                // save the session!
+                synchronized (botSafeCookies) {
+                    botSafeCookies = br.getCookies(this.getHost());
+                }
+                break;
             }
         }
     }

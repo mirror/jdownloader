@@ -762,11 +762,11 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                                     originalRequest.resetConnection();
                                     sendRequest(ibr, originalRequest);
                                 } catch (final Exception t) {
+                                    logger.log(t);
                                     // we want to preserve proper exceptions!
                                     if (t instanceof PluginException) {
                                         throw t;
                                     }
-                                    t.printStackTrace();
                                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unexpected CloudFlare related issue", 5 * 60 * 1000l);
                                 }
                                 // new sendRequest saves cookie session
