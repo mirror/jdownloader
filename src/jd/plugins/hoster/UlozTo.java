@@ -18,12 +18,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -51,7 +47,6 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPlugin
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to", "ulozto.net", "pornfile.cz" }, urls = { "https?://(?:www\\.)?(?:uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)/(?!soubory/)[\\!a-zA-Z0-9]+/[^\\?\\s]+", "https?://(?:www\\.)?ulozto\\.net/(?!soubory/)[\\!a-zA-Z0-9]+(?:/[^\\?\\s]+)?", "https?://(?:www\\.)?(?:pornfile\\.cz|pornfile\\.ulozto\\.net)/[\\!a-zA-Z0-9]+/[^\\?\\s]+" })
 public class UlozTo extends PluginForHost {
     private boolean              passwordProtected            = false;
-    private static final String  REPEAT_CAPTCHA               = "REPEAT_CAPTCHA";
     private static final String  CAPTCHA_TEXT                 = "CAPTCHA_TEXT";
     private static final String  CAPTCHA_ID                   = "CAPTCHA_ID";
     private static final String  QUICKDOWNLOAD                = "https?://(?:www\\.)?uloz\\.to/quickDownload/\\d+";
@@ -66,7 +61,6 @@ public class UlozTo extends PluginForHost {
 
     public UlozTo(PluginWrapper wrapper) {
         super(wrapper);
-        this.setConfigElements();
         this.enablePremium("http://www.uloz.to/kredit");
     }
 
@@ -288,7 +282,6 @@ public class UlozTo extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public void doFree(final DownloadLink downloadLink, final Account account) throws Exception {
-        this.getPluginConfig().setProperty(REPEAT_CAPTCHA, false);
         AvailableStatus status = requestFileInformation(downloadLink);
         if (downloadLink.getDownloadURL().matches(QUICKDOWNLOAD)) {
             throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
@@ -332,42 +325,13 @@ public class UlozTo extends PluginForHost {
                 if (captchaForm == null || captchaUrl == null || hash == null || timestamp == null || salt == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                String code = null, ts = null, sign = null, cid = null;
-                // Tries to read if property selected
-                if (getPluginConfig().getBooleanProperty(REPEAT_CAPTCHA)) {
-                    code = getPluginConfig().getStringProperty(CAPTCHA_TEXT);
-                    ts = getPluginConfig().getStringProperty("ts");
-                    sign = getPluginConfig().getStringProperty("cid");
-                    cid = getPluginConfig().getStringProperty("sign");
-                }
-                // If property not selected or read failed (no data), asks to solve
+                final String code = getCaptchaCode(captchaUrl, downloadLink);
                 if (code == null) {
-                    code = getCaptchaCode(captchaUrl, downloadLink);
-                    final Matcher m = Pattern.compile("http://img\\.uloz\\.to/captcha/(\\d+)\\.png").matcher(captchaUrl);
-                    if (m.find()) {
-                        getPluginConfig().setProperty(CAPTCHA_TEXT, code);
-                        getPluginConfig().setProperty("ts", new Regex(captchaForm.getHtmlCode(), "name=\"ts\" id=\"frmfreeDownloadForm\\-ts\" value=\"([^<>\"]*?)\"").getMatch(0));
-                        getPluginConfig().setProperty("cid", new Regex(captchaForm.getHtmlCode(), "name=\"cid\" id=\"frmfreeDownloadForm\\-cid\" value=\"([^<>\"]*?)\"").getMatch(0));
-                        getPluginConfig().setProperty("sign", new Regex(captchaForm.getHtmlCode(), "name=\"sign\" id=\"frmfreeDownloadForm\\-sign\" value=\"([^<>\"]*?)\"").getMatch(0));
-                        getPluginConfig().setProperty(REPEAT_CAPTCHA, true);
-                    }
-                }
-                // if something failed
-                if (code == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
                 captchaForm.put("captcha_value", Encoding.urlEncode(code));
                 captchaForm.remove(null);
                 captchaForm.remove("freeDownload");
-                if (ts != null) {
-                    captchaForm.put("ts", ts);
-                }
-                if (cid != null) {
-                    captchaForm.put("cid", cid);
-                }
-                if (sign != null) {
-                    captchaForm.put("sign", sign);
-                }
                 captchaForm.put("timestamp", timestamp);
                 captchaForm.put("salt", salt);
                 captchaForm.put("hash", hash);
@@ -376,16 +340,17 @@ public class UlozTo extends PluginForHost {
                 br.submitForm(captchaForm);
                 // If captcha fails, throrotws exception
                 // If in automatic mode, clears saved data
-                if (br.containsHTML("\"errors\":\\[\"(Error rewriting the text|Rewrite the text from the picture|Text je opsán špatně|An error ocurred while|Chyba při ověření uživatele, zkus to znovu)")) {
-                    if (getPluginConfig().getBooleanProperty(REPEAT_CAPTCHA)) {
-                        getPluginConfig().setProperty(CAPTCHA_ID, Property.NULL);
-                        getPluginConfig().setProperty(CAPTCHA_TEXT, Property.NULL);
-                        getPluginConfig().setProperty(REPEAT_CAPTCHA, false);
-                        getPluginConfig().setProperty("ts", Property.NULL);
-                        getPluginConfig().setProperty("cid", Property.NULL);
-                        getPluginConfig().setProperty("sign", Property.NULL);
-                    }
+                if (br.containsHTML("\"errors\"\\s*:\\s*\\[\\s*\"(Error rewriting the text|Rewrite the text from the picture|Text je opsán špatně|An error ocurred while)")) {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                } else if (br.containsHTML("\"errors\"\\s*:\\s*\\[\\s*\"Chyba při ověření uživatele")) {
+                    if (account != null) {
+                        synchronized (account) {
+                            account.clearCookies("");
+                        }
+                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                 }
                 dllink = PluginJSonUtils.getJsonValue(br, "url");
                 if (dllink == null) {
@@ -410,10 +375,15 @@ public class UlozTo extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     } else if (br.containsHTML("dla_backend/uloz\\.to\\.overloaded\\.html")) {
                         throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available", 10 * 60 * 1000l);
-                    } else if (br.containsHTML("Chyba při ověření uživatele, zkus to znovu|Nastala chyba při odeslání textu\\. Znovu opiš text z obrázku\\.")) {
-                        /* \"errors\":\\[\"Chyba při ověření uživatele, zkus to znovu */
-                        // Error in user authentication, try again
-                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                    } else if (br.containsHTML("Chyba při ověření uživatele|Nastala chyba při odeslání textu\\. Znovu opiš text z obrázku\\.")) {
+                        if (account != null) {
+                            synchronized (account) {
+                                account.clearCookies("");
+                            }
+                            throw new PluginException(LinkStatus.ERROR_RETRY);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
                     }
                     br.clearCookies("ulozto.net");
                     br.clearCookies("uloz.to");
@@ -543,28 +513,27 @@ public class UlozTo extends PluginForHost {
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+        final String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
-                if (!!con.isOK() || con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                if (con.isOK() && (con.isContentDisposition() || (!con.getContentType().contains("html") && con.getLongContentLength() > 0))) {
+                    return dllink;
                 }
             } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+                logger.log(e);
             } finally {
                 try {
                     con.disconnect();
                 } catch (final Throwable e) {
                 }
             }
+            downloadLink.setProperty(property, Property.NULL);
         }
-        return dllink;
+        return null;
     }
 
     @SuppressWarnings("deprecation")
@@ -779,9 +748,5 @@ public class UlozTo extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
-    }
-
-    private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), UlozTo.REPEAT_CAPTCHA, "Solve captcha by replaying previous (disable to solve manually)").setDefaultValue(true));
     }
 }
