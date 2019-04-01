@@ -731,7 +731,7 @@ public class UlozTo extends PluginForHost {
         if (trafficleft == null) {
             trafficleft = br.getRegex("\"fi fi-user\">\\s*</i>\\s*<em>.*?</em>\\s*\\((.*?)\\)\\s*<").getMatch(0);
             if (trafficleft == null) {
-                trafficleft = br.getRegex("\"t-header-username\">\\s*<em[^<]*>.*?</em>\\s*<em[^<]*>\\s*\\(([0-9\\.,]\\s*[BMTGK]+)\\)\\s*<").getMatch(0);
+                trafficleft = br.getRegex("\"t-header-username\">\\s*<em[^<]*>.*?</em>\\s*<em[^<]*>\\s*\\(([0-9\\.,]+\\s*[BMTGK]+)\\)\\s*<").getMatch(0);
             }
         }
         ai.setTrafficRefill(false);
