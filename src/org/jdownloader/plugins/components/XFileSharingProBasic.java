@@ -965,7 +965,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         /* 2, check for streaming/direct links on the first page */
         if (dllink == null) {
             checkErrors(link, account, false);
-            dllink = getDllink();
+            dllink = getDllink(link, account);
         }
         /* 3, do they provide audio hosting? */
         if (dllink == null && link.getName().endsWith(".mp3") && this.isAudiohoster()) {
@@ -1008,7 +1008,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 logger.info("Trying to get link via embed");
                 final String embed_access = getMainPage() + "/embed-" + fuid + ".html";
                 getPage(embed_access);
-                dllink = getDllink();
+                dllink = getDllink(link, account);
                 if (dllink == null) {
                     logger.info("Failed to get link via embed because: " + br.toString());
                 } else {
@@ -1033,7 +1033,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     /* end of backward compatibility */
                     submitForm(imghost_next_form);
                     checkErrors(link, account, false);
-                    dllink = getDllink();
+                    dllink = getDllink(link, account);
                     /* For imagehosts, filenames are often not given until we can actually see/download the image! */
                     final String image_filename = new Regex(correctedBR, "class=\"pic\" alt=\"([^<>\"]*?)\"").getMatch(0);
                     if (image_filename != null) {
@@ -1063,7 +1063,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 /* end of backward compatibility */
                 submitForm(download1);
                 checkErrors(link, account, false);
-                dllink = getDllink();
+                dllink = getDllink(link, account);
             }
         }
         if (dllink == null) {
@@ -1111,7 +1111,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 submitForm(dlForm);
                 logger.info("Submitted DLForm");
                 checkErrors(link, account, true);
-                dllink = getDllink();
+                dllink = getDllink(link, account);
                 if (dllink == null && (!br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"") || i == repeat)) {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -1382,7 +1382,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     /** Function to find the final downloadlink. */
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public String getDllink() {
+    public String getDllink(DownloadLink downloadLink, Account account) {
         String dllink = br.getRedirectLocation();
         if (dllink == null || new Regex(dllink, this.getSupportedLinks()).matches()) {
             // dllink = new Regex(correctedBR, "(\"|')(" + String.format(dllinkRegexFile, getHostsPatternPart()) + ")\\1").getMatch(1);
@@ -1455,7 +1455,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 }
             }
             if (inValidate(dllink)) {
-                dllink = new Regex(correctedBR, "file\\s*?:\\s*?\"(http[^<>\"]*?\\.(?:mp4|flv))\"").getMatch(0);
+                final String check = new Regex(correctedBR, "file\\s*?:\\s*?\"(https?[^<>\"]*?\\.(?:mp4|flv))\"").getMatch(0);
+                if (StringUtils.isNotEmpty(check) && !StringUtils.containsIgnoreCase(check, "/images/")) {
+                    // jwplayer("flvplayer").onError(function()...
+                    dllink = check;
+                }
             }
         }
         if (dllink == null && this.isImagehoster()) {
@@ -2222,7 +2226,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             String dllink = checkDirectLink(link, directlinkproperty);
             if (dllink == null) {
                 getPage(link.getPluginPatternMatcher());
-                dllink = getDllink();
+                dllink = getDllink(link, account);
                 if (dllink == null) {
                     final Form dlform = br.getFormbyProperty("name", "F1");
                     if (dlform != null && isPasswordProtected()) {
@@ -2234,7 +2238,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     }
                     submitForm(dlform);
                     checkErrors(link, account, true);
-                    dllink = getDllink();
+                    dllink = getDllink(link, account);
                 }
             }
             handleDownload(link, account, dllink);
@@ -2363,6 +2367,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+        if (link != null) {
+            link.removeProperty("freelink2");
+            link.removeProperty("premlink");
+            link.removeProperty("freelink");
+        }
     }
 
     @Override

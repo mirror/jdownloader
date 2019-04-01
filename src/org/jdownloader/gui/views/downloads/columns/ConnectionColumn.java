@@ -56,14 +56,14 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
     /**
      *
      */
-    private static final long serialVersionUID   = 1L;
+    private static final long serialVersionUID = 1L;
     private MigPanel          panel;
     private RenderLabel[]     labels;
     private final Icon        resumeIndicator;
     private final Icon        directConnection;
     private final Icon        proxyConnection;
     private final Icon        connections;
-    private final int         DEFAULT_ICON_COUNT = 4;
+    private final int         labelsSize       = 6;
     private final Icon        skipped;
     private final Icon        forced;
     private DownloadWatchDog  dlWatchdog;
@@ -76,10 +76,10 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
     public ConnectionColumn() {
         super(_GUI.T.ConnectionColumn_ConnectionColumn(), null);
         panel = new RendererMigPanel("ins 0 0 0 0", "[]", "[grow,fill]");
-        labels = new RenderLabel[DEFAULT_ICON_COUNT + 1];
+        labels = new RenderLabel[labelsSize + 1];
         // panel.add(Box.createGlue(), "pushx,growx");
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i <= DEFAULT_ICON_COUNT; i++) {
+        for (int i = 0; i < labels.length; i++) {
             labels[i] = new RenderLabel();
             // labels[i].setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1,
             // Color.RED));
@@ -187,7 +187,7 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
 
     @Override
     public int getDefaultWidth() {
-        return DEFAULT_ICON_COUNT * 19 + 14;
+        return labelsSize * 19 + 14;
     }
 
     public void configureRendererComponent(AbstractNode value, boolean isSelected, boolean hasFocus, int row, int column) {
@@ -200,45 +200,45 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
             } else {
                 dli = null;
             }
-            int index = 0;
+            int labelIndex = 0;
             if (dlLink.isSkipped()) {
-                labels[index].setIcon(skipped);
-                labels[index].setVisible(true);
-                index++;
+                labels[labelIndex].setIcon(skipped);
+                labels[labelIndex].setVisible(true);
+                labelIndex++;
             }
             if (dlWatchdog.isLinkForced(dlLink)) {
-                labels[index].setIcon(forced);
-                labels[index].setVisible(true);
-                index++;
+                labels[labelIndex].setIcon(forced);
+                labels[labelIndex].setVisible(true);
+                labelIndex++;
             }
             if (dlLink.isResumeable() && !dlLink.getFinalLinkState().isFinished()) {
-                labels[index].setIcon(resumeIndicator);
-                labels[index].setVisible(true);
-                index++;
+                labels[labelIndex].setIcon(resumeIndicator);
+                labels[labelIndex].setVisible(true);
+                labelIndex++;
             }
             if (dli != null && sdc != null) {
                 final HTTPProxy proxy = sdc.getUsedProxy();
                 if (proxy != null && proxy.isRemote()) {
-                    labels[index].setIcon(proxyConnection);
-                    labels[index].setVisible(true);
+                    labels[labelIndex].setIcon(proxyConnection);
+                    labels[labelIndex].setVisible(true);
                 } else {
-                    labels[index].setIcon(directConnection);
-                    labels[index].setVisible(true);
+                    labels[labelIndex].setIcon(directConnection);
+                    labels[labelIndex].setVisible(true);
                 }
-                index++;
+                labelIndex++;
                 if (sdc.getAccount() != null && sdc.getAccount().getPlugin() != null) {
                     final PluginForHost plugin = sdc.getAccount().getPlugin();
                     final DomainInfo domainInfo = DomainInfo.getInstance(plugin.getHost(dlLink, sdc.getAccount()));
                     if (domainInfo != null) {
                         final Icon icon = domainInfo.getFavIcon();
-                        labels[index].setIcon(icon);
-                        labels[index].setVisible(true);
-                        index++;
+                        labels[labelIndex].setIcon(icon);
+                        labels[labelIndex].setVisible(true);
+                        labelIndex++;
                     }
                 }
-                labels[index].setText("" + dli.getManagedConnetionHandler().size());
-                labels[index].setIcon(connections);
-                labels[index].setVisible(true);
+                labels[labelIndex].setText("" + dli.getManagedConnetionHandler().size());
+                labels[labelIndex].setIcon(connections);
+                labels[labelIndex].setVisible(true);
             }
         }
     }
@@ -412,7 +412,7 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
 
     @Override
     public void resetRenderer() {
-        for (int i = 0; i <= DEFAULT_ICON_COUNT; i++) {
+        for (int i = 0; i < labels.length; i++) {
             labels[i].setVisible(false);
             labels[i].setText(null);
         }
