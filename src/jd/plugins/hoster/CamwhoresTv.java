@@ -124,8 +124,14 @@ public class CamwhoresTv extends PluginForHost {
             return AvailableStatus.TRUE;
         }
         getDllink(link);
-        if (dllink != null && !(Thread.currentThread() instanceof SingleDownloadController)) {
+        if (dllink != null && link.getFinalFileName() == null) {
+            final String urlExt = getFileNameExtensionFromURL(dllink, default_Extension);
+            if (!StringUtils.endsWithCaseInsensitive(dllink, urlExt)) {
+                filename += urlExt;
+            }
             link.setFinalFileName(filename);
+        }
+        if (dllink != null && !(Thread.currentThread() instanceof SingleDownloadController)) {
             final Browser br2 = br.cloneBrowser();
             br.setFollowRedirects(true);
             URLConnectionAdapter con = null;
