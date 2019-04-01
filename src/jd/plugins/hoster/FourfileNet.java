@@ -17,15 +17,15 @@ package jd.plugins.hoster;
 
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FourfileNet extends XFileSharingProBasic {
@@ -155,9 +155,9 @@ public class FourfileNet extends XFileSharingProBasic {
     }
 
     @Override
-    public String getDllink() {
+    public String getDllink(DownloadLink link, Account account) {
         /* 2019-02-21: Special */
-        String dllink = super.getDllink();
+        String dllink = super.getDllink(link, account);
         if (StringUtils.isEmpty(dllink)) {
             dllink = new Regex(correctedBR, "id=\"direct_link\"[^<>]*?>\\s*?<a href=\"(http[^\"]+)\"").getMatch(0);
         }

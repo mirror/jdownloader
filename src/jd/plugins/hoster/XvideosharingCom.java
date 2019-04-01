@@ -17,15 +17,15 @@ package jd.plugins.hoster;
 
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XvideosharingCom extends XFileSharingProBasic {
@@ -117,8 +117,8 @@ public class XvideosharingCom extends XFileSharingProBasic {
 
     /** 2019-02-08: Special */
     @Override
-    public String getDllink() {
-        String dllink = super.getDllink();
+    public String getDllink(DownloadLink link, Account account) {
+        String dllink = super.getDllink(link, account);
         if (StringUtils.isEmpty(dllink)) {
             dllink = new Regex(super.correctedBR, "\"(https?://[^\"]+v\\.mp4)\"").getMatch(0);
         }
