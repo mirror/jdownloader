@@ -219,7 +219,7 @@ public class ImgSrcRu extends PluginForDecrypt {
         } else {
             imgs.add(br.getURL().replaceFirst("https?://imgsrc\\.ru", ""));
         }
-        final String[] links = br.getRegex("<a href='(/" + Pattern.quote(username) + "/\\d+\\.html(\\?pwd=[a-z0-9]{32})?)[^']*'>").getColumn(0);
+        final String[] links = br.getRegex("<a href='(/" + Pattern.quote(username) + "/\\d+\\.html(\\?pwd=[a-z0-9]{32})?)[^']*'\\s*(?:>|target)").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Possible plugin error: Please confirm in your webbrowser that this album " + parameter + " contains more than one image. If it does please report this issue to JDownloader Development Team.");
         }
@@ -299,16 +299,21 @@ public class ImgSrcRu extends PluginForDecrypt {
                 }
                 // needs to be before password
                 if (br.containsHTML("Continue to album(?: >>)?")) {
-                    String newLink = br.getRegex("\\((\"|')right\\1,function\\(\\) \\{window\\.location=('|\")(https?://imgsrc\\.ru/[^<>\"'/]+/[a-z0-9]+\\.html((\\?pwd=)?(\\?pwd=[a-z0-9]{32})?)?)\\2").getMatch(2);
-                    if (newLink == null) {
-                        /* This is also possible: "/blablabla/[0-9]+.html?pwd=&" */
-                        newLink = br.getRegex("href=(/[^<>\"]+\\?pwd=[^<>\"/]*?)><br><br>Continue to album >></a>").getMatch(0);
+                    Form continueForm = br.getFormByRegex("value\\s*=\\s*'Continue");
+                    if (continueForm != null) {
+                        br.submitForm(continueForm);
+                    } else {
+                        String newLink = br.getRegex("\\((\"|')right\\1,function\\(\\) \\{window\\.location=('|\")(https?://imgsrc\\.ru/[^<>\"'/]+/[a-z0-9]+\\.html((\\?pwd=)?(\\?pwd=[a-z0-9]{32})?)?)\\2").getMatch(2);
+                        if (newLink == null) {
+                            /* This is also possible: "/blablabla/[0-9]+.html?pwd=&" */
+                            newLink = br.getRegex("href=(/[^<>\"]+\\?pwd=[^<>\"/]*?)><br><br>Continue to album >></a>").getMatch(0);
+                        }
+                        if (newLink == null) {
+                            logger.warning("Couldn't process Album forward: " + parameter);
+                            return false;
+                        }
+                        br.getPage(newLink);
                     }
-                    if (newLink == null) {
-                        logger.warning("Couldn't process Album forward: " + parameter);
-                        return false;
-                    }
-                    br.getPage(newLink);
                 }
                 if (br.containsHTML(">Album owner has protected his work from unauthorized access") || br.containsHTML("enter password to continue:")) {
                     Form pwForm = br.getFormbyProperty("name", "passchk");
