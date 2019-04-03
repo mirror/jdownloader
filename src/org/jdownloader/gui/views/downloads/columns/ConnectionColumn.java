@@ -211,7 +211,7 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                 labels[labelIndex].setVisible(true);
                 labelIndex++;
             }
-            if (dlLink.isResumeable() && !dlLink.getFinalLinkState().isFinished()) {
+            if (dlLink.isResumeable() && dlLink.getFinalLinkState() == null) {
                 labels[labelIndex].setIcon(resumeIndicator);
                 labels[labelIndex].setVisible(true);
                 labelIndex++;
@@ -299,7 +299,7 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                     SwingUtils.setOpaque(lbl, false);
                     lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
                 }
-                if (link.isResumeable() && !link.getFinalLinkState().isFinished()) {
+                if (link.isResumeable() && link.getFinalLinkState() == null) {
                     panel.add(lbl = new JLabel(_GUI.T.ConnectionColumn_DownloadIsResumeable(), resumeIndicator, JLabel.LEADING));
                     SwingUtils.setOpaque(lbl, false);
                     lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
