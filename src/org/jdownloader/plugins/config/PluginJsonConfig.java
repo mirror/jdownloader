@@ -39,12 +39,12 @@ public class PluginJsonConfig {
     private static final WeakHashMap<ClassLoader, HashMap<String, WeakReference<ConfigInterface>>> CONFIG_CACHE  = new WeakHashMap<ClassLoader, HashMap<String, WeakReference<ConfigInterface>>>();
     private static final HashMap<String, JsonKeyValueStorage>                                      STORAGE_CACHE = new HashMap<String, JsonKeyValueStorage>();
     protected static final DelayedRunnable                                                         SAVEDELAYER   = new DelayedRunnable(5000, 30000) {
-                                                                                                                     @Override
-                                                                                                                     public void delayedrun() {
-                                                                                                                         saveAll();
-                                                                                                                         cleanup();
-                                                                                                                     }
-                                                                                                                 };
+        @Override
+        public void delayedrun() {
+            saveAll();
+            cleanup();
+        }
+    };
     private final static boolean                                                                   DEBUG         = false;
     static {
         File pluginsFolder = Application.getResource("cfg/plugins/");
@@ -160,7 +160,7 @@ public class PluginJsonConfig {
         }
         final StorageHandler<T> storageHandler = new StorageHandler<T>(storage, configInterface) {
             @Override
-            protected void error(Throwable e) {
+            protected void error(final Throwable e) {
                 if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                     new Thread("ERROR THROWER") {
                         @Override

@@ -13,7 +13,7 @@ public class MyJDownloaderSettingsStorageHandlerFactory implements StorageHandle
     public StorageHandler<MyJDownloaderSettings> create(File path, Class<MyJDownloaderSettings> configInterface) {
         return new StorageHandler<MyJDownloaderSettings>(path, configInterface) {
             @Override
-            protected void error(Throwable e) {
+            protected void error(final Throwable e) {
                 if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                     new Thread("ERROR THROWER") {
                         @Override
