@@ -249,7 +249,7 @@ public class AccountJsonConfig {
         };
         final StorageHandler<T> storageHandler = new StorageHandler<T>(configInterface) {
             @Override
-            protected void error(Throwable e) {
+            protected void error(final Throwable e) {
                 if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                     new Thread("ERROR THROWER") {
                         @Override
