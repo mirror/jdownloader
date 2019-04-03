@@ -17,16 +17,18 @@ package jd.plugins.decrypter;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Map;
 
 import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.requests.GetRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -37,10 +39,15 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "binbox.io" }, urls = { "https?://(?:www\\.)?binbox\\.io/(?!0|about|api|earn|help|login|register|submit|tour)\\w+(?:#\\w+)?" })
-public class BinBoxIo extends PluginForDecrypt {
+public class BinBoxIo extends antiDDoSForDecrypt {
     private String sjcl, uid, salt, token, paste;
 
     public BinBoxIo(PluginWrapper wrapper) {
@@ -50,7 +57,39 @@ public class BinBoxIo extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("https://", "http://");
-        br.getPage(parameter);
+        getPage(parameter);
+        if (true) {
+            try {
+                // https://github.com/adsbypasser/adsbypasser
+                final Browser brc = br.cloneBrowser();
+                final GetRequest request = brc.createGetRequest(parameter + ".json");
+                request.getCookies().add(new Cookie(getHost(), "referrer", "1"));
+                sendRequest(brc, request);
+                final Map<String, Object> response = JSonStorage.restoreFromString(request.getHtmlCode(), TypeRef.HASHMAP);
+                if (Boolean.TRUE.equals(response.get("ok"))) {
+                    final Map<String, Object> paste = (Map<String, Object>) response.get("paste");
+                    final String urls[] = StringUtils.getLines((String) paste.get("url"));
+                    for (final String url : urls) {
+                        if (StringUtils.isNotEmpty(url)) {
+                            decryptedLinks.add(createDownloadlink(url));
+                        }
+                    }
+                    final String title = (String) paste.get("title");
+                    if (title != null) {
+                        final FilePackage fp = FilePackage.getInstance();
+                        fp.setName(Encoding.htmlDecode(title.trim()));
+                        fp.addLinks(decryptedLinks);
+                    }
+                    return decryptedLinks;
+                }
+            } catch (final PluginException e) {
+                throw e;
+            } catch (final InterruptedException e) {
+                throw e;
+            } catch (final Throwable e) {
+                logger.log(e);
+            }
+        }
         if (br.containsHTML(">Page Not Found<|<h2 id=('|\"|)title\\1>Access Denied</h2>")) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
@@ -81,7 +120,7 @@ public class BinBoxIo extends PluginForDecrypt {
                     final String chid = sm.getChallenge(code);
                     captcha.put("adcopy_response", Encoding.urlEncode(code));
                     captcha.put("adcopy_challenge", Encoding.urlEncode(chid));
-                    br.submitForm(captcha);
+                    submitForm(captcha);
                     if (br.containsHTML("solvemedia\\.com/papi/")) {
                         continue;
                     }
@@ -106,7 +145,9 @@ public class BinBoxIo extends PluginForDecrypt {
             paste = paste.replace("&quot;", "\"");
             paste = Encoding.Base64Decode(paste);
             if (isEmpty(sjcl)) {
-                sjcl = br.cloneBrowser().getPage("/public/js/sjcl.js");
+                final Browser brc = br.cloneBrowser();
+                getPage(brc, "/public/js/sjcl.js");
+                sjcl = brc.toString();
             }
             final String[] links = decryptLinks();
             if (links == null) {
@@ -141,8 +182,8 @@ public class BinBoxIo extends PluginForDecrypt {
                     logger.info("Link offline: " + parameter);
                 }
             } else if (br.containsHTML(/* DCMA */"<div id=\"paste-deleted\"" +
-            /* suspended or deactivated account */"|This link is unavailable because |" +
-            /* content deleted */"The content you have requested has been deleted\\.")) {
+                    /* suspended or deactivated account */"|This link is unavailable because |" +
+                    /* content deleted */"The content you have requested has been deleted\\.")) {
                 try {
                     decryptedLinks.add(createOfflinelink(parameter, fpName != null ? Encoding.htmlDecode(fpName.trim()) : null, null));
                 } catch (final Throwable t) {
