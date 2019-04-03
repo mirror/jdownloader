@@ -58,37 +58,35 @@ public class BinBoxIo extends antiDDoSForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("https://", "http://");
         getPage(parameter);
-        if (true) {
-            try {
-                // https://github.com/adsbypasser/adsbypasser
-                final Browser brc = br.cloneBrowser();
-                final GetRequest request = brc.createGetRequest(parameter + ".json");
-                request.getCookies().add(new Cookie(getHost(), "referrer", "1"));
-                sendRequest(brc, request);
-                final Map<String, Object> response = JSonStorage.restoreFromString(request.getHtmlCode(), TypeRef.HASHMAP);
-                if (Boolean.TRUE.equals(response.get("ok"))) {
-                    final Map<String, Object> paste = (Map<String, Object>) response.get("paste");
-                    final String urls[] = StringUtils.getLines((String) paste.get("url"));
-                    for (final String url : urls) {
-                        if (StringUtils.isNotEmpty(url)) {
-                            decryptedLinks.add(createDownloadlink(url));
-                        }
+        try {
+            // https://github.com/adsbypasser/adsbypasser
+            final Browser brc = br.cloneBrowser();
+            final GetRequest request = brc.createGetRequest(parameter + ".json");
+            request.getCookies().add(new Cookie(getHost(), "referrer", "1"));
+            sendRequest(brc, request);
+            final Map<String, Object> response = JSonStorage.restoreFromString(request.getHtmlCode(), TypeRef.HASHMAP);
+            if (Boolean.TRUE.equals(response.get("ok"))) {
+                final Map<String, Object> paste = (Map<String, Object>) response.get("paste");
+                final String urls[] = StringUtils.getLines((String) paste.get("url"));
+                for (final String url : urls) {
+                    if (StringUtils.isNotEmpty(url)) {
+                        decryptedLinks.add(createDownloadlink(url));
                     }
-                    final String title = (String) paste.get("title");
-                    if (title != null) {
-                        final FilePackage fp = FilePackage.getInstance();
-                        fp.setName(Encoding.htmlDecode(title.trim()));
-                        fp.addLinks(decryptedLinks);
-                    }
-                    return decryptedLinks;
                 }
-            } catch (final PluginException e) {
-                throw e;
-            } catch (final InterruptedException e) {
-                throw e;
-            } catch (final Throwable e) {
-                logger.log(e);
+                final String title = (String) paste.get("title");
+                if (title != null) {
+                    final FilePackage fp = FilePackage.getInstance();
+                    fp.setName(Encoding.htmlDecode(title.trim()));
+                    fp.addLinks(decryptedLinks);
+                }
+                return decryptedLinks;
             }
+        } catch (final PluginException e) {
+            throw e;
+        } catch (final InterruptedException e) {
+            throw e;
+        } catch (final Throwable e) {
+            logger.log(e);
         }
         if (br.containsHTML(">Page Not Found<|<h2 id=('|\"|)title\\1>Access Denied</h2>")) {
             decryptedLinks.add(createOfflinelink(parameter));
