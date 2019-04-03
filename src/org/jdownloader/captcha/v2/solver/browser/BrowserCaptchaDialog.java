@@ -15,7 +15,6 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package org.jdownloader.captcha.v2.solver.browser;
 
-import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Dialog.ModalityType;
 import java.awt.Dimension;
@@ -163,6 +162,7 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
     protected boolean                                 stopShowingCrawlerCaptchas;
     protected final AtomicReference<BrowserReference> browserReference = new AtomicReference<BrowserReference>(null);
     private volatile String                           responseCode;
+    private WindowFocusListener                       openBrowserFocusListener;
 
     private void createPopup() {
         final JPopupMenu popup = new JPopupMenu();
@@ -283,12 +283,18 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
             if (!isInitialized()) {
                 return;
             }
-            if (dialog != null) {
-                config.setX(getDialog().getWidth());
-                config.setValid(true);
-                config.setY(getDialog().getHeight());
+            try {
+                if (dialog != null) {
+                    config.setX(getDialog().getWidth());
+                    config.setValid(true);
+                    config.setY(getDialog().getHeight());
+                    if (openBrowserFocusListener != null) {
+                        getDialog().removeWindowFocusListener(openBrowserFocusListener);
+                    }
+                }
+            } finally {
+                super.dispose();
             }
-            super.dispose();
         } finally {
             final BrowserReference lBrowserReference = browserReference.getAndSet(null);
             if (lBrowserReference != null) {
@@ -673,9 +679,17 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
         }
         if (BrowserSolverService.getInstance().getConfig().isAutoOpenBrowserEnabled()) {
             if (CFG_GUI.CFG.getNewDialogFrameState() != FrameState.TO_BACK) {
-                openBrowser();
+                new Thread() {
+                    public void run() {
+                        try {
+                            Thread.sleep(1000);
+                            openBrowser();
+                        } catch (InterruptedException e) {
+                        }
+                    };
+                }.start();
             } else {
-                getDialog().addWindowFocusListener(new WindowFocusListener() {
+                getDialog().addWindowFocusListener(openBrowserFocusListener = new WindowFocusListener() {
                     @Override
                     public void windowLostFocus(WindowEvent e) {
                     }
@@ -702,13 +716,6 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
     @Override
     public String getOKButtonText() {
         return _GUI.T.BrowserCaptchaDialog_getOKButtonText_open_browser();
-    }
-
-    private Component key(String str) {
-        JLabel lbl = new JLabel(str);
-        lbl.setEnabled(false);
-        SwingUtils.toBold(lbl);
-        return lbl;
     }
 
     public boolean isRefresh() {
@@ -774,11 +781,14 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
             }
         };
         try {
-            lBrowserReference.open();
-            browserReference.set(lBrowserReference);
+            if (browserReference.compareAndSet(null, lBrowserReference)) {
+                lBrowserReference.open();
+            }
         } catch (Throwable e1) {
             UIOManager.I().showException(e1.getMessage(), e1);
-            lBrowserReference.dispose();
+            if (browserReference.compareAndSet(lBrowserReference, null)) {
+                lBrowserReference.dispose();
+            }
         }
     }
 }

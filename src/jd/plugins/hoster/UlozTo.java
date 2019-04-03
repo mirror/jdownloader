@@ -309,6 +309,9 @@ public class UlozTo extends PluginForHost {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             Browser cbr = null;
             for (int i = 0; i <= 5; i++) {
+                if (i == 5) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
                 cbr = br.cloneBrowser();
                 cbr.getPage("/reloadXapca.php?rnd=" + System.currentTimeMillis());
                 if (cbr.getRequest().getHttpConnection().getResponseCode() == 404) {
