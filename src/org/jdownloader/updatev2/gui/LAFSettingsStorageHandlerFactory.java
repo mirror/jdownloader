@@ -25,7 +25,7 @@ public class LAFSettingsStorageHandlerFactory implements StorageHandlerFactory<L
     public StorageHandler<LAFSettings> create(File path, Class<LAFSettings> configInterface) {
         final StorageHandler<LAFSettings> ret = new StorageHandler<LAFSettings>(path, configInterface) {
             @Override
-            protected void error(Throwable e) {
+            protected void error(final Throwable e) {
                 if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                     new Thread("ERROR THROWER") {
                         @Override
