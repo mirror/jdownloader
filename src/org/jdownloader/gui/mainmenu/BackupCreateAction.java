@@ -19,8 +19,6 @@ import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.ZipEntry;
 
 import javax.swing.filechooser.FileFilter;
@@ -91,16 +89,8 @@ public class BackupCreateAction extends CustomizableAppAction {
                     }
                     final File backupFile = file;
                     ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
-                        private final AtomicBoolean runningFlag  = new AtomicBoolean(true);
-                        private final AtomicLong    progress     = new AtomicLong(0);
-                        private final AtomicBoolean activityFlag = new AtomicBoolean(false);
                         {
                             setHookPriority(Integer.MIN_VALUE);
-                        }
-
-                        @Override
-                        public long getMaxDuration() {
-                            return 60 * 1000l;
                         }
 
                         @Override
@@ -109,40 +99,17 @@ public class BackupCreateAction extends CustomizableAppAction {
                         }
 
                         @Override
-                        protected void waitFor() {
-                            long last = progress.get();
-                            int noProgressCheck = 30;
-                            while (runningFlag.get() && noProgressCheck > 0) {
-                                if (progress.get() == last && !activityFlag.get()) {
-                                    noProgressCheck--;
-                                } else {
-                                    last = progress.get();
-                                    noProgressCheck = 30;
-                                }
-                                synchronized (runningFlag) {
-                                    if (runningFlag.get()) {
-                                        try {
-                                            runningFlag.wait(1000);
-                                        } catch (InterruptedException e) {
-                                        }
-                                    }
-                                }
-                            }
+                        public long getMaxDuration() {
+                            return 0;
                         }
 
                         @Override
                         public void onShutdown(ShutdownRequest shutdownRequest) {
                             try {
-                                runningFlag.set(true);
-                                create(backupFile, progress, activityFlag);
+                                create(backupFile);
                             } catch (Throwable e) {
                                 LogV3.defaultLogger().log(e);
-                                Dialog.getInstance().showExceptionDialog(_GUI.T.lit_error_occured(), e.getMessage(), e);
-                            } finally {
-                                synchronized (runningFlag) {
-                                    runningFlag.set(false);
-                                    runningFlag.notifyAll();
-                                }
+                                backupFile.delete();
                             }
                         }
                     });
@@ -156,7 +123,7 @@ public class BackupCreateAction extends CustomizableAppAction {
         }.start();
     }
 
-    public static void create(File auto, final AtomicLong createAlive, final AtomicBoolean activityFlag) throws IOException {
+    public static void create(File auto) throws IOException {
         ZipIOWriter zipper = null;
         boolean bad = true;
         try {
@@ -165,14 +132,8 @@ public class BackupCreateAction extends CustomizableAppAction {
             }
             zipper = new ZipIOWriter(auto) {
                 @Override
-                protected void notify(ZipEntry entry, long bytesWrite, long bytesProcessed) {
-                    if (createAlive != null) {
-                        if (entry.isDirectory()) {
-                            createAlive.incrementAndGet();
-                        } else {
-                            createAlive.addAndGet(bytesWrite);
-                        }
-                    }
+                protected void addDirectoryInternal(File addDirectory, boolean compress, String path) throws ZipIOException, IOException {
+                    super.addDirectoryInternal(addDirectory, compress, path);
                 }
 
                 @Override
@@ -201,14 +162,10 @@ public class BackupCreateAction extends CustomizableAppAction {
                         throw new ZipIOException("addFile invalid:null");
                     }
                     if (isFiltered(addFile)) {
-                        createAlive.incrementAndGet();
                         return;
                     }
                     boolean zipEntryAdded = false;
                     try {
-                        if (activityFlag != null) {
-                            activityFlag.set(true);
-                        }
                         final byte[] bytes;
                         try {
                             bytes = IO.readBytes(addFile);
@@ -251,9 +208,6 @@ public class BackupCreateAction extends CustomizableAppAction {
                         LogV3.defaultLogger().log(e);
                         throw e;
                     } finally {
-                        if (activityFlag != null) {
-                            activityFlag.set(false);
-                        }
                         if (zipEntryAdded) {
                             this.zipStream.closeEntry();
                         }

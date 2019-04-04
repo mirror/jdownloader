@@ -22,9 +22,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.zip.ZipEntry;
 
 import javax.swing.filechooser.FileFilter;
 
@@ -196,53 +193,20 @@ public class BackupRestoreAction extends CustomizableAppAction implements Action
                             return "ShutdownHook: Restore Backup";
                         }
 
-                        private final AtomicBoolean runningFlag  = new AtomicBoolean(true);
-                        private final AtomicLong    progress     = new AtomicLong(0);
-                        private final AtomicBoolean activityFlag = new AtomicBoolean(false);
-
                         @Override
-                        protected void waitFor() {
-                            long last = progress.get();
-                            int noProgressCheck = 30;
-                            while (runningFlag.get() && noProgressCheck > 0) {
-                                if (progress.get() == last && !activityFlag.get()) {
-                                    noProgressCheck--;
-                                } else {
-                                    last = progress.get();
-                                    noProgressCheck = 30;
-                                }
-                                synchronized (runningFlag) {
-                                    if (runningFlag.get()) {
-                                        try {
-                                            runningFlag.wait(1000);
-                                        } catch (InterruptedException e) {
-                                        }
-                                    }
-                                }
-                            }
+                        public long getMaxDuration() {
+                            return 0;
                         }
 
                         @Override
                         public void onShutdown(ShutdownRequest shutdownRequest) {
-                            ZipIOReader zip = null;
                             try {
-                                runningFlag.set(true);
                                 if (getMaxAutoBackupFiles() > 0) {
-                                    BackupCreateAction.create(fauto, progress, activityFlag);
+                                    BackupCreateAction.create(fauto);
                                 }
                                 if (getMaxAutoBackupFiles() >= 0) {
                                     cleanupAutoBackups(getMaxAutoBackupFiles());
                                 }
-                                zip = new ZipIOReader(file) {
-                                    @Override
-                                    protected void notify(ZipEntry entry, long bytesWrite, long bytesProcessed) {
-                                        if (entry.isDirectory()) {
-                                            progress.incrementAndGet();
-                                        } else {
-                                            progress.addAndGet(bytesWrite);
-                                        }
-                                    }
-                                };
                                 File tmp = Application.getTempResource("restorebackup_" + System.currentTimeMillis());
                                 while (tmp.exists()) {
                                     tmp = Application.getTempResource("restorebackup_" + System.currentTimeMillis());
@@ -251,29 +215,27 @@ public class BackupRestoreAction extends CustomizableAppAction implements Action
                                 while (backup.exists()) {
                                     backup = Application.getResource("cfg_backup_" + System.currentTimeMillis());
                                 }
-                                zip.extractTo(tmp);
+                                final ZipIOReader zip = new ZipIOReader(file);
+                                try {
+                                    zip.extractTo(tmp);
+                                } finally {
+                                    try {
+                                        zip.close();
+                                    } catch (Throwable e) {
+                                    }
+                                }
                                 Application.getResource("cfg").renameTo(backup);
                                 if (getMaxCFGBackupFolders() >= 0) {
                                     cleanupCFGBackFolders(getMaxCFGBackupFolders());
                                 }
                                 if (Application.getResource("cfg").exists()) {
                                     throw new Exception("Could not delete " + Application.getResource("cfg"));
+                                } else {
+                                    new File(tmp, "cfg").renameTo(Application.getResource("cfg"));
                                 }
-                                new File(tmp, "cfg").renameTo(Application.getResource("cfg"));
                             } catch (Exception e) {
                                 LogV3.defaultLogger().log(e);
                                 Dialog.getInstance().showExceptionDialog(_GUI.T.lit_error_occured(), e.getMessage() + "\r\nPlease try to close JDownloader, and extract the file\r\n" + file.getAbsolutePath() + "\r\nto " + Application.getResource("cfg").getParent() + "\r\nusing an application like WinZip, 7Zip or Winrar.\r\nIf this does not work, feel free to contact our support.", e);
-                            } finally {
-                                if (zip != null) {
-                                    try {
-                                        zip.close();
-                                    } catch (Throwable e) {
-                                    }
-                                }
-                                synchronized (runningFlag) {
-                                    runningFlag.set(false);
-                                    runningFlag.notifyAll();
-                                }
                             }
                         }
                     });

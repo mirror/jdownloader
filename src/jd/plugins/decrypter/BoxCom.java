@@ -22,17 +22,23 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
+import com.sun.xml.internal.org.jvnet.mimepull.DecodingException;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "box.com" }, urls = { "https?://(?:\\w+\\.)*box\\.(?:net|com)/s(?:hared)?/(?:[a-z0-9]{32}|[a-z0-9]{20})(?:/folder/\\d+)?" })
 public class BoxCom extends antiDDoSForDecrypt {
@@ -66,17 +72,12 @@ public class BoxCom extends antiDDoSForDecrypt {
             return decryptedLinks;
         }
         if (br.getURL().matches(TYPE_APP)) {
-            decryptedLinks.addAll(decryptApp(cryptedlink));
+            decryptedLinks.addAll(decryptApp(parameter, cryptedlink));
             // single link share url!
             if (decryptedLinks.isEmpty()) {
                 // test links for password/empty folder/login required https://svn.jdownloader.org/issues/83897
                 if (br.containsHTML("<strong>There are no items in this folder.</strong>")) {
                     // could be a empty folder.
-                    decryptedLinks.add(createOfflinelink(cryptedlink));
-                    return decryptedLinks;
-                } else if (br.containsHTML(">\\s*Enter Password</h1>")) {
-                    // password protected
-                    decryptedLinks.add(createOfflinelink(cryptedlink));
                     return decryptedLinks;
                 }
                 // single link should still have fuid
@@ -108,8 +109,29 @@ public class BoxCom extends antiDDoSForDecrypt {
         return decryptedLinks;
     }
 
-    private ArrayList<DownloadLink> decryptApp(final String cryptedlink) throws Exception {
+    private boolean isPasswordProtected(final Browser br) {
+        return (br.containsHTML("passwordRequired") || br.containsHTML("incorrectPassword")) && br.containsHTML("\"status\"\\s*:\\s*403");
+    }
+
+    private ArrayList<DownloadLink> decryptApp(CryptedLink cryptedLink, final String currentUrl) throws Exception {
         // 20170711
+        int retry = 5;
+        String passCode = null;
+        while (retry-- > 0 && isPasswordProtected(br)) {
+            if (isAbort()) {
+                throw new InterruptedException();
+            }
+            passCode = Plugin.getUserInput(null, cryptedLink);
+            if (!StringUtils.isEmpty(passCode)) {
+                final PostRequest request = br.createPostRequest(br.getURL(), "password=" + Encoding.urlEncode(passCode));
+                br.getPage(request);
+            } else {
+                break;
+            }
+        }
+        if (isPasswordProtected(br)) {
+            throw new DecodingException(DecrypterException.PASSWORD);
+        }
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final HashSet<String> dupe = new HashSet<String>();
         final String fpName = br.getRegex("\"currentFolderName\":\"([^\"]*?)\"").getMatch(0);
@@ -136,6 +158,7 @@ public class BoxCom extends antiDDoSForDecrypt {
                         }
                         final DownloadLink dl = createDownloadlink(link);
                         dl.setLinkID("box.com://file/" + fuid);
+                        dl.setProperty("passCode", passCode);
                         dl.setName(Encoding.unicodeDecode(filename));
                         dl.setVerifiedFileSize(Long.parseLong(size));
                         dl.setAvailable(true);
@@ -153,6 +176,7 @@ public class BoxCom extends antiDDoSForDecrypt {
                         }
                         final DownloadLink dl = createDownloadlink(link);
                         dl.setLinkID("box.com://folder/" + duid);
+                        dl.setProperty("passCode", passCode);
                         decryptedLinks.add(dl);
                         if (fp != null) {
                             fp.add(dl);
