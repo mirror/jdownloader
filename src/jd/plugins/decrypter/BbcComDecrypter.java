@@ -99,6 +99,11 @@ public class BbcComDecrypter extends PluginForDecrypt {
             /* 2018-12-07 */
             jsons = this.br.getRegex("<script id=\"initial\\-data\" type=\"text/plain\" data\\-json=\\'([^<>\"\\']+)\\'").getColumn(0);
         }
+        if (jsons == null || jsons.length == 0) {
+            /* Type 9 (similar to 5) */
+            /* 2019-04-04 */
+            jsons = this.br.getRegex("window\\.__IPLAYER_REDUX_STATE__ = (\\{.*?\\});").getColumn(0);
+        }
         if (jsons == null) {
             logger.info("Failed to find any playable content");
             return decryptedLinks;
@@ -113,6 +118,7 @@ public class BbcComDecrypter extends PluginForDecrypt {
             final Object o_story = entries.get("story");
             final Object o_player = entries.get("player");
             final Object o_episode = entries.get("episode");
+            final Object o_versions = entries.get("versions");
             final Object o_appStoreState = entries.get("appStoreState");
             final Object o_programmes = entries.get("programmes");
             String title = null;
@@ -132,7 +138,7 @@ public class BbcComDecrypter extends PluginForDecrypt {
                 }
                 title = (String) entries.get("Title");
                 vpid = (String) entries.get("Vpid");
-            } else if (o_player != null) {
+            } else if (o_player != null && ((LinkedHashMap<String, Object>) o_player).containsKey("title")) {
                 /* Type 4 */
                 entries2 = (LinkedHashMap<String, Object>) o_episode;
                 entries = (LinkedHashMap<String, Object>) o_player;
@@ -142,6 +148,16 @@ public class BbcComDecrypter extends PluginForDecrypt {
                 tv_brand = (String) entries.get("masterbrand");
                 episodeType = (String) entries.get("episodeType");
                 date = (String) entries2.get("release_date_time");
+                description = (String) JavaScriptEngineFactory.walkJson(entries, "synopses/large");
+            } else if (o_episode != null && o_versions != null) {
+                /* Type 9 */
+                entries = (LinkedHashMap<String, Object>) o_episode;
+                title = (String) entries.get("title");
+                subtitle = (String) entries.get("subtitle");
+                vpid = (String) JavaScriptEngineFactory.walkJson(o_versions, "{0}/id");
+                tv_brand = (String) JavaScriptEngineFactory.walkJson(entries, "master_brand/id");
+                episodeType = (String) entries.get("type");
+                date = (String) entries.get("release_date_time");
                 description = (String) JavaScriptEngineFactory.walkJson(entries, "synopses/large");
             } else if (o_episode != null) {
                 /* Type 5 */
