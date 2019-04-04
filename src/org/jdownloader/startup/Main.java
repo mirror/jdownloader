@@ -175,8 +175,8 @@ public class Main {
                 return list.toJsonString();
             }
         });
-        // set MyJDownloaderCLient JsonHandler
         MyJDJsonMapper.HANDLER = new JSonHandler<Type>() {
+            // set MyJDownloaderCLient JsonHandler
             @Override
             public String objectToJSon(Object payload) {
                 return JSonStorage.serializeToJson(payload);
