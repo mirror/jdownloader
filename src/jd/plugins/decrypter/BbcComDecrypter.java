@@ -150,7 +150,7 @@ public class BbcComDecrypter extends PluginForDecrypt {
                 date = (String) entries2.get("release_date_time");
                 description = (String) JavaScriptEngineFactory.walkJson(entries, "synopses/large");
             } else if (o_episode != null && o_versions != null) {
-                /* Type 9 */
+                /* Type 9 - similar to type 5 */
                 entries = (LinkedHashMap<String, Object>) o_episode;
                 title = (String) entries.get("title");
                 subtitle = (String) entries.get("subtitle");
