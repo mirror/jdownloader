@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.requests.GetRequest;
 import jd.http.requests.PostRequest;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -77,6 +78,10 @@ public class BoxCom extends antiDDoSForHost {
         return false;
     }
 
+    private boolean isPasswordProtected(final Browser br) {
+        return (br.containsHTML("passwordRequired") || br.containsHTML("incorrectPassword")) && br.containsHTML("\"status\"\\s*:\\s*403");
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
@@ -89,7 +94,16 @@ public class BoxCom extends antiDDoSForHost {
             final String sharedname = dlIds.getMatch(0);
             final String fileid = dlIds.getMatch(1);
             final String rootFolder = new Regex(parameter.getPluginPatternMatcher(), "(.+)/file/\\d+").getMatch(0);
-            br.getPage(rootFolder);
+            final String passCode = parameter.getStringProperty("passCode", null);
+            if (passCode != null) {
+                br.postPage(rootFolder, "password=" + Encoding.urlEncode(passCode));
+            } else {
+                br.getPage(rootFolder);
+            }
+            if (isPasswordProtected(br)) {
+                // direct link that is password protected?
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             final String requestToken = br.getRegex("Box\\.config\\.requestToken\\s*=\\s*'(.*?)'").getMatch(0);
             if (StringUtils.isEmpty(requestToken)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
