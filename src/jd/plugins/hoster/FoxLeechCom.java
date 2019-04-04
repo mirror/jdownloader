@@ -308,29 +308,33 @@ public class FoxLeechCom extends antiDDoSForHost {
             final String accountType = (String) entries.get("account");
             if (!"premium".equalsIgnoreCase(accountType)) {
                 // unsupported account type
-                throw new AccountInvalidException("Unsupported account type:" + accountType);
+                account.setType(AccountType.FREE);
+                ai.setStatus("Free Account");
+                /* Free accounts cannot be used to download */
+                ai.setTrafficLeft(0);
+            } else {
+                final Object expire = entries.get("expire_time");
+                if (expire != null) {
+                    ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(expire.toString()), br);
+                }
+                final String apiurl = (String) entries.get("api_url");
+                if (apiurl != null) {
+                    account.setProperty("api_url", apiurl);
+                }
+                final Object trafficLeft = entries.get("traffic_left_bytes");
+                if (trafficLeft != null) {
+                    ai.setTrafficLeft(Long.parseLong(trafficLeft.toString()));
+                }
+                final Object trafficMax = entries.get("traffic_bytes");
+                if (trafficLeft != null) {
+                    ai.setTrafficMax(Long.parseLong(trafficMax.toString()));
+                }
+                final String hosts = (String) entries.get("hosts");
+                if (hosts != null) {
+                    ai.setMultiHostSupport(this, Arrays.asList(hosts.split(",")));
+                }
+                ai.setStatus("Premium Account");
             }
-            final Object expire = entries.get("expire_time");
-            if (expire != null) {
-                ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(expire.toString()), br);
-            }
-            final String apiurl = (String) entries.get("api_url");
-            if (apiurl != null) {
-                account.setProperty("api_url", apiurl);
-            }
-            final Object trafficLeft = entries.get("traffic_left_bytes");
-            if (trafficLeft != null) {
-                ai.setTrafficLeft(Long.parseLong(trafficLeft.toString()));
-            }
-            final Object trafficMax = entries.get("traffic_bytes");
-            if (trafficLeft != null) {
-                ai.setTrafficMax(Long.parseLong(trafficMax.toString()));
-            }
-            final String hosts = (String) entries.get("hosts");
-            if (hosts != null) {
-                ai.setMultiHostSupport(this, Arrays.asList(hosts.split(",")));
-            }
-            ai.setStatus("Premium Account");
             return ai;
         }
     }
