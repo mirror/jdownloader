@@ -1,7 +1,7 @@
-gui_config_antistandby_whiledl2=Download in Arbeit ist
-gui_config_antistandby_whilejd2=JDownloader läuft
 gui_config_antistandby_whilecrawl=JDownloader Links sammelt
+gui_config_antistandby_whiledl2=Download in Arbeit ist
 gui_config_antistandby_whiledl2orcrawl=JDownloader Links sammelt oder herunterlädt
+gui_config_antistandby_whilejd2=JDownloader läuft
 jd_plugins_optional_antistandby_jdantistandby=Bye-bye, Standby
 jd_plugins_optional_antistandby_jdantistandby_description=Verhindert den automatischen Standby-Modus während Downloads noch laufen.
 mode=Verhindere Standby/Ruhezustand, wenn
