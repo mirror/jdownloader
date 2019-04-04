@@ -193,8 +193,11 @@ public class MultiupOrg extends PluginForHost {
         boolean is_premium = false;
         long validuntil = 0;
         String validuntilStr = null;
-        /** TODO: 2019-02-22: API does not have any way to find out account-type and expiredate --> We need the website :( */
-        final boolean website_workaround_required = true;
+        /**
+         * TODO: 2019-04-04: Admin has updated API so this workaround is not required anymore but we will keep this boolean as a switch just
+         * in case ...
+         */
+        final boolean website_workaround_required = false;
         if (website_workaround_required) {
             loginWebsite(account);
             if (br.getURL() == null || !br.getURL().contains("/profile/my-profile")) {
@@ -209,7 +212,12 @@ public class MultiupOrg extends PluginForHost {
                 is_premium = br.containsHTML("class=\"role\">\\s*?Premium user");
             }
         } else {
-            is_premium = false;
+            final String account_type = PluginJSonUtils.getJson(br, "account_type");
+            final String premium_days_left = PluginJSonUtils.getJson(br, "premium_days_left");
+            is_premium = account_type != null && account_type.equalsIgnoreCase("premium");
+            if (premium_days_left != null && premium_days_left.matches("\\d+")) {
+                validuntil = System.currentTimeMillis() + Integer.parseInt(premium_days_left) * 24 * 60 * 1000l;
+            }
         }
         if (!is_premium) {
             account.setType(AccountType.FREE);
