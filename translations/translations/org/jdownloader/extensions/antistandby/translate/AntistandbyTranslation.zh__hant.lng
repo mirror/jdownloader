@@ -1,3 +1,4 @@
+gui_config_antistandby_whilecrawl=爬蟲工具正在進行中
 gui_config_antistandby_whiledl2=下載正在處理中
 gui_config_antistandby_whilejd2=JDownloader 正在執行
 jd_plugins_optional_antistandby_jdantistandby=防止待機
