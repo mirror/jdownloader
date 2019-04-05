@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -27,9 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "126disk.com" }, urls = { "http://(?:www\\.)?126(?:disk|xy|xiazai)\\.com/(file|rf)view_\\d+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "126disk.com" }, urls = { "http://(?:www\\.)?126(?:disk|xy|xiazai)\\.com/(?:file|rf)view_(\\d+)\\.html" })
 public class HundredTwentySixDiskCom extends PluginForHost {
     public HundredTwentySixDiskCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -45,16 +45,30 @@ public class HundredTwentySixDiskCom extends PluginForHost {
     }
 
     @Override
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        if (linkid != null) {
+            return linkid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         if (br.getURL().endsWith("/error.php") || br.getHttpConnection().getResponseCode() == 403 || br.containsHTML(">你访问的文件不存在。现在将转入首页！|>\\s*你访问的文件包含违规内容…\\s*<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<h1[^<>]+>([^<>]*?)</h1>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("class=\"nowrap file-name( [a-z0-9\\-]+)?\">([^<>\"]*?)</h1>").getMatch(1);
+        }
+        if (filename == null) {
+            /* Fallback */
+            filename = getLinkID(link);
         }
         String filesize = br.getRegex("大小：<[^<>]+>([^<>]*?)( ?\\([^<>])?<").getMatch(0);
         if (filesize == null) {
@@ -64,7 +78,9 @@ public class HundredTwentySixDiskCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize + "b"));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize + "b"));
+        }
         String md5 = br.getRegex(">M D 5值 ：</b>([a-z0-9]{32})</li>").getMatch(0);
         if (md5 == null) {
             md5 = br.getRegex("<td>文件MD5：([a-f0-9]{32})</td>").getMatch(0);
@@ -81,6 +97,10 @@ public class HundredTwentySixDiskCom extends PluginForHost {
         br.getPage("/download.php?id=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)\\.html$").getMatch(0) + "&share=0&type=wt&t=" + System.currentTimeMillis());
         final String dllink = br.getRegex("\"(http://[a-z0-9]+\\.126(?:disk|xy)\\.com/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                /* 2019-04-05: I was not able to find a single downloadable file, 404 also happens in browser */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404");
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, Encoding.htmlDecode(dllink), false, 1);

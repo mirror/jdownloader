@@ -16,16 +16,21 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.regex.Pattern;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Request;
+import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -56,7 +61,7 @@ public class OneFichierComFolder extends PluginForDecrypt {
     public static String[] getAnnotationUrls() {
         // construct pattern
         final String host = getHostsPattern();
-        return new String[] { host + "/(([a-z]{2})/)?dir/[A-Za-z0-9]+" };
+        return new String[] { host + "/(?:(?:[a-z]{2})/)?dir/([A-Za-z0-9]+)" };
     }
 
     private static String getHostsPattern() {
@@ -68,8 +73,45 @@ public class OneFichierComFolder extends PluginForDecrypt {
         return hosts;
     }
 
+    private ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts(this.getHost());
+        Account account = null;
+        if (accounts != null && accounts.size() != 0) {
+            Iterator<Account> it = accounts.iterator();
+            while (it.hasNext()) {
+                Account n = it.next();
+                if (n.isEnabled() && n.isValid() && n.getType() == AccountType.PREMIUM) {
+                    account = n;
+                    break;
+                }
+            }
+        }
+        /*
+         * 2019-04-05: Folder support via API does not yet work (serverside) as it requires us to have the internal folder-IDs which we do
+         * not have!
+         */
+        if (jd.plugins.hoster.OneFichierCom.canUseAPI(account) && false) {
+            /* Use premium API */
+            crawlAPI(param, account);
+        } else {
+            /* Use website */
+            crawlWebsite(param);
+        }
+        return decryptedLinks;
+    }
+
+    private void crawlAPI(final CryptedLink param, final Account account) throws Exception {
+        final String folderID = new Regex(param.toString(), this.getSupportedLinks()).getMatch(0);
+        jd.plugins.hoster.OneFichierCom.setPremiumAPIHeaders(this.br, account);
+        PostRequest downloadReq = br.createJSonPostRequest(jd.plugins.hoster.OneFichierCom.API_BASE + "/file/ls.cgi", null);
+        downloadReq.setContentType("application/json");
+        br.openRequestConnection(downloadReq);
+        br.loadConnection(null);
+    }
+
+    private void crawlWebsite(final CryptedLink param) throws Exception {
         final String parameter = Request.getLocation("/dir/" + new Regex(param.toString(), "([A-Za-z0-9]+)$").getMatch(0), br.createGetRequest(param.toString()));
         prepareBrowser(br);
         br.setLoadLimit(Integer.MAX_VALUE);
@@ -77,7 +119,7 @@ public class OneFichierComFolder extends PluginForDecrypt {
         jsonBR.getPage(parameter + "?e=1");
         if (jsonBR.toString().equals("bad") || jsonBR.getHttpConnection().getResponseCode() == 404 || jsonBR.containsHTML("No htmlCode read")) {
             decryptedLinks.add(createOfflinelink(parameter));
-            return decryptedLinks;
+            return;
         }
         /* Access folder without API just to find foldername ... */
         br.getPage(parameter);
@@ -104,8 +146,7 @@ public class OneFichierComFolder extends PluginForDecrypt {
             // webmode
             final String[][] linkInfo = getLinkInfo();
             if (linkInfo == null || linkInfo.length == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                throw new DecrypterException("Plugin broken");
             }
             for (String singleLinkInfo[] : linkInfo) {
                 final DownloadLink dl = createDownloadlink(singleLinkInfo[1]);
@@ -123,7 +164,6 @@ public class OneFichierComFolder extends PluginForDecrypt {
             fp.setName(fpName);
             fp.addLinks(decryptedLinks);
         }
-        return decryptedLinks;
     }
 
     private final String[][] getLinkInfo() {

@@ -19,6 +19,10 @@ import java.io.IOException;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -39,10 +43,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to", "ulozto.net", "pornfile.cz" }, urls = { "https?://(?:www\\.)?(?:uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)/(?!soubory/)[\\!a-zA-Z0-9]+/[^\\?\\s]+", "https?://(?:www\\.)?ulozto\\.net/(?!soubory/)[\\!a-zA-Z0-9]+(?:/[^\\?\\s]+)?", "https?://(?:www\\.)?(?:pornfile\\.cz|pornfile\\.ulozto\\.net)/[\\!a-zA-Z0-9]+/[^\\?\\s]+" })
 public class UlozTo extends PluginForHost {
@@ -142,32 +142,7 @@ public class UlozTo extends PluginForHost {
                     return AvailableStatus.UNCHECKABLE;
                 }
             }
-            /* For age restricted links */
-            final String ageFormToken = br.getRegex("id=\"frm-askAgeForm-_token_\" value=\"([^<>\"]*?)\"").getMatch(0);
-            if (ageFormToken != null) {
-                /* 2016-05-24: This might be outdated */
-                br.postPage(br.getURL(), "agree=Confirm&do=askAgeForm-submit&_token_=" + Encoding.urlEncode(ageFormToken));
-                handleRedirect(downloadLink);
-            } else if (br.containsHTML("value=\"pornDisclaimer-submit\"")) {
-                /* 2016-05-24: This might be outdated */
-                br.setFollowRedirects(true);
-                String currenturlpart = new Regex(br.getURL(), "https?://[^/]+(/.+)").getMatch(0);
-                currenturlpart = Encoding.urlEncode(currenturlpart);
-                br.postPage("/porn-disclaimer/?back=" + currenturlpart, "agree=Souhlas%C3%ADm&_do=pornDisclaimer-submit");
-                br.setFollowRedirects(false);
-            } else if (br.containsHTML("id=\"frm\\-askAgeForm\"")) {
-                /*
-                 * 2016-05-24: Uloz.to recognizes porn files and moves them from uloz.to to pornfile.cz (usually with the same filename- and
-                 * link-ID.
-                 */
-                this.br.setFollowRedirects(true);
-                /* Agree to redirect from uloz.to to pornfile.cz */
-                br.postPage(this.br.getURL(), "agree=Souhlas%C3%ADm&do=askAgeForm-submit");
-                /* Agree to porn disclaimer */
-                final String currenturlpart = new Regex(br.getURL(), "https?://[^/]+(/.+)").getMatch(0);
-                br.postPage("/porn-disclaimer/?back=" + Encoding.urlEncode(currenturlpart), "agree=Souhlas%C3%ADm&do=pornDisclaimer-submit");
-                br.setFollowRedirects(false);
-            }
+            handleAgeRestrictedRedirects(downloadLink);
             if (br.containsHTML("The file is not available at this moment, please, try it later")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "The file is not available at this moment, please, try it later", 15 * 60 * 1000l);
             }
@@ -219,6 +194,35 @@ public class UlozTo extends PluginForHost {
         }
     }
 
+    private void handleAgeRestrictedRedirects(final DownloadLink downloadLink) throws Exception {
+        /* For age restricted links */
+        final String ageFormToken = br.getRegex("id=\"frm-askAgeForm-_token_\" value=\"([^<>\"]*?)\"").getMatch(0);
+        if (ageFormToken != null) {
+            /* 2016-05-24: This might be outdated */
+            br.postPage(br.getURL(), "agree=Confirm&do=askAgeForm-submit&_token_=" + Encoding.urlEncode(ageFormToken));
+            handleRedirect(downloadLink);
+        } else if (br.containsHTML("value=\"pornDisclaimer-submit\"")) {
+            /* 2016-05-24: This might be outdated */
+            br.setFollowRedirects(true);
+            String currenturlpart = new Regex(br.getURL(), "https?://[^/]+(/.+)").getMatch(0);
+            currenturlpart = Encoding.urlEncode(currenturlpart);
+            br.postPage("/porn-disclaimer/?back=" + currenturlpart, "agree=Souhlas%C3%ADm&_do=pornDisclaimer-submit");
+            br.setFollowRedirects(false);
+        } else if (br.containsHTML("id=\"frm\\-askAgeForm\"")) {
+            /*
+             * 2016-05-24: Uloz.to recognizes porn files and moves them from uloz.to to pornfile.cz (usually with the same filename- and
+             * link-ID.
+             */
+            this.br.setFollowRedirects(true);
+            /* Agree to redirect from uloz.to to pornfile.cz */
+            br.postPage(this.br.getURL(), "agree=Souhlas%C3%ADm&do=askAgeForm-submit");
+            /* Agree to porn disclaimer */
+            final String currenturlpart = new Regex(br.getURL(), "https?://[^/]+(/.+)").getMatch(0);
+            br.postPage("/porn-disclaimer/?back=" + Encoding.urlEncode(currenturlpart), "agree=Souhlas%C3%ADm&do=pornDisclaimer-submit");
+            br.setFollowRedirects(false);
+        }
+    }
+
     private String getFilename() {
         final String filename = br.getRegex("<title>\\s*(.*?)\\s*(?:\\|\\s*(PORNfile.cz|Ulož.to)\\s*)?</title>").getMatch(0);
         return filename;
@@ -262,13 +266,16 @@ public class UlozTo extends PluginForHost {
         }
     }
 
+    /** Handles special redirects e.g. after submitting 'Age restricted' Form. */
     @SuppressWarnings("deprecation")
     private void handleRedirect(final DownloadLink downloadLink) throws Exception {
         for (int i = 0; i <= i; i++) {
-            String continuePage = br.getRegex("<p><a href=\"(http://.*?)\">Please click here to continue</a>").getMatch(0);
+            final String continuePage = br.getRegex("<p><a href=\"(http://.*?)\">Please click here to continue</a>").getMatch(0);
             if (continuePage != null) {
-                downloadLink.setUrlDownload(continuePage);
-                br.getPage(downloadLink.getDownloadURL());
+                if (downloadLink != null) {
+                    downloadLink.setUrlDownload(continuePage);
+                }
+                br.getPage(continuePage);
             } else {
                 break;
             }
@@ -639,6 +646,7 @@ public class UlozTo extends PluginForHost {
                     return;
                 }
                 this.br.getPage("https://" + account.getHoster() + "/login");
+                handleAgeRestrictedRedirects(null);
                 final Form loginform = br.getFormbyKey("username");
                 if (loginform == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

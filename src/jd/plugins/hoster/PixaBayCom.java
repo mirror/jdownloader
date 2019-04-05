@@ -16,8 +16,6 @@
 package jd.plugins.hoster;
 
 import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -27,7 +25,6 @@ import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -42,7 +39,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pixabay.com" }, urls = { "https?://(www\\.)?pixabay\\.com/en/[a-z0-9\\-]+\\-\\d+/" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pixabay.com" }, urls = { "https?://(?:www\\.)?pixabay\\.com/en/([a-z0-9\\-]+\\-\\d+)/" })
 public class PixaBayCom extends PluginForHost {
     public PixaBayCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -81,10 +78,12 @@ public class PixaBayCom extends PluginForHost {
         if (aa != null) {
             this.login(aa, false);
         }
-        br.getPage(link.getDownloadURL());
+        br.setFollowRedirects(true);
+        br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("?")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final String fallback_filename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
         String filename = br.getRegex("<title>(?:Free photo: )?([^<>]*?)(?:· Free vector graphic on Pixabay)?</title>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>([^<>]*?)</title>").getMatch(0);
@@ -93,18 +92,37 @@ public class PixaBayCom extends PluginForHost {
         String filesize = null;
         if (aa != null) {
             boolean done = false;
+            int heightMax = 0;
+            int heightTmp = 0;
             final String[] qualityInfo = br.getRegex("(<td><input type=\"radio\" name=\"download\".*?/td></tr>)").getColumn(0);
             for (final String possiblequality : qualities) {
                 for (final String quality : qualityInfo) {
+                    boolean grabDownloadData = false;
                     // logger.info("quality: " + quality);
-                    final String quality_name = new Regex(quality, "(ORIGINAL|O|S|M|L|XXL|XL|SVG)</td>").getMatch(0);
+                    String quality_name = new Regex(quality, "(ORIGINAL|O|S|M|L|XXL|XL|SVG)</td>").getMatch(0);
+                    if (quality_name == null) {
+                        quality_name = new Regex(quality, "(\\d+(?:x|×)\\d+)").getMatch(0);
+                    }
                     if (quality_name == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     final boolean accountQualityPossible = aa != null && (quality_name.equalsIgnoreCase("XXL") || quality_name.equalsIgnoreCase("XL") || quality_name.equalsIgnoreCase("O") || quality_name.equalsIgnoreCase("Original"));
                     final boolean isNoAccountQuality = !quality_name.equalsIgnoreCase("XXL") && !quality_name.equalsIgnoreCase("XL") && !quality_name.equalsIgnoreCase("O") && !quality_name.equalsIgnoreCase("Original");
+                    /* Possibly unknown quality but we might be able to find the highest quality by resolution */
+                    final boolean isResolution = quality_name.matches("\\d+.\\d+");
                     if (quality_name.equals(possiblequality) && (accountQualityPossible || isNoAccountQuality)) {
                         done = true;
+                        grabDownloadData = true;
+                        break;
+                    } else if (isResolution) {
+                        grabDownloadData = true;
+                        final String heightStr = new Regex(quality_name, "^(\\d+)").getMatch(0);
+                        heightTmp = Integer.parseInt(heightStr);
+                        if (heightTmp > heightMax) {
+                            heightMax = heightTmp;
+                        }
+                    }
+                    if (grabDownloadData) {
                         filesize = new Regex(quality, "class=\"hide-xs hide-md\">([^<>\"]*?)<").getMatch(0);
                         if (filesize == null) {
                             filesize = new Regex(quality, ">(\\d+(?:\\.\\d+)? (?:kB|mB|gB))<").getMatch(0);
@@ -114,13 +132,15 @@ public class PixaBayCom extends PluginForHost {
                         if (quality_download_id == null) {
                             quality_download_id = new Regex(quality, "name=\"download\" value=\"([^<>\"]*?)\"").getMatch(0);
                         }
-                        break;
                     }
                 }
                 if (done) {
                     break;
                 }
             }
+        }
+        if (filename == null) {
+            filename = fallback_filename;
         }
         if (filesize == null || quality_download_id == null) { // No account
             String dllink = br.getRegex("(https://cdn[^<>\"\\s]+) 1.333x").getMatch(0);
@@ -136,8 +156,8 @@ public class PixaBayCom extends PluginForHost {
                 return AvailableStatus.TRUE; // <=== No account
             }
         }
-        if (filename == null || filesize == null || quality_download_id == null) {
-            logger.info("filename: " + filename + ", filesize: " + filesize + ", quality_download_id: " + quality_download_id);
+        if (quality_download_id == null) {
+            logger.info("quality_download_id: " + quality_download_id);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (quality_max == null) {
@@ -146,7 +166,9 @@ public class PixaBayCom extends PluginForHost {
         filename = Encoding.htmlDecode(filename.trim());
         filename = encodeUnicode(filename) + ".jpg";
         link.setFinalFileName(filename);
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -232,33 +254,20 @@ public class PixaBayCom extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    private static final String MAINPAGE = "http://pixabay.com";
-    private static Object       LOCK     = new Object();
+    private static Object LOCK = new Object();
 
-    @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            br.setCookie(MAINPAGE, key, value);
-                        }
-                        return;
-                    }
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null && !force) {
+                    br.setCookies(account.getHoster(), cookies);
+                    return;
                 }
                 br.setFollowRedirects(true);
-                br.postPage("https://pixabay.com/en/accounts/login/", "next=%2Fen%2Faccounts%2Fmedia%2F&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                br.postPage("https://pixabay.com/accounts/login/", "next=%2Fen%2Faccounts%2Fmedia%2F&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (!this.br.containsHTML("/accounts/logout/\"")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -266,17 +275,9 @@ public class PixaBayCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(MAINPAGE);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.saveCookies(br.getCookies(account.getHoster()), "");
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                account.clearCookies("");
                 throw e;
             }
         }

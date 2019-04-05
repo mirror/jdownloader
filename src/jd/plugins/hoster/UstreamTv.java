@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.util.LinkedHashMap;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -29,9 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ustream.tv" }, urls = { "https?://(www\\.)?ustream\\.tv/(embed/?)recorded/\\d+(/highlight/\\d+)?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ustream.tv" }, urls = { "https?://(?:www\\.)?ustream\\.tv/(?:embed/?)recorded/\\d+(?:/highlight/\\d+)?" })
 public class UstreamTv extends PluginForHost {
     private String dllink = null;
 
