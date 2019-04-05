@@ -6,6 +6,7 @@ config_toolbarbutton=工具列按鈕可見
 gui_config_jdshutdown_close=關閉 JDownloader
 gui_config_jdshutdown_forceshutdown=強制關機 (並不適用所有作業系統)
 gui_config_jdshutdown_hibernate=休眠 (並不適用所有作業系統)
+gui_config_jdshutdown_logoff=登出
 gui_config_jdshutdown_mode=模式：
 gui_config_jdshutdown_shutdown=關機
 gui_config_jdshutdown_standby=待機 (並不適用所有作業系統)
@@ -16,13 +17,14 @@ interaction_shutdown_dialog_msg_closejd=<h2><font color="red">JDownloader 將會
 interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">系統將進入休眠模式！</font></h2>
 interaction_shutdown_dialog_msg_shutdown=<h2><font color="red">系統將執行關機！</font></h2>
 interaction_shutdown_dialog_msg_standby=<h2><font color="red">系統將進入待機模式！</font></h2>
-interaction_shutdown_dialog_title_closejd=關閉 JD？
+interaction_shutdown_dialog_title_closejd=關閉 JDownloader？
 interaction_shutdown_dialog_title_hibernate=休眠?
+interaction_shutdown_dialog_title_logoff=要登出嗎？
 interaction_shutdown_dialog_title_shutdown=關機？
 interaction_shutdown_dialog_title_standby=待命?
 jd_plugins_optional_jdshutdown=JD 關機
 jd_plugins_optional_jdshutdown_description=當下載完成時將會自動關機、暫停、休眠您的電腦或關閉 JDownloader。
 lit_shutdownn=關機
 show_admin=管理員權限才能設定 JDownloader 休眠或待機模式
-shutdown_toggle_action_disabled2=下載後關機
-shutdown_toggle_action_enabled2=下載後關機
+shutdown_toggle_action_disable=停用下載後關機功能
+shutdown_toggle_action_enable=啟用下載後關機功能
