@@ -23,8 +23,14 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.Request;
@@ -39,21 +45,15 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import jd.plugins.components.MultiHosterManagement;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "jheberg.net" }, urls = { "" })
 public class JhebergNet extends antiDDoSForHost {
-    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
-    private static final String                            DOMAIN             = "https://jheberg.net/";
-    private static final String                            HOST               = "https://www.jheberg.net/";
-    private static final String                            NICE_HOST          = "jheberg.net";
-    private static final String                            NICE_HOSTproperty  = NICE_HOST.replaceAll("(\\.|\\-)", "");
+    private static final String          DOMAIN            = "https://jheberg.net/";
+    private static final String          HOST              = "https://www.jheberg.net/";
+    private static final String          NICE_HOST         = "jheberg.net";
+    private static final String          NICE_HOSTproperty = NICE_HOST.replaceAll("(\\.|\\-)", "");
+    private static MultiHosterManagement mhm               = new MultiHosterManagement("jheberg.net");
 
     public JhebergNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -101,7 +101,7 @@ public class JhebergNet extends antiDDoSForHost {
 
     private void handleDL(final Account account, final DownloadLink link, final String dllink) throws Exception {
         if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            mhm.handleErrorGeneric(account, link, "dllink_null", 50, 5 * 60 * 1000l);
         }
         /* We want to follow redirects in final stage */
         br.setFollowRedirects(true);
@@ -116,9 +116,9 @@ public class JhebergNet extends antiDDoSForHost {
                 logger.log(e);
             }
             if (br.containsHTML("Download not available at the moment")) {
-                handleErrorRetries(link, account, "download_not_available", 5, 5 * 60 * 1000l);
+                mhm.handleErrorGeneric(account, link, "download_not_available_at_the_moment", 50, 5 * 60 * 1000l);
             }
-            handleErrorRetries(link, account, "unknowndlerror", 5, 5 * 60 * 1000l);
+            mhm.handleErrorGeneric(account, link, "unknowndlerror", 50, 5 * 60 * 1000l);
         }
     }
 
@@ -130,21 +130,7 @@ public class JhebergNet extends antiDDoSForHost {
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         this.br = newBrowser();
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null) {
-                Long lastUnavailable = unavailableMap.get(link.getHost());
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    final long wait = lastUnavailable - System.currentTimeMillis();
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(link.getHost());
-                    if (unavailableMap.size() == 0) {
-                        hostUnavailableMap.remove(account);
-                    }
-                }
-            }
-        }
+        mhm.runCheck(account, link);
         this.login(account);
         String dllink = null;
         if (false) {
@@ -157,7 +143,7 @@ public class JhebergNet extends antiDDoSForHost {
             getPage("https://dashboard.jheberg.net/downloader");
             final String token = getToken(br);
             if (token == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                mhm.handleErrorGeneric(account, link, "token_null", 50, 5 * 60 * 1000l);
             }
             final Request downloader = br.createPostRequest("https://dashboard.jheberg.net/downloader", "csrfmiddlewaretoken=" + token + "&urls[]=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
             downloader.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -165,7 +151,7 @@ public class JhebergNet extends antiDDoSForHost {
             final HashMap<String, Object> map = JSonStorage.restoreFromString(downloader.getHtmlCode(), TypeRef.HASHMAP);
             final List<Map<String, Object>> list = (List<Map<String, Object>>) map.get("urls");
             if (list == null || list.size() != 1) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                mhm.handleErrorGeneric(account, link, "list_null", 50, 5 * 60 * 1000l);
             }
             final Map<String, Object> url = list.get(0);
             final Long status = JavaScriptEngineFactory.toLong(url.get("status"), -1);
@@ -181,7 +167,7 @@ public class JhebergNet extends antiDDoSForHost {
                 final Map<String, Object> server = (Map<String, Object>) servers.get(new Random().nextInt(servers.size()));
                 dllink = server.get("url") + "download/" + id;
             } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                mhm.handleErrorGeneric(account, link, "unknown_serverside_download_status", 50, 5 * 60 * 1000l);
             }
         }
         handleDL(account, link, dllink);
@@ -212,30 +198,6 @@ public class JhebergNet extends antiDDoSForHost {
             }
         }
         return null;
-    }
-
-    /**
-     * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before we temporarily remove the host
-     * from the host list.
-     *
-     * @param error
-     *            : The name of the error
-     * @param maxRetries
-     *            : Max retries before out of date error is thrown
-     */
-    private void handleErrorRetries(final DownloadLink downloadLink, final Account account, final String error, final int maxRetries, final long disableTime) throws PluginException {
-        int timesFailed = downloadLink.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
-        downloadLink.getLinkStatus().setRetryCount(0);
-        if (timesFailed <= maxRetries) {
-            logger.info(NICE_HOST + ": " + error + " -> Retrying");
-            timesFailed++;
-            downloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
-            throw new PluginException(LinkStatus.ERROR_RETRY, error);
-        } else {
-            downloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
-            logger.info(NICE_HOST + ": " + error + " -> Disabling current host");
-            tempUnavailableHoster(downloadLink, account, disableTime);
-        }
     }
 
     @SuppressWarnings("deprecation")
@@ -355,22 +317,6 @@ public class JhebergNet extends antiDDoSForHost {
 
     private String getToken(Browser br) {
         return br.getRegex("name\\s*=\\s*\\'csrfmiddlewaretoken\\'\\s*value\\s*=\\s*\\'([^<>\"]*?)\\'").getMatch(0);
-    }
-
-    private void tempUnavailableHoster(final DownloadLink downloadLink, final Account account, final long timeout) throws PluginException {
-        if (downloadLink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
-        }
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap == null) {
-                unavailableMap = new HashMap<String, Long>();
-                hostUnavailableMap.put(account, unavailableMap);
-            }
-            /* wait 30 mins to retry this host */
-            unavailableMap.put(downloadLink.getHost(), (System.currentTimeMillis() + timeout));
-        }
-        throw new PluginException(LinkStatus.ERROR_RETRY);
     }
 
     @Override
