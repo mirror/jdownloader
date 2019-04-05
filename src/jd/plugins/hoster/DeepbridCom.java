@@ -19,6 +19,14 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -38,14 +46,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deepbrid.com" }, urls = { "https?://(?:www\\.)?deepbrid\\.com/dl\\?f=([a-f0-9]{32})" })
 public class DeepbridCom extends antiDDoSForHost {
@@ -253,6 +253,7 @@ public class DeepbridCom extends antiDDoSForHost {
         final ArrayList<Object> supportedhostslistO = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         final ArrayList<String> supportedhostslist = new ArrayList<String>();
         for (final Object hostO : supportedhostslistO) {
+            /* List can be given in two different varieties */
             if (hostO instanceof LinkedHashMap) {
                 entries = (LinkedHashMap<String, Object>) hostO;
                 for (final String host : entries.keySet()) {
@@ -266,6 +267,27 @@ public class DeepbridCom extends antiDDoSForHost {
             } else if (hostO instanceof String) {
                 supportedhostslist.add((String) hostO);
             }
+        }
+        try {
+            /*
+             * Neither their API nor their website contains TLDs which is very bad ... but also their API-List and website list differ so
+             * this is another workaround ...
+             */
+            logger.info("Checking for additional supported hosts on website (API list = unreliable)");
+            getPage("/downloader");
+            final String[] crippled_hosts = br.getRegex("hosters\\-icons/([a-z0-9\\-]+)\\.png").getColumn(0);
+            for (final String crippled_host : crippled_hosts) {
+                if (!supportedhostslist.contains(crippled_host)) {
+                    logger.info("Adding host from website which has not been given via API: " + crippled_host);
+                    supportedhostslist.add(crippled_host);
+                }
+            }
+        } catch (final Throwable e) {
+            logger.info("Website-workarond to find additional supported hosts failed");
+        }
+        /* 2019-04-05: Workaround for MEGA */
+        if (supportedhostslist != null && supportedhostslist.contains("mega")) {
+            supportedhostslist.add("mega.co.nz");
         }
         account.setConcurrentUsePossible(true);
         ai.setMultiHostSupport(this, supportedhostslist);
