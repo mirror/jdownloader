@@ -283,7 +283,7 @@ public class DeepbridCom extends antiDDoSForHost {
                 }
             }
         } catch (final Throwable e) {
-            logger.info("Website-workarond to find additional supported hosts failed");
+            logger.info("Website-workaround to find additional supported hosts failed");
         }
         /* 2019-04-05: Workaround for MEGA */
         if (supportedhostslist != null && supportedhostslist.contains("mega")) {
