@@ -13,10 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -29,11 +30,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sugarsync.com" }, urls = { "https?://(www\\.)?sugarsync\\.com/pf/D[\\d\\_]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sugarsync.com" }, urls = { "https?://(www\\.)?sugarsync\\.com/pf/D[\\d\\_]+" })
 public class SugarSyncCom extends PluginForHost {
-
     public SugarSyncCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -76,7 +74,8 @@ public class SugarSyncCom extends PluginForHost {
             }
         }
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("class=\"pf\\-down\\-unshared\\-main\\-message pf\\-down\\-unshared\\-unavailable\\-file\\-message\"") || br.containsHTML("class=\"pf-error-icon\"")) {
+        if (br.containsHTML("class=\"pf-down-unshared-main-message pf-down-unshared-unavailable-file-message\"")) {
+            // || br.containsHTML("class=\"pf-error-icon\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<span class=\"displayFileName\" title=\"(.*?)\"></span>").getMatch(0);
@@ -124,5 +123,4 @@ public class SugarSyncCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
