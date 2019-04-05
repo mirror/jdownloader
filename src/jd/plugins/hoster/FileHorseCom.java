@@ -32,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filehorse.com" }, urls = { "https?://(www\\.)?(mac\\.)?filehorse\\.com/download\\-[a-z0-9\\-]+/(\\d+/)?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filehorse.com" }, urls = { "https?://(www\\.)?(mac\\.)?filehorse\\.com/download\\-([a-z0-9\\-]+)/(\\d+/)?" })
 public class FileHorseCom extends PluginForHost {
     public FileHorseCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -50,9 +50,10 @@ public class FileHorseCom extends PluginForHost {
         br = new Browser();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>404 Error \\- Page Not Found<|>Page Not Found)")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(>404 Error \\- Page Not Found<|>Page Not Found)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final String url_filename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
         String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         String filesize = br.getRegex("id=\"btn_file_size\">\\(([^<>\"]*?)\\)</span>").getMatch(0);
         if (filesize == null) {
@@ -65,15 +66,19 @@ public class FileHorseCom extends PluginForHost {
         if (filesize == null && pagepiece != null) {
             filesize = new Regex(pagepiece, "(\\d+(\\.{1,2})? (B|b|MB|KB|GB))").getMatch(0);
         }
-        if (filename == null || filesize == null) {
-            logger.info("filename: " + filename + ", filesize: " + filesize);
+        if (filename == null) {
+            filename = url_filename;
+        }
+        if (filename == null) {
             if (!br.containsHTML("\"main_down_link\"")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setName(Encoding.htmlDecode(filename.trim()) + ".exe");
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -97,11 +102,15 @@ public class FileHorseCom extends PluginForHost {
                 d.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 br.submitForm(d);
                 dllink = br.getRegex("<a href=\"(https?://(\\w+\\.)?filehorse\\.com/download/file/[^\"]+)").getMatch(0);
-            } else {
+            } else if (d != null) {
                 br.submitForm(d);
                 dllink = br.getRegex("<a href=\"(https?://(\\w+\\.)?filehorse\\.com/download/file/[^\"]+)").getMatch(0);
             }
             if (dllink == null) {
+                if (!br.containsHTML("id=\"download_url\"")) {
+                    /* E.g. Google Chrome: https://www.filehorse.com/download-google-chrome-64/ */
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via browser / external website");
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
