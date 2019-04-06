@@ -34,6 +34,9 @@ public class JavCL extends PluginForDecrypt {
         }
         int index = 0;
         for (String data_link : data_links) {
+            if (data_link.equals("post")) {
+                continue;
+            }
             final String url = decodejav(data_link, data_id);
             final String name;
             if (data_links.length > 1) {
