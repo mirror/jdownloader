@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -29,9 +28,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "badjojo.com" }, urls = { "http://(www\\.)?decryptedbadjojo\\.com/\\d+/.{1}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "badjojo.com" }, urls = { "http://(www\\.)?decryptedbadjojo\\.com/\\d+/.{1}" })
 public class BadJoJoCom extends PluginForHost {
-
     /* DEV NOTES */
     /* Porn_plugin */
     private String dllink = null;
@@ -64,7 +62,7 @@ public class BadJoJoCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("images/unavailablevideo\\.jpg\"")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("images/unavailablevideo\\.jpg\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if ("http://www.badjojo.com/".equals(br.getURL())) {
