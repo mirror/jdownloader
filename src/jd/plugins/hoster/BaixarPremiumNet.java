@@ -42,7 +42,6 @@ import jd.utils.JDUtilities;
 public class BaixarPremiumNet extends PluginForHost {
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static AtomicInteger                           maxPrem            = new AtomicInteger(20);
-    private static final String                            MAINPAGE           = "http://baixarpremium.net";
     private static final String                            NICE_HOST          = "baixarpremium.net";
     private static final String                            NICE_HOSTproperty  = NICE_HOST.replaceAll("(\\.|\\-)", "");
     private Account                                        currAcc            = null;
@@ -86,7 +85,7 @@ public class BaixarPremiumNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
-        br.getPage("http://" + account.getHoster() + "/gerador/");
+        br.getPage("https://" + account.getHoster() + "/gerador/");
         final boolean is_premium = br.containsHTML("id=\"BaixarLinkstxt\"");
         br.getPage("/contas-ativas/");
         /* free accounts are not supported */
@@ -109,7 +108,7 @@ public class BaixarPremiumNet extends PluginForHost {
         if (hoststext != null) {
             crippledHosts = hoststext.split(", ");
         } else {
-            br.getPage("http://" + account.getHoster() + "/");
+            br.getPage("https://" + account.getHoster() + "/");
             crippledHosts = br.getRegex("theme/img/([A-Za-z0-9\\-]+)\\.(?:jpg|jpeg|png)\"").getColumn(0);
             if (crippledHosts.length == 0 || crippledHosts.length <= 5) {
                 /* Especially for comprarpremium.com */
@@ -192,7 +191,7 @@ public class BaixarPremiumNet extends PluginForHost {
         }
         final String keypass = br.getCookie(account.getHoster(), "utmhb");
         final String getdata = "?link=" + Encoding.base16Encode(link.getDownloadURL()) + "&keypass=" + keypass + additional_param;
-        final String dllink = br.getPage("http://baixarpremium.net/api/index.php" + getdata);
+        final String dllink = br.getPage("https://baixarpremium.net/api/index.php" + getdata);
         if (br.toString().equals("Arquivo-nao-encontrado")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -230,6 +229,7 @@ public class BaixarPremiumNet extends PluginForHost {
                 if (this.br == null) {
                     this.br = br;
                 }
+                br.setFollowRedirects(true);
                 final String currenthost = account.getHoster();
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
@@ -238,7 +238,7 @@ public class BaixarPremiumNet extends PluginForHost {
                     final Browser test = br.cloneBrowser();
                     test.setFollowRedirects(true);
                     /* Avoid login captchas whenever possible! */
-                    test.getPage("http://" + currenthost + "/contas-ativas/");
+                    test.getPage("https://" + currenthost + "/contas-ativas/");
                     if (test.getURL().endsWith("/contas-ativas/")) {
                         /* Refresh cookie timestamp */
                         account.saveCookies(br.getCookies(currenthost), "");
@@ -247,11 +247,10 @@ public class BaixarPremiumNet extends PluginForHost {
                     br.clearCookies(account.getHoster());
                     /* Force full login! */
                 }
-                br.setFollowRedirects(false);
-                br.getPage("http://" + currenthost + "/logar/");
+                br.getPage("https://" + currenthost + "/logar/");
                 String postData = "login=" + Encoding.urlEncode(account.getUser()) + "&senha=" + Encoding.urlEncode(account.getPass());
                 if (br.containsHTML("/captcha\\.php")) {
-                    final DownloadLink dummyLink = new DownloadLink(this, "Account", currenthost, "http://" + currenthost, true);
+                    final DownloadLink dummyLink = new DownloadLink(this, "Account", currenthost, "https://" + currenthost, true);
                     final String code = getCaptchaCode("/acoes/captcha.php", dummyLink);
                     postData += "&confirmacao=" + Encoding.urlEncode(code);
                 }

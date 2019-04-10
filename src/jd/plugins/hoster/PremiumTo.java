@@ -20,7 +20,11 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.WeakHashMap;
+
+import org.appwork.storage.JSonStorage;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -43,29 +47,22 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.utils.locale.JDL;
 
-import org.appwork.storage.JSonStorage;
-import org.jdownloader.plugins.ConditionalSkipReasonException;
-import org.jdownloader.plugins.WaitingSkipReason;
-import org.jdownloader.plugins.WaitingSkipReason.CAUSE;
-import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetServer;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "https?://torrent[a-z0-9]*?\\.(premium\\.to|premium4\\.me)/(t|z)/[^<>/\"]+(/[^<>/\"]+){0,1}(/\\d+)*|https?://storage[a-z0-9]*?\\.(?:premium\\.to|premium4\\.me)/file/[A-Z0-9]+" })
 public class PremiumTo extends UseNet {
-    private static WeakHashMap<Account, HashMap<String, Long>> hostUnavailableMap             = new WeakHashMap<Account, HashMap<String, Long>>();
-    private final String                                       noChunks                       = "noChunks";
-    private static Object                                      LOCK                           = new Object();
-    private final String                                       normalTraffic                  = "normalTraffic";
-    private final String                                       specialTraffic                 = "specialTraffic";
-    private static final String                                lang                           = System.getProperty("user.language");
-    private static final String                                CLEAR_DOWNLOAD_HISTORY_STORAGE = "CLEAR_DOWNLOAD_HISTORY";
-    private static final String                                type_storage                   = "https?://storage.+";
-    private static final String                                type_torrent                   = "https?://torrent.+";
-    private static final String                                API_BASE                       = "http://api.premium.to/";
+    private final String                 noChunks                       = "noChunks";
+    private static Object                LOCK                           = new Object();
+    private final String                 normalTraffic                  = "normalTraffic";
+    private final String                 specialTraffic                 = "specialTraffic";
+    private static final String          lang                           = System.getProperty("user.language");
+    private static final String          CLEAR_DOWNLOAD_HISTORY_STORAGE = "CLEAR_DOWNLOAD_HISTORY";
+    private static final String          type_storage                   = "https?://storage.+";
+    private static final String          type_torrent                   = "https?://torrent.+";
+    private static final String          API_BASE                       = "http://api.premium.to/";
+    private static MultiHosterManagement mhm                            = new MultiHosterManagement("premium.to");
 
     public PremiumTo(PluginWrapper wrapper) {
         super(wrapper);
@@ -107,7 +104,6 @@ public class PremiumTo extends UseNet {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         final AccountInfo ac = new AccountInfo();
@@ -161,10 +157,6 @@ public class PremiumTo extends UseNet {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-    }
-
-    private void showMessage(DownloadLink link, String message) {
-        link.getLinkStatus().setStatusText(message);
     }
 
     @Override
@@ -265,26 +257,12 @@ public class PremiumTo extends UseNet {
 
     /** no override to keep plugin compatible to old stable */
     @SuppressWarnings("deprecation")
-    public void handleMultiHost(DownloadLink link, Account account) throws Exception {
+    public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         if (isUsenetLink(link)) {
             super.handleMultiHost(link, account);
             return;
         } else {
-            synchronized (hostUnavailableMap) {
-                HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-                if (unavailableMap != null) {
-                    Long lastUnavailable = unavailableMap.get(link.getHost());
-                    if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                        final long wait = lastUnavailable - System.currentTimeMillis();
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
-                    } else if (lastUnavailable != null) {
-                        unavailableMap.remove(link.getHost());
-                        if (unavailableMap.size() == 0) {
-                            hostUnavailableMap.remove(account);
-                        }
-                    }
-                }
-            }
+            mhm.runCheck(account, link);
             dl = null;
             String url = link.getDownloadURL().replaceFirst("https?://", "");
             // this here is bullshit... multihoster side should do all the corrections.
@@ -295,9 +273,7 @@ public class PremiumTo extends UseNet {
             if (url.startsWith("www.")) {
                 url = url.substring(4);
             }
-            if (url.startsWith("freakshare.com/")) {
-                url = url.replaceFirst("freakshare.com/", "fs.com/");
-            } else if (url.startsWith("depositfiles.com/")) {
+            if (url.startsWith("depositfiles.com/")) {
                 url = url.replaceFirst("depositfiles.com/", "df.com/");
             } else if (url.startsWith("turbobit.net/")) {
                 url = url.replaceFirst("turbobit.net/", "tb.net/");
@@ -312,9 +288,7 @@ public class PremiumTo extends UseNet {
                 url = url.replaceFirst("oboom.com/#", "oboom.com/");
             }
             url = Encoding.urlEncode(url);
-            showMessage(link, "Phase 1/3: Login...");
             login(account, false);
-            showMessage(link, "Phase 2/3: Get link");
             int connections = getConnections(link.getHost());
             if (link.getChunks() != -1) {
                 if (connections < 1) {
@@ -349,23 +323,12 @@ public class PremiumTo extends UseNet {
             if (dl.getConnection().getResponseCode() == 404) {
                 /* file offline */
                 dl.getConnection().disconnect();
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                mhm.handleErrorGeneric(account, link, "server_error_404", 2, 5 * 60 * 1000l);
             }
             if (!dl.getConnection().isContentDisposition()) {
                 if (dl.getConnection().getResponseCode() == 420) {
                     dl.close();
-                    int timesFailed = link.getIntegerProperty("timesfailedpremiumto_420dlerror", 0);
-                    link.getLinkStatus().setRetryCount(0);
-                    logger.info("premium.to: Download attempt failed because of server error 420");
-                    if (timesFailed <= 5) {
-                        timesFailed++;
-                        link.setProperty("timesfailedpremiumto_420dlerror", timesFailed);
-                        throw new PluginException(LinkStatus.ERROR_RETRY, "Download could not be started (420)");
-                    } else {
-                        link.setProperty("timesfailedpremiumto_420dlerror", Property.NULL);
-                        logger.info("premium.to: 420 download error - disabling current host!");
-                        tempUnavailableHoster(account, link, 60 * 60 * 1000l);
-                    }
+                    mhm.handleErrorGeneric(account, link, "server_error_420", 2, 5 * 60 * 1000l);
                 }
                 br.followConnection();
                 logger.severe("PremiumTo Error");
@@ -374,8 +337,7 @@ public class PremiumTo extends UseNet {
                     // jiaz new handling to dump to next download candidate.
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                 } else if (br.toString().matches("File hosting service not supported")) {
-                    tempUnavailableHoster(account, link, 60 * 60 * 1000);
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                    mhm.putError(account, link, 10 * 60 * 1000l, "hoster_unsupported");
                 } else if ("Not enough traffic".equals(br.toString())) {
                     /*
                      * With our special traffic it's a bit complicated. When you still have a little Special Traffic but you have enough
@@ -386,18 +348,8 @@ public class PremiumTo extends UseNet {
                 /*
                  * after x retries we disable this host and retry with normal plugin
                  */
-                if (link.getLinkStatus().getRetryCount() >= 3) {
-                    /* disable hoster for 1h */
-                    tempUnavailableHoster(account, link, 60 * 60 * 1000);
-                    /* reset retry counter */
-                    link.getLinkStatus().setRetryCount(0);
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-                String msg = "(" + (link.getLinkStatus().getRetryCount() + 1) + "/" + 3 + ")";
-                showMessage(link, msg);
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in few secs" + msg, 10 * 1000l);
+                mhm.handleErrorGeneric(account, link, "unknown_dl_error", 2, 5 * 60 * 1000l);
             }
-            showMessage(link, "Phase 3/3: Download...");
             try {
                 /* Check if the download is successful && user wants JD to delete the file in his premium.to account afterwards. */
                 if (dl.startDownload() && this.getPluginConfig().getBooleanProperty(CLEAR_DOWNLOAD_HISTORY_STORAGE, default_clear_download_history_storage) && link.getDownloadURL().matches(type_storage)) {
@@ -519,22 +471,6 @@ public class PremiumTo extends UseNet {
         }
     }
 
-    private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
-        if (downloadLink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
-        }
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap == null) {
-                unavailableMap = new HashMap<String, Long>();
-                hostUnavailableMap.put(account, unavailableMap);
-            }
-            /* wait to retry this host */
-            unavailableMap.put(downloadLink.getHost(), (System.currentTimeMillis() + timeout));
-        }
-        throw new PluginException(LinkStatus.ERROR_RETRY);
-    }
-
     @Override
     public int getMaxSimultanDownload(DownloadLink link, Account account) {
         if (isUsenetLink(link)) {
@@ -549,20 +485,6 @@ public class PremiumTo extends UseNet {
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
         if (account != null) {
-            synchronized (hostUnavailableMap) {
-                final HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-                if (unavailableMap != null) {
-                    final Long lastUnavailable = unavailableMap.get(downloadLink.getHost());
-                    if (lastUnavailable != null) {
-                        final long remainingTime = lastUnavailable - System.currentTimeMillis();
-                        if (remainingTime > 0) {
-                            throw new ConditionalSkipReasonException(new WaitingSkipReason(CAUSE.HOST_TEMP_UNAVAILABLE, remainingTime, null));
-                        } else {
-                            unavailableMap.remove(downloadLink.getHost());
-                        }
-                    }
-                }
-            }
             // some routine to check traffic allocations: normalTraffic specialTraffic
             // if (downloadLink.getHost().matches("uploaded\\.net|uploaded\\.to|ul\\.to|filemonkey\\.in|oboom\\.com")) {
             // We no longer sell Special traffic! Special traffic works only with our Usenet servers and for these 5 filehosts:
