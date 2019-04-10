@@ -1117,8 +1117,15 @@ public class OneFichierCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
             ret.remove("save");
-            if (!PluginJsonConfig.get(OneFichierConfigInterface.class).isPreferSSLEnabled()) {
-                ret.put("dl_no_ssl", "on");
+            try {
+                /*
+                 * 2019-04-04: TODO: Remove this workaround; workaround required as hostlist is not in annotations anymore which leads to a
+                 * WTFException!
+                 */
+                if (!PluginJsonConfig.get(OneFichierConfigInterface.class).isPreferSSLEnabled()) {
+                    ret.put("dl_no_ssl", "on");
+                }
+            } catch (final Throwable e) {
             }
             return ret;
         }
