@@ -68,8 +68,8 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.MediathekHelper;
 import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ardmediathek.de", "mediathek.daserste.de", "daserste.de", "rbb-online.de", "sandmann.de", "wdr.de", "sportschau.de", "one.ard.de", "wdrmaus.de", "sr-online.de", "ndr.de", "kika.de", "eurovision.de", "sputnik.de", "mdr.de", "checkeins.de" }, urls = { "https?://(?:[A-Z0-9]+\\.)?ardmediathek\\.de/.*?documentId=\\d+[^/]*?", "https?://(?:www\\.)?mediathek\\.daserste\\.de/.*?documentId=\\d+[^/]*?", "https?://www\\.daserste\\.de/[^<>\"]+/(?:videos|videosextern)/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?mediathek\\.rbb\\-online\\.de/tv/[^<>\"]+documentId=\\d+[^/]*?", "https?://(?:www\\.)?sandmann\\.de/.+", "https?://(?:[a-z0-9]+\\.)?wdr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?sportschau\\.de/.*?\\.html", "https?://(?:www\\.)?one\\.ard\\.de/tv/[^<>\"]+documentId=\\d+[^/]*?",
-        "https?://(?:www\\.)?wdrmaus\\.de/.+", "https?://sr\\-mediathek\\.sr\\-online\\.de/index\\.php\\?seite=\\d+\\&id=\\d+", "https?://(?:[a-z0-9]+\\.)?ndr\\.de/.*?\\.html", "https?://(?:www\\.)?kika\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?eurovision\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?sputnik\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?mdr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?checkeins\\.de/[^<>\"]+\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ardmediathek.de", "mediathek.daserste.de", "daserste.de", "rbb-online.de", "sandmann.de", "wdr.de", "sportschau.de", "one.ard.de", "wdrmaus.de", "sr-online.de", "ndr.de", "kika.de", "eurovision.de", "sputnik.de", "mdr.de", "checkeins.de" }, urls = { "https?://(?:[A-Z0-9]+\\.)?ardmediathek\\.de/(?:.*?documentId=\\d+[^/]*?|.*?player/[a-zA-Z0-9_/\\+\\=\\-%]+)", "https?://(?:www\\.)?mediathek\\.daserste\\.de/.*?documentId=\\d+[^/]*?", "https?://www\\.daserste\\.de/[^<>\"]+/(?:videos|videosextern)/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?mediathek\\.rbb\\-online\\.de/tv/[^<>\"]+documentId=\\d+[^/]*?", "https?://(?:www\\.)?sandmann\\.de/.+", "https?://(?:[a-z0-9]+\\.)?wdr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?sportschau\\.de/.*?\\.html",
+        "https?://(?:www\\.)?one\\.ard\\.de/tv/[^<>\"]+documentId=\\d+[^/]*?", "https?://(?:www\\.)?wdrmaus\\.de/.+", "https?://sr\\-mediathek\\.sr\\-online\\.de/index\\.php\\?seite=\\d+\\&id=\\d+", "https?://(?:[a-z0-9]+\\.)?ndr\\.de/.*?\\.html", "https?://(?:www\\.)?kika\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?eurovision\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?sputnik\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?mdr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?checkeins\\.de/[^<>\"]+\\.html" })
 public class Ardmediathek extends PluginForDecrypt {
     private static final String                 EXCEPTION_LINKOFFLINE = "EXCEPTION_LINKOFFLINE";
     /* Constants */
@@ -389,8 +389,15 @@ public class Ardmediathek extends PluginForDecrypt {
             }
         } else {
             /* E.g. ardmediathek.de */
-            show = brHTML.getRegex("name=\"dcterms\\.isPartOf\" content=\"([^<>\"]*?)\"").getMatch(0);
-            title = brHTML.getRegex("<meta name=\"dcterms\\.title\" content=\"([^\"]+)\"").getMatch(0);
+            String newjson = brHTML.getRegex("window\\.__APOLLO_STATE__ = (\\{.*?);\\s+").getMatch(0);
+            if (newjson == null) {
+                newjson = br.toString();
+            }
+            show = PluginJSonUtils.getJson(newjson, "show");
+            title = PluginJSonUtils.getJson(newjson, "clipTitle");
+            if (date == null) {
+                date = PluginJSonUtils.getJson(newjson, "broadcastedOn");
+            }
         }
         this.date_timestamp = getDateMilliseconds(date);
         if (StringUtils.isEmpty(title)) {
@@ -438,8 +445,23 @@ public class Ardmediathek extends PluginForDecrypt {
     /** Finds json URL which leads to subtitle and video stream URLs AND sets unique contentID. */
     private String getVideoJsonURL() throws MalformedURLException {
         String url_json = null;
-        final String ardBroadcastID = new Regex(br.getURL(), "(?:\\?|\\&)documentId=(\\d+)").getMatch(0);
         final String host = getHost();
+        String ardDocumentID = new Regex(br.getURL(), "(?:\\?|\\&)documentId=(\\d+)").getMatch(0);
+        if (ardDocumentID == null && host.contains("ardmediathek.de")) {
+            /*
+             * 2019-04-11: Old ardmediathek URLs will redirect to new ones thus we'll lose the id from inside the URL --> Check if we can
+             * find it in the original URL which the user added.
+             */
+            ardDocumentID = new Regex(this.parameter, "(?:\\?|\\&)documentId=(\\d+)").getMatch(0);
+            if (ardDocumentID == null) {
+                /*
+                 * 2019-04-11: 'Workaround' new ARDMediathek system --> 'old' system/old videoID [Keep in mind this system is still used by
+                 * other services and obviously still running here so there is NO NEED to add a full implementation of the 'new' system
+                 * yet!!]
+                 */
+                ardDocumentID = br.getRegex("ardmediathek\\.de/page\\-gateway/playerconfig/(\\d+)").getMatch(0);
+            }
+        }
         if (host.contains("sr-online.de")) {
             this.contentID = new Regex(br.getURL(), "id=(\\d+)").getMatch(0);
             url_json = String.format("http://www.sr-mediathek.de/sr_player/mc.php?id=%s&tbl=&pnr=0&hd=1&devicetype=", this.contentID);
@@ -452,8 +474,9 @@ public class Ardmediathek extends PluginForDecrypt {
                 /* This is a very ugly contentID */
                 this.contentID = new Regex(url_json, "sandmann\\.de/(.+)").getMatch(0);
             }
-        } else if (ardBroadcastID != null) {
-            this.contentID = ardBroadcastID;
+        } else if (ardDocumentID != null) {
+            /* Also possible: http://page.ardmediathek.de/page-gateway/playerconfig/<documentID> */
+            this.contentID = ardDocumentID;
             url_json = String.format("http://www.ardmediathek.de/play/media/%s?devicetype=pc&features=flash", this.contentID);
         } else if (host.contains("ndr.de") || host.equalsIgnoreCase("eurovision.de")) {
             /* E.g. daserste.ndr.de, blabla.ndr.de */
@@ -748,7 +771,7 @@ public class Ardmediathek extends PluginForDecrypt {
          * TODO: It might only make sense to attempt this if we found more than 3 http qualities previously because usually 3 means we will
          * also only have 3 hls qualities --> There are no additional http qualities!
          */
-        final String http_url_audio = brJSON.getRegex("(https?://[^<>\"]+\\.mp3)\"").getMatch(0);
+        String http_url_audio = brJSON.getRegex("((?:https?:)?//[^<>\"]+\\.mp3)\"").getMatch(0);
         final String hls_master = brJSON.getRegex("(//[^<>\"]+\\.m3u8[^<>\"]*?)").getMatch(0);
         final Regex regex_hls = new Regex(hls_master, ".+/([^/]+/[^/]+/[^,/]+)(?:/|_|\\.),([A-Za-z0-9_,\\-]+),\\.mp4\\.csmil/?");
         final String quality_string = regex_hls.getMatch(1);
@@ -792,6 +815,10 @@ public class Ardmediathek extends PluginForDecrypt {
             addHLS(brJSON, hls_master);
         }
         if (http_url_audio != null) {
+            if (http_url_audio.startsWith("//")) {
+                /* 2019-04-11: Workaround for missing protocol */
+                http_url_audio = "https:" + http_url_audio;
+            }
             addQuality(http_url_audio, null, 0, 0, 0);
         }
     }

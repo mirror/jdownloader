@@ -1324,6 +1324,79 @@ public class OneFichierCom extends PluginForHost {
         return br;
     }
 
+    // public static class OnefichierAccountFactory extends MigPanel implements AccountBuilderInterface {
+    // private static final long serialVersionUID = 1L;
+    // private final String PINHELP = "Enter your API Key";
+    //
+    // private String getPassword() {
+    // if (this.pass == null) {
+    // return null;
+    // }
+    // if (EMPTYPW.equals(new String(this.pass.getPassword()))) {
+    // return null;
+    // }
+    // return new String(this.pass.getPassword());
+    // }
+    //
+    // public boolean updateAccount(Account input, Account output) {
+    // boolean changed = false;
+    // if (!StringUtils.equals(input.getUser(), output.getUser())) {
+    // output.setUser(input.getUser());
+    // changed = true;
+    // }
+    // if (!StringUtils.equals(input.getPass(), output.getPass())) {
+    // output.setPass(input.getPass());
+    // changed = true;
+    // }
+    // return changed;
+    // }
+    //
+    // private final ExtPasswordField pass;
+    // private static String EMPTYPW = " ";
+    //
+    // public OnefichierAccountFactory(final InputChangedCallbackInterface callback) {
+    // super("ins 0, wrap 2", "[][grow,fill]", "");
+    // add(new JLabel("Click here to find your API Key:"));
+    // add(new JLink("https://1fichier.com/console/params.pl"));
+    // add(new JLabel("API Key:"));
+    // add(this.pass = new ExtPasswordField() {
+    // @Override
+    // public void onChanged() {
+    // callback.onChangedInput(this);
+    // }
+    // }, "");
+    // pass.setHelpText(PINHELP);
+    // }
+    //
+    // @Override
+    // public JComponent getComponent() {
+    // return this;
+    // }
+    //
+    // @Override
+    // public void setAccount(Account defaultAccount) {
+    // if (defaultAccount != null) {
+    // // name.setText(defaultAccount.getUser());
+    // pass.setText(defaultAccount.getPass());
+    // }
+    // }
+    //
+    // @Override
+    // public boolean validateInputs() {
+    // // final String userName = getUsername();
+    // // if (userName == null || !userName.trim().matches("^\\d{9}$")) {
+    // // idLabel.setForeground(Color.RED);
+    // // return false;
+    // // }
+    // // idLabel.setForeground(Color.BLACK);
+    // return getPassword() != null;
+    // }
+    //
+    // @Override
+    // public Account getAccount() {
+    // return new Account(null, getPassword());
+    // }
+    // }
     @Override
     public void reset() {
     }

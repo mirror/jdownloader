@@ -602,23 +602,33 @@ public class YetiShareCore extends antiDDoSForHost {
         if (skipWaittime) {
             logger.info("Skipping waittime");
         } else {
+            final int extraWaitSeconds = 2;
             int wait = 0;
-            int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
+            int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - extraWaitSeconds;
             /* Ticket Time */
             final String ttt = regexWaittime();
-            if (ttt != null) {
+            if (ttt != null && ttt.matches("\\d+")) {
                 logger.info("Found waittime, parsing waittime: " + ttt);
-                /* Wait 3 additional seconds */
-                wait = Integer.parseInt(ttt) + 3;
-                wait -= passedTime;
-                if (wait > 0) {
-                    logger.info("Waittime minus captcha input time: " + wait);
-                    sleep(wait * 1000l, downloadLink);
-                } else {
-                    logger.info("Waittime is zero or lower, not waiting");
-                }
+                wait = Integer.parseInt(ttt);
+            }
+            /*
+             * Check how much time has passed during eventual captcha event before this function has been called and see how much time is
+             * left to wait.
+             */
+            wait -= passedTime;
+            if (passedTime > 0) {
+                /* This usually means that the user had to solve a captcha which cuts down the remaining time we have to wait. */
+                logger.info("Total passed time during captcha: " + passedTime);
+            }
+            if (wait > 0) {
+                logger.info("Waiting waittime: " + wait);
+                sleep(wait * 1000l, downloadLink);
+            } else if (wait < -extraWaitSeconds) {
+                /* User needed more time to solve the captcha so there is no waittime left :) */
+                logger.info("Congratulations: Time to solve captcha was higher than waittime");
             } else {
-                logger.info("Failed to find waittime, either there is none or plugin is out of date");
+                /* No waittime at all */
+                logger.info("Found no waittime");
             }
         }
     }
