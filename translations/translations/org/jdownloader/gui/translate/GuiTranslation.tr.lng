@@ -1337,6 +1337,7 @@ ViewTestResultTableModel_initColumns_matches_=Eşleşmeler
 VoteFinderWindow_runInEDT_thankyou_2=Sorunu bildirdiğiniz için teşekkür ederiz.\nBir indirme beklendiği gibi çalışmadığında lütfen sorunları bildirmeye devam edin.\nYakında bildirme istatistiklerini http://my.jdownloader.org adresinde görebileceksiniz.\n --- Daha fazla bildirimlerle, Eklentiyi daha hızlı düzeltebiliriz. ---
 YOUTUBE_CONFIG_PANEL_TABLE_AUDIO_BITRATE=Ses Bitoranı
 YOUTUBE_CONFIG_PANEL_TABLE_AUDIO_CODEC=Ses Kodek
+YOUTUBE_CONFIG_PANEL_TABLE_CONTAINER=Kalıp
 YOUTUBE_CONFIG_PANEL_TABLE_FILETYPE=Dosya Türü
 YOUTUBE_CONFIG_PANEL_TABLE_FPS=Fps
 YOUTUBE_CONFIG_PANEL_TABLE_GROUPING=Birleştirme KİMLİĞİ
