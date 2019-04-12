@@ -473,7 +473,6 @@ public class ShareOnlineBiz extends antiDDoSForHost {
             }
             /* evaluate expire date */
             final Long validUntil = Long.parseLong(infos.get("expire_date"));
-            account.setValid(true);
             if (validUntil > 0) {
                 ai.setValidUntil(validUntil * 1000);
             } else {
@@ -634,6 +633,15 @@ public class ShareOnlineBiz extends antiDDoSForHost {
     }
 
     private final long THREADFAILURESTIMEOUT = 5 * 60 * 1000l;
+
+    @Override
+    public boolean enoughTrafficFor(DownloadLink downloadLink, Account account) throws Exception {
+        if (account == null || isFree(account) || !userTrafficWorkaround()) {
+            return super.enoughTrafficFor(downloadLink, account);
+        } else {
+            return true;
+        }
+    }
 
     @Override
     public int getMaxSimultanDownload(final DownloadLink link, final Account account) {
@@ -1140,7 +1148,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                 }
                 return infos;
             } catch (PluginException e) {
-                account.setProperty("group", Property.NULL);
+                account.removeProperty("group");
                 ACCOUNTINFOS.remove(account);
                 throw e;
             }
