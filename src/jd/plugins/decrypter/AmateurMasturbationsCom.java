@@ -23,9 +23,11 @@ import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "amateurmasturbations.com" }, urls = { "http://(www\\.)?amateurmasturbations\\.com/(\\d+/[a-z0-9\\-]+/|video/\\d+/.*?\\.html)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "amateurmasturbations.com" }, urls = { "http://(www\\.)?amateurmasturbations\\.com/(\\d+/[a-z0-9\\-]+/|video/.*?\\.html)" })
 public class AmateurMasturbationsCom extends PluginForDecrypt {
     public AmateurMasturbationsCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -56,7 +58,7 @@ public class AmateurMasturbationsCom extends PluginForDecrypt {
         } else if (externID != null) {
             br.getPage(externID);
         }
-        if (!br.getURL().matches("http://(www\\.)?amateurmasturbations\\.com/(\\d+/[a-z0-9\\-]+/|video/\\d+/.*?\\.html)")) {
+        if (!br.getURL().matches("http://(www\\.)?amateurmasturbations\\.com/(\\d+/[a-z0-9\\-]+/|video/.*?\\.html)")) {
             final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
             offline.setAvailable(false);
             offline.setProperty("offline", true);
@@ -75,6 +77,9 @@ public class AmateurMasturbationsCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         externID = br.getRegex("xhamster\\.com/xembed\\.php\\?video=(\\d+)\"").getMatch(0);
+        if (externID == null) {
+            externID = br.getRegex("xhamster\\.com/embed//(\\d+)\"").getMatch(0);
+        }
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("http://xhamster.com/movies/" + externID + "/" + System.currentTimeMillis() + ".html"));
             return decryptedLinks;
@@ -84,7 +89,7 @@ public class AmateurMasturbationsCom extends PluginForDecrypt {
             externID = br.getRegex("value=\"id_video=(\\d+)\" /><embed src=\"http://static\\.xvideos\\.com").getMatch(0);
         }
         if (externID != null) {
-            decryptedLinks.add(createDownloadlink("http://www.xvideos.com/video" + externID));
+            decryptedLinks.add(createDownloadlink("https://www.xvideos.com/video" + externID + "/"));
             return decryptedLinks;
         }
         // pornyeah.com/playerConfig.php?4ea5d02e3538a093_s_te.mp4|6290|418"/><param name="mov
@@ -94,12 +99,12 @@ public class AmateurMasturbationsCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        externID = br.getRegex("pornhub\\.com/embed/(\\d+)").getMatch(0);
+        externID = br.getRegex("pornhub\\.com/embed/([a-z0-9]+)").getMatch(0);
         if (externID == null) {
-            externID = br.getRegex("pornhub\\.com/view_video\\.php\\?viewkey=(\\d+)").getMatch(0);
+            externID = br.getRegex("pornhub\\.com/view_video\\.php\\?viewkey=([a-z0-9]+)").getMatch(0);
         }
         if (externID != null) {
-            DownloadLink dl = createDownloadlink("http://www.pornhub.com/view_video.php?viewkey=" + externID);
+            DownloadLink dl = createDownloadlink("https://www.pornhub.com/view_video.php?viewkey=" + externID);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
@@ -124,12 +129,12 @@ public class AmateurMasturbationsCom extends PluginForDecrypt {
         if (filename == null) {
             filename = br.getRegex("<title>(.*?) \\| (Amateur Masturbation|Real Masturbate)</title>").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex("<div class=\"hed\">[\t\n\r ]+<h1>(.*?)</h1>").getMatch(0);
+                filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
             }
         }
         if (filename == null) {
             logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = filename.trim();
         externID = br.getRegex("<p><a  href=\"(http://pictures\\.share\\-image\\.com/flv/.*?)\"").getMatch(0);
@@ -152,6 +157,12 @@ public class AmateurMasturbationsCom extends PluginForDecrypt {
         externID = br.getRegex("emb\\.slutload\\.com/([A-Za-z0-9]+)\"").getMatch(0);
         if (externID != null) {
             final DownloadLink dl = createDownloadlink("http://www.slutload.com/watch/" + externID + "/" + Integer.toString(new Random().nextInt(1000000)) + ".html");
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        externID = br.getRegex("https://gfycat.com/ifr/([A-Za-z0-9]+)\"").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = createDownloadlink("https://gfycat.com/" + externID);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
@@ -184,7 +195,7 @@ public class AmateurMasturbationsCom extends PluginForDecrypt {
         }
         if (externID == null) {
             logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         return decryptedLinks;
     }
