@@ -21,19 +21,6 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.config.annotations.DefaultIntValue;
-import org.appwork.storage.config.annotations.SpinnerValidator;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.config.TakeValueFromSubconfig;
-import org.jdownloader.translate._JDT;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -59,6 +46,21 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
+
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DefaultIntValue;
+import org.appwork.storage.config.annotations.SpinnerValidator;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginHost;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.config.TakeValueFromSubconfig;
+import org.jdownloader.plugins.config.Type;
+import org.jdownloader.translate._JDT;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class OneFichierCom extends PluginForHost {
@@ -1258,10 +1260,7 @@ public class OneFichierCom extends PluginForHost {
         return test;
     }
 
-    // @Override
-    // public Class<? extends PluginConfigInterface> getConfigInterface() {
-    // return OneFichierConfigInterface.class;
-    // }
+    @PluginHost(host = "1fichier.com", type = Type.HOSTER)
     public static interface OneFichierConfigInterface extends PluginConfigInterface {
         public static class OneFichierConfigInterfaceTranslation {
             public String getPreferReconnectEnabled_label() {
