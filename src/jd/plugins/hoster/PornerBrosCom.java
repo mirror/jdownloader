@@ -102,7 +102,13 @@ public class PornerBrosCom extends PluginForHost {
         if (br.getURL().equals("http://www.pornerbros.com/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("property=\"og:title\" content=\"([^<>]*?)\\| PornerBros\"").getMatch(0);
+        String filename = br.getRegex("property=\"og:title\" content=\"([^<>]*?)\\| PornerBros").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<h1[^<>]+>([^<>]*?)</h1>").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getRegex("<title[^<>]+>([^<>]*?) \\| PornerBros</title>").getMatch(0);
+        }
         if (filename == null) {
             /* Fallback */
             filename = linkid;
