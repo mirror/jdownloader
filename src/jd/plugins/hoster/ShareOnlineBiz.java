@@ -46,6 +46,7 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -1080,6 +1081,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                     } finally {
                         br.setFollowRedirects(follow);
                     }
+                    checkServerMaintenance(account, br);
                     if (StringUtils.contains(page, "** INVALID USER DATA **")) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
@@ -1184,6 +1186,16 @@ public class ShareOnlineBiz extends antiDDoSForHost {
         return result == null ? null : result.toString();
     }
 
+    private void checkServerMaintenance(Account account, Browser br) throws PluginException {
+        if (br.containsHTML(">Share-Online - Server Maintenance<|>MAINTENANCE</h1>") || br.containsHTML("<title>Share-Online - Not available</title>")) {
+            if (account != null) {
+                throw new AccountUnavailableException("Server Maintenance", 15 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.maintenance", "Server maintenance"), 30 * 60 * 1000l);
+            }
+        }
+    }
+
     /**
      * this is API!
      */
@@ -1201,6 +1213,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
         br.setKeepResponseContentBytes(true);
         try {
             postPage(userProtocolApi() + "://api.share-online.biz/cgi-bin?q=checklinks&md5=1&snr=1", "links=" + id);
+            checkServerMaintenance(null, br);
             final byte[] responseBytes = br.getRequest().getResponseBytes();
             if (br.getRequest().getHtmlCode().matches("\\s*")) {
                 // web method failover.
@@ -1208,6 +1221,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                 String startURL = downloadLink.getDownloadURL();
                 // workaround to bypass new layout and use old site
                 getPage(startURL += startURL.contains("?") ? "&v2=1" : "?v2=1");
+                checkServerMaintenance(null, br);
                 // we only use this direct mode if the API failed twice! in this case this is the only way to get the information
                 String js = br.getRegex("var dl=[^\r\n]*").getMatch(-1);
                 js = execJS(js);

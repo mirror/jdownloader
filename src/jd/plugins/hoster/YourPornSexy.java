@@ -14,7 +14,7 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourporn.sexy" }, urls = { "https?://(www\\.)?yourporn\\.sexy/post/[a-fA-F0-9]{13}\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourporn.sexy" }, urls = { "https?://(www\\.)?(yourporn\\.sexy|sxyprn\\.com)/post/[a-fA-F0-9]{13}\\.html" })
 public class YourPornSexy extends antiDDoSForHost {
     public YourPornSexy(PluginWrapper wrapper) {
         super(wrapper);

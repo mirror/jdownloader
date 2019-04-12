@@ -257,6 +257,10 @@ public class ImgSrcRu extends PluginForDecrypt {
         return false;
     }
 
+    private boolean isPasswordProtected(Browser br) {
+        return br.containsHTML(">\\s*Album owner has protected it from unauthorized access") || br.containsHTML(">\\s*Album owner has protected his work from unauthorized access") || br.containsHTML("enter password to continue:");
+    }
+
     private boolean getPage(String url, CryptedLink param) throws Exception {
         if (url == null || parameter == null) {
             return false;
@@ -301,7 +305,34 @@ public class ImgSrcRu extends PluginForDecrypt {
                 if (br.containsHTML("Continue to album(?: >>)?")) {
                     Form continueForm = br.getFormByRegex("value\\s*=\\s*'Continue");
                     if (continueForm != null) {
+                        if (isPasswordProtected(br)) {
+                            if (passwords.size() > 0) {
+                                password = passwords.remove(0);
+                            } else {
+                                password = getUserInput("Enter password for link: " + param.getCryptedUrl(), param);
+                                if (password == null || password.equals("")) {
+                                    logger.info("User aborted/entered blank password");
+                                    reason = Reason.PASSWORD;
+                                    return false;
+                                }
+                            }
+                            continueForm.put("pwd", Encoding.urlEncode(password));
+                        }
                         br.submitForm(continueForm);
+                        if (isPasswordProtected(br)) {
+                            password = null;
+                            failed = true;
+                            if (i == repeat) {
+                                // using 'i' is probably not a good idea, as we could have had connection errors!
+                                logger.warning("Exausted Password try : " + parameter);
+                                reason = Reason.PASSWORD;
+                                return false;
+                            } else {
+                                continue;
+                            }
+                        }
+                        this.getPluginConfig().setProperty("lastusedpassword", password);
+                        pwd = br.getRegex("\\?pwd=([a-z0-9]{32})").getMatch(0);
                     } else {
                         String newLink = br.getRegex("\\((\"|')right\\1,function\\(\\) \\{window\\.location=('|\")(https?://imgsrc\\.ru/[^<>\"'/]+/[a-z0-9]+\\.html((\\?pwd=)?(\\?pwd=[a-z0-9]{32})?)?)\\2").getMatch(2);
                         if (newLink == null) {
@@ -315,7 +346,7 @@ public class ImgSrcRu extends PluginForDecrypt {
                         br.getPage(newLink);
                     }
                 }
-                if (br.containsHTML(">Album owner has protected his work from unauthorized access") || br.containsHTML("enter password to continue:")) {
+                if (isPasswordProtected(br)) {
                     Form pwForm = br.getFormbyProperty("name", "passchk");
                     if (pwForm == null) {
                         logger.warning("Decrypter broken for link: " + parameter);
