@@ -326,6 +326,10 @@ public class ImgSrcRu extends PluginForHost {
         dl.startDownload();
     }
 
+    private boolean isPasswordProtected(Browser br) {
+        return br.containsHTML(">\\s*Album owner has protected it from unauthorized access") || br.containsHTML(">\\s*Album owner has protected his work from unauthorized access") || br.containsHTML("enter password to continue:");
+    }
+
     private void getPage(String url, DownloadLink downloadLink) throws Exception {
         if (url == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -347,6 +351,28 @@ public class ImgSrcRu extends PluginForHost {
             }
         }
         // needs to be before password
+        if (br.containsHTML("Continue to album(?: >>)?")) {
+            Form continueForm = br.getFormByRegex("value\\s*=\\s*'Continue");
+            if (continueForm != null) {
+                String password = downloadLink.getStringProperty("pass");
+                if (isPasswordProtected(br)) {
+                    if (password == null) {
+                        password = getUserInput("Enter password for link:", downloadLink);
+                        if (password == null || password.equals("")) {
+                            logger.info("User abored/entered blank password");
+                            throw new PluginException(LinkStatus.ERROR_FATAL);
+                        }
+                    }
+                    continueForm.put("pwd", Encoding.urlEncode(password));
+                }
+                br.submitForm(continueForm);
+                if (isPasswordProtected(br)) {
+                    downloadLink.setProperty("pass", Property.NULL);
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+                downloadLink.setProperty("pass", password);
+            }
+        }
         if (br.containsHTML(">Album foreword:.+Continue to album >></a>")) {
             final String newLink = br.getRegex(">shortcut\\.add\\(\"Right\",function\\(\\) \\{window\\.location=\\'(https?://imgsrc\\.ru/[^<>\"\\'/]+/[a-z0-9]+\\.html(\\?pwd=([a-z0-9]{32})?)?)\\'").getMatch(0);
             if (newLink == null) {
@@ -355,7 +381,7 @@ public class ImgSrcRu extends PluginForHost {
             }
             br.getPage(newLink);
         }
-        if (br.containsHTML(">Album owner has protected his work from unauthorized access") || br.containsHTML("enter password to continue:")) {
+        if (isPasswordProtected(br)) {
             Form pwForm = br.getFormbyProperty("name", "passchk");
             if (pwForm == null) {
                 logger.warning("Password form finder failed!");

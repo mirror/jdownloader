@@ -21,6 +21,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Browser;
 import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
@@ -38,8 +39,6 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-import com.sun.xml.internal.org.jvnet.mimepull.DecodingException;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "box.com" }, urls = { "https?://(?:\\w+\\.)*box\\.(?:net|com)/s(?:hared)?/(?:[a-z0-9]{32}|[a-z0-9]{20})(?:/folder/\\d+)?" })
 public class BoxCom extends antiDDoSForDecrypt {
     private static final String TYPE_APP    = "https?://(?:\\w+\\.)*box\\.(?:net|com)/s(?:hared)?/(?:[a-z0-9]{32}|[a-z0-9]{20})(?:/folder/\\d+)?";
@@ -47,6 +46,32 @@ public class BoxCom extends antiDDoSForDecrypt {
 
     public BoxCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    protected String handlePassword(Browser br, final String passCode, CryptedLink parameter) throws Exception {
+        int retry = 5;
+        String password = passCode;
+        while (retry-- > 0 && isPasswordProtected(br)) {
+            if (isAbort()) {
+                throw new InterruptedException();
+            }
+            if (StringUtils.isEmpty(password)) {
+                password = Plugin.getUserInput(null, parameter);
+            }
+            if (!StringUtils.isEmpty(password)) {
+                final PostRequest request = br.createPostRequest(br.getURL(), "password=" + Encoding.urlEncode(password));
+                br.getPage(request);
+                if (isPasswordProtected(br)) {
+                    password = null;
+                }
+            } else {
+                break;
+            }
+        }
+        if (isPasswordProtected(br)) {
+            throw new DecrypterException(DecrypterException.PASSWORD);
+        }
+        return password;
     }
 
     @Override
@@ -57,12 +82,26 @@ public class BoxCom extends antiDDoSForDecrypt {
         logger.finer("Decrypting: " + cryptedlink);
         br.setFollowRedirects(true);
         // our default is german, this returns german!!
+        String passCode = null;
+        CrawledLink current = getCurrentLink();
+        while (current != null) {
+            if (current.getDownloadLink() != null && getSupportedLinks().matcher(current.getURL()).matches()) {
+                final String pass = current.getDownloadLink().getStringProperty("passCode", null);
+                if (pass != null) {
+                    passCode = pass;
+                    break;
+                }
+            }
+            current = current.getSourceLink();
+        }
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         if (cryptedlink.matches(".+/folder/\\d+")) {
             final String rootFolder = new Regex(cryptedlink, "(.+)/folder/\\d+").getMatch(0);
             br.getPage(rootFolder);
+            passCode = handlePassword(br, passCode, parameter);
         }
         br.getPage(cryptedlink);
+        passCode = handlePassword(br, passCode, parameter);
         if (br._getURL().getPath().equals("/freeshare")) {
             decryptedLinks.add(createOfflinelink(cryptedlink));
             return decryptedLinks;
@@ -72,7 +111,7 @@ public class BoxCom extends antiDDoSForDecrypt {
             return decryptedLinks;
         }
         if (br.getURL().matches(TYPE_APP)) {
-            decryptedLinks.addAll(decryptApp(parameter, cryptedlink));
+            decryptedLinks.addAll(decryptApp(parameter, passCode));
             // single link share url!
             if (decryptedLinks.isEmpty()) {
                 // test links for password/empty folder/login required https://svn.jdownloader.org/issues/83897
@@ -113,25 +152,8 @@ public class BoxCom extends antiDDoSForDecrypt {
         return (br.containsHTML("passwordRequired") || br.containsHTML("incorrectPassword")) && br.containsHTML("\"status\"\\s*:\\s*403");
     }
 
-    private ArrayList<DownloadLink> decryptApp(CryptedLink cryptedLink, final String currentUrl) throws Exception {
+    private ArrayList<DownloadLink> decryptApp(CryptedLink cryptedLink, final String passCode) throws Exception {
         // 20170711
-        int retry = 5;
-        String passCode = null;
-        while (retry-- > 0 && isPasswordProtected(br)) {
-            if (isAbort()) {
-                throw new InterruptedException();
-            }
-            passCode = Plugin.getUserInput(null, cryptedLink);
-            if (!StringUtils.isEmpty(passCode)) {
-                final PostRequest request = br.createPostRequest(br.getURL(), "password=" + Encoding.urlEncode(passCode));
-                br.getPage(request);
-            } else {
-                break;
-            }
-        }
-        if (isPasswordProtected(br)) {
-            throw new DecodingException(DecrypterException.PASSWORD);
-        }
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final HashSet<String> dupe = new HashSet<String>();
         final String fpName = br.getRegex("\"currentFolderName\":\"([^\"]*?)\"").getMatch(0);

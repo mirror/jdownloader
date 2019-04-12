@@ -34,6 +34,10 @@ import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
+import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
+import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
+import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 public class PluginJsonConfig {
     private static final WeakHashMap<ClassLoader, HashMap<String, WeakReference<ConfigInterface>>> CONFIG_CACHE  = new WeakHashMap<ClassLoader, HashMap<String, WeakReference<ConfigInterface>>>();
@@ -98,22 +102,52 @@ public class PluginJsonConfig {
             if (enc != null) {
                 if (PluginForHost.class.isAssignableFrom(enc)) {
                     type = Type.HOSTER;
-                    HostPlugin anno = enc.getAnnotation(HostPlugin.class);
-                    String[] names = anno.names();
-                    if (names.length == 1) {
+                    final HostPlugin anno = enc.getAnnotation(HostPlugin.class);
+                    final String[] names = anno.names();
+                    if (names.length == 0) {
+                        LazyHostPlugin plugin = null;
+                        for (LazyHostPlugin lazyHostPlugin : HostPluginController.getInstance().list()) {
+                            if (StringUtils.equals(enc.getName(), lazyHostPlugin.getClassName())) {
+                                if (plugin == null) {
+                                    plugin = lazyHostPlugin;
+                                } else {
+                                    plugin = null;
+                                    break;
+                                }
+                            }
+                        }
+                        if (plugin != null) {
+                            host = plugin.getDisplayName();
+                        }
+                    } else if (names.length == 1) {
                         host = names[0];
-                    } else {
+                    }
+                    if (StringUtils.isEmpty(host)) {
                         throw new WTFException("Bad Config Interface Definition. " + enc + " defines " + names.length + " Hosts. you have to define an own config interface class for each one and use the @PluginHost(\"domain.de\") Annotation");
                     }
                 } else if (PluginForDecrypt.class.isAssignableFrom(enc)) {
                     type = Type.CRAWLER;
-                    DecrypterPlugin anno = enc.getAnnotation(DecrypterPlugin.class);
-                    String[] names = anno.names();
-                    if (names.length == 1) {
-                        if (StringUtils.isEmpty(host)) {
-                            host = names[0];
+                    final DecrypterPlugin anno = enc.getAnnotation(DecrypterPlugin.class);
+                    final String[] names = anno.names();
+                    if (names.length == 0) {
+                        LazyCrawlerPlugin plugin = null;
+                        for (LazyCrawlerPlugin lazyCrawlerPlugin : CrawlerPluginController.getInstance().list()) {
+                            if (StringUtils.equals(enc.getName(), lazyCrawlerPlugin.getClassName())) {
+                                if (plugin == null) {
+                                    plugin = lazyCrawlerPlugin;
+                                } else {
+                                    plugin = null;
+                                    break;
+                                }
+                            }
                         }
-                    } else {
+                        if (plugin != null) {
+                            host = plugin.getDisplayName();
+                        }
+                    } else if (names.length == 1) {
+                        host = names[0];
+                    }
+                    if (StringUtils.isEmpty(host)) {
                         throw new WTFException("Bad Config Interface Definition. " + enc + " defines " + names.length + " Hosts. you have to define an own config interface class for each one and use the @PluginHost(\"domain.de\") Annotation");
                     }
                 }

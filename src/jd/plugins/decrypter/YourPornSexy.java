@@ -13,7 +13,7 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourporn.sexy" }, urls = { "https?://(www\\.)?yourporn\\.sexy/[^/]*?\\.html(\\?page=\\d+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourporn.sexy" }, urls = { "https?://(www\\.)?(yourporn\\.sexy|sxyprn\\.com)/[^/]*?\\.html(\\?page=\\d+)?" })
 public class YourPornSexy extends antiDDoSForDecrypt {
     public YourPornSexy(PluginWrapper wrapper) {
         super(wrapper);
@@ -22,6 +22,7 @@ public class YourPornSexy extends antiDDoSForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        br.setFollowRedirects(true);
         getPage(parameter.getCryptedUrl());
         final String[][] hits = br.getRegex("<a href=(?:\"|')(/post/[a-fA-F0-9]{13}\\.html)\\?sk=.*?title='(.*?)'").getMatches();
         for (final String[] hit : hits) {
