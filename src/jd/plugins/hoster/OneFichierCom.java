@@ -21,6 +21,21 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DefaultIntValue;
+import org.appwork.storage.config.annotations.SpinnerValidator;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginHost;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.config.TakeValueFromSubconfig;
+import org.jdownloader.plugins.config.Type;
+import org.jdownloader.translate._JDT;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -46,21 +61,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.config.annotations.DefaultIntValue;
-import org.appwork.storage.config.annotations.SpinnerValidator;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginHost;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.config.TakeValueFromSubconfig;
-import org.jdownloader.plugins.config.Type;
-import org.jdownloader.translate._JDT;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class OneFichierCom extends PluginForHost {
@@ -839,16 +839,7 @@ public class OneFichierCom extends PluginForHost {
         } else {
             final long knownDownloadSize = downloadLink.getKnownDownloadSize();
             if (knownDownloadSize > 0 && knownDownloadSize <= 50 * 1024 * 1024) {
-                int wait = 0;
-                try {
-                    /*
-                     * 2019-04-04: TODO: Remove this workaround; workaround required as hostlist is not in annotations anymore which leads
-                     * to a WTFException!
-                     */
-                    wait = PluginJsonConfig.get(OneFichierConfigInterface.class).getSmallFilesWaitInterval();
-                } catch (final Throwable e) {
-                    return super.getStartIntervall(downloadLink, account);
-                }
+                final int wait = PluginJsonConfig.get(OneFichierConfigInterface.class).getSmallFilesWaitInterval();
                 // avoid IP block because of too many downloads in short time
                 return Math.max(0, wait * 1000);
             } else {
@@ -875,15 +866,7 @@ public class OneFichierCom extends PluginForHost {
             return;
         }
         String dllink = getDllinkPremium(link, account);
-        boolean preferSSL = true;
-        try {
-            /*
-             * 2019-04-04: TODO: Remove this workaround; workaround required as hostlist is not in annotations anymore which leads to a
-             * WTFException!
-             */
-            preferSSL = PluginJsonConfig.get(OneFichierConfigInterface.class).isPreferSSLEnabled();
-        } catch (final Throwable e) {
-        }
+        final boolean preferSSL = PluginJsonConfig.get(OneFichierConfigInterface.class).isPreferSSLEnabled();
         if (preferSSL && dllink.startsWith("http://")) {
             dllink = dllink.replace("http://", "https://");
         }
@@ -1119,15 +1102,8 @@ public class OneFichierCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
             ret.remove("save");
-            try {
-                /*
-                 * 2019-04-04: TODO: Remove this workaround; workaround required as hostlist is not in annotations anymore which leads to a
-                 * WTFException!
-                 */
-                if (!PluginJsonConfig.get(OneFichierConfigInterface.class).isPreferSSLEnabled()) {
-                    ret.put("dl_no_ssl", "on");
-                }
-            } catch (final Throwable e) {
+            if (!PluginJsonConfig.get(OneFichierConfigInterface.class).isPreferSSLEnabled()) {
+                ret.put("dl_no_ssl", "on");
             }
             return ret;
         }

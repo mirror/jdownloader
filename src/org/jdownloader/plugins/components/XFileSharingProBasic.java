@@ -27,6 +27,17 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -51,16 +62,6 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.hoster.RTMPDownload;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 public class XFileSharingProBasic extends antiDDoSForHost {
     public XFileSharingProBasic(PluginWrapper wrapper) {
@@ -114,7 +115,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 4.0.0.8<br />
+     * DEV NOTES XfileSharingProBasic Version 4.0.1.0<br />
      ****************************
      * NOTES from raztoki <br/>
      * - no need to set setfollowredirect true. <br />
@@ -317,7 +318,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * See also function getFilesizeViaAvailablecheckAlt! <br />
      * <b> Enabling this will eventually lead to at least one additional website-request! </b>
      *
-     * @return true: Implies that website supports getFilesizeViaAvailablecheckAlt call as an alternative source for filesize-parsing. <br />
+     * @return true: Implies that website supports getFilesizeViaAvailablecheckAlt call as an alternative source for filesize-parsing.
+     *         <br />
      *         false: Implies that website does NOT support getFilesizeViaAvailablecheckAlt. <br />
      *         default: true
      */
@@ -373,7 +375,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /**
-     * A correct setting increases linkcheck-speed as unnecessary redirects will be avoided.
+     * A correct setting increases linkcheck-speed as unnecessary redirects will be avoided. <br />
+     * Also in some cases, you may get 404 errors or redirects to other websites if this setting is not correct.
      *
      * @return true: Implies that website requires 'www.' in all URLs. <br />
      *         false: Implies that website does NOT require 'www.' in all URLs. <br />
@@ -959,15 +962,15 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     /** Handles pre-download forms & captcha for free (anonymous) + FREE ACCOUNT modes. */
     public void doFree(final DownloadLink link, final Account account) throws Exception, PluginException {
-        /* 1, bring up saved final links */
+        /* 1. Bring up saved final links */
         final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
         String dllink = checkDirectLink(link, directlinkproperty);
-        /* 2, check for streaming/direct links on the first page */
+        /* 2. Check for streaming/direct links on the first page */
         if (dllink == null) {
             checkErrors(link, account, false);
             dllink = getDllink(link, account);
         }
-        /* 3, do they provide audio hosting? */
+        /* 3. Do they provide audio hosting? EXTREMELY rare case! */
         if (dllink == null && link.getName().endsWith(".mp3") && this.isAudiohoster()) {
             try {
                 logger.info("Trying to get link via mp3embed");
@@ -986,7 +989,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 logger.info("Failed to get link via mp3embed");
             }
         }
-        /* 4, do they provide video hosting? */
+        /* 4. Do they provide video hosting? */
         if (dllink == null && this.isVideohoster()) {
             try {
                 logger.info("Trying to get link via vidembed");
@@ -1002,7 +1005,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 logger.info("Failed to get link via vidembed");
             }
         }
-        /* 5, do they provide video hosting #2? */
+        /* 5. Do they provide video hosting #2? */
         if (dllink == null && this.isVideohoster_2()) {
             try {
                 logger.info("Trying to get link via embed");
@@ -1022,7 +1025,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 getPage(link.getPluginPatternMatcher());
             }
         }
-        /* 6, do we have an imagehost? */
+        /* 6. Do we have an imagehost? */
         if (dllink == null && this.isImagehoster()) {
             checkErrors(link, account, false);
             Form imghost_next_form = null;
@@ -1042,7 +1045,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 }
             } while (imghost_next_form != null);
         }
-        /* 7, continue like normal */
+        /* 7. Continue like normal */
         if (dllink == null) {
             /*
              * Check errors here because if we don't and a link is premiumonly, download1 Form will be present, plugin will send it and most
@@ -1088,7 +1091,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 /* Okay we finally have no idea what happened ... */
                 handlePluginBroken(link, "dlform_f1_null", 3);
             }
-            /* Define how many forms deep do you want to try? */
+            /* Define how many forms deep do we want to try? */
             int repeat = 2;
             for (int i = 0; i <= repeat; i++) {
                 dlForm.remove(null);
@@ -1310,15 +1313,17 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * [NOT html]).
      */
     public String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        final String dllink = downloadLink.getStringProperty(property);
+        String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
                 con = openAntiDDoSRequestConnection(br2, br2.createHeadRequest(dllink));
                 if (con.isOK() && con.isContentDisposition()) {
+                    /* Ok */
                     return dllink;
                 } else if (con.getResponseCode() == 503) {
+                    /* Ok */
                     /*
                      * Too many connections but that does not mean that our downloadlink is valid. Accept it and if it still returns 503 on
                      * download-attempt this error will get displayed to the user.
@@ -1326,19 +1331,25 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     logger.info("Stored directurl lead to 503 | too many connections");
                     return dllink;
                 } else if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    return null;
+                    /* Failure */
+                    dllink = null;
+                    return dllink;
                 } else {
+                    /* Ok */
                     return dllink;
                 }
             } catch (final Exception e) {
+                /* Failure */
                 logger.log(e);
-                downloadLink.setProperty(property, Property.NULL);
-                return null;
+                dllink = null;
+                return dllink;
             } finally {
                 try {
                     con.disconnect();
                 } catch (final Throwable e) {
+                }
+                if (dllink == null) {
+                    downloadLink.setProperty(property, Property.NULL);
                 }
             }
         }
@@ -1615,12 +1626,13 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * Handles pre download (pre-captcha) waittime. If WAITFORCED it ensures to always wait long enough even if the waittime RegEx fails.
      */
     protected void waitTime(final DownloadLink downloadLink, final long timeBefore) throws PluginException {
+        final int extraWaitSeconds = 1;
         int wait = 0;
-        int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
+        int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - extraWaitSeconds;
         /* Ticket Time */
         String ttt = regexWaittime();
-        if (ttt != null) {
-            logger.info("Found waittime: " + ttt);
+        if (ttt != null && ttt.matches("\\d+")) {
+            logger.info("Found waittime, parsing waittime: " + ttt);
             wait = Integer.parseInt(ttt);
             /* Waittime found in html but plugin developer set min- and max times? Check and fallback to getWaitsecondsforced if needed. */
             if (this.isWaitforced() && (wait > this.getWaitsecondsmax() || wait < this.getWaitsecondsmin())) {
@@ -1640,10 +1652,18 @@ public class XFileSharingProBasic extends antiDDoSForHost {
          * to wait.
          */
         wait -= passedTime;
+        if (passedTime > 0) {
+            /* This usually means that the user had to solve a captcha which cuts down the remaining time we have to wait. */
+            logger.info("Total passed time during captcha: " + passedTime);
+        }
         if (wait > 0) {
             logger.info("Waiting waittime: " + wait);
             sleep(wait * 1000l, downloadLink);
+        } else if (wait < -extraWaitSeconds) {
+            /* User needed more time to solve the captcha so there is no waittime left :) */
+            logger.info("Congratulations: Time to solve captcha was higher than waittime");
         } else {
+            /* No waittime at all */
             logger.info("Found no waittime");
         }
     }
@@ -2046,16 +2066,16 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         expire_milliseconds_precise_to_the_second = ((years * 86400000 * 365) + (days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000)) + System.currentTimeMillis();
                     }
                     if (expire_milliseconds_precise_to_the_second > 0) {
-                        logger.info("Successfully found expire_milliseconds_precise_to_the_second via paymentURL: " + paymentURL);
+                        logger.info("Successfully found precise expire-date via paymentURL: \"" + paymentURL + "\"");
                         break;
                     } else {
-                        logger.info("Failed to find expire_milliseconds_precise_to_the_second via paymentURL: " + paymentURL);
+                        logger.info("Failed to find precise expire-date via paymentURL: \"" + paymentURL + "\"");
                     }
                 }
             }
             // final boolean trust_expire_milliseconds_from_expiredate = expire_milliseconds_from_expiredate > 0;
             final boolean trust_expire_milliseconds_precise_to_the_second = expire_milliseconds_from_expiredate - expire_milliseconds_precise_to_the_second <= 24 * 60 * 60 * 1000;
-            if (trust_expire_milliseconds_precise_to_the_second) {
+            if (trust_expire_milliseconds_precise_to_the_second && expire_milliseconds_precise_to_the_second > 0) {
                 /*
                  * Prefer more precise expire-date as long as it is max. 48 hours shorter than the other expire-date which is only exact up
                  * to 24 hours (up to the last day).
@@ -2367,7 +2387,14 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-        if (link != null) {
+        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE && link != null) {
+            /* Reset directurl-properties in stable, NOT in dev mode */
+            /*
+             * TODO 2019-04-05: Either just don't do this or find a better solution for this. This will cause unnecessary captchas and will
+             * just waste the users' hard work of generating direct-URLs (e.g. entering captchas). I have never seen a situation in which
+             * one of our plugins e.g. looped forever because of bad directlink handling. This plugin is designed to verify directlinks and
+             * automatically delete that property once a directlink is not valid anymore!
+             */
             link.removeProperty("freelink2");
             link.removeProperty("premlink");
             link.removeProperty("freelink");
