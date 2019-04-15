@@ -206,7 +206,7 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                 labels[labelIndex].setVisible(true);
                 labelIndex++;
             }
-            if (dlWatchdog.isLinkForced(dlLink)) {
+            if (dlWatchdog.isLinkForced(dlLink) && dlLink.getFinalLinkState() == null && dlLink.isEnabled()) {
                 labels[labelIndex].setIcon(forced);
                 labels[labelIndex].setVisible(true);
                 labelIndex++;
@@ -235,6 +235,18 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                         labels[labelIndex].setVisible(true);
                         labelIndex++;
                     }
+                } else {
+                    final PluginForHost plugin = sdc.getProcessingPlugin();
+                    final DomainInfo domainInfo = plugin != null ? DomainInfo.getInstance(sdc.getProcessingPlugin().getHost(dlLink, sdc.getAccount())) : null;
+                    final Icon icon;
+                    if (domainInfo != null) {
+                        icon = domainInfo.getFavIcon();
+                    } else {
+                        icon = url;
+                    }
+                    labels[labelIndex].setIcon(icon);
+                    labels[labelIndex].setVisible(true);
+                    labelIndex++;
                 }
                 labels[labelIndex].setText("" + dli.getManagedConnetionHandler().size());
                 labels[labelIndex].setIcon(connections);
@@ -288,8 +300,12 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                 dli = null;
             }
             {
-                if (dlWatchdog.isLinkForced(link)) {
-                    panel.add(lbl = new JLabel(_GUI.T.ConnectionColumn_DownloadIsForced(), forced, JLabel.LEADING));
+                if (dlWatchdog.isLinkForced(link) && link.getFinalLinkState() == null && link.isEnabled()) {
+                    if (dli == null) {
+                        panel.add(lbl = new JLabel(_GUI.T.ConnectionColumn_DownloadIsForcedWaiting(), forced, JLabel.LEADING));
+                    } else {
+                        panel.add(lbl = new JLabel(_GUI.T.ConnectionColumn_DownloadIsForced(), forced, JLabel.LEADING));
+                    }
                     SwingUtils.setOpaque(lbl, false);
                     lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
                 }
@@ -381,11 +397,19 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                 }
             }
             if (dli != null) {
+                final PluginForHost plugin = sdc.getProcessingPlugin();
+                final DomainInfo domainInfo = plugin != null ? DomainInfo.getInstance(sdc.getProcessingPlugin().getHost(link, sdc.getAccount())) : null;
+                final Icon icon;
+                if (domainInfo != null) {
+                    icon = domainInfo.getFavIcon();
+                } else {
+                    icon = url;
+                }
                 final URLConnectionAdapter con = dli.getConnection();
                 if (con != null) {
-                    panel.add(lbl = new JLabel(_GUI.T.ConnectionColumn_getStringValue_from(con.getURL().getProtocol() + "@" + dli.getDownloadable().getHost()), url, JLabel.LEADING));
+                    panel.add(lbl = new JLabel(_GUI.T.ConnectionColumn_getStringValue_from(con.getURL().getProtocol() + "@" + dli.getDownloadable().getHost()), icon, JLabel.LEADING));
                 } else {
-                    panel.add(lbl = new JLabel(_GUI.T.ConnectionColumn_getStringValue_from(dli.getDownloadable().getHost()), url, JLabel.LEADING));
+                    panel.add(lbl = new JLabel(_GUI.T.ConnectionColumn_getStringValue_from(dli.getDownloadable().getHost()), icon, JLabel.LEADING));
                 }
                 SwingUtils.setOpaque(lbl, false);
                 lbl.setForeground(new Color(this.getConfig().getForegroundColor()));

@@ -2192,6 +2192,9 @@ public interface GuiTranslation extends TranslateInterface {
     String ForceDownloadAction_actionPerformed_help_msg_();
 
     @Default(lngs = { "en" }, values = { "Download is waiting for a prioritized start" })
+    String ConnectionColumn_DownloadIsForcedWaiting();
+
+    @Default(lngs = { "en" }, values = { "Prioritized Download" })
     String ConnectionColumn_DownloadIsForced();
 
     @Default(lngs = { "en" }, values = { "Force Download Start" })
