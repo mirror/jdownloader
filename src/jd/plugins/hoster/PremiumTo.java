@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
@@ -48,6 +49,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.utils.locale.JDL;
 
@@ -62,6 +64,7 @@ public class PremiumTo extends UseNet {
     private static final String          type_storage                   = "https?://storage.+";
     private static final String          type_torrent                   = "https?://torrent.+";
     private static final String          API_BASE                       = "http://api.premium.to/";
+    private static final String          API_BASE_STORAGE               = "http://storage.premium.to/api";
     private static MultiHosterManagement mhm                            = new MultiHosterManagement("premium.to");
 
     public PremiumTo(PluginWrapper wrapper) {
@@ -108,7 +111,7 @@ public class PremiumTo extends UseNet {
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         final AccountInfo ac = new AccountInfo();
         login(account, true);
-        Browser tbr = br.cloneBrowser();
+        final Browser tbr = br.cloneBrowser();
         tbr.setFollowRedirects(true);
         tbr.getPage("https://" + this.getHost() + "/sstraffic.php");
         /* NormalTraffic:SpecialTraffic:TorrentTraffic */
@@ -133,15 +136,47 @@ public class PremiumTo extends UseNet {
         final Browser hbr = br.cloneBrowser();
         hbr.setFollowRedirects(true);
         hbr.getPage(API_BASE + "hosts.php");
-        final String hosters[] = hbr.toString().split(";|\\s+");
-        if (hosters != null && hosters.length != 0) {
-            final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosters));
-            supportedHosts.add("usenet");
-            ac.setMultiHostSupport(this, supportedHosts);
+        final String hosters_regular[] = hbr.toString().toLowerCase().split(";|\\s+");
+        final ArrayList<String> supported_hosts_regular = new ArrayList<String>(Arrays.asList(hosters_regular));
+        /* Find storage hosts and add them to array of supported hosts as well */
+        hbr.getPage(API_BASE_STORAGE + "/hosts.php");
+        final String hosters_storage[] = hbr.toString().toLowerCase().split(";|\\s+");
+        final ArrayList<String> supported_hosts_storage = new ArrayList<String>(Arrays.asList(hosters_storage));
+        for (final String supported_host_storage : supported_hosts_storage) {
+            if (!supported_hosts_regular.contains(supported_host_storage)) {
+                logger.info("Adding storage host: " + supported_host_storage);
+                supported_hosts_regular.add(supported_host_storage);
+            }
+        }
+        if (supported_hosts_regular.size() > 0) {
+            supported_hosts_regular.add("usenet");
+            ac.setMultiHostSupport(this, supported_hosts_regular);
         }
         account.setType(AccountType.PREMIUM);
         ac.setStatus("Premium account" + additionalAccountStatus);
+        try {
+            /* Do not fail here */
+            getAndStoreAPIKey(account, false);
+        } catch (final Throwable e) {
+        }
         return ac;
+    }
+
+    /** 2019-04-15: Required for downloading from STORAGE hosts */
+    private String getAndStoreAPIKey(final Account account, final boolean forceRenew) throws Exception {
+        /* 2019-04-15: TODO: Check if this apikey ever changes/canExpire */
+        String apikey = account.getStringProperty("apikey");
+        if (apikey == null || forceRenew) {
+            br.getPage(API_BASE + "api/getauthcode.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            /* 2019-04-15: apikey = username+hash */
+            if (br.toString().length() > account.getUser().length()) {
+                apikey = br.toString();
+                account.setProperty("apikey", apikey);
+            } else {
+                account.setProperty("apikey", Property.NULL);
+            }
+        }
+        return apikey;
     }
 
     @Override
@@ -279,9 +314,6 @@ public class PremiumTo extends UseNet {
                 url = url.replaceFirst("turbobit.net/", "tb.net/");
             } else if (url.startsWith("filefactory.com/")) {
                 url = url.replaceFirst("filefactory.com/", "ff.com/");
-            } else if (url.startsWith("k2s.cc/")) {
-                // doesn't work...
-                // url = url.replaceFirst("k2s.cc/", "keep2share.cc/");
             }
             /* end code from premium.to support */
             if (url.startsWith("oboom.com/")) {
@@ -298,7 +330,19 @@ public class PremiumTo extends UseNet {
             if (link.getBooleanProperty(noChunks, false)) {
                 connections = 1;
             }
-            String finalURL = API_BASE + "getfile.php?link=" + url;
+            String finalURL = null;
+            final boolean requiresStorageDownload = false;
+            if (requiresStorageDownload) {
+                final String apikey = getAndStoreAPIKey(account, false);
+                br.getPage(API_BASE_STORAGE + "/check.php?apikey=" + apikey + "&url=" + url);
+                handleErrorsStorageAPI();
+                if (br.containsHTML("Not in queue")) {
+                    /* Add to queue */
+                    br.getPage(API_BASE_STORAGE + "/add.php?apikey=" + apikey + "&url=" + url);
+                }
+            } else {
+                finalURL = API_BASE + "getfile.php?link=" + url;
+            }
             final Browser brc = br.cloneBrowser();
             brc.setFollowRedirects(true);
             final URLConnectionAdapter con = brc.openGetConnection(finalURL);
@@ -378,6 +422,40 @@ public class PremiumTo extends UseNet {
                 }
             }
         }
+    }
+
+    private void handleErrorsStorageAPI() throws Exception {
+        if (br.toString().equalsIgnoreCase("Invalid API key")) {
+            /* Temp disable account --> Next accountcheck will refresh apikey */
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        } else {
+            final int responsecode = br.getHttpConnection().getResponseCode();
+            switch (responsecode) {
+            case 200:
+                /* Everything ok */
+                break;
+            case 401:
+                /* Invalid apikey (same as above) */
+                /* Temp disable account --> Next accountcheck will refresh apikey */
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            case 403:
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Not enough traffic left", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            case 405:
+                /* User has reached max. storage files limit (2019-04-15: 200 files) */
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Storage max files limit reached", 5 * 60 * 1000);
+            }
+            final String status = getStorageAPIStatus();
+            if (StringUtils.isEmpty(status)) {
+                return;
+            }
+            if (status.equalsIgnoreCase("In queue")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Storage download pending", 5 * 60 * 1000);
+            }
+        }
+    }
+
+    private String getStorageAPIStatus() {
+        return PluginJSonUtils.getJson(br, "Status");
     }
 
     /**

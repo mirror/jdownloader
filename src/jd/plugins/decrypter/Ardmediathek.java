@@ -71,16 +71,17 @@ import jd.plugins.components.PluginJSonUtils;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ardmediathek.de", "mediathek.daserste.de", "daserste.de", "rbb-online.de", "sandmann.de", "wdr.de", "sportschau.de", "one.ard.de", "wdrmaus.de", "sr-online.de", "ndr.de", "kika.de", "eurovision.de", "sputnik.de", "mdr.de", "checkeins.de" }, urls = { "https?://(?:[A-Z0-9]+\\.)?ardmediathek\\.de/(?:.*?documentId=\\d+[^/]*?|.*?player/[a-zA-Z0-9_/\\+\\=\\-%]+)", "https?://(?:www\\.)?mediathek\\.daserste\\.de/.*?documentId=\\d+[^/]*?", "https?://www\\.daserste\\.de/[^<>\"]+/(?:videos|videosextern)/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?mediathek\\.rbb\\-online\\.de/tv/[^<>\"]+documentId=\\d+[^/]*?", "https?://(?:www\\.)?sandmann\\.de/.+", "https?://(?:[a-z0-9]+\\.)?wdr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?sportschau\\.de/.*?\\.html",
         "https?://(?:www\\.)?one\\.ard\\.de/tv/[^<>\"]+documentId=\\d+[^/]*?", "https?://(?:www\\.)?wdrmaus\\.de/.+", "https?://sr\\-mediathek\\.sr\\-online\\.de/index\\.php\\?seite=\\d+\\&id=\\d+", "https?://(?:[a-z0-9]+\\.)?ndr\\.de/.*?\\.html", "https?://(?:www\\.)?kika\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?eurovision\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?sputnik\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?mdr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?checkeins\\.de/[^<>\"]+\\.html" })
 public class Ardmediathek extends PluginForDecrypt {
-    private static final String                 EXCEPTION_LINKOFFLINE = "EXCEPTION_LINKOFFLINE";
+    private static final String                 EXCEPTION_LINKOFFLINE                      = "EXCEPTION_LINKOFFLINE";
     /* Constants */
-    private static final String                 type_unsupported      = ".+ardmediathek\\.de/(tv/live\\?kanal=\\d+|dossiers/.*)";
-    private static final String                 type_invalid          = ".+(ardmediathek|mediathek\\.daserste)\\.de/(download|livestream).+";
+    private static final String                 type_unsupported                           = ".+ardmediathek\\.de/(tv/live\\?kanal=\\d+|dossiers/.*)";
+    private static final String                 type_invalid                               = ".+(ardmediathek|mediathek\\.daserste)\\.de/(download|livestream).+";
     /* Variables */
-    private final HashMap<String, DownloadLink> foundQualitiesMap     = new HashMap<String, DownloadLink>();
-    ArrayList<DownloadLink>                     decryptedLinks        = new ArrayList<DownloadLink>();
+    private final HashMap<String, DownloadLink> foundQualitiesMap                          = new HashMap<String, DownloadLink>();
+    private final HashMap<String, DownloadLink> foundQualitiesMap_http_urls_via_HLS_master = new HashMap<String, DownloadLink>();
+    ArrayList<DownloadLink>                     decryptedLinks                             = new ArrayList<DownloadLink>();
     /* Important: Keep this updated & keep this in order: Highest --> Lowest */
-    private final List<String>                  all_known_qualities   = Arrays.asList("http_3773000_720", "hls_3773000_720", "http_1989000_540", "hls_1989000_540", "http_1213000_360", "hls_1213000_360", "http_605000_280", "hls_605000_280", "http_448000_270", "hls_448000_270", "http_317000_270", "hls_317000_270", "http_189000_180", "hls_189000_180", "http_0_0");
-    private final Map<String, Long>             heigth_to_bitrate     = new HashMap<String, Long>();
+    private final List<String>                  all_known_qualities                        = Arrays.asList("http_3773000_720", "hls_3773000_720", "http_1989000_540", "hls_1989000_540", "http_1213000_360", "hls_1213000_360", "http_605000_280", "hls_605000_280", "http_448000_270", "hls_448000_270", "http_317000_270", "hls_317000_270", "http_189000_180", "hls_189000_180", "http_0_0");
+    private final Map<String, Long>             heigth_to_bitrate                          = new HashMap<String, Long>();
     {
         heigth_to_bitrate.put("180", 189000l);
         /* keep in mind that sometimes there are two versions for 270! This is the higher one (default)! */
@@ -602,6 +603,8 @@ public class Ardmediathek extends PluginForDecrypt {
          * Grab all http qualities inside json
          */
         final List<String> httpStreamsQualityIdentifiers = new ArrayList<String>();
+        /*  */
+        final List<String> httpStreamsQualityIdentifiers_2_over_hls_master = new ArrayList<String>();
         try {
             final String json = brJSON.toString().trim();
             final HashMap<String, Object> map;
@@ -756,7 +759,7 @@ public class Ardmediathek extends PluginForDecrypt {
                                     }
                                 }
                             }
-                            final DownloadLink download = addQuality(url, null, 0, widthInt, heightInt);
+                            final DownloadLink download = addQuality(url, null, 0, widthInt, heightInt, foundQualitiesMap);
                             if (download != null) {
                                 httpStreamsQualityIdentifiers.add(getQualityIdentifier(url, 0, widthInt, heightInt));
                             }
@@ -779,6 +782,10 @@ public class Ardmediathek extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             throw new DecrypterException("Plugin broken");
         }
+        /*
+         * This is a completely different attempt to find HTTP URLs. As long as it works, this may be more reliable than everything above
+         * here!
+         */
         final boolean tryToFindAdditionalHTTPURLs = true;
         if (tryToFindAdditionalHTTPURLs && hls_master != null) {
             final String http_url_format = getHlsToHttpURLFormat(hls_master);
@@ -803,12 +810,25 @@ public class Ardmediathek extends PluginForDecrypt {
                         final int widthInt = Integer.parseInt(width);
                         final int heightInt = Integer.parseInt(height);
                         final String qualityIdentifier = getQualityIdentifier(final_url, 0, widthInt, heightInt);
-                        if (!httpStreamsQualityIdentifiers.contains(qualityIdentifier)) {
-                            logger.info("Adding missing http quality: " + qualityIdentifier);
-                            addQuality(final_url, null, 0, widthInt, heightInt);
+                        if (!httpStreamsQualityIdentifiers_2_over_hls_master.contains(qualityIdentifier)) {
+                            logger.info("Found (additional) http quality via HLS Master: " + qualityIdentifier);
+                            addQuality(final_url, null, 0, widthInt, heightInt, foundQualitiesMap_http_urls_via_HLS_master);
+                            httpStreamsQualityIdentifiers_2_over_hls_master.add(qualityIdentifier);
                         }
                     }
                 }
+            }
+            final int numberof_http_qualities_found_inside_json = foundQualitiesMap.keySet().size();
+            final int numberof_http_qualities_found_via_hls_to_http_conversion = foundQualitiesMap_http_urls_via_HLS_master.keySet().size();
+            if (numberof_http_qualities_found_via_hls_to_http_conversion > 0) {
+                /*
+                 * 2019-04-15: Prefer URLs created via this way because if we don't, we may get entries labled as different qualities which
+                 * may be duplicates!
+                 */
+                logger.info(String.format("Found [%d] qualities via HLS --> HTTP conversion which is more than number of http URLs inside json [%d]", numberof_http_qualities_found_via_hls_to_http_conversion, numberof_http_qualities_found_inside_json));
+                logger.info("--> Using converted URLs instead");
+                foundQualitiesMap.clear();
+                foundQualitiesMap.putAll(foundQualitiesMap_http_urls_via_HLS_master);
             }
         }
         if (hls_master != null) {
@@ -819,7 +839,7 @@ public class Ardmediathek extends PluginForDecrypt {
                 /* 2019-04-11: Workaround for missing protocol */
                 http_url_audio = "https:" + http_url_audio;
             }
-            addQuality(http_url_audio, null, 0, 0, 0);
+            addQuality(http_url_audio, null, 0, 0, 0, foundQualitiesMap);
         }
     }
 
@@ -932,7 +952,7 @@ public class Ardmediathek extends PluginForDecrypt {
                 continue;
             }
             final String final_download_url = hlscontainer.getDownloadurl();
-            addQuality(final_download_url, null, hlscontainer.getBandwidth(), hlscontainer.getWidth(), hlscontainer.getHeight());
+            addQuality(final_download_url, null, hlscontainer.getBandwidth(), hlscontainer.getWidth(), hlscontainer.getHeight(), foundQualitiesMap);
         }
     }
 
@@ -955,7 +975,7 @@ public class Ardmediathek extends PluginForDecrypt {
         }
         width = getWidth(width_URL, width);
         height = getHeight(width_URL, width, height);
-        addQuality(directurl, filesize_str, bitrate, width, height);
+        addQuality(directurl, filesize_str, bitrate, width, height, foundQualitiesMap);
     }
 
     /* Returns quality identifier String, compatible with quality selection values. Format: protocol_bitrateCorrected_heightCorrected */
@@ -978,7 +998,7 @@ public class Ardmediathek extends PluginForDecrypt {
         return qualityStringForQualitySelection;
     }
 
-    private DownloadLink addQuality(final String directurl, final String filesize_str, long bitrate, int width, int height) {
+    private DownloadLink addQuality(final String directurl, final String filesize_str, long bitrate, int width, int height, final HashMap<String, DownloadLink> qualitiesMap) {
         /* Errorhandling */
         final String ext;
         if (directurl == null || ((width == 0 || height == 0) && !directurl.contains(".mp3"))) {
@@ -1031,7 +1051,7 @@ public class Ardmediathek extends PluginForDecrypt {
         } else if (cfg.isFastLinkcheckEnabled()) {
             link.setAvailable(true);
         }
-        foundQualitiesMap.put(qualityStringForQualitySelection, link);
+        qualitiesMap.put(qualityStringForQualitySelection, link);
         return link;
     }
 
