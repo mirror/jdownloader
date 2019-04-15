@@ -860,7 +860,7 @@ public class YetiShareCore extends antiDDoSForHost {
             getPage("/account_home.html");
         }
         /* 2019-03-01: Bad german translation, example: freefile.me */
-        boolean isPremium = br.containsHTML("class=\"badge badge\\-success\">(?:BEZAHLT(er)? BENUTZER|PAID USER|USUARIO DE PAGO|VIP)</span>");
+        boolean isPremium = br.containsHTML("class=\"badge badge\\-success\">(?:BEZAHLT(er)? BENUTZER|PAID USER|USUARIO DE PAGO|VIP|PREMIUM)</span>");
         if (!isPremium) {
             account.setType(AccountType.FREE);
             account.setMaxSimultanDownloads(this.getMaxSimultaneousFreeAccountDownloads());

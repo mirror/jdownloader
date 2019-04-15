@@ -236,7 +236,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
         }
         /* Do NOT use value of "videoURL_MP4" here! */
         /* E.g. http://www.rai.tv/dl/RaiTV/programmi/media/ContentItem-70996227-7fec-4be9-bc49-ba0a8104305a.html */
-        dllink = this.br.getRegex("var[\t\n\r ]*?videoURL[\t\n\r ]*?=[\t\n\r ]*?\"(http://[^<>\"]+)\"").getMatch(0);
+        dllink = this.br.getRegex("var[\t\n\r ]*?videoURL[\t\n\r ]*?=[\t\n\r ]*?\"((?:https?:)?//[^<>\"]+)\"").getMatch(0);
         String content_id_from_url = null;
         if (this.parameter.matches(TYPE_CONTENTITEM)) {
             content_id_from_url = new Regex(this.parameter, "(\\-[a-f0-9\\-]+)\\.html$").getMatch(0);
@@ -265,6 +265,9 @@ public class RaiItDecrypter extends PluginForDecrypt {
             return;
         }
         if (dllink != null) {
+            if (dllink.startsWith("//")) {
+                dllink = "https:" + dllink;
+            }
             if (title == null) {
                 /* Streamurls directly in html */
                 title = this.br.getRegex("id=\"idMedia\">([^<>]+)<").getMatch(0);
@@ -531,6 +534,6 @@ public class RaiItDecrypter extends PluginForDecrypt {
     }
 
     private String findRelinkerUrl() {
-        return this.br.getRegex("(https?://mediapolisvod\\.rai\\.it/relinker/relinkerServlet\\.htm\\?cont=[A-Za-z0-9]+)").getMatch(0);
+        return this.br.getRegex("(//mediapolisvod\\.rai\\.it/relinker/relinkerServlet\\.htm\\?cont=[A-Za-z0-9]+)").getMatch(0);
     }
 }
