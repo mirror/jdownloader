@@ -603,7 +603,7 @@ public class Ardmediathek extends PluginForDecrypt {
          * Grab all http qualities inside json
          */
         final List<String> httpStreamsQualityIdentifiers = new ArrayList<String>();
-        /*  */
+        /* For http stream quality identifiers which have been created by the hls --> http URLs converter */
         final List<String> httpStreamsQualityIdentifiers_2_over_hls_master = new ArrayList<String>();
         try {
             final String json = brJSON.toString().trim();

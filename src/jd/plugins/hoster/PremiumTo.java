@@ -55,17 +55,19 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "https?://torrent[a-z0-9]*?\\.(premium\\.to|premium4\\.me)/(t|z)/[^<>/\"]+(/[^<>/\"]+){0,1}(/\\d+)*|https?://storage[a-z0-9]*?\\.(?:premium\\.to|premium4\\.me)/file/[A-Z0-9]+" })
 public class PremiumTo extends UseNet {
-    private final String                 noChunks                       = "noChunks";
-    private static Object                LOCK                           = new Object();
-    private final String                 normalTraffic                  = "normalTraffic";
-    private final String                 specialTraffic                 = "specialTraffic";
-    private static final String          lang                           = System.getProperty("user.language");
-    private static final String          CLEAR_DOWNLOAD_HISTORY_STORAGE = "CLEAR_DOWNLOAD_HISTORY";
-    private static final String          type_storage                   = "https?://storage.+";
-    private static final String          type_torrent                   = "https?://torrent.+";
-    private static final String          API_BASE                       = "http://api.premium.to/";
-    private static final String          API_BASE_STORAGE               = "http://storage.premium.to/api";
-    private static MultiHosterManagement mhm                            = new MultiHosterManagement("premium.to");
+    private final String                   noChunks                       = "noChunks";
+    private static Object                  LOCK                           = new Object();
+    private final String                   normalTraffic                  = "normalTraffic";
+    private final String                   specialTraffic                 = "specialTraffic";
+    private static final String            lang                           = System.getProperty("user.language");
+    private static final String            CLEAR_DOWNLOAD_HISTORY_STORAGE = "CLEAR_DOWNLOAD_HISTORY";
+    private static final String            type_storage                   = "https?://storage.+";
+    private static final String            type_torrent                   = "https?://torrent.+";
+    private static final String            API_BASE                       = "http://api.premium.to/";
+    private static final String            API_BASE_STORAGE               = "http://storage.premium.to/api";
+    private static MultiHosterManagement   mhm                            = new MultiHosterManagement("premium.to");
+    private static final ArrayList<String> hosts_regular                  = new ArrayList<String>();
+    private static final ArrayList<String> hosts_storage                  = new ArrayList<String>();
 
     public PremiumTo(PluginWrapper wrapper) {
         super(wrapper);
@@ -138,18 +140,20 @@ public class PremiumTo extends UseNet {
         hbr.getPage(API_BASE + "hosts.php");
         final String hosters_regular[] = hbr.toString().toLowerCase().split(";|\\s+");
         final ArrayList<String> supported_hosts_regular = new ArrayList<String>(Arrays.asList(hosters_regular));
-        /* Find storage hosts and add them to array of supported hosts as well */
-        hbr.getPage(API_BASE_STORAGE + "/hosts.php");
-        final String hosters_storage[] = hbr.toString().toLowerCase().split(";|\\s+");
-        final ArrayList<String> supported_hosts_storage = new ArrayList<String>(Arrays.asList(hosters_storage));
-        for (final String supported_host_storage : supported_hosts_storage) {
-            if (!supported_hosts_regular.contains(supported_host_storage)) {
-                logger.info("Adding storage host: " + supported_host_storage);
-                supported_hosts_regular.add(supported_host_storage);
-            }
-        }
+        supported_hosts_regular.add("usenet");
+        hosts_regular.addAll(supported_hosts_regular);
+        // /* Find storage hosts and add them to array of supported hosts as well */
+        // hbr.getPage(API_BASE_STORAGE + "/hosts.php");
+        // final String hosters_storage[] = hbr.toString().toLowerCase().split(";|\\s+");
+        // final ArrayList<String> supported_hosts_storage = new ArrayList<String>(Arrays.asList(hosters_storage));
+        // for (final String supported_host_storage : supported_hosts_storage) {
+        // if (!supported_hosts_regular.contains(supported_host_storage)) {
+        // logger.info("Adding storage host: " + supported_host_storage);
+        // supported_hosts_regular.add(supported_host_storage);
+        // hosts_storage.add(supported_host_storage);
+        // }
+        // }
         if (supported_hosts_regular.size() > 0) {
-            supported_hosts_regular.add("usenet");
             ac.setMultiHostSupport(this, supported_hosts_regular);
         }
         account.setType(AccountType.PREMIUM);
@@ -331,14 +335,27 @@ public class PremiumTo extends UseNet {
                 connections = 1;
             }
             String finalURL = null;
+            /*
+             * 2019-04-15: URLs of some hosts can only be downloaded via storage while others can be used via normal download AND storage
+             * (e.g. uploaded.net) - we prefer normal download and only use storage download if necessary.
+             */
+            /*
+             * TODO: Finish implementation of this, maybe add a setting to remove files from storage after successful download because if we
+             * don't do this, users' storage accounts might soon be full (there is a 'max number of storage files' limit).
+             */
             final boolean requiresStorageDownload = false;
             if (requiresStorageDownload) {
                 final String apikey = getAndStoreAPIKey(account, false);
                 br.getPage(API_BASE_STORAGE + "/check.php?apikey=" + apikey + "&url=" + url);
                 handleErrorsStorageAPI();
-                if (br.containsHTML("Not in queue")) {
+                final String status = getStorageAPIStatus();
+                if ("Not in queue".equalsIgnoreCase(status)) {
                     /* Add to queue */
-                    br.getPage(API_BASE_STORAGE + "/add.php?apikey=" + apikey + "&url=" + url);
+                    br.getPage(API_BASE_STORAGE + "/add.php?apikey=" + apikey + "&url=" + Encoding.urlEncode(link.getDownloadURL()));
+                } else if ("completed".equalsIgnoreCase(status)) {
+                    finalURL = API_BASE_STORAGE + "/download.php?apikey=" + apikey + "&url=" + url;
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown status");
                 }
             } else {
                 finalURL = API_BASE + "getfile.php?link=" + url;
@@ -568,7 +585,8 @@ public class PremiumTo extends UseNet {
             // We no longer sell Special traffic! Special traffic works only with our Usenet servers and for these 5 filehosts:
             // uploaded.net,share-online.biz, rapidgator.net, filer.net
             // special traffic
-            if (downloadLink.getHost().matches("uploaded\\.net|uploaded\\.to|ul\\.to|share-online\\.biz|rapidgator\\.net|filer\\.net")) {
+            /* TODO: Add check for storage traffic here */
+            if (downloadLink.getHost().matches("uploaded\\.net|uploaded\\.to|ul\\.to|share\\-online\\.biz|rapidgator\\.net|filer\\.net")) {
                 if (account.getLongProperty(specialTraffic, 0) > 0) {
                     return true;
                 }
