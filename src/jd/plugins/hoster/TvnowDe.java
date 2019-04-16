@@ -26,6 +26,7 @@ import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.downloader.hds.HDSDownloader;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.config.MediathekProperties;
@@ -76,6 +77,7 @@ public class TvnowDe extends PluginForHost {
     private static final String           API_NEW_BASE                   = "https://apigw.tvnow.de";
     public static final String            CURRENT_DOMAIN                 = "tvnow.de";
     private LinkedHashMap<String, Object> entries                        = null;
+    private boolean                       usingNewAPI                    = false;
 
     public static Browser prepBRAPI(final Browser br) {
         br.getHeaders().put("Accept", "application/json, text/plain, */*");
@@ -127,28 +129,49 @@ public class TvnowDe extends PluginForHost {
      */
     @SuppressWarnings({ "unchecked" })
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        /* In case anything serious goes wrong user should still be able to see that this is supposed to be a video-file. */
+        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         setBrowserExclusive();
         /* Fix old urls */
-        correctDownloadLink(downloadLink);
+        correctDownloadLink(link);
         prepBRAPI(this.br);
         /* Required to access items via API and also used as linkID */
-        final String urlpart = getURLPart(downloadLink);
+        final String urlpart = getURLPart(link);
         // ?fields=*,format,files,manifest,breakpoints,paymentPaytypes,trailers,packages,isDrm
         /*
          * Explanation of possible but left-out parameters: "breakpoints" = timecodes when ads are delivered, "paymentPaytypes" = how can
          * this item be purchased and how much does it cost, "trailers" = trailers, "files" = old rtlnow URLs, see plugin revision 38232 and
-         * earlier
+         * earlier.
          */
         br.getPage(API_BASE + "/movies/" + urlpart + "?fields=" + getFields());
         if (br.getHttpConnection().getResponseCode() != 200) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            logger.info("URL might be offline");
+            /*
+             * Some content (very rare case) can only be accessed via new API as we are sometimes unable to find the correct parameters for
+             * the old API (well, or some content simply isn't accessible via old API anymore).
+             */
+            final TvnowConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.TvnowDe.TvnowConfigInterface.class);
+            final boolean allowSpecialWorkaround = cfg.isEnableSpecialOfflineWorkaround();
+            if (allowSpecialWorkaround) {
+                logger.info("Attempting special offline workaround");
+                /* If the content is offline (as we suspect), that function will throw ERROR_FILE_NOT_FOUND. */
+                accessStreamInfoViaNewAPI(link);
+                logger.info("Special offline workaround successful: Content is online");
+            } else {
+                logger.info("Special workaround is disabled, displaying URL as offline");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         }
         entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-        final LinkedHashMap<String, Object> format = (LinkedHashMap<String, Object>) entries.get("format");
-        final String tv_station = (String) format.get("station");
-        final String formatTitle = (String) format.get("title");
-        return parseInformation(downloadLink, entries, tv_station, formatTitle);
+        String tv_station = null;
+        String formatTitle = null;
+        if (!this.usingNewAPI) {
+            final LinkedHashMap<String, Object> format = (LinkedHashMap<String, Object>) entries.get("format");
+            tv_station = (String) format.get("station");
+            formatTitle = (String) format.get("title");
+        }
+        return parseInformation(link, entries, tv_station, formatTitle, this.usingNewAPI);
     }
 
     /** Returns parameters for API 'fields=' key. Only request all fields we actually need. */
@@ -156,19 +179,55 @@ public class TvnowDe extends PluginForHost {
         return "*,format,packages,isDrm";
     }
 
-    public static AvailableStatus parseInformation(final DownloadLink downloadLink, final LinkedHashMap<String, Object> entries, final String tv_station, final String formatTitle) {
-        final MediathekProperties data = downloadLink.bindData(MediathekProperties.class);
-        final String date = (String) entries.get("broadcastStartDate");
-        final String episode_url_str = new Regex(downloadLink.getPluginPatternMatcher(), "folge\\-(\\d+)").getMatch(0);
-        final int season = (int) JavaScriptEngineFactory.toLong(entries.get("season"), -1);
+    /** Parses API json to find important downloadlink properties. */
+    public static AvailableStatus parseInformation(final DownloadLink link, LinkedHashMap<String, Object> entries, final String tv_station, final String formatTitle, final boolean newAPI) {
+        /* In case anything serious goes wrong user should still be able to see that this is supposed to be a video-file. */
+        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+        final boolean isFree;
+        final boolean isDRM;
+        // final boolean isStrictDrm1080p;
+        final boolean geoBLOCKED;
+        String date = null;
+        final String description;
+        final int season;
+        if (newAPI) {
+            final String error = (String) entries.get("error");
+            if ("User not authorized!".equalsIgnoreCase(error)) {
+                /* Paid content - goes along with response 403, also json will not contain anything else but the thumbnail-URL. */
+                isFree = false;
+                /* Just assumptions - no way to find out without account at this stage. */
+                isDRM = false;
+                geoBLOCKED = false;
+            } else {
+                isFree = true;
+                isDRM = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "rights/isDrm"));
+                /* TODO: Find out what this means? 1080p = DRM protected, other qualities not? */
+                // isStrictDrm1080p = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "rights/isStrictDrm1080p"));
+                geoBLOCKED = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "config/boards/geoBlocking/block"));
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "config/source");
+                /* TODO: Re-Check this - this might not be the actual broadcastDate! */
+                date = (String) entries.get("previewStart");
+            }
+            /* Not given */
+            description = null;
+            season = -1;
+        } else {
+            isFree = ((Boolean) entries.get("free")).booleanValue();
+            isDRM = ((Boolean) entries.get("isDrm")).booleanValue();
+            // isStrictDrm1080p = ((Boolean) entries.get("isStrictDrm1080p")).booleanValue();;
+            geoBLOCKED = ((Boolean) entries.get("geoblocked"));
+            date = (String) entries.get("broadcastStartDate");
+            description = (String) entries.get("articleLong");
+            season = (int) JavaScriptEngineFactory.toLong(entries.get("season"), -1);
+        }
+        final MediathekProperties data = link.bindData(MediathekProperties.class);
+        final String episode_url_str = new Regex(link.getPluginPatternMatcher(), "folge\\-(\\d+)").getMatch(0);
         final String episodeStr = getEpisodeNumber(entries);
-        int episode = Integer.parseInt(episodeStr);
-        final boolean isDRM = ((Boolean) entries.get("isDrm")).booleanValue();
-        if (episode == -1 && episode_url_str != null) {
+        int episode = (episodeStr != null && episodeStr.matches("\\d+")) ? Integer.parseInt(episodeStr) : -1;
+        if (episode == -1 && episode_url_str != null && episode_url_str.matches("\\d+")) {
             /* Fallback which should usually not be required */
             episode = (int) Long.parseLong(episode_url_str);
         }
-        final String description = (String) entries.get("articleLong");
         /* Title or subtitle of a current series-episode */
         String title = (String) entries.get("title");
         if (title == null || formatTitle == null || date == null) {
@@ -182,51 +241,61 @@ public class TvnowDe extends PluginForHost {
             filename_beginning = "[DRM]";
             if (cfg.isEnableDRMOffline()) {
                 /* Show as offline although it is online ... but we cannot download it anyways! */
-                downloadLink.setAvailable(false);
+                link.setAvailable(false);
                 status = AvailableStatus.FALSE;
             } else {
                 /* Show as online although we cannot download it */
-                downloadLink.setAvailable(true);
+                link.setAvailable(true);
                 status = AvailableStatus.TRUE;
             }
         } else {
             /* Show as online as it is downloadable and online */
-            downloadLink.setAvailable(true);
+            link.setAvailable(true);
             status = AvailableStatus.TRUE;
         }
-        data.setShow(formatTitle);
-        if (isValidTvStation(tv_station)) {
-            data.setChannel(tv_station);
-        }
-        data.setReleaseDate(getDateMilliseconds(date));
-        if (season != -1 && episode != -1) {
-            data.setSeasonNumber(season);
-            data.setEpisodeNumber(episode);
-            /* Episodenumber is in title --> Remove it as we insert it via 'S00E00' format so we do not need it twice! */
-            if (title.matches("Folge \\d+")) {
-                /* No usable title available - remove it completely! */
-                title = null;
-            } else if (title.matches("Folge \\d+: .+")) {
-                /* Improve title by removing redundant episodenumber from it. */
-                title = title.replaceAll("(Folge \\d+: )", "");
+        /* Important: Download-routine relies in this information!! */
+        link.setProperty("isFREE", isFree);
+        link.setProperty("isDRM", isDRM);
+        link.setProperty("isGEOBLOCKED", geoBLOCKED);
+        if (!newAPI) {
+            /*
+             * 2019-04-16: Do not set filenames via new API as they should have been set inside crawler already. Do not set them because the
+             * new API does not return as much details as the old one does!
+             */
+            data.setShow(formatTitle);
+            if (isValidTvStation(tv_station)) {
+                data.setChannel(tv_station);
             }
-        }
-        if (!StringUtils.isEmpty(title)) {
-            data.setTitle(title);
-        }
-        final String filename = filename_beginning + MediathekHelper.getMediathekFilename(downloadLink, data, false, false);
-        try {
-            if (FilePackage.isDefaultFilePackage(downloadLink.getFilePackage())) {
-                final FilePackage fp = FilePackage.getInstance();
-                fp.setName(formatTitle);
-                fp.add(downloadLink);
+            data.setReleaseDate(getDateMilliseconds(date));
+            if (season != -1 && episode != -1) {
+                data.setSeasonNumber(season);
+                data.setEpisodeNumber(episode);
+                /* Episodenumber is in title --> Remove it as we insert it via 'S00E00' format so we do not need it twice! */
+                if (title.matches("Folge \\d+")) {
+                    /* No usable title available - remove it completely! */
+                    title = null;
+                } else if (title.matches("Folge \\d+: .+")) {
+                    /* Improve title by removing redundant episodenumber from it. */
+                    title = title.replaceAll("(Folge \\d+: )", "");
+                }
             }
-            if (!StringUtils.isEmpty(description) && downloadLink.getComment() == null) {
-                downloadLink.setComment(description);
+            if (!StringUtils.isEmpty(title)) {
+                data.setTitle(title);
             }
-        } catch (final Throwable e) {
+            final String filename = filename_beginning + MediathekHelper.getMediathekFilename(link, data, false, false);
+            try {
+                if (FilePackage.isDefaultFilePackage(link.getFilePackage())) {
+                    final FilePackage fp = FilePackage.getInstance();
+                    fp.setName(formatTitle);
+                    fp.add(link);
+                }
+                if (!StringUtils.isEmpty(description) && link.getComment() == null) {
+                    link.setComment(description);
+                }
+            } catch (final Throwable e) {
+            }
+            link.setFinalFileName(filename);
         }
-        downloadLink.setFinalFileName(filename);
         return status;
     }
 
@@ -273,43 +342,54 @@ public class TvnowDe extends PluginForHost {
     /* Last revision with old handling: BEFORE 38232 (30393) */
     private void handleDownload(final DownloadLink downloadLink, final Account acc) throws Exception {
         final TvnowConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.TvnowDe.TvnowConfigInterface.class);
-        final boolean isFree = ((Boolean) entries.get("free")).booleanValue();
-        final boolean isDRM = ((Boolean) entries.get("isDrm")).booleanValue();
-        final String movieID = Long.toString(JavaScriptEngineFactory.toLong(entries.get("id"), -1));
-        if (movieID.equals("-1")) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (isDRM) {
-            /* There really is no way to download these videos and if, you will get encrypted trash data so let's just stop here. */
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming type [DRM]");
-        }
-        /* 2019-01-16: Usage of new API requires auth header --> Only use it in premium mode for now */
-        final boolean useNewAPI = acc != null && acc.getType() == AccountType.PREMIUM;
-        if (useNewAPI) {
-            final String episodeID = downloadLink.getStringProperty("id_episode", null);
-            if (StringUtils.isEmpty(episodeID)) {
+        final boolean isFree = downloadLink.getBooleanProperty("isFREE", false);
+        final boolean isDRM = downloadLink.getBooleanProperty("isDRM", false);
+        // final boolean isStrictDrm1080p;
+        if (this.usingNewAPI) {
+            /* TODO: Find out what this means? 1080p = DRM protected, other qualities not? */
+            // isStrictDrm1080p = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "rights/isStrictDrm1080p"));
+        } else {
+            final String movieID = Long.toString(JavaScriptEngineFactory.toLong(entries.get("id"), -1));
+            if (movieID.equals("-1")) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.getPage(API_NEW_BASE + "/module/player/" + episodeID);
-        } else {
-            final String urlpart = getURLPart(downloadLink);
-            br.getPage(API_BASE + "/movies/" + urlpart + "?fields=manifest");
-        }
-        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-        entries = (LinkedHashMap<String, Object>) entries.get("manifest");
-        /* 2018-04-18: So far I haven't seen a single http stream! */
-        // final String urlHTTP = (String) entries.get("hbbtv");
-        final String hdsMaster = (String) entries.get("hds");
-        String hlsMaster = (String) entries.get("hlsfairplayhd");
-        if (StringUtils.isEmpty(hlsMaster) || !hlsMaster.startsWith("http")) {
-            hlsMaster = (String) entries.get("hlsfairplay");
-            if (StringUtils.isEmpty(hlsMaster) || !hlsMaster.startsWith("http")) {
-                hlsMaster = (String) entries.get("hlsclear");
+            if (isDRM) {
+                /* There really is no way to download these videos and if, you will get encrypted trash data so let's just stop here. */
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming type [DRM]");
             }
-            /* 2018-05-04: Only "hls" == Always DRM */
-            // if (StringUtils.isEmpty(hlsMaster)) {
-            // hlsMaster = (String) entries.get("hls");
-            // }
+            /*
+             * 2019-01-16: Usage of new API usually (not always) requires auth header --> Only use it in premium mode for now to get (higher
+             * quality) stream-URLs
+             */
+            final boolean useNewAPI = acc != null && acc.getType() == AccountType.PREMIUM;
+            if (useNewAPI) {
+                accessStreamInfoViaNewAPI(downloadLink);
+            } else {
+                final String urlpart = getURLPart(downloadLink);
+                br.getPage(API_BASE + "/movies/" + urlpart + "?fields=manifest");
+            }
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+        }
+        String hdsMaster = null;
+        String hlsMaster = null;
+        try {
+            /* Make sure not to fail here in case no streams are given! */
+            entries = (LinkedHashMap<String, Object>) entries.get("manifest");
+            /* 2018-04-18: So far I haven't seen a single http stream! */
+            // final String urlHTTP = (String) entries.get("hbbtv");
+            hdsMaster = (String) entries.get("hds");
+            hlsMaster = (String) entries.get("hlsfairplayhd");
+            if (StringUtils.isEmpty(hlsMaster) || !hlsMaster.startsWith("http")) {
+                hlsMaster = (String) entries.get("hlsfairplay");
+                if (StringUtils.isEmpty(hlsMaster) || !hlsMaster.startsWith("http")) {
+                    hlsMaster = (String) entries.get("hlsclear");
+                }
+                /* 2018-05-04: Only "hls" == Always DRM */
+                // if (StringUtils.isEmpty(hlsMaster)) {
+                // hlsMaster = (String) entries.get("hls");
+                // }
+            }
+        } catch (final Throwable e) {
         }
         if (!StringUtils.isEmpty(hlsMaster)) {
             hlsMaster = hlsMaster.replaceAll("(\\??filter=.*?)(&|$)", "");// show all available qualities
@@ -394,6 +474,25 @@ public class TvnowDe extends PluginForHost {
         }
     }
 
+    /**
+     * Access stream-information via apigw.tvnow.de/module/player/<episodeID> <br />
+     */
+    private void accessStreamInfoViaNewAPI(final DownloadLink link) throws Exception {
+        logger.info("Trying to get streams via new API");
+        final String episodeID = link.getStringProperty("id_episode", null);
+        if (StringUtils.isEmpty(episodeID)) {
+            logger.info("id_episode is null - content is not downloadable without this id");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.getPage(API_NEW_BASE + "/module/player/" + episodeID);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            /* Extra offline-errorhandling & rare case: {"code":404,"message":"movie.not.found"} */
+            logger.info("Content offline according to new API");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        this.usingNewAPI = true;
+    }
+
     private void errorNoDownloadurlFound(final Account acc, final boolean isFree) throws PluginException {
         /* 2019-01-29: TODO: Check if this can also happen when logged-in */
         if (!isFree) {
@@ -409,8 +508,8 @@ public class TvnowDe extends PluginForHost {
             }
             throw new AccountRequiredException();
         }
-        /* Assume that no downloadable stream-type is available. */
-        throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming type [DRM]");
+        /* Assume that no downloadable stream-type is available. This may also mean that the content is only downloadable via account! */
+        throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming type [DRM] or only downloadable via premium");
     }
 
     private String selectedQualityEnumToQualityString(final Quality selectedQuality) {
@@ -515,7 +614,7 @@ public class TvnowDe extends PluginForHost {
                 final String redirecturl = br.getRedirectLocation();
                 /*
                  * We accessed the main-URL so it makes sense to at least check for a 404 at this stage to avoid requestion potentially dead
-                 * URLÖs again via API!
+                 * URLs again via API!
                  */
                 if (br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -786,6 +885,11 @@ public class TvnowDe extends PluginForHost {
                 return "Enable unlimited simultaneous downloads? [Warning this may cause issues]";
             }
 
+            public String getEnableSpecialOfflineWorkaround_label() {
+                /* Translation not required for this */
+                return "Enable special workaround for rare 'offline' issue? [Warning this slows down the linkchecking process]";
+            }
+
             public String getEnableDRMOffline_label() {
                 /* Translation not required for this */
                 return "Display DRM protected content as offline (because it is not downloadable anyway)?";
@@ -849,6 +953,12 @@ public class TvnowDe extends PluginForHost {
         boolean isEnableUnlimitedSimultaneousDownloads();
 
         void setEnableUnlimitedSimultaneousDownloads(boolean b);
+
+        @DefaultBooleanValue(false)
+        @Order(11)
+        boolean isEnableSpecialOfflineWorkaround();
+
+        void setEnableSpecialOfflineWorkaround(boolean b);
 
         @DefaultBooleanValue(false)
         @Order(20)

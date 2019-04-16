@@ -266,7 +266,7 @@ public class TvnowDe extends PluginForDecrypt {
                 final boolean isSingleObject = ressourcelist.size() == 1;
                 final String contentturl = getContentURL(formatID, episodeID, url_showname, videoSeoName, seasonnumber, episodenumber, episodenumberO, parameter, url_old, thisStationName, broadcastStartDate_important_part, isMovie, isSingleObject);
                 final DownloadLink dl = this.createDownloadlink(contentturl);
-                jd.plugins.hoster.TvnowDe.parseInformation(dl, entries, thisStationName, formatTitle);
+                jd.plugins.hoster.TvnowDe.parseInformation(dl, entries, thisStationName, formatTitle, false);
                 /* Very important! */
                 jd.plugins.hoster.TvnowDe.storeUrlPartInfo(dl, url_showname, videoSeoName, thisStationName, formatID, episodeID);
                 decryptedLinks.add(dl);
