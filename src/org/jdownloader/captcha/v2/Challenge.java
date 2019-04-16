@@ -128,8 +128,9 @@ public abstract class Challenge<T> {
     public boolean validateResponse(AbstractResponse<T> response) {
         if (response.getPriority() <= 0) {
             return false;
+        } else {
+            return true;
         }
-        return true;
     }
 
     public void setAccountLogin(boolean accountLogin) {

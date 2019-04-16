@@ -3,6 +3,8 @@ package org.jdownloader.captcha.v2.challenge.areyouahuman;
 import java.io.IOException;
 import java.net.URL;
 
+import jd.plugins.Plugin;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
@@ -14,10 +16,9 @@ import org.appwork.utils.net.httpserver.requests.GetRequest;
 import org.appwork.utils.net.httpserver.requests.HttpRequest;
 import org.appwork.utils.net.httpserver.requests.PostRequest;
 import org.appwork.utils.net.httpserver.responses.HttpResponse;
+import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.solver.browser.AbstractBrowserChallenge;
 import org.jdownloader.captcha.v2.solver.browser.BrowserReference;
-
-import jd.plugins.Plugin;
 
 public abstract class AreYouAHumanChallenge extends AbstractBrowserChallenge {
     private String siteKey;
@@ -65,6 +66,11 @@ public abstract class AreYouAHumanChallenge extends AbstractBrowserChallenge {
         }
     }
 
+    @Override
+    public boolean validateResponse(AbstractResponse<String> response) {
+        return super.validateResponse(response) && isCaptchaResponseValid();
+    }
+
     /**
      * Used to validate result against expected pattern. <br />
      * This is different to AbstractBrowserChallenge.isSolved, as we don't want to throw the same error exception.
@@ -76,7 +82,8 @@ public abstract class AreYouAHumanChallenge extends AbstractBrowserChallenge {
     protected final boolean isCaptchaResponseValid() {
         if (isSolved() && getResult().getValue().matches("[\\w-]{30,}")) {
             return true;
+        } else {
+            return false;
         }
-        return false;
     }
 }
