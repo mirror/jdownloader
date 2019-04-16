@@ -115,7 +115,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 4.0.1.0<br />
+     * DEV NOTES XfileSharingProBasic Version 4.0.1.1<br />
      ****************************
      * NOTES from raztoki <br/>
      * - no need to set setfollowredirect true. <br />
@@ -2166,6 +2166,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     br.setCookies(getMainPage(), cookies);
                     if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l && !force) {
                         /* We trust these cookies as they're not that old --> Do not check them */
+                        logger.info("Trust cookies without checking as they're still fresh");
                         return;
                     }
                     logger.info("Verifying login-cookies");
