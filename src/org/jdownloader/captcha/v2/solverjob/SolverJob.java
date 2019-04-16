@@ -23,27 +23,18 @@ import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.ValidationResult;
 
 public class SolverJob<T> {
-
     private final Challenge<T>                            challenge;
-
     private final CaptchaSettings                         config;
-
     private final ChallengeResponseController             controller;
     private volatile ArrayList<ResponseList<T>>           cumulatedList;
     private final HashSet<ChallengeSolver<T>>             doneList  = new HashSet<ChallengeSolver<T>>();
     private volatile ChallengeSolverJobEventSender        eventSender;
     private final List<AbstractResponse<T>>               responses = new ArrayList<AbstractResponse<T>>();
-
     private final CopyOnWriteArraySet<ChallengeSolver<T>> solverList;
-
     private LogSource                                     logger;
-
     private volatile SkipRequest                          skipRequest;
-
     private final Object                                  LOCK      = new Object();
-
     private final AtomicBoolean                           alive     = new AtomicBoolean(true);
-
     private long                                          created;
 
     public String toString() {
@@ -68,7 +59,6 @@ public class SolverJob<T> {
     public boolean addAnswer(AbstractResponse<T> abstractResponse) {
         if (!abstractResponse.getChallenge().validateResponse(abstractResponse)) {
             abstractResponse.setValidation(ValidationResult.INVALID);
-
             return false;
         }
         boolean kill = false;
@@ -94,7 +84,6 @@ public class SolverJob<T> {
         } else {
             abstractResponse.setValidation(ValidationResult.UNUSED);
             return false;
-
         }
     }
 
@@ -310,7 +299,6 @@ public class SolverJob<T> {
             log(this + " exit by interrupt");
             throw e;
         }
-
     }
 
     public void setLogger(LogSource logSource) {

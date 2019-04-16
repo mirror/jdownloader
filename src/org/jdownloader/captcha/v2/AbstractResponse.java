@@ -6,13 +6,13 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 public class AbstractResponse<T> {
     private final UniqueAlltimeID id         = new UniqueAlltimeID();
     private int                   priority;
-    private ValidationResult      validation = null;;
+    private ValidationResult      validation = null;                  ;
 
     public ValidationResult getValidation() {
         return validation;
     }
 
-    public boolean setValidation(ValidationResult validation) {
+    public boolean setValidation(final ValidationResult validation) {
         try {
             // only validate once
             if (this.validation != null) {
@@ -21,16 +21,14 @@ public class AbstractResponse<T> {
                 this.validation = validation;
                 final Object solver = getSolver();
                 if (solver != null && solver instanceof ChallengeSolver) {
-                    Challenge<T> c = getChallenge();
+                    final Challenge<T> c = getChallenge();
                     switch (validation) {
                     case INVALID:
-
                         if (c != null) {
                             c.sendStatsValidation(((ChallengeSolver) solver), "false");
                         }
                         return ((ChallengeSolver<?>) solver).setInvalid(this);
                     case UNUSED:
-
                         if (c != null) {
                             c.sendStatsValidation(((ChallengeSolver) solver), "unused");
                         }
@@ -45,7 +43,7 @@ public class AbstractResponse<T> {
                 return true;
             }
         } catch (Throwable e) {
-            validation = null;
+            this.validation = null;
             LoggerFactory.getDefaultLogger().log(e);
             return false;
         }
@@ -93,5 +91,4 @@ public class AbstractResponse<T> {
     public Challenge<T> getChallenge() {
         return challenge;
     }
-
 }

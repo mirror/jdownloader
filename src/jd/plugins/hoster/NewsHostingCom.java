@@ -12,6 +12,8 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountUnavailableException;
+import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -20,6 +22,7 @@ import org.appwork.utils.Exceptions;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.net.usenet.InvalidAuthException;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 
@@ -66,7 +69,10 @@ public class NewsHostingCom extends UseNet {
             try {
                 if (cookies != null) {
                     br.setCookies(getHost(), cookies);
-                    br.getPage("https://controlpanel.newshosting.com/customer/login.php");
+                    br.getPage("https://controlpanel.newshosting.com/customer/index.php");
+                    if (br.containsHTML("There have been too many attempts, please try again later")) {
+                        throw new AccountUnavailableException("There have been too many attempts, please try again later", 60 * 60 * 1000l);
+                    }
                     final Form login = getLoginForm(br);
                     if (login != null && login.containsHTML("username") && login.containsHTML("password")) {
                         br.getCookies(getHost()).clear();
@@ -77,13 +83,32 @@ public class NewsHostingCom extends UseNet {
                 if (br.getCookie(getHost(), "sessionID") == null) {
                     account.clearCookies("");
                     final String userName = account.getUser();
-                    br.getPage("https://controlpanel.newshosting.com/customer/login.php");
+                    br.getPage("https://controlpanel.newshosting.com/customer/index.php");
+                    if (br.containsHTML("There have been too many attempts, please try again later")) {
+                        throw new AccountUnavailableException("There have been too many attempts, please try again later", 60 * 60 * 1000l);
+                    }
                     Form login = getLoginForm(br);
                     if (login == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     login.put("username", Encoding.urlEncode(userName));
                     login.put("password", Encoding.urlEncode(account.getPass()));
+                    if (login.containsHTML("g-recaptcha")) {
+                        final DownloadLink before = getDownloadLink();
+                        try {
+                            final DownloadLink dummyLink = new DownloadLink(this, "Account", getHost(), null, true);
+                            setDownloadLink(dummyLink);
+                            final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br);
+                            final String code = rc2.getToken();
+                            if (StringUtils.isEmpty(code)) {
+                                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                            } else {
+                                login.put("g-recaptcha-response", Encoding.urlEncode(code));
+                            }
+                        } finally {
+                            setDownloadLink(before);
+                        }
+                    }
                     br.submitForm(login);
                     login = getLoginForm(br);
                     if (login != null && login.containsHTML("username") && login.containsHTML("password")) {
@@ -146,7 +171,7 @@ public class NewsHostingCom extends UseNet {
                 logger.log(e);
                 try {
                     verifyUseNetLogins(account);
-                    account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 1 * 60 * 60 * 1000l);
+                    account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 5 * 60 * 60 * 1000l);
                     ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
                     return ai;
                 } catch (InvalidAuthException e2) {
@@ -158,7 +183,7 @@ public class NewsHostingCom extends UseNet {
                     }
                 }
             }
-            account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 2 * 60 * 60 * 1000l);
+            account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 5 * 60 * 60 * 1000l);
             ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
             return ai;
         }
