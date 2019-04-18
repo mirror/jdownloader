@@ -662,7 +662,17 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return AvailableStatus.TRUE;
     }
 
+    /**
+     * Tries to find filename, filesize and md5hash inside html. On Override, make sure to first use your special RegExes e.g.
+     * fileInfo[0]="bla", THEN, if needed, call super.scanInfo(fileInfo). <br />
+     * fileInfo[0] = filename, fileInfo[1] = filesize, fileInfo[2] = md5hash (rarely used)
+     */
     public String[] scanInfo(final String[] fileInfo) {
+        /*
+         * 2019-04-17: TODO: Improve sharebox RegExes as this may save us from having to use other time-comsuming fallbacks such as
+         * getFilesizeViaAvailablecheckAlt or getFnameViaAbuseLink. E.g. new XFS3 has good information in their shareboxes, example-hoster:
+         * brupload.net
+         */
         final String sharebox0 = "copy\\(this\\);.+>(.+) - ([\\d\\.]+ (?:B|KB|MB|GB))</a></textarea>[\r\n\t ]+</div>";
         final String sharebox1 = "copy\\(this\\);.+\\](.+) - ([\\d\\.]+ (?:B|KB|MB|GB))\\[/URL\\]";
         /* standard traits from base page */
@@ -1981,7 +1991,9 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             ai.setUsedSpace(space[0] + "Mb");
         }
         String availabletraffic = regExTrafficLeft();
-        if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
+        /* Example non english: brupload.net */
+        final boolean userHasUnlimitedTraffic = availabletraffic != null && availabletraffic.matches(".*?nlimited|Ilimitado.*?");
+        if (availabletraffic != null && !userHasUnlimitedTraffic && !availabletraffic.equalsIgnoreCase(" Mb")) {
             availabletraffic.trim();
             /* need to set 0 traffic left, as getSize returns positive result, even when negative value supplied. */
             long trafficLeft = 0;
@@ -2125,11 +2137,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return br.getFormbyKey("next");
     }
 
-    public String regExTrafficLeft() {
+    protected String regExTrafficLeft() {
         return regExTrafficLeft(this.correctedBR);
     }
 
-    /** Tries to find available traffic via RegEx. */
+    /** Tries to find available traffic inside html code. */
     public String regExTrafficLeft(final String source) {
         /* Traffic can also be negative! */
         String availabletraffic = new Regex(source, "Traffic available[^<>]*?:?</TD><TD><b>([^<>\"']+)</b>").getMatch(0);
@@ -2366,18 +2378,21 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      */
     protected void setWeakFilename(final DownloadLink link) {
         final String weak_fallback_filename = this.getFallbackFilename(link);
-        /* Set fallback_filename */
-        link.setName(weak_fallback_filename);
-        /* TODO: Find better way to determine whether a String contains a file-extension or not. */
-        final boolean fallback_filename_contains_file_extension = weak_fallback_filename != null && weak_fallback_filename.contains(".");
-        if (!fallback_filename_contains_file_extension) {
-            /* Only setMimeHint if weak filename does not contain filetype. */
-            if (this.isAudiohoster()) {
-                link.setMimeHint(CompiledFiletypeFilter.AudioExtensions.MP3);
-            } else if (this.isImagehoster()) {
-                link.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
-            } else if (this.isVideohoster_enforce_video_filename()) {
-                link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+        /* Set fallback_filename if no better filename has ever been set before. */
+        final boolean setWeakFilename = link.getName() == null || (weak_fallback_filename != null && weak_fallback_filename.length() > link.getName().length());
+        if (setWeakFilename) {
+            link.setName(weak_fallback_filename);
+            /* TODO: Find better way to determine whether a String contains a file-extension or not. */
+            final boolean fallback_filename_contains_file_extension = weak_fallback_filename != null && weak_fallback_filename.contains(".");
+            if (!fallback_filename_contains_file_extension) {
+                /* Only setMimeHint if weak filename does not contain filetype. */
+                if (this.isAudiohoster()) {
+                    link.setMimeHint(CompiledFiletypeFilter.AudioExtensions.MP3);
+                } else if (this.isImagehoster()) {
+                    link.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
+                } else if (this.isVideohoster_enforce_video_filename()) {
+                    link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+                }
             }
         }
     }

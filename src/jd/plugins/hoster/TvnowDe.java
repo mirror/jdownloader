@@ -151,17 +151,10 @@ public class TvnowDe extends PluginForHost {
              * Some content (very rare case) can only be accessed via new API as we are sometimes unable to find the correct parameters for
              * the old API (well, or some content simply isn't accessible via old API anymore).
              */
-            final TvnowConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.TvnowDe.TvnowConfigInterface.class);
-            final boolean allowSpecialWorkaround = cfg.isEnableSpecialOfflineWorkaround();
-            if (allowSpecialWorkaround) {
-                logger.info("Attempting special offline workaround");
-                /* If the content is offline (as we suspect), that function will throw ERROR_FILE_NOT_FOUND. */
-                accessStreamInfoViaNewAPI(link);
-                logger.info("Special offline workaround successful: Content is online");
-            } else {
-                logger.info("Special workaround is disabled, displaying URL as offline");
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
+            logger.info("Attempting special offline workaround");
+            /* If the content is offline (as we suspect), that function will throw ERROR_FILE_NOT_FOUND. */
+            accessStreamInfoViaNewAPI(link);
+            logger.info("Special offline workaround successful: Content is online");
         }
         entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         String tv_station = null;
@@ -180,7 +173,7 @@ public class TvnowDe extends PluginForHost {
     }
 
     /** Parses API json to find important downloadlink properties. */
-    public static AvailableStatus parseInformation(final DownloadLink link, LinkedHashMap<String, Object> entries, final String tv_station, final String formatTitle, final boolean newAPI) {
+    public static AvailableStatus parseInformation(final DownloadLink link, LinkedHashMap<String, Object> entries, final String tv_station, String formatTitle, final boolean newAPI) {
         /* In case anything serious goes wrong user should still be able to see that this is supposed to be a video-file. */
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         final boolean isFree;
@@ -205,8 +198,11 @@ public class TvnowDe extends PluginForHost {
                 // isStrictDrm1080p = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "rights/isStrictDrm1080p"));
                 geoBLOCKED = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "config/boards/geoBlocking/block"));
                 entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "config/source");
-                /* TODO: Re-Check this - this might not be the actual broadcastDate! */
+                /* TODO: Re-Check this - this might not be the same as "broadcastDate" in the old API! */
                 date = (String) entries.get("previewStart");
+                if (StringUtils.isEmpty(formatTitle)) {
+                    formatTitle = (String) entries.get("format");
+                }
             }
             /* Not given */
             description = null;
@@ -257,11 +253,11 @@ public class TvnowDe extends PluginForHost {
         link.setProperty("isFREE", isFree);
         link.setProperty("isDRM", isDRM);
         link.setProperty("isGEOBLOCKED", geoBLOCKED);
-        if (!newAPI) {
-            /*
-             * 2019-04-16: Do not set filenames via new API as they should have been set inside crawler already. Do not set them because the
-             * new API does not return as much details as the old one does!
-             */
+        final String final_filename = link.getFinalFileName();
+        /* Only set filename if we're using the old API or we're using the new API and crawler did not set filename before. */
+        final boolean set_filename = !newAPI || final_filename == null || !final_filename.endsWith(".mp4");
+        if (set_filename) {
+            title = title.trim();
             data.setShow(formatTitle);
             if (isValidTvStation(tv_station)) {
                 data.setChannel(tv_station);
@@ -271,12 +267,14 @@ public class TvnowDe extends PluginForHost {
                 data.setSeasonNumber(season);
                 data.setEpisodeNumber(episode);
                 /* Episodenumber is in title --> Remove it as we insert it via 'S00E00' format so we do not need it twice! */
+                /* Improve title by removing redundant episodenumber from it. */
                 if (title.matches("Folge \\d+")) {
                     /* No usable title available - remove it completely! */
                     title = null;
                 } else if (title.matches("Folge \\d+: .+")) {
-                    /* Improve title by removing redundant episodenumber from it. */
                     title = title.replaceAll("(Folge \\d+: )", "");
+                } else if (title.matches(".+ - Folge \\d+")) {
+                    title = title.replaceAll("( - Folge \\d+)", "");
                 }
             }
             if (!StringUtils.isEmpty(title)) {
@@ -885,11 +883,6 @@ public class TvnowDe extends PluginForHost {
                 return "Enable unlimited simultaneous downloads? [Warning this may cause issues]";
             }
 
-            public String getEnableSpecialOfflineWorkaround_label() {
-                /* Translation not required for this */
-                return "Enable special workaround for rare 'offline' issue? [Warning this slows down the linkchecking process]";
-            }
-
             public String getEnableDRMOffline_label() {
                 /* Translation not required for this */
                 return "Display DRM protected content as offline (because it is not downloadable anyway)?";
@@ -953,12 +946,6 @@ public class TvnowDe extends PluginForHost {
         boolean isEnableUnlimitedSimultaneousDownloads();
 
         void setEnableUnlimitedSimultaneousDownloads(boolean b);
-
-        @DefaultBooleanValue(false)
-        @Order(11)
-        boolean isEnableSpecialOfflineWorkaround();
-
-        void setEnableSpecialOfflineWorkaround(boolean b);
 
         @DefaultBooleanValue(false)
         @Order(20)

@@ -88,7 +88,7 @@ public class XFileShareProFolder extends antiDDoSForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        // name isn't needed, other than than text output for fpName.
+        /* name isn't needed, other than than text output for fpName. */
         final String username = new Regex(parameter, "/users/([^/]+)").getMatch(0);
         String fpName = new Regex(parameter, "(folder/\\d+/|f/[a-z0-9]+/|go/[a-z0-9]+/)[^/]+/(.+)").getMatch(1); // name
         if (fpName == null) {
@@ -147,9 +147,9 @@ public class XFileShareProFolder extends antiDDoSForDecrypt {
                      * online!
                      */
                     final DownloadLink dl = createDownloadlink(link);
-                    /* E.g. world-files.com */
-                    /* TODO: Improve this RegEx e.g. for katfile.com */
-                    String html_snippet = new Regex(br.toString(), "<TD>\\s+.*?" + linkid + ".*?</TD>").getMatch(-1);
+                    /* Works for e.g. world-files.com, brupload.net */
+                    /* TODO: Improve this RegEx e.g. for katfile.com, brupload.net */
+                    String html_snippet = new Regex(br.toString(), "<TD>\\s.*?.*?" + linkid + ".*?</TD>").getMatch(-1);
                     if (StringUtils.isEmpty(html_snippet)) {
                         /* E.g. up-4.net */
                         /* TODO: Improve this RegEx */
@@ -198,10 +198,14 @@ public class XFileShareProFolder extends antiDDoSForDecrypt {
             }
         }
         // these should only be shown when its a /user/ decrypt task
+        final String cleanedUpAddedFolderLink = new Regex(parameter, "https?://[^/]+/(.+)").getMatch(0);
         final String folders[] = br.getRegex("folder.?\\.gif.*?<a href=\"(.+?" + Pattern.quote(host) + "[^\"]+users/[^\"]+)").getColumn(0);
         if (folders != null && folders.length > 0) {
             for (final String folderlink : folders) {
-                if (folderlink.matches(this.getSupportedLinks().pattern()) && !dupe.contains(folderlink) && !parameter.equals(folderlink)) {
+                final String cleanedUpFoundFolderLink = new Regex(folderlink, "https?://[^/]+/(.+)").getMatch(0);
+                /* Make sure that we're not grabbing the parent folder but only the folder that the user has added + eventual subfolders! */
+                final boolean folderIsChildFolder = cleanedUpFoundFolderLink.length() > cleanedUpAddedFolderLink.length();
+                if (folderlink.matches(this.getSupportedLinks().pattern()) && !dupe.contains(folderlink) && folderIsChildFolder) {
                     final DownloadLink dlfolder = createDownloadlink(folderlink);
                     decryptedLinks.add(dlfolder);
                     distribute(dlfolder);
