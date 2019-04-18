@@ -963,16 +963,20 @@ public class YetiShareCore extends antiDDoSForHost {
      */
     protected void setWeakFilename(final DownloadLink link) {
         final String weak_fallback_filename = this.getFallbackFilename(link);
-        /* Set fallback_filename */
-        link.setName(weak_fallback_filename);
-        /// * TODO: Find better way to determine whether a String contains a file-extension or not. */
-        // final boolean fallback_filename_contains_file_extension = weak_fallback_filename != null && weak_fallback_filename.contains(".");
-        // if (!fallback_filename_contains_file_extension) {
-        // /* Only setMimeHint if weak filename does not contain filetype. */
-        // if (this.isAudiohoster()) {
-        // link.setMimeHint(CompiledFiletypeFilter.AudioExtensions.MP3);
-        // }
-        // }
+        /* Set fallback_filename if no better filename has ever been set before. */
+        final boolean setWeakFilename = link.getName() == null || (weak_fallback_filename != null && weak_fallback_filename.length() > link.getName().length());
+        if (setWeakFilename) {
+            link.setName(weak_fallback_filename);
+            /// * TODO: Find better way to determine whether a String contains a file-extension or not. */
+            // final boolean fallback_filename_contains_file_extension = weak_fallback_filename != null &&
+            /// weak_fallback_filename.contains(".");
+            // if (!fallback_filename_contains_file_extension) {
+            // /* Only setMimeHint if weak filename does not contain filetype. */
+            // if (this.isAudiohoster()) {
+            // link.setMimeHint(CompiledFiletypeFilter.AudioExtensions.MP3);
+            // }
+            // }
+        }
     }
 
     @Override

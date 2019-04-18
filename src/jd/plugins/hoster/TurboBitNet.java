@@ -985,7 +985,7 @@ public class TurboBitNet extends PluginForHost {
         }
         String fileSize = br.getRegex(filenameSize).getMatch(1);
         if (fileSize == null) {
-            br.getRegex("class=\"file-size\">([^<>\"]*?)<").getMatch(0);
+            fileSize = br.getRegex("class=\"file-size\">([^<>\"]*?)<").getMatch(0);
         }
         if (fileName == null) {
             if (br.containsHTML("Our service is currently unavailable in your country.")) {

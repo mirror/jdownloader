@@ -34,7 +34,6 @@ import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.controlling.proxy.AbstractProxySelectorImpl;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.PostRequest;
@@ -94,7 +93,7 @@ public class PremiumTo extends UseNet {
         if (link != null && "keep2share.cc".equals(link.getHost())) {
             return 1;
         } else if (link != null && "share-online.biz".equals(link.getHost())) {
-            // re admin: only 1 possible
+            /* re admin: only 1 possible */
             return 1;
         } else {
             return super.getMaxSimultanDownload(link, account, proxy);
@@ -116,7 +115,7 @@ public class PremiumTo extends UseNet {
             final long nT = Long.parseLong(traffic[0]);
             /* Special traffic */
             final long spT = Long.parseLong(traffic[1]);
-            /* Storage traffic */
+            /* Storage traffic, 2019-04-17: According to admin, this type of traffic does not exist anymore(API will always return 0) */
             final long stT = Long.parseLong(traffic[2]);
             ac.setTrafficLeft(nT + spT + stT + "MiB");
             // set both so we can check in canHandle.
@@ -134,37 +133,44 @@ public class PremiumTo extends UseNet {
         final ArrayList<String> supported_hosts_regular = new ArrayList<String>(Arrays.asList(hosters_regular));
         supported_hosts_regular.add("usenet");
         hosts_regular.addAll(supported_hosts_regular);
-        /* TODO: release this once they've fixed their serverside API issues. */
-        hosts_storage.add("dummyhost_wait_for_serverside_bugfix");
-        // /* Find storage hosts and add them to array of supported hosts as well */
-        // hbr.getPage(API_BASE_STORAGE + "/hosts.php");
-        // final String hosters_storage[] = hbr.toString().toLowerCase().split(";|\\s+");
-        // final ArrayList<String> supported_hosts_storage = new ArrayList<String>(Arrays.asList(hosters_storage));
-        // for (final String supported_host_storage : supported_hosts_storage) {
-        // if (!supported_hosts_regular.contains(supported_host_storage)) {
-        // /*
-        // * Make sure to add only "storage-only" hosts to storage Array as some hosts can be used via both ways - we prefer direct
-        // * downloads!
-        // */
-        // logger.info("Adding storage host: " + supported_host_storage);
-        // supported_hosts_regular.add(supported_host_storage);
-        // hosts_storage.add(supported_host_storage);
-        // }
-        // }
-        if (supported_hosts_regular.size() > 0) {
-            ac.setMultiHostSupport(this, supported_hosts_regular);
-        }
         account.setType(AccountType.PREMIUM);
         ac.setStatus("Premium account" + additionalAccountStatus);
+        String apikey = null;
         try {
             /* Do not fail here */
             getAndStoreAPIKey(account, false);
         } catch (final Throwable e) {
         }
+        /* Find storage hosts and add them to array of supported hosts as well */
+        hbr.getPage(API_BASE_STORAGE + "/hosts.php?apikey=" + apikey);
+        final String hosters_storage[] = hbr.toString().toLowerCase().split(";|\\s+");
+        final ArrayList<String> supported_hosts_storage = new ArrayList<String>(Arrays.asList(hosters_storage));
+        for (final String supported_host_storage : supported_hosts_storage) {
+            if (!supported_hosts_regular.contains(supported_host_storage)) {
+                /*
+                 * Make sure to add only "storage-only" hosts to storage Array as some hosts can be used via both ways - we prefer direct
+                 * downloads!
+                 */
+                logger.info("Adding storage host: " + supported_host_storage);
+                supported_hosts_regular.add(supported_host_storage);
+                hosts_storage.add(supported_host_storage);
+            }
+        }
+        /*
+         * 2019-04-17: Workaround: This host is not available for all users. Waiting for admin to change API to only return supported hosts
+         * for user.
+         */
+        supported_hosts_regular.remove("share-online.biz");
+        if (supported_hosts_regular.size() > 0) {
+            ac.setMultiHostSupport(this, supported_hosts_regular);
+        }
         return ac;
     }
 
-    /** 2019-04-15: Required for downloading from STORAGE hosts */
+    /**
+     * 2019-04-15: Required for downloading from STORAGE hosts. This apikey will always be the same until the user changes his password
+     * (which he then also has to change in JDownloader)!
+     */
     private String getAndStoreAPIKey(final Account account, final boolean forceRenew) throws Exception {
         /* 2019-04-15: TODO: Check if this apikey ever changes/canExpire */
         String apikey = account.getStringProperty("apikey");
@@ -229,7 +235,6 @@ public class PremiumTo extends UseNet {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private boolean login(Account account, boolean force) throws Exception {
         final boolean redirect = br.isFollowingRedirects();
         synchronized (LOCK) {
@@ -237,21 +242,10 @@ public class PremiumTo extends UseNet {
                 /* Load cookies */
                 br.setCookiesExclusive(true);
                 prepBrowser(br);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            br.setCookie(this.getHost(), key, value);
-                        }
-                        return false;
-                    }
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    br.setCookies(this.getHost(), cookies);
+                    return false;
                 }
                 final Map<String, Object> login = new HashMap<String, Object>();
                 login.put("u", account.getUser());
@@ -267,19 +261,11 @@ public class PremiumTo extends UseNet {
                 if (br.getCookie(this.br.getHost(), "auth", Cookies.NOTDELETEDPATTERN) == null) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                /* Save cookies */
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(this.getHost());
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.saveCookies(br.getCookies(this.getHost()), "");
                 return true;
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.setProperty("cookies", Property.NULL);
+                    account.clearCookies("");
                 }
                 throw e;
             } finally {
@@ -309,8 +295,8 @@ public class PremiumTo extends UseNet {
             }
             dl = null;
             String url = link.getDownloadURL().replaceFirst("https?://", "");
-            // this here is bullshit... multihoster side should do all the corrections.
-            /* begin code from premium.to support */
+            /* this here is bullshit... multihoster side should do all the corrections. */
+            /* TODO: Remove these workarounds */
             if (url.startsWith("http://")) {
                 url = url.substring(7);
             }
@@ -322,12 +308,10 @@ public class PremiumTo extends UseNet {
             } else if (url.startsWith("filefactory.com/")) {
                 url = url.replaceFirst("filefactory.com/", "ff.com/");
             }
-            /* end code from premium.to support */
             if (url.startsWith("oboom.com/")) {
                 url = url.replaceFirst("oboom.com/#", "oboom.com/");
             }
             url = Encoding.urlEncode(url);
-            login(account, false);
             int connections = getConnections(link.getHost());
             if (link.getChunks() != -1) {
                 if (connections < 1) {
@@ -358,7 +342,7 @@ public class PremiumTo extends UseNet {
                 if ("Not in queue".equalsIgnoreCase(status)) {
                     /* Not on their servers? Add to download-queue! */
                     br.getPage(API_BASE_STORAGE + "/add.php?apikey=" + apikey + "&url=" + url);
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Queue download pending", 5 * 60 * 1000);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Added URL to Storage: Storage download pending", 5 * 60 * 1000);
                 } else if ("completed".equalsIgnoreCase(status)) {
                     /* File has been downloaded to their servers and download should be possible now. */
                     finalURL = API_BASE_STORAGE + "/download.php?apikey=" + apikey + "&url=" + url;
@@ -367,6 +351,8 @@ public class PremiumTo extends UseNet {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown status");
                 }
             } else {
+                /* Normal (direct) download */
+                login(account, false);
                 finalURL = API_BASE + "getfile.php?link=" + url;
             }
             final Browser brc = br.cloneBrowser();
@@ -429,8 +415,11 @@ public class PremiumTo extends UseNet {
                          * TODO: Check if there is a way to determine if the deletion was successful and add loggers for
                          * successful/unsuccessful cases!
                          */
-                        br.getPage("https://storage." + this.getHost() + "/removeFile.php?f=" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
-                        success = true;
+                        final String storageID = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
+                        if (storageID != null) {
+                            br.getPage("https://storage." + this.getHost() + "/removeFile.php?f=" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
+                            success = true;
+                        }
                     } catch (final Throwable e) {
                         /* Don't fail here */
                     }
@@ -594,19 +583,6 @@ public class PremiumTo extends UseNet {
             // We no longer sell Special traffic! Special traffic works only with our Usenet servers and for these 5 filehosts:
             // uploaded.net,share-online.biz, rapidgator.net, filer.net
             // special traffic
-            if (hosts_storage != null && hosts_storage.contains(downloadLink.getHost())) {
-                /* Storage-host - it is bound to storage traffic!! */
-                if (account.getLongProperty(storageTraffic, 0) > 0) {
-                    return true;
-                }
-                /*
-                 * 2019-04-16: Hm either I do not understand the system or if according to the API, storage traffic is zero, normal traffic
-                 * will be used instead(?)
-                 */
-                // else {
-                // return false;
-                // }
-            }
             if (downloadLink.getHost().matches("uploaded\\.net|uploaded\\.to|ul\\.to|share\\-online\\.biz|rapidgator\\.net|filer\\.net")) {
                 if (account.getLongProperty(specialTraffic, 0) > 0) {
                     return true;
