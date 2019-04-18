@@ -17,10 +17,6 @@ package jd.plugins.hoster;
 
 import java.net.URL;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -35,6 +31,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nexusmods.com" }, urls = { "https?://(?:www\\.)?nexusmods\\.com+/Core/Libs/Common/Widgets/DownloadPopUp\\?id=\\d+.+" })
 public class NexusmodsCom extends antiDDoSForHost {
@@ -127,7 +127,7 @@ public class NexusmodsCom extends antiDDoSForHost {
                     filename = getFileNameFromURL(new URL(dllink));
                 }
             }
-            if (filename == null) {
+            if (filename == null && !link.isNameSet()) {
                 filename = fid;
             }
         }
