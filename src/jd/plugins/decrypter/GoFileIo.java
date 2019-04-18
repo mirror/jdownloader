@@ -18,12 +18,12 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.net.HTTPHeader;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision: 40170 $", interfaceVersion = 3, names = { "gofile.io" }, urls = { "https?://(?:www\\.)?gofile\\.io/\\?c=[A-Za-z0-9]+$" })
+@DecrypterPlugin(revision = "$Revision: 40170 $", interfaceVersion = 3, names = { "gofile.io" }, urls = { "https?://(?:www\\.)?gofile\\.io/(#download#|\\?c=)[A-Za-z0-9]+$" })
 public class GoFileIo extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String id = new Regex(parameter.getCryptedUrl(), "c=([A-Za-z0-9]+)").getMatch(0);
+        final String id = new Regex(parameter.getCryptedUrl(), "(#download#|\\?c=)([A-Za-z0-9]+)").getMatch(1);
         br.getPage(parameter.getCryptedUrl());
         final PostRequest post = br.createPostRequest("https://api.gofile.io/getUpload.php?c=" + id, "");
         post.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ORIGIN, "https://gofile.io"));
