@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "indianpornvideos.com" }, urls = { "https?://(www\\.)?indianpornvideos\\.com/(video/)?[A-Za-z0-9\\-_]+(\\.html)?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "indianpornvideos.com" }, urls = { "https?://(www\\.)?indianpornvideos2?\\.com/(video/)?[A-Za-z0-9\\-_]+(\\.html)?" })
 public class IndianPornVideosCom extends PluginForHost {
     public IndianPornVideosCom(PluginWrapper wrapper) {
         super(wrapper);
