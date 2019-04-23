@@ -135,7 +135,7 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
         }
         logger.info("PornEmbedParser is being executed...");
         // xvideos.com 1
-        String externID = br.getRegex("xvideos\\.com/embedframe/(\\d+)\"").getMatch(0);
+        String externID = br.getRegex("xvideos\\.[^/]+/embedframe/(\\d+)\"").getMatch(0);
         // xvideos.com 2
         if (externID == null) {
             externID = br.getRegex("\"(?:https?:)?//(?:www\\.)?flashservice\\.xvideos\\.com/embedframe/(\\d+)\"").getMatch(0);
