@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -27,8 +29,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anonfiles.com" }, urls = { "https?://(?:www\\.)?anonfiles?\\.com/(?:file/)?[A-Za-z0-9]+" })
 public class AnonFilesCom extends PluginForHost {
@@ -103,7 +103,7 @@ public class AnonFilesCom extends PluginForHost {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);

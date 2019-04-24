@@ -304,6 +304,7 @@ public class TurboBitNet extends PluginForHost {
         prepBrowser(br, userAgent.get());
         String dllink = downloadLink.getDownloadURL();
         sleep(2500, downloadLink);
+        br.setFollowRedirects(true);
         br.getPage(dllink);
         simulateBrowser();
         if (br.containsHTML("'File not found\\. Probably it was deleted") || br.containsHTML(HitFileNet.HTML_FILE_OFFLINE)) {
@@ -323,21 +324,10 @@ public class TurboBitNet extends PluginForHost {
         id = getFUID(downloadLink);
         br.setCookie(br.getHost(), "turbobit1", getCurrentTimeCookie(br));
         br.getPage("/download/free/" + id);
-        if (br.getHttpConnection().getCompleteContentLength() < 200) {
-            String redirect = br.getRegex("window\\.location\\.href\\s*=\\s*(\"|')(.*?)\\1").getMatch(1);
-            /* 2017-02-07: Possible redirect from https to http */
-            if (redirect == null) {
-                redirect = br.getRedirectLocation();
-            }
-            if (redirect != null) {
-                br.getPage(redirect);
-            }
-        }
         simulateBrowser();
         if (br.containsHTML(HitFileNet.HTML_FILE_OFFLINE)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (StringUtils.equalsIgnoreCase(br.getRedirectLocation(), downloadLink.getDownloadURL().replace("www.", "")) || br.containsHTML("<div class=\"free-limit-note\">\\s*Limit reached for free download of this file\\.")) {
+        } else if (br.containsHTML("<div class=\"free-limit-note\">\\s*Limit reached for free download of this file\\.")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
         Form captchaform = null;
@@ -374,8 +364,8 @@ public class TurboBitNet extends PluginForHost {
         if (captchaform == null) {
             if (br.containsHTML("Our service is currently unavailable in your country\\.")) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Turbobit.net is currently unavailable in your country.");
-            } else if (!br.getURL().contains("/download/free/") || br.getRedirectLocation() != null || !br.getRedirectLocation().contains("/download/free/")) {
-                /* 2018-11-14: Seems like this happens frequently --> Retry */
+            } else if (!br.getURL().contains("/download/free/")) {
+                /* 2019-04-24: This should not happen anymore but still we should retry if it happens. */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Captcha form fail", 1 * 60 * 1000l);
             }
             logger.warning("captchaform equals null!");

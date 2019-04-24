@@ -148,10 +148,15 @@ public class OneFichierCom extends PluginForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
+        /**
+         * 2019-04-24: Do NOT change domains here! Uploaders can decide which domain is the only valid domain for their files e.g.
+         * "alterupload.com". Using their main domain (1fichier.com) will result in OFFLINE URLs!
+         */
         final String linkid = getLinkID(link);
+        final String current_domain = Browser.getHost(link.getPluginPatternMatcher());
         if (linkid != null) {
             /* Always use main domain & new linktype */
-            link.setPluginPatternMatcher("https://1fichier.com/?" + linkid);
+            link.setPluginPatternMatcher(String.format("https://%s/?%s", current_domain, linkid));
         }
     }
 
@@ -184,7 +189,6 @@ public class OneFichierCom extends PluginForHost {
         this.currDownloadLink = dl;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
         if (urls == null || urls.length == 0) {
@@ -217,7 +221,7 @@ public class OneFichierCom extends PluginForHost {
                 sb.delete(0, sb.capacity());
                 for (final DownloadLink dl : links) {
                     sb.append("links[]=");
-                    sb.append(Encoding.urlEncode(dl.getDownloadURL()));
+                    sb.append(Encoding.urlEncode(dl.getPluginPatternMatcher()));
                     sb.append("&");
                 }
                 // remove last &
