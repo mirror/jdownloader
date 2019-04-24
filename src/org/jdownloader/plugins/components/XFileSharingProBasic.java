@@ -115,7 +115,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 4.0.1.1<br />
+     * DEV NOTES XfileSharingProBasic Version 4.0.1.2<br />
      ****************************
      * NOTES from raztoki <br/>
      * - no need to set setfollowredirect true. <br />
@@ -518,7 +518,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      *         false: Link is downloadable for all users.
      */
     public boolean isPremiumOnlyHTML() {
-        return new Regex(correctedBR, "( can download files up to |>\\s*Upgrade your account to download (?:larger|bigger) files|>\\s*The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit|>\\s*This file is available for Premium Users only|>\\s*Available Only for Premium Members)").matches();
+        return new Regex(correctedBR, "( can download files up to |>\\s*Upgrade your account to download (?:larger|bigger) files|>\\s*The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit|>\\s*This file is available for Premium Users only|>\\s*Available Only for Premium Members|>File is available only for Premium users)").matches();
+        // return new Regex(correctedBR, Pattern.compile("( can download files up to |>\\s*Upgrade your account to download
+        // (?:larger|bigger) files|>\\s*The file you requested reached max downloads limit for Free Users|Please Buy Premium To download
+        // this file<|This file reached max downloads limit|>\\s*This file is available for Premium Users only|>\\s*Available Only for
+        // Premium Members)", Pattern.CASE_INSENSITIVE)).matches();
     }
 
     /**

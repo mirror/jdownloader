@@ -17,43 +17,41 @@ package jd.plugins.hoster;
 
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class WstreamVideo extends XFileSharingProBasic {
-    public WstreamVideo(final PluginWrapper wrapper) {
+public class VipfileCc extends XFileSharingProBasic {
+    public VipfileCc(final PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium(super.getPurchasePremiumURL());
+        this.enablePremium(super.getPurchasePremiumURL());
     }
 
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
-     * limit-info:<br />
-     * captchatype-info: null<br />
+     * limit-info:2019-04-24: premium max 3 connections total (left maxdls setting @ unlimited)<br />
+     * captchatype-info: 2019-04-24: null<br />
      * other:<br />
      */
-    private static String[] domains = new String[] { "wstream.video" };
+    private static String[] domains = new String[] { "vipfile.cc" };
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return true;
+            return false;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
             return true;
         } else {
             /* Free(anonymous) and unknown account type */
-            return true;
+            return false;
         }
     }
 
@@ -61,39 +59,29 @@ public class WstreamVideo extends XFileSharingProBasic {
     public int getMaxChunks(final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return -2;
+            return 1;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return 0;
+            return 1;
         } else {
             /* Free(anonymous) and unknown account type */
-            return -2;
+            return 1;
         }
-    }
-
-    @Override
-    public String[] scanInfo(final String[] fileInfo) {
-        /* 2019-04-24: Special */
-        super.scanInfo(fileInfo);
-        if (StringUtils.isEmpty(fileInfo[0])) {
-            fileInfo[0] = new Regex(correctedBR, "<h3>(?:\\s*?<div class=\"[^\"]+\">)?([^<>\"]+)(?:</div>\\s*?)?</h3>").getMatch(0);
-        }
-        return fileInfo;
     }
 
     @Override
     public int getMaxSimultaneousFreeAnonymousDownloads() {
-        return 1;
+        return -1;
     }
 
     @Override
     public int getMaxSimultaneousFreeAccountDownloads() {
-        return 1;
+        return -1;
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 1;
+        return -1;
     }
 
     @Override
@@ -123,7 +111,7 @@ public class WstreamVideo extends XFileSharingProBasic {
 
     @Override
     public boolean isVideohoster_enforce_video_filename() {
-        return true;
+        return super.isVideohoster_enforce_video_filename();
     }
 
     @Override
@@ -133,14 +121,12 @@ public class WstreamVideo extends XFileSharingProBasic {
 
     @Override
     public boolean supports_availablecheck_alt() {
-        /* 2019-04-24: Special */
-        return false;
+        return super.supports_availablecheck_alt();
     }
 
     @Override
     public boolean supports_availablecheck_filesize_alt_fast() {
-        /* 2019-04-24: Special */
-        return false;
+        return super.supports_availablecheck_filesize_alt_fast();
     }
 
     @Override
@@ -150,14 +136,12 @@ public class WstreamVideo extends XFileSharingProBasic {
 
     @Override
     public boolean supports_availablecheck_filename_abuse() {
-        /* 2019-04-24: Special */
-        return false;
+        return super.supports_availablecheck_filename_abuse();
     }
 
     @Override
     public boolean supports_availablecheck_filesize_html() {
-        /* 2019-04-24: Special */
-        return true;
+        return super.supports_availablecheck_filesize_html();
     }
 
     @Override
@@ -181,7 +165,7 @@ public class WstreamVideo extends XFileSharingProBasic {
     public static String[] getAnnotationUrls() {
         // construct pattern
         final String host = getHostsPattern();
-        return new String[] { host + "/(?:embed\\-|video/)?[a-z0-9]{12}(?:/[^/]+\\.html)?" };
+        return new String[] { host + "/(?:embed\\-)?[a-z0-9]{12}(?:/[^/]+\\.html)?" };
     }
 
     /** returns 'https?://(?:www\\.)?(?:domain1|domain2)' */

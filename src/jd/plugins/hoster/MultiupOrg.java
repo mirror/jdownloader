@@ -51,9 +51,9 @@ import jd.plugins.components.PluginJSonUtils;
 public class MultiupOrg extends PluginForHost {
     private static final String          API_BASE            = "http://multiup.org/api";
     private static MultiHosterManagement mhm                 = new MultiHosterManagement("multiup.org");
-    /** TODO: Set correct limits */
-    private static final int             defaultMAXDOWNLOADS = 20;
-    private static final int             defaultMAXCHUNKS    = -2;
+    /** 2019-04-24: According to support: max con per file:3, max per account: 15 */
+    private static final int             defaultMAXDOWNLOADS = 5;
+    private static final int             defaultMAXCHUNKS    = -3;
     private static final boolean         defaultRESUME       = true;
 
     @SuppressWarnings("deprecation")
@@ -103,12 +103,8 @@ public class MultiupOrg extends PluginForHost {
         String dllink = checkDirectLink(link, this.getHost() + "directlink");
         br.setFollowRedirects(true);
         if (dllink == null) {
-            final boolean use_website_workaround = true;
+            final boolean use_website_workaround = false;
             if (use_website_workaround) {
-                /*
-                 * 2019-02-28: That is just ridiculous as it even works without account (issue reported to owner). Also, API will return
-                 * exactly what this returns ...
-                 */
                 loginWebsite(account);
                 br.setFollowRedirects(false);
                 final String urlDoubleB64 = Encoding.Base64Encode(Encoding.Base64Encode(link.getPluginPatternMatcher()));
@@ -122,7 +118,10 @@ public class MultiupOrg extends PluginForHost {
                 if (passCode != null) {
                     dlQuery.add("password", passCode);
                 }
-                /** TODO: WTF this also works without login */
+                /**
+                 * 2019-04-24: WTF this also works without login --> According to admin, once logged in once, current IP gets unlocked for
+                 * premium download. Without this happening, used is a free-user and can only download one file at the time.
+                 */
                 br.postPage(API_BASE + "/generate-debrid-link", dlQuery);
                 dllink = PluginJSonUtils.getJsonValue(br, "debrid_link");
             }
@@ -131,6 +130,7 @@ public class MultiupOrg extends PluginForHost {
             }
         }
         link.setProperty(this.getHost() + "directlink", dllink);
+        /** 2019-04-24: Now returning 402 payment required ... */
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, defaultRESUME, defaultMAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -235,18 +235,29 @@ public class MultiupOrg extends PluginForHost {
             ai.setUnlimitedTraffic();
         }
         /* Continue via API */
-        this.getAPISafe(API_BASE + "/get-list-hosts", account, null);
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        entries = (LinkedHashMap<String, Object>) entries.get("hosts");
-        final Iterator<Entry<String, Object>> iterator = entries.entrySet().iterator();
-        final ArrayList<String> supportedhostslist = new ArrayList<String>();
-        while (iterator.hasNext()) {
-            final Entry<String, Object> entry = iterator.next();
-            final String host = entry.getKey();
-            supportedhostslist.add(host);
+        this.getAPISafe(API_BASE + "/get-list-hosts-debrid", account, null);
+        try {
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            final Object hostsO = entries.get("hosts");
+            final ArrayList<String> supportedhostslist = new ArrayList<String>();
+            if (hostsO instanceof LinkedHashMap) {
+                entries = (LinkedHashMap<String, Object>) hostsO;
+                final Iterator<Entry<String, Object>> iterator = entries.entrySet().iterator();
+                while (iterator.hasNext()) {
+                    final Entry<String, Object> entry = iterator.next();
+                    final String host = entry.getKey();
+                    supportedhostslist.add(host);
+                }
+            } else {
+                final ArrayList<Object> hostlistO = (ArrayList<Object>) hostsO;
+                for (final Object hostO : hostlistO) {
+                    supportedhostslist.add((String) hostO);
+                }
+            }
+            ai.setMultiHostSupport(this, supportedhostslist);
+        } catch (final Throwable e) {
         }
         account.setConcurrentUsePossible(true);
-        ai.setMultiHostSupport(this, supportedhostslist);
         return ai;
     }
 
@@ -266,7 +277,11 @@ public class MultiupOrg extends PluginForHost {
                 if (cookies != null) {
                     this.br.setCookies(this.getHost(), cookies);
                     br.getPage("https://" + account.getHoster() + "/en/profile/my-profile");
+                    /* 2019-04-24: Debug code */
+                    // br.setCookie(br.getURL(), "REMEMBERME_MULTIDOMAIN", "true");
+                    // br.setCookie(br.getURL(), "premium_available", "true");
                     if (isLoggedinHTML(this.br)) {
+                        account.saveCookies(this.br.getCookies(this.getHost()), "");
                         return;
                     }
                 }
