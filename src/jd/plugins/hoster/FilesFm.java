@@ -16,8 +16,12 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.LinkedHashMap;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -86,20 +90,46 @@ public class FilesFm extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }
+        final String linkid = this.getLinkID(link);
         final String linkpart = new Regex(link.getDownloadURL(), "(\\?i=.+)").getMatch(0);
         final String filename_url = new Regex(linkpart, "\\&n=(.+)").getMatch(0);
         String filename_header = null;
         URLConnectionAdapter con = null;
+        final Browser brc = br.cloneBrowser();
         try {
             dllink = "https://files.fm/down.php?i=" + getLinkID(link);
-            con = br.openHeadConnection(dllink);
+            con = brc.openHeadConnection(dllink);
             if (con.getURL().toString().contains("/private")) {
                 // https://files.fm/thumb_show.php?i=wfslpuh&n=20140908_073035.jpg&refresh1
                 /* Maybe we have a picture without official "Download" button ... */
                 dllink = "https://files.fm/thumb_show.php" + linkpart + "&refresh1";
-                con = br.openHeadConnection(dllink);
+                con = brc.openHeadConnection(dllink);
             }
-            if (!con.getContentType().contains("html")) {
+            if (con.getContentType().contains("html")) {
+                final String webdlTorrentID = br.getRegex("new WebTorrentDownloadForm\\( \\'([a-z0-9]+)\\' \\)").getMatch(0);
+                if (webdlTorrentID == null) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                // br.getHeaders().put("x-requested-with", "XMLHttpRequest");
+                // br.postPage("/ajax/webtorrent_download_form.php?PHPSESSID=" + webdlTorrentID,
+                // "action=init_client&folder_hash=&file_hash=" + linkid + "&file_hashes=%5B%5D");
+                /* Large files are only available via web-/torrent download */
+                dllink = String.format("https://files.fm/torrent/get_torrent.php?file_hash=%s", linkid);
+                String filename = null;
+                try {
+                    final String jsonFileInfo = br.getRegex("objMainShareParams = (\\{.*?\\});").getMatch(0);
+                    LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(jsonFileInfo);
+                    entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "one_file/item_info");
+                    filename = (String) entries.get("file_name");
+                } catch (final Throwable e) {
+                }
+                if (filename == null) {
+                    /* Fallback */
+                    filename = linkid + ".torrent";
+                }
+                link.setName(filename);
+                // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
                 filename_header = Encoding.htmlDecode(getFileNameFromHeader(con));
                 if (filename_url == null && filename_header != null) {
                     link.setFinalFileName(filename_header);
@@ -109,8 +139,6 @@ public class FilesFm extends PluginForHost {
                     link.setFinalFileName(filename_url);
                 }
                 link.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         } finally {
             try {
@@ -128,12 +156,6 @@ public class FilesFm extends PluginForHost {
     }
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        // if (dllink == null) {
-        // dllink = br.getRegex("").getMatch(0);
-        // if (dllink == null) {
-        // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // }
-        // }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

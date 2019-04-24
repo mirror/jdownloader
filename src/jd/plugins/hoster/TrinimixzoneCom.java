@@ -13,11 +13,12 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
+
+import org.appwork.utils.logging2.LogInterface;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -35,11 +36,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.logging2.LogInterface;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "trinimixzone.com" }, urls = { "" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "trinimixzone.com" }, urls = { "" })
 public class TrinimixzoneCom extends PluginForHost {
-
     public TrinimixzoneCom(PluginWrapper wrapper) {
         super(wrapper);
         enablePremium("http://trinimixzone.com/forum/member.php?action=register");
@@ -57,19 +55,23 @@ public class TrinimixzoneCom extends PluginForHost {
     }
 
     public static boolean login(Browser br, Account account) throws Exception {
-        br.setCookiesExclusive(true);
-        br.clearCookies("http://trinimixzone.com/forum/member.php");
-        final Form form = new Form();
-        form.setAction("http://trinimixzone.com/forum/member.php");
-        form.setEncoding("application/x-www-form-urlencoded");
-        form.setMethod(MethodType.POST);
-        form.addInputField(new InputField("action", "do_login"));
-        form.addInputField(new InputField("url", Encoding.urlEncode("http://trinimixzone.com/forum/index.php")));
-        form.addInputField(new InputField("quick_username", Encoding.urlEncode(account.getUser())));
-        form.addInputField(new InputField("quick_password", Encoding.urlEncode(account.getPass())));
-        form.addInputField(new InputField("quick_remember", "yes"));
-        form.addInputField(new InputField("submit", "Login"));
-        br.submitForm(form);
+        br.getPage("http://trinimixzone.com/forum/member.php?action=login");
+        Form loginform = br.getForm(0);
+        if (loginform == null) {
+            br.setCookiesExclusive(true);
+            br.clearCookies("http://trinimixzone.com/forum/member.php");
+            loginform = new Form();
+            loginform.setAction("http://trinimixzone.com/forum/member.php");
+            loginform.setEncoding("application/x-www-form-urlencoded");
+            loginform.setMethod(MethodType.POST);
+            loginform.addInputField(new InputField("action", "do_login"));
+            loginform.addInputField(new InputField("url", Encoding.urlEncode("http://trinimixzone.com/forum/index.php")));
+            loginform.addInputField(new InputField("submit", "Login"));
+        }
+        loginform.addInputField(new InputField("quick_username", Encoding.urlEncode(account.getUser())));
+        loginform.addInputField(new InputField("quick_password", Encoding.urlEncode(account.getPass())));
+        loginform.addInputField(new InputField("quick_remember", "yes"));
+        br.submitForm(loginform);
         final boolean ret = br.getCookie(br.getHost(), "mybbuser") != null;
         if (!ret) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
