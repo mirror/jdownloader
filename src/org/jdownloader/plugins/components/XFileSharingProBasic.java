@@ -519,10 +519,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      */
     public boolean isPremiumOnlyHTML() {
         return new Regex(correctedBR, "( can download files up to |>\\s*Upgrade your account to download (?:larger|bigger) files|>\\s*The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit|>\\s*This file is available for Premium Users only|>\\s*Available Only for Premium Members|>File is available only for Premium users)").matches();
-        // return new Regex(correctedBR, Pattern.compile("( can download files up to |>\\s*Upgrade your account to download
-        // (?:larger|bigger) files|>\\s*The file you requested reached max downloads limit for Free Users|Please Buy Premium To download
-        // this file<|This file reached max downloads limit|>\\s*This file is available for Premium Users only|>\\s*Available Only for
-        // Premium Members)", Pattern.CASE_INSENSITIVE)).matches();
     }
 
     /**
