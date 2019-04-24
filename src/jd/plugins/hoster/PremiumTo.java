@@ -227,7 +227,7 @@ public class PremiumTo extends UseNet {
                  * This e.g. happens if the user deletes a file via the premium.to site and then tries to download the previously added link
                  * via JDownloader.
                  */
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403 (file offline?)", 30 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
@@ -497,7 +497,7 @@ public class PremiumTo extends UseNet {
                     link.getLinkStatus().setStatusText("Only downlodable via account!");
                     return AvailableStatus.UNCHECKABLE;
                 }
-                /* try without login (only possible for links with token) */
+                /* try without login (only possible for URLs with token) */
                 try {
                     con = br.openGetConnection(dlink);
                     if (!con.getContentType().contains("html")) {
@@ -533,23 +533,18 @@ public class PremiumTo extends UseNet {
                 for (Account acc : accs) {
                     login(acc, false);
                     try {
-                        con = br.openGetConnection(dlink);
+                        con = br.openHeadConnection(dlink);
+                        if (con.getResponseCode() == 403) {
+                            /* Either invalid URL or user deleted file from Storage/Cloud --> URL is invalid now. */
+                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                        }
                         if (!con.getContentType().contains("html")) {
                             fileSize = con.getLongContentLength();
                             if (fileSize <= 0) {
                                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                             }
+                            link.setFinalFileName(getFileNameFromHeader(con));
                             link.setDownloadSize(fileSize);
-                            String name = con.getHeaderField("Content-Disposition");
-                            if (name != null) {
-                                // filter the filename from content disposition and decode it...
-                                name = new Regex(name, "filename.=UTF-8\'\'([^\"]+)").getMatch(0);
-                                name = Encoding.UTF8Decode(name).replaceAll("%20", " ");
-                                name = Encoding.htmlDecode(name);
-                                if (name != null) {
-                                    link.setFinalFileName(name);
-                                }
-                            }
                             return AvailableStatus.TRUE;
                         }
                     } finally {
