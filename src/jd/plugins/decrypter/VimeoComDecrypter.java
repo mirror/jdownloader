@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -103,6 +104,17 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         } else {
             return null;
         }
+    }
+
+    private boolean retryWithCustomReferer(final CryptedLink param, final PluginException e, final Browser br, final AtomicReference<String> referer) throws Exception {
+        if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND && br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 403 && SubConfiguration.getConfig("vimeo.com").getBooleanProperty("ASK_REF", Boolean.TRUE)) {
+            final String vimeo_asked_referer = getUserInput("Please enter referer for this link", param);
+            if (StringUtils.isNotEmpty(vimeo_asked_referer) && !StringUtils.equalsIgnoreCase(Browser.getHost(vimeo_asked_referer), "vimeo.com")) {
+                referer.set(vimeo_asked_referer);
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -206,19 +218,21 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             fp.addLinks(decryptedLinks);
         } else {
             /* Check if we got a forced Referer - if so, extract it, clean url, use it and set it on our DownloadLinks for later usage. */
-            String vimeo_forced_referer = null;
+            final AtomicReference<String> referer = new AtomicReference<String>(null);
             final String vimeo_forced_referer_url_part = new Regex(parameter, "((\\&|\\?|#)forced_referer=.+)").getMatch(0);
             if (vimeo_forced_referer_url_part != null) {
                 parameter = parameter.replace(vimeo_forced_referer_url_part, "");
-                vimeo_forced_referer = getForcedRefererFromURLParam(vimeo_forced_referer_url_part);
+                final String vimeo_forced_referer = getForcedRefererFromURLParam(vimeo_forced_referer_url_part);
                 if (vimeo_forced_referer != null) {
+                    referer.set(vimeo_forced_referer);
                     logger.info("Use *forced* referer:" + vimeo_forced_referer);
                 }
             }
-            if (vimeo_forced_referer == null) {
-                vimeo_forced_referer = guessReferer(param);
-                if (vimeo_forced_referer != null) {
-                    logger.info("Use *guessed* referer:" + vimeo_forced_referer);
+            if (referer.get() == null) {
+                final String vimeo_guessed_referer = guessReferer(param);
+                if (vimeo_guessed_referer != null) {
+                    referer.set(vimeo_guessed_referer);
+                    logger.info("Use *guessed* referer:" + vimeo_guessed_referer);
                 }
             }
             String videoID = getVideoidFromURL(parameter);
@@ -260,10 +274,18 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             VIMEO_URL_TYPE urlType = null;
             try {
                 try {
-                    urlType = jd.plugins.hoster.VimeoCom.accessVimeoURL(this.br, parameter, vimeo_forced_referer, null);
+                    try {
+                        urlType = jd.plugins.hoster.VimeoCom.accessVimeoURL(this.br, parameter, referer, null);
+                    } catch (PluginException e) {
+                        if (retryWithCustomReferer(param, e, br, referer)) {
+                            urlType = jd.plugins.hoster.VimeoCom.accessVimeoURL(this.br, parameter, referer, null);
+                        } else {
+                            throw e;
+                        }
+                    }
                 } catch (PluginException e) {
                     if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND && orgParameter.matches(type_player)) {
-                        urlType = jd.plugins.hoster.VimeoCom.accessVimeoURL(this.br, orgParameter, vimeo_forced_referer, VIMEO_URL_TYPE.RAW);
+                        urlType = jd.plugins.hoster.VimeoCom.accessVimeoURL(this.br, orgParameter, referer, VIMEO_URL_TYPE.RAW);
                         parameter = orgParameter;
                     } else {
                         throw e;
@@ -400,8 +422,8 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 if (password != null) {
                     link.setDownloadPassword(password);
                 }
-                if (vimeo_forced_referer != null) {
-                    link.setProperty("vimeo_forced_referer", vimeo_forced_referer);
+                if (referer.get() != null) {
+                    link.setProperty("vimeo_forced_referer", referer.get());
                 }
                 if (date != null) {
                     link.setProperty("originalDate", date);
