@@ -63,7 +63,7 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
         /** urlcero.us domains */
         "urlcero.us", "urlcero.com",
         /** clicksfly.com domains */
-        "clicksfly.com", "gifsis.com", "blogginggyanbox.com", "buyitonline.store", "clk.ink", "counsellingresult2016.in", "yourtechguider.com", "1921681254.tech", "iitjeemainguide.in", "yesmoviesapp.info", "newskart.xyz", "funnyquiz.blog", "fabsdeals.com", "utimetableresult.in", "geki.tech", "govtsmartjob.com", "clkfly.pw", "technodia.xyz", "ourtechnoew.xyz",
+        "clicksfly.com", "gifsis.com", "blogginggyanbox.com", "buyitonline.store", "clk.ink", "counsellingresult2016.in", "yourtechguider.com", "1921681254.tech", "iitjeemainguide.in", "yesmoviesapp.info", "newskart.xyz", "funnyquiz.blog", "fabsdeals.com", "utimetableresult.in", "geki.tech", "govtsmartjob.com", "clkfly.pw", "technodia.xyz", "ourtechnoew.xyz", "mutharammss.xyz", "viralcollect.info",
         /** eglink.info domains */
         "eglink.info", "egyptiangy.net", "egypt-mix.com",
         /** cut-urls.com domains */

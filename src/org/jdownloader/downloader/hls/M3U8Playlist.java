@@ -220,10 +220,10 @@ public class M3U8Playlist {
         String xKeyIV = null;
         String xKeyURI = null;
         br.getPage(m3u8);
+        br.followRedirect();
         if (br.getHttpConnection().getResponseCode() != 200 && br.getHttpConnection().getResponseCode() != 206) {
             throw new IOException("ResponseCode must be 200 or 206!");
         }
-        br.followRedirect();
         for (final String line : Regex.getLines(br.toString())) {
             if (StringUtils.isEmpty(line)) {
                 continue;

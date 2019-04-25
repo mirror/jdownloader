@@ -775,6 +775,7 @@ public class HLSDownloader extends DownloadInterface {
         final Browser ret = sourceBrowser.cloneBrowser();
         ret.setConnectTimeout(30 * 1000);
         ret.setReadTimeout(30 * 1000);
+        ret.setFollowRedirects(true);
         return ret;
     }
 
