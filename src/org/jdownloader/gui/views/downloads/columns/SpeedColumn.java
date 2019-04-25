@@ -152,8 +152,9 @@ public class SpeedColumn extends ExtTextColumn<AbstractNode> {
     protected Icon getIcon(AbstractNode value) {
         if (isSpeedWarning(value)) {
             return warningIcon;
+        } else {
+            return null;
         }
-        return null;
     }
 
     private boolean isSpeedWarning(AbstractNode value) {
@@ -190,8 +191,9 @@ public class SpeedColumn extends ExtTextColumn<AbstractNode> {
         if (speedLimiterEnabled.get()) {
             final String limit = _GUI.T.SpeedMeterPanel_getString_limited(SizeFormatter.formatBytes(org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT.getValue()));
             return limit + "\r\n" + ret;
+        } else {
+            return ret;
         }
-        return ret;
     }
 
     public boolean onSingleClick(final MouseEvent e, final AbstractNode obj) {
