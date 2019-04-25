@@ -34,7 +34,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "animeout.com" }, urls = { "https?://[a-z0-9\\-]+\\.animeout\\.com/series/.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "animeout.com" }, urls = { "https?://[a-z0-9\\-]+\\.animeout\\.(?:com|xyz)/series/.+" })
 public class AnimeoutCom extends PluginForHost {
     public AnimeoutCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -64,12 +64,21 @@ public class AnimeoutCom extends PluginForHost {
         final String url_filename = new Regex(link.getDownloadURL(), "/([^/]+)$").getMatch(0);
         link.setName(url_filename);
         final Account aa = AccountController.getInstance().getValidAccount(this);
-        if (aa == null) {
-            /* Accound required */
-            return AvailableStatus.UNCHECKABLE;
+        if (aa != null) {
+            login(aa);
+            dllink = link.getDownloadURL();
+        } else {
+            br.getPage(link.getDownloadURL());
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final String continue_url = br.getRegex("(https?://ddl\\.animeout\\.com/public\\.php[^<>\"]+)").getMatch(0);
+            br.getPage(continue_url);
+            dllink = br.getRegex("var url\\s*?=\\s*?\"(http[^<>\"]+)\";").getMatch(0);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
-        login(aa);
-        dllink = link.getDownloadURL();
         URLConnectionAdapter con = null;
         try {
             con = br.openHeadConnection(dllink);

@@ -17,6 +17,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Request;
@@ -27,8 +29,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.utils.formatter.SizeFormatter;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "files.fm" }, urls = { "https?://(?:www\\.)?files\\.fm/u/[a-z0-9]+" })
 public class FilesFmFolder extends PluginForDecrypt {
@@ -38,6 +40,7 @@ public class FilesFmFolder extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final PluginForHost hostplg = JDUtilities.getPluginForHost(this.getHost());
         /* 2016-03-10: They enforce https */
         final String parameter = param.toString().replace("http://", "https://");
         final String fid = new Regex(parameter, "([a-z0-9]+)$").getMatch(0);
@@ -75,6 +78,11 @@ public class FilesFmFolder extends PluginForDecrypt {
             links = br.getRegex("class=\"file\\-icon\"(.*?)class=\"OrderID\"").getColumn(0);
         }
         if (links == null || links.length == 0) {
+            if (new Regex(br.getURL(), hostplg.getSupportedLinks()).matches()) {
+                /* Folder redirected to single file-link */
+                decryptedLinks.add(this.createDownloadlink(br.getURL()));
+                return decryptedLinks;
+            }
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
