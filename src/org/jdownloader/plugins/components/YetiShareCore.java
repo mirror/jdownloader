@@ -98,7 +98,7 @@ public class YetiShareCore extends antiDDoSForHost {
     // }
     /**
      * For sites which use this script: http://www.yetishare.com/<br />
-     * YetiShareCore Version 2.0.0.5-psp<br />
+     * YetiShareCore Version 2.0.0.6-psp<br />
      * mods: see overridden functions in host plugins<br />
      * limit-info:<br />
      * captchatype: null, solvemedia, reCaptchaV2<br />
@@ -256,40 +256,23 @@ public class YetiShareCore extends antiDDoSForHost {
         return 8;
     }
 
+    /** Returns empty StringArray for filename, filesize, [more information in he future?] */
+    protected String[] getFileInfoArray() {
+        return new String[3];
+    }
+
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         setWeakFilename(link);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         prepBrowser(this.br);
         final String fallback_filename = this.getFallbackFilename(link);
-        String filename = null;
-        String filesize;
+        final String[] fileInfo = getFileInfoArray();
         try {
             if (supports_availablecheck_over_info_page()) {
                 getPage(link.getPluginPatternMatcher() + "~i");
                 if (!br.getURL().contains("~i") || br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                final String[] tableData = this.br.getRegex("class=\"responsiveInfoTable\">([^<>\"/]*?)<").getColumn(0);
-                /* Sometimes we get crippled results with the 2nd RegEx so use this one first */
-                filename = this.br.getRegex("data\\-animation\\-delay=\"\\d+\">(?:Information about|Informacion) ([^<>\"]*?)</div>").getMatch(0);
-                if (filename == null) {
-                    /* "Information about"-filename-trait without the animation(delay). */
-                    filename = this.br.getRegex("class=\"description\\-1\">Information about ([^<>\"]+)<").getMatch(0);
-                }
-                if (filename == null) {
-                    filename = this.br.getRegex("(?:Filename|Dateiname|اسم الملف|Nome|Dosya Adı):[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
-                }
-                filesize = br.getRegex("(?:Filesize|Dateigröße|حجم الملف|Tamanho|Boyut):[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
-                try {
-                    /* Language-independant attempt ... */
-                    if (filename == null) {
-                        filename = tableData[0];
-                    }
-                    if (filesize == null) {
-                        filesize = tableData[1];
-                    }
-                } catch (final Throwable e) {
                 }
             } else {
                 getPage(link.getPluginPatternMatcher());
@@ -307,28 +290,71 @@ public class YetiShareCore extends antiDDoSForHost {
                     checkErrors(link, null);
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                final Regex fInfo = br.getRegex("<strong>([^<>\"]*?) \\((\\d+(?:,\\d+)?(?:\\.\\d+)? (?:KB|MB|GB))\\)<");
-                filename = fInfo.getMatch(0);
-                filesize = fInfo.getMatch(1);
-                if (filesize == null) {
-                    filesize = br.getRegex("(\\d+(?:,\\d+)?(\\.\\d+)? (?:KB|MB|GB))").getMatch(0);
-                }
             }
-            if (StringUtils.isEmpty(filename)) {
+            scanInfo(fileInfo);
+            if (StringUtils.isEmpty(fileInfo[0])) {
                 /* Final fallback - this should never happen! */
-                filename = fallback_filename;
+                fileInfo[0] = fallback_filename;
             }
-            filename = Encoding.htmlDecode(filename).trim();
-            link.setName(filename);
-            if (filesize != null) {
-                link.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize.replace(",", "")).trim()));
+            fileInfo[0] = Encoding.htmlDecode(fileInfo[0]).trim();
+            link.setName(fileInfo[0]);
+            if (fileInfo[1] != null) {
+                link.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(fileInfo[1].replace(",", ""))));
             }
         } finally {
-            if (StringUtils.isEmpty(filename)) {
+            /* Something went seriously wrong? Use fallback filename! */
+            if (StringUtils.isEmpty(fileInfo[0])) {
                 link.setName(getFallbackFilename(link));
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    /**
+     * Tries to find filename and filesize inside html. On Override, make sure to first use your special RegExes e.g. fileInfo[0]="bla",
+     * THEN, if needed, call super.scanInfo(fileInfo). <br />
+     * fileInfo[0] = filename, fileInfo[1] = filesize
+     */
+    public String[] scanInfo(final String[] fileInfo) {
+        if (supports_availablecheck_over_info_page()) {
+            final String[] tableData = this.br.getRegex("class=\"responsiveInfoTable\">([^<>\"/]*?)<").getColumn(0);
+            /* Sometimes we get crippled results with the 2nd RegEx so use this one first */
+            if (StringUtils.isEmpty(fileInfo[0])) {
+                fileInfo[0] = this.br.getRegex("data\\-animation\\-delay=\"\\d+\">(?:Information about|Informacion) ([^<>\"]*?)</div>").getMatch(0);
+            }
+            if (StringUtils.isEmpty(fileInfo[0])) {
+                /* "Information about"-filename-trait without the animation(delay). */
+                fileInfo[0] = this.br.getRegex("class=\"description\\-1\">Information about ([^<>\"]+)<").getMatch(0);
+            }
+            if (StringUtils.isEmpty(fileInfo[0])) {
+                fileInfo[0] = this.br.getRegex("(?:Filename|Dateiname|اسم الملف|Nome|Dosya Adı):[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
+            }
+            if (StringUtils.isEmpty(fileInfo[1])) {
+                fileInfo[1] = br.getRegex("(?:Filesize|Dateigröße|حجم الملف|Tamanho|Boyut):[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
+            }
+            try {
+                /* Language-independant attempt ... */
+                if (StringUtils.isEmpty(fileInfo[0])) {
+                    fileInfo[0] = tableData[0];
+                }
+                if (StringUtils.isEmpty(fileInfo[1])) {
+                    fileInfo[1] = tableData[1];
+                }
+            } catch (final Throwable e) {
+            }
+        } else {
+            final Regex fInfo = br.getRegex("<strong>([^<>\"]*?) \\((\\d+(?:,\\d+)?(?:\\.\\d+)? (?:KB|MB|GB))\\)<");
+            if (StringUtils.isEmpty(fileInfo[0])) {
+                fileInfo[0] = fInfo.getMatch(0);
+            }
+            if (StringUtils.isEmpty(fileInfo[1])) {
+                fileInfo[1] = fInfo.getMatch(1);
+            }
+            if (StringUtils.isEmpty(fileInfo[1])) {
+                fileInfo[1] = br.getRegex("(\\d+(?:,\\d+)?(\\.\\d+)? (?:KB|MB|GB))").getMatch(0);
+            }
+        }
+        return fileInfo;
     }
 
     @Override
@@ -376,7 +402,9 @@ public class YetiShareCore extends antiDDoSForHost {
                     continue_link = br.getRedirectLocation();
                 } else if (redirect != null) {
                     /* Follow redirect */
+                    br.setFollowRedirects(true);
                     getPage(redirect);
+                    br.setFollowRedirects(false);
                 }
             }
             if (continue_link == null) {
@@ -554,7 +582,7 @@ public class YetiShareCore extends antiDDoSForHost {
 
     /**
      * In some cases, URL may contain filename which can be used as fallback e.g. 'https://host.tld/<fuid>/<filename>'. Example host which
-     * has URLs that contain filenames: freefile.me
+     * has URLs that contain filenames: freefile.me, letsupload.co
      */
     public String getFilenameFromURL(final DownloadLink dl) {
         try {
