@@ -256,9 +256,9 @@ public class YetiShareCore extends antiDDoSForHost {
         return 8;
     }
 
-    /** Returns empty StringArray for filename, filesize, [more information in he future?] */
+    /** Returns empty StringArray for filename, filesize, [more information in the future?] */
     protected String[] getFileInfoArray() {
-        return new String[3];
+        return new String[2];
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {

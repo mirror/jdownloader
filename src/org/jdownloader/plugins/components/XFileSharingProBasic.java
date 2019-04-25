@@ -541,7 +541,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return br.getHttpConnection().getResponseCode() == 404 || new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches();
     }
 
-    /** Returns empty StringArray for filename, filesize, filehash, [more information in he future?] */
+    /** Returns empty StringArray for filename, filesize, filehash, [more information in the future?] */
     protected String[] getFileInfoArray() {
         return new String[3];
     }
