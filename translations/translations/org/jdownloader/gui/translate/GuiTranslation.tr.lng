@@ -295,6 +295,7 @@ ConnectedDevicesTableModel_frontend=Ön uç
 ConnectedDevicesTableModel_kill=Oturumu Sonlandır
 ConnectionColumn_ConnectionColumn=Bağlantı
 ConnectionColumn_DownloadIsForced=İndirme önceliklendirilmiş başlatma için bekliyor
+ConnectionColumn_DownloadIsForcedWaiting=İndirme, bir öncelikli başlatma için bekliyor
 ConnectionColumn_DownloadIsResumeable=İndirme devam ettirilebilir
 ConnectionColumn_DownloadUsesAccount=Kullanımdaki Hesap: %s1
 ConnectionColumn_getStringValue_chunks=%s1 parça ile indiriliyor
