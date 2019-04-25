@@ -18,20 +18,20 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movie4k.to" }, urls = { "https?://(www\\.)?movie4k\\.(?:to|tv|org)/{1,2}(?!movies\\-(all|genre)|tvshows\\-season)(tvshows\\-\\d+\\-[^<>\"/]*?\\.html|[^<>\"/]*\\-\\d+(?:.*?\\.html)?|\\d+\\-[^<>\"/]*?)(\\.html)?" })
-public class Mv2kTo extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movie4k.to" }, urls = { "https?://(?:www\\.)?(movie4k\\.(?:to|tv|org|io|lol)|movie\\.to)/{1,2}(?!movies\\-(all|genre)|tvshows\\-season)(tvshows\\-\\d+\\-[^<>\"/]*?\\.html|[^<>\"/]*\\-\\d+(?:.*?\\.html)?|\\d+\\-[^<>\"/]*?)(\\.html)?" })
+public class Mv2kTo extends antiDDoSForDecrypt {
     public Mv2kTo(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -44,8 +44,8 @@ public class Mv2kTo extends PluginForDecrypt {
      * uploadc.com, allmyvideos.net, firedrive.com, and many others 4=stream2k.com 5=flashx.tv, yesload.net
      */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final String old_domain = new Regex(param.toString(), "https?://(?:www\\.)?([^/]+/)").getMatch(0);
-        final String parameter = param.toString().replace(old_domain, "movie4k.tv/");
+        final String old_domain = Browser.getHost(param.toString());
+        final String parameter = param.toString().replace(old_domain, "movie4k.to/");
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String initalMirror = parameter.substring(parameter.lastIndexOf("/") + 1);
         br.setFollowRedirects(true);
@@ -54,10 +54,10 @@ public class Mv2kTo extends PluginForDecrypt {
             return decryptedLinks;
         }
         try {
-            br.getPage(parameter);
+            getPage(parameter);
             final String continuelink = br.getRegex("<SCRIPT>window\\.location='([^<>\"]*?)';</SCRIPT>").getMatch(0);
             if (continuelink != null) {
-                br.getPage(continuelink);
+                getPage(continuelink);
             }
             if (br.getHttpConnection().getResponseCode() == 404 || this.br.getURL().length() < 30) {
                 logger.info("Invalid URL, or the URL doesn't exist any longer: " + parameter);
@@ -94,7 +94,7 @@ public class Mv2kTo extends PluginForDecrypt {
                             if (finallink.contains("facebook.com/")) {
                                 continue;
                             } else if (finallink.matches("https?://embed\\.stream2k\\.com/[^<>\"]+")) {
-                                br2.getPage(finallink);
+                                getPage(br2, finallink);
                                 finallink = br2.getRegex("file: '(https?://[^<>\"]*?)',").getMatch(0);
                                 if (finallink == null) {
                                     finallink = br2.getRegex("'(https?://server\\d+\\.stream2k\\.com/dl\\d+/[^<>\"/]*?)'").getMatch(0);
@@ -104,7 +104,7 @@ public class Mv2kTo extends PluginForDecrypt {
                                 }
                             } else if (finallink.matches("https?://flashx\\.tv/player/embed_player\\.php\\?vid=\\d+")) {
                                 br2.setFollowRedirects(true);
-                                br2.getPage(finallink);
+                                getPage(br2, finallink);
                                 if (br2.containsHTML(">Video not found or deleted<")) {
                                     logger.info("Video not found or deleted");
                                     return decryptedLinks;
@@ -130,7 +130,7 @@ public class Mv2kTo extends PluginForDecrypt {
                         if (!nextPart.startsWith("/")) {
                             nextPart = "/" + nextPart;
                         }
-                        br.getPage(nextPart);
+                        getPage(nextPart);
                         br2 = br.cloneBrowser();
                     }
                     // No wait = stream2k links may fail
@@ -146,7 +146,7 @@ public class Mv2kTo extends PluginForDecrypt {
                     }
                     if (i < mirrors.length) {
                         next = mirrors[i];
-                        br.getPage(next);
+                        getPage(next);
                         br2 = br.cloneBrowser();
                         String mirrorParts[] = br.getRegex("<a href=\"(movie\\.php\\?id=\\d+\\&part=\\d)\">").getColumn(0);
                         if (mirrorParts != null && mirrorParts.length > 1) {

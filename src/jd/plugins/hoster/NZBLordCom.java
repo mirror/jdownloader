@@ -22,6 +22,7 @@ import jd.http.requests.PostFormDataRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -32,7 +33,6 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nzblord.com" }, urls = { "" })
 public class NZBLordCom extends PluginForHost {
-
     public NZBLordCom(final PluginWrapper wrapper) {
         super(wrapper);
         enablePremium("http://nzblord.com/premium/");
@@ -82,7 +82,7 @@ public class NZBLordCom extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
-    private void login(AccountInfo ai, Account account) throws Exception {
+    private void login(final AccountInfo ai, final Account account) throws Exception {
         synchronized (account) {
             br.setFollowRedirects(true);
             final Cookies cookies = account.loadCookies("");
@@ -119,18 +119,19 @@ public class NZBLordCom extends PluginForHost {
                 }
                 account.saveCookies(br.getCookies(getHost()), "");
                 final String validUntil = br.getRegex("Until\\s*<b><span\\s*title=\"(\\d+:\\d+:\\d+)\">(\\d+-\\d+-\\d+)").getMatch(1);
-                if (validUntil != null) {
+                if (validUntil != null && br.containsHTML("∞</span>UNLIMITED")) {
                     if (ai != null) {
                         ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "yyyy'-'MM'-'dd", Locale.ENGLISH) + (24 * 60 * 60 * 1000l));
+                        ai.setUnlimitedTraffic();
                     }
+                    account.setType(AccountType.PREMIUM);
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                if (!br.containsHTML("∞</span>UNLIMITED")) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    account.setType(AccountType.FREE);
+                    if (ai != null) {
+                        ai.setTrafficLeft(0);
+                    }
                 }
                 if (ai != null) {
-                    ai.setUnlimitedTraffic();
                     ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
                 }
             } catch (final PluginException e) {

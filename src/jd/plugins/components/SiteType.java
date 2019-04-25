@@ -247,7 +247,7 @@ public class SiteType {
          */
         URLShortnerLLP_URLShortner,
         /**
-         * URL shortening or monetising platform by <a href="https://www.mightyscripts.com/">mightyscripts.com</a><br />
+         * URL shortening or monetizing platform by <a href="https://www.mightyscripts.com/">mightyscripts.com</a><br />
          * <a href="https://www.mightyscripts.com/downloads/adlinkfly-monetized-url-shortener/">AdLinkFly – Monetized URL
          * Shortener</a><br />
          * <a href="https://www.mightyscripts.com/downloads/mighty-url-shortener-short-url-script/">Mighty URL Shortener | Short URL
@@ -255,6 +255,12 @@ public class SiteType {
          * They seem to share the same HTML frame work.
          */
         MightyScript_AdLinkFly,
+        /**
+         * URL shortening or monetizing platform which was first detected via clicksfly.com URLs (2019-04-25) thus called
+         * 'MightyScript_AdLinkFly2' until we find a better/real name. <br />
+         * Example: <a href="https://thinana.xyz/">thinana.xyz</a><br />
+         */
+        MightyScript_AdLinkFly2,
         MightyScript_MightyURLShortener,
         /**
          * <a href="https://www.abdulibrahim.com/url-shortener-with-ads-and-powerful-admin-panel/">URL Shortener with Ads and Powerful Admin

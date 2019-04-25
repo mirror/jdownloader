@@ -333,6 +333,10 @@ public class PremiumTo extends UseNet {
              */
             final boolean requiresStorageDownload = hosts_storage != null && hosts_storage.contains(link.getHost());
             if (requiresStorageDownload) {
+                /**
+                 * 2019-04-25: TODO: Add support for the "CLEAR_DOWNLOAD_HISTORY_STORAGE" feature for this mode as well (e.g. user downloads
+                 * file to storage via JD, downloads file via JD, lets JD delete the file from storage right after he downloaded it)
+                 */
                 /* Storage download */
                 final String apikey = getAndStoreAPIKey(account, false);
                 /* Check if that URL has already been downloaded to their cloud. */
