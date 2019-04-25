@@ -760,7 +760,12 @@ public class MegaConz extends PluginForHost {
             checkAndReserve(link, reservation);
             if (src.exists() && src.length() == link.getVerifiedFileSize()) {
                 // ready for decryption
-                decrypt(path, encryptionDone, link, keyString);
+                decryptingDownloadLink = link;
+                try {
+                    decrypt(path, encryptionDone, link, keyString);
+                } finally {
+                    decryptingDownloadLink = null;
+                }
                 link.getLinkStatus().setStatus(LinkStatus.FINISHED);
                 return;
             }
@@ -974,7 +979,8 @@ public class MegaConz extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_GLOBAL_CDN, JDL.L("plugins.hoster.megaconz.globalcdn", "Use global CDN?")).setDefaultValue(true));
     }
 
-    private static Object DECRYPTLOCK = new Object();
+    private static Object         DECRYPTLOCK            = new Object();
+    private volatile DownloadLink decryptingDownloadLink = null;
 
     private void decrypt(final String path, AtomicLong encryptionDone, DownloadLink link, String keyString) throws Exception {
         byte[] b64Dec = b64decode(keyString);
@@ -1118,6 +1124,15 @@ public class MegaConz extends PluginForHost {
             }
         } finally {
             FileStateManager.getInstance().releaseFileState(outputFile, this);
+        }
+    }
+
+    @Override
+    public boolean isSpeedLimited(DownloadLink link, Account account) {
+        if (decryptingDownloadLink != null && link == decryptingDownloadLink) {
+            return false;
+        } else {
+            return super.isSpeedLimited(link, account);
         }
     }
 

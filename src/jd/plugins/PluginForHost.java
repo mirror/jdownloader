@@ -2165,7 +2165,7 @@ public abstract class PluginForHost extends Plugin {
         try {
             UIOManager.I().show(AskToUsePremiumDialogInterface.class, d).throwCloseExceptions();
         } catch (Throwable e) {
-            LogSource.exception(logger, e);
+            logger.log(e);
         }
     }
 
@@ -2173,7 +2173,7 @@ public abstract class PluginForHost extends Plugin {
 
     protected boolean checkShowFreeDialog(final String domain) {
         try {
-            if (domain != null) {
+            if (domain != null && !Application.isHeadless()) {
                 synchronized (CHECKSHOWFREEDIALOGLOCK) {
                     final String key = JDHash.getMD5(domain) + "_08052015";
                     final long TIMEOUT = 1000l * 60 * 60 * 24 * 31 * 2;
@@ -2204,7 +2204,7 @@ public abstract class PluginForHost extends Plugin {
                 }
             }
         } catch (final Throwable e) {
-            LogSource.exception(logger, e);
+            logger.log(e);
         }
         return false;
     }
