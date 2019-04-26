@@ -165,7 +165,8 @@ public class Tf1Fr extends PluginForHost {
             dl.startDownload();
         } else if (finallink.contains(".m3u8")) {
             // HLS
-            final List<HlsContainer> qualities = HlsContainer.getHlsQualities(br, finallink);
+            final String m3u8 = finallink.replaceAll("(&(min|max)_bitrate=\\d+)", "");
+            final List<HlsContainer> qualities = HlsContainer.getHlsQualities(br, m3u8);
             final HlsContainer best = HlsContainer.findBestVideoByBandwidth(qualities);
             if (best == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
