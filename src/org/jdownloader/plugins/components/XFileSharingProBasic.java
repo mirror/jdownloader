@@ -115,7 +115,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 4.0.1.2<br />
+     * DEV NOTES XfileSharingProBasic Version 4.0.1.3<br />
      ****************************
      * NOTES from raztoki <br/>
      * - no need to set setfollowredirect true. <br />
@@ -1382,15 +1382,22 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
     }
 
-    /* Removes HTML code which could break the plugin */
-    public void correctBR() throws NumberFormatException, PluginException {
-        correctedBR = br.toString();
-        ArrayList<String> regexStuff = new ArrayList<String>();
+    public ArrayList<String> getCleanupHTMLRegexes() {
+        final ArrayList<String> regexStuff = new ArrayList<String>();
         // remove custom rules first!!! As html can change because of generic cleanup rules.
         /* generic cleanup */
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
         regexStuff.add("(display: ?none;\">.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
+        return regexStuff;
+    }
+
+    /* Removes HTML code which could break the plugin */
+    protected void correctBR() throws NumberFormatException, PluginException {
+        correctedBR = br.toString();
+        final ArrayList<String> regexStuff = getCleanupHTMLRegexes();
+        // remove custom rules first!!! As html can change because of generic cleanup rules.
+        /* generic cleanup */
         for (String aRegex : regexStuff) {
             String results[] = new Regex(correctedBR, aRegex).getColumn(0);
             if (results != null) {
