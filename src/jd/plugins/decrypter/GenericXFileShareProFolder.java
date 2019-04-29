@@ -38,8 +38,8 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 @SuppressWarnings("deprecation")
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "XFileShareProFolder" }, urls = {
-        "https?://(?:www\\.)?(?:subyshare\\.com|brupload\\.net|(?:exclusivefaile\\.com|exclusiveloader\\.com)|ex-load\\.com|hulkload\\.com|koofile\\.com|bestreams\\.net|powvideo\\.net|lunaticfiles\\.com|youwatch\\.org|streamratio\\.com|vshare\\.eu|up\\.media1fire\\.com|salefiles\\.com|ortofiles\\.com|restfile\\.ca|restfilee\\.com|storagely\\.com|free\\-uploading\\.com|rapidfileshare\\.net|fireget\\.com|ishareupload\\.com|gorillavid\\.in|mixshared\\.com|longfiles\\.com|novafile\\.com|orangefiles\\.me|qtyfiles\\.com|free\\-uploading\\.com|free\\-uploading\\.com|uppit\\.com|downloadani\\.me|faststore\\.org|clicknupload\\.org|isra\\.cloud|(?:up\\-4\\.net|up\\-4ever\\.com)|world\\-files\\.com|katfile\\.com)/(users/[a-z0-9_]+(?:/[^\\?\r\n]+)?|folder/\\d+/[^\\?\r\n]+)|https?://(?:www\\.)?users(?:files|cloud)\\.com/go/[a-zA-Z0-9]{12}/?|https?://(www\\.)?(hotlink\\.cc|ex-load\\.com)/folder/[a-f0-9\\-]+|https?://(?:www\\.)?imgbaron\\.com/g/[A-Za-z0-9]+" })
-public class XFileShareProFolder extends antiDDoSForDecrypt {
+        "https?://(?:www\\.)?(?:subyshare\\.com|brupload\\.net|(?:exclusivefaile\\.com|exclusiveloader\\.com)|ex-load\\.com|hulkload\\.com|koofile\\.com|bestreams\\.net|powvideo\\.net|lunaticfiles\\.com|youwatch\\.org|streamratio\\.com|vshare\\.eu|up\\.media1fire\\.com|salefiles\\.com|ortofiles\\.com|restfile\\.ca|restfilee\\.com|storagely\\.com|free\\-uploading\\.com|rapidfileshare\\.net|fireget\\.com|ishareupload\\.com|gorillavid\\.in|mixshared\\.com|longfiles\\.com|novafile\\.com|orangefiles\\.me|qtyfiles\\.com|free\\-uploading\\.com|free\\-uploading\\.com|uppit\\.com|downloadani\\.me|faststore\\.org|clicknupload\\.org|isra\\.cloud|(?:up\\-4\\.net|up\\-4ever\\.com)|world\\-files\\.com|katfile\\.com)/(users/[a-z0-9_]+(?:/[^\\?\r\n]+)?|folder/\\d+/[^\\?\r\n]+)|https?://(?:www\\.)?users(?:files|cloud)\\.com/go/[a-zA-Z0-9]{12}/?|https?://(www\\.)?(hotlink\\.cc|ex-load\\.com)/folder/[a-f0-9\\-]+|https?://(?:www\\.)?imgbaron\\.com/g/[A-Za-z0-9]+|https?://(?:filespace|spaceforfiles)\\.com/dir/[a-z0-9]+" })
+public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
     // DONT FORGET TO MAINTAIN HERE ALSO!
     public String[] siteSupportedNames() {
         return new String[] { "up-4.net", "usersfiles.com", "subyshare.com", "brupload.net", "exclusivefaile.com", "exclusiveloader.com", "ex-load.com", "hulkload.com", "koofile.com", "powvideo.net", "lunaticfiles.com", "youwatch.org", "streamratio.com", "vshare.eu", "up.media1fire.com", "salefiles.com", "ortofiles.com", "restfile.ca", "restfilee.com", "storagely.com", "free-uploading.com", "rapidfileshare.net", "fireget.com", "ishareupload.com", "gorillavid.in", "mixshared.com", "longfiles.com", "novafile.com", "orangefiles.me", "qtyfiles.com", "free-uploading.com", "free-uploading.com", "uppit.com", "downloadani.me", "faststore.org", "hotlink.cc", "clicknupload.org", "isra.cloud", "imgbaron.com", "world-files.com" };
@@ -54,7 +54,6 @@ public class XFileShareProFolder extends antiDDoSForDecrypt {
     // other: keep last /.+ for fpName. Not needed otherwise.
     // other: group sister sites or aliased domains together, for easy
     // maintenance.
-    // TODO: remove old xfileshare folder plugins after next major update.
     private String                        host           = null;
     private String                        parameter      = null;
     private boolean                       fast_linkcheck = false;
@@ -65,7 +64,7 @@ public class XFileShareProFolder extends antiDDoSForDecrypt {
     /**
      * @author raztoki
      */
-    public XFileShareProFolder(PluginWrapper wrapper) {
+    public GenericXFileShareProFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
 

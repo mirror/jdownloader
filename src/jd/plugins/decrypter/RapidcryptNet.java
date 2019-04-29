@@ -17,15 +17,16 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidcrypt.net" }, urls = { "https?://(?:www\\.)?rapidcrypt\\.net/[^/]+/[a-z0-9]+" })
-public class RapidcryptNet extends PluginForDecrypt {
+public class RapidcryptNet extends antiDDoSForDecrypt {
     public RapidcryptNet(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -33,12 +34,13 @@ public class RapidcryptNet extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        br.getPage(parameter);
+        br.setFollowRedirects(true);
+        getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final String finallink = this.br.getRegex("class=\"push_button blue\" href=([^>]+)>").getMatch(0);
+        final String finallink = this.br.getRegex("class=(?:\"|\\')push_button blue(?:\"|\\') href=(?:\"|\\')?([^\"\\'>]+)(?:\"|\\')?>").getMatch(0);
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

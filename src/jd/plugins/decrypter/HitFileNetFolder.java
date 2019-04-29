@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -28,9 +27,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hitfile.net" }, urls = { "http://(www\\.)?hitfile\\.net/download/folder/\\d+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hitfile.net" }, urls = { "https?://(?:www\\.)?(?:hitfile\\.net|hil\\.to)/download/folder/\\d+" })
 public class HitFileNetFolder extends PluginForDecrypt {
-
     public HitFileNetFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -40,7 +38,7 @@ public class HitFileNetFolder extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getHeaders().put("Referer", parameter);
-        br.getPage("http://hitfile.net/lang/en");
+        br.getPage("https://hitfile.net/lang/en");
         if (!br.getURL().equals(parameter)) {
             br.getPage(parameter);
         }
@@ -51,7 +49,7 @@ public class HitFileNetFolder extends PluginForDecrypt {
         final String fpName = br.getRegex("class=\\'folder\\-big\\'><img src=\\'/js/lib/grid/icon/folder\\.png\\'>([^<>\"\\']+)</div>").getMatch(0);
         final String fid = new Regex(parameter, "/folder/(\\d+)").getMatch(0);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.getPage("http://hitfile.net/downloadfolder/gridFile?rootId=" + fid + "&currentId=" + fid + "&_search=false&nd=" + Math.random() + "&rows=100000&page=1&sidx=file_type&sord=asc");
+        br.getPage("https://hitfile.net/downloadfolder/gridFile?rootId=" + fid + "&currentId=" + fid + "&_search=false&nd=" + Math.random() + "&rows=100000&page=1&sidx=file_type&sord=asc");
         String[] ids = br.getRegex("\"id\":\"([A-Za-z0-9]+)\"").getColumn(0);
         if (ids == null || ids.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
@@ -59,7 +57,7 @@ public class HitFileNetFolder extends PluginForDecrypt {
         }
         for (String id : ids) {
             if (!id.equals(fid)) {
-                decryptedLinks.add(createDownloadlink("http://hitfile.net/" + id));
+                decryptedLinks.add(createDownloadlink("https://hitfile.net/" + id));
             }
         }
         if (fpName != null) {
@@ -74,5 +72,4 @@ public class HitFileNetFolder extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

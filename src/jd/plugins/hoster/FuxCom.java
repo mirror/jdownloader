@@ -15,6 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -28,7 +30,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fux.com" }, urls = { "https?://(?:www\\.)?fux\\.com/(?:videos?|embed)/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fux.com", "4tube.com", "porntube.com", "pornerbros.com" }, urls = { "https?://(?:www\\.)?fux\\.com/(?:video|embed)/\\d+/?(?:[\\w-]+)?", "https?://(?:www\\.)?4tube\\.com/(?:embed|videos)/\\d+/?(?:[\\w-]+)?|https?://m\\.4tube\\.com/videos/\\d+/?(?:[\\w-]+)?", "https?://(?:www\\.)?(?:porntube\\.com/videos/[a-z0-9\\-]+_\\d+|embed\\.porntube\\.com/\\d+|porntube\\.com/embed/\\d+)", "https?://(?:www\\.)?(?:pornerbros\\.com/videos/[a-z0-9\\-]+_\\d+|embed\\.pornerbros\\.com/\\d+|pornerbros\\.com/embed/\\d+)" })
 public class FuxCom extends PluginForHost {
     public FuxCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -48,12 +50,35 @@ public class FuxCom extends PluginForHost {
     }
 
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("fux.com/embed/", "fux.com/video/"));
+        final String protocol_of_mobile_URL = new Regex(link.getPluginPatternMatcher(), "^(https?://)m\\..+").getMatch(0);
+        if (protocol_of_mobile_URL != null) {
+            /* E.g. 4tube.com, Change mobile-website-URL --> Desktop URL */
+            link.setPluginPatternMatcher(link.getPluginPatternMatcher().replaceAll(protocol_of_mobile_URL + "m.", protocol_of_mobile_URL));
+        }
+        final String linkid = this.getLinkID(link);
+        if (link.getPluginPatternMatcher().matches(".+4tube\\.com/embed/\\d+")) {
+            /* Special case! */
+            link.setPluginPatternMatcher(String.format("https://www.4tube.com/videos/%s/dummytext", linkid));
+        } else if (link.getPluginPatternMatcher().matches(".+(porntube|pornerbros)\\.com/embed/\\d+")) {
+            /* Special case! */
+            final String host = link.getHost();
+            link.setPluginPatternMatcher(String.format("https://www.%s/videos/dummytext_%s", host, linkid));
+        } else {
+            link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("/embed/", "/video/"));
+        }
     }
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        final String linkid = new Regex(link.getPluginPatternMatcher(), "(\\d+)$").getMatch(0);
+        String linkid = new Regex(link.getPluginPatternMatcher(), "/(?:videos|embed)/(\\d+)").getMatch(0);
+        if (linkid == null) {
+            /* E.g. porntube.com & pornerbros.com OLD embed linkformat */
+            linkid = new Regex(link.getPluginPatternMatcher(), "https?://embed\\.[^/]+/(\\d+)").getMatch(0);
+        }
+        if (linkid == null) {
+            /* E.g. pornerbros.com */
+            linkid = new Regex(link.getPluginPatternMatcher(), "_(\\d+)$").getMatch(0);
+        }
         if (linkid != null) {
             return linkid;
         } else {
@@ -61,33 +86,45 @@ public class FuxCom extends PluginForHost {
         }
     }
 
+    private String dllink = null;
+
+    // private boolean isEmbed(final String url) {
+    // return url.matches(".+(embed\\..+|/embed/).+");
+    // }
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getHeaders().put("Accept-Language", "en-AU,en;q=0.8");
         br.getPage(link.getPluginPatternMatcher());
-        if (br.getURL().matches(".+/videos?\\?error=\\d+") || br.containsHTML("<title>Fux - Error - Page not found</title>|<h2>Page<br />not found</h2>|We can't find that page you're looking for|<h3>Oops!</h3>|class='videoNotAvailable'")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().matches(".+/videos?\\?error=\\d+")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final String fallback_filename = getFallbackFilename(link);
         String filename = br.getRegex("property=\"og:title\" content=\"([^\"]+)\"").getMatch(0);
-        if (filename == null) {
-            /* Fallback */
-            filename = getLinkID(link);
+        if (filename == null || true) {
+            filename = fallback_filename;
         }
         final String source;
         final String b64 = br.getRegex("window\\.INITIALSTATE = \\'([^\"\\']+)\\'").getMatch(0);
         if (b64 != null) {
-            /* 2018-11-14: New */
+            /* 2018-11-14: fux.com: New */
             source = Encoding.htmlDecode(Encoding.Base64Decode(b64));
         } else {
             source = br.toString();
         }
-        final String mediaID = new Regex(source, "\"mediaId\":([0-9]{2,})").getMatch(0);
+        /* 2019-04-29: fux.com */
+        String mediaID = new Regex(source, "\"mediaId\":([0-9]{2,})").getMatch(0);
+        if (mediaID == null) {
+            /* 2019-04-29: E.g. 4tube.com and all others (?) */
+            mediaID = getMediaid(this.br);
+        }
         String availablequalities = br.getRegex("\\((\\d+)\\s*,\\s*\\d+\\s*,\\s*\\[([0-9,]+)\\]\\);").getMatch(0);
         if (availablequalities != null) {
             availablequalities = availablequalities.replace(",", "+");
         } else {
+            /* Fallback */
             availablequalities = "1080+720+480+360+240";
         }
         if (mediaID == null || filename == null) {
@@ -96,16 +133,22 @@ public class FuxCom extends PluginForHost {
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
         br.getHeaders().put("Origin", "http://www.fux.com");
         final boolean newWay = true;
-        if (newWay) {
-            /* 2017-05-31 */
-            br.postPage("https://tkn.kodicdn.com/" + mediaID + "/desktop/" + availablequalities, "");
+        final String host = br.getHost();
+        if (host.equals("fux.com")) {
+            if (newWay) {
+                /* 2019-04-29 */
+                br.postPage("https://token.fux.com/" + mediaID + "/desktop/" + availablequalities, "");
+            } else {
+                /* Leave this in as it might still be usable as a fallback in the future! */
+                br.postPage("https://tkn.fux.com/" + mediaID + "/desktop/" + availablequalities, "");
+            }
         } else {
-            br.postPage("https://tkn.fux.com/" + mediaID + "/desktop/" + availablequalities, "");
+            br.postPage("https://token." + host + "/" + mediaID + "/desktop/" + availablequalities, "");
         }
         // seems to be listed in order highest quality to lowest. 20130513
-        String dllink = getDllink();
+        dllink = getDllink();
         if (dllink == null) {
-            logger.warning("Couldn't find 'DDLINK'");
+            logger.warning("Couldn't find 'dllink'");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.htmlDecode(dllink);
@@ -124,7 +167,6 @@ public class FuxCom extends PluginForHost {
             con = br.openGetConnection(dllink.trim());
             if (!con.getContentType().contains("html")) {
                 link.setDownloadSize(con.getLongContentLength());
-                link.setProperty("DDLink", br.getURL());
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -135,6 +177,44 @@ public class FuxCom extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    private String getFilenameURL(final String url) {
+        String filename_url = new Regex(url, "/videos/\\d+/(.+)").getMatch(0);
+        if (filename_url == null) {
+            /* E.g. pornerbros.com */
+            filename_url = new Regex(url, "/videos/(.+)_\\d+$").getMatch(0);
+        }
+        return filename_url;
+    }
+
+    private String getFallbackFilename(final DownloadLink dl) {
+        final String linkid = this.getLinkID(dl);
+        String filename_url = getFilenameURL(dl.getPluginPatternMatcher());
+        /*
+         * Sites will usually redirect to URL which contains title so if the user adds a short URL, there is still a chance to get a
+         * filename via URL!
+         */
+        // final String filename_url_browser = getFilenameURL(br.getURL());
+        /* URL-filename may also be present in HTML */
+        String filename_url_browser_html = br.getRegex("/videos?/" + linkid + "/([A-Za-z0-9\\-_]+)").getMatch(0);
+        if (filename_url_browser_html == null) {
+            /* E.g. porntube.com & pornerbros.com */
+            filename_url_browser_html = br.getRegex("/videos?/([A-Za-z0-9\\-_]+)_" + linkid).getMatch(0);
+        }
+        if (filename_url == null) {
+            filename_url = getFilenameURL(br.getURL());
+        }
+        final String fallback_filename;
+        if (filename_url != null && filename_url_browser_html != null && filename_url_browser_html.length() > filename_url.length()) {
+            /* Title in current browser URL is longer than in the user-added URL --> Use that */
+            fallback_filename = linkid + "_" + filename_url_browser_html;
+        } else if (filename_url != null) {
+            fallback_filename = linkid + "_" + filename_url;
+        } else {
+            fallback_filename = linkid;
+        }
+        return fallback_filename;
     }
 
     @Override
@@ -164,6 +244,30 @@ public class FuxCom extends PluginForHost {
             finallink = br.getRegex("\"token\":\"(https?://[^<>\"]*?)\"").getMatch(0);
         }
         return finallink;
+    }
+
+    public static String getMediaid(final Browser br) throws IOException {
+        return getMediaid(br, br.toString());
+    }
+
+    public static String getMediaid(final Browser br, final String source) throws IOException {
+        final Regex info = new Regex(source, "\\.ready\\(function\\(\\) \\{embedPlayer\\((\\d+), \\d+, \\[(.*?)\\],");
+        String mediaID = info.getMatch(0);
+        if (mediaID == null) {
+            mediaID = new Regex(source, "\\$\\.ajax\\(url, opts\\);[\t\n\r ]+\\}[\t\n\r ]+\\}\\)\\((\\d+),").getMatch(0);
+        }
+        if (mediaID == null) {
+            mediaID = new Regex(source, "id=\"download\\d+p\" data\\-id=\"(\\d+)\"").getMatch(0);
+        }
+        if (mediaID == null) {
+            // just like 4tube/porntube/fux....<script id="playerembed" src...
+            final String embed = new Regex(source, "/js/player/(?:embed|web)/\\d+(?:\\.js)?").getMatch(-1);
+            if (embed != null) {
+                br.getPage(embed);
+                mediaID = br.getRegex("\\((\\d+)\\s*,\\s*\\d+\\s*,\\s*\\[([0-9,]+)\\]\\);").getMatch(0); // $.ajax(url,opts);}})(
+            }
+        }
+        return mediaID;
     }
 
     private String checkDirectLink(String directlink) {

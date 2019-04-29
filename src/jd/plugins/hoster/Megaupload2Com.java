@@ -17,7 +17,6 @@ package jd.plugins.hoster;
 
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.YetiShareCore;
 
 import jd.PluginWrapper;
@@ -27,8 +26,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class LetsuploadCo extends YetiShareCore {
-    public LetsuploadCo(PluginWrapper wrapper) {
+public class Megaupload2Com extends YetiShareCore {
+    public Megaupload2Com(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(getPurchasePremiumURL());
     }
@@ -37,12 +36,12 @@ public class LetsuploadCo extends YetiShareCore {
      * DEV NOTES YetiShare<br />
      ****************************
      * mods: See overridden functions<br />
-     * limit-info: 2019-04-25: no limits at all<br />
-     * captchatype-info: 2019-04-25: null<br />
+     * limit-info: 2019-04-27: no limits at all <br />
+     * captchatype-info: 2019-04-27: null<br />
      * other: <br />
      */
     /* 1st domain = current domain! */
-    public static String[] domains = new String[] { "letsupload.co" };
+    public static String[] domains = new String[] { "megaupload2.com" };
 
     public static String[] getAnnotationNames() {
         return new String[] { domains[0] };
@@ -54,7 +53,7 @@ public class LetsuploadCo extends YetiShareCore {
      */
     public static String[] getAnnotationUrls() {
         final String host = getHostsPattern();
-        return new String[] { host + "/(?!folder)[A-Za-z0-9]+(?:/[^/<>]+)?" };
+        return new String[] { host + "/[A-Za-z0-9]+(?:/[^/<>]+)?" };
     }
 
     /** Returns '(?:domain1|domain2)' */
@@ -116,22 +115,6 @@ public class LetsuploadCo extends YetiShareCore {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
-    }
-
-    /** 2019-04-25: Special */
-    @Override
-    public String[] scanInfo(final String[] fileInfo) {
-        if (supports_availablecheck_over_info_page()) {
-            fileInfo[0] = br.getRegex("<span>Filename[^<]*?<p>([^<>\"]+)</p>").getMatch(0);
-            fileInfo[1] = br.getRegex("<span>Filesize[^<]*?<p>([^<>\"]+)</p>").getMatch(0);
-        } else {
-            fileInfo[0] = br.getRegex("class=\"fa fa-file\\-text\"></i>([^<>\"]+)</div>").getMatch(0);
-            fileInfo[1] = br.getRegex("size[^<]*?<p>([^<>\"]+)</p>").getMatch(0);
-        }
-        if (StringUtils.isEmpty(fileInfo[0]) || StringUtils.isEmpty(fileInfo[1])) {
-            super.scanInfo(fileInfo);
-        }
-        return fileInfo;
     }
 
     public boolean supports_https() {
