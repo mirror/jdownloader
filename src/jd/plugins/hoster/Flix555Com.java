@@ -20,28 +20,26 @@ import java.util.regex.Pattern;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class FilespaceCom extends XFileSharingProBasic {
-    public FilespaceCom(final PluginWrapper wrapper) {
+public class Flix555Com extends XFileSharingProBasic {
+    public Flix555Com(final PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(super.getPurchasePremiumURL());
+        // this.enablePremium(super.getPurchasePremiumURL());
     }
 
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
      * limit-info:<br />
-     * captchatype-info: 2019-04-29: solvemedia<br />
+     * captchatype-info: 2019-04-29: null<br />
      * other:<br />
      */
-    private static String[] domains = new String[] { "filespace.com", "spaceforfiles.com" };
+    private static String[] domains = new String[] { "flix555.com" };
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
@@ -61,48 +59,29 @@ public class FilespaceCom extends XFileSharingProBasic {
     public int getMaxChunks(final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return 1;
+            return -2;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return 1;
+            return -2;
         } else {
             /* Free(anonymous) and unknown account type */
-            return 1;
+            return -2;
         }
     }
 
     @Override
     public int getMaxSimultaneousFreeAnonymousDownloads() {
-        return 1;
+        return 2;
     }
 
     @Override
     public int getMaxSimultaneousFreeAccountDownloads() {
-        return 1;
+        return 2;
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 10;
-    }
-
-    public boolean handleCaptcha(final DownloadLink link, final Form captchaForm) throws Exception {
-        /* 2019-04-29: Special */
-        final String md5hash = new Regex(correctedBR, "MD5 Checksum: ([a-f0-9]{32})").getMatch(0);
-        if (md5hash != null) {
-            link.setMD5Hash(md5hash);
-        }
-        return super.handleCaptcha(link, captchaForm);
-    }
-
-    @Override
-    public String regexWaittime() {
-        /* 2019-04-29: Special */
-        String wait = super.regexWaittime();
-        if (wait == null) {
-            wait = new Regex(correctedBR, "Please wait <span id=\"[a-z0-9]+\">(\\d+)</span>").getMatch(0);
-        }
-        return wait;
+        return 2;
     }
 
     @Override
@@ -127,12 +106,14 @@ public class FilespaceCom extends XFileSharingProBasic {
 
     @Override
     public boolean isVideohoster_2() {
-        return super.isVideohoster_2();
+        /* 2019-04-29: Special */
+        return true;
     }
 
     @Override
     public boolean isVideohoster_enforce_video_filename() {
-        return super.isVideohoster_enforce_video_filename();
+        /* 2019-04-29: Special */
+        return true;
     }
 
     @Override
@@ -142,12 +123,14 @@ public class FilespaceCom extends XFileSharingProBasic {
 
     @Override
     public boolean supports_availablecheck_alt() {
-        return super.supports_availablecheck_alt();
+        /* 2019-04-29: Special */
+        return false;
     }
 
     @Override
     public boolean supports_availablecheck_filesize_alt_fast() {
-        return super.supports_availablecheck_filesize_alt_fast();
+        /* 2019-04-29: Special */
+        return false;
     }
 
     @Override
@@ -157,12 +140,14 @@ public class FilespaceCom extends XFileSharingProBasic {
 
     @Override
     public boolean supports_availablecheck_filename_abuse() {
-        return super.supports_availablecheck_filename_abuse();
+        /* 2019-04-29: Special */
+        return false;
     }
 
     @Override
     public boolean supports_availablecheck_filesize_html() {
-        return super.supports_availablecheck_filesize_html();
+        /* 2019-04-29: Special */
+        return false;
     }
 
     @Override

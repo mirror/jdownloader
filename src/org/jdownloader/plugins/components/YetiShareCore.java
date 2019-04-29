@@ -121,7 +121,7 @@ public class YetiShareCore extends antiDDoSForHost {
     public void correctDownloadLink(final DownloadLink link) {
         /* link cleanup, but respect users protocol choosing or forced protocol */
         final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), "^https?://[^/]+/([A-Za-z0-9]+)");
-        final String fid = urlinfo.getMatch(1);
+        final String fid = urlinfo.getMatch(0);
         final String protocol;
         if (supports_https()) {
             protocol = "https";
@@ -554,7 +554,8 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     private String getDllink(final Browser br) {
-        return br.getRegex("\"(https?://(?:www\\.)?(?:[A-Za-z0-9\\.\\-]+\\.)?[^/]+/[^<>\"\\?]*?\\?download_token=[A-Za-z0-9]+)\"").getMatch(0);
+        String dllink = br.getRegex("\"(https?://[A-Za-z0-9\\.\\-]+\\.[^/]+/[^<>\"]*?(?:\\?|\\&)download_token=[A-Za-z0-9]+[^<>\"]*?)\"").getMatch(0);
+        return dllink;
     }
 
     private boolean isDllink(final String url) {
@@ -571,8 +572,13 @@ public class YetiShareCore extends antiDDoSForHost {
 
     /** Returns unique id from inside URL - usually with this pattern: [A-Za-z0-9]+ */
     protected String getFUIDFromURL(final DownloadLink dl) {
+        return getFUIDFromURL(dl.getPluginPatternMatcher());
+    }
+
+    /** Returns unique id from inside URL - usually with this pattern: [A-Za-z0-9]+ */
+    public static String getFUIDFromURL(final String url) {
         try {
-            final String result = new Regex(new URL(dl.getPluginPatternMatcher()).getPath(), "^/([A-Za-z0-9]+)").getMatch(0);
+            final String result = new Regex(new URL(url).getPath(), "^/([A-Za-z0-9]+)").getMatch(0);
             return result;
         } catch (MalformedURLException e) {
             e.printStackTrace();
@@ -585,14 +591,18 @@ public class YetiShareCore extends antiDDoSForHost {
      * has URLs that contain filenames: freefile.me, letsupload.co
      */
     public String getFilenameFromURL(final DownloadLink dl) {
+        final String result;
+        if (dl.getContentUrl() != null) {
+            result = getFilenameFromURL(dl.getContentUrl());
+        } else {
+            result = getFilenameFromURL(dl.getPluginPatternMatcher());
+        }
+        return result;
+    }
+
+    public static String getFilenameFromURL(final String url) {
         try {
-            String result = null;
-            if (dl.getContentUrl() != null) {
-                result = new Regex(new URL(dl.getContentUrl()).getPath(), "[^/]+/(.+)$").getMatch(0);
-            }
-            if (result == null) {
-                result = new Regex(new URL(dl.getPluginPatternMatcher()).getPath(), "[^/]+/(.+)$").getMatch(0);
-            }
+            final String result = new Regex(new URL(url).getPath(), "[^/]+/(.+)$").getMatch(0);
             return result;
         } catch (MalformedURLException e) {
             e.printStackTrace();
@@ -605,6 +615,15 @@ public class YetiShareCore extends antiDDoSForHost {
         String fallback_filename = this.getFilenameFromURL(dl);
         if (fallback_filename == null) {
             fallback_filename = this.getFUIDFromURL(dl);
+        }
+        return fallback_filename;
+    }
+
+    /** Tries to get filename from URL and if this fails, will return <fuid> filename. */
+    public static String getFallbackFilename(final String url) {
+        String fallback_filename = getFilenameFromURL(url);
+        if (fallback_filename == null) {
+            fallback_filename = getFUIDFromURL(url);
         }
         return fallback_filename;
     }
