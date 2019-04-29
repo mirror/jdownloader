@@ -101,11 +101,11 @@ public class FuxCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().matches(".+/videos?\\?error=\\d+")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String fallback_filename = getFallbackFilename(link);
-        String filename = br.getRegex("property=\"og:title\" content=\"([^\"]+)\"").getMatch(0);
-        if (filename == null || true) {
-            filename = fallback_filename;
-        }
+        /*
+         * 2019-04-29: Always use 'Fallback filename' as it works for all supported websites and will usually give us a 'good looking'
+         * filename.
+         */
+        String filename = getFallbackFilename(link);
         final String source;
         final String b64 = br.getRegex("window\\.INITIALSTATE = \\'([^\"\\']+)\\'").getMatch(0);
         if (b64 != null) {
