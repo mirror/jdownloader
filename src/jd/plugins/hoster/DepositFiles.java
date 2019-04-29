@@ -31,6 +31,14 @@ import java.util.regex.Pattern;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -55,23 +63,14 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "depositfiles.com" }, urls = { "https?://(www\\.)?(depositfiles\\.(com|org)|dfiles\\.(eu|ru))(/\\w{1,3})?/files/[\\w]+" })
 public class DepositFiles extends antiDDoSForHost {
-    private final String                  UA                           = "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.81 Safari/537.36";
+    private final String                  UA                           = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36";
     private final String                  FILE_NOT_FOUND               = "Dieser File existiert nicht|Entweder existiert diese Datei nicht oder sie wurde";
     private final String                  downloadLimitReached         = "<strong>Achtung! Sie haben ein Limit|Sie haben Ihre Download Zeitfrist erreicht\\.<";
     private final String                  PATTERN_PREMIUM_FINALURL     = "<div id=\"download_url\".*?<a href=\"(.*?)\"";
@@ -450,7 +449,7 @@ public class DepositFiles extends antiDDoSForHost {
             }
             checkErrors();
             String dllink = getDllink();
-            if (dllink != null && !dllink.equals("")) {
+            if (!StringUtils.isEmpty(dllink)) {
                 dllink = fixLinkSSL(dllink);
                 // handling for txt file downloadlinks, dunno why they made a completely different page for txt files
                 dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 1);
@@ -504,15 +503,20 @@ public class DepositFiles extends antiDDoSForHost {
                 }
                 final String fid = br.getRegex("var fid = \\'(.*?)\\';").getMatch(0);
                 final String wait = br.getRegex("Please wait (\\d+) sec").getMatch(0);
+                if (fid == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 // wait required here before ajax
-                sleep(((wait != null ? Integer.parseInt(wait) : 60) * 1000l) - (System.currentTimeMillis() - timeBefore), downloadLink);
+                sleep(((wait != null ? Integer.parseInt(wait) : 60) * 1001l) - (System.currentTimeMillis() - timeBefore), downloadLink);
                 // // ajax request, here they give you more html && js. Think this is where the captcha type is determined.
-                ajaxGetPage("/get_file.php?fid=" + fid);
+                ajaxGetPage("/get_file.php?abspeed=0&fid=" + fid);
+                if (ajax.containsHTML("But currently no free download slots for")) {
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available", 5 * 60 * 1000l);
+                }
                 // this changes each time you load page...
                 final String ck = ajax.getRegex("ACPuzzleKey\\s*=\\s*('|\")(.*?)\\1").getMatch(1);
                 if (ck != null) {
                     // lets prefer solvemedia as it can be passed into CES/headless as browser not required
-                    final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
                     final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                     sm.setChallengeKey(ck);
                     File cf = null;

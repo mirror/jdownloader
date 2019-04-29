@@ -43,7 +43,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub(?:premium)?\\.com/(?:.*\\?viewkey=[a-z0-9]+|embed/[a-z0-9]+|embed_player\\.php\\?id=\\d+|pornstar/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos(/upload)?)?|users/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos(/public)?)?|model/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos)?|playlist/\\d+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub(?:premium)?\\.com/(?:.*\\?viewkey=[a-z0-9]+|embed/[a-z0-9]+|embed_player\\.php\\?id=\\d+|pornstar/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos(/upload)?)?|channels/[A-Za-z0-9\\-_]+/videos|users/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos(/public)?)?|model/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos)?|playlist/\\d+)" })
 public class PornHubCom extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     public PornHubCom(PluginWrapper wrapper) {
@@ -116,7 +116,7 @@ public class PornHubCom extends PluginForDecrypt {
         } else if (parameter.matches("(?i).*/(model|pornstar)/.*")) {
             logger.info("Model/Pornstar");
             ret = decryptAllVideosOfAPornstar();
-        } else if (parameter.matches("(?i).*/users/.*")) {
+        } else if (parameter.matches("(?i).*/(?:users|channels)/.*")) {
             if (new Regex(br.getURL(), "/(model|pornstar)/").matches()) { // Handle /users/ that has been switched to model|pornstar
                 logger.info("Users->Model|pornstar");
                 ret = decryptAllVideosOfAPornstar();
@@ -172,33 +172,41 @@ public class PornHubCom extends PluginForDecrypt {
         }
         FilePackage fp = null;
         // TODO: better check for user/model/pornstar and handle all possible cases
+        String user;
         if (parameter.matches("(?i).*/pornstar/[^/]+/videos/upload")) {
             jd.plugins.hoster.PornHubCom.getPage(br, parameter);
-            final String user = getUser(br);
+            user = getUser(br);
             if (user != null) {
                 fp = FilePackage.getInstance();
                 fp.setName("Videos uploaded by " + user);
             }
         } else if (parameter.matches("(?i).*/pornstar/[^/]+/videos/?")) {
             jd.plugins.hoster.PornHubCom.getPage(br, parameter);
-            final String user = getUser(br);
+            user = getUser(br);
             if (user != null) {
                 fp = FilePackage.getInstance();
                 fp.setName(user + " - Upload Videos");
             }
         } else if (parameter.matches("(?i).*/model/[^/]+/videos/?")) {
             jd.plugins.hoster.PornHubCom.getPage(br, parameter);
-            final String user = getUser(br);
+            user = getUser(br);
             if (user != null) {
                 fp = FilePackage.getInstance();
                 fp.setName(user + " - Upload Videos");
             }
         } else if (parameter.matches("(?i).*/users/[^/]*/?(videos/?)?")) {
             jd.plugins.hoster.PornHubCom.getPage(br, new Regex(parameter, "(.*/users/[^/]*)").getMatch(0) + "/videos/public");
-            final String user = getUser(br);
+            user = getUser(br);
             if (user != null) {
                 fp = FilePackage.getInstance();
                 fp.setName(user + "'s Public Videos");
+            }
+        } else if (parameter.matches("(?i).*/channels/.+")) {
+            jd.plugins.hoster.PornHubCom.getPage(br, parameter);
+            user = getUser(br);
+            if (user != null) {
+                fp = FilePackage.getInstance();
+                fp.setName(user + " Channel Uploads");
             }
         } else {
             jd.plugins.hoster.PornHubCom.getPage(br, parameter);
@@ -209,7 +217,7 @@ public class PornHubCom extends PluginForDecrypt {
         }
         // final String username = new Regex(parameter, "users/([^/]+)/").getMatch(0);
         int page = 1;
-        final int max_entries_per_page = 40;
+        int max_entries_per_page = 40;
         int links_found_in_this_page;
         final Set<String> dupes = new HashSet<String>();
         String publicVideosHTMLSnippet = null;
@@ -240,9 +248,12 @@ public class PornHubCom extends PluginForDecrypt {
                 base_url = br.getURL();
             }
             if (htmlSource) {
-                /* only parse videos of the user, avoid catching videos from 'outside' html */
+                /* only parse videos of the user/pornstar/channel, avoid catching unrelated content e.g. 'related' videos */
                 if (parameter.contains("/pornstar/") || parameter.contains("/model/")) {
                     publicVideosHTMLSnippet = br.getRegex("(class=\"videoUList[^\"]*?\".*?</section>)").getMatch(0);
+                } else if (parameter.contains("/channels/")) {
+                    publicVideosHTMLSnippet = br.getRegex("<ul[^>]*?id=\"showAllChanelVideos\">.*?</ul>").getMatch(-1);
+                    max_entries_per_page = 36;
                 } else {
                     // publicVideosHTMLSnippet = br.getRegex("(>public Videos<.+?(>Load More<|</section>))").getMatch(0);
                     publicVideosHTMLSnippet = br.getRegex("(class=\"videoUList[^\"]*?\".*?</section>)").getMatch(0);
@@ -278,8 +289,8 @@ public class PornHubCom extends PluginForDecrypt {
         return ret;
     }
 
-    private String getUser(Browser br) {
-        final String ret = new Regex(br.getURL(), "/(?:users|model|pornstar)/([^/]+)").getMatch(0);
+    private String getUser(final Browser br) {
+        final String ret = new Regex(br.getURL(), "/(?:users|model|pornstar|channels)/([^/]+)").getMatch(0);
         return ret;
     }
 
@@ -429,7 +440,6 @@ public class PornHubCom extends PluginForDecrypt {
             final DownloadLink dl = createOfflinelink(parameter);
             dl.setFinalFileName("viewkey=" + viewkey);
             decryptedLinks.add(dl);
-            logger.info("Debug info: isOffline: " + parameter);
             return true;
         }
         if (br.containsHTML(jd.plugins.hoster.PornHubCom.html_privatevideo)) {
@@ -448,6 +458,12 @@ public class PornHubCom extends PluginForDecrypt {
         logger.info("Debug info: foundLinks_all: " + foundLinks_all);
         boolean ret = false;
         if (foundLinks_all != null) {
+            if (foundLinks_all.isEmpty()) {
+                final DownloadLink dl = createOfflinelink(parameter);
+                dl.setFinalFileName("viewkey=" + viewkey);
+                decryptedLinks.add(dl);
+                return true;
+            }
             final Iterator<Entry<String, String>> it = foundLinks_all.entrySet().iterator();
             while (it.hasNext()) {
                 final Entry<String, String> next = it.next();
@@ -466,17 +482,19 @@ public class PornHubCom extends PluginForDecrypt {
                     ret = true;
                     logger.info("Grab:" + qualityInfo);
                     String final_filename = fpName + "_";
-                    if (!StringUtils.isEmpty(username)) {
-                        final_filename += username + "_";
-                    }
-                    final_filename += qualityInfo + "p.mp4";
                     final DownloadLink dl = getDecryptDownloadlink(viewkey, qualityInfo);
                     dl.setProperty("directlink", finallink);
                     dl.setProperty("quality", qualityInfo);
                     dl.setProperty("decryptedfilename", final_filename);
                     dl.setProperty("mainlink", parameter);
                     dl.setProperty("viewkey", viewkey);
-                    dl.setLinkID(getHost() + "://" + viewkey + qualityInfo);
+                    dl.setLinkID(viewkey + qualityInfo);
+                    if (!StringUtils.isEmpty(username)) {
+                        final_filename += username + "_";
+                        /* This property is only for the user (packagizer) and not required anywhere in our host plugin! */
+                        dl.setProperty("username", username);
+                    }
+                    final_filename += qualityInfo + "p.mp4";
                     dl.setFinalFileName(final_filename);
                     dl.setContentUrl(parameter);
                     if (fastlinkcheck) {
