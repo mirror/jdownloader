@@ -240,8 +240,19 @@ public class M3U8Playlist {
             }
             if (StringUtils.startsWithCaseInsensitive(line, "concat") || StringUtils.contains(line, "file:")) {
                 // http://habrahabr.ru/company/mailru/blog/274855/
-            } else if (line.matches("^https?://.+") || !line.trim().startsWith("#")) {
-                final String segmentURL = br.getURL(line).toString();
+            } else if (line.matches("^https?://.+") || !line.trim().startsWith("#") || line.startsWith("#EXT-X-MAP:URI")) {
+                final String segmentURL;
+                if (line.matches("^https?://.+") || !line.trim().startsWith("#")) {
+                    segmentURL = br.getURL(line).toString();
+                } else {
+                    // TODO: add BYTERANGE support
+                    final String URI = new Regex(line, "URI\\s*=\\s*\"(.*?)\"").getMatch(0);
+                    if (URI == null) {
+                        throw new IOException("Unsupported EXT-X-MAP:URI:" + line);
+                    } else {
+                        segmentURL = br.getURL(URI).toString();
+                    }
+                }
                 final M3U8Segment existing = current.getSegment(segmentURL);
                 if (existing == null || existing.isByteRange()) {
                     final M3U8Segment lastSegment = current.getLastSegment();
@@ -273,6 +284,7 @@ public class M3U8Playlist {
                 byteRange = null;
             } else {
                 if (line.startsWith("#EXT-X-BYTERANGE")) {
+                    // TODO: extract BYTERANGE parser into own method
                     final long byteRangeLength = Long.parseLong(new Regex(line, "#EXT-X-BYTERANGE:(\\d+)").getMatch(0));
                     final String byteRangeStart = new Regex(line, "#EXT-X-BYTERANGE:\\d+@(\\d+)").getMatch(0);
                     if (byteRangeStart != null) {
