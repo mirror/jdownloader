@@ -26,6 +26,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.plugins.components.containers.VimeoContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -46,15 +53,10 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.VimeoCom;
 import jd.plugins.hoster.VimeoCom.VIMEO_URL_TYPE;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.plugins.components.containers.VimeoContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vimeo.com" }, urls = { "https?://(?:www\\.)?vimeo\\.com/(\\d+(?:/[a-f0-9]+)?|(?:[a-z]{2}/)?channels/[a-z0-9\\-_]+/\\d+|[A-Za-z0-9\\-_]+/videos|ondemand/[A-Za-z0-9\\-_]+(/\\d+)?|groups/[A-Za-z0-9\\-_]+(?:/videos/\\d+)?)|https?://player\\.vimeo.com/(?:video|external)/\\d+((\\?|#).+)?|https?://(?:www\\.)?vimeo\\.com/[a-z0-9]+/review/\\d+/[a-f0-9]+" })
 public class VimeoComDecrypter extends PluginForDecrypt {
@@ -330,6 +332,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             String channelName = null;
             String channelUrl = null;
             String title = null;
+            String description = null;
             try {
                 if (orgParameter.matches((".+vimeo\\.com/channels/[^/]+.*"))) {
                     channelUrl = new Regex(orgParameter, "vimeo\\.com/channels/([^/]+)").getMatch(0);
@@ -415,16 +418,45 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             } catch (final Throwable e) {
                 logger.log(e);
             }
-            if (StringUtils.isEmpty(title)) {
-                /* Fallback */
-                title = videoID;
-            }
-            final List<VimeoContainer> containers = jd.plugins.hoster.VimeoCom.find(this, br, videoID, true, qALL || qMOBILE || qMOBILE || qHD, qALL || qMOBILE || qMOBILE || qHD, subtitle);
+            final boolean tryToFindOfficialDownloadURLs = this.qORG;
+            final List<VimeoContainer> containers = jd.plugins.hoster.VimeoCom.find(this, br, videoID, tryToFindOfficialDownloadURLs, qALL || qMOBILE || qMOBILE || qHD, qALL || qMOBILE || qMOBILE || qHD, subtitle);
             if (containers == null) {
                 return null;
             }
             if (containers.size() == 0) {
                 return decryptedLinks;
+            }
+            try {
+                /*
+                 * We're doing this request ONLY to find additional information which we were not able to get before (upload_date,
+                 * description) - also this can be used as a fallback to find data which should have been found before (e.g. title,
+                 * channel_name).
+                 */
+                final Browser brc = br.cloneBrowser();
+                /* https://developer.vimeo.com/api/oembed/videos */
+                brc.getPage("https://vimeo.com/api/oembed.json?url=" + URLEncode.encodeURIComponent(parameter));
+                if (StringUtils.isEmpty(title)) {
+                    title = PluginJSonUtils.getJson(brc, "title");
+                }
+                if (StringUtils.isEmpty(channelName)) {
+                    channelName = PluginJSonUtils.getJson(brc, "channel_name");
+                }
+                if (StringUtils.isEmpty(date)) {
+                    date = PluginJSonUtils.getJson(brc, "upload_date");
+                }
+                if (StringUtils.isEmpty(description)) {
+                    description = PluginJSonUtils.getJson(brc, "description");
+                }
+            } catch (final Throwable e) {
+            }
+            if (!StringUtils.isEmpty(date) && date.matches("\\d{4}\\-\\d{2}\\-\\d{2}T\\d{2}:\\d{2}:\\d{2}")) {
+                /* Correct date if needed */
+                final String[] dateStuff = date.split("T");
+                date = dateStuff[0] + ":" + dateStuff[1];
+            }
+            if (StringUtils.isEmpty(title)) {
+                /* Fallback */
+                title = videoID;
             }
             final HashMap<String, DownloadLink> dedupeMap = new HashMap<String, DownloadLink>();
             final List<DownloadLink> subtitles = new ArrayList<DownloadLink>();
@@ -480,12 +512,16 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 } else if (container.getEstimatedSize() != null) {
                     link.setDownloadSize(container.getEstimatedSize());
                 }
+                if (!StringUtils.isEmpty(description)) {
+                    link.setComment(description);
+                }
                 link.setAvailable(true);
                 if (isSubtitle) {
                     subtitles.add(link);
                 } else {
                     final DownloadLink best = dedupeMap.get(container.bestString());
-                    // we wont use size as its not always shown for different qualities. use quality preference
+                    /* we wont use size as its not always shown for different qualities. use quality preference */
+                    final int ordial_current = container.getSource().ordinal();
                     if (best == null || container.getSource().ordinal() > (jd.plugins.hoster.VimeoCom.getVimeoVideoContainer(best, false)).getSource().ordinal()) {
                         dedupeMap.put(container.bestString(), link);
                     }
@@ -505,9 +541,8 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 if (date != null) {
                     try {
                         final String userDefinedDateFormat = cfg.getStringProperty("CUSTOM_DATE_3", "dd.MM.yyyy_HH-mm-ss");
-                        final String[] dateStuff = date.split("T");
-                        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd:hh:mm:ss");
-                        Date dateStr = formatter.parse(dateStuff[0] + ":" + dateStuff[1]);
+                        SimpleDateFormat formatter = jd.plugins.hoster.VimeoCom.getFormatterForDate(date);
+                        Date dateStr = formatter.parse(date);
                         String formattedDate = formatter.format(dateStr);
                         Date theDate = formatter.parse(formattedDate);
                         formatter = new SimpleDateFormat(userDefinedDateFormat);
