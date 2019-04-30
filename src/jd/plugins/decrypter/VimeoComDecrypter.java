@@ -26,13 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.plugins.components.containers.VimeoContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -57,6 +50,13 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.VimeoCom;
 import jd.plugins.hoster.VimeoCom.VIMEO_URL_TYPE;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.plugins.components.containers.VimeoContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vimeo.com" }, urls = { "https?://(?:www\\.)?vimeo\\.com/(\\d+(?:/[a-f0-9]+)?|(?:[a-z]{2}/)?channels/[a-z0-9\\-_]+/\\d+|[A-Za-z0-9\\-_]+/videos|ondemand/[A-Za-z0-9\\-_]+(/\\d+)?|groups/[A-Za-z0-9\\-_]+(?:/videos/\\d+)?)|https?://player\\.vimeo.com/(?:video|external)/\\d+((\\?|#).+)?|https?://(?:www\\.)?vimeo\\.com/[a-z0-9]+/review/\\d+/[a-f0-9]+" })
 public class VimeoComDecrypter extends PluginForDecrypt {
@@ -334,18 +334,6 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             String title = null;
             String description = null;
             try {
-                if (orgParameter.matches((".+vimeo\\.com/channels/[^/]+.*"))) {
-                    channelUrl = new Regex(orgParameter, "vimeo\\.com/channels/([^/]+)").getMatch(0);
-                    final Browser brc = br.cloneBrowser();
-                    brc.getPage(orgParameter);
-                    final String channelHeader = brc.getRegex("<header id\\s*=\\s*\"channel_header\"\\s*>\\s*(.*?)\\s*</header").getMatch(0);
-                    if (channelHeader != null) {
-                        channelName = new Regex(channelHeader, "title\\s*=\\s*\"(.*?)\"").getMatch(0);
-                    } else {
-                        channelName = brc.getRegex("<title>\\s*(.*?)\\s*</title>").getMatch(0);
-                    }
-                    channelName = Encoding.htmlDecode(channelName);
-                }
                 final String json = getJsonFromHTML(this.br);
                 final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
                 if (entries.containsKey("vimeo_esi")) {
@@ -427,7 +415,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 return decryptedLinks;
             }
             try {
-                if (StringUtils.isEmpty(title) || StringUtils.isEmpty(channelName) || StringUtils.isEmpty(date) || StringUtils.isEmpty(description)) {
+                if (!StringUtils.isAllNotEmpty(title, channelName, channelUrl, date, description)) {
                     /*
                      * We're doing this request ONLY to find additional information which we were not able to get before (upload_date,
                      * description) - also this can be used as a fallback to find data which should have been found before (e.g. title,
@@ -442,6 +430,9 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     if (StringUtils.isEmpty(channelName)) {
                         channelName = PluginJSonUtils.getJson(brc, "channel_name");
                     }
+                    if (StringUtils.isEmpty(channelUrl)) {
+                        channelUrl = new Regex(PluginJSonUtils.getJson(brc, "channel_url"), "vimeo\\.com/channels/([^/]+)").getMatch(0);
+                    }
                     if (StringUtils.isEmpty(date)) {
                         date = PluginJSonUtils.getJson(brc, "upload_date");
                     }
@@ -450,11 +441,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     }
                 }
             } catch (final Throwable e) {
-            }
-            if (!StringUtils.isEmpty(date) && date.matches("\\d{4}\\-\\d{2}\\-\\d{2}T\\d{2}:\\d{2}:\\d{2}")) {
-                /* Correct date if needed */
-                final String[] dateStuff = date.split("T");
-                date = dateStuff[0] + ":" + dateStuff[1];
+                logger.log(e);
             }
             if (StringUtils.isEmpty(title)) {
                 /* Fallback */

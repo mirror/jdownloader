@@ -25,17 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.containers.VimeoContainer;
-import org.jdownloader.plugins.components.containers.VimeoContainer.Quality;
-import org.jdownloader.plugins.components.containers.VimeoContainer.Source;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -60,6 +49,17 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.locale.JDL;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.containers.VimeoContainer;
+import org.jdownloader.plugins.components.containers.VimeoContainer.Quality;
+import org.jdownloader.plugins.components.containers.VimeoContainer.Source;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "decryptedforVimeoHosterPlugin://.+" })
 public class VimeoCom extends PluginForHost {
@@ -603,9 +603,9 @@ public class VimeoCom extends PluginForHost {
             results.addAll(handleDownloadConfig(plugin, ibr, ID));
         }
         /** 2019-04-30: Only try to grab streams if we failed to find any downloads. */
-        final boolean foundAtLeastTwoDownloadlinks = results.size() >= 2;
+        final boolean tryToFindStreams = results.size() < 2 && (stream || hls);
         /* player.vimeo.com links = Special case as the needed information is already in our current browser. */
-        if (!foundAtLeastTwoDownloadlinks && (configURL != null || ibr.getURL().contains("player.vimeo.com/"))) {
+        if ((tryToFindStreams || subtitles) && (configURL != null || ibr.getURL().contains("player.vimeo.com/"))) {
             // iconify_down_b could fail, revert to the following if statements.
             final Browser gq = ibr.cloneBrowser();
             gq.getHeaders().put("Accept", "*/*");
@@ -949,7 +949,9 @@ public class VimeoCom extends PluginForHost {
 
     public static SimpleDateFormat getFormatterForDate(final String dateSrc) {
         final SimpleDateFormat formatter;
-        if (dateSrc.matches("\\d{4}\\-\\d{2}\\-\\d{2}:\\d{2}:\\d{2}:\\d{2}")) {
+        if (dateSrc.matches("\\d{4}\\-\\d{2}\\-\\d{2}T\\d{2}:\\d{2}:\\d{2}")) {
+            formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+        } else if (dateSrc.matches("\\d{4}\\-\\d{2}\\-\\d{2}:\\d{2}:\\d{2}:\\d{2}")) {
             formatter = new SimpleDateFormat("yyyy-MM-dd:HH:mm:ss");
         } else {
             formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
