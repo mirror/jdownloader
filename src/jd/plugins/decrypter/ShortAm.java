@@ -64,7 +64,7 @@ public class ShortAm extends antiDDoSForDecrypt {
             final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, sitekey).getToken();
             continueform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
         } else {
-            sleep(5000l, param);
+            sleep(2000l, param);
         }
         submitForm(continueform);
         continueform = br.getForm(0);
