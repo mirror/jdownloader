@@ -54,13 +54,18 @@ public class ShortAm extends antiDDoSForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        String sitekey = br.getRegex("sitekey\\s*?:\\s*?\"([^<>\"]+)\"").getMatch(0);
-        if (sitekey == null) {
-            /* 2018-08-07: Fallback */
-            sitekey = "6LevHzcUAAAAAJgJHvtcVzlRxasZsJgZWJI5ZUvF";
+        if (false) {
+            // https://github.com/adsbypasser/adsbypasser/blob/master/src/sites/link/short.am.js
+            String sitekey = br.getRegex("sitekey\\s*?:\\s*?\"([^<>\"]+)\"").getMatch(0);
+            if (sitekey == null) {
+                /* 2018-08-07: Fallback */
+                sitekey = "6LevHzcUAAAAAJgJHvtcVzlRxasZsJgZWJI5ZUvF";
+            }
+            final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, sitekey).getToken();
+            continueform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+        } else {
+            sleep(5000l, param);
         }
-        final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, sitekey).getToken();
-        continueform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
         submitForm(continueform);
         continueform = br.getForm(0);
         if (continueform == null) {
