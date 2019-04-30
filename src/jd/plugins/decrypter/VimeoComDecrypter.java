@@ -427,25 +427,27 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 return decryptedLinks;
             }
             try {
-                /*
-                 * We're doing this request ONLY to find additional information which we were not able to get before (upload_date,
-                 * description) - also this can be used as a fallback to find data which should have been found before (e.g. title,
-                 * channel_name).
-                 */
-                final Browser brc = br.cloneBrowser();
-                /* https://developer.vimeo.com/api/oembed/videos */
-                brc.getPage("https://vimeo.com/api/oembed.json?url=" + URLEncode.encodeURIComponent(parameter));
-                if (StringUtils.isEmpty(title)) {
-                    title = PluginJSonUtils.getJson(brc, "title");
-                }
-                if (StringUtils.isEmpty(channelName)) {
-                    channelName = PluginJSonUtils.getJson(brc, "channel_name");
-                }
-                if (StringUtils.isEmpty(date)) {
-                    date = PluginJSonUtils.getJson(brc, "upload_date");
-                }
-                if (StringUtils.isEmpty(description)) {
-                    description = PluginJSonUtils.getJson(brc, "description");
+                if (StringUtils.isEmpty(title) || StringUtils.isEmpty(channelName) || StringUtils.isEmpty(date) || StringUtils.isEmpty(description)) {
+                    /*
+                     * We're doing this request ONLY to find additional information which we were not able to get before (upload_date,
+                     * description) - also this can be used as a fallback to find data which should have been found before (e.g. title,
+                     * channel_name).
+                     */
+                    final Browser brc = br.cloneBrowser();
+                    /* https://developer.vimeo.com/api/oembed/videos */
+                    brc.getPage("https://vimeo.com/api/oembed.json?url=" + URLEncode.encodeURIComponent(parameter));
+                    if (StringUtils.isEmpty(title)) {
+                        title = PluginJSonUtils.getJson(brc, "title");
+                    }
+                    if (StringUtils.isEmpty(channelName)) {
+                        channelName = PluginJSonUtils.getJson(brc, "channel_name");
+                    }
+                    if (StringUtils.isEmpty(date)) {
+                        date = PluginJSonUtils.getJson(brc, "upload_date");
+                    }
+                    if (StringUtils.isEmpty(description)) {
+                        description = PluginJSonUtils.getJson(brc, "description");
+                    }
                 }
             } catch (final Throwable e) {
             }
