@@ -12,7 +12,7 @@ import org.jdownloader.plugins.components.hls.HlsContainer;
  */
 public class VimeoContainer extends VideoContainer {
     public static final TypeRef<VimeoContainer> TYPE_REF = new TypeRef<VimeoContainer>() {
-    };
+                                                         };
     private Quality                             quality;
     private String                              lang;
 
@@ -187,9 +187,16 @@ public class VimeoContainer extends VideoContainer {
         return super.toString().concat(getQuality() != null ? "|" + getQuality().toString() : "").concat(getSource() != null ? "|" + getSource().toString() : "");
     }
 
+    /** Internal String to differ between different qualities. */
     public String bestString() {
         if (Source.SUBTITLE.equals(getSource())) {
             return getLang();
+        } else if (getQuality() == Quality.ORIGINAL) {
+            /*
+             * Special case: Original download is an exception as the resolution does not matter: If wished, it should always be added as it
+             * will definitely be the BEST quality available.
+             */
+            return String.valueOf(getWidth()).concat("x").concat(String.valueOf(getHeight())).concat(getQuality().toString()).concat(getSource().toString());
         } else {
             return String.valueOf(getWidth()).concat("x").concat(String.valueOf(getHeight()));
         }
