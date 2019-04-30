@@ -291,16 +291,13 @@ public class VimeoCom extends PluginForHost {
                 urlTypeUsed.set(ret);
             }
             br.getPage(url_source);
-        } else if (urlTypeRequested == VIMEO_URL_TYPE.PLAYER || (urlTypeRequested == null && forced_referer != null)) {
+        } else if (unlistedHash == null && (urlTypeRequested == VIMEO_URL_TYPE.PLAYER || (urlTypeRequested == null && referer != null))) {
             ret = VIMEO_URL_TYPE.PLAYER;
             if (urlTypeUsed != null) {
                 urlTypeUsed.set(ret);
             }
             br.getPage("https://player.vimeo.com/video/" + videoID);
-        } else if (urlTypeRequested == VIMEO_URL_TYPE.UNLISTED || (urlTypeRequested == null && unlistedHash != null)) {
-            if (unlistedHash == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+        } else if (unlistedHash != null && (urlTypeRequested == VIMEO_URL_TYPE.UNLISTED || urlTypeRequested == null)) {
             ret = VIMEO_URL_TYPE.UNLISTED;
             if (urlTypeUsed != null) {
                 urlTypeUsed.set(ret);
@@ -310,11 +307,19 @@ public class VimeoCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         } else {
-            ret = VIMEO_URL_TYPE.NORMAL;
+            if (unlistedHash != null) {
+                ret = VIMEO_URL_TYPE.UNLISTED;
+            } else {
+                ret = VIMEO_URL_TYPE.NORMAL;
+            }
             if (urlTypeUsed != null) {
                 urlTypeUsed.set(ret);
             }
-            br.getPage("https://vimeo.com/" + videoID);
+            if (unlistedHash != null) {
+                br.getPage(String.format("https://vimeo.com/%s/%s", videoID, unlistedHash));
+            } else {
+                br.getPage("https://vimeo.com/" + videoID);
+            }
         }
         if (br.getHttpConnection().getResponseCode() == 403) {
             // referer or account might be required
@@ -590,7 +595,10 @@ public class VimeoCom extends PluginForHost {
              * 2019-04-30: TODO: This is kind of a small workaround - to remove this, we would always need to access the main video page
              * first (e.g. vimeo.com/123456 and NOT player.vimeo.com).
              */
-            final boolean force_attempt_download = true;
+            /*
+             * fails for me, will do more checks on this
+             */
+            final boolean force_attempt_download = false;
             if (force_attempt_download) {
                 download_possible = true;
             } else {
