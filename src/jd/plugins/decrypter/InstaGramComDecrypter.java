@@ -48,13 +48,13 @@ import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "https?://(www\\.)?instagram\\.com/(?!explore/)(p/[A-Za-z0-9_-]+|[^/]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "https?://(www\\.)?instagram\\.com/(?!explore/)(p/[A-Za-z0-9_-]+|[^/]+(/p/[A-Za-z0-9_-]+)?)" })
 public class InstaGramComDecrypter extends PluginForDecrypt {
     public InstaGramComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String           TYPE_GALLERY           = ".+/p/[A-Za-z0-9_-]+/?$";
+    private static final String           TYPE_GALLERY           = ".+/p/[A-Za-z0-9_-]+/?";
     private String                        username_url           = null;
     private final ArrayList<DownloadLink> decryptedLinks         = new ArrayList<DownloadLink>();
     private boolean                       prefer_server_filename = jd.plugins.hoster.InstaGramCom.defaultPREFER_SERVER_FILENAMES;

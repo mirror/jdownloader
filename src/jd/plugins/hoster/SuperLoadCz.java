@@ -54,7 +54,6 @@ public class SuperLoadCz extends antiDDoSForHost {
     private static final String          mAPI              = "http://api.superload.cz/a-p-i";
     private static final String          NICE_HOSTproperty = "superloadcz";
     private static MultiHosterManagement mhm               = new MultiHosterManagement("superload.cz");
-    private static Object                LOCK              = new Object();
 
     public SuperLoadCz(final PluginWrapper wrapper) {
         super(wrapper);
@@ -223,10 +222,11 @@ public class SuperLoadCz extends antiDDoSForHost {
                     account.setAccountInfo(ai);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 } else if (StringUtils.equalsIgnoreCase(error, "User deleted")) {
-                    /* WTF what does this error mean?? */
-                    logger.info("Superload.cz says 'User deleted'");
-                    // to me this means disable user account! -raz
-                    mhm.putError(account, link, 60 * 60 * 1000l, "Invalid Link");
+                    synchronized (account) {
+                        account.removeProperty("token");
+                        getToken(account);
+                    }
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
                 } else if (StringUtils.containsIgnoreCase(error, "Unable to download the file")) {
                     handleErrorRetries(null, link, "Unable to download file", 10, 10 * 60 * 1000l);
                 } else if (downloadURL == null) {
@@ -296,12 +296,11 @@ public class SuperLoadCz extends antiDDoSForHost {
     }
 
     private String getToken(final Account account) throws PluginException, IOException {
-        synchronized (LOCK) {
+        synchronized (account) {
             String token = account.getStringProperty("token", null);
             if (inValidate(token)) {
                 // relogin
-                login(account);
-                token = account.getStringProperty("token", null);
+                token = login(account);
                 if (inValidate(token)) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -310,22 +309,29 @@ public class SuperLoadCz extends antiDDoSForHost {
         }
     }
 
-    private boolean login(final Account acc) throws IOException, PluginException {
-        final Browser login = prepBrowser(new Browser());
-        login.postPage(mAPI + "/login", "username=" + Encoding.urlEncode(acc.getUser()) + "&password=" + JDHash.getMD5(acc.getPass()));
-        if (login.getHttpConnection() != null && login.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_RETRY);
+    private String login(final Account acc) throws IOException, PluginException {
+        try {
+            final Browser login = prepBrowser(new Browser());
+            login.postPage(mAPI + "/login", "username=" + Encoding.urlEncode(acc.getUser()) + "&password=" + JDHash.getMD5(acc.getPass()));
+            if (login.getHttpConnection() != null && login.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+            if (!getSuccess(login)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            final String token = PluginJSonUtils.getJsonValue(login, "token");
+            if (!inValidate(token)) {
+                acc.setProperty("token", token);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            return token;
+        } catch (PluginException e) {
+            if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                acc.removeProperty("token");
+            }
+            throw e;
         }
-        if (!getSuccess(login)) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
-        String token = PluginJSonUtils.getJsonValue(login, "token");
-        if (!inValidate(token)) {
-            acc.setProperty("token", token);
-        } else {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        return true;
     }
 
     private void showMessage(DownloadLink link, String message) {

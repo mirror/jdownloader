@@ -33,6 +33,7 @@ import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.net.HTTPHeader;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -90,7 +91,7 @@ public class GofileIo extends PluginForHost {
                     final Number size = JavaScriptEngineFactory.toLong(entry.get("size"), -1);
                     if (size.longValue() >= 0) {
                         // not verified!
-                        link.setDownloadSize(size.longValue());
+                        link.setDownloadSize(SizeFormatter.getSize(size.longValue() + "MB"));
                     }
                     final String name = (String) entry.get("name");
                     if (name != null) {

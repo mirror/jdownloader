@@ -217,7 +217,7 @@ public class SpankBangCom extends PluginForDecrypt {
     }
 
     public static boolean isOffline(final Browser br) {
-        return br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">this video is (no longer available|private|under review)|>este vídeo já não está disponível") || !br.getURL().contains("/video");
+        return br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">\\s*this video is (no longer available|private|under review)|>\\s*este vídeo já não está disponível") || !br.getURL().contains("/video");
     }
 
     /**

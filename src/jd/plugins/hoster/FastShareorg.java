@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
@@ -27,9 +26,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fastshare.org" }, urls = { "http://[\\w\\.]*?fastshare\\.org/download/(.*)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fastshare.org" }, urls = { "https?://[\\w\\.]*?fastshare\\.org/download/(.*)" })
 public class FastShareorg extends PluginForHost {
-
     public FastShareorg(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -45,7 +43,6 @@ public class FastShareorg extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         String url = downloadLink.getDownloadURL();
         requestFileInformation(downloadLink);
-
         /* Link holen */
         Form form = br.getForm(0);
         if (form == null) {
@@ -55,7 +52,7 @@ public class FastShareorg extends PluginForHost {
         if ((url = new Regex(br, "Link: <a href=(.*?)><b>").getMatch(0)) == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        url = "http://www.fastshare.org" + url;
+        url = "https://www.fastshare.org" + url;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 503) {
@@ -65,7 +62,6 @@ public class FastShareorg extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-
     }
 
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {

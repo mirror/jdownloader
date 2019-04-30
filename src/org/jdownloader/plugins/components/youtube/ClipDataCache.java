@@ -23,7 +23,8 @@ public class ClipDataCache {
     private static final Object LOCK                                          = new Object();
 
     private static class CachedClipData {
-        private volatile YoutubeClipData clipData = null;
+        private volatile YoutubeClipData clipData  = null;
+        private final long               timeStamp = System.currentTimeMillis();
         private final List<HTTPProxy>    proxyList;
 
         public CachedClipData(List<HTTPProxy> proxyListNew, YoutubeClipData youtubeClipData) {
@@ -46,6 +47,10 @@ public class ClipDataCache {
             }
             return false;
         }
+
+        public boolean isExpired() {
+            return System.currentTimeMillis() - timeStamp > (15 * 60 * 1000l);
+        }
     }
 
     private static final HashMap<String, MinTimeWeakReference<CachedClipData>> CACHE = new HashMap<String, MinTimeWeakReference<CachedClipData>>();
@@ -64,13 +69,13 @@ public class ClipDataCache {
     }
 
     private static MinTimeWeakReferenceCleanup CLEANUP = new MinTimeWeakReferenceCleanup() {
-                                                           @Override
-                                                           public void onMinTimeWeakReferenceCleanup(MinTimeWeakReference<?> minTimeWeakReference) {
-                                                               synchronized (LOCK) {
-                                                                   CACHE.remove(minTimeWeakReference.getID());
-                                                               }
-                                                           }
-                                                       };
+        @Override
+        public void onMinTimeWeakReferenceCleanup(MinTimeWeakReference<?> minTimeWeakReference) {
+            synchronized (LOCK) {
+                CACHE.remove(minTimeWeakReference.getID());
+            }
+        }
+    };
 
     private static CachedClipData getInternal(YoutubeHelper helper, YoutubeClipData vid) throws Exception {
         synchronized (LOCK) {
@@ -84,6 +89,8 @@ public class ClipDataCache {
                 } else if (StringUtils.isEmpty(cachedData.clipData.title)) {
                     cachedData = null;
                 } else if (cachedData.clipData.date == 0) {
+                    cachedData = null;
+                } else if (cachedData.isExpired()) {
                     cachedData = null;
                 }
             }
@@ -165,7 +172,7 @@ public class ClipDataCache {
                 e.printStackTrace();
             }
             CachedClipData data = null;
-            if (cache != null && (data = cache.get()) != null && data.hasValidProxyList(proxyListNew)) {
+            if (cache != null && (data = cache.get()) != null && data.hasValidProxyList(proxyListNew) && !data.isExpired()) {
                 data.setYoutubeClipData(vid);
                 link.getTempProperties().setProperty("CLIP_DATA_REFERENCE", data);
             } else {
@@ -183,7 +190,7 @@ public class ClipDataCache {
             if (cachedData != null) {
                 try {
                     final List<HTTPProxy> proxyListNew = helper.getBr().selectProxies(YOUTUBE_URL);
-                    return cachedData.hasValidProxyList(proxyListNew);
+                    return cachedData.hasValidProxyList(proxyListNew) && !cachedData.isExpired();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }

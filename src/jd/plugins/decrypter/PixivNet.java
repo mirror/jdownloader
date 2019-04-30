@@ -171,9 +171,21 @@ public class PixivNet extends PluginForDecrypt {
                     fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
                 }
                 // old layout
-                final boolean found = add(links, br, "pixiv\\.context\\.images\\[\\d+\\]\\s*=\\s*\"(https?[^\"]+)\"");
+                boolean found = add(links, br, "pixiv\\.context\\.images\\[\\d+\\]\\s*=\\s*\"(https?[^\"]+)\"");
                 if (!found) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    // original(new layout)
+                    found = add(links, br, "\"illustId\"\\s*:\\s*\"" + lid + "\".*?\"original\"\\s*:\\s*\"(https?[^<>\"']+)\"");
+                    if (!found) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    } else {
+                        final Integer pageCount = getPageCount(br, lid);
+                        if (pageCount != null && links.size() != pageCount.intValue()) {
+                            final String template = links.iterator().next();
+                            for (int page = 0; page < pageCount.intValue(); page++) {
+                                links.add(template.replaceAll("(_p0\\.)", "_p" + page + "."));
+                            }
+                        }
+                    }
                 }
             }
             if (fpName != null) {
