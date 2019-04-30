@@ -41,7 +41,7 @@ public class ShortAm extends antiDDoSForDecrypt {
         br = new Browser();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
@@ -67,6 +67,7 @@ public class ShortAm extends antiDDoSForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         sleep(6123l, param);
+        br.setFollowRedirects(false);
         submitForm(continueform);
         final String finallink = br.getRegex("window\\.location\\.replace\\('(http[^<>\"\\']+)'\\)").getMatch(0);
         if (finallink == null) {

@@ -67,28 +67,21 @@ public class RenameDialog extends AbstractDialog<Object> {
                     final ArrayList<Result> list = new ArrayList<Result>();
                     for (final AbstractNode node : nodes) {
                         if (node instanceof CrawledLink) {
-                            final CrawledLink link = ((CrawledLink) node);
-                            final String name = link.getName();
-                            final String newName = pattern.matcher(name).replaceAll(rep);
-                            list.add(new Result(name, newName, node));
+                            final String oldName = node.getName();
+                            final String newName = replace((CrawledLink) node, pattern, rep, true);
+                            list.add(new Result(oldName, newName, node));
                         } else if (node instanceof DownloadLink) {
-                            final DownloadLink link = ((DownloadLink) node);
-                            final String name = link.getName();
-                            final FilePackage fp = link.getFilePackage();
-                            String newName = pattern.matcher(name).replaceAll(rep);
-                            newName = PackagizerController.replaceDynamicTags(newName, fp.getName(), node);
-                            list.add(new Result(name, newName, node));
+                            final String oldName = node.getName();
+                            final String newName = replace((DownloadLink) node, pattern, rep, true);
+                            list.add(new Result(oldName, newName, node));
                         } else if (node instanceof FilePackage) {
-                            final FilePackage pkg = (FilePackage) node;
-                            final String name = pkg.getName();
-                            String newName = pattern.matcher(name).replaceAll(rep);
-                            newName = PackagizerController.replaceDynamicTags(newName, name, node);
-                            list.add(new Result(name, newName, node));
+                            final String oldName = node.getName();
+                            final String newName = replace((FilePackage) node, pattern, rep, true);
+                            list.add(new Result(oldName, newName, node));
                         } else if (node instanceof CrawledPackage) {
-                            final CrawledPackage pkg = (CrawledPackage) node;
-                            final String name = pkg.getName();
-                            final String newName = pattern.matcher(name).replaceAll(rep);
-                            list.add(new Result(name, newName, node));
+                            final String oldName = node.getName();
+                            final String newName = replace((CrawledPackage) node, pattern, rep, true);
+                            list.add(new Result(oldName, newName, node));
                         }
                     }
                     final TestWaitDialog d = new TestWaitDialog(regex, pattern, rep, list);
@@ -98,6 +91,40 @@ public class RenameDialog extends AbstractDialog<Object> {
                 }
             }
         });
+    }
+
+    private String replace(CrawledPackage node, Pattern pattern, final String rep, boolean preview) {
+        final CrawledPackage pkg = node;
+        final String oldName = pkg.getName();
+        String newName = pattern.matcher(oldName).replaceAll(rep);
+        newName = PackagizerController.replaceDynamicTags(newName, oldName, node);
+        return newName;
+    }
+
+    private String replace(FilePackage node, Pattern pattern, final String rep, boolean preview) {
+        final FilePackage pkg = node;
+        final String oldName = pkg.getName();
+        String newName = pattern.matcher(oldName).replaceAll(rep);
+        newName = PackagizerController.replaceDynamicTags(newName, oldName, node);
+        return newName;
+    }
+
+    private String replace(DownloadLink node, Pattern pattern, final String rep, boolean preview) {
+        final DownloadLink link = (node);
+        final String oldName = link.getName();
+        final String fpName = link.getFilePackage().getName();
+        String newName = pattern.matcher(oldName).replaceAll(rep);
+        newName = PackagizerController.replaceDynamicTags(newName, fpName, node);
+        return newName;
+    }
+
+    private String replace(CrawledLink node, Pattern pattern, final String rep, boolean preview) {
+        final CrawledLink link = (node);
+        final String oldName = link.getName();
+        final String pkgName = link.getParentNode().getName();
+        String newName = pattern.matcher(oldName).replaceAll(rep);
+        newName = PackagizerController.replaceDynamicTags(newName, pkgName, node);
+        return newName;
     }
 
     @Override
@@ -153,28 +180,17 @@ public class RenameDialog extends AbstractDialog<Object> {
                 final String rep = txtReplace.getText();
                 for (final AbstractNode node : nodes) {
                     if (node instanceof CrawledLink) {
-                        final CrawledLink link = ((CrawledLink) node);
-                        final String name = link.getName();
-                        final String newName = pattern.matcher(name).replaceAll(rep);
-                        link.setName(newName);
+                        final String newName = replace((CrawledLink) node, pattern, rep, false);
+                        ((CrawledLink) node).setName(newName);
                     } else if (node instanceof DownloadLink) {
-                        final DownloadLink link = ((DownloadLink) node);
-                        final String name = link.getName();
-                        final FilePackage fp = link.getFilePackage();
-                        String newName = pattern.matcher(name).replaceAll(rep);
-                        newName = PackagizerController.replaceDynamicTags(newName, fp.getName(), node);
-                        DownloadWatchDog.getInstance().renameLink(link, newName);
+                        final String newName = replace((DownloadLink) node, pattern, rep, false);
+                        DownloadWatchDog.getInstance().renameLink((DownloadLink) node, newName);
                     } else if (node instanceof FilePackage) {
-                        final FilePackage pkg = (FilePackage) node;
-                        final String name = pkg.getName();
-                        final String newName = pattern.matcher(name).replaceAll(rep);
-                        pkg.setName(newName);
+                        final String newName = replace((FilePackage) node, pattern, rep, false);
+                        ((FilePackage) node).setName(newName);
                     } else if (node instanceof CrawledPackage) {
-                        final CrawledPackage pkg = (CrawledPackage) node;
-                        final String name = pkg.getName();
-                        String newName = pattern.matcher(name).replaceAll(rep);
-                        newName = PackagizerController.replaceDynamicTags(newName, name, node);
-                        pkg.setName(newName);
+                        final String newName = replace((CrawledPackage) node, pattern, rep, false);
+                        ((CrawledPackage) node).setName(newName);
                     }
                 }
             } catch (Exception e) {

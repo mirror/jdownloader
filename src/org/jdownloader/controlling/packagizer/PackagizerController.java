@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -857,10 +858,14 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
     }
 
     public static String replaceDynamicTags(String input, String packageName, AbstractNode node) {
+        return replaceDynamicTags(input, packageName, node, null);
+    }
+
+    public static String replaceDynamicTags(String input, String packageName, AbstractNode node, final Set<String> replaceTags) {
         String ret = input;
         if (ret != null && ret.contains("<jd:")) {
             final AtomicBoolean modifyFlag = new AtomicBoolean(false);
-            if (ret.contains(PACKAGETAG)) {
+            if (ret.contains(PACKAGETAG) && (replaceTags == null || replaceTags.contains(PACKAGETAG))) {
                 modifyFlag.set(true);
                 if (StringUtils.isEmpty(packageName)) {
                     ret = ret.replace(PACKAGETAG, "");
@@ -868,7 +873,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                     ret = ret.replace(PACKAGETAG, CrossSystem.alleviatePathParts(packageName));
                 }
             }
-            if (ret.contains(INDEXOFTAG)) {
+            if (ret.contains(INDEXOFTAG) && (replaceTags == null || replaceTags.contains(INDEXOFTAG))) {
                 modifyFlag.set(true);
                 AbstractPackageNode parentNode = null;
                 if (!(node instanceof AbstractPackageChildrenNode) || (parentNode = ((AbstractPackageChildrenNode<AbstractPackageNode>) node).getParentNode()) == null) {

@@ -31,14 +31,6 @@ import java.util.regex.Pattern;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -67,6 +59,14 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "depositfiles.com" }, urls = { "https?://(www\\.)?(depositfiles\\.(com|org)|dfiles\\.(eu|ru))(/\\w{1,3})?/files/[\\w]+" })
 public class DepositFiles extends antiDDoSForHost {
@@ -501,11 +501,14 @@ public class DepositFiles extends antiDDoSForHost {
                     }
                     downloadLink.setProperty("pass", passCode);
                 }
-                final String fid = br.getRegex("var fid = \\'(.*?)\\';").getMatch(0);
-                final String wait = br.getRegex("Please wait (\\d+) sec").getMatch(0);
+                String fid = br.getRegex("var\\s*fid\\s*=\\s*\\'(.*?)\\'").getMatch(0);
                 if (fid == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    fid = br.getRegex("php\\?fid=([a-z0-9A-Z]+)").getMatch(0);
+                    if (fid == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                 }
+                final String wait = br.getRegex("Please wait (\\d+) sec").getMatch(0);
                 // wait required here before ajax
                 sleep(((wait != null ? Integer.parseInt(wait) : 60) * 1001l) - (System.currentTimeMillis() - timeBefore), downloadLink);
                 // // ajax request, here they give you more html && js. Think this is where the captcha type is determined.
