@@ -1,5 +1,9 @@
 package jd.plugins.hoster;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -9,10 +13,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourporn.sexy" }, urls = { "https?://(www\\.)?(yourporn\\.sexy|sxyprn\\.com)/post/[a-fA-F0-9]{13}\\.html" })
 public class YourPornSexy extends antiDDoSForHost {
@@ -33,13 +33,17 @@ public class YourPornSexy extends antiDDoSForHost {
         }
     }
 
-    private String dllink   = null;
-    private String authorid = null;
+    private String  json         = null;
+    private String  dllink       = null;
+    private boolean server_issue = false;
+    private String  authorid     = null;
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        json = null;
+        dllink = null;
         br.setFollowRedirects(true);
-        getPage(link.getDownloadURL());
+        getPage(link.getPluginPatternMatcher());
         final String title = br.getRegex("name\" content=\"(.*?)\"").getMatch(0);
         if (title == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -47,7 +51,7 @@ public class YourPornSexy extends antiDDoSForHost {
         link.setFinalFileName(title.trim() + ".mp4");
         String fid = new Regex(link.getLinkID(), "//([a-z0-9]+)").getMatch(0);
         authorid = br.getRegex("data-authorid='([^']+)'").getMatch(0);
-        String json = br.getRegex("data-vnfo='([^']+)'").getMatch(0);
+        json = br.getRegex("data-vnfo=\\'([^\\']+)\\'").getMatch(0);
         String vnfo = PluginJSonUtils.getJsonValue(json, fid);
         if (vnfo == null && json != null) {
             String ids[] = new Regex(json, "\"([a-z0-9]*?)\"").getColumn(0);
@@ -91,6 +95,10 @@ public class YourPornSexy extends antiDDoSForHost {
                 con.disconnect();
             }
         }
+        if (dllink == null && items.length > 0) {
+            /* Rare case (e.g. all video sources lead to http responsecode 404) */
+            server_issue = true;
+        }
         return dllink;
     }
 
@@ -103,6 +111,12 @@ public class YourPornSexy extends antiDDoSForHost {
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
         if (dllink == null) {
+            if (json != null && json.length() <= 10) {
+                /* Rare case: E.g. empty json object '[]' */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: No video source available");
+            } else if (server_issue) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: All video sources are broken");
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -2);
