@@ -326,7 +326,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
              */
             String ownerName = null;
             String ownerUrl = null;
-            String unlistedHash = null;
+            String unlistedHash = getUnlistedHashFromURL(orgParameter);
             String reviewHash = null;
             String date = null;
             String channelName = null;
@@ -415,7 +415,10 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 return decryptedLinks;
             }
             try {
-                if (!StringUtils.isAllNotEmpty(title, channelName, channelUrl, date, description)) {
+                if ((unlistedHash == null && !VIMEO_URL_TYPE.UNLISTED.equals(urlType.get())) && !StringUtils.isAllNotEmpty(title, channelName, channelUrl, date, description)) {
+                    /*
+                     * doesn't seem to work for unlisted videos
+                     */
                     /*
                      * We're doing this request ONLY to find additional information which we were not able to get before (upload_date,
                      * description) - also this can be used as a fallback to find data which should have been found before (e.g. title,
