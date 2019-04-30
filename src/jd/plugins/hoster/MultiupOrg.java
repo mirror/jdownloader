@@ -153,13 +153,8 @@ public class MultiupOrg extends PluginForHost {
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        final long direct_url_end_time = downloadLink.getLongProperty("direct_url_end_time", 0) * 1000;
         String dllink = downloadLink.getStringProperty(property);
-        if (direct_url_end_time > 0 && direct_url_end_time < System.currentTimeMillis()) {
-            logger.info("Directlink expired");
-            downloadLink.setProperty(property, Property.NULL);
-            dllink = null;
-        } else if (dllink != null) {
+        if (dllink != null) {
             try {
                 final Browser br2 = br.cloneBrowser();
                 URLConnectionAdapter con = br2.openHeadConnection(dllink);
