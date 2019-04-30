@@ -412,6 +412,7 @@ public class GoogleDrive extends PluginForHost {
                         return;
                     }
                 } catch (final Throwable e) {
+                    getLogger().log(e);
                 }
                 /* unknown error, we disable multiple chunks */
                 if (downloadLink.getBooleanProperty(GoogleDrive.NOCHUNKS, false) == false) {
