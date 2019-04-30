@@ -37,6 +37,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.HashInfo;
 import jd.utils.locale.JDL;
@@ -277,28 +278,65 @@ public class AllDebridCom extends antiDDoSForHost {
         if (link.getBooleanProperty(AllDebridCom.NOCHUNKS, false)) {
             maxChunks = 1;
         }
+        final boolean useVerifiedFileSize;
         if (br != null && PluginJSonUtils.parseBoolean(PluginJSonUtils.getJsonValue(br, "paws"))) {
-            final String host = Browser.getHost(link.getDownloadURL());
-            final DownloadLinkDownloadable downloadLinkDownloadable = new DownloadLinkDownloadable(link) {
-                @Override
-                public HashInfo getHashInfo() {
-                    return null;
+            logger.info("don't use verified filesize because 'paws'!");
+            useVerifiedFileSize = false;
+        } else if (link.getVerifiedFileSize() > 0) {
+            final Browser brc = br.cloneBrowser();
+            final URLConnectionAdapter check = openAntiDDoSRequestConnection(brc, brc.createGetRequest(genlink));
+            try {
+                if (check.getCompleteContentLength() < 0) {
+                    logger.info("don't use verified filesize because complete content length isn't available!");
+                    useVerifiedFileSize = false;
+                } else if (check.getCompleteContentLength() == link.getVerifiedFileSize()) {
+                    logger.info("use verified filesize because it matches complete content length");
+                    useVerifiedFileSize = true;
+                } else {
+                    if (link.getDownloadCurrent() > 0) {
+                        logger.info("cannot resume different file!");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    } else {
+                        logger.info("don't use verified filesize because it doesn't match complete content length!");
+                        useVerifiedFileSize = false;
+                    }
                 }
+            } finally {
+                check.disconnect();
+            }
+        } else {
+            logger.info("use verified filesize");
+            useVerifiedFileSize = true;
+        }
+        final String host = Browser.getHost(link.getDownloadURL());
+        final DownloadLinkDownloadable downloadLinkDownloadable = new DownloadLinkDownloadable(link) {
+            @Override
+            public HashInfo getHashInfo() {
+                return null;
+            }
 
-                @Override
-                public long getVerifiedFileSize() {
+            @Override
+            public long getVerifiedFileSize() {
+                if (useVerifiedFileSize) {
+                    return super.getVerifiedFileSize();
+                } else {
                     return -1;
                 }
+            }
 
-                @Override
-                public String getHost() {
-                    return host;
+            @Override
+            public String getHost() {
+                final DownloadInterface dli = getDownloadInterface();
+                if (dli != null) {
+                    final URLConnectionAdapter connection = dli.getConnection();
+                    if (connection != null) {
+                        return connection.getURL().getHost();
+                    }
                 }
-            };
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLinkDownloadable, br.createGetRequest(genlink), true, maxChunks);
-        } else {
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, genlink, true, maxChunks);
-        }
+                return host;
+            }
+        };
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLinkDownloadable, br.createGetRequest(genlink), true, maxChunks);
         if (dl.getConnection().getResponseCode() == 404) {
             /* file offline */
             dl.getConnection().disconnect();
@@ -381,7 +419,7 @@ public class AllDebridCom extends antiDDoSForHost {
         prepBrowser(br, dl.getDownloadURL());
         URLConnectionAdapter con = null;
         try {
-            con = br.openGetConnection(dl.getDownloadURL());
+            con = openAntiDDoSRequestConnection(br, br.createGetRequest(dl.getDownloadURL()));
             if ((con.isContentDisposition() || con.isOK()) && !con.getContentType().contains("html")) {
                 if (dl.getFinalFileName() == null) {
                     dl.setFinalFileName(getFileNameFromHeader(con));
@@ -393,12 +431,12 @@ public class AllDebridCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         } catch (final Throwable e) {
+            getLogger().log(e);
             if (e instanceof PluginException) {
                 throw (PluginException) e;
             }
-            getLogger().log(e);
             dl.setAvailable(false);
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, null, e);
         } finally {
             try {
                 /* make sure we close connection */

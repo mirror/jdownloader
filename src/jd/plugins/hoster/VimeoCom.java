@@ -171,7 +171,7 @@ public class VimeoCom extends PluginForHost {
         br.setFollowRedirects(true);
         final String forced_referer = getForcedReferer(downloadLink);
         final AtomicReference<String> referer = new AtomicReference<String>(forced_referer);
-        accessVimeoURL(this.br, downloadLink.getPluginPatternMatcher(), referer, getVimeoUrlType(downloadLink));
+        accessVimeoURL(this.br, downloadLink.getPluginPatternMatcher(), null, referer, getVimeoUrlType(downloadLink));
         handlePW(downloadLink, br);
         /* Video titles can be changed afterwards by the puloader - make sure that we always got the currrent title! */
         String videoTitle = null;
@@ -272,7 +272,7 @@ public class VimeoCom extends PluginForHost {
      * Use this to access a vimeo URL for the first time! Make sure to call password handling afterwards! <br />
      * Important: Execute password handling afterwards!!
      */
-    public static VIMEO_URL_TYPE accessVimeoURL(final Browser br, final String url_source, final AtomicReference<String> forced_referer, final VIMEO_URL_TYPE urlType) throws Exception {
+    public static VIMEO_URL_TYPE accessVimeoURL(final Browser br, final String url_source, final AtomicReference<VIMEO_URL_TYPE> urlTypeUsed, final AtomicReference<String> forced_referer, final VIMEO_URL_TYPE urlTypeRequested) throws Exception {
         final String videoID = jd.plugins.decrypter.VimeoComDecrypter.getVideoidFromURL(url_source);
         final String unlistedHash = jd.plugins.decrypter.VimeoComDecrypter.getUnlistedHashFromURL(url_source);
         // final String reviewHash = jd.plugins.decrypter.VimeoComDecrypter.getReviewHashFromURL(url_source);
@@ -281,66 +281,43 @@ public class VimeoCom extends PluginForHost {
             br.getHeaders().put("Referer", referer);
         }
         final VIMEO_URL_TYPE ret;
-        if (urlType == VIMEO_URL_TYPE.RAW || (urlType == null && url_source.matches("https?://.*?vimeo\\.com.*?/review/.+")) || videoID == null) {
+        if (urlTypeRequested == VIMEO_URL_TYPE.RAW || (urlTypeRequested == null && url_source.matches("https?://.*?vimeo\\.com.*?/review/.+")) || videoID == null) {
             /*
              * 2019-02-20: Special: We have to access 'review' URLs same way as via browser - if we don't, we will get response 403/404!
              * Review-URLs may contain a reviewHash which is required! If then, inside their json, the unlistedHash is present,
              */
-            br.getPage(url_source);
             ret = VIMEO_URL_TYPE.RAW;
-        } else if (urlType == VIMEO_URL_TYPE.PLAYER || (urlType == null && forced_referer != null)) {
-            /*
-             * Referer given/required? We HAVE TO access the url via player.vimeo.com (with the correct Referer) otherwise we will only
-             * receive 403/404!
-             */
-            br.getPage("https://player.vimeo.com/video/" + videoID);
-            /* TODO: 2019-02-20: Check if this old decrypter-handling is still required! */
-            // if (vimeo_forced_referer == null && br.getHttpConnection().getResponseCode() == 403) {
-            // CrawledLink check = getCurrentLink().getSourceLink();
-            // while (check != null) {
-            // vimeo_forced_referer = check.getURL();
-            // if (check == check.getSourceLink() || !StringUtils.equalsIgnoreCase(Browser.getHost(vimeo_forced_referer), "vimeo.com")) {
-            // break;
-            // } else {
-            // check = check.getSourceLink();
-            // }
-            // }
-            // if (!StringUtils.equalsIgnoreCase(Browser.getHost(vimeo_forced_referer), "vimeo.com")) {
-            // br.getHeaders().put("Referer", vimeo_forced_referer);
-            // br.getPage("https://player.vimeo.com/video/" + videoID);
-            // }
-            // if (br.getHttpConnection().getResponseCode() == 403) {
-            // if (SubConfiguration.getConfig("vimeo.com").getBooleanProperty("ASK_REF", Boolean.TRUE)) {
-            // try {
-            // vimeo_forced_referer = getUserInput("Please enter referer for this link", param);
-            // } catch (DecrypterException e) {
-            // vimeo_forced_referer = null;
-            // }
-            // if (StringUtils.isNotEmpty(vimeo_forced_referer) && !StringUtils.equalsIgnoreCase(Browser.getHost(vimeo_forced_referer),
-            // "vimeo.com")) {
-            // br.getHeaders().put("Referer", vimeo_forced_referer);
-            // br.getPage("https://player.vimeo.com/video/" + videoID);
-            // }
-            // }
-            // }
-            // }
+            if (urlTypeUsed != null) {
+                urlTypeUsed.set(ret);
+            }
+            br.getPage(url_source);
+        } else if (urlTypeRequested == VIMEO_URL_TYPE.PLAYER || (urlTypeRequested == null && forced_referer != null)) {
             ret = VIMEO_URL_TYPE.PLAYER;
-        } else if (urlType == VIMEO_URL_TYPE.UNLISTED || (urlType == null && unlistedHash != null)) {
+            if (urlTypeUsed != null) {
+                urlTypeUsed.set(ret);
+            }
+            br.getPage("https://player.vimeo.com/video/" + videoID);
+        } else if (urlTypeRequested == VIMEO_URL_TYPE.UNLISTED || (urlTypeRequested == null && unlistedHash != null)) {
             if (unlistedHash == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            ret = VIMEO_URL_TYPE.UNLISTED;
+            if (urlTypeUsed != null) {
+                urlTypeUsed.set(ret);
             }
             br.getPage(String.format("https://vimeo.com/%s/%s", videoID, unlistedHash));
             if (jd.plugins.decrypter.VimeoComDecrypter.iranWorkaround(br, videoID) && br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            ret = VIMEO_URL_TYPE.UNLISTED;
         } else {
-            br.getPage("https://vimeo.com/" + videoID);
             ret = VIMEO_URL_TYPE.NORMAL;
+            if (urlTypeUsed != null) {
+                urlTypeUsed.set(ret);
+            }
+            br.getPage("https://vimeo.com/" + videoID);
         }
         if (br.getHttpConnection().getResponseCode() == 403) {
-            /* Hmm offline or account required */
-            /** TODO: Maybe add better handling for this case */
+            // referer or account might be required
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.getHttpConnection().getResponseCode() == 404 || "This video does not exist\\.".equals(PluginJSonUtils.getJsonValue(br, "message"))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -414,7 +391,7 @@ public class VimeoCom extends PluginForHost {
         final boolean is_private_link = link.getBooleanProperty("private_player_link", false);
         final String forced_referer = getForcedReferer(link);
         final AtomicReference<String> referer = new AtomicReference<String>(forced_referer);
-        accessVimeoURL(this.br, link.getPluginPatternMatcher(), referer, getVimeoUrlType(link));
+        accessVimeoURL(this.br, link.getPluginPatternMatcher(), null, referer, getVimeoUrlType(link));
         if (br.containsHTML("\">Sorry, not available for download")) {
             /* Premium / account users cannot download private URLs. */
             logger.info("No download available for link: " + link.getDownloadURL() + " , downloading as unregistered user...");
