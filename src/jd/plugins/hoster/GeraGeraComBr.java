@@ -2,10 +2,7 @@ package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import java.util.List;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -21,6 +18,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "geragera.com.br" }, urls = { "" })
 public class GeraGeraComBr extends PluginForHost {
@@ -98,13 +99,13 @@ public class GeraGeraComBr extends PluginForHost {
             account.setMaxSimultanDownloads(1);
             ac.setStatus("Free Account");
         }
-        br.getPage("https://" + br.getHost() + "/");
-        final ArrayList<String> supportedHosts = new ArrayList<String>();
-        final String[] crippledHosts = br.getRegex("<div class=\"servidor ([^\"]+)\"").getColumn(0);
+        br.getPage("https://geragera.com.br/meus-servidores");
+        List<String> supportedHosts = new ArrayList<String>();
+        final String[] crippledHosts = br.getRegex("<div class=\"[^\"]*online[^\"]*\"\\s*>\\s*(.*?)\\s*</div>").getColumn(0);
         for (final String crippledHost : crippledHosts) {
             supportedHosts.add(crippledHost);
         }
-        ac.setMultiHostSupport(this, supportedHosts);
+        supportedHosts = ac.setMultiHostSupport(this, supportedHosts);
         return ac;
     }
 
