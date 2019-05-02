@@ -37,6 +37,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgsrc.ru" }, urls = { "https?://(www\\.)?imgsrc\\.(ru|su|ro)/(main/passchk\\.php\\?(ad|id)=\\d+(&pwd=[a-z0-9]{32})?|main/(preword|pic_tape|warn|pic)\\.php\\?ad=\\d+(&pwd=[a-z0-9]{32})?|[^/]+/a?\\d+\\.html)" })
@@ -105,6 +106,38 @@ public class ImgSrcRu extends PluginForDecrypt {
         this.passwords = passwords;
     }
 
+    private boolean tryDefaultPassword = true;
+
+    private void tryDefaultPassword(CryptedLink param, Browser br) {
+        if (tryDefaultPassword) {
+            tryDefaultPassword = false;
+            final String galleryName = getGalleryName(br);
+            if (StringUtils.containsIgnoreCase(galleryName, "EZZE")) {
+                this.passwords.add(0, "1234554321");
+            } else if (StringUtils.containsIgnoreCase(galleryName, "EZE")) {
+                this.passwords.add(0, "123454321");
+            } else if (StringUtils.containsIgnoreCase(galleryName, "ZE")) {
+                this.passwords.add(0, "54321");
+            } else if (StringUtils.contains(galleryName, "EZ6")) {
+                this.passwords.add(0, "123456");
+            } else if (StringUtils.containsIgnoreCase(galleryName, "0EZ6")) {
+                this.passwords.add(0, "0123456");
+            } else if (StringUtils.containsIgnoreCase(galleryName, "0EZ")) {
+                this.passwords.add(0, "012345");
+            } else if (StringUtils.containsIgnoreCase(galleryName, "EZ")) {
+                this.passwords.add(0, "12345");
+            }
+        }
+    }
+
+    private String getGalleryName(Browser br) {
+        String ret = br.getRegex("from '<strong>([^\r\n]+)</strong>").getMatch(0);
+        if (ret == null) {
+            ret = br.getRegex("<title>(.*?)(\\s*@\\s*iMGSRC.RU)?</title>").getMatch(0);
+        }
+        return ret;
+    }
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         setInitConstants(param);
         prepBrowser(br, false);
@@ -127,13 +160,10 @@ public class ImgSrcRu extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            String fpName = br.getRegex("from '<strong>([^\r\n]+)</strong>").getMatch(0);
+            final String fpName = getGalleryName(br);
             if (fpName == null) {
-                fpName = br.getRegex("<title>(.*?)(\\s*@\\s*iMGSRC.RU)?</title>").getMatch(0);
-                if (fpName == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
-                }
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
             }
             aid = new Regex(parameter, "ad=(\\d+)").getMatch(0);
             if (aid == null) {
@@ -306,6 +336,7 @@ public class ImgSrcRu extends PluginForDecrypt {
                     Form continueForm = br.getFormByRegex("value\\s*=\\s*'Continue");
                     if (continueForm != null) {
                         if (isPasswordProtected(br)) {
+                            tryDefaultPassword(param, br);
                             if (passwords.size() > 0) {
                                 password = passwords.remove(0);
                             } else {
@@ -347,6 +378,7 @@ public class ImgSrcRu extends PluginForDecrypt {
                     }
                 }
                 if (isPasswordProtected(br)) {
+                    tryDefaultPassword(param, br);
                     Form pwForm = br.getFormbyProperty("name", "passchk");
                     if (pwForm == null) {
                         logger.warning("Decrypter broken for link: " + parameter);
