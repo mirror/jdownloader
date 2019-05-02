@@ -25,6 +25,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import jd.config.Property;
@@ -327,7 +328,7 @@ public class AccountInfo extends Property {
                 final HashSet<String> nonTldHosts = new HashSet<String>();
                 // lets do some preConfiguring, and match hosts which do not contain tld
                 for (final String host : multiHostSupportList) {
-                    final String cleanup = host.trim().toLowerCase(Locale.ENGLISH);
+                    final String cleanup = host.trim().toLowerCase(Locale.ENGLISH).replaceAll("\\s+", "");
                     mapping.put(host, cleanup);
                     if (StringUtils.isEmpty(cleanup)) {
                         // blank entry will match every plugin! -raztoki20170315
@@ -365,14 +366,19 @@ public class AccountInfo extends Property {
                                     while (it.hasNext()) {
                                         final String nonTldHost = it.next();
                                         for (final String siteSupportedName : siteSupportedNames) {
-                                            if (StringUtils.containsIgnoreCase(siteSupportedName, nonTldHost)) {
+                                            if (StringUtils.equalsIgnoreCase(siteSupportedName, nonTldHost)) {
+                                                final List<LazyHostPlugin> list = new ArrayList<LazyHostPlugin>();
+                                                map.put(nonTldHost, list);
+                                                list.add(lazyHostPlugin);
+                                                it.remove();
+                                                continue loop;
+                                            } else if (StringUtils.containsIgnoreCase(siteSupportedName, nonTldHost)) {
                                                 List<LazyHostPlugin> list = map.get(nonTldHost);
                                                 if (list == null) {
                                                     list = new ArrayList<LazyHostPlugin>();
                                                     map.put(nonTldHost, list);
                                                 }
                                                 list.add(lazyHostPlugin);
-                                                break;
                                             }
                                         }
                                     }
@@ -514,13 +520,18 @@ public class AccountInfo extends Property {
                 Collections.sort(list, new NaturalOrderComparator());
                 this.setProperty("multiHostSupport", new CopyOnWriteArrayList<String>(list));
                 final List<String> ret = new ArrayList<String>();
-                for (final String host : multiHostSupportList) {
-                    final String map = mapping.get(host);
-                    if (assignedMultiHostSupport.contains(map)) {
-                        ret.add(map);
-                    } else {
-                        ret.add(null);
+                hostLoop: for (final String host : multiHostSupportList) {
+                    String map = mapping.get(host);
+                    final Set<String> loopBreak = new HashSet<String>();
+                    while (map != null && loopBreak.add(map)) {
+                        if (assignedMultiHostSupport.contains(map)) {
+                            ret.add(map);
+                            continue hostLoop;
+                        } else {
+                            map = mapping.get(map);
+                        }
                     }
+                    ret.add(null);
                 }
                 return ret;
             }

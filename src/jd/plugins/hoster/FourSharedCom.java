@@ -73,6 +73,11 @@ public class FourSharedCom extends PluginForHost {
         setConfigElements();
     }
 
+    @Override
+    public String[] siteSupportedNames() {
+        return new String[] { "4shared.com", "4shared-china.com", "4shared" };
+    }
+
     /**
      * TODO: Implement API: http://www.4shared.com/developer/docs/rest/resources/#files 19.12.12: Their support never responded so we don't
      * know how to use the API...

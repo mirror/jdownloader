@@ -133,6 +133,11 @@ public class Uploadedto extends PluginForHost {
     }
 
     @Override
+    public String[] siteSupportedNames() {
+        return new String[] { "uploaded.net", "uploaded.to", "ul.to", "uploaded" };
+    }
+
+    @Override
     public String rewriteHost(String host) {
         if (host == null || "uploaded.net".equals(host) || "uploaded.to".equals(host) || "ul.to".equals(host)) {
             return "uploaded.to";
