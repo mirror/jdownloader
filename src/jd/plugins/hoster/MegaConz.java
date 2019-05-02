@@ -98,7 +98,7 @@ public class MegaConz extends PluginForHost {
 
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "mega.co.nz", "mega.nz" };
+        return new String[] { "mega.co.nz", "mega.nz", "mega" };
     }
 
     public MegaConz(PluginWrapper wrapper) {

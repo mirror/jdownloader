@@ -17,24 +17,11 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
-
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.config.annotations.DefaultIntValue;
-import org.appwork.storage.config.annotations.SpinnerValidator;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginHost;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.config.TakeValueFromSubconfig;
-import org.jdownloader.plugins.config.Type;
-import org.jdownloader.translate._JDT;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -61,6 +48,21 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
+
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DefaultIntValue;
+import org.appwork.storage.config.annotations.SpinnerValidator;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginHost;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.config.TakeValueFromSubconfig;
+import org.jdownloader.plugins.config.Type;
+import org.jdownloader.translate._JDT;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class OneFichierCom extends PluginForHost {
@@ -99,7 +101,9 @@ public class OneFichierCom extends PluginForHost {
     @Override
     public String[] siteSupportedNames() {
         /* 1st domain = current domain! */
-        return domains;
+        final List<String> ret = new ArrayList<String>(Arrays.asList(domains));
+        ret.add("1fichier");
+        return ret.toArray(new String[0]);
     }
 
     public static String[] getAnnotationNames() {

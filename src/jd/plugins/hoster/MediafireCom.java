@@ -73,6 +73,11 @@ public class MediafireCom extends PluginForHost {
         return UserAgents.portableUserAgent();
     }
 
+    @Override
+    public String[] siteSupportedNames() {
+        return new String[] { "mediafire.com", "mediafire" };
+    }
+
     public static String hbbtvUserAgent() {
         return UserAgents.hbbtvUserAgent();
     }

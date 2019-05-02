@@ -58,6 +58,11 @@ public class GoogleDrive extends PluginForHost {
     }
 
     @Override
+    public String[] siteSupportedNames() {
+        return new String[] { "docs.google.com", "googledrive" };
+    }
+
+    @Override
     public boolean isSpeedLimited(DownloadLink link, Account account) {
         return false;
     }
