@@ -17,6 +17,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.HashSet;
 import java.util.List;
 import java.util.StringTokenizer;
@@ -790,7 +791,7 @@ public class ClipboardMonitoring {
         final byte[] htmlDataBytes = getBytes(transferable, dataFlavors, null, htmlFlavor);
         if (htmlDataBytes != null && htmlDataBytes.length != 0) {
             final String charSet = new Regex(htmlFlavor.toString(), "charset=(.*?)]").getMatch(0);
-            final String result = convertBytes(htmlDataBytes, charSet, true);
+            final String result = convertBytes(htmlDataBytes, Charset.forName(charSet), true);
             if (CrossSystem.isWindows()) {
                 final String sourceURL = new Regex(result, "EndFragment:\\d+[\r\n]*SourceURL:(.*?)(\r|\n)").getMatch(0);
                 final String fragment = new Regex(result, "<!--StartFragment-->(.*?)<!--EndFragment-->").getMatch(0);
@@ -822,12 +823,12 @@ public class ClipboardMonitoring {
 
     private final static byte[] REPLACEMENT_CHARACTER = new byte[] { (byte) 0xef, (byte) 0xbf, (byte) 0xbd };
 
-    private static String convertBytes(byte[] bytes, String charSet, boolean linuxWorkaround) throws UnsupportedEncodingException {
+    private static String convertBytes(byte[] bytes, Charset charSet, boolean linuxWorkaround) throws UnsupportedEncodingException {
         if (bytes == null || bytes.length == 0) {
             return null;
         }
-        if (StringUtils.isEmpty(charSet)) {
-            charSet = "UTF-8";
+        if (charSet == null) {
+            charSet = IO.BOM.UTF8.getCharSet();
         }
         if (CrossSystem.isUnix()) {
             /*
@@ -1158,6 +1159,6 @@ public class ClipboardMonitoring {
 
     public static String getBrowserMime(final Transferable transferable, final DataFlavor[] dataFlavors, final String mime) throws UnsupportedFlavorException, IOException {
         final byte[] xmozurlprivBytes = getBytes(transferable, dataFlavors, mime, null);
-        return convertBytes(xmozurlprivBytes, "UTF-8", false);
+        return convertBytes(xmozurlprivBytes, IO.BOM.UTF8.getCharSet(), false);
     }
 }
