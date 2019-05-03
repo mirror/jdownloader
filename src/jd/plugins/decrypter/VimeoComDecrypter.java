@@ -278,6 +278,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 try {
                     try {
                         try {
+                            // TODO: add another plugin option to use original url first
                             jd.plugins.hoster.VimeoCom.accessVimeoURL(this.br, parameter, urlType, referer, alwaysLogin ? VIMEO_URL_TYPE.RAW : null);
                         } catch (final PluginException e) {
                             if (isEmbeddedForbidden(e, br) && VIMEO_URL_TYPE.PLAYER.equals(urlType.get()) && orgParameter.matches(type_normal)) {
@@ -622,20 +623,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
     }
 
     public void login(Account account) throws PluginException, IOException {
-        br.getPage("https://www.vimeo.com/log_in");
-        final String xsrft = getXsrft(br);
-        // static post are bad idea, always use form.
-        final Form login = br.getFormbyProperty("id", "login_form");
-        if (login == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        login.put("token", Encoding.urlEncode(xsrft));
-        login.put("email", Encoding.urlEncode(account.getUser()));
-        login.put("password", Encoding.urlEncode(account.getPass()));
-        br.submitForm(login);
-        if (br.getCookie("http://vimeo.com", "vimeo") == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        VimeoCom.login(br, account);
     }
 
     public static boolean iranWorkaround(final Browser br, final String videoID) throws IOException {
