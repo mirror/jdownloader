@@ -26,6 +26,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.plugins.components.containers.VimeoContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -50,13 +57,6 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.VimeoCom;
 import jd.plugins.hoster.VimeoCom.VIMEO_URL_TYPE;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.plugins.components.containers.VimeoContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vimeo.com" }, urls = { "https?://(?:www\\.)?vimeo\\.com/(\\d+(?:/[a-f0-9]+)?|(?:[a-z]{2}/)?channels/[a-z0-9\\-_]+/\\d+|[A-Za-z0-9\\-_]+/videos|ondemand/[A-Za-z0-9\\-_]+(/\\d+)?|groups/[A-Za-z0-9\\-_]+(?:/videos/\\d+)?)|https?://player\\.vimeo.com/(?:video|external)/\\d+((\\?|#).+)?|https?://(?:www\\.)?vimeo\\.com/[a-z0-9]+/review/\\d+/[a-f0-9]+" })
 public class VimeoComDecrypter extends PluginForDecrypt {
@@ -409,18 +409,23 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 logger.log(e);
             }
             final boolean tryToFindOfficialDownloadURLs = this.qORG;
-            final List<VimeoContainer> containers = jd.plugins.hoster.VimeoCom.find(this, br, videoID, tryToFindOfficialDownloadURLs, qALL || qMOBILE || qMOBILE || qHD, qALL || qMOBILE || qMOBILE || qHD, subtitle);
+            final List<VimeoContainer> containers = jd.plugins.hoster.VimeoCom.find(this, urlType.get(), br, videoID, tryToFindOfficialDownloadURLs, qALL || qMOBILE || qMOBILE || qHD, qALL || qMOBILE || qMOBILE || qHD, subtitle);
             if (containers == null) {
                 return null;
             }
             if (containers.size() == 0) {
                 return decryptedLinks;
             }
+            /*
+             * Both APIs we use as fallback to find additional information can only be used to display public content - it will not help us
+             * if the user has e.g. added a private/password protected video.
+             */
+            final boolean isPublicContent = urlType.get() == VIMEO_URL_TYPE.NORMAL || urlType.get() == VIMEO_URL_TYPE.RAW;
             try {
                 if (!StringUtils.isAllNotEmpty(title, date, description, ownerName, ownerUrl)) {
                     final Browser brc = br.cloneBrowser();
                     brc.setRequest(null);
-                    brc.getPage("http://vimeo.com/api/v2/video/" + videoID + ".xml");
+                    brc.getPage("https://vimeo.com/api/v2/video/" + videoID + ".xml");
                     if (StringUtils.isEmpty(title)) {
                         title = brc.getRegex("<title>\\s*(.*?)\\s*</title>").getMatch(0);
                         title = Encoding.htmlOnlyDecode(title);
@@ -443,7 +448,8 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 logger.log(e);
             }
             try {
-                if (!StringUtils.isAllNotEmpty(channelName, channelUrl) && StringUtils.containsIgnoreCase(orgParameter, "/channels/")) {
+                /* Fallback to find additional information */
+                if (!StringUtils.isAllNotEmpty(title, date, description, ownerName, ownerUrl) && isPublicContent) {
                     /*
                      * We're doing this request ONLY to find additional information which we were not able to get before (upload_date,
                      * description) - also this can be used as a fallback to find data which should have been found before (e.g. title,
@@ -453,11 +459,21 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     brc.setRequest(null);
                     /* https://developer.vimeo.com/api/oembed/videos */
                     brc.getPage("https://vimeo.com/api/oembed.json?url=" + URLEncode.encodeURIComponent(parameter));
+                    final String author_url = PluginJSonUtils.getJson(brc, "author_url");
                     if (StringUtils.isEmpty(title)) {
                         title = PluginJSonUtils.getJson(brc, "title");
                     }
                     if (StringUtils.isEmpty(channelName)) {
                         channelName = PluginJSonUtils.getJson(brc, "channel_name");
+                    }
+                    if (StringUtils.isEmpty(ownerName)) {
+                        ownerName = PluginJSonUtils.getJson(brc, "author_name");
+                    }
+                    if (StringUtils.isEmpty(ownerUrl) && author_url != null) {
+                        ownerUrl = new Regex(author_url, "/(user\\d+)$").getMatch(0);
+                        if (StringUtils.isEmpty(ownerUrl)) {
+                            ownerUrl = new Regex(author_url, "^https?://[^/]+/(.+)$").getMatch(0);
+                        }
                     }
                     if (StringUtils.isEmpty(channelUrl)) {
                         channelUrl = new Regex(PluginJSonUtils.getJson(brc, "channel_url"), "vimeo\\.com/channels/([^/]+)").getMatch(0);
@@ -470,6 +486,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     }
                 }
             } catch (final Throwable e) {
+                logger.log(e);
             }
             if (StringUtils.isEmpty(channelName)) {
                 channelName = ownerName;
