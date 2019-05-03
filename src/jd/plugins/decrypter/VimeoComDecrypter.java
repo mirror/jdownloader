@@ -268,6 +268,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 if (accs != null) {
                     // not optimized
                     login(accs.get(0));
+                    loggedIn = true;
                 } else {
                     logger.info("Cannot crawl this link without account");
                     return decryptedLinks;
@@ -279,7 +280,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     try {
                         try {
                             // TODO: add another plugin option to use original url first
-                            jd.plugins.hoster.VimeoCom.accessVimeoURL(this.br, parameter, urlType, referer, alwaysLogin ? VIMEO_URL_TYPE.RAW : null);
+                            jd.plugins.hoster.VimeoCom.accessVimeoURL(this.br, parameter, urlType, referer, loggedIn ? VIMEO_URL_TYPE.RAW : null);
                         } catch (final PluginException e) {
                             if (isEmbeddedForbidden(e, br) && VIMEO_URL_TYPE.PLAYER.equals(urlType.get()) && orgParameter.matches(type_normal)) {
                                 jd.plugins.hoster.VimeoCom.accessVimeoURL(this.br, parameter, urlType, referer, VIMEO_URL_TYPE.RAW);
@@ -420,7 +421,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
              * if the user has e.g. added a private/password protected video.
              */
             final boolean isPublicContent = VIMEO_URL_TYPE.NORMAL.equals(urlType.get()) || VIMEO_URL_TYPE.RAW.equals(urlType.get());
-            boolean embedPossible = false;
+            String embed_privacy = null;
             try {
                 if (!StringUtils.isAllNotEmpty(title, date, description, ownerName, ownerUrl) && isPublicContent) {
                     final Browser brc = br.cloneBrowser();
@@ -443,15 +444,14 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                         description = brc.getRegex("<description>\\s*(.*?)\\s*</description>").getMatch(0);
                         description = Encoding.htmlOnlyDecode(description);
                     }
-                    final String embed_privacy = brc.getRegex("<description>\\s*(.*?)\\s*</description>").getMatch(0);
-                    embedPossible = StringUtils.equalsIgnoreCase(embed_privacy, "anywhere");
+                    embed_privacy = brc.getRegex("<description>\\s*(.*?)\\s*</description>").getMatch(0);
                 }
             } catch (final Throwable e) {
                 logger.log(e);
             }
             try {
                 /* Fallback to find additional information */
-                if (embedPossible && !StringUtils.isAllNotEmpty(title, date, description, ownerName, ownerUrl) && isPublicContent) {
+                if (StringUtils.equalsIgnoreCase(embed_privacy, "anywhere") && !StringUtils.isAllNotEmpty(title, date, description, ownerName, ownerUrl) && isPublicContent) {
                     /*
                      * We're doing this request ONLY to find additional information which we were not able to get before (upload_date,
                      * description) - also this can be used as a fallback to find data which should have been found before (e.g. title,
