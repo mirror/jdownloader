@@ -251,7 +251,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             String videoID = getVideoidFromURL(parameter);
             if (videoID == null && !parameter.contains("ondemand")) {
                 /* This should never happen but can happen when adding support for new linktypes. */
-                return null;
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             boolean loggedIn = false;
             if (alwaysLogin) {
