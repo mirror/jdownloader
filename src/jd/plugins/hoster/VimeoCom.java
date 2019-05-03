@@ -596,15 +596,7 @@ public class VimeoCom extends PluginForHost {
              * 2019-04-30: TODO: This is kind of a small workaround - to remove this, we would always need to access the main video page
              * first (e.g. vimeo.com/123456 and NOT player.vimeo.com).
              */
-            /*
-             * fails for me, will do more checks on this
-             */
-            final boolean force_attempt_download = false;
-            if (force_attempt_download) {
-                download_possible = true;
-            } else {
-                download_possible = false;
-            }
+            download_possible = PluginJSonUtils.getJson(ibr, "download_config") != null;
         } else {
             download_possible = PluginJSonUtils.getJson(ibr, "download_config") != null;
         }
