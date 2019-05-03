@@ -21,12 +21,14 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ffetish.photos" }, urls = { "https?://(?:www\\.)?ffetish\\.photos/\\d+[a-z0-9\\-]+\\.html" })
@@ -51,7 +53,14 @@ public class FfetishPhotos extends antiDDoSForDecrypt {
             for (int i = 0; i <= 3; i++) {
                 final String code = this.getCaptchaCode("https://" + this.getHost() + "/engine/modules/antibot/antibot.php?rndval=" + System.currentTimeMillis(), param);
                 postPage("https://" + this.getHost() + "/engine/ajax/getlink.php", "sec_code=" + Encoding.urlEncode(code) + "&id=" + dl_id + "&skin=ffphotos");
-                if (br.toString().length() > 100) {
+                Form form = br.getForm(0);
+                if (form != null && form.containsHTML("g-recaptcha")) {
+                    final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+                    form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    submitForm(form);
+                }
+                form = br.getForm(0);
+                if (form == null && br.toString().length() > 100) {
                     success = true;
                     break;
                 }
