@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,13 +30,13 @@ import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -65,7 +64,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 public class VimeoCom extends PluginForHost {
     private static final String MAINPAGE        = "http://vimeo.com";
     private String              finalURL;
-    private static Object       LOCK            = new Object();
     public static final String  Q_MOBILE        = "Q_MOBILE";
     public static final String  Q_ORIGINAL      = "Q_ORIGINAL";
     public static final String  Q_HD            = "Q_HD";
@@ -115,7 +113,7 @@ public class VimeoCom extends PluginForHost {
 
     private static AtomicReference<String> userAgent = new AtomicReference<String>(null);
 
-    public Browser prepBrGeneral(final DownloadLink dl, final Browser prepBr) {
+    public static Browser prepBrGeneral(final DownloadLink dl, final Browser prepBr) {
         final String vimeo_forced_referer = dl != null ? getForcedReferer(dl) : null;
         if (vimeo_forced_referer != null) {
             prepBr.getHeaders().put("Referer", vimeo_forced_referer);
@@ -128,7 +126,7 @@ public class VimeoCom extends PluginForHost {
             }
             prepBr.getHeaders().put("User-Agent", userAgent.get());
         }
-        prepBr.setAllowedResponseCodes(new int[] { 418, 451 });
+        prepBr.setAllowedResponseCodes(new int[] { 418, 451, 406 });
         return prepBr;
     }
 
@@ -392,7 +390,7 @@ public class VimeoCom extends PluginForHost {
             return;
         }
         requestFileInformation(link);
-        login(account, false);
+        login(br, account);
         br.setFollowRedirects(false);
         final boolean is_private_link = link.getBooleanProperty("private_player_link", false);
         final String forced_referer = getForcedReferer(link);
@@ -435,7 +433,7 @@ public class VimeoCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             final AccountInfo ai = new AccountInfo();
             if (!account.getUser().matches(".+@.+\\..+")) {
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -444,12 +442,10 @@ public class VimeoCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail adress in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             }
-            try {
-                login(account, true);
-            } catch (final PluginException e) {
-                account.setProperty("cookies", null);
-                account.setValid(false);
-                return ai;
+            setBrowserExclusive();
+            login(br, account);
+            if (br.getRequest() == null || !StringUtils.containsIgnoreCase(br.getHost(), "vimeo.com")) {
+                br.getPage(MAINPAGE);
             }
             br.getPage("/settings");
             String type = br.getRegex("acct_status\">.*?>(.*?)<").getMatch(0);
@@ -467,55 +463,47 @@ public class VimeoCom extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+    public static void login(Browser br, Account account) throws PluginException, IOException {
+        synchronized (account) {
             try {
-                setBrowserExclusive();
                 prepBrGeneral(null, br);
                 br.setFollowRedirects(true);
-                br.setDebug(true);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = account.getUser().matches(account.getStringProperty("name", account.getUser()));
-                if (acmatch) {
-                    acmatch = account.getPass().matches(account.getStringProperty("pass", account.getPass()));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (cookies.containsKey("vimeo") && account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            br.setCookie(MAINPAGE, key, value);
-                        }
+                Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    br.setCookies(MAINPAGE, cookies);
+                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 5 * 60 * 1000l) {
+                        /* We trust these cookies --> Do not check them */
                         return;
                     }
+                    br.getPage(MAINPAGE);
+                    if (br.getCookie(MAINPAGE, "vimeo", Cookies.NOTDELETEDPATTERN) == null) {
+                        cookies = null;
+                    }
                 }
-                br.getPage("https://www.vimeo.com/log_in");
-                final String xsrft = getXsrft(br);
-                // static post are bad idea, always use form.
-                final Form login = br.getFormbyProperty("id", "login_form");
-                if (login == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (cookies == null) {
+                    br.getPage("https://www.vimeo.com/log_in");
+                    final String xsrft = getXsrft(br);
+                    // static post are bad idea, always use form.
+                    final Form login = br.getFormbyProperty("id", "login_form");
+                    if (login == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    login.put("token", Encoding.urlEncode(xsrft));
+                    login.put("email", Encoding.urlEncode(account.getUser()));
+                    login.put("password", Encoding.urlEncode(account.getPass()));
+                    br.submitForm(login);
+                    if (br.getHttpConnection().getResponseCode() == 406) {
+                        throw new AccountUnavailableException("Account login temp. blocked", 15 * 60 * 1000l);
+                    }
+                    if (br.getCookie(MAINPAGE, "vimeo", Cookies.NOTDELETEDPATTERN) == null) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
-                login.put("token", Encoding.urlEncode(xsrft));
-                login.put("email", Encoding.urlEncode(account.getUser()));
-                login.put("password", Encoding.urlEncode(account.getPass()));
-                br.submitForm(login);
-                if (br.getCookie(MAINPAGE, "vimeo") == null) {
-                    account.setProperty("cookies", null);
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(MAINPAGE);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", account.getUser());
-                account.setProperty("pass", account.getPass());
-                account.setProperty("cookies", cookies);
+                account.saveCookies(br.getCookies(MAINPAGE), "");
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
@@ -587,8 +575,6 @@ public class VimeoCom extends PluginForHost {
          * No matter which attempt we chose: We need one request more!
          */
         final boolean download_possible = PluginJSonUtils.getJson(ibr, "download_config") != null || PluginJSonUtils.getJson(ibr, "file_transfer_url") != null;
-        plugin.getLogger().info("Debug1:" + PluginJSonUtils.getJson(ibr, "download_config"));
-        plugin.getLogger().info("Debug2:" + PluginJSonUtils.getJson(ibr, "file_transfer_url"));
         plugin.getLogger().info("Download possible:" + download_possible);
         if (download && download_possible) {
             plugin.getLogger().info("query downloads");
@@ -952,7 +938,7 @@ public class VimeoCom extends PluginForHost {
         return formatter;
     }
 
-    private String getForcedReferer(final DownloadLink dl) {
+    public static String getForcedReferer(final DownloadLink dl) {
         return dl.getStringProperty("vimeo_forced_referer", null);
     }
 
