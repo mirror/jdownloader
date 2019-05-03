@@ -579,10 +579,6 @@ public class VimeoCom extends PluginForHost {
             /* 2019-02-20 */
             configURL = PluginJSonUtils.getJsonValue(ibr, "configUrl");
         }
-        // if (StringUtils.isEmpty(configURL)) {
-        // /* 2019-02-20 */
-        // configURL = PluginJSonUtils.getJsonValue(ibr, "configUrlMobile");
-        // }
         final ArrayList<VimeoContainer> results = new ArrayList<VimeoContainer>();
         /**
          * "download_config":[] --> Download possible, "download_config":null --> No download available. <br />
@@ -590,18 +586,14 @@ public class VimeoCom extends PluginForHost {
          * out about this information or simply try it (current attempt). <br />
          * No matter which attempt we chose: We need one request more!
          */
-        final boolean download_possible;
-        if (ibr.getURL().contains("player.vimeo.com/")) {
-            /*
-             * 2019-04-30: TODO: This is kind of a small workaround - to remove this, we would always need to access the main video page
-             * first (e.g. vimeo.com/123456 and NOT player.vimeo.com).
-             */
-            download_possible = PluginJSonUtils.getJson(ibr, "download_config") != null;
-        } else {
-            download_possible = PluginJSonUtils.getJson(ibr, "download_config") != null || PluginJSonUtils.getJson(ibr, "file_transfer_url") != null;
-        }
+        final boolean download_possible = PluginJSonUtils.getJson(ibr, "download_config") != null || PluginJSonUtils.getJson(ibr, "file_transfer_url") != null;
+        plugin.getLogger().info("Debug1:" + PluginJSonUtils.getJson(ibr, "download_config"));
+        plugin.getLogger().info("Debug2:" + PluginJSonUtils.getJson(ibr, "file_transfer_url"));
+        plugin.getLogger().info("Download possible:" + download_possible);
         if (download && download_possible) {
+            plugin.getLogger().info("query downloads");
             results.addAll(handleDownloadConfig(plugin, ibr, ID));
+            plugin.getLogger().info("downloads found:" + results.size());
         }
         /** 2019-04-30: Only try to grab streams if we failed to find any downloads. */
         final boolean tryToFindStreams = results.size() < 2 && (stream || hls);
