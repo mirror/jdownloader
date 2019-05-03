@@ -197,13 +197,11 @@ public class PixivNet extends PluginForDecrypt {
                     fpName += "」";
                 }
             }
-            int counter = 0;
             for (String singleLink : links) {
-                counter++;
                 singleLink = singleLink.replaceAll("\\\\", "");
                 final String filename_url = new Regex(singleLink, "/([^/]+\\.[a-z]+)$").getMatch(0);
                 String filename;
-                final String picNumberStr = new Regex(singleLink, "/[^/]+_p(\\d+)[^/]+\\.[a-z]+$").getMatch(0);
+                final String picNumberStr = new Regex(singleLink, "/[^/]+_p(\\d+)[^/]*\\.[a-z]+$").getMatch(0);
                 if (picNumberStr != null) {
                     filename = lid + "_p" + picNumberStr + (fpName != null ? fpName : "");
                 } else {
