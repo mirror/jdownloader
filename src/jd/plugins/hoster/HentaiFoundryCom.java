@@ -118,7 +118,9 @@ public class HentaiFoundryCom extends PluginForHost {
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
-        downloadLink.setFinalFileName(filename);
+        if (downloadLink.getFinalFileName() == null) {
+            downloadLink.setFinalFileName(filename);
+        }
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
@@ -129,7 +131,7 @@ public class HentaiFoundryCom extends PluginForHost {
                 } catch (final Throwable e) {
                 }
             }
-            if (!con.getContentType().contains("html")) {
+            if (con.isOK() && !con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
                 server_issues = true;

@@ -415,16 +415,40 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 return decryptedLinks;
             }
             try {
-                if ((unlistedHash == null && !VIMEO_URL_TYPE.UNLISTED.equals(urlType.get())) && !StringUtils.isAllNotEmpty(title, channelName, channelUrl, date, description)) {
-                    /*
-                     * doesn't seem to work for unlisted videos
-                     */
+                if (!StringUtils.isAllNotEmpty(title, date, description, ownerName, ownerUrl)) {
+                    final Browser brc = br.cloneBrowser();
+                    brc.setRequest(null);
+                    brc.getPage("http://vimeo.com/api/v2/video/" + videoID + ".xml");
+                    if (StringUtils.isEmpty(title)) {
+                        title = brc.getRegex("<title>\\s*(.*?)\\s*</title>").getMatch(0);
+                        title = Encoding.htmlOnlyDecode(title);
+                    }
+                    if (StringUtils.isEmpty(date)) {
+                        date = brc.getRegex("<upload_date>\\s*(.*?)\\s*</upload_date>").getMatch(0);
+                    }
+                    if (StringUtils.isEmpty(ownerName)) {
+                        ownerName = brc.getRegex("<user_name>\\s*(.*?)\\s*</user_name>").getMatch(0);
+                    }
+                    if (StringUtils.isEmpty(ownerUrl)) {
+                        ownerUrl = new Regex(brc.getRegex("<user_url>\\s*(.*?)\\s*</user_url>").getMatch(0), "vimeo\\.com/([^/]+)").getMatch(0);
+                    }
+                    if (StringUtils.isEmpty(description)) {
+                        description = brc.getRegex("<description>\\s*(.*?)\\s*</description>").getMatch(0);
+                        description = Encoding.htmlOnlyDecode(description);
+                    }
+                }
+            } catch (final Throwable e) {
+                logger.log(e);
+            }
+            try {
+                if (!StringUtils.isAllNotEmpty(channelName, channelUrl) && StringUtils.containsIgnoreCase(orgParameter, "/channels/")) {
                     /*
                      * We're doing this request ONLY to find additional information which we were not able to get before (upload_date,
                      * description) - also this can be used as a fallback to find data which should have been found before (e.g. title,
                      * channel_name).
                      */
                     final Browser brc = br.cloneBrowser();
+                    brc.setRequest(null);
                     /* https://developer.vimeo.com/api/oembed/videos */
                     brc.getPage("https://vimeo.com/api/oembed.json?url=" + URLEncode.encodeURIComponent(parameter));
                     if (StringUtils.isEmpty(title)) {
@@ -444,7 +468,9 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     }
                 }
             } catch (final Throwable e) {
-                logger.log(e);
+            }
+            if (StringUtils.isEmpty(channelName)) {
+                channelName = ownerName;
             }
             if (StringUtils.isEmpty(title)) {
                 /* Fallback */

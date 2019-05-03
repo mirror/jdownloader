@@ -116,15 +116,17 @@ public class ImgSrcRu extends PluginForDecrypt {
                 this.passwords.add(0, "1234554321");
             } else if (StringUtils.containsIgnoreCase(galleryName, "EZE")) {
                 this.passwords.add(0, "123454321");
+            } else if (StringUtils.containsIgnoreCase(galleryName, "ZEZ")) {
+                this.passwords.add(0, "543212345");
             } else if (StringUtils.containsIgnoreCase(galleryName, "ZE")) {
                 this.passwords.add(0, "54321");
-            } else if (StringUtils.contains(galleryName, "EZ6")) {
-                this.passwords.add(0, "123456");
             } else if (StringUtils.containsIgnoreCase(galleryName, "0EZ6")) {
                 this.passwords.add(0, "0123456");
+            } else if (StringUtils.contains(galleryName, "EZ6")) {
+                this.passwords.add(0, "123456");
             } else if (StringUtils.containsIgnoreCase(galleryName, "0EZ")) {
                 this.passwords.add(0, "012345");
-            } else if (StringUtils.containsIgnoreCase(galleryName, "EZ")) {
+            } else if (StringUtils.containsIgnoreCase(galleryName, "EZ") || StringUtils.containsIgnoreCase(galleryName, "12345")) {
                 this.passwords.add(0, "12345");
             }
         }
