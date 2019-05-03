@@ -598,7 +598,7 @@ public class VimeoCom extends PluginForHost {
              */
             download_possible = PluginJSonUtils.getJson(ibr, "download_config") != null;
         } else {
-            download_possible = PluginJSonUtils.getJson(ibr, "download_config") != null;
+            download_possible = PluginJSonUtils.getJson(ibr, "download_config") != null || PluginJSonUtils.getJson(ibr, "file_transfer_url") != null;
         }
         if (download && download_possible) {
             results.addAll(handleDownloadConfig(plugin, ibr, ID));
