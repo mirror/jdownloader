@@ -115,7 +115,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 4.0.1.3<br />
+     * DEV NOTES XfileSharingProBasic Version 4.0.1.4<br />
      ****************************
      * NOTES from raztoki <br/>
      * - no need to set setfollowredirect true. <br />
@@ -1062,17 +1062,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
              * likely end up with error "Fatal countdown error (countdown skipped)"
              */
             checkErrors(link, account, false);
-            final Form download1 = br.getFormByInputFieldKeyValue("op", "download1");
+            final Form download1 = findFormDownload1();
             if (download1 != null) {
-                download1.remove("method_premium");
-                /* Fix/Add "method_free" value if necessary. */
-                if (!download1.hasInputFieldByName("method_free") || download1.getInputFieldByName("method_free").getValue() == null) {
-                    String method_free_value = download1.getRegex("\"method_free\" value=\"([^<>\"]+)\"").getMatch(0);
-                    if (method_free_value == null || method_free_value.equals("")) {
-                        method_free_value = "Free Download";
-                    }
-                    download1.put("method_free", Encoding.urlEncode(method_free_value));
-                }
                 /* end of backward compatibility */
                 submitForm(download1);
                 checkErrors(link, account, false);
@@ -1264,7 +1255,24 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return skipWaittime;
     }
 
-    /** Tries to find first download Form. */
+    /** Tries to find 1st download Form for free download. */
+    public Form findFormDownload1() throws Exception {
+        final Form download1 = br.getFormByInputFieldKeyValue("op", "download1");
+        if (download1 != null) {
+            download1.remove("method_premium");
+            /* Fix/Add "method_free" value if necessary. */
+            if (!download1.hasInputFieldByName("method_free") || download1.getInputFieldByName("method_free").getValue() == null) {
+                String method_free_value = download1.getRegex("\"method_free\" value=\"([^<>\"]+)\"").getMatch(0);
+                if (method_free_value == null || method_free_value.equals("")) {
+                    method_free_value = "Free Download";
+                }
+                download1.put("method_free", Encoding.urlEncode(method_free_value));
+            }
+        }
+        return download1;
+    }
+
+    /** Tries to find 2nd download Form for free download. */
     public Form findFormF1() {
         Form dlForm = null;
         /* First try to find Form for video hosts with multiple qualities. */
@@ -1282,6 +1290,15 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             dlForm = br.getFormbyProperty("name", "F1");
         }
         return dlForm;
+    }
+
+    /**
+     * Tries to find download Form for premium download.
+     *
+     * @throws Exception
+     */
+    public Form findFormF1Premium() throws Exception {
+        return br.getFormbyProperty("name", "F1");
     }
 
     /**
@@ -2268,7 +2285,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 getPage(link.getPluginPatternMatcher());
                 dllink = getDllink(link, account);
                 if (dllink == null) {
-                    final Form dlform = br.getFormbyProperty("name", "F1");
+                    final Form dlform = findFormF1Premium();
                     if (dlform != null && isPasswordProtected()) {
                         handlePassword(dlform, link);
                     }
