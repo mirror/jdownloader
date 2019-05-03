@@ -278,7 +278,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 try {
                     try {
                         try {
-                            jd.plugins.hoster.VimeoCom.accessVimeoURL(this.br, parameter, urlType, referer, null);
+                            jd.plugins.hoster.VimeoCom.accessVimeoURL(this.br, parameter, urlType, referer, alwaysLogin ? VIMEO_URL_TYPE.RAW : null);
                         } catch (final PluginException e) {
                             if (isEmbeddedForbidden(e, br) && VIMEO_URL_TYPE.PLAYER.equals(urlType.get()) && orgParameter.matches(type_normal)) {
                                 jd.plugins.hoster.VimeoCom.accessVimeoURL(this.br, parameter, urlType, referer, VIMEO_URL_TYPE.RAW);
