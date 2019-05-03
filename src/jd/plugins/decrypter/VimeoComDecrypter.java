@@ -26,13 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.plugins.components.containers.VimeoContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -57,6 +50,13 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.VimeoCom;
 import jd.plugins.hoster.VimeoCom.VIMEO_URL_TYPE;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.plugins.components.containers.VimeoContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vimeo.com" }, urls = { "https?://(?:www\\.)?vimeo\\.com/(\\d+(?:/[a-f0-9]+)?|(?:[a-z]{2}/)?channels/[a-z0-9\\-_]+/\\d+|[A-Za-z0-9\\-_]+/videos|ondemand/[A-Za-z0-9\\-_]+(/\\d+)?|groups/[A-Za-z0-9\\-_]+(?:/videos/\\d+)?)|https?://player\\.vimeo.com/(?:video|external)/\\d+((\\?|#).+)?|https?://(?:www\\.)?vimeo\\.com/[a-z0-9]+/review/\\d+/[a-f0-9]+" })
 public class VimeoComDecrypter extends PluginForDecrypt {
@@ -303,7 +303,6 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     }
                 }
             } catch (final PluginException e2) {
-                // TODO: ask for referer if required and vimeo_forced_referer not set
                 if (e2.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
                     decryptedLinks.add(createOfflinelink(parameter, videoID, null));
                     return decryptedLinks;
@@ -420,9 +419,10 @@ public class VimeoComDecrypter extends PluginForDecrypt {
              * Both APIs we use as fallback to find additional information can only be used to display public content - it will not help us
              * if the user has e.g. added a private/password protected video.
              */
-            final boolean isPublicContent = urlType.get() == VIMEO_URL_TYPE.NORMAL || urlType.get() == VIMEO_URL_TYPE.RAW;
+            final boolean isPublicContent = VIMEO_URL_TYPE.NORMAL.equals(urlType.get()) || VIMEO_URL_TYPE.RAW.equals(urlType.get());
+            boolean embedPossible = false;
             try {
-                if (!StringUtils.isAllNotEmpty(title, date, description, ownerName, ownerUrl)) {
+                if (!StringUtils.isAllNotEmpty(title, date, description, ownerName, ownerUrl) && isPublicContent) {
                     final Browser brc = br.cloneBrowser();
                     brc.setRequest(null);
                     brc.getPage("https://vimeo.com/api/v2/video/" + videoID + ".xml");
@@ -443,13 +443,15 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                         description = brc.getRegex("<description>\\s*(.*?)\\s*</description>").getMatch(0);
                         description = Encoding.htmlOnlyDecode(description);
                     }
+                    final String embed_privacy = brc.getRegex("<description>\\s*(.*?)\\s*</description>").getMatch(0);
+                    embedPossible = StringUtils.equalsIgnoreCase(embed_privacy, "anywhere");
                 }
             } catch (final Throwable e) {
                 logger.log(e);
             }
             try {
                 /* Fallback to find additional information */
-                if (!StringUtils.isAllNotEmpty(title, date, description, ownerName, ownerUrl) && isPublicContent) {
+                if (embedPossible && !StringUtils.isAllNotEmpty(title, date, description, ownerName, ownerUrl) && isPublicContent) {
                     /*
                      * We're doing this request ONLY to find additional information which we were not able to get before (upload_date,
                      * description) - also this can be used as a fallback to find data which should have been found before (e.g. title,
