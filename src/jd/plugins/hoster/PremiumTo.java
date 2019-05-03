@@ -156,11 +156,6 @@ public class PremiumTo extends UseNet {
                 hosts_storage.add(supported_host_storage);
             }
         }
-        /*
-         * 2019-04-17: Workaround: This host is not available for all users. Waiting for admin to change API to only return supported hosts
-         * for user.
-         */
-        supported_hosts_regular.remove("share-online.biz");
         if (supported_hosts_regular.size() > 0) {
             ac.setMultiHostSupport(this, supported_hosts_regular);
         }
@@ -172,7 +167,6 @@ public class PremiumTo extends UseNet {
      * (which he then also has to change in JDownloader)!
      */
     private String getAndStoreAPIKey(final Account account, final boolean forceRenew) throws Exception {
-        /* 2019-04-15: TODO: Check if this apikey ever changes/canExpire */
         String apikey = account.getStringProperty("apikey");
         if (apikey == null || forceRenew) {
             br.getPage(API_BASE + "api/getauthcode.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));

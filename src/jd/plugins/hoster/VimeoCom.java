@@ -24,6 +24,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.containers.VimeoContainer;
+import org.jdownloader.plugins.components.containers.VimeoContainer.Quality;
+import org.jdownloader.plugins.components.containers.VimeoContainer.Source;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -48,17 +59,6 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.locale.JDL;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.containers.VimeoContainer;
-import org.jdownloader.plugins.components.containers.VimeoContainer.Quality;
-import org.jdownloader.plugins.components.containers.VimeoContainer.Source;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "decryptedforVimeoHosterPlugin://.+" })
 public class VimeoCom extends PluginForHost {
@@ -190,7 +190,7 @@ public class VimeoCom extends PluginForHost {
         final boolean isHLS = StringUtils.endsWithCaseInsensitive(videoQuality, "HLS") || StringUtils.endsWithCaseInsensitive(downloadlinkId, "HLS");
         final boolean isDownload = StringUtils.endsWithCaseInsensitive(videoQuality, "DOWNLOAD") || StringUtils.endsWithCaseInsensitive(downloadlinkId, "DOWNLOAD");
         final boolean isStream = !isHLS && !isDownload;
-        final List<VimeoContainer> qualities = find(this, br, videoID, isDownload || !isHLS, isStream, isHLS, isSubtitle);
+        final List<VimeoContainer> qualities = find(this, getVimeoUrlType(downloadLink), br, videoID, isDownload || !isHLS, isStream, isHLS, isSubtitle);
         if (qualities.isEmpty()) {
             logger.warning("vimeo.com: Qualities could not be found");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -552,7 +552,7 @@ public class VimeoCom extends PluginForHost {
     }
 
     @SuppressWarnings({ "unchecked", "unused" })
-    public static List<VimeoContainer> find(final Plugin plugin, final Browser ibr, final String ID, final boolean download, final boolean stream, final boolean hls, final boolean subtitles) throws Exception {
+    public static List<VimeoContainer> find(final Plugin plugin, final VIMEO_URL_TYPE urlTypeUsed, final Browser ibr, final String ID, final boolean user_wants_download_urls, final boolean stream, final boolean hls, final boolean subtitles) throws Exception {
         /*
          * little pause needed so the next call does not return trash
          */
@@ -574,9 +574,31 @@ public class VimeoCom extends PluginForHost {
          * out about this information or simply try it (current attempt). <br />
          * No matter which attempt we chose: We need one request more!
          */
-        final boolean download_possible = PluginJSonUtils.getJson(ibr, "download_config") != null || PluginJSonUtils.getJson(ibr, "file_transfer_url") != null;
-        plugin.getLogger().info("Download possible:" + download_possible);
-        if (download && download_possible) {
+        boolean download_might_be_possible = false;
+        if (ibr.getURL().contains("player.vimeo.com/")) {
+            /*
+             * 2019-04-30: We've already accessed the player-page which means we can only assume whether a download might be possible or not
+             * based on the added linktype.
+             */
+            final boolean force_download_attempt = false;
+            if (urlTypeUsed == null || urlTypeUsed == VIMEO_URL_TYPE.RAW || urlTypeUsed == VIMEO_URL_TYPE.NORMAL || force_download_attempt) {
+                download_might_be_possible = true;
+            } else {
+                download_might_be_possible = false;
+            }
+        } else {
+            /* As stated in the other case, if we access the main video page first, it should contain this information. */
+            try {
+                final String json = jd.plugins.decrypter.VimeoComDecrypter.getJsonFromHTML(ibr);
+                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
+                /* Empty Array = download possible, null = download NOT possible! */
+                final Object download_might_be_possibleO = entries.get("download_config");
+                download_might_be_possible = download_might_be_possibleO != null || PluginJSonUtils.getJson(ibr, "file_transfer_url") != null;
+            } catch (final Throwable e) {
+            }
+        }
+        plugin.getLogger().info("Download possible:" + download_might_be_possible);
+        if (user_wants_download_urls && download_might_be_possible) {
             plugin.getLogger().info("query downloads");
             results.addAll(handleDownloadConfig(plugin, ibr, ID));
             plugin.getLogger().info("downloads found:" + results.size());
