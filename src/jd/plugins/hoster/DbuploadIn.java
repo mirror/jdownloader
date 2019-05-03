@@ -17,21 +17,17 @@ package jd.plugins.hoster;
 
 import java.util.regex.Pattern;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class FileAl extends XFileSharingProBasic {
-    public FileAl(final PluginWrapper wrapper) {
+public class DbuploadIn extends XFileSharingProBasic {
+    public DbuploadIn(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
     }
@@ -39,24 +35,23 @@ public class FileAl extends XFileSharingProBasic {
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
-     * limit-info:<br />
-     * captchatype-info: 2019-05-03: reCaptchaV2<br />
-     * other: Their website has strict anti-ddos measures which can easily be triggered and will lead to 'ip_check' pages --> More
-     * reCaptchaV2 <br />
+     * limit-info: 2019-05-03: untested as signup-page was broken during testing, set FREE limits <br />
+     * captchatype-info: 2019-05-03: null<br />
+     * other:<br />
      */
-    private static String[] domains = new String[] { "file.al" };
+    private static String[] domains = new String[] { "dbupload.in" };
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return false;
+            return true;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
             return true;
         } else {
             /* Free(anonymous) and unknown account type */
-            return false;
+            return true;
         }
     }
 
@@ -64,55 +59,29 @@ public class FileAl extends XFileSharingProBasic {
     public int getMaxChunks(final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return 1;
+            return -5;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return 0;
+            return -5;
         } else {
             /* Free(anonymous) and unknown account type */
-            return 1;
+            return -5;
         }
     }
 
     @Override
     public int getMaxSimultaneousFreeAnonymousDownloads() {
-        return 1;
+        return 2;
     }
 
     @Override
     public int getMaxSimultaneousFreeAccountDownloads() {
-        return 1;
+        return 2;
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        /* 2019-05-03: Special: Set this to 1 to avoid unnerving 'ip_check' captchas (same will happen via browser) */
-        return 1;
-    }
-
-    @Override
-    public Form findLoginform(final Browser br) {
-        /* 2019-05-03: Special */
-        final Form loginform = super.findLoginform(br);
-        if (loginform != null) {
-            /* This may help to reduce login-captchas */
-            loginform.remove("bind_to_ip");
-            loginform.put("bind_to_ip", "0");
-        }
-        return loginform;
-    }
-
-    @Override
-    public Form findFormF1Premium() throws Exception {
-        /* 2019-05-03: Special */
-        checkForSpecialCaptcha();
-        return super.findFormF1Premium();
-    }
-
-    public Form findFormDownload1() throws Exception {
-        /* 2019-05-03: Special */
-        checkForSpecialCaptcha();
-        return super.findFormDownload1();
+        return 2;
     }
 
     @Override
@@ -212,25 +181,5 @@ public class FileAl extends XFileSharingProBasic {
             pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
         }
         return pattern.toString();
-    }
-
-    private void checkForSpecialCaptcha() throws Exception {
-        if (br.getURL() != null && br.getURL().contains("/ip_check/")) {
-            /*
-             * 2019-01-23: Special - this may also happen in premium mode! This will only happen when accessing downloadurl. It gets e.g.
-             * triggered when accessing a lot of different downloadurls in a small timeframe.
-             */
-            /* Tags: XFS_IP_CHECK /ip_check/ */
-            final Form specialCaptchaForm = br.getFormbyProperty("name", "F1");
-            if (specialCaptchaForm != null) {
-                logger.info("Handling specialCaptchaForm");
-                final boolean redirectSetting = br.isFollowingRedirects();
-                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                specialCaptchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                br.setFollowRedirects(true);
-                super.submitForm(specialCaptchaForm);
-                br.setFollowRedirects(redirectSetting);
-            }
-        }
     }
 }
