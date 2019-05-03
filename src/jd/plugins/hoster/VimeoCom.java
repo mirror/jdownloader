@@ -24,17 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.containers.VimeoContainer;
-import org.jdownloader.plugins.components.containers.VimeoContainer.Quality;
-import org.jdownloader.plugins.components.containers.VimeoContainer.Source;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -59,6 +48,17 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.locale.JDL;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.containers.VimeoContainer;
+import org.jdownloader.plugins.components.containers.VimeoContainer.Quality;
+import org.jdownloader.plugins.components.containers.VimeoContainer.Source;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "decryptedforVimeoHosterPlugin://.+" })
 public class VimeoCom extends PluginForHost {
@@ -476,7 +476,9 @@ public class VimeoCom extends PluginForHost {
                         return;
                     }
                     br.getPage(MAINPAGE);
-                    if (br.getCookie(MAINPAGE, "vimeo", Cookies.NOTDELETEDPATTERN) == null) {
+                    if (br.getCookie(MAINPAGE, "vuid", Cookies.NOTDELETEDPATTERN) == null) {
+                        cookies = null;
+                    } else if (!"1".equals(br.getCookie(MAINPAGE, "is_logged_in", Cookies.NOTDELETEDPATTERN))) {
                         cookies = null;
                     }
                 }
@@ -495,7 +497,9 @@ public class VimeoCom extends PluginForHost {
                     if (br.getHttpConnection().getResponseCode() == 406) {
                         throw new AccountUnavailableException("Account login temp. blocked", 15 * 60 * 1000l);
                     }
-                    if (br.getCookie(MAINPAGE, "vimeo", Cookies.NOTDELETEDPATTERN) == null) {
+                    if (br.getCookie(MAINPAGE, "vuid", Cookies.NOTDELETEDPATTERN) == null) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else if (!"1".equals(br.getCookie(MAINPAGE, "is_logged_in", Cookies.NOTDELETEDPATTERN))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
@@ -562,10 +566,10 @@ public class VimeoCom extends PluginForHost {
         if (StringUtils.isEmpty(configURL)) {
             /* can be within json on the given page now.. but this is easy to just request again raz20151215 */
             configURL = PluginJSonUtils.getJsonValue(ibr, "config_url");
-        }
-        if (StringUtils.isEmpty(configURL)) {
-            /* 2019-02-20 */
-            configURL = PluginJSonUtils.getJsonValue(ibr, "configUrl");
+            if (StringUtils.isEmpty(configURL)) {
+                /* 2019-02-20 */
+                configURL = PluginJSonUtils.getJsonValue(ibr, "configUrl");
+            }
         }
         final ArrayList<VimeoContainer> results = new ArrayList<VimeoContainer>();
         /**
@@ -588,13 +592,17 @@ public class VimeoCom extends PluginForHost {
             }
         } else {
             /* As stated in the other case, if we access the main video page first, it should contain this information. */
-            try {
-                final String json = jd.plugins.decrypter.VimeoComDecrypter.getJsonFromHTML(ibr);
-                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
-                /* Empty Array = download possible, null = download NOT possible! */
-                final Object download_might_be_possibleO = entries.get("download_config");
-                download_might_be_possible = download_might_be_possibleO != null || PluginJSonUtils.getJson(ibr, "file_transfer_url") != null;
-            } catch (final Throwable e) {
+            download_might_be_possible = PluginJSonUtils.getJson(ibr, "file_transfer_url") != null;
+            if (!download_might_be_possible) {
+                try {
+                    final String json = jd.plugins.decrypter.VimeoComDecrypter.getJsonFromHTML(ibr);
+                    final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
+                    /* Empty Array = download possible, null = download NOT possible! */
+                    final Object download_might_be_possibleO = entries.get("download_config");
+                    download_might_be_possible = download_might_be_possibleO != null;
+                } catch (final Throwable e) {
+                    plugin.getLogger().log(e);
+                }
             }
         }
         plugin.getLogger().info("Download possible:" + download_might_be_possible);
@@ -607,6 +615,7 @@ public class VimeoCom extends PluginForHost {
         final boolean tryToFindStreams = results.size() < 2 && (stream || hls);
         /* player.vimeo.com links = Special case as the needed information is already in our current browser. */
         if ((tryToFindStreams || subtitles) && (configURL != null || ibr.getURL().contains("player.vimeo.com/"))) {
+            plugin.getLogger().info("try to find streams");
             // iconify_down_b could fail, revert to the following if statements.
             final Browser gq = ibr.cloneBrowser();
             gq.getHeaders().put("Accept", "*/*");
@@ -635,14 +644,23 @@ public class VimeoCom extends PluginForHost {
                 // progressive = web, hls = hls
                 if (files != null) {
                     if (files.containsKey("progressive") && stream) {
+                        final int before = results.size();
+                        plugin.getLogger().info("query progressive streams");
                         results.addAll(handleProgessive(plugin, ibr, files));
+                        plugin.getLogger().info("progressive streams found:" + (results.size() - before));
                     }
                     if (files.containsKey("hls") && hls) {
+                        final int before = results.size();
+                        plugin.getLogger().info("query hls streams");
                         results.addAll(handleHLS(plugin, ibr, (Map<String, Object>) files.get("hls")));
+                        plugin.getLogger().info("hls streams found:" + (results.size() - before));
                     }
                 }
                 if (text_tracks != null && subtitles) {
+                    final int before = results.size();
+                    plugin.getLogger().info("query subtitles");
                     results.addAll(handleSubtitles(plugin, ibr, text_tracks));
+                    plugin.getLogger().info("subtitles found:" + (results.size() - before));
                 }
             }
         }
