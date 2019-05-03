@@ -74,6 +74,7 @@ public class VimeoCom extends PluginForHost {
     public static final String  SUBTITLE        = "SUBTITLE";
     private static final String CUSTOM_DATE     = "CUSTOM_DATE_3";
     private static final String CUSTOM_FILENAME = "CUSTOM_FILENAME_3";
+    public static final String  ALWAYS_LOGIN    = "ALWAYS_LOGIN";
     public static final String  VVC             = "VVC_1";
     public static final String  P_240           = "P_240";
     public static final String  P_360           = "P_360";
@@ -1034,6 +1035,7 @@ public class VimeoCom extends PluginForHost {
         sb.append("*videoBitrate* = bitrate of video eg. xxxkbits (not always available)\r\n");
         sb.append("*type* = STREAM or DOWNLOAD\r\n");
         sb.append("*ext* = the extension of the file, in this case usually '.mp4'");
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALWAYS_LOGIN, JDL.L("plugins.hoster.vimeo.alwayslogin", "Always login with account?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sb.toString()));
     }
 }

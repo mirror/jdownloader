@@ -127,6 +127,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final SubConfiguration cfg = SubConfiguration.getConfig("vimeo.com");
+        final boolean alwaysLogin = cfg.getBooleanProperty(VimeoCom.ALWAYS_LOGIN, false);
         init(cfg);
         int skippedLinks = 0;
         String parameter = param.toString().replace("http://", "https://");
@@ -156,6 +157,12 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         br.setAllowedResponseCodes(new int[] { 400, 410 });
         String password = null;
         if (parameter.matches(LINKTYPE_USER) || parameter.matches(LINKTYPE_GROUP)) {
+            if (alwaysLogin) {
+                final ArrayList<Account> accs = AccountController.getInstance().getValidAccounts(getHost());
+                if (accs != null) {
+                    login(accs.get(0));
+                }
+            }
             /* Decrypt all videos of a user- or group. */
             br.getPage(parameter);
             if (this.br.getHttpConnection().getResponseCode() == 404) {
@@ -246,27 +253,21 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 /* This should never happen but can happen when adding support for new linktypes. */
                 return null;
             }
+            boolean loggedIn = false;
+            if (alwaysLogin) {
+                final ArrayList<Account> accs = AccountController.getInstance().getValidAccounts(getHost());
+                if (accs != null) {
+                    login(accs.get(0));
+                    loggedIn = true;
+                }
+            }
             /* Log in if required */
-            if (StringUtils.containsIgnoreCase(parameter, "/ondemand/")) {
+            if (loggedIn == false && StringUtils.containsIgnoreCase(parameter, "/ondemand/")) {
                 logger.info("Account required to crawl this link");
                 final ArrayList<Account> accs = AccountController.getInstance().getValidAccounts(getHost());
                 if (accs != null) {
                     // not optimized
-                    final Account account = accs.get(0);
-                    br.getPage("https://www.vimeo.com/log_in");
-                    final String xsrft = getXsrft(br);
-                    // static post are bad idea, always use form.
-                    final Form login = br.getFormbyProperty("id", "login_form");
-                    if (login == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    login.put("token", Encoding.urlEncode(xsrft));
-                    login.put("email", Encoding.urlEncode(account.getUser()));
-                    login.put("password", Encoding.urlEncode(account.getPass()));
-                    br.submitForm(login);
-                    if (br.getCookie("http://vimeo.com", "vimeo") == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
+                    login(accs.get(0));
                 } else {
                     logger.info("Cannot crawl this link without account");
                     return decryptedLinks;
@@ -620,6 +621,23 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         return ret;
     }
 
+    public void login(Account account) throws PluginException, IOException {
+        br.getPage("https://www.vimeo.com/log_in");
+        final String xsrft = getXsrft(br);
+        // static post are bad idea, always use form.
+        final Form login = br.getFormbyProperty("id", "login_form");
+        if (login == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        login.put("token", Encoding.urlEncode(xsrft));
+        login.put("email", Encoding.urlEncode(account.getUser()));
+        login.put("password", Encoding.urlEncode(account.getPass()));
+        br.submitForm(login);
+        if (br.getCookie("http://vimeo.com", "vimeo") == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+    }
+
     public static boolean iranWorkaround(final Browser br, final String videoID) throws IOException {
         /* Workaround for User from Iran */
         if (br.containsHTML("<body><iframe src=\"http://10\\.10\\.\\d+\\.\\d+\\?type=(Invalid Site)?\\&policy=MainPolicy")) {
@@ -741,7 +759,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
 
     private PluginForHost vimeo_hostPlugin = null;
 
-    private String getXsrft(final Browser br) throws Exception {
+    private String getXsrft(final Browser br) throws PluginException {
         return jd.plugins.hoster.VimeoCom.getXsrft(br);
     }
 
