@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -34,11 +33,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.mediaset.it", "wittytv.it" }, urls = { "https?://(?:www\\.)?video\\.mediaset\\.it/(video/.*?\\.html|player/playerIFrame\\.shtml\\?id=\\d+)", "https?://(?:www\\.)?wittytv\\.it/[^/]+/([^/]+/)?\\d+/?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.mediaset.it", "wittytv.it" }, urls = { "https?://(?:www\\.)?video\\.mediaset\\.it/(video/.*?\\.html|player/playerIFrame\\.shtml\\?id=\\d+)", "https?://(?:www\\.)?wittytv\\.it/[^/]+/([^/]+/)?.+" })
 public class VideoMediasetIt extends PluginForHost {
-
     public VideoMediasetIt(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -62,9 +61,16 @@ public class VideoMediasetIt extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        String streamID;
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.setReadTimeout(3 * 60 * 1000);
+        String streamID = null;
         if (downloadLink.getDownloadURL().matches(TYPE_VIDEO_WITTYTV)) {
-            streamID = new Regex(downloadLink.getDownloadURL(), "(\\d+)/?$").getMatch(0);
+            streamID = new Regex(downloadLink.getDownloadURL(), "/[^/]+/(?:[^/]+/)(\\d+)/?$").getMatch(0);
+            if (StringUtils.isEmpty(streamID)) {
+                br.getPage(downloadLink.getDownloadURL());
+                streamID = br.getRegex("PlayerIFrame\\.shtml\\?id=(\\d+)").getMatch(0);
+            }
         } else {
             streamID = new Regex(downloadLink.getDownloadURL(), "video\\.mediaset\\.it/video/[^<>/\"]*?/[^<>/\"]*?/(\\d+)/").getMatch(0);
             if (streamID == null) {
@@ -75,9 +81,6 @@ public class VideoMediasetIt extends PluginForHost {
             /* Whatever the user added it is probably not a video! */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.setReadTimeout(3 * 60 * 1000);
         /* 2016-06-16 TODO: Fix support for embedded URLs */
         if (downloadLink.getDownloadURL().matches(TYPE_VIDEO_MEDIASET_EMBED)) {
             br.getPage(downloadLink.getDownloadURL());
@@ -89,7 +92,6 @@ public class VideoMediasetIt extends PluginForHost {
             /* 2016-06-16 TODO: Fix support for embedded URLs! */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-
         String date = null;
         String date_formatted = null;
         String filename;
