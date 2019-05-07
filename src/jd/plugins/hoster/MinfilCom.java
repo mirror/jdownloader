@@ -26,8 +26,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision $", interfaceVersion = 2, names = {}, urls = {})
-public class MegauploadNz extends UnknownHostingScriptCore {
-    public MegauploadNz(PluginWrapper wrapper) {
+public class MinfilCom extends UnknownHostingScriptCore {
+    public MinfilCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
     }
@@ -39,7 +39,7 @@ public class MegauploadNz extends UnknownHostingScriptCore {
      * other:<br />
      */
     /* 1st domain = current domain! */
-    public static String[] domains = new String[] { "megaupload.nz" };
+    public static String[] domains = new String[] { "minfil.com" };
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
@@ -96,7 +96,8 @@ public class MegauploadNz extends UnknownHostingScriptCore {
 
     @Override
     public boolean supports_availablecheck_via_api() {
-        return super.supports_availablecheck_via_api();
+        /* 2019-05-07: Special: API should work but JDownloader will often get a redirect to their mainpage this this is not reliable ... */
+        return false;
     }
 
     public static String[] getAnnotationNames() {

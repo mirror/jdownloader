@@ -15,133 +15,58 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.UnknownHostingScriptCore;
 
 import jd.PluginWrapper;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anonfiles.com" }, urls = { "https?://(?:www\\.)?anonfiles?\\.com/(?:file/)?[A-Za-z0-9]+" })
-public class AnonFilesCom extends PluginForHost {
+@HostPlugin(revision = "$Revision $", interfaceVersion = 2, names = {}, urls = {})
+public class AnonFilesCom extends UnknownHostingScriptCore {
     public AnonFilesCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium(super.getPurchasePremiumURL());
     }
+
+    /**
+     * mods: See overridden functions<br />
+     * limit-info:<br />
+     * captchatype-info: null<br />
+     * other:<br />
+     */
+    /* 1st domain = current domain! */
+    public static String[] domains = new String[] { "anonfiles.com" };
 
     @Override
-    public String getAGBLink() {
-        return "https://anonfiles.com/terms";
-    }
-
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasAutoCaptcha() {
-        return false;
-    }
-
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return false;
-        }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-            /* free accounts also have captchas */
-            return false;
-        }
-        return false;
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.setCookie(this.getHost(), "lang", "us");
-        br.getPage("https://anonfiles.com/api/v2/file/" + new Regex(link.getPluginPatternMatcher(), "([A-Za-z0-9]+)$").getMatch(0) + "/info");
-        if (!br.containsHTML("\"status\":true") || br.getHttpConnection().getResponseCode() == 404) {
-            br.getPage(link.getPluginPatternMatcher());
-            final String filename = br.getRegex("<h1 class=\"text-center text-wordwrap\"\\s*>\\s*(.*?)\\s*</h1>").getMatch(0);
-            final String filesize = br.getRegex(">\\s*Download\\s*\\(([0-9\\.]+\\s*[TBKMG]+)\\)\\s*<").getMatch(0);
-            if (filename != null && filesize != null) {
-                link.setName(Encoding.htmlDecode(filename.trim()));
-                link.setDownloadSize(SizeFormatter.getSize(filesize));
-                return AvailableStatus.TRUE;
-            }
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        if (account != null && account.getType() == AccountType.FREE) {
+            /* Free Account */
+            return true;
+        } else if (account != null && account.getType() == AccountType.PREMIUM) {
+            /* Premium account */
+            return true;
         } else {
-            final String filename = PluginJSonUtils.getJson(br, "name");
-            final String filesize = PluginJSonUtils.getJson(br, "bytes");
-            if (filename == null || filesize == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            link.setName(Encoding.htmlDecode(filename.trim()));
-            link.setDownloadSize(Long.parseLong(filesize));
-            return AvailableStatus.TRUE;
+            /* Free(anonymous) and unknown account type */
+            return true;
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        br.getPage(downloadLink.getDownloadURL());
-        /* Check this, maybe API fails sometimes */
-        if (br.containsHTML(">The file you are looking for does not") || br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        String dllink = br.getRegex("\"(https?://[a-z0-9\\-\\.]+\\.anon[^/\"]+/[^<>\"]+)\"").getMatch(0);
-        if (dllink == null) {
-            dllink = this.br.getRegex("id=\"download\\-url\" class=\"btn btn\\-primary btn\\-block\" href=\"(https[^<>\"]*?)\"").getMatch(0);
-        }
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
-            }
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 30 * 60 * 1000l);
-        }
-        fixFilename(downloadLink);
-        dl.startDownload();
-    }
-
-    private void fixFilename(final DownloadLink downloadLink) {
-        String oldName = downloadLink.getFinalFileName();
-        if (oldName == null) {
-            oldName = downloadLink.getName();
-        }
-        final String serverFilename = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
-        String newExtension = null;
-        // some streaming sites do not provide proper file.extension within headers (Content-Disposition or the fail over getURL()).
-        if (serverFilename.contains(".")) {
-            newExtension = serverFilename.substring(serverFilename.lastIndexOf("."));
+    public int getMaxChunks(final Account account) {
+        if (account != null && account.getType() == AccountType.FREE) {
+            /* Free Account */
+            return 0;
+        } else if (account != null && account.getType() == AccountType.PREMIUM) {
+            /* Premium account */
+            return 0;
         } else {
-            logger.info("HTTP headers don't contain filename.extension information");
+            /* Free(anonymous) and unknown account type */
+            return 0;
         }
-        if (newExtension != null && !oldName.endsWith(newExtension)) {
-            String oldExtension = null;
-            if (oldName.contains(".")) {
-                oldExtension = oldName.substring(oldName.lastIndexOf("."));
-            }
-            if (oldExtension != null && oldExtension.length() <= 5) {
-                downloadLink.setFinalFileName(oldName.replace(oldExtension, newExtension));
-            } else {
-                downloadLink.setFinalFileName(oldName + newExtension);
-            }
-        }
-    }
-
-    @Override
-    public void reset() {
     }
 
     @Override
@@ -150,6 +75,65 @@ public class AnonFilesCom extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(final DownloadLink link) {
+    public int getMaxSimultaneousFreeAccountDownloads() {
+        return -1;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public boolean supports_https() {
+        return super.supports_https();
+    }
+
+    @Override
+    public boolean requires_WWW() {
+        return super.requires_WWW();
+    }
+
+    @Override
+    public boolean supports_availablecheck_via_api() {
+        return super.supports_availablecheck_via_api();
+    }
+
+    public static String[] getAnnotationNames() {
+        return new String[] { domains[0] };
+    }
+
+    /**
+     * returns the annotation pattern array: 'https?://(?:www\\.)?(?:domain1|domain2)/[A-Za-z0-9]+'
+     *
+     */
+    /**
+     * returns the annotation pattern array: 'https?://(?:www\\.)?(?:domain1|domain2)/[A-Za-z0-9]+(?:/[^/]+)?'
+     *
+     */
+    public static String[] getAnnotationUrls() {
+        // construct pattern
+        final String host = getHostsPattern();
+        return new String[] { host + "/[A-Za-z0-9]+(?:/[^/<>]+)?" };
+    }
+
+    /** Returns '(?:domain1|domain2)' */
+    private static String getHostsPatternPart() {
+        final StringBuilder pattern = new StringBuilder();
+        for (final String name : domains) {
+            pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
+        }
+        return pattern.toString();
+    }
+
+    /** returns 'https?://(?:www\\.)?(?:domain1|domain2)' */
+    private static String getHostsPattern() {
+        final String hosts = "https?://(?:www\\.)?" + "(?:" + getHostsPatternPart() + ")";
+        return hosts;
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return domains;
     }
 }

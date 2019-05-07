@@ -111,7 +111,7 @@ public class MultiupOrg extends PluginForHost {
                 dllink = "https://debrid.multiup.org/" + urlDoubleB64;
             } else {
                 /** TODO: Find better way to login */
-                fetchAccountInfo(account);
+                this.loginAPI(account);
                 final UrlQuery dlQuery = new UrlQuery();
                 dlQuery.add("link", link.getPluginPatternMatcher());
                 final String passCode = link.getDownloadPassword();
@@ -130,9 +130,14 @@ public class MultiupOrg extends PluginForHost {
             }
         }
         link.setProperty(this.getHost() + "directlink", dllink);
-        /** 2019-04-24: Now returning 402 payment required ... */
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, defaultRESUME, defaultMAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
+            /* 402 - Payment required */
+            if (dl.getConnection().getResponseCode() == 402) {
+                /* 2019-05-03: E.g. free account[or expired premium], only 1 download per day (?) possible */
+                account.getAccountInfo().setTrafficLeft(0);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "No traffic left", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
             br.followConnection();
             handleKnownErrors(this.br, account, link);
             mhm.handleErrorGeneric(account, link, "unknown_dl_error", 10, 5 * 60 * 1000l);
@@ -175,16 +180,7 @@ public class MultiupOrg extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         this.br = newBrowser();
         final AccountInfo ai = new AccountInfo();
-        br.setFollowRedirects(true);
-        final UrlQuery loginQuery = new UrlQuery();
-        loginQuery.add("username", account.getUser());
-        loginQuery.add("password", account.getPass());
-        br.postPage(API_BASE + "/login", loginQuery);
-        final String error = PluginJSonUtils.getJson(br, "error");
-        if (!"success".equalsIgnoreCase(error)) {
-            /* E.g. {"error":"bad username OR bad password"} */
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
+        loginAPI(account);
         boolean is_premium = false;
         long validuntil = 0;
         String validuntilStr = null;
@@ -211,12 +207,12 @@ public class MultiupOrg extends PluginForHost {
             final String premium_days_left = PluginJSonUtils.getJson(br, "premium_days_left");
             is_premium = account_type != null && account_type.equalsIgnoreCase("premium");
             if (premium_days_left != null && premium_days_left.matches("\\d+")) {
-                validuntil = System.currentTimeMillis() + Integer.parseInt(premium_days_left) * 24 * 60 * 1000l;
+                validuntil = System.currentTimeMillis() + Integer.parseInt(premium_days_left) * 24 * 60 * 60 * 1000l;
             }
         }
         if (!is_premium) {
             account.setType(AccountType.FREE);
-            ai.setStatus("Free account");
+            ai.setStatus("Free account (max. 1 download per day)");
             account.setMaxSimultanDownloads(1);
             // ai.setTrafficLeft(0);
         } else {
@@ -254,6 +250,19 @@ public class MultiupOrg extends PluginForHost {
         }
         account.setConcurrentUsePossible(true);
         return ai;
+    }
+
+    private void loginAPI(final Account account) throws IOException, PluginException {
+        br.setFollowRedirects(true);
+        final UrlQuery loginQuery = new UrlQuery();
+        loginQuery.add("username", account.getUser());
+        loginQuery.add("password", account.getPass());
+        br.postPage(API_BASE + "/login", loginQuery);
+        final String error = PluginJSonUtils.getJson(br, "error");
+        if (!"success".equalsIgnoreCase(error)) {
+            /* E.g. {"error":"bad username OR bad password"} */
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
     }
 
     private static Object acclock = new Object();

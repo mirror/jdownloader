@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2009  JD-Team support@jdownloader.org
+//Copyright (C) 2010  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -15,157 +15,125 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
-import java.util.LinkedHashMap;
+import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.jdownloader.plugins.components.UnknownHostingScriptCore;
 
 import jd.PluginWrapper;
-import jd.config.Property;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bayfiles.com" }, urls = { "https?://(?:www\\.)?bayfiles\\.(?:com|net)/[a-z0-9]+(?:/.+)?" })
-public class BayFilesCom extends PluginForHost {
+@HostPlugin(revision = "$Revision $", interfaceVersion = 2, names = {}, urls = {})
+public class BayFilesCom extends UnknownHostingScriptCore {
     public BayFilesCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium(super.getPurchasePremiumURL());
     }
 
-    @Override
-    public String getAGBLink() {
-        return "https://bayfiles.com/terms";
-    }
-
-    /* Connection stuff */
-    private final boolean        FREE_RESUME       = true;
-    private final int            FREE_MAXCHUNKS    = 0;
-    private final int            FREE_MAXDOWNLOADS = 20;
-    private static final boolean use_filecheck_API = true;
-    private static final String  API_BASE          = "https://bayfiles.com/api/v2";
+    /**
+     * mods: See overridden functions<br />
+     * limit-info:<br />
+     * captchatype-info: null<br />
+     * other:<br />
+     */
+    /* 1st domain = current domain! */
+    public static String[] domains = new String[] { "bayfiles.com" };
 
     @Override
-    public String getLinkID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/([a-z0-9]+)").getMatch(0);
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        this.setBrowserExclusive();
-        String filename;
-        long filesize = -1;
-        if (use_filecheck_API) {
-            /* https://bayfiles.com/docs/api */
-            br.getPage(API_BASE + "/file/" + getLinkID(link) + "/info");
-            if (this.br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/file/metadata");
-            filename = (String) entries.get("name");
-            filesize = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "size/bytes"), -1);
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        if (account != null && account.getType() == AccountType.FREE) {
+            /* Free Account */
+            return true;
+        } else if (account != null && account.getType() == AccountType.PREMIUM) {
+            /* Premium account */
+            return true;
         } else {
-            br.getPage(link.getDownloadURL());
-            if (this.br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            filename = br.getRegex("").getMatch(0);
-            final String filesizeStr = br.getRegex("").getMatch(0);
-            if (filesizeStr != null) {
-                filesize = SizeFormatter.getSize(filesizeStr);
-            }
+            /* Free(anonymous) and unknown account type */
+            return true;
         }
-        if (StringUtils.isEmpty(filename)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        link.setName(Encoding.htmlDecode(filename.trim()));
-        if (filesize >= 0) {
-            link.setDownloadSize(filesize);
-        }
-        return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
-    }
-
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        String dllink = checkDirectLink(downloadLink, directlinkproperty);
-        if (dllink == null) {
-            if (use_filecheck_API) {
-                br.getPage(downloadLink.getDownloadURL());
-            }
-            dllink = br.getRegex("id=\"download\\-url\" class=\"btn btn\\-primary btn\\-block\" href=\"(http[^<>\"]+)\"").getMatch(0);
-            if (StringUtils.isEmpty(dllink)) {
-                dllink = br.getRegex("\"(https?://cdn\\-\\d+\\.bayfiles\\.com/[^<>\"]+)\"").getMatch(0);
-            }
-            if (StringUtils.isEmpty(dllink)) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+    public int getMaxChunks(final Account account) {
+        if (account != null && account.getType() == AccountType.FREE) {
+            /* Free Account */
+            return 0;
+        } else if (account != null && account.getType() == AccountType.PREMIUM) {
+            /* Premium account */
+            return 0;
+        } else {
+            /* Free(anonymous) and unknown account type */
+            return 0;
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            try {
-                br.followConnection();
-            } catch (IOException e) {
-                logger.log(e);
-            }
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        downloadLink.setProperty(directlinkproperty, dllink);
-        dl.startDownload();
-    }
-
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser br2 = br.cloneBrowser();
-                con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1 || con.getResponseCode() != 200) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
-                }
-            } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
-        }
-        return dllink;
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return -1;
     }
 
     @Override
-    public void reset() {
+    public int getMaxSimultaneousFreeAccountDownloads() {
+        return -1;
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public boolean supports_https() {
+        return super.supports_https();
+    }
+
+    @Override
+    public boolean requires_WWW() {
+        return super.requires_WWW();
+    }
+
+    @Override
+    public boolean supports_availablecheck_via_api() {
+        return super.supports_availablecheck_via_api();
+    }
+
+    public static String[] getAnnotationNames() {
+        return new String[] { domains[0] };
+    }
+
+    /**
+     * returns the annotation pattern array: 'https?://(?:www\\.)?(?:domain1|domain2)/[A-Za-z0-9]+'
+     *
+     */
+    /**
+     * returns the annotation pattern array: 'https?://(?:www\\.)?(?:domain1|domain2)/[A-Za-z0-9]+(?:/[^/]+)?'
+     *
+     */
+    public static String[] getAnnotationUrls() {
+        // construct pattern
+        final String host = getHostsPattern();
+        return new String[] { host + "/[A-Za-z0-9]+(?:/[^/<>]+)?" };
+    }
+
+    /** Returns '(?:domain1|domain2)' */
+    private static String getHostsPatternPart() {
+        final StringBuilder pattern = new StringBuilder();
+        for (final String name : domains) {
+            pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
+        }
+        return pattern.toString();
+    }
+
+    /** returns 'https?://(?:www\\.)?(?:domain1|domain2)' */
+    private static String getHostsPattern() {
+        final String hosts = "https?://(?:www\\.)?" + "(?:" + getHostsPatternPart() + ")";
+        return hosts;
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return domains;
     }
 }
