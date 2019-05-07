@@ -80,6 +80,7 @@ public class SiteType {
          * <a href="http://sibsoft.net/xfilesharing_free.html">XFileSharing FREE (old version)</a><br />
          * <a href="http://sibsoft.net/xvideosharing.html">XVideoSharing<a><br />
          * <a href="http://sibsoft.net/ximagesharing.html">XImageSharing<a><br />
+         * <b>Superclass:</b> XFileSharingProBasic <br />
          */
         SibSoft_XFileShare,
         /**
@@ -121,6 +122,14 @@ public class SiteType {
          * google
          */
         Unknown_ChineseFileHosting,
+        /**
+         * Script used by some (mostly free) file-hosting sites. <a href="http:/sx566.com/">sx566.com</a>. Not sure what's the name of this
+         * script.<br />
+         * Usually hosts using this script will provide an public upload- & filecheck API under '/docs/api'.<br />
+         * <b>Examples:</b> <a href="https://megaupload.nz/">megaupload.nz</a>, <a href="https://anonfiles.com/">anonfiles.com</a><br />
+         * <b>Superclass:</b> UnknownHostingScriptCore <br />
+         */
+        Unknown_FilehostScript,
         /**
          * Script used by some multihosters e.g. <a href="http://www.premiumax.net/">premiumax.net</a>. Not sure what to call this script.
          */

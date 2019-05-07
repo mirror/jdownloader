@@ -26,10 +26,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision $", interfaceVersion = 2, names = {}, urls = {})
-public class MegauploadNz extends UnknownHostingScriptCore {
-    public MegauploadNz(PluginWrapper wrapper) {
+public class DesufilesCom extends UnknownHostingScriptCore {
+    public DesufilesCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(super.getPurchasePremiumURL());
+        // this.enablePremium(super.getPurchasePremiumURL());
     }
 
     /**
@@ -39,7 +39,7 @@ public class MegauploadNz extends UnknownHostingScriptCore {
      * other:<br />
      */
     /* 1st domain = current domain! */
-    public static String[] domains = new String[] { "megaupload.nz" };
+    public static String[] domains = new String[] { "desufiles.com" };
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
