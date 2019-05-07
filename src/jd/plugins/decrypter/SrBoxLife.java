@@ -21,9 +21,6 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.Regex;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -34,13 +31,16 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "israbox.life" }, urls = { "https?://[\\w\\.]*(?:isrbx\\.(?:[a-zA-Z]+)|isbox\\.net)/[0-9]+-.*?\\.html" })
+import org.appwork.utils.Regex;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "israbox.life" }, urls = { "https?://[\\w\\.]*(?:isra?bo?x\\.(?:[a-zA-Z]+)|isbox\\.net)/[0-9]+-.*?\\.html" })
 public class SrBoxLife extends antiDDoSForDecrypt {
     public SrBoxLife(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private final String base = "(?i)https?://[\\w\\.]*(?:isrbx\\.(?:[a-zA-Z]+)|isbox\\.net)/";
+    private final String base = "(?i)https?://[\\w\\.]*(?:isra?bo?x\\.(?:[a-zA-Z]+)|isbox\\.net)/";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
