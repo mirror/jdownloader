@@ -20,6 +20,7 @@ import java.util.regex.Pattern;
 import org.jdownloader.plugins.components.UnknownHostingScriptCore;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -85,6 +86,15 @@ public class MinfilCom extends UnknownHostingScriptCore {
     }
 
     @Override
+    public Browser prepBrowser(final Browser br) {
+        /* 2019-05-07: Special: See description of original prepBrowser() function - a wrong language cookie may cause fatal issues! */
+        super.prepBrowser(br);
+        // br.getCookies(this.getHost()).remove("lang");
+        br.setCookie(this.getHost(), "lang", "se");
+        return br;
+    }
+
+    @Override
     public boolean supports_https() {
         return super.supports_https();
     }
@@ -96,8 +106,7 @@ public class MinfilCom extends UnknownHostingScriptCore {
 
     @Override
     public boolean supports_availablecheck_via_api() {
-        /* 2019-05-07: Special: API should work but JDownloader will often get a redirect to their mainpage this this is not reliable ... */
-        return false;
+        return super.supports_availablecheck_via_api();
     }
 
     public static String[] getAnnotationNames() {

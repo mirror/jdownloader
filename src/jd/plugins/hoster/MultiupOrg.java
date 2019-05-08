@@ -110,7 +110,6 @@ public class MultiupOrg extends PluginForHost {
                 final String urlDoubleB64 = Encoding.Base64Encode(Encoding.Base64Encode(link.getPluginPatternMatcher()));
                 dllink = "https://debrid.multiup.org/" + urlDoubleB64;
             } else {
-                /** TODO: Find better way to login */
                 this.loginAPI(account);
                 final UrlQuery dlQuery = new UrlQuery();
                 dlQuery.add("link", link.getPluginPatternMatcher());
@@ -212,6 +211,10 @@ public class MultiupOrg extends PluginForHost {
         }
         if (!is_premium) {
             account.setType(AccountType.FREE);
+            /*
+             * 2019-05-07: Limit according to: https://multiup.org/en/premium - once this limit is reached, website will return
+             * "402 payment required" on further download attempts.
+             */
             ai.setStatus("Free account (max. 1 download per day)");
             account.setMaxSimultanDownloads(1);
             // ai.setTrafficLeft(0);
