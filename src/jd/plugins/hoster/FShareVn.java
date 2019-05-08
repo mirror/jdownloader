@@ -68,11 +68,11 @@ public class FShareVn extends PluginForHost {
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS             = -3;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS          = -1;
     /** Use mobile API for different things? */
-    private boolean              use_api_for_premium_account_downloads = true;
+    private static final boolean use_api_for_premium_account_downloads = true;
     /** 2019-05-08: API also works for free accounts */
-    private boolean              use_api_for_free_account_downloads    = true;
+    private static final boolean use_api_for_free_account_downloads    = true;
     /** 2019-05-08: We are not (yet) able to obtain account information via API - keep this DISABLED until there is a solution!! */
-    private boolean              use_api_for_login_fetch_account_info  = false;
+    private static final boolean use_api_for_login_fetch_account_info  = false;
 
     public FShareVn(PluginWrapper wrapper) {
         super(wrapper);
@@ -177,7 +177,6 @@ public class FShareVn extends PluginForHost {
             token = this.loginAPI(account, true);
         }
         prepBrowserAPI(br);
-        // token = this.loginAPI(account, true);
         /*
          * Use requestFileInformationAPI to verify login-token. If everything works as designed, we will only have to do 2 API-calls until
          * downloadstart!
