@@ -23,12 +23,19 @@ import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
+import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -43,12 +50,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fshare.vn" }, urls = { "https?://(?:www\\.)?(?:mega\\.1280\\.com|fshare\\.vn)/file/([0-9A-Z]+)" })
 public class FShareVn extends PluginForHost {
@@ -66,6 +67,8 @@ public class FShareVn extends PluginForHost {
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = -3;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = -1;
+    /** Use mobile API for login & downloads? We do not have any documentation of this API!! */
+    private boolean              use_api                      = false;
 
     public FShareVn(PluginWrapper wrapper) {
         super(wrapper);
@@ -105,7 +108,7 @@ public class FShareVn extends PluginForHost {
         br.setFollowRedirects(false);
         // enforce english
         br.getHeaders().put("Referer", link.getDownloadURL());
-        prepBrowser(this.br);
+        prepBrowserWebsite(this.br);
         String redirect = br.getRedirectLocation();
         if (redirect != null) {
             final boolean follows_redirects = br.isFollowingRedirects();
@@ -153,12 +156,10 @@ public class FShareVn extends PluginForHost {
         if (filesize == null) {
             filesize = br.getRegex(">\\s*([\\d\\.]+ [K|M|G]B)\\s*<").getMatch(0);
         }
-        if (filename == null) {
-            logger.info("filename = " + filename + ", filesize = " + filesize);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename != null) {
+            /* Server sometimes sends bad filenames */
+            link.setFinalFileName(Encoding.htmlDecode(filename));
         }
-        // Server sometimes sends bad filenames
-        link.setFinalFileName(Encoding.htmlDecode(filename));
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
@@ -279,8 +280,8 @@ public class FShareVn extends PluginForHost {
     }
 
     /** Sets required headers and required language */
-    public static void prepBrowser(final Browser br) throws IOException {
-        // Sometime the page is extremely slow!
+    public static void prepBrowserWebsite(final Browser br) throws IOException {
+        /* Sometime the page is extremely slow! */
         br.setReadTimeout(120 * 1000);
         br.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
@@ -289,6 +290,14 @@ public class FShareVn extends PluginForHost {
         br.getHeaders().put("Accept-Encoding", "gzip, deflate");
         br.setCustomCharset("utf-8");
         br.getPage("https://www.fshare.vn/site/location?lang=vi"); // en - English version is having problems in version 3
+    }
+
+    /** Sets required headers */
+    public static void prepBrowserAPI(final Browser br) throws IOException {
+        /* Sometime the page is extremely slow! */
+        br.setReadTimeout(120 * 1000);
+        br.getHeaders().put("User-Agent", "okhttp/3.6.0");
+        br.setAllowedResponseCodes(new int[] { 400 });
     }
 
     @Override
@@ -320,68 +329,21 @@ public class FShareVn extends PluginForHost {
         if (account.getType() == AccountType.FREE) {
             // premium link wont need user to login!
             if (dllink == null) {
-                login(account, true);
+                logger.info("Free account download: logging in");
+                login(account, false);
                 br.getPage(link.getDownloadURL());
                 dllink = br.getRedirectLocation();
+            } else {
+                logger.info("Free account download: Not logging in because user tries to download a premium-direct-download-url via free account");
             }
             doFree(link, account);
         } else {
             final String directlinkproperty = "directlink_account";
             /* English is also set here && cache login causes problems, premium pages sometimes not returned without fresh login. */
-            login(account, true);
+            login(account, false);
             dllink = this.checkDirectLink(link, directlinkproperty);
             if (dllink == null) {
-                // we get page again, because we do not take directlink from requestfileinfo.
-                br.getPage(link.getDownloadURL());
-                dllink = br.getRedirectLocation();
-                final String uid = getUID(link);
-                if (dllink != null && dllink.endsWith("/file/" + uid)) {
-                    br.getPage(dllink);
-                    if (br.containsHTML("Your account is being used from another device")) {
-                        throw new PluginException(LinkStatus.ERROR_FATAL, "Account is being used in another device");
-                    }
-                    dllink = br.getRedirectLocation();
-                }
-                if (dllink == null) {
-                    if (br.containsHTML(">\\s*Fshare suspect this account has been stolen or is being used by other people\\.|Please press “confirm” to get a verification code, it’s sent to your email address\\.<")) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account determined as stolen or shared...", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                    dllink = br.getRegex("\"(https?://[a-z0-9]+\\.fshare\\.vn/(vip|dl)/[^<>\"]*?)\"").getMatch(0);
-                    if (dllink == null) {
-                        String page = getDllink(); // <---
-                        for (int i = 1; i < 3; i++) {
-                            if (page.contains("url")) {
-                                break;
-                            }
-                            if (page.contains("Too many download sessions") || page.contains("Quá nhiều phiên tải")) {
-                                sleep(10 * 1001l, link);
-                                page = getDllink(); // <---
-                            }
-                        }
-                        if (page.contains("Too many download sessions") || page.contains("Quá nhiều phiên tải")) {
-                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many download sessions", 3 * 60 * 1000l);
-                        } else if (page.contains("\"errors\":")) {
-                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, page, 3 * 60 * 1000l);
-                        }
-                        dllink = PluginJSonUtils.getJsonValue(page, "url");
-                        if (dllink == null) {
-                            final String msg = PluginJSonUtils.getJsonValue(page, "msg");
-                            if (StringUtils.containsIgnoreCase(msg, "try again")) {
-                                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg, 5 * 60 * 1000l);
-                            }
-                        } else {
-                            dllink = dllink.replace("\\", "");
-                        }
-                    }
-                    if (dllink == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                }
-                if (StringUtils.containsIgnoreCase(dllink, "Server error") && StringUtils.containsIgnoreCase(dllink, "please try again later")) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
-                } else if (dllink.contains("logout")) {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL premium error");
-                }
+                dllink = getDllinkPremium(link);
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
             if (dl.getConnection().getContentType().contains("html")) {
@@ -395,28 +357,90 @@ public class FShareVn extends PluginForHost {
         }
     }
 
-    public String getDllink() throws Exception {
-        final Form dlfast = br.getFormbyAction("/download/get");
-        if (dlfast != null) {
-            /* Fix form */
-            if (!dlfast.hasInputFieldByName("ajax")) {
-                dlfast.put("ajax", "download-form");
+    public String getDllinkPremium(final DownloadLink link) throws Exception {
+        // we get page again, because we do not take directlink from requestfileinfo.
+        br.getPage(link.getDownloadURL());
+        dllink = br.getRedirectLocation();
+        final String uid = getUID(link);
+        if (dllink != null && dllink.endsWith("/file/" + uid)) {
+            br.getPage(dllink);
+            if (br.containsHTML("Your account is being used from another device")) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your account is being used from another device", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
-            if (!dlfast.hasInputFieldByName("undefined")) {
-                dlfast.put("undefined", "undefined");
-            }
-            dlfast.remove("DownloadForm%5Bpwd%5D");
-            dlfast.put("DownloadForm[pwd]", "");
-            dlfast.put("fcode5", "");
-            // button base download here,
-            final Browser ajax = br.cloneBrowser();
-            ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-            ajax.getHeaders().put("x-requested-with", "XMLHttpRequest");
-            ajax.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-            ajax.submitForm(dlfast);
-            return ajax.toString();
+            dllink = br.getRedirectLocation();
         }
-        return null;
+        if (dllink == null || dllink.matches(".+/file/.+\\?token=\\d+")) {
+            if (br.containsHTML(">\\s*Fshare suspect this account has been stolen or is being used by other people\\.|Please press “confirm” to get a verification code, it’s sent to your email address\\.<")) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account determined as stolen or shared...", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            dllink = br.getRegex("\"(https?://[a-z0-9]+\\.fshare\\.vn/(vip|dl)/[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) {
+                /* Maybe user has disabled direct-download */
+                final Browser ajax = br.cloneBrowser();
+                ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+                ajax.getHeaders().put("x-requested-with", "XMLHttpRequest");
+                ajax.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+                for (int i = 1; i < 3; i++) {
+                    final Form dlfast = br.getFormbyAction("/download/get");
+                    if (dlfast == null) {
+                        break;
+                    }
+                    /* Fix form */
+                    if (!dlfast.hasInputFieldByName("ajax")) {
+                        dlfast.put("ajax", "download-form");
+                    }
+                    if (!dlfast.hasInputFieldByName("undefined")) {
+                        dlfast.put("undefined", "undefined");
+                    }
+                    dlfast.remove("DownloadForm%5Bpwd%5D");
+                    dlfast.put("DownloadForm[pwd]", "");
+                    dlfast.put("fcode5", "");
+                    ajax.submitForm(dlfast);
+                    if (ajax.containsHTML("Too many download sessions") || ajax.containsHTML("Quá nhiều phiên tải")) {
+                        sleep(10 * 1001l, link);
+                        continue;
+                    }
+                    dllink = PluginJSonUtils.getJsonValue(ajax, "url");
+                }
+                if (ajax.containsHTML("Too many download sessions") || ajax.containsHTML("Quá nhiều phiên tải")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many download sessions", 3 * 60 * 1000l);
+                } else if (ajax.containsHTML("\"errors\":")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error occured", 3 * 60 * 1000l);
+                }
+                if (dllink == null) {
+                    final String msg = PluginJSonUtils.getJsonValue(ajax, "msg");
+                    if (StringUtils.containsIgnoreCase(msg, "try again")) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg, 5 * 60 * 1000l);
+                    }
+                }
+            }
+            if (StringUtils.isEmpty(dllink) || !dllink.startsWith("http")) {
+                logger.warning("dllink is null");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
+        if (StringUtils.containsIgnoreCase(dllink, "Server error") && StringUtils.containsIgnoreCase(dllink, "please try again later")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+        } else if (dllink.contains("logout")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL premium error");
+        }
+        return dllink;
+    }
+
+    /** Retrieves downloadurl via API which is also used in their mobile apps. */
+    private String getDllinkPremiumAPI(final DownloadLink link, final Account account) throws Exception {
+        prepBrowserAPI(this.br);
+        /* TODO: Find a way to check that token so we do not have to generate a new token for every download! */
+        final String token = getAPIToken(account);
+        /* Every login via this method invalidates all previously generated tokens! */
+        final PostRequest downloadReq2 = br.createJSonPostRequest("https://api.fshare.vn/api/session/download", String.format("{\"token\":\"%s\",\"url\":\"%s\"}", token, link.getDownloadURL()));
+        br.openRequestConnection(downloadReq2);
+        br.loadConnection(null);
+        return PluginJSonUtils.getJson(br, "location");
+    }
+
+    private String getAPIToken(final Account account) {
+        return account.getStringProperty("token", null);
     }
 
     // do not add @Override here to keep 0.* compatibility
@@ -424,20 +448,20 @@ public class FShareVn extends PluginForHost {
         return false;
     }
 
-    private boolean isLoggedinHTML() {
-        return br.containsHTML("class =\"user__profile\"");
+    private boolean isLoggedin() {
+        return br.containsHTML("class =\"user__profile\"") && br.getCookie(br.getHost(), "fshare-app", Cookies.NOTDELETEDPATTERN) != null;
     }
 
     private void login(Account account, boolean force) throws Exception {
         synchronized (LOCK) {
             try {
-                prepBrowser(this.br);
+                prepBrowserWebsite(this.br);
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     br.setCookies(this.getHost(), cookies);
                     br.getPage("https://www." + this.getHost() + "/file/manager");
-                    if (isLoggedinHTML() && br.getCookie(br.getHost(), "fshare-app", Cookies.NOTDELETEDPATTERN) != null) {
+                    if (isLoggedin()) {
                         account.saveCookies(br.getCookies(this.getHost()), "");
                         return;
                     }
@@ -476,6 +500,20 @@ public class FShareVn extends PluginForHost {
                 throw e;
             }
         }
+    }
+
+    /**
+     * Login via API which is also used by their mobile app. <br />
+     * Thx to: https://github.com/tudoanh/get_fshare/blob/master/get_fshare/get_fshare.py
+     */
+    private void loginAPI(final Account account, final boolean force) throws Exception {
+        prepBrowserAPI(this.br);
+        final PostRequest loginReq = br.createJSonPostRequest("https://api.fshare.vn/api/user/login", String.format("{\"user_email\":\"%s\",\"password\":\"%s\",\"app_key\":\"L2S7R6ZMagggC5wWkQhX2+aDi467PPuftWUMRFSn\"}", account.getUser(), account.getPass()));
+        br.openRequestConnection(loginReq);
+        br.loadConnection(null);
+        final String code = PluginJSonUtils.getJson(br, "code");
+        final String token = PluginJSonUtils.getJson(br, "token");
+        final String session_id = PluginJSonUtils.getJson(br, "session_id");
     }
 
     @Override
