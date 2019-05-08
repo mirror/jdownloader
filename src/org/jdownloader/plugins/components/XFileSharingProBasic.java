@@ -676,7 +676,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         final String sharebox0 = "copy\\(this\\);.+>(.+) - ([\\d\\.]+ (?:B|KB|MB|GB))</a></textarea>[\r\n\t ]+</div>";
         final String sharebox1 = "copy\\(this\\);.+\\](.+) - ([\\d\\.]+ (?:B|KB|MB|GB))\\[/URL\\]";
         /* 2019-05-08: Sharebox with filename & filesize (bytes) */
-        final String sharebox2 = "\\[URL=https?://(?:www\\.)?[^/\"]+/" + this.fuid + "\\](.*?)\\s*?\\-\\s*?(\\d+)\\[/URL\\]";
+        final String sharebox2 = "\\[URL=https?://(?:www\\.)?[^/\"]+/" + this.fuid + "\\]([^\"/]*?)\\s*?\\-\\s*?(\\d+)\\[/URL\\]";
         /* standard traits from base page */
         if (inValidate(fileInfo[0])) {
             fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(?:www\\.)?[^/]+/" + fuid + "/(.*?)</font>").getMatch(0);

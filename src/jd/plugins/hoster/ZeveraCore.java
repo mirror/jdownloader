@@ -165,10 +165,13 @@ abstract public class ZeveraCore extends UseNet {
                 link.setVerifiedFileSize(con.getLongContentLength());
                 return AvailableStatus.TRUE;
             } else if (con.getResponseCode() == 404) {
-                /* Usually 404 when offline */
+                /* Usually 404 == offline */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
-                /* E.g. 403 because of bad fair use status */
+                /*
+                 * E.g. 403 because of bad fair use status (or offline, 2019-05-08: This is confusing, support was told to change it to a
+                 * 404 if a cloud file has been deleted by the user and is definitely offline!)
+                 */
                 return AvailableStatus.UNCHECKABLE;
             }
         } finally {
@@ -268,20 +271,22 @@ abstract public class ZeveraCore extends UseNet {
 
     /** Account is not required */
     private void handleDL_DIRECT(final Account account, final DownloadLink link) throws Exception {
-        try {
-            antiCloudflare(br, link.getPluginPatternMatcher());
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-            final String contenttype = dl.getConnection().getContentType();
-            if (contenttype.contains("html")) {
-                br.followConnection();
-                // handleAPIErrors(this.br);
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
-            }
-            this.dl.startDownload();
-        } catch (final Exception e) {
-            link.setProperty(account.getHoster() + "directlink", Property.NULL);
-            throw e;
+        antiCloudflare(br, link.getPluginPatternMatcher());
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+        if (dl.getConnection().getResponseCode() == 403) {
+            /*
+             * 2019-05-08: This most likely only happens for offline cloud files. They've been notified to update their API to return a
+             * clear 404 for offline files.
+             */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Most likely you have reached your bandwidth limit, or you don't have this file in your cloud anymore!", 3 * 60 * 1000l);
         }
+        final String contenttype = dl.getConnection().getContentType();
+        if (contenttype.contains("html")) {
+            // br.followConnection();
+            // handleAPIErrors(this.br);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 3 * 60 * 1000l);
+        }
+        this.dl.startDownload();
     }
 
     public String getDllink(final Browser br, final Account account, final DownloadLink link, final String client_id, final PluginForHost hostPlugin) throws Exception {
