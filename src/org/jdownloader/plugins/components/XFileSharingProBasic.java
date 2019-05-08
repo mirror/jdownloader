@@ -115,7 +115,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 4.0.1.4<br />
+     * DEV NOTES XfileSharingProBasic Version 4.0.1.5<br />
      ****************************
      * NOTES from raztoki <br/>
      * - no need to set setfollowredirect true. <br />
@@ -675,6 +675,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
          */
         final String sharebox0 = "copy\\(this\\);.+>(.+) - ([\\d\\.]+ (?:B|KB|MB|GB))</a></textarea>[\r\n\t ]+</div>";
         final String sharebox1 = "copy\\(this\\);.+\\](.+) - ([\\d\\.]+ (?:B|KB|MB|GB))\\[/URL\\]";
+        /* 2019-05-08: Sharebox with filename & filesize (bytes) */
+        final String sharebox2 = "\\[URL=https?://(?:www\\.)?[^/\"]+/" + this.fuid + "\\](.*?)\\s*?\\-\\s*?(\\d+)\\[/URL\\]";
         /* standard traits from base page */
         if (inValidate(fileInfo[0])) {
             fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(?:www\\.)?[^/]+/" + fuid + "/(.*?)</font>").getMatch(0);
@@ -685,18 +687,21 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     /* traits from download1 page below */
                     if (inValidate(fileInfo[0])) {
                         fileInfo[0] = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"']+)").getMatch(1);
-                        // next two are details from sharing box
-                        if (inValidate(fileInfo[0])) {
-                            fileInfo[0] = new Regex(correctedBR, sharebox0).getMatch(0);
-                            if (inValidate(fileInfo[0])) {
-                                fileInfo[0] = new Regex(correctedBR, sharebox1).getMatch(0);
-                                if (inValidate(fileInfo[0])) {
-                                    /* Link of the box without filesize */
-                                    fileInfo[0] = new Regex(correctedBR, "onFocus=\"copy\\(this\\);\">https?://(?:www\\.)?[^/]+/" + fuid + "/([^<>\"]*?)</textarea").getMatch(0);
-                                }
-                            }
-                        }
                     }
+                }
+            }
+        }
+        /* Next - details from sharing box (new to old) */
+        if (inValidate(fileInfo[0])) {
+            fileInfo[0] = new Regex(correctedBR, sharebox2).getMatch(0);
+            if (inValidate(fileInfo[0])) {
+                fileInfo[0] = new Regex(correctedBR, sharebox1).getMatch(0);
+                if (inValidate(fileInfo[0])) {
+                    fileInfo[0] = new Regex(correctedBR, sharebox0).getMatch(0);
+                }
+                if (inValidate(fileInfo[0])) {
+                    /* Link of the box without filesize */
+                    fileInfo[0] = new Regex(correctedBR, "onFocus=\"copy\\(this\\);\">https?://(?:www\\.)?[^/]+/" + fuid + "/([^<>\"]*?)</textarea").getMatch(0);
                 }
             }
         }
@@ -708,6 +713,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             fileInfo[0] = new Regex(correctedBR, Pattern.compile("<title>Watch ([^<>\"]+)</title>", Pattern.CASE_INSENSITIVE)).getMatch(0);
         }
         if (this.supports_availablecheck_filesize_html()) {
+            /** TODO: Consider moving some 'safe' traits out of this block e.g. sharebox2 */
+            /* Safe attempt via sharingbox */
+            if (inValidate(fileInfo[1])) {
+                fileInfo[1] = new Regex(correctedBR, sharebox2).getMatch(1);
+            }
+            /* Starting from here - more unsafe attempts */
             if (inValidate(fileInfo[1])) {
                 fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
                 if (inValidate(fileInfo[1])) {
@@ -715,18 +726,18 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 }
                 if (inValidate(fileInfo[1])) {
                     fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"'/]+)\\)(.*?)</font>").getMatch(0);
-                    /* next two are details from sharing box */
-                    if (inValidate(fileInfo[1])) {
-                        fileInfo[1] = new Regex(correctedBR, sharebox0).getMatch(1);
-                        if (inValidate(fileInfo[1])) {
-                            fileInfo[1] = new Regex(correctedBR, sharebox1).getMatch(1);
-                            // generic failover#1
-                            if (inValidate(fileInfo[1])) {
-                                fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)?(?: |\\&nbsp;)?(KB|MB|GB))").getMatch(0);
-                            }
-                        }
-                    }
                 }
+            }
+            /* Next - unsafe details from sharing box */
+            if (inValidate(fileInfo[1])) {
+                fileInfo[1] = new Regex(correctedBR, sharebox0).getMatch(1);
+                if (inValidate(fileInfo[1])) {
+                    fileInfo[1] = new Regex(correctedBR, sharebox1).getMatch(1);
+                }
+            }
+            /* Generic failover */
+            if (inValidate(fileInfo[1])) {
+                fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)?(?: |\\&nbsp;)?(KB|MB|GB))").getMatch(0);
             }
         }
         /* MD5 is only available in very very rare cases! */
@@ -740,7 +751,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * Use this to Override 'checkLinks(final DownloadLink[])'. <br />
      * Similar to getFilesizeViaAvailablecheckAlt <br />
      * <b>Use this only if:</b> <br />
-     * - You have verified that the filehost has a mass-linkchecker and it is working fine. <br />
+     * - You have verified that the filehost has a mass-linkchecker and it is working fine with this code. <br />
      * - The contentURLs contain a filename as a fallback e.g. https://host.tld/<fuid>/someFilename.png.html
      */
     public boolean massLinkchecker(final DownloadLink[] urls) {
@@ -842,11 +853,16 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         if (br.containsHTML(">No such file<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<b>Filename\\s*:?\\s*</b></td><td>([^<>\"]*?)</td>").getMatch(0);
+        String filename = regexFilenameAbuse(br);
         if (filename == null) {
             filename = fallbackFilename;
         }
         return filename;
+    }
+
+    /** Part of getFnameViaAbuseLink(). */
+    public String regexFilenameAbuse(final Browser br) {
+        return br.getRegex("<b>Filename\\s*:?\\s*</b></td><td>([^<>\"]*?)</td>").getMatch(0);
     }
 
     /**

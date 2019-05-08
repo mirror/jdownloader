@@ -108,7 +108,7 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         /* link cleanup, but respect users protocol choosing or forced protocol */
-        final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), "^https?://[^/]+/([A-Za-z0-9]+)$");
+        final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), "^https?://[^/]+/([A-Za-z0-9]+)");
         final String fid = urlinfo.getMatch(0);
         final String protocol;
         if (supports_https()) {
@@ -226,9 +226,19 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
         return new String[2];
     }
 
+    /**
+     * Their normal URLs look exactly like downloadurls and thus will get picked up. This does not have to be perfect as we got a 2nd
+     * detection in code below.
+     */
+    protected boolean isNotADownloadURL(final String url) {
+        return url.matches(".+/(abuse|faq|feedback|docs|terms|subscription).*?");
+    }
+
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        this.br = new Browser();
         setWeakFilename(link);
+        if (isNotADownloadURL(link.getPluginPatternMatcher())) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         prepBrowser(this.br);
@@ -243,10 +253,17 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
                  * {"status":false,"error":{"message":"The file you are looking for does not exist.","type":"ERROR_FILE_NOT_FOUND","code":
                  * 404}}
                  */
-                if (br.getHttpConnection().getResponseCode() == 404) {
+                /*
+                 * E.g. wrong language cookie set --> Website will always first redirect to mainpage and set supported language-cookie (e.g.
+                 * minfil.com does not support "lang":"us") [see prepBrowser()]
+                 */
+                final boolean isNoAPIUrlAnymore = !br.getURL().contains(this.getLinkID(link));
+                final boolean isOffline = br.getHttpConnection().getResponseCode() == 404;
+                if (isOffline || isNoAPIUrlAnymore) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 scanInfoAPI(fileInfo);
+                fileInfo[0] = correctFilename(fileInfo[0]);
             } else {
                 getPage(link.getPluginPatternMatcher());
                 if (isOfflineWebsite()) {
@@ -254,6 +271,8 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 scanInfoWebsite(fileInfo);
+                /* 2019-05-07: Website-filenames do not need any corrections. */
+                // fileInfo[0] = correctFilename(fileInfo[0]);
             }
             if (StringUtils.isEmpty(fileInfo[0])) {
                 /* Final fallback - this should never happen! */
@@ -277,13 +296,16 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
     }
 
     public boolean isOfflineWebsite() {
-        return br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">The file you are looking for does not exist|>The file you were looking for could not be found");
+        final boolean isOffline = br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">The file you are looking for does not exist|>The file you were looking for could not be found");
+        /* Some normal website URLs look exactly like downloadurls and will definitely get picked up by our hostpattern. */
+        final boolean isNoDownloadableContent = !br.containsHTML("/file/filetype");
+        return isOffline || isNoDownloadableContent;
     }
 
     /**
      * Tries to find filename and filesize inside html. On Override, make sure to FIRST use your special RegExes e.g. fileInfo[0]="bla",
      * THEN, if needed, call super.scanInfo(fileInfo). <br />
-     * fileInfo[0] = filename, fileInfo[1] = filesize
+     * fileInfo[0] = filename, fileInfo[1] = filesize <br />
      */
     public String[] scanInfoAPI(final String[] fileInfo) {
         if (StringUtils.isEmpty(fileInfo[0])) {
@@ -292,18 +314,23 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
         if (StringUtils.isEmpty(fileInfo[1])) {
             fileInfo[1] = PluginJSonUtils.getJson(br, "bytes");
         }
-        /*
-         * 2019-05-07: Special: API sometimes returns bad filenames e.g. bayfiles.com, anonfiles.com. It replaces some spaces and dots with
-         * "_" --> We will at least have to replace the last underscore by DOT to have a file-extension
-         */
-        if (!StringUtils.isEmpty(fileInfo[0]) && fileInfo[0].contains("_") && fileInfo[0].length() > 2) {
+        return fileInfo;
+    }
+
+    /**
+     * 2019-05-07: Special: API filenames and filenames inside URL sometimes returns bad filenames e.g. bayfiles.com, anonfiles.com. It
+     * replaces some spaces and dots with "_" --> We will at least have to replace the last underscore by DOT to have a file-extension
+     */
+    public String correctFilename(final String input) {
+        String output = input;
+        if (!StringUtils.isEmpty(input) && input.contains("_") && input.length() > 2) {
             /* First fix filename beginning - beginning with underscore is definitely wrong! */
-            if (fileInfo[0].startsWith("_")) {
-                fileInfo[0] = fileInfo[0].substring(1);
+            if (input.startsWith("_")) {
+                output = input.substring(1);
             }
             /* Now fix filename ending / fileextension */
-            final String filename_part1 = fileInfo[0].substring(0, fileInfo[0].lastIndexOf("_"));
-            final String filename_part2_suggested_extension = fileInfo[0].substring(fileInfo[0].lastIndexOf("_") + 1);
+            final String filename_part1 = output.substring(0, output.lastIndexOf("_"));
+            final String filename_part2_suggested_extension = output.substring(output.lastIndexOf("_") + 1);
             boolean ending_is_Extension = false;
             final ArrayList<Pattern> patterns = new ArrayList<Pattern>();
             for (final ExtensionsFilterInterface extension : ImageExtensions.values()) {
@@ -330,10 +357,10 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
                 }
             }
             if (ending_is_Extension) {
-                fileInfo[0] = filename_part1 + "." + filename_part2_suggested_extension;
+                output = filename_part1 + "." + filename_part2_suggested_extension;
             }
         }
-        return fileInfo;
+        return output;
     }
 
     /**
@@ -347,7 +374,7 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
         }
         if (StringUtils.isEmpty(fileInfo[1])) {
             /* Language-independant RegEx */
-            fileInfo[1] = br.getRegex("filetypes/ext/[a-z0-9]+\\.png\\?\\d+\"/>\\s*?[A-Za-z0-9]+\\s*?\\(([^<>\"]+)\\)</a>").getMatch(0);
+            fileInfo[1] = br.getRegex("file/filetypes/[^\"]+\"/>\\s*?[A-Za-z0-9 ]+\\s*?\\(([^<>\"]+)\\)</a>").getMatch(0);
         }
         return fileInfo;
     }
@@ -365,13 +392,15 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
         String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
             if (supports_availablecheck_via_api()) {
+                /* Did we use the API before? Then we'll have to access the website now. */
                 this.getPage(link.getPluginPatternMatcher());
                 /* Check again here just in case the API is wrong. */
                 if (isOfflineWebsite()) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             }
-            dllink = getDllink();
+            /* Example of a website which supports videostreaming: minfil.com */
+            dllink = getDllink(link);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
         /*
@@ -394,15 +423,24 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
         dl.startDownload();
     }
 
-    private String getDllink() {
-        return getDllink(this.br);
+    private String getDllink(final DownloadLink dl) {
+        return getDllink(this.br, dl);
     }
 
-    private String getDllink(final Browser br) {
+    private String getDllink(final Browser br, final DownloadLink dl) {
         String dllink = br.getRegex("id=\"download\\-url\"\\s*?class=\"[^\"]+\"\\s*?href=\"(https[^<>\"]*?)\"").getMatch(0);
-        if (StringUtils.isEmpty(dllink)) {
+        if (StringUtils.isEmpty(dllink) || true) {
             /* 2019-05-07: E.g. bayfiles.com, anonfiles.com */
-            dllink = br.getRegex("\"(https?://cdn\\-\\d+\\.[^/\"]+/[^<>\"]+)\"").getMatch(0);
+            final String linkid = dl.getLinkID();
+            /*
+             * First try to find downloadurl which contains linkid as for different streaming qualities, downloadURLs look exactly the same
+             * but lead to different video-resolutions.
+             */
+            /* 2019-05-07: E.g. bayfiles.com, anonfiles.com */
+            dllink = br.getRegex("\"(https?://cdn\\-\\d+\\.[^/\"]+/" + linkid + "[^<>\"]+)\"").getMatch(0);
+            if (StringUtils.isEmpty(dllink)) {
+                dllink = br.getRegex("\"(https?://cdn\\-\\d+\\.[^/\"]+/[^<>\"]+)\"").getMatch(0);
+            }
         }
         return dllink;
     }
@@ -437,9 +475,12 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
         return result;
     }
 
-    public static String getFilenameFromURL(final String url) {
+    public String getFilenameFromURL(final String url) {
         try {
-            final String result = new Regex(new URL(url).getPath(), "[^/]+/(.+)$").getMatch(0);
+            String result = new Regex(new URL(url).getPath(), "[^/]+/(.+)$").getMatch(0);
+            if (result != null) {
+                result = correctFilename(result);
+            }
             return result;
         } catch (MalformedURLException e) {
             e.printStackTrace();
@@ -457,7 +498,7 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
     }
 
     /** Tries to get filename from URL and if this fails, will return <fuid> filename. */
-    public static String getFallbackFilename(final String url) {
+    public String getFallbackFilename(final String url) {
         String fallback_filename = getFilenameFromURL(url);
         if (fallback_filename == null) {
             fallback_filename = getFUIDFromURL(url);
@@ -466,9 +507,10 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
     }
 
     public void checkErrors(final DownloadLink link, final Account account) throws PluginException {
-        if (br.containsHTML("TODO")) {
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "TODO", 3 * 60 * 1000l);
-        }
+        /** TODO: Check if we need this. */
+        // if (br.containsHTML("TODO")) {
+        // throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "TODO", 3 * 60 * 1000l);
+        // }
     }
 
     /** Handles all kinds of error-responsecodes! */
@@ -519,8 +561,11 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
         }
     }
 
-    protected Browser prepBrowser(final Browser br) {
-        /* Prefer English html */
+    public Browser prepBrowser(final Browser br) {
+        /*
+         * Prefer English html CAUTION: A wrong language cookie (= unsupported by that website) will cause every request to redirect to
+         * their mainpage until a supported language-cookie is set (example of unsupported English language: minfil.com)
+         */
         br.setCookie(this.getHost(), "lang", "us");
         if (enable_random_user_agent()) {
             if (agent.get() == null) {
