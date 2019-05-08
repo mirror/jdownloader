@@ -43,7 +43,7 @@ public class FShareVnFolder extends PluginForDecrypt {
         final String parameter = param.toString();
         final String folderid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         final LinkedHashSet<String> dupe = new LinkedHashSet<String>();
-        jd.plugins.hoster.FShareVn.prepBrowser(br);
+        jd.plugins.hoster.FShareVn.prepBrowserWebsite(br);
         /* Important or we'll get XML ;) */
         br.getHeaders().put("Accept", "application/json, text/plain, */*");
         br.getPage("https://www." + getHost() + "/api/v3/files/folder?linkcode=" + folderid + "&sort=type,name");
