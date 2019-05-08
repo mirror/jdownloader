@@ -53,22 +53,26 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fshare.vn" }, urls = { "https?://(?:www\\.)?(?:mega\\.1280\\.com|fshare\\.vn)/file/([0-9A-Z]+)" })
 public class FShareVn extends PluginForHost {
-    private final String         SERVERERROR                  = "Tài nguyên bạn yêu cầu không tìm thấy";
-    private final String         IPBLOCKED                    = "<li>Tài khoản của bạn thuộc GUEST nên chỉ tải xuống";
-    private static Object        LOCK                         = new Object();
-    private String               dllink                       = null;
+    private final String         SERVERERROR                           = "Tài nguyên bạn yêu cầu không tìm thấy";
+    private final String         IPBLOCKED                             = "<li>Tài khoản của bạn thuộc GUEST nên chỉ tải xuống";
+    private static Object        LOCK                                  = new Object();
+    private String               dllink                                = null;
     /* Connection stuff */
-    private static final boolean FREE_RESUME                  = false;
-    private static final int     FREE_MAXCHUNKS               = 1;
-    private static final int     FREE_MAXDOWNLOADS            = 1;
+    private static final boolean FREE_RESUME                           = false;
+    private static final int     FREE_MAXCHUNKS                        = 1;
+    private static final int     FREE_MAXDOWNLOADS                     = 1;
     // private static final boolean ACCOUNT_FREE_RESUME = false;
     // private static final int ACCOUNT_FREE_MAXCHUNKS = 1;
-    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 1;
-    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = -3;
-    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = -1;
-    /** Use mobile API for login & downloads? We do not have any documentation of this API!! */
-    private boolean              use_api                      = false;
+    private static final int     ACCOUNT_FREE_MAXDOWNLOADS             = 1;
+    private static final boolean ACCOUNT_PREMIUM_RESUME                = true;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS             = -3;
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS          = -1;
+    /** Use mobile API for different things? */
+    private boolean              use_api_for_premium_account_downloads = true;
+    /** 2019-05-08: API also works for free accounts */
+    private boolean              use_api_for_free_account_downloads    = true;
+    /** 2019-05-08: We are not (yet) able to obtain account information via API - keep this DISABLED until there is a solution!! */
+    private boolean              use_api_for_login_fetch_account_info  = false;
 
     public FShareVn(PluginWrapper wrapper) {
         super(wrapper);
@@ -166,9 +170,47 @@ public class FShareVn extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    public AvailableStatus requestFileInformationAPI(final DownloadLink link, final Account account) throws Exception {
+        this.setBrowserExclusive();
+        String token = this.getAPITokenAndSetCookies(account);
+        if (token == null) {
+            token = this.loginAPI(account, true);
+        }
+        prepBrowserAPI(br);
+        // token = this.loginAPI(account, true);
+        /*
+         * Use requestFileInformationAPI to verify login-token. If everything works as designed, we will only have to do 2 API-calls until
+         * downloadstart!
+         */
+        final PostRequest filecheckReq = br.createJSonPostRequest("https://" + getAPIHost() + "/api/fileops/get", String.format("{\"token\":\"%s\",\"url\":\"%s\"}", token, link.getDownloadURL()));
+        br.openRequestConnection(filecheckReq);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getHttpConnection().getResponseCode() == 400) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Login token invalid", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        }
+        br.loadConnection(null);
+        final String filename = PluginJSonUtils.getJson(br, "name");
+        final String size = PluginJSonUtils.getJson(br, "size");
+        final String deleted = PluginJSonUtils.getJson(br, "deleted");
+        /* 2019-05-08: This is NOT a hash we can use for anything! */
+        // final String hash = PluginJSonUtils.getJson(br, "hash_index");
+        if ("1".equals(deleted)) {
+            /* This should never happen (should return 404 for dead URLs) */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (!StringUtils.isEmpty(filename)) {
+            link.setFinalFileName(filename);
+        }
+        if (!StringUtils.isEmpty(size) && size.matches("\\d+")) {
+            link.setDownloadSize(Long.parseLong(size));
+        }
+        return AvailableStatus.TRUE;
+    }
+
     public void doFree(final DownloadLink downloadLink, final Account acc) throws Exception {
         if (dllink != null) {
-            // these are effectively premium links?
+            /* these are effectively premium links? */
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
             if (!dl.getConnection().getContentType().contains("html")) {
                 dl.startDownload();
@@ -191,7 +233,7 @@ public class FShareVn extends PluginForHost {
                 if (br.containsHTML(IPBLOCKED)) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
                 }
-                // we want _csrf token
+                /* we want _csrf token */
                 final String csrf = br.getRegex("_csrf-app\" value=\"([^<>\"]+)\"").getMatch(0);
                 final Browser ajax = br.cloneBrowser();
                 ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
@@ -324,26 +366,26 @@ public class FShareVn extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        // this should set English here...
-        requestFileInformation(link);
         if (account.getType() == AccountType.FREE) {
-            // premium link wont need user to login!
-            if (dllink == null) {
-                logger.info("Free account download: logging in");
-                login(account, false);
-                br.getPage(link.getDownloadURL());
-                dllink = br.getRedirectLocation();
+            if (use_api_for_free_account_downloads) {
+                dllink = this.getDllinkAPI(link, account);
             } else {
-                logger.info("Free account download: Not logging in because user tries to download a premium-direct-download-url via free account");
+                requestFileInformation(link);
+                if (dllink == null) {
+                    logger.info("Free account download: logging in");
+                    login(account, false);
+                    br.getPage(link.getDownloadURL());
+                    dllink = br.getRedirectLocation();
+                } else {
+                    logger.info("Free account download: Not logging in because user tries to download a premium-direct-download-url via free account");
+                }
             }
             doFree(link, account);
         } else {
             final String directlinkproperty = "directlink_account";
-            /* English is also set here && cache login causes problems, premium pages sometimes not returned without fresh login. */
-            login(account, false);
             dllink = this.checkDirectLink(link, directlinkproperty);
             if (dllink == null) {
-                dllink = getDllinkPremium(link);
+                dllink = getDllinkPremium(link, account);
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
             if (dl.getConnection().getContentType().contains("html")) {
@@ -357,10 +399,49 @@ public class FShareVn extends PluginForHost {
         }
     }
 
-    public String getDllinkPremium(final DownloadLink link) throws Exception {
+    public String getDllinkPremium(final DownloadLink link, final Account account) throws Exception {
         // we get page again, because we do not take directlink from requestfileinfo.
+        final String dllink;
+        if (use_api_for_premium_account_downloads) {
+            dllink = getDllinkAPI(link, account);
+        } else {
+            dllink = getDllinkPremiumWebsite(link, account);
+        }
+        if (StringUtils.isEmpty(dllink) || !dllink.startsWith("http")) {
+            logger.warning("dllink is null");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (StringUtils.containsIgnoreCase(dllink, "Server error") && StringUtils.containsIgnoreCase(dllink, "please try again later")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+        } else if (dllink.contains("logout")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL premium error");
+        }
+        return dllink;
+    }
+
+    /** Retrieves downloadurl via API which is also used in their mobile apps. */
+    private String getDllinkAPI(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformationAPI(link, account);
+        /* Login not required here as we're already logged-in (= obtained login-token) via availablecheck! */
+        // loginAPI(account, false);
+        final String token = getAPITokenAndSetCookies(account);
+        if (StringUtils.isEmpty(token)) {
+            /* Login failure? This should never happen! */
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Login token missing", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        }
+        /* Every login via this method invalidates all previously generated tokens! */
+        final PostRequest downloadReq = br.createJSonPostRequest("https://" + getAPIHost() + "/api/session/download", String.format("{\"token\":\"%s\",\"url\":\"%s\"}", token, link.getDownloadURL()));
+        br.openRequestConnection(downloadReq);
+        br.loadConnection(null);
+        return PluginJSonUtils.getJson(br, "location");
+    }
+
+    /** Retrieves downloadurl via website. */
+    private String getDllinkPremiumWebsite(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link);
+        loginWebsite(account, false);
         br.getPage(link.getDownloadURL());
-        dllink = br.getRedirectLocation();
+        String dllink = br.getRedirectLocation();
         final String uid = getUID(link);
         if (dllink != null && dllink.endsWith("/file/" + uid)) {
             br.getPage(dllink);
@@ -414,33 +495,20 @@ public class FShareVn extends PluginForHost {
                     }
                 }
             }
-            if (StringUtils.isEmpty(dllink) || !dllink.startsWith("http")) {
-                logger.warning("dllink is null");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        }
-        if (StringUtils.containsIgnoreCase(dllink, "Server error") && StringUtils.containsIgnoreCase(dllink, "please try again later")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
-        } else if (dllink.contains("logout")) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL premium error");
         }
         return dllink;
     }
 
-    /** Retrieves downloadurl via API which is also used in their mobile apps. */
-    private String getDllinkPremiumAPI(final DownloadLink link, final Account account) throws Exception {
-        prepBrowserAPI(this.br);
-        /* TODO: Find a way to check that token so we do not have to generate a new token for every download! */
-        final String token = getAPIToken(account);
-        /* Every login via this method invalidates all previously generated tokens! */
-        final PostRequest downloadReq2 = br.createJSonPostRequest("https://api.fshare.vn/api/session/download", String.format("{\"token\":\"%s\",\"url\":\"%s\"}", token, link.getDownloadURL()));
-        br.openRequestConnection(downloadReq2);
-        br.loadConnection(null);
-        return PluginJSonUtils.getJson(br, "location");
-    }
-
-    private String getAPIToken(final Account account) {
-        return account.getStringProperty("token", null);
+    /** Returns APIToken and sets cookies if both is available. */
+    private String getAPITokenAndSetCookies(final Account account) {
+        final String token = account.getStringProperty("token", null);
+        if (token != null) {
+            final Cookies cookies = account.loadCookies("apicookies");
+            if (cookies != null) {
+                br.setCookies(getAPIHost(), cookies);
+            }
+        }
+        return token;
     }
 
     // do not add @Override here to keep 0.* compatibility
@@ -448,79 +516,138 @@ public class FShareVn extends PluginForHost {
         return false;
     }
 
-    private boolean isLoggedin() {
+    private String getAPIHost() {
+        return "api.fshare.vn";
+    }
+
+    private boolean isLoggedinWebsite() {
         return br.containsHTML("class =\"user__profile\"") && br.getCookie(br.getHost(), "fshare-app", Cookies.NOTDELETEDPATTERN) != null;
     }
 
-    private void login(Account account, boolean force) throws Exception {
+    private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
-                prepBrowserWebsite(this.br);
                 br.setCookiesExclusive(true);
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
-                    br.setCookies(this.getHost(), cookies);
-                    br.getPage("https://www." + this.getHost() + "/file/manager");
-                    if (isLoggedin()) {
-                        account.saveCookies(br.getCookies(this.getHost()), "");
-                        return;
-                    }
-                    br.clearCookies(br.getHost());
+                if (use_api_for_premium_account_downloads) {
+                    loginAPI(account, force);
+                } else {
+                    loginWebsite(account, force);
                 }
-                final boolean isFollowingRedirects = br.isFollowingRedirects();
-                br.setFollowRedirects(true);
-                br.getHeaders().put("Referer", "https://www.fshare.vn/site/login");
-                br.getPage("https://www.fshare.vn"); // 503 with /site/location?lang=en
-                final String csrf = br.getRegex("name=\"_csrf-app\" value=\"([^<>\"]+)\"").getMatch(0);
-                final String cookie_fshare_app_old = br.getCookie(br.getHost(), "fshare-app", Cookies.NOTDELETEDPATTERN);
-                if (csrf == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } else if (cookie_fshare_app_old == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                br.setFollowRedirects(false);
-                /*
-                 * 2018-02-06: Do NOT use the long session cookies as that could cause "Too many sessions"(or similar) error when trying to
-                 * start downloads!
-                 */
-                br.postPage("/site/login", "_csrf-app=" + csrf + "&LoginForm%5Bemail%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()) + "&LoginForm%5BrememberMe%5D=0");
-                final String cookie_fshare_app_new = br.getCookie(br.getHost(), "fshare-app", Cookies.NOTDELETEDPATTERN);
-                if (cookie_fshare_app_new == null || StringUtils.equalsIgnoreCase(cookie_fshare_app_new, cookie_fshare_app_old)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                if (br.getURL().contains("/resend")) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYour account is not activated yet. Confirm the activation mail to use it.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                account.saveCookies(br.getCookies(this.getHost()), "");
-                br.setFollowRedirects(isFollowingRedirects);
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    /* Reset website related cookies */
                     account.clearCookies("");
+                    /* Reset API related properties */
+                    account.clearCookies("apicookies");
+                    account.setProperty("token", Property.NULL);
                 }
                 throw e;
             }
         }
     }
 
+    private void loginWebsite(Account account, boolean force) throws Exception {
+        prepBrowserWebsite(this.br);
+        final Cookies cookies = account.loadCookies("");
+        if (cookies != null && !force) {
+            br.setCookies(this.getHost(), cookies);
+            br.getPage("https://www." + this.getHost() + "/file/manager");
+            if (isLoggedinWebsite()) {
+                account.saveCookies(br.getCookies(this.getHost()), "");
+                return;
+            }
+            br.clearCookies(br.getHost());
+        }
+        final boolean isFollowingRedirects = br.isFollowingRedirects();
+        br.setFollowRedirects(true);
+        br.getHeaders().put("Referer", "https://www.fshare.vn/site/login");
+        br.getPage("https://www.fshare.vn"); // 503 with /site/location?lang=en
+        final String csrf = br.getRegex("name=\"_csrf-app\" value=\"([^<>\"]+)\"").getMatch(0);
+        final String cookie_fshare_app_old = br.getCookie(br.getHost(), "fshare-app", Cookies.NOTDELETEDPATTERN);
+        if (csrf == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if (cookie_fshare_app_old == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.setFollowRedirects(false);
+        /*
+         * 2018-02-06: Do NOT use the long session cookies as that could cause "Too many sessions"(or similar) error when trying to start
+         * downloads!
+         */
+        br.postPage("/site/login", "_csrf-app=" + csrf + "&LoginForm%5Bemail%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()) + "&LoginForm%5BrememberMe%5D=0");
+        final String cookie_fshare_app_new = br.getCookie(br.getHost(), "fshare-app", Cookies.NOTDELETEDPATTERN);
+        if (cookie_fshare_app_new == null || StringUtils.equalsIgnoreCase(cookie_fshare_app_new, cookie_fshare_app_old)) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        if (br.getURL().contains("/resend")) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYour account is not activated yet. Confirm the activation mail to use it.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        account.saveCookies(br.getCookies(this.getHost()), "");
+        br.setFollowRedirects(isFollowingRedirects);
+    }
+
     /**
      * Login via API which is also used by their mobile app. <br />
+     * Biggest issue when using this API: We cannot get the account information.<br />
      * Thx to: https://github.com/tudoanh/get_fshare/blob/master/get_fshare/get_fshare.py
+     *
+     * @return
      */
-    private void loginAPI(final Account account, final boolean force) throws Exception {
+    private String loginAPI(final Account account, final boolean force) throws Exception {
         prepBrowserAPI(this.br);
-        final PostRequest loginReq = br.createJSonPostRequest("https://api.fshare.vn/api/user/login", String.format("{\"user_email\":\"%s\",\"password\":\"%s\",\"app_key\":\"L2S7R6ZMagggC5wWkQhX2+aDi467PPuftWUMRFSn\"}", account.getUser(), account.getPass()));
+        String token = this.getAPITokenAndSetCookies(account);
+        final Cookies cookies = account.loadCookies("apicookies");
+        if (token != null && cookies != null && !force) {
+            br.setCookies(getAPIHost(), cookies);
+            // br.setAllowedResponseCodes(new int[] { 409 });
+            // final PostRequest loginCheckReq2 = br.createJSonPostRequest("https://api.fshare.vn/api/session/upload",
+            // String.format("{\"token\":\"%s\",\"name\":\"20mo.dat\",\"path\":\"/Music\",\"secure\":true,\"size\":10000}", token));
+            // br.openRequestConnection(loginCheckReq2);
+            // br.loadConnection(null);
+            /*
+             * We do not have any official way to check whether that token is valid so we will use their filecheck-function with a dummy
+             * URL. 404 = token is VALID[and our dummy URL is of course offline], 400 = token is INVALID and full login is required!
+             */
+            final PostRequest loginCheckReq = br.createJSonPostRequest("https://" + getAPIHost() + "/api/fileops/get", String.format("{\"token\":\"%s\",\"url\":\"%s\"}", token, "https://www.fshare.vn/file/JDTESTJDJDJD"));
+            br.openRequestConnection(loginCheckReq);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                logger.info("Old login-token is VALID");
+                account.saveCookies(br.getCookies(this.getHost()), "apicookies");
+                return token;
+            } else {
+                // br.loadConnection(null);
+                logger.info("Old login-token is INVALID");
+            }
+        }
+        final PostRequest loginReq = br.createJSonPostRequest("https://" + getAPIHost() + "/api/user/login", String.format("{\"user_email\":\"%s\",\"password\":\"%s\",\"app_key\":\"L2S7R6ZMagggC5wWkQhX2+aDi467PPuftWUMRFSn\"}", account.getUser(), account.getPass()));
         br.openRequestConnection(loginReq);
         br.loadConnection(null);
-        final String code = PluginJSonUtils.getJson(br, "code");
-        final String token = PluginJSonUtils.getJson(br, "token");
+        // final String code = PluginJSonUtils.getJson(br, "code");
+        token = PluginJSonUtils.getJson(br, "token");
         final String session_id = PluginJSonUtils.getJson(br, "session_id");
+        if (StringUtils.isEmpty(token) || StringUtils.isEmpty(session_id) || br.getHttpConnection().getResponseCode() == 400) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        /* Same key as in browser but not usable for browser-requests */
+        br.setCookie(this.getHost(), "session_id", session_id);
+        account.saveCookies(br.getCookies(getAPIHost()), "apicookies");
+        account.setProperty("token", token);
+        return token;
     }
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        if (use_api_for_login_fetch_account_info) {
+            return fetchAccountInfoAPI(account);
+        } else {
+            return fetchAccountInfoWebsite(account);
+        }
+    }
+
+    public AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
+        this.loginWebsite(account, true);
         final AccountInfo ai = new AccountInfo();
-        login(account, true);
-        br.getPage("/account/profile");
+        br.getPage("https://www." + this.getHost() + "/account/profile");
         final String validUntil = br.getRegex("(?:Expire|Hạn dùng):</a>\\s*<span.*?>([^<>]*?)</span>").getMatch(0); // Version 3 (2018)
         final String accountType = br.getRegex("(?:Account type|Loại tài khoản)</a>\\s*?<span>([^<>\"]+)</span>").getMatch(0);
         if (StringUtils.equalsIgnoreCase(accountType, "VIP")) {
@@ -581,6 +708,18 @@ public class FShareVn extends PluginForHost {
             ai.setStatus("Free Account");
             account.setType(AccountType.FREE);
         }
+        return ai;
+    }
+
+    public AccountInfo fetchAccountInfoAPI(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        this.loginAPI(account, true);
+        /** 2019-05-08: So far we cannot obtain any account information via API :( */
+        /* As long as we cannot get any information via API, we'll simply treat every account as FREE-account. */
+        account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+        account.setConcurrentUsePossible(true);
+        ai.setStatus("Free Account");
+        account.setType(AccountType.FREE);
         return ai;
     }
 

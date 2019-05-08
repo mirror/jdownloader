@@ -50,7 +50,6 @@ public class RapidsPl extends PluginForHost {
     private static MultiHosterManagement                     mhm                     = new MultiHosterManagement("rapids.pl");
     private static final String                              NOCHUNKS                = "NOCHUNKS";
     private static final String                              NICE_HOST               = "rapids.pl";
-    private static final String                              NICE_HOSTproperty       = NICE_HOST.replaceAll("(\\.|\\-)", "");
     private static final String                              COOKIE_HOST             = "http://" + NICE_HOST;
     private static WeakHashMap<Account, Map<String, Object>> SUPPORTED_HOST_SETTINGS = new WeakHashMap<Account, Map<String, Object>>();
 
@@ -374,10 +373,6 @@ public class RapidsPl extends PluginForHost {
                 br.setCookiesExclusive(true);
                 newBrowser();
                 final Cookies cookies = account.loadCookies("");
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
                 if (cookies != null && !force) {
                     br.setCookies(account.getHoster(), cookies);
                     return;
