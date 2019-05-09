@@ -26,17 +26,30 @@ import org.jdownloader.plugins.components.TurbobitCore;
 import jd.PluginWrapper;
 import jd.plugins.HostPlugin;
 
+/** 2019-05-09: This filehost seems to be broken serverside. Download attempts will always result in http response 404. */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class TurboBitNet extends TurbobitCore {
-    public TurboBitNet(PluginWrapper wrapper) {
+public class WayuploadCom extends TurbobitCore {
+    public WayuploadCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* Keep this up2date! */
-    public static String[] domains = new String[] { "turbobit.net", "ifolder.com.ua", "turo-bit.net", "depositfiles.com.ua", "dlbit.net", "hotshare.biz", "sibit.net", "turbobit.ru", "xrfiles.ru", "turbabit.net", "filedeluxe.com", "filemaster.ru", "файлообменник.рф", "turboot.ru", "kilofile.com", "twobit.ru", "forum.flacmania.ru", "filhost.ru", "fayloobmennik.com", "rapidfile.tk", "turbo.to" };
+    public static String[] domains = new String[] { "wayupload.com" };
 
     public static String[] getAnnotationNames() {
         return new String[] { domains[0] };
+    }
+
+    @Override
+    public boolean supports_https() {
+        /* 2019-05-09: Special */
+        return false;
+    }
+
+    @Override
+    public boolean supports_mass_linkcheck() {
+        /* 2019-05-09: Special - their mass-linkchecker is broken */
+        return false;
     }
 
     /**
@@ -61,7 +74,7 @@ public class TurboBitNet extends TurbobitCore {
     @Override
     public String[] siteSupportedNames() {
         final List<String> ret = new ArrayList<String>(Arrays.asList(domains));
-        ret.add("turbobit");
+        ret.add("wayupload");
         return ret.toArray(new String[0]);
     }
 }
