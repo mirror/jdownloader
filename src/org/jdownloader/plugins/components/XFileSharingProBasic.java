@@ -115,7 +115,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 4.0.1.5<br />
+     * DEV NOTES XfileSharingProBasic Version 4.0.1.6<br />
      ****************************
      * NOTES from raztoki <br/>
      * - no need to set setfollowredirect true. <br />
@@ -400,13 +400,24 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /**
+     * @return: Skip pre-download waittime or not. See waitTime function below. <br />
+     *          default: false <br />
+     *          example true: uploadrar.com
+     */
+    public boolean preDownloadWaittimeSkippable() {
+        return false;
+    }
+
+    /**
+     * TODO: 2019-05-09: Consider removing this as it has not been used in a single plugin! <br />
+     *
      * @return true: Wait a forced amount of pre-download-waittime even if no waittime is found in html code. Code will make sure that the
      *         found waittime is between waitsecondsmin and waitsecondsmax. <br />
      *         If that is NOT the case, waitsecondsforced will be used as pre-download-waittime instead. <br />
      *         false: Only wait pre-download-waittime if waittime is found in html. <br />
      *         default: false
      */
-    public boolean isWaitforced() {
+    protected boolean forcePreDownloadWaittime() {
         return false;
     }
 
@@ -620,14 +631,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             fileInfo[0] = fallback_filename;
         }
         if (inValidate(fileInfo[0])) {
-            /*
-             * We failed to find the filename --> Do a last check, maybe we've reached a downloadlimit. This is a rare case - usually plugin
-             * code needs to be updated in this case!
-             */
-            if (correctedBR.contains("You have reached the download(\\-| )limit")) {
-                logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
-                return AvailableStatus.UNCHECKABLE;
-            }
+            /* This should never happen as we set fallback-filename if we fail to find a 'good filename' inside html. */
             logger.warning("filename equals null, throwing \"plugin defect\"");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -1117,7 +1121,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     logger.info("The downloadlink seems to be password protected.");
                     handlePassword(dlForm, link);
                 }
-                final boolean skipWaittime = handleCaptcha(link, dlForm);
+                handleCaptcha(link, dlForm);
                 /* 2019-02-08: MD5 can be on the subsequent pages - it is to be found very rare in current XFS versions */
                 if (link.getMD5Hash() == null) {
                     final String md5hash = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
@@ -1125,9 +1129,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         link.setMD5Hash(md5hash.trim());
                     }
                 }
-                if (!skipWaittime) {
-                    waitTime(link, timeBefore);
-                }
+                waitTime(link, timeBefore);
                 submitForm(dlForm);
                 logger.info("Submitted DLForm");
                 checkErrors(link, account, true);
@@ -1150,8 +1152,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /** Handles all kinds of captchas, also login-captcha - fills the given captchaForm. */
-    public boolean handleCaptcha(final DownloadLink link, final Form captchaForm) throws Exception {
-        boolean skipWaittime = false;
+    public void handleCaptcha(final DownloadLink link, final Form captchaForm) throws Exception {
         /* Captcha START */
         if (correctedBR.contains("class=\"g-recaptcha\"")) {
             /*
@@ -1264,11 +1265,9 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_FATAL);
                 }
                 captchaForm.put("capcode", result);
-                skipWaittime = false;
             }
             /* Captcha END */
         }
-        return skipWaittime;
     }
 
     /** Tries to find 1st download Form for free download. */
@@ -1676,45 +1675,52 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * Handles pre download (pre-captcha) waittime. If WAITFORCED it ensures to always wait long enough even if the waittime RegEx fails.
      */
     protected void waitTime(final DownloadLink downloadLink, final long timeBefore) throws PluginException {
-        final int extraWaitSeconds = 1;
-        int wait = 0;
-        int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - extraWaitSeconds;
         /* Ticket Time */
-        String ttt = regexWaittime();
-        if (ttt != null && ttt.matches("\\d+")) {
-            logger.info("Found waittime, parsing waittime: " + ttt);
-            wait = Integer.parseInt(ttt);
-            /* Waittime found in html but plugin developer set min- and max times? Check and fallback to getWaitsecondsforced if needed. */
-            if (this.isWaitforced() && (wait > this.getWaitsecondsmax() || wait < this.getWaitsecondsmin())) {
-                logger.warning("Wait exceeds max/min, using forced wait!");
-                wait = this.getWaitsecondsforced();
-            }
-        } else if (this.isWaitforced()) {
-            /* Get random waittime > Waitsecondsmin */
-            int i = 0;
-            while (i < this.getWaitsecondsmin()) {
-                i += new Random().nextInt(this.getWaitsecondsmin());
-            }
-            wait = i;
-        }
-        /*
-         * Check how much time has passed during eventual captcha event before this function has been called and see how much time is left
-         * to wait.
-         */
-        wait -= passedTime;
-        if (passedTime > 0) {
-            /* This usually means that the user had to solve a captcha which cuts down the remaining time we have to wait. */
-            logger.info("Total passed time during captcha: " + passedTime);
-        }
-        if (wait > 0) {
-            logger.info("Waiting waittime: " + wait);
-            sleep(wait * 1000l, downloadLink);
-        } else if (wait < -extraWaitSeconds) {
-            /* User needed more time to solve the captcha so there is no waittime left :) */
-            logger.info("Congratulations: Time to solve captcha was higher than waittime");
+        final String waitStr = regexWaittime();
+        if (this.preDownloadWaittimeSkippable()) {
+            logger.info("Skipping pre-download waittime: " + waitStr);
         } else {
-            /* No waittime at all */
-            logger.info("Found no waittime");
+            final int extraWaitSeconds = 1;
+            int wait = 0;
+            int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - extraWaitSeconds;
+            if (waitStr != null && waitStr.matches("\\d+")) {
+                logger.info("Found waittime, parsing waittime: " + waitStr);
+                wait = Integer.parseInt(waitStr);
+                /*
+                 * Waittime found in html but plugin developer set min- and max times? Check and fallback to getWaitsecondsforced if needed.
+                 */
+                if (this.forcePreDownloadWaittime() && (wait > this.getWaitsecondsmax() || wait < this.getWaitsecondsmin())) {
+                    logger.warning("Wait exceeds max/min, using forced wait!");
+                    wait = this.getWaitsecondsforced();
+                }
+            } else if (this.forcePreDownloadWaittime()) {
+                logger.info("Failed to find waittime - using forced pre-download waittime");
+                /* Get random waittime > Waitsecondsmin */
+                int i = 0;
+                while (i < this.getWaitsecondsmin()) {
+                    i += new Random().nextInt(this.getWaitsecondsmin());
+                }
+                wait = i;
+            }
+            /*
+             * Check how much time has passed during eventual captcha event before this function has been called and see how much time is
+             * left to wait.
+             */
+            wait -= passedTime;
+            if (passedTime > 0) {
+                /* This usually means that the user had to solve a captcha which cuts down the remaining time we have to wait. */
+                logger.info("Total passed time during captcha: " + passedTime);
+            }
+            if (wait > 0) {
+                logger.info("Waiting waittime: " + wait);
+                sleep(wait * 1000l, downloadLink);
+            } else if (wait < -extraWaitSeconds) {
+                /* User needed more time to solve the captcha so there is no waittime left :) */
+                logger.info("Congratulations: Time to solve captcha was higher than waittime");
+            } else {
+                /* No waittime at all */
+                logger.info("Found no waittime");
+            }
         }
     }
 
@@ -1852,7 +1858,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     /**
      * Checks for (-& handles) all kinds of errors e.g. wrong captcha, wrong downloadpassword, waittimes and server error-responsecodes such
-     * as 403, 404 and 503.
+     * as 403, 404 and 503. <br />
+     * checkAll: If enabled, ,this will also check for wrong password, wrong captcha and 'Skipped countdown' errors.
      */
     public void checkErrors(final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
         if (checkAll) {
@@ -1872,6 +1879,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             }
         }
         /** Wait time reconnect handling */
+        final String limitBasedOnNumberofFilesAndTime = new Regex(correctedBR, ">(You have reached the maximum limit \\d+ files in \\d+ hours)").getMatch(0);
         if (new Regex(correctedBR, "(You have reached the download(\\-| )limit|You have to wait)").matches()) {
             /* adjust this regex to catch the wait time string for COOKIE_HOST */
             String wait = new Regex(correctedBR, "((You have reached the download(\\-| )limit|You have to wait)[^<>]+)").getMatch(0);
@@ -1918,11 +1926,16 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
                 }
             }
-        }
-        if (correctedBR.contains("You're using all download slots for IP")) {
+        } else if (limitBasedOnNumberofFilesAndTime != null) {
+            /*
+             * 2019-05-09: New: Seems like XFS owners can even limit by number of files inside specified timeframe. Example: hotlink.cc; 150
+             * files per 24 hours
+             */
+            /* Typically '>You have reached the maximum limit 150 files in 24 hours' */
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, limitBasedOnNumberofFilesAndTime);
+        } else if (correctedBR.contains("You're using all download slots for IP")) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Server error 'You're using all download slots for IP'", 10 * 60 * 1001l);
-        }
-        if (correctedBR.contains("Error happened when generating Download Link")) {
+        } else if (correctedBR.contains("Error happened when generating Download Link")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Error happened when generating Download Link'", 10 * 60 * 1000l);
         }
         /** Error handling for premiumonly links */
