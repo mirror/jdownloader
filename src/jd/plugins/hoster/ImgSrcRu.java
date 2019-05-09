@@ -112,7 +112,7 @@ public class ImgSrcRu extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
-        prepBrowser(br, false);
+        br = prepBrowser(br, false);
         final String r = downloadLink.getStringProperty("Referer", null);
         if (r != null) {
             br.getHeaders().put("Referer", r);
@@ -335,7 +335,7 @@ public class ImgSrcRu extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.setAllowedResponseCodes(new int[] { 410 });
-        br.getPage(url);
+        jd.plugins.decrypter.ImgSrcRu.getPage(br, url);
         if (br.getRequest().getHttpConnection().getResponseCode() == 410) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -344,10 +344,10 @@ public class ImgSrcRu extends PluginForHost {
             // lets look for the link
             final String yeah = br.getRegex("/[^/]+/a\\d+\\.html\\?warned=yeah").getMatch(-1);
             if (yeah != null) {
-                br.getPage(yeah);
+                jd.plugins.decrypter.ImgSrcRu.getPage(br, yeah);
             } else {
                 // fail over
-                br.getPage(br.getURL() + "?warned=yeah");
+                jd.plugins.decrypter.ImgSrcRu.getPage(br, br.getURL() + "?warned=yeah");
             }
         }
         // needs to be before password
@@ -365,7 +365,7 @@ public class ImgSrcRu extends PluginForHost {
                     }
                     continueForm.put("pwd", Encoding.urlEncode(password));
                 }
-                br.submitForm(continueForm);
+                jd.plugins.decrypter.ImgSrcRu.submitForm(br, continueForm);
                 if (isPasswordProtected(br)) {
                     downloadLink.setProperty("pass", Property.NULL);
                     throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -379,7 +379,7 @@ public class ImgSrcRu extends PluginForHost {
                 logger.warning("Couldn't process Album forward");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.getPage(newLink);
+            jd.plugins.decrypter.ImgSrcRu.getPage(br, newLink);
         }
         if (isPasswordProtected(br)) {
             Form pwForm = br.getFormbyProperty("name", "passchk");
@@ -396,7 +396,7 @@ public class ImgSrcRu extends PluginForHost {
                 }
             }
             pwForm.put("pwd", Encoding.urlEncode(password));
-            br.submitForm(pwForm);
+            jd.plugins.decrypter.ImgSrcRu.submitForm(br, pwForm);
             pwForm = br.getFormbyProperty("name", "passchk");
             if (pwForm != null) {
                 downloadLink.setProperty("pass", Property.NULL);
