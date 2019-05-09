@@ -23,6 +23,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.plugins.components.config.DropBoxConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -38,17 +49,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DropboxCom.DropboxConfig;
-
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.jdownloader.plugins.components.config.DropBoxConfig;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropbox.com" }, urls = { "https?://(?:www\\.)?dropbox\\.com/(?:(?:sh|sc|s)/[^<>\"]+|l/[A-Za-z0-9]+)(?:\\&crawl_subfolders=(?:true|false))?|https?://(www\\.)?db\\.tt/[A-Za-z0-9]+" })
 public class DropBoxCom extends PluginForDecrypt {
@@ -220,87 +220,108 @@ public class DropBoxCom extends PluginForDecrypt {
             dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subFolder);
             decryptedLinks.add(dl);
         }
-        String json_source = getSharedJsonSource(br);
-        final boolean isShared;
-        if (json_source != null) {
-            isShared = true;
-        } else {
-            isShared = false;
-            json_source = getJsonSource(this.br);
-        }
-        if (json_source == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        /* 2017-01-27 new */
-        boolean decryptSubfolders = crawl_subfolder_string != null && crawl_subfolder_string.contains("crawl_subfolders=true");
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source);
-        final List<Object> ressourcelist_folders = getFoldersList(entries, isShared);
-        final List<Object> ressourcelist_files = getFilesList(entries, isShared);
-        final boolean isSingleFile = ressourcelist_files != null && ressourcelist_files.size() == 1;
-        if (ressourcelist_folders != null && ressourcelist_folders.size() > 0 && !decryptSubfolders) {
-            /* Only ask user if we actually have subfolders that can be decrypted! */
-            final ConfirmDialog confirm = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, link, "For this URL JDownloader can crawl the files inside the current folder or crawl subfolders as well. What would you like to do?", null, "Add files of current folder AND subfolders?", "Add only files of current folder?") {
-                @Override
-                public ModalityType getModalityType() {
-                    return ModalityType.MODELESS;
-                }
-
-                @Override
-                public boolean isRemoteAPIEnabled() {
-                    return true;
-                }
-            };
-            try {
-                UIOManager.I().show(ConfirmDialogInterface.class, confirm).throwCloseExceptions();
-                decryptSubfolders = true;
-            } catch (DialogCanceledException e) {
-                decryptSubfolders = false;
-            } catch (DialogClosedException e) {
-                decryptSubfolders = false;
-            }
-        }
-        if (ressourcelist_files != null) {
-            for (final Object o : ressourcelist_files) {
-                entries = (LinkedHashMap<String, Object>) o;
-                String url = (String) entries.get("href");
-                if (url == null && isSingleFile) {
-                    url = link;
-                }
-                final String filename = (String) entries.get("filename");
-                final long filesize = JavaScriptEngineFactory.toLong(entries.get("bytes"), 0);
-                if (url == null || url.equals("") || filename == null || filename.equals("")) {
-                    return null;
-                }
-                final DownloadLink dl = createSingleDownloadLink(url);
-                if (filesize > 0) {
-                    dl.setDownloadSize(filesize);
-                }
-                dl.setName(filename);
-                dl.setAvailable(true);
-                dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subFolder);
-                decryptedLinks.add(dl);
-            }
-        }
-        if (decryptSubfolders) {
-            final String subFolderBase = subFolder;
-            for (final Object o : ressourcelist_folders) {
-                entries = (LinkedHashMap<String, Object>) o;
-                final boolean is_dir = ((Boolean) entries.get("is_dir")).booleanValue();
-                String url = (String) entries.get("href");
-                if (!is_dir || url == null || url.equals("")) {
-                    continue;
-                }
-                url += "&crawl_subfolders=true";
-                final String name = (String) entries.get("filename");
-                if (StringUtils.isNotEmpty(name)) {
-                    subFolder = subFolderBase + "/" + name;
+        boolean hasMore = false;
+        boolean isShared = false;
+        boolean askedUserIfHeWantsSubfolders = false;
+        int page = 1;
+        String json_source = null;
+        do {
+            if (page == 0) {
+                json_source = getSharedJsonSource(br);
+                if (json_source != null) {
+                    isShared = true;
                 } else {
-                    subFolder = subFolderBase;
+                    isShared = false;
+                    json_source = getJsonSource(this.br);
                 }
-                final DownloadLink subFolderDownloadLink = this.createDownloadlink(url);
-                decryptedLinks.add(subFolderDownloadLink);
+            } else {
+                /** TODO: Fix this */
+                if (true) {
+                    break;
+                }
+                br.getHeaders().put("x-requested-with", "XMLHttpRequest");
+                br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+                br.getHeaders().put("content-type", "application/x-www-form-urlencoded; charset=UTF-8");
+                br.getHeaders().put("Origin", "https://www.dropbox.com");
+                br.postPage("https://www.dropbox.com/list_shared_link_folder_entries", "");
+                json_source = br.toString();
             }
-        }
+            if (json_source == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            /* 2017-01-27 new */
+            boolean decryptSubfolders = crawl_subfolder_string != null && crawl_subfolder_string.contains("crawl_subfolders=true");
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source);
+            final List<Object> ressourcelist_folders = getFoldersList(entries, isShared);
+            final List<Object> ressourcelist_files = getFilesList(entries, isShared);
+            final boolean isSingleFile = ressourcelist_files != null && ressourcelist_files.size() == 1;
+            if (ressourcelist_folders != null && ressourcelist_folders.size() > 0 && !decryptSubfolders && !askedUserIfHeWantsSubfolders) {
+                /* Only ask user if we actually have subfolders that can be decrypted! */
+                final ConfirmDialog confirm = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, link, "For this URL JDownloader can crawl the files inside the current folder or crawl subfolders as well. What would you like to do?", null, "Add files of current folder AND subfolders?", "Add only files of current folder?") {
+                    @Override
+                    public ModalityType getModalityType() {
+                        return ModalityType.MODELESS;
+                    }
+
+                    @Override
+                    public boolean isRemoteAPIEnabled() {
+                        return true;
+                    }
+                };
+                try {
+                    UIOManager.I().show(ConfirmDialogInterface.class, confirm).throwCloseExceptions();
+                    decryptSubfolders = true;
+                } catch (DialogCanceledException e) {
+                    decryptSubfolders = false;
+                } catch (DialogClosedException e) {
+                    decryptSubfolders = false;
+                }
+                askedUserIfHeWantsSubfolders = true;
+            }
+            if (ressourcelist_files != null) {
+                for (final Object o : ressourcelist_files) {
+                    entries = (LinkedHashMap<String, Object>) o;
+                    String url = (String) entries.get("href");
+                    if (url == null && isSingleFile) {
+                        url = link;
+                    }
+                    final String filename = (String) entries.get("filename");
+                    final long filesize = JavaScriptEngineFactory.toLong(entries.get("bytes"), 0);
+                    if (url == null || url.equals("") || filename == null || filename.equals("")) {
+                        return null;
+                    }
+                    final DownloadLink dl = createSingleDownloadLink(url);
+                    if (filesize > 0) {
+                        dl.setDownloadSize(filesize);
+                    }
+                    dl.setName(filename);
+                    dl.setAvailable(true);
+                    dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subFolder);
+                    decryptedLinks.add(dl);
+                }
+            }
+            if (decryptSubfolders) {
+                final String subFolderBase = subFolder;
+                for (final Object o : ressourcelist_folders) {
+                    entries = (LinkedHashMap<String, Object>) o;
+                    final boolean is_dir = ((Boolean) entries.get("is_dir")).booleanValue();
+                    String url = (String) entries.get("href");
+                    if (!is_dir || url == null || url.equals("")) {
+                        continue;
+                    }
+                    url += "&crawl_subfolders=true";
+                    final String name = (String) entries.get("filename");
+                    if (StringUtils.isNotEmpty(name)) {
+                        subFolder = subFolderBase + "/" + name;
+                    } else {
+                        subFolder = subFolderBase;
+                    }
+                    final DownloadLink subFolderDownloadLink = this.createDownloadlink(url);
+                    decryptedLinks.add(subFolderDownloadLink);
+                }
+            }
+            page++;
+        } while (hasMore);
         return decryptedLinks;
     }
 
