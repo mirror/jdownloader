@@ -70,6 +70,12 @@ public class UploadrarCom extends XFileSharingProBasic {
     }
 
     @Override
+    public boolean preDownloadWaittimeSkippable() {
+        /* 2019-05-09: Special */
+        return true;
+    }
+
+    @Override
     public int getMaxSimultaneousFreeAnonymousDownloads() {
         return -1;
     }
