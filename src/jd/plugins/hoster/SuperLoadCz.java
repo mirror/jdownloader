@@ -199,6 +199,7 @@ public class SuperLoadCz extends antiDDoSForHost {
             postPageSafe(account, mAPI + "/download-url", "url=" + Encoding.urlEncode(link.getDownloadURL()) + (pass != null ? "&password=" + Encoding.urlEncode(pass) : "") + "&token=");
             downloadURL = PluginJSonUtils.getJsonValue(br, "link");
             if (downloadURL == null) {
+                handleAPIAccountErrors(br, account);
                 final String error = PluginJSonUtils.getJsonValue(br, "error");
                 if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -224,9 +225,8 @@ public class SuperLoadCz extends antiDDoSForHost {
                 } else if (StringUtils.equalsIgnoreCase(error, "User deleted")) {
                     synchronized (account) {
                         account.removeProperty("token");
-                        getToken(account);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
                 } else if (StringUtils.containsIgnoreCase(error, "Unable to download the file")) {
                     handleErrorRetries(null, link, "Unable to download file", 10, 10 * 60 * 1000l);
                 } else if (downloadURL == null) {
@@ -269,15 +269,7 @@ public class SuperLoadCz extends antiDDoSForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         prepBrowser(br);
-        // this will force new login.
-        account.setProperty("token", Property.NULL);
-        try {
-            updateCredits(ai, account);
-        } catch (Exception e) {
-            logger.info("Could not updateCredits fetchAccountInfo!");
-            logger.info(e.toString());
-            throw e;
-        }
+        updateCredits(ai, account);
         account.setValid(true);
         account.setConcurrentUsePossible(true);
         account.setMaxSimultanDownloads(5);
@@ -285,11 +277,14 @@ public class SuperLoadCz extends antiDDoSForHost {
         ai.setStatus("Premium Account");
         try {
             // get the supported host list,
-            String hostsSup = br.cloneBrowser().postPage(mAPI + "/get-supported-hosts", "token=" + getToken(account));
-            String[] hosts = new Regex(hostsSup, "\"([^\", ]+\\.[^\", ]+)").getColumn(0);
-            ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
+            final String hostsSup = br.cloneBrowser().postPage(mAPI + "/get-supported-hosts", "token=" + getToken(account));
+            final String[] hosts = new Regex(hostsSup, "\"([^\", ]+\\.[^\", ]+)").getColumn(0);
+            final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
             ai.setMultiHostSupport(this, supportedHosts);
+        } catch (PluginException e) {
+            throw e;
         } catch (Throwable e) {
+            logger.log(e);
             logger.info("Could not fetch ServerList from " + mName + ": " + e.toString());
         }
         return ai;
@@ -313,6 +308,7 @@ public class SuperLoadCz extends antiDDoSForHost {
         try {
             final Browser login = prepBrowser(new Browser());
             login.postPage(mAPI + "/login", "username=" + Encoding.urlEncode(acc.getUser()) + "&password=" + JDHash.getMD5(acc.getPass()));
+            handleAPIAccountErrors(login, acc);
             if (login.getHttpConnection() != null && login.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
@@ -338,6 +334,22 @@ public class SuperLoadCz extends antiDDoSForHost {
         link.getLinkStatus().setStatusText(message);
     }
 
+    private void handleAPIAccountErrors(final Browser br, Account account) throws PluginException {
+        synchronized (account) {
+            try {
+                final String error = PluginJSonUtils.getJsonValue(br, "error");
+                if (StringUtils.equalsIgnoreCase(error, "User deleted")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            } catch (PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.removeProperty("token");
+                }
+                throw e;
+            }
+        }
+    }
+
     private AccountInfo updateCredits(final AccountInfo ai, final Account account) throws PluginException, IOException {
         AccountInfo ac = ai;
         if ((ai == null || ac == null) && account != null) {
@@ -347,6 +359,7 @@ public class SuperLoadCz extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.postPage(mAPI + "/get-status-bar", "token=" + getToken(account));
+        handleAPIAccountErrors(br, account);
         final String credits = PluginJSonUtils.getJsonValue(br, "credits");
         if (!inValidate(credits) && credits.matches("[\\d\\.]+")) {
             // 1000 credits = 1 GB, convert back into 1024 (Bytes)

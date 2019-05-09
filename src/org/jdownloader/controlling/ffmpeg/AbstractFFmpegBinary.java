@@ -391,14 +391,14 @@ public abstract class AbstractFFmpegBinary {
         try {
             final String path = getPath();
             if (StringUtils.isEmpty(path)) {
-                return null;
+                throw new Exception("path is empty!");
             }
             File file = new File(path);
             if (!file.isAbsolute()) {
                 file = Application.getResource(path);
             }
-            if (!file.exists() || file.isDirectory()) {
-                return null;
+            if (!file.isFile()) {
+                throw new Exception("not a file:" + file.getAbsolutePath());
             }
             if (Application.getJavaVersion() >= Application.JAVA16) {
                 if (!file.canExecute()) {

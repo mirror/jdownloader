@@ -21,7 +21,6 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 public class HDSContainer {
-
     public static HDSContainer findBestVideoByResolution(final List<HDSContainer> list) {
         if (list != null) {
             HDSContainer best = null;
@@ -109,12 +108,7 @@ public class HDSContainer {
 
     public void write(DownloadLink destination, final String propertyPrefix) {
         if (destination != null) {
-            final String prefix;
-            if (propertyPrefix != null) {
-                prefix = propertyPrefix + "_";
-            } else {
-                prefix = "";
-            }
+            final String prefix = handlePrefix(propertyPrefix);
             destination.setProperty(prefix + PROPERTY_FRAGMENTURL, getFragmentURL());
             destination.setProperty(prefix + PROPERTY_STREAMID, getStreamId());
             destination.setProperty(prefix + PROPERTY_WIDTH, getWidth());
@@ -129,14 +123,37 @@ public class HDSContainer {
         return read(source, null);
     }
 
+    public static boolean clear(DownloadLink source) {
+        return clear(source, null);
+    }
+
+    public static boolean clear(DownloadLink source, final String propertyPrefix) {
+        if (source != null) {
+            final String prefix = handlePrefix(propertyPrefix);
+            final boolean ret = source.removeProperty(prefix + PROPERTY_FRAGMENTURL);
+            source.removeProperty(prefix + PROPERTY_STREAMID);
+            source.removeProperty(prefix + PROPERTY_BITRATE);
+            source.removeProperty(prefix + PROPERTY_HEIGHT);
+            source.removeProperty(prefix + PROPERTY_WIDTH);
+            source.removeProperty(prefix + PROPERTY_DURATION);
+            source.removeProperty(prefix + PROPERTY_ID);
+            return ret;
+        } else {
+            return false;
+        }
+    }
+
+    private static String handlePrefix(final String propertyPrefix) {
+        if (propertyPrefix != null) {
+            return propertyPrefix + "_";
+        } else {
+            return "";
+        }
+    }
+
     public static HDSContainer read(DownloadLink source, final String propertyPrefix) {
         if (source != null) {
-            final String prefix;
-            if (propertyPrefix != null) {
-                prefix = propertyPrefix + "_";
-            } else {
-                prefix = "";
-            }
+            final String prefix = handlePrefix(propertyPrefix);
             final String fragmentURL = source.getStringProperty(prefix + PROPERTY_FRAGMENTURL, null);
             if (fragmentURL != null) {
                 final HDSContainer ret = new HDSContainer();
@@ -264,5 +281,4 @@ public class HDSContainer {
 
     public HDSContainer() {
     }
-
 }
