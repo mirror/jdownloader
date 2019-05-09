@@ -257,19 +257,15 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             if (alwaysLogin) {
                 final ArrayList<Account> accs = AccountController.getInstance().getValidAccounts(getHost());
                 if (accs != null) {
-                    login(accs.get(0));
-                    loggedIn = true;
+                    loggedIn = login(accs.get(0));
                 }
             }
             /* Log in if required */
             if (loggedIn == false && StringUtils.containsIgnoreCase(parameter, "/ondemand/")) {
                 logger.info("Account required to crawl this link");
                 final ArrayList<Account> accs = AccountController.getInstance().getValidAccounts(getHost());
-                if (accs != null) {
-                    // not optimized
-                    login(accs.get(0));
-                    loggedIn = true;
-                } else {
+                loggedIn = accs != null && login(accs.get(0));
+                if (!loggedIn) {
                     logger.info("Cannot crawl this link without account");
                     return decryptedLinks;
                 }
@@ -641,8 +637,14 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         return ret;
     }
 
-    public void login(Account account) throws PluginException, IOException {
-        VimeoCom.login(br, account);
+    public boolean login(Account account) throws Exception {
+        try {
+            VimeoCom.login(br, account);
+            return true;
+        } catch (PluginException e) {
+            handleAccountException(account, e);
+            return false;
+        }
     }
 
     public static boolean iranWorkaround(final Browser br, final String videoID) throws IOException {

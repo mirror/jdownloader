@@ -15,15 +15,8 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.ByteArrayInputStream;
 import java.util.List;
 import java.util.Map;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -40,10 +33,8 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.jdownloader.downloader.hds.HDSDownloader;
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hds.HDSContainer;
 import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tf1.fr" }, urls = { "https?://(?:www\\.)?(wat\\.tv/video/.*?|tf1\\.fr/.+/videos/[A-Za-z0-9\\-_]+)\\.html" })
 public class Tf1Fr extends PluginForHost {
@@ -67,7 +58,6 @@ public class Tf1Fr extends PluginForHost {
     }
 
     /* 2016-04-22: Changed domain from wat.tv to tf1.fr - everything else mostly stays the same */
-    @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         String filename = null;
@@ -121,8 +111,7 @@ public class Tf1Fr extends PluginForHost {
         String finallink = getFinalLink(video_id);
         if (finallink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (finallink.startsWith("rtmp")) {
+        } else if (finallink.startsWith("rtmp")) {
             /* Old */
             if (System.getProperty("jd.revision.jdownloaderrevision") == null) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "JD2 BETA needed!");
@@ -147,24 +136,30 @@ public class Tf1Fr extends PluginForHost {
         } else if (finallink.contains(".f4m?")) {
             // HDS
             br.getPage(finallink);
-            final DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-            final XPath xPath = XPathFactory.newInstance().newXPath();
-            Document d = parser.parse(new ByteArrayInputStream(br.toString().getBytes("UTF-8")));
-            NodeList mediaUrls = (NodeList) xPath.evaluate("/manifest/media", d, XPathConstants.NODESET);
-            Node media;
-            for (int j = 0; j < mediaUrls.getLength(); j++) {
-                media = mediaUrls.item(j);
-                String temp = getAttByNamedItem(media, "url");
-                if (temp != null) {
-                    // finallink = Request.getLocation(temp, br.getRequest());
-                    finallink = temp;
-                    break;
+            final List<HDSContainer> all = HDSContainer.getHDSQualities(br);
+            if (all == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                final HDSContainer read = HDSContainer.read(downloadLink);
+                final HDSContainer hit;
+                if (read != null) {
+                    hit = HDSContainer.getBestMatchingContainer(all, read);
+                } else {
+                    hit = HDSContainer.findBestVideoByResolution(all);
+                }
+                if (hit == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
+                    hit.write(downloadLink);
+                    final HDSDownloader dl = new HDSDownloader(downloadLink, br, hit.getFragmentURL());
+                    this.dl = dl;
+                    dl.setEstimatedDuration(hit.getDuration());
+                    dl.startDownload();
                 }
             }
-            dl = new HDSDownloader(downloadLink, br, finallink);
-            dl.startDownload();
         } else if (finallink.contains(".m3u8")) {
             // HLS
+            checkFFmpeg(downloadLink, "Download a HLS Stream");
             final String m3u8 = finallink.replaceAll("(&(min|max)_bitrate=\\d+)", "");
             final List<HlsContainer> qualities = HlsContainer.getHlsQualities(br, m3u8);
             final HlsContainer best = HlsContainer.findBestVideoByBandwidth(qualities);
@@ -182,19 +177,6 @@ public class Tf1Fr extends PluginForHost {
         }
     }
 
-    /**
-     * lets try and prevent possible NPE from killing the progress.
-     *
-     * @author raztoki
-     * @param n
-     * @param item
-     * @return
-     */
-    private String getAttByNamedItem(final Node n, final String item) {
-        final String t = n.getAttributes().getNamedItem(item).getTextContent();
-        return (t != null ? t.trim() : null);
-    }
-
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
@@ -207,7 +189,7 @@ public class Tf1Fr extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
         if (link != null) {
-            link.removeProperty(HDSDownloader.RESUME_FRAGMENT);
+            HDSContainer.clear(link);
         }
     }
 
