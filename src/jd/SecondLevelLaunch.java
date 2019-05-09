@@ -364,7 +364,7 @@ public class SecondLevelLaunch {
         }
         LoggerFactory.getDefaultLogger().info("JDownloader2");
         // checkSessionInstallLog();
-        boolean jared = Application.isJared(SecondLevelLaunch.class);
+        final boolean jared = Application.isJared(SecondLevelLaunch.class);
         String revision = JDUtilities.getRevision();
         if (!jared) {
             /* always enable debug and cache refresh in developer version */
@@ -595,13 +595,15 @@ public class SecondLevelLaunch {
             if (e.getMessage() != null && e.getMessage().contains("Can't find dependent libraries")) {
                 // probably the path contains unsupported special chars
                 LoggerFactory.getDefaultLogger().info("The Library Path probably contains special chars: " + Application.getResource("tmp/jna").getAbsolutePath());
-                ExceptionDialog d = new ExceptionDialog(UIOManager.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_COUNTDOWN | UIOManager.BUTTONS_HIDE_OK, _GUI.T.lit_error_occured(), _GUI.T.special_char_lib_loading_problem(Application.getHome(), "Java Native Interface"), e, null, _GUI.T.lit_close()) {
-                    @Override
-                    public ModalityType getModalityType() {
-                        return ModalityType.MODELESS;
-                    }
-                };
-                UIOManager.I().show(ExceptionDialogInterface.class, d);
+                if (!Application.isHeadless()) {
+                    final ExceptionDialog d = new ExceptionDialog(UIOManager.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_COUNTDOWN | UIOManager.BUTTONS_HIDE_OK, _GUI.T.lit_error_occured(), _GUI.T.special_char_lib_loading_problem(Application.getHome(), "Java Native Interface"), e, null, _GUI.T.lit_close()) {
+                        @Override
+                        public ModalityType getModalityType() {
+                            return ModalityType.MODELESS;
+                        }
+                    };
+                    UIOManager.I().show(ExceptionDialogInterface.class, d);
+                }
             }
             LoggerFactory.getDefaultLogger().log(e);
         } catch (final Throwable e1) {
@@ -609,9 +611,9 @@ public class SecondLevelLaunch {
         }
         UJCECheck.check();
         //
-        LogSource edtLogger = LogController.getInstance().getLogger("BlockingEDT");
-        edtLogger.setInstantFlush(true);
         if (!Application.isHeadless() && Application.isJared(SecondLevelLaunch.class)) {
+            final LogSource edtLogger = LogController.getInstance().getLogger("BlockingEDT");
+            edtLogger.setInstantFlush(true);
             new SlowEDTDetector(10000l, edtLogger);
         }
         /* these can be initiated without a gui */
@@ -683,8 +685,11 @@ public class SecondLevelLaunch {
                     }
                 } catch (Throwable e) {
                     LoggerFactory.getDefaultLogger().log(e);
-                    Dialog.getInstance().showExceptionDialog("Exception occured", "An unexpected error occured.\r\nJDownloader will try to fix this. If this happens again, please contact our support.", e);
-                    // org.jdownloader.controlling.JDRestartController.getInstance().restartViaUpdater(false);
+                    if (Application.isHeadless()) {
+                        ConsoleDialog.showExceptionDialog("Exception occured", "An unexpected error occured.\r\nJDownloader will try to fix this. If this happens again, please contact our support.", e);
+                    } else {
+                        Dialog.getInstance().showExceptionDialog("Exception occured", "An unexpected error occured.\r\nJDownloader will try to fix this. If this happens again, please contact our support.", e);
+                    }
                 }
             }
         };
@@ -923,7 +928,6 @@ public class SecondLevelLaunch {
                                 ConsoleDialog.showExceptionDialog("Exception occured", "An unexpected error occured.\r\nJDownloader will try to fix this. If this happens again, please contact our support.", e);
                             } else {
                                 Dialog.getInstance().showExceptionDialog("Exception occured", "An unexpected error occured.\r\nJDownloader will try to fix this. If this happens again, please contact our support.", e);
-                                // org.jdownloader.controlling.JDRestartController.getInstance().restartViaUpdater(false);
                             }
                         } finally {
                             OperatingSystemEventSender.getInstance();
@@ -974,7 +978,6 @@ public class SecondLevelLaunch {
                     } catch (Throwable e) {
                         LoggerFactory.getDefaultLogger().log(e);
                         Dialog.getInstance().showExceptionDialog("Exception occured", "An unexpected error occured.\r\nJDownloader will try to fix this. If this happens again, please contact our support.", e);
-                        // org.jdownloader.controlling.JDRestartController.getInstance().restartViaUpdater(false);
                     }
                     return null;
                 }
