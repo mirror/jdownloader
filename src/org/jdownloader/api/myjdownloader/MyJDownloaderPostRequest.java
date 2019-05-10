@@ -54,16 +54,18 @@ public class MyJDownloaderPostRequest extends PostRequest implements MyJDownload
     public int getApiVersion() {
         if (requestProperties.apiVersion >= 0) {
             return requestProperties.apiVersion;
-        }
-        try {
-            final JSonRequest jsonr = getJsonRequest();
-            if (jsonr != null) {
-                return jsonr.getApiVer();
+        } else {
+            try {
+                final JSonRequest jsonr = getJsonRequest();
+                if (jsonr != null) {
+                    return jsonr.getApiVer();
+                } else {
+                    return -1;
+                }
+            } catch (IOException e) {
+                return -1;
             }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
-        return -1;
     }
 
     @Override
@@ -155,9 +157,7 @@ public class MyJDownloaderPostRequest extends PostRequest implements MyJDownload
                 return jsonRequest;
             }
             try {
-                final byte[] jsonBytes = IO.readStream(-1, getInputStream());
-                final String json = new String(jsonBytes, "UTF-8");
-                jsonRequest = JSonStorage.restoreFromString(json, new TypeRef<JSonRequest>() {
+                jsonRequest = JSonStorage.getMapper().inputStreamToObject(getInputStream(), new TypeRef<JSonRequest>() {
                 });
                 return jsonRequest;
             } catch (IOException e) {
@@ -244,35 +244,41 @@ public class MyJDownloaderPostRequest extends PostRequest implements MyJDownload
     public long getDiffKeepAlive() throws IOException {
         if (requestProperties.diffKeepalive >= 0) {
             return requestProperties.diffKeepalive;
+        } else {
+            final JSonRequest jsonr = getJsonRequest();
+            if (jsonr != null) {
+                return jsonr.getDiffKA();
+            } else {
+                return 0;
+            }
         }
-        final JSonRequest jsonr = getJsonRequest();
-        if (jsonr != null) {
-            return jsonr.getDiffKA();
-        }
-        return 0;
     }
 
     @Override
     public String getDiffID() throws IOException {
         if (requestProperties.diffID != null) {
             return requestProperties.diffID;
+        } else {
+            final JSonRequest jsonr = getJsonRequest();
+            if (jsonr != null) {
+                return jsonr.getDiffID();
+            } else {
+                return null;
+            }
         }
-        final JSonRequest jsonr = getJsonRequest();
-        if (jsonr != null) {
-            return jsonr.getDiffID();
-        }
-        return null;
     }
 
     @Override
     public String getDiffType() throws IOException {
         if (requestProperties.diffType != null) {
             return requestProperties.diffType;
+        } else {
+            final JSonRequest jsonr = getJsonRequest();
+            if (jsonr != null) {
+                return jsonr.getDiffType();
+            } else {
+                return null;
+            }
         }
-        final JSonRequest jsonr = getJsonRequest();
-        if (jsonr != null) {
-            return jsonr.getDiffType();
-        }
-        return null;
     }
 }
