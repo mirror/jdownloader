@@ -8,10 +8,8 @@ import org.appwork.utils.net.httpserver.requests.OptionsRequest;
 import org.jdownloader.api.myjdownloader.MyJDownloaderGetRequest.GetData;
 
 public class MyJDownloaderOptionsRequest extends OptionsRequest implements MyJDownloaderRequestInterface {
-
     public MyJDownloaderOptionsRequest(MyJDownloaderHttpConnection connection) {
         super(connection);
-
     }
 
     private GetData requestProperties = GetData.EMPTY;
@@ -19,9 +17,7 @@ public class MyJDownloaderOptionsRequest extends OptionsRequest implements MyJDo
     @Override
     public void setRequestedURLParameters(final List<KeyValuePair> requestedURLParameters) {
         super.setRequestedURLParameters(requestedURLParameters);
-
         requestProperties = MyJDownloaderGetRequest.parseGetData(requestedURLParameters);
-
     }
 
     public int getApiVersion() {

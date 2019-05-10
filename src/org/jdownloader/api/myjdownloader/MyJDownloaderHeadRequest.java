@@ -8,15 +8,12 @@ import org.appwork.utils.net.httpserver.requests.KeyValuePair;
 import org.jdownloader.api.myjdownloader.MyJDownloaderGetRequest.GetData;
 
 public class MyJDownloaderHeadRequest extends HeadRequest implements MyJDownloaderRequestInterface {
-
     private GetData requestProperties = GetData.EMPTY;
 
     @Override
     public void setRequestedURLParameters(final List<KeyValuePair> requestedURLParameters) {
         super.setRequestedURLParameters(requestedURLParameters);
-
         requestProperties = MyJDownloaderGetRequest.parseGetData(requestedURLParameters);
-
     }
 
     public int getApiVersion() {
@@ -45,7 +42,6 @@ public class MyJDownloaderHeadRequest extends HeadRequest implements MyJDownload
 
     public MyJDownloaderHeadRequest(MyJDownloaderHttpConnection connection) {
         super(connection);
-
     }
 
     public String getRequestConnectToken() {
@@ -66,5 +62,4 @@ public class MyJDownloaderHeadRequest extends HeadRequest implements MyJDownload
     public String getDiffID() {
         return requestProperties.diffID;
     }
-
 }

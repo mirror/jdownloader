@@ -11,7 +11,6 @@ import javax.crypto.spec.SecretKeySpec;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
-import org.appwork.utils.IO;
 import org.appwork.utils.net.Base64InputStream;
 import org.appwork.utils.net.CharSequenceInputStream;
 import org.appwork.utils.net.httpserver.HttpConnection;
@@ -133,9 +132,7 @@ public class MyJDownloaderGetRequest extends GetRequest implements MyJDownloader
                 final Cipher aesCipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
                 aesCipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
                 final String value = requestedURLParameters.get(0).value;
-                final byte[] jsonBytes = IO.readStream(-1, new CipherInputStream(new Base64InputStream(new CharSequenceInputStream(value)), aesCipher));
-                final String json = new String(jsonBytes, "UTF-8");
-                return JSonStorage.restoreFromString(json, new TypeRef<JSonRequest>() {
+                return JSonStorage.getMapper().inputStreamToObject(new CipherInputStream(new Base64InputStream(new CharSequenceInputStream(value, MyJDownloaderHttpConnection.UTF8)), aesCipher), new TypeRef<JSonRequest>() {
                 });
             } catch (Exception e) {
                 throw new IOException(e);
@@ -147,28 +144,33 @@ public class MyJDownloaderGetRequest extends GetRequest implements MyJDownloader
     public int getApiVersion() {
         if (requestProperties.apiVersion >= 0) {
             return requestProperties.apiVersion;
-        }
-        try {
-            final JSonRequest jsonr = getJsonRequest();
-            if (jsonr != null) {
-                return jsonr.getApiVer();
+        } else {
+            try {
+                final JSonRequest jsonr = getJsonRequest();
+                if (jsonr != null) {
+                    return jsonr.getApiVer();
+                } else {
+                    return -1;
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+                return -1;
             }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
-        return -1;
     }
 
     @Override
     public long getRid() throws IOException {
         if (requestProperties.rid >= 0) {
             return requestProperties.rid;
+        } else {
+            final JSonRequest jsonr = getJsonRequest();
+            if (jsonr != null) {
+                return jsonr.getRid();
+            } else {
+                return -1;
+            }
         }
-        final JSonRequest jsonr = getJsonRequest();
-        if (jsonr != null) {
-            return jsonr.getRid();
-        }
-        return -1;
     }
 
     @Override
@@ -185,24 +187,28 @@ public class MyJDownloaderGetRequest extends GetRequest implements MyJDownloader
     public long getDiffKeepAlive() throws IOException {
         if (requestProperties.diffKeepalive >= 0) {
             return requestProperties.diffKeepalive;
+        } else {
+            final JSonRequest jsonr = getJsonRequest();
+            if (jsonr != null) {
+                return jsonr.getDiffKA();
+            } else {
+                return 0;
+            }
         }
-        final JSonRequest jsonr = getJsonRequest();
-        if (jsonr != null) {
-            return jsonr.getDiffKA();
-        }
-        return 0;
     }
 
     @Override
     public String getDiffID() throws IOException {
         if (requestProperties.diffID != null) {
             return requestProperties.diffID;
+        } else {
+            final JSonRequest jsonr = getJsonRequest();
+            if (jsonr != null) {
+                return jsonr.getDiffID();
+            } else {
+                return null;
+            }
         }
-        final JSonRequest jsonr = getJsonRequest();
-        if (jsonr != null) {
-            return jsonr.getDiffID();
-        }
-        return null;
     }
 
     public JSonRequest getJsonRequest() throws IOException {
@@ -213,11 +219,13 @@ public class MyJDownloaderGetRequest extends GetRequest implements MyJDownloader
     public String getDiffType() throws IOException {
         if (requestProperties.diffType != null) {
             return requestProperties.diffType;
+        } else {
+            final JSonRequest jsonr = getJsonRequest();
+            if (jsonr != null) {
+                return jsonr.getDiffType();
+            } else {
+                return null;
+            }
         }
-        final JSonRequest jsonr = getJsonRequest();
-        if (jsonr != null) {
-            return jsonr.getDiffType();
-        }
-        return null;
     }
 }

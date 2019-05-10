@@ -7,6 +7,7 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.net.SocketException;
 import java.nio.channels.ClosedChannelException;
+import java.nio.charset.Charset;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.util.ArrayList;
@@ -61,6 +62,7 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
     private final SocketStreamInterface                                     socketStream;
     private static final HashMap<String, List<MyJDownloaderHttpConnection>> CONNECTIONS    = new HashMap<String, List<MyJDownloaderHttpConnection>>();
     private static final HashMap<String, KeyPair>                           RSAKEYPAIRS    = new HashMap<String, KeyPair>();
+    public final static Charset                                             UTF8           = Charset.forName("UTF-8");
 
     public KeyPair getRSAKeyPair() {
         final String token = getRequestConnectToken();
@@ -248,7 +250,7 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
         if (StringUtils.isEmpty(requestLine)) {
             throw new EmptyRequestException();
         }
-        final RequestLineParser parser = RequestLineParser.parse(requestLine.getBytes("UTF-8"));
+        final RequestLineParser parser = RequestLineParser.parse(requestLine.getBytes(UTF8));
         if (parser == null || parser.getSessionToken() == null) {
             throw new InvalidMyJDownloaderRequest();
         }
