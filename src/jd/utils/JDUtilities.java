@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.utils;
 
 import java.io.File;
@@ -57,18 +56,13 @@ import org.xml.sax.InputSource;
  * @author astaldo/JD-Team
  */
 public class JDUtilities {
-
     /**
      * Die Konfiguration
      */
     private static Configuration     CONFIGURATION = null;
-
     private static DatabaseConnector DB_CONNECT    = null;
-
     private static File              JD_HOME       = null;
-
     private static String            REVISION;
-
     private static long              REVISIONINT   = -1;
     private static Boolean           oldDBExists   = null;
 
@@ -117,29 +111,27 @@ public class JDUtilities {
             return JD_HOME;
         } else {
             // do not use hardcoded classpaths if possible
-            URL ressource = Thread.currentThread().getContextClassLoader().getResource(SecondLevelLaunch.class.getName().replace(".", "/") + ".class");
-
+            final URL ressource = JDUtilities.class.getClassLoader().getResource(SecondLevelLaunch.class.getName().replace(".", "/") + ".class");
             if (ressource != null) {
-                JD_HOME = new File(Application.getRoot(jd.SecondLevelLaunch.class));
+                final File root = new File(Application.getRoot(jd.SecondLevelLaunch.class));
+                if (!root.isDirectory()) {
+                    FileCreationManager.getInstance().mkdir(root);
+                }
+                JD_HOME = root;
+                return JD_HOME;
             } else {
-                throw new NullPointerException("jd/Main.class not found");
+                throw new NullPointerException(SecondLevelLaunch.class.getName() + "not found");
             }
-            if (!JD_HOME.exists()) {
-                FileCreationManager.getInstance().mkdir(JD_HOME);
-            }
-            return JD_HOME;
         }
     }
 
     public static String getJDTitle(int waitingupdates) {
         final StringBuilder ret = new StringBuilder("JDownloader");
-
         if (waitingupdates > 0) {
             ret.append(new char[] { ' ', '(' });
             ret.append(_JDT.T.gui_mainframe_title_updatemessage2(waitingupdates));
             ret.append(')');
         }
-
         return ret.toString();
     }
 
@@ -157,7 +149,6 @@ public class JDUtilities {
                 return l.getPrototype(PluginClassLoader.getThreadPluginClassLoaderChild());
             } catch (UpdateRequiredClassNotFoundException e) {
                 LogController.CL().log(e);
-
             }
         }
         return null;
@@ -227,7 +218,6 @@ public class JDUtilities {
             return Application.getTempResource(resource.substring(4));
         }
         return Application.getResource(resource);
-
     }
 
     public static File getResourceFile(final String resource, final boolean mkdirs) {
@@ -295,12 +285,9 @@ public class JDUtilities {
             // Create a builder factory
             final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             factory.setValidating(validating);
-
             final InputSource inSource = new InputSource(new StringReader(xmlString));
-
             // Create the builder and parse the file
             final Document doc = factory.newDocumentBuilder().parse(inSource);
-
             return doc;
         } catch (Exception e) {
             LogController.CL().severe(xmlString);
@@ -313,13 +300,10 @@ public class JDUtilities {
         try {
             final Transformer transformer = TransformerFactory.newInstance().newTransformer();
             transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-
             // initialize StreamResult with File object to save to file
             final StreamResult result = new StreamResult(new StringWriter());
             final DOMSource source = new DOMSource(doc);
-
             transformer.transform(source, result);
-
             return result.getWriter().toString();
         } catch (Throwable e) {
             LogController.CL().log(e);
@@ -341,5 +325,4 @@ public class JDUtilities {
         }
         return att.getNamedItem(key).getNodeValue();
     }
-
 }
