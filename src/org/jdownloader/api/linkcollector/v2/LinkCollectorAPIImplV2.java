@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.CharBuffer;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -654,7 +656,8 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
         if (base64Index == -1 || base64Index + 8 >= dataURL.length()) {
             throw new IOException("Invalid DataURL: " + dataURL);
         }
-        return new Base64InputStream(new CharSequenceInputStream(dataURL, base64Index + 8));
+        final CharBuffer cb = CharBuffer.wrap(dataURL, base64Index + 8, dataURL.length());
+        return new Base64InputStream(new CharSequenceInputStream(cb, Charset.forName("UTF-8")));
     }
 
     @Override
