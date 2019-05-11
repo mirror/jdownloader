@@ -20,6 +20,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -27,16 +28,32 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-//When adding new domains here also add them to the hosterplugin (TurboBitNet)
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class TurboBitNetFolder extends PluginForDecrypt {
     @Override
     public String[] siteSupportedNames() {
-        return jd.plugins.hoster.TurboBitNet.domains;
+        return getAllSupportedNames();
+    }
+
+    public static String[] getAllSupportedNames() {
+        /* Different Hostplugins which all extend one class - this crawler can handle all of their folder-links */
+        final String[] supportedNamesTurbobit = jd.plugins.hoster.TurboBitNet.domains;
+        final String[] supportedNamesHitfile = jd.plugins.hoster.HitFileNet.domains;
+        final String[] supportedNamesWayupload = jd.plugins.hoster.WayuploadCom.domains;
+        final String[][] supportedNamesArrays = { jd.plugins.hoster.TurboBitNet.domains, jd.plugins.hoster.HitFileNet.domains, jd.plugins.hoster.WayuploadCom.domains };
+        final String[] supportedNamesAll = new String[supportedNamesTurbobit.length + supportedNamesHitfile.length + supportedNamesWayupload.length];
+        int position = 0;
+        for (final String[] supportedNamesOfOneHost : supportedNamesArrays) {
+            for (final String supportedName : supportedNamesOfOneHost) {
+                supportedNamesAll[position] = supportedName;
+                position++;
+            }
+        }
+        return supportedNamesAll;
     }
 
     public static String[] getAnnotationNames() {
-        return new String[] { "turbobit.net" };
+        return new String[] { jd.plugins.hoster.TurboBitNet.domains[0] };
     }
 
     /**
@@ -51,7 +68,7 @@ public class TurboBitNetFolder extends PluginForDecrypt {
 
     private static String getHostsPattern() {
         final StringBuilder pattern = new StringBuilder();
-        for (final String name : jd.plugins.hoster.TurboBitNet.domains) {
+        for (final String name : getAllSupportedNames()) {
             pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
         }
         final String hosts = "https?://(?:www\\.)?" + "(?:" + pattern.toString() + ")";
@@ -64,6 +81,7 @@ public class TurboBitNetFolder extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.setAllowedResponseCodes(new int[] { 400 });
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         String id = new Regex(parameter, "download/folder/(\\d+)").getMatch(0);
@@ -73,9 +91,10 @@ public class TurboBitNetFolder extends PluginForDecrypt {
         }
         // rows = 100 000 makes sure that we only get one page with all links
         // br.getPage("http://turbobit.net/downloadfolder/gridFile?id_folder=" + id + "&_search=false&nd=&rows=100000&page=1");
-        br.getPage("http://turbobit.net/downloadfolder/gridFile?rootId=" + id + "?currentId=" + id + "&_search=false&nd=&rows=100000&page=1&sidx=file_type&sord=asc");
-        if (br.containsHTML("\"records\":0,\"total\":0,\"")) {
-            logger.info("Link offline: " + parameter);
+        final String host = Browser.getHost(parameter);
+        br.getPage(String.format("http://%s/downloadfolder/gridFile?rootId=%s?currentId=%s&_search=false&nd=&rows=100000&page=1&sidx=file_type&sord=asc", host, id, id));
+        if (br.containsHTML("\"records\":0,\"total\":0,\"") || br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         final String[] ids = br.getRegex("\\{\"id\":\"([a-z0-9]+)\"").getColumn(0);
@@ -84,8 +103,9 @@ public class TurboBitNetFolder extends PluginForDecrypt {
             return null;
         }
         for (String singleID : ids) {
+            /* Do not add the same folder again. */
             if (!singleID.equals(id)) {
-                decryptedLinks.add(createDownloadlink("http://turbobit.net/" + singleID + ".html"));
+                decryptedLinks.add(createDownloadlink(String.format("https://%s/%s.html", host, singleID)));
             }
         }
         return decryptedLinks;
