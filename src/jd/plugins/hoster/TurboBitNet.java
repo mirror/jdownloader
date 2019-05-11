@@ -39,6 +39,12 @@ public class TurboBitNet extends TurbobitCore {
         return new String[] { domains[0] };
     }
 
+    @Override
+    public int minimum_pre_download_waittime_seconds() {
+        /* 2019-05-11 */
+        return 60;
+    }
+
     /**
      * returns the annotation pattern array
      *

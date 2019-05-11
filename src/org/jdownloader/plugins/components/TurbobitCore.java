@@ -11,6 +11,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -40,7 +41,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
-import jd.plugins.hoster.HitFileNet;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 
@@ -76,16 +76,21 @@ public class TurbobitCore extends PluginForHost {
         if (uid == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        // We don't rename match format because these are generated links. Leave as is!
+        /* Not all added URLs have to be corrected! */
         if (!link.getDownloadURL().matches(premRedirectLinks)) {
-            link.setUrlDownload(protocol + this.getHost() + "/" + uid + ".html");
-            // we wont use linkid for match format either.
-            final String linkID = getHost() + "://" + uid;
-            link.setLinkID(linkID);
+            String newDownloadURL = protocol + this.getHost() + "/" + uid;
+            if (downloadurls_need_html_ending()) {
+                newDownloadURL += ".html";
+            }
+            link.setUrlDownload(newDownloadURL);
+            link.setLinkID(uid);
         }
     }
 
-    /** 01.12.14: turbobit.net & hitfile.net Linkchecker is broken - will hopefully be back soon! */
+    /**
+     * 2019-05-11: There is also an API-version of this but it seems like it only returns online/offline - no filename/filesize:
+     * https://hitfile.net/linkchecker/api
+     */
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
         if (urls == null || urls.length == 0) {
@@ -114,7 +119,7 @@ public class TurbobitCore extends PluginForHost {
                 sb.append("links_to_check=");
                 for (final DownloadLink dl : links) {
                     correctDownloadLink(dl);
-                    sb.append(Encoding.urlEncode(getMainpage() + getFUID(dl) + ".html"));
+                    sb.append(Encoding.urlEncode(dl.getDownloadURL()));
                     sb.append("%0A");
                 }
                 // remove last
@@ -190,17 +195,18 @@ public class TurbobitCore extends PluginForHost {
         br.setFollowRedirects(true);
         prepBrowserWebsite(br, userAgent.get());
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(<div class=\"code-404\">404</div>|Файл не найден\\. Возможно он был удален\\.<br|File( was)? not found\\.|It could possibly be deleted\\.)")) {
+        if (isFileOfflineWebsite(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filenameSize = "<title>\\s*(?:Download\\s+file|Datei\\s+downloaden)\\s*(.*?)\\s*\\(([\\d\\.,]+\\s*[BMGTP]{1,2})\\)\\s*\\|\\s*TurboBit\\.net";
+        final String filenameSize = "<title>\\s*(?:Download\\s+file|Datei\\s+downloaden)\\s*(.*?)\\s*\\(([\\d\\.,]+\\s*[BMGTP]{1,2})\\)\\s*\\|\\s*(?:TurboBit|Hitfile)\\.net";
         String filename = br.getRegex(filenameSize).getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<span class=(\"|')file\\-title\\1[^>]*>(.*?)</span>").getMatch(1);
         }
         String fileSize = br.getRegex(filenameSize).getMatch(1);
         if (fileSize == null) {
-            fileSize = br.getRegex("class=\"file-size\">([^<>\"]*?)<").getMatch(0);
+            /* E.g. for hitfile.net, filesize is in brakets '(")(")' */
+            fileSize = br.getRegex("class=\"file-size\">(?:\\()?([^<>\"]*?)(?:\\))?<").getMatch(0);
         }
         if (filename != null) {
             link.setName(filename);
@@ -208,12 +214,11 @@ public class TurbobitCore extends PluginForHost {
         if (fileSize != null) {
             link.setDownloadSize(SizeFormatter.getSize(fileSize.trim().replace(",", ".").replace(" ", "")));
         }
-        /** TODO: 2019-05-09: Check if this case still exists and also handle it in download handling! */
-        // if (br.containsHTML("Our service is currently unavailable in your country.")) {
-        // downloadLink.getLinkStatus().setStatusText("Our service is currently unavailable in your country.");
-        // return AvailableStatus.UNCHECKABLE;
-        // }
         return AvailableStatus.TRUE;
+    }
+
+    public static boolean isFileOfflineWebsite(final Browser br) {
+        return br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(<div class=\"code-404\">404</div>|Файл не найден\\. Возможно он был удален\\.<br|File( was)? not found\\.|It could possibly be deleted\\.)");
     }
 
     /** 2019-05-09: Seems like API can only be used to check self uploaded content - it is useless for us! */
@@ -324,6 +329,21 @@ public class TurbobitCore extends PluginForHost {
         return true;
     }
 
+    /** E.g. '.html' needed at the end of downloadurls: turbobit.net - e.g. NOT needed: hitfile.net */
+    public boolean downloadurls_need_html_ending() {
+        return true;
+    }
+
+    /** If no waittime is found or it is less than this, a fallback waittime will get used. */
+    public int minimum_pre_download_waittime_seconds() {
+        return 60;
+    }
+
+    /** Waittime which is used if no waittime was found or the found waittime is less than minimum_pre_download_waittime_seconds */
+    protected int get_fallback_waittime() {
+        return 600;
+    }
+
     private String id = null;
 
     @SuppressWarnings("deprecation")
@@ -346,7 +366,7 @@ public class TurbobitCore extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(dllink);
         simulateBrowser();
-        if (br.containsHTML("'File not found\\. Probably it was deleted") || br.containsHTML(HitFileNet.HTML_FILE_OFFLINE)) {
+        if (isFileOfflineWebsite(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String fileSize = br.getRegex("class=\"file-size\">([^<>\"]*?)</span>").getMatch(0);
@@ -361,14 +381,19 @@ public class TurbobitCore extends PluginForHost {
             link.setDownloadSize(SizeFormatter.getSize(fileSize.trim().replace(",", ".").replace(" ", "")));
         }
         id = getFUID(link);
+        /** 2019-05-11: Not required for e.g. hitfile.net but it does not destroy anything either so let's set it anyways. */
         br.setCookie(br.getHost(), "turbobit1", getCurrentTimeCookie(br));
         br.getPage("/download/free/" + id);
         simulateBrowser();
-        if (br.containsHTML(HitFileNet.HTML_FILE_OFFLINE)) {
+        if (isFileOfflineWebsite(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("<div class=\"free-limit-note\">\\s*Limit reached for free download of this file\\.")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
+        partTwo(link);
+    }
+
+    private final void partTwo(final DownloadLink downloadLink) throws Exception {
         Form captchaform = null;
         final Form[] allForms = br.getForms();
         if (allForms != null && allForms.length != 0) {
@@ -379,12 +404,14 @@ public class TurbobitCore extends PluginForHost {
                 }
             }
         }
-        partTwo(link, captchaform);
-    }
-
-    private final void partTwo(final DownloadLink downloadLink, final Form captchaform) throws Exception {
         String downloadUrl = null, waittime = null;
         if (captchaform == null) {
+            handleGeneralErrors();
+            if (!br.getURL().contains("/download/free/")) {
+                /* 2019-04-24: This should not happen anymore but still we should retry if it happens. */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Captcha form fail", 1 * 60 * 1000l);
+            }
+            /* Don't give up yet - check for waittime! */
             if (br.containsHTML(tb(0))) {
                 waittime = br.getRegex(tb(1)).getMatch(0);
                 final int wait = waittime != null ? Integer.parseInt(waittime) : -1;
@@ -399,19 +426,21 @@ public class TurbobitCore extends PluginForHost {
             if (waittime != null) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 1001l);
             }
-        }
-        if (captchaform == null) {
-            if (br.containsHTML("Our service is currently unavailable in your country\\.")) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Website currently unavailable in your country.");
-            } else if (!br.getURL().contains("/download/free/")) {
-                /* 2019-04-24: This should not happen anymore but still we should retry if it happens. */
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Captcha form fail", 1 * 60 * 1000l);
-            }
+            /* Give up */
             logger.warning("captchaform equals null!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        /* Fix Form */
         if (StringUtils.equalsIgnoreCase(captchaform.getAction(), "#")) {
             captchaform.setAction(br.getURL());
+        }
+        if (!captchaform.hasInputFieldByName("captcha_type") && captchaform.containsHTML("recaptcha2")) {
+            /* E.g. hitfile.net */
+            captchaform.put("captcha_type", "recaptcha2");
+        }
+        if (!captchaform.hasInputFieldByName("captcha_subtype") && captchaform.containsHTML("captcha_subtype")) {
+            /* E.g. hitfile.net */
+            captchaform.put("captcha_subtype", "");
         }
         if (br.containsHTML("class=\"g-recaptcha\"")) {
             /* ReCaptchaV2 */
@@ -443,7 +472,7 @@ public class TurbobitCore extends PluginForHost {
             }
         }
         boolean waited = false;
-        int tt = getPreDownloadWaittime(br, 220);
+        int tt = getPreDownloadWaittime(br);
         if (ttt != null) {
             tt = Integer.parseInt(ttt);
             tt = tt < realWait ? tt : realWait;
@@ -475,6 +504,7 @@ public class TurbobitCore extends PluginForHost {
         if (downloadUrl == null) {
             handleDownloadRedirectErrors(br2);
         }
+        /** 2019-05-11: Not required for e.g. hitfile.net but it does not destroy anything either so let's set it anyways. */
         br.setCookie(br.getHost(), "turbobit2", getCurrentTimeCookie(br2));
         br.setFollowRedirects(false);
         // Future redirects at this point! We want to catch them and not process in order to get the MD5sum! example url structure
@@ -490,15 +520,18 @@ public class TurbobitCore extends PluginForHost {
         dl.startDownload();
     }
 
-    public static int getPreDownloadWaittime(final Browser br, final int wait_fallback) {
-        int wait = wait_fallback;
+    public int getPreDownloadWaittime(final Browser br) {
+        int wait = 0;
         /* This is NOT a corrent implementation - they use js for the waittime but usually this will do just fine! */
         final String wait_str = br.getRegex("minLimit\\s*?:\\s*?(\\d+)").getMatch(0);
-        if (wait_str != null) {
+        if (wait_str == null) {
+            wait = get_fallback_waittime();
+        } else {
             wait = Integer.parseInt(wait_str);
-            if (wait > 800 || wait < 60) {
+            /* Check for too short/too long waittime. */
+            if (wait > 800 || wait < minimum_pre_download_waittime_seconds()) {
                 /* We do not want to wait too long! */
-                wait = wait_fallback;
+                wait = get_fallback_waittime();
             }
         }
         return wait;
@@ -537,11 +570,11 @@ public class TurbobitCore extends PluginForHost {
      */
     @SuppressWarnings("deprecation")
     private String getFUID(DownloadLink downloadLink) throws PluginException {
-        // standard links turbobit.net/uid.html && turbobit.net/uid/filename.html
-        String fuid = new Regex(downloadLink.getDownloadURL(), "https?://[^/]+/([a-zA-F0-9]+)(/[^/]+)?\\.html").getMatch(0);
+        /* standard links turbobit.net/uid.html && turbobit.net/uid/filename.html */
+        String fuid = new Regex(downloadLink.getDownloadURL(), "https?://[^/]+/([A-Za-z0-9]+)(?:/[^/]+)?(?:\\.html)?$").getMatch(0);
         if (fuid == null) {
             // download/free/
-            fuid = new Regex(downloadLink.getDownloadURL(), "download/free/([a-zA-F0-9]+)").getMatch(0);
+            fuid = new Regex(downloadLink.getDownloadURL(), "download/free/([A-Za-z0-9]+)").getMatch(0);
             if (fuid == null) {
                 // support for public premium links
                 fuid = new Regex(downloadLink.getDownloadURL(), "download/redirect/[A-Za-z0-9]+/([a-zA-F0-9]+)").getMatch(0);
@@ -579,9 +612,7 @@ public class TurbobitCore extends PluginForHost {
                     logger.info("No traffic available");
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 }
-                if (br.containsHTML("Our service is currently unavailable in your country\\.")) {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Turbobit.net is currently unavailable in your country.");
-                }
+                this.handleGeneralErrors();
                 logger.warning("dllink equals null, plugin seems to be broken!");
                 if (br.getCookie("http://turbobit.net", "user_isloggedin") == null || "deleted".equalsIgnoreCase(br.getCookie("http://turbobit.net", "user_isloggedin"))) {
                     synchronized (LOCK) {
@@ -616,11 +647,21 @@ public class TurbobitCore extends PluginForHost {
                     }
                 }
             }
-            final String md5sum = new Regex(dllink, "md5=([a-f0-9]{32})").getMatch(0);
-            if (md5sum != null) {
-                link.setMD5Hash(md5sum);
-            }
             dl.startDownload();
+        }
+    }
+
+    /**
+     * 2019-05-11: Their final-downloadlinks usually contain the md5 checksum of the file and this is the only place we can get it from.
+     * This function tries to find this md5 value and sets it if possible.
+     */
+    protected boolean getAndSetMd5Hash(final DownloadLink link, final String dllink) {
+        final String md5sum = new Regex(dllink, "md5=([a-f0-9]{32})").getMatch(0);
+        if (md5sum != null) {
+            link.setMD5Hash(md5sum);
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -631,11 +672,13 @@ public class TurbobitCore extends PluginForHost {
         GUEST_PREMIUMLINK;
     }
 
-    /**
-     * TODO: Check if these limits are the same for all turbobit services - if not, change code so that each service can have its' own
-     * limits
-     */
-    private boolean initDownload(final DownloadType downloadType, final DownloadLink downloadLink, final String directlink, final boolean isLast) throws Exception {
+    /** 2019-05-11: Limits seem to be the same for all of their services. */
+    private boolean initDownload(final DownloadType downloadType, final DownloadLink link, final String directlink, final boolean isLast) throws Exception {
+        if (directlink == null) {
+            logger.warning("dllink is null");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        getAndSetMd5Hash(link, directlink);
         boolean result = false;
         try {
             switch (downloadType) {
@@ -684,7 +727,7 @@ public class TurbobitCore extends PluginForHost {
                 } catch (IOException e) {
                     logger.log(e);
                 }
-                handleGeneralServerErrors();
+                handleGeneralErrors();
                 if (isLast) {
                     // existing error handling is broken! there is no more mirrors!
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -724,11 +767,7 @@ public class TurbobitCore extends PluginForHost {
         br.getPage(dllink);
         if (br.getRedirectLocation() != null) {
             dllink = br.getRedirectLocation();
-            // we expect md5 redirect here...
-            final String md5sum = new Regex(dllink, "md5=([a-f0-9]{32})").getMatch(0);
-            if (md5sum != null) {
-                link.setMD5Hash(md5sum);
-            } else {
+            if (!getAndSetMd5Hash(link, dllink)) {
                 // errors can happen here
                 if (StringUtils.endsWithCaseInsensitive(dllink, "://turbobit.net/")) {
                     // expired/invalid?
@@ -749,7 +788,7 @@ public class TurbobitCore extends PluginForHost {
         dl.startDownload();
     }
 
-    private void handleGeneralServerErrors() throws PluginException {
+    private void handleGeneralErrors() throws PluginException {
         if (br.containsHTML("Try to download it once again after")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Try again later'", 20 * 60 * 1000l);
         }
@@ -805,7 +844,6 @@ public class TurbobitCore extends PluginForHost {
         return prepBr;
     }
 
-    /* TODO: Make an unique login function which works for turbobit.net AND hitfile.net (same system) */
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
@@ -828,6 +866,9 @@ public class TurbobitCore extends PluginForHost {
                         return;
                     }
                     logger.info("cookie login failed: Full login is required");
+                    if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                        logger.warning("Cookie login failed MAKE SURE THAT YOU RE-USED THE SAME USER-AGENT AS USED FOR THE FIRST LOGIN ELSE COOKIE LOGIN WILL NOT WORK!!!");
+                    }
                 }
                 // * lets set a new User-Ggent */
                 prepBrowserWebsite(br, null);
