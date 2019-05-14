@@ -26,8 +26,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision $", interfaceVersion = 2, names = {}, urls = {})
-public class AnonFilesCom extends UnknownHostingScriptCore {
-    public AnonFilesCom(PluginWrapper wrapper) {
+public class AnonFileCom extends UnknownHostingScriptCore {
+    public AnonFileCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
     }
@@ -36,10 +36,10 @@ public class AnonFilesCom extends UnknownHostingScriptCore {
      * mods: See overridden functions<br />
      * limit-info:<br />
      * captchatype-info: null<br />
-     * other: 2019-05-15: NOT RELATED TO anonfile.com!!!<br />
+     * other: 2019-05-15: NOT RELATED TO anonfiles.com!!!<br />
      */
     /* 1st domain = current domain! */
-    public static String[] domains = new String[] { "anonfiles.com" };
+    public static String[] domains = new String[] { "anonfile.com" };
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
