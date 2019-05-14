@@ -41,7 +41,7 @@ public class HotlinkCc extends XFileSharingProBasic {
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
      * limit-info:<br />
-     * captchatype-info: 2019-02-11: null<br />
+     * captchatype-info: 2019-05-11: null<br />
      * other: 2019-05-09: Login via username&pw not possible anymore, only via EMAIL&PASSWORD! <br />
      */
     private static String[] domains = new String[] { "hotlink.cc" };
@@ -137,8 +137,16 @@ public class HotlinkCc extends XFileSharingProBasic {
     }
 
     @Override
+    public void doFree(DownloadLink link, Account account) throws Exception, PluginException {
+        if (checkShowFreeDialog(getHost())) {
+            showFreeDialog(getHost());
+        }
+        super.doFree(link, account);
+    }
+
+    @Override
     public boolean supports_https() {
-        return true;
+        return super.supports_https();
     }
 
     @Override
@@ -167,47 +175,28 @@ public class HotlinkCc extends XFileSharingProBasic {
     }
 
     @Override
-    public void doFree(DownloadLink link, Account account) throws Exception, PluginException {
-        if (checkShowFreeDialog(getHost())) {
-            showFreeDialog(getHost());
-        }
-        super.doFree(link, account);
-    }
-
-    @Override
     public boolean isImagehoster() {
         return super.isImagehoster();
     }
 
     @Override
     public boolean supports_availablecheck_alt() {
-        return true;
+        return super.supports_availablecheck_alt();
     }
 
     @Override
     public boolean supports_availablecheck_filesize_alt_fast() {
-        return true;
+        return super.supports_availablecheck_filesize_alt_fast();
     }
 
     @Override
     public boolean supports_availablecheck_filename_abuse() {
-        return true;
+        return super.supports_availablecheck_filename_abuse();
     }
 
     @Override
     public boolean supports_availablecheck_filesize_html() {
-        return true;
-    }
-
-    @Override
-    public boolean isOffline(final DownloadLink link) {
-        final String fuid = super.getFUIDFromURL(link);
-        boolean isOffline = super.isOffline(this.br, link);
-        if (!br.getURL().contains(fuid) || (br.getRedirectLocation() != null && !br.getRedirectLocation().contains(fuid))) {
-            /* 2018-11-15: Special - redirect to: https://takefile.link/upgrade */
-            isOffline = true;
-        }
-        return isOffline;
+        return super.supports_availablecheck_filesize_html();
     }
 
     @Override
@@ -235,7 +224,7 @@ public class HotlinkCc extends XFileSharingProBasic {
     public static String[] getAnnotationUrls() {
         // construct pattern
         final String host = getHostsPattern();
-        return new String[] { host + "/(?:embed\\-)?[a-z0-9]{12}" };
+        return new String[] { host + "/(?:embed\\-)?[a-z0-9]{12}(?:/[^/]+\\.html)?" };
     }
 
     /** returns 'https?://(?:www\\.)?(?:domain1|domain2)' */

@@ -17,15 +17,15 @@ package jd.plugins.hoster;
 
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class The7skyInfo extends XFileSharingProBasic {
@@ -96,69 +96,57 @@ public class The7skyInfo extends XFileSharingProBasic {
 
     @Override
     public boolean supports_https() {
-        return false;
+        return super.supports_https();
     }
 
     @Override
     public boolean isAudiohoster() {
-        return false;
+        return super.isAudiohoster();
     }
 
     @Override
     public boolean isVideohoster() {
-        return false;
+        return super.isVideohoster();
     }
 
     @Override
     public boolean isVideohoster_2() {
-        return false;
+        return super.isVideohoster_2();
     }
 
     @Override
     public boolean isVideohoster_enforce_video_filename() {
-        return false;
+        return super.isVideohoster_enforce_video_filename();
     }
 
     @Override
     public boolean supports_precise_expire_date() {
-        // remove after next full core update, pattern changes pending in XFileSharingPro
-        return false;
+        return super.supports_precise_expire_date();
     }
 
     @Override
     public boolean isImagehoster() {
-        return false;
+        return super.isImagehoster();
     }
 
     @Override
     public boolean supports_availablecheck_alt() {
-        return true;
+        return super.supports_availablecheck_alt();
     }
 
     @Override
     public boolean supports_availablecheck_filesize_alt_fast() {
-        return true;
+        return super.supports_availablecheck_filesize_alt_fast();
     }
 
     @Override
     public boolean supports_availablecheck_filename_abuse() {
-        return true;
+        return super.supports_availablecheck_filename_abuse();
     }
 
     @Override
     public boolean supports_availablecheck_filesize_html() {
-        return true;
-    }
-
-    @Override
-    public boolean isOffline(final DownloadLink link) {
-        final String fuid = super.getFUIDFromURL(link);
-        boolean isOffline = super.isOffline(this.br, link);
-        if (!br.getURL().contains(fuid) || (br.getRedirectLocation() != null && !br.getRedirectLocation().contains(fuid))) {
-            /* 2018-11-15: Special - redirect to: https://takefile.link/upgrade */
-            isOffline = true;
-        }
-        return isOffline;
+        return super.supports_availablecheck_filesize_html();
     }
 
     @Override
@@ -186,7 +174,7 @@ public class The7skyInfo extends XFileSharingProBasic {
     public static String[] getAnnotationUrls() {
         // construct pattern
         final String host = getHostsPattern();
-        return new String[] { host + "/(?:embed\\-)?[a-z0-9]{12}" };
+        return new String[] { host + "/(?:embed\\-)?[a-z0-9]{12}(?:/[^/]+\\.html)?" };
     }
 
     /** returns 'https?://(?:www\\.)?(?:domain1|domain2)' */
