@@ -63,7 +63,6 @@ public class UnknownPornScript4 extends PluginForHost {
         dllink = null;
         rtmpurl = null;
         final String host = downloadLink.getHost();
-        final Browser br2 = new Browser();
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -87,41 +86,45 @@ public class UnknownPornScript4 extends PluginForHost {
         }
         filename = Encoding.htmlDecode(filename).trim();
         filename = encodeUnicode(filename);
-        String flashvars = this.br.getRegex("\"flashvars\",\"([^<>\"]*?)\"").getMatch(0);
+        String flashvars = this.br.getRegex("\"flashvars\"\\s*,\\s*\"([^<>\"]*?)\"").getMatch(0);
         if (flashvars == null) {
             /* E.g. homemoviestube.com */
-            flashvars = this.br.getRegex("flashvars=\"([^<>\"]+)").getMatch(0);
+            flashvars = this.br.getRegex("flashvars\\s*=\\s*\"([^<>\"]+)").getMatch(0);
         }
         if (flashvars != null) {
             dllink = new Regex(flashvars, "(https?://(?:www\\.)?[^/]+/playerConfig\\.php[^<>\"/\\&]+)").getMatch(0);
             if (dllink != null) {
                 dllink = Encoding.htmlDecode(dllink);
-                br2.getPage(dllink);
-                dllink = br2.getRegex("flvMask:(.*?)(%7C|;)").getMatch(0);
-                rtmpurl = br2.getRegex("conn:(rtmp://[^<>\"]*?);").getMatch(0);
+                final Browser brc = new Browser();
+                brc.getPage(dllink);
+                dllink = brc.getRegex("flvMask:(.*?)(%7C|;)").getMatch(0);
+                dllink = Encoding.htmlDecode(dllink);
+                rtmpurl = brc.getRegex("conn:(rtmp://[^<>\"]*?);").getMatch(0);
                 if (dllink == null && rtmpurl == null) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             }
         }
         if (dllink == null) {
-            dllink = br.getRegex("<source src=\"([^<>\"]*?)\"").getMatch(0);
+            final String src = br.getRegex("<source src=\"([^<>\"]*?)\"").getMatch(0);
+            if (src != null) {
+                dllink = br.getURL(src).toString();
+            }
         }
         String ext = default_Extension;
         if (dllink != null && dllink.startsWith("http")) {
-            dllink = Encoding.htmlDecode(dllink);
             filename = filename.trim();
             ext = getFileNameExtensionFromString(dllink, default_Extension);
             /* Set final filename! */
             downloadLink.setFinalFileName(filename + ext);
             URLConnectionAdapter con = null;
-            br2.setFollowRedirects(true);
+            final Browser brc = new Browser();
+            brc.setFollowRedirects(true);
             try {
-                con = br2.openGetConnection(dllink);
-                if (!con.getContentType().contains("html")) {
+                con = brc.openHeadConnection(dllink);
+                if (con.isOK() && !con.getContentType().contains("html")) {
                     downloadLink.setDownloadSize(con.getLongContentLength());
                 } else {
-                    br2.followConnection();
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             } finally {
