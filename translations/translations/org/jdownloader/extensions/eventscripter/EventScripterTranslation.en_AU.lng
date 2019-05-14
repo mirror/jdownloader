@@ -12,7 +12,7 @@ ON_NEW_CRAWLER_JOB=New Crawler Job
 ON_NEW_FILE=A new file has been created
 ON_OUTGOING_REMOTE_API_EVENT=Remote API Event fired
 ON_PACKAGE_FINISHED=Package finished
-ON_PACKAGIZER=Packagiser Hook
+ON_PACKAGIZER=Packagizer Hook
 allow=allow
 btnExampleScripts=Example Scripts
 classes=/* ===== Classes ===== */
