@@ -26,13 +26,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 
-import org.appwork.txtresource.TranslationFactory;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.UniqueAlltimeID;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -44,6 +37,13 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.txtresource.TranslationFactory;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.UniqueAlltimeID;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "arte.tv", "concert.arte.tv", "creative.arte.tv", "future.arte.tv", "cinema.arte.tv", "theoperaplatform.eu", "info.arte.tv" }, urls = { "https?://(?:www\\.)?arte\\.tv/.+", "https?://concert\\.arte\\.tv/.+", "https?://creative\\.arte\\.tv/(?:de|fr)/(?!scald_dmcloud_json).+", "https?://future\\.arte\\.tv/.+", "https?://cinema\\.arte\\.tv/.+", "https?://(?:www\\.)?theoperaplatform\\.eu/.+", "https?://info\\.arte\\.tv/.+" })
 public class ArteMediathekDecrypter extends PluginForDecrypt {
@@ -333,7 +333,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 final Collection<Object> vsr_quals = ((LinkedHashMap<String, Object>) vsro).values();
                 /* One packagename for every language */
                 final FilePackage fp = FilePackage.getInstance();
-                fp.setName(title);
+                fp.setName(date_formatted + "_arte_" + title);
                 for (final Object o : vsr_quals) {
                     foundFormatsNum++;
                     final LinkedHashMap<String, Object> qualitymap = (LinkedHashMap<String, Object>) o;
@@ -506,7 +506,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 link.setFinalFileName(title + ".jpg");
                 decryptedLinks.add(link);
             }
-            if (decryptedLinks.size() > 1) {
+            if (decryptedLinks.size() > 0) {
                 final FilePackage fp = FilePackage.getInstance();
                 fp.setName(date_formatted + "_arte_" + title);
                 fp.addLinks(decryptedLinks);
