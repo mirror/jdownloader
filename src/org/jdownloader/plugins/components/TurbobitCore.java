@@ -11,13 +11,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -29,7 +22,6 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
-import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -42,6 +34,13 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class TurbobitCore extends antiDDoSForHost {
@@ -57,7 +56,6 @@ public class TurbobitCore extends antiDDoSForHost {
     // private static final String SETTING_JAC = "SETTING_JAC";
     private static final String  SETTING_FREE_PARALLEL_DOWNLOADSTARTS         = "SETTING_FREE_PARALLEL_DOWNLOADSTARTS";
     private static final int     FREE_MAXDOWNLOADS_PLUGINSETTING              = 20;
-    private static Object        LOCK                                         = new Object();
     private static final boolean prefer_single_linkcheck_via_mass_linkchecker = true;
     private static final String  premRedirectLinks                            = ".*//?download/redirect/[A-Za-z0-9]+/[a-z0-9]+";
 
@@ -634,9 +632,9 @@ public class TurbobitCore extends antiDDoSForHost {
                 this.handleGeneralErrors();
                 logger.warning("dllink equals null, plugin seems to be broken!");
                 if (isLoggedIN()) {
-                    synchronized (LOCK) {
+                    synchronized (account) {
                         account.setProperty("UA", null);
-                        account.setProperty("cookies", null);
+                        account.clearCookies("");
                     }
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
@@ -843,7 +841,7 @@ public class TurbobitCore extends antiDDoSForHost {
     }
 
     private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 setBrowserExclusive();
                 /*
@@ -871,30 +869,32 @@ public class TurbobitCore extends antiDDoSForHost {
                 /* lets set a new User-Agent */
                 prepBrowserWebsite(br, null);
                 getPage(getMainpage() + "login");
-                Form loginform = findAndPrepareLoginForm(account);
+                Form loginform = findAndPrepareLoginForm(br, account);
                 submitForm(loginform);
-                /* Check for stupid login captcha */
-                final DownloadLink dummyLink = new DownloadLink(this, "Account", account.getHoster(), getMainpage(), true);
-                loginform = findAndPrepareLoginForm(account);
-                if (br.containsHTML("class=\"g-recaptcha\"")) {
-                    this.setDownloadLink(dummyLink);
-                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                    loginform.put("g-recaptcha-response", recaptchaV2Response);
-                } else if (loginform.containsHTML("class=\"reloadCaptcha\"")) {
-                    /* Old captcha - e.g. wayupload.com */
-                    final String captchaurl = br.getRegex("(https?://[^/]+/captcha/securimg[^\"<>]+)").getMatch(0);
-                    if (captchaurl == null) {
-                        logger.warning("Failed to find captchaURL");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (findLoginForm(br, account) != null) {
+                    /* Check for stupid login captcha */
+                    final DownloadLink dummyLink = new DownloadLink(this, "Account", account.getHoster(), getMainpage(), true);
+                    loginform = findAndPrepareLoginForm(br, account);
+                    if (br.containsHTML("class=\"g-recaptcha\"")) {
+                        this.setDownloadLink(dummyLink);
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                        loginform.put("g-recaptcha-response", recaptchaV2Response);
+                    } else if (loginform.containsHTML("class=\"reloadCaptcha\"")) {
+                        /* Old captcha - e.g. wayupload.com */
+                        final String captchaurl = br.getRegex("(https?://[^/]+/captcha/securimg[^\"<>]+)").getMatch(0);
+                        if (captchaurl == null) {
+                            logger.warning("Failed to find captchaURL");
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        final String code = this.getCaptchaCode(captchaurl, dummyLink);
+                        loginform.put("user%5Bcaptcha_response%5D", Encoding.urlEncode(code));
+                        loginform.put("user%5Bcaptcha_type%5D", "securimg");
+                        loginform.put("user%5Bcaptcha_subtype%5D", "9");
                     }
-                    final String code = this.getCaptchaCode(captchaurl, dummyLink);
-                    loginform.put("user[captcha_response]", code);
-                    loginform.put("user[captcha_type]", "securimg");
-                    loginform.put("user[captcha_subtype]", "9");
+                    submitForm(loginform);
                 }
-                submitForm(loginform);
                 universalLoginErrorhandling(br);
-                if (isLoggedIN()) {
+                if (!isLoggedIN()) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.\r\n3. Gehe auf folgende Seite und deaktiviere, den Login Captcha Schutz deines Accounts und versuche es erneut: turbobit.net/user/settings", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -904,8 +904,10 @@ public class TurbobitCore extends antiDDoSForHost {
                 account.saveCookies(br.getCookies(getMainpage()), "");
                 account.setProperty("UA", userAgent.get());
             } catch (final PluginException e) {
-                account.setProperty("UA", Property.NULL);
-                account.clearCookies("");
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.setProperty("UA", Property.NULL);
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
@@ -915,21 +917,23 @@ public class TurbobitCore extends antiDDoSForHost {
         return ("1".equals(br.getHostCookie("user_isloggedin", Cookies.NOTDELETEDPATTERN)));
     }
 
-    private Form findAndPrepareLoginForm(final Account account) {
+    private Form findAndPrepareLoginForm(Browser br, final Account account) throws PluginException {
         if (account == null) {
             return null;
+        } else {
+            final Form loginForm = findLoginForm(br, account);
+            if (loginForm != null) {
+                loginForm.put("user%5Blogin%5D", Encoding.urlEncode(account.getUser()));
+                loginForm.put("user%5Bpass%5D", Encoding.urlEncode(account.getPass()));
+                return loginForm;
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
-        Form loginform = br.getFormbyAction("/user/login");
-        if (loginform == null) {
-            loginform = new Form();
-            loginform.setMethod(MethodType.POST);
-            loginform.setAction("/user/login");
-            loginform.put("user[submit]", "Sign in");
-            loginform.put("user[memory]", "on");
-        }
-        loginform.put("user[login]", account.getUser());
-        loginform.put("user[pass]", account.getPass());
-        return loginform;
+    }
+
+    private Form findLoginForm(Browser br, final Account account) {
+        return br.getFormbyAction("/user/login");
     }
 
     public static void universalLoginErrorhandling(final Browser br) throws PluginException {
