@@ -38,14 +38,13 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class TurbobitCore extends PluginForHost {
+public class TurbobitCore extends antiDDoSForHost {
     /**
      * TODO: Check if we already got errorhandling for this kind of error http://turbobit.net/error/download/dcount/xxxtesst --> "
      *
@@ -122,13 +121,13 @@ public class TurbobitCore extends PluginForHost {
                     sb.append(Encoding.urlEncode(dl.getDownloadURL()));
                     sb.append("%0A");
                 }
-                // remove last
+                /* remove last */
                 sb.delete(sb.length() - 3, sb.length());
                 /*
                  * '/linkchecker/csv' is the official "API" method but this will only return fileID and online/offline - not even the
                  * filename
                  */
-                br.postPage("https://" + this.getHost() + "/linkchecker/check", sb.toString());
+                postPage(br, "https://" + this.getHost() + "/linkchecker/check", sb.toString());
                 for (final DownloadLink dllink : links) {
                     final Regex fileInfo = br.getRegex("<td>" + getFUID(dllink) + "</td>[\t\n\r ]*<td>([^<]*)</td>[\t\n\r ]*<td style=\"text-align:center;\">(?:[\t\n\r ]*)?<img src=\"(?:[^\"]+)?/(done|error)\\.png\"");
                     if (fileInfo.getMatches() == null || fileInfo.getMatches().length == 0) {
@@ -194,7 +193,7 @@ public class TurbobitCore extends PluginForHost {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         prepBrowserWebsite(br, userAgent.get());
-        br.getPage(link.getDownloadURL());
+        getPage(link.getDownloadURL());
         if (isFileOfflineWebsite(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -232,7 +231,7 @@ public class TurbobitCore extends PluginForHost {
         }
         br.setFollowRedirects(true);
         prepBrowserAPI(br, userAgent.get());
-        br.getPage("https://turbobit.net/v001/files/" + this.getLinkID(link));
+        getPage("https://turbobit.net/v001/files/" + this.getLinkID(link));
         return AvailableStatus.UNCHECKABLE;
     }
 
@@ -364,7 +363,7 @@ public class TurbobitCore extends PluginForHost {
         String dllink = link.getDownloadURL();
         sleep(2500, link);
         br.setFollowRedirects(true);
-        br.getPage(dllink);
+        getPage(dllink);
         simulateBrowser();
         if (isFileOfflineWebsite(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -383,7 +382,7 @@ public class TurbobitCore extends PluginForHost {
         id = getFUID(link);
         /** 2019-05-11: Not required for e.g. hitfile.net but it does not destroy anything either so let's set it anyways. */
         br.setCookie(br.getHost(), "turbobit1", getCurrentTimeCookie(br));
-        br.getPage("/download/free/" + id);
+        getPage("/download/free/" + id);
         simulateBrowser();
         if (isFileOfflineWebsite(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -393,7 +392,7 @@ public class TurbobitCore extends PluginForHost {
         partTwo(link);
     }
 
-    private final void partTwo(final DownloadLink downloadLink) throws Exception {
+    private final void partTwo(final DownloadLink link) throws Exception {
         Form captchaform = null;
         final Form[] allForms = br.getForms();
         if (allForms != null && allForms.length != 0) {
@@ -419,7 +418,7 @@ public class TurbobitCore extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l);
                 } else if (wait < 0) {
                 } else {
-                    sleep(wait * 1000l, downloadLink);
+                    sleep(wait * 1000l, link);
                 }
             }
             waittime = br.getRegex(tb(1)).getMatch(0);
@@ -446,7 +445,7 @@ public class TurbobitCore extends PluginForHost {
             /* ReCaptchaV2 */
             String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
             captchaform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-            br.submitForm(captchaform);
+            submitForm(captchaform);
         } else {
             /* This should not happen - see old captcha handling in TurboBitNet class revision 40594 */
             logger.warning("Captcha-handling failed");
@@ -495,27 +494,25 @@ public class TurbobitCore extends PluginForHost {
             continueLink = "/download/getLinkTimeout/" + id;
         }
         if (!waited) {
-            this.sleep(tt * 1001l, downloadLink);
+            this.sleep(tt * 1001l, link);
         }
         final Browser br2 = br.cloneBrowser();
         br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br2.getPage(continueLink);
+        getPage(br2, continueLink);
         downloadUrl = br2.getRegex("(\"|')(/?/download/redirect/.*?)\\1").getMatch(1);
-        if (downloadUrl == null) {
-            handleDownloadRedirectErrors(br2);
-        }
+        handleDownloadRedirectErrors(downloadUrl, link);
         /** 2019-05-11: Not required for e.g. hitfile.net but it does not destroy anything either so let's set it anyways. */
         br.setCookie(br.getHost(), "turbobit2", getCurrentTimeCookie(br2));
         br.setFollowRedirects(false);
         // Future redirects at this point! We want to catch them and not process in order to get the MD5sum! example url structure
         // http://s\\d{2}.turbobit.ru:\\d+/download.php?name=FILENAME.FILEEXTENTION&md5=793379e72eef01ed1fa3fec91eff5394&fid=b5w4jikojflm&uid=free&speed=59&till=1356198536&trycount=1&ip=YOURIP&sid=60193f81464cca228e7bb240a0c39130&browser=201c88fd294e46f9424f724b0d1a11ff&did=800927001&sign=7c2e5d7b344b4a205c71c18c923f96ab
-        br.getPage(downloadUrl);
+        getPage(downloadUrl);
         downloadUrl = br.getRedirectLocation() != null ? br.getRedirectLocation() : br.getURL();
         final String md5sum = new Regex(downloadUrl, "md5=([a-f0-9]{32})").getMatch(0);
         if (md5sum != null) {
-            downloadLink.setMD5Hash(md5sum);
+            link.setMD5Hash(md5sum);
         }
-        initDownload(DownloadType.GUEST_FREE, downloadLink, downloadUrl, true);
+        initDownload(DownloadType.GUEST_FREE, link, downloadUrl, true);
         handleServerErrors();
         dl.startDownload();
     }
@@ -537,15 +534,37 @@ public class TurbobitCore extends PluginForHost {
         return wait;
     }
 
-    private void handleDownloadRedirectErrors(final Browser br) throws PluginException {
-        if (br.toString().matches("Error: \\d+")) {
-            // unknown error...
-            throw new PluginException(LinkStatus.ERROR_RETRY);
+    /** Handles errors */
+    private void handleDownloadRedirectErrors(final String dllink, final DownloadLink link) throws PluginException {
+        final String host = link.getHost();
+        if (StringUtils.isEmpty(dllink)) {
+            if (br.toString().matches("Error: \\d+")) {
+                // unknown error...
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            } else if (br.toString().matches("^The file is not avaliable now because of technical problems\\. <br> Try to download it once again after 10-15 minutes\\..*?")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File not avaiable due to technical problems.", 15 * 60 * 1001l);
+            } else if (br.containsHTML("<a href=\\'/" + this.getLinkID(link) + "\\.html\\'>new</a>")) {
+                /* Expired downloadlink - rare issue. If user has added such a direct-URL, we're not able to retry. */
+                /**
+                 * 2019-05-14: TODO: Even premium-directurls should contain the linkid so we should be able to use that to 'convert' such
+                 * problematic URLs to 'normal' URLs. Keep in mind that this is a VERY VERY rare case!
+                 */
+                /*
+                 * <div class="action-block"><p>Der Link ist abgelaufen. Fordern Sie bitte <a href='/FUID.html'>new</a> download
+                 * link.</p></div></div> </div> Example: http://turbobit.net/download/redirect/TEST/TEST
+                 */
+                if (link.getPluginPatternMatcher().matches(premRedirectLinks)) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Generated Premium link has expired");
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to generate final downloadlink");
+                }
+            }
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown Error - failed to find redirect-url to final downloadurl");
+        } else if (StringUtils.endsWithCaseInsensitive(dllink, "://" + host + "/")) {
+            // expired/invalid?
+            // @see Link; 0418034739341.log; 1111047; jdlog://0418034739341
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Premium link no longer valid");
         }
-        if (br.toString().matches("^The file is not avaliable now because of technical problems\\. <br> Try to download it once again after 10-15 minutes\\..*?")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File not avaiable due to technical problems.", 15 * 60 * 1001l);
-        }
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown Error");
     }
 
     private String getCurrentTimeCookie(Browser ibr) throws PluginException {
@@ -600,7 +619,7 @@ public class TurbobitCore extends PluginForHost {
             requestFileInformation(link);
             login(account, false);
             sleep(2000, link);
-            br.getPage(link.getDownloadURL());
+            getPage(link.getDownloadURL());
             String dllink = null;
             final String[] mirrors = br.getRegex("('|\")(https?://([a-z0-9\\.]+)?[^/\\'\"]+//?download/redirect/.*?)\\1").getColumn(1);
             if (mirrors == null || mirrors.length == 0) {
@@ -614,7 +633,7 @@ public class TurbobitCore extends PluginForHost {
                 }
                 this.handleGeneralErrors();
                 logger.warning("dllink equals null, plugin seems to be broken!");
-                if (br.getCookie("http://turbobit.net", "user_isloggedin") == null || "deleted".equalsIgnoreCase(br.getCookie("http://turbobit.net", "user_isloggedin"))) {
+                if (isLoggedIN()) {
                     synchronized (LOCK) {
                         account.setProperty("UA", null);
                         account.setProperty("cookies", null);
@@ -630,7 +649,7 @@ public class TurbobitCore extends PluginForHost {
                 for (int i = 0; i < mirrors.length; i++) {
                     final String currentlink = mirrors[i];
                     logger.info("Checking mirror: " + currentlink);
-                    br.getPage(currentlink);
+                    getPage(currentlink);
                     if (br.getHttpConnection().getResponseCode() == 503) {
                         logger.info("Too many connections on current account via current IP");
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
@@ -714,7 +733,7 @@ public class TurbobitCore extends PluginForHost {
                 } catch (IOException e) {
                     logger.log(e);
                 }
-                logger.info("File is offline");
+                logger.info("File is offline on download-attempt");
                 if (dl.getConnection().getURL().getPath().startsWith("landpage")) {
                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Seems to be blocked by ISP", 60 * 60 * 1000l);
                 }
@@ -759,30 +778,9 @@ public class TurbobitCore extends PluginForHost {
         br.setCookie(getMainpage(), "JD", "1");
         String dllink = link.getDownloadURL();
         br.setFollowRedirects(false);
-        // Future redirects at this point, but we want to catch them not process
-        // them in order to get the MD5sum. Which provided within the
-        // URL args, within the final redirect
-        // example url structure
-        // http://s\\d{2}.turbobit.ru:\\d+/download.php?name=FILENAME.FILEEXTENTION&md5=793379e72eef01ed1fa3fec91eff5394&fid=b5w4jikojflm&uid=free&speed=59&till=1356198536&trycount=1&ip=YOURIP&sid=60193f81464cca228e7bb240a0c39130&browser=201c88fd294e46f9424f724b0d1a11ff&did=800927001&sign=7c2e5d7b344b4a205c71c18c923f96ab
-        br.getPage(dllink);
-        if (br.getRedirectLocation() != null) {
-            dllink = br.getRedirectLocation();
-            if (!getAndSetMd5Hash(link, dllink)) {
-                // errors can happen here
-                if (StringUtils.endsWithCaseInsensitive(dllink, "://turbobit.net/")) {
-                    // expired/invalid?
-                    // @see Link; 0418034739341.log; 1111047; jdlog://0418034739341
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Premium link no longer valid");
-                } else if (br.containsHTML(">Der Link ist abgelaufen\\. Fordern Sie bitte <a href='/" + getFUID(link) + "\\.html'>new</a> download link\\.<")) {
-                    /*
-                     * <div class="action-block"><p>Der Link ist abgelaufen. Fordern Sie bitte <a href='/FUID.html'>new</a> download
-                     * link.</p></div></div> </div>
-                     */
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Generated Premium link has expired");
-                }
-                handleDownloadRedirectErrors(br);
-            }
-        }
+        getPage(dllink);
+        dllink = br.getRedirectLocation();
+        handleDownloadRedirectErrors(dllink, link);
         initDownload(DownloadType.GUEST_PREMIUMLINK, link, dllink, true);
         handleServerErrors();
         dl.startDownload();
@@ -858,8 +856,8 @@ public class TurbobitCore extends PluginForHost {
                 if (cookies != null) {
                     logger.info("Attempting cookie login");
                     br.setCookies(this.getMainpage(), cookies);
-                    br.getPage(this.getMainpage());
-                    if ("1".equals(br.getHostCookie("user_isloggedin", Cookies.NOTDELETEDPATTERN))) {
+                    getPage(this.getMainpage());
+                    if (isLoggedIN()) {
                         logger.info("Cookie login successful");
                         /* Set new cookie timestamp */
                         br.setCookies(getMainpage(), cookies);
@@ -870,14 +868,11 @@ public class TurbobitCore extends PluginForHost {
                         logger.warning("Cookie login failed MAKE SURE THAT YOU RE-USED THE SAME USER-AGENT AS USED FOR THE FIRST LOGIN ELSE COOKIE LOGIN WILL NOT WORK!!!");
                     }
                 }
-                // * lets set a new User-Ggent */
+                /* lets set a new User-Agent */
                 prepBrowserWebsite(br, null);
-                br.getPage(getMainpage() + "login");
+                getPage(getMainpage() + "login");
                 Form loginform = findAndPrepareLoginForm(account);
-                br.submitForm(loginform);
-                // br.postPage("/user/login", "user%5Blogin%5D=" + Encoding.urlEncode(account.getUser()) + "&user%5Bpass%5D=" +
-                // Encoding.urlEncode(account.getPass()) +
-                // "&user%5Bcaptcha_type%5D=&user%5Bcaptcha_subtype%5D=&user%5Bmemory%5D=on&user%5Bsubmit%5D=Sign+in");
+                submitForm(loginform);
                 /* Check for stupid login captcha */
                 final DownloadLink dummyLink = new DownloadLink(this, "Account", account.getHoster(), getMainpage(), true);
                 loginform = findAndPrepareLoginForm(account);
@@ -885,9 +880,6 @@ public class TurbobitCore extends PluginForHost {
                     this.setDownloadLink(dummyLink);
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                     loginform.put("g-recaptcha-response", recaptchaV2Response);
-                    // br.postPage("/user/login", "user%5Blogin%5D=" + Encoding.urlEncode(account.getUser()) + "&user%5Bpass%5D=" +
-                    // Encoding.urlEncode(account.getPass()) + "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response) +
-                    // "&user%5Bcaptcha_type%5D=recaptcha2&user%5Bcaptcha_subtype%5D=&user%5Bmemory%5D=on&user%5Bsubmit%5D=Sign+in");
                 } else if (loginform.containsHTML("class=\"reloadCaptcha\"")) {
                     /* Old captcha - e.g. wayupload.com */
                     final String captchaurl = br.getRegex("(https?://[^/]+/captcha/securimg[^\"<>]+)").getMatch(0);
@@ -900,9 +892,9 @@ public class TurbobitCore extends PluginForHost {
                     loginform.put("user[captcha_type]", "securimg");
                     loginform.put("user[captcha_subtype]", "9");
                 }
-                br.submitForm(loginform);
+                submitForm(loginform);
                 universalLoginErrorhandling(br);
-                if (!"1".equals(br.getCookie(getMainpage(), "user_isloggedin"))) {
+                if (isLoggedIN()) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.\r\n3. Gehe auf folgende Seite und deaktiviere, den Login Captcha Schutz deines Accounts und versuche es erneut: turbobit.net/user/settings", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -917,6 +909,10 @@ public class TurbobitCore extends PluginForHost {
                 throw e;
             }
         }
+    }
+
+    protected boolean isLoggedIN() {
+        return ("1".equals(br.getHostCookie("user_isloggedin", Cookies.NOTDELETEDPATTERN)));
     }
 
     private Form findAndPrepareLoginForm(final Account account) {

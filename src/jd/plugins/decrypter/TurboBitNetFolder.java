@@ -18,6 +18,8 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -25,11 +27,10 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class TurboBitNetFolder extends PluginForDecrypt {
+public class TurboBitNetFolder extends antiDDoSForDecrypt {
     @Override
     public String[] siteSupportedNames() {
         return getAllSupportedNames();
@@ -92,7 +93,7 @@ public class TurboBitNetFolder extends PluginForDecrypt {
         // rows = 100 000 makes sure that we only get one page with all links
         // br.getPage("http://turbobit.net/downloadfolder/gridFile?id_folder=" + id + "&_search=false&nd=&rows=100000&page=1");
         final String host = Browser.getHost(parameter);
-        br.getPage(String.format("http://%s/downloadfolder/gridFile?rootId=%s?currentId=%s&_search=false&nd=&rows=100000&page=1&sidx=file_type&sord=asc", host, id, id));
+        getPage(String.format("http://%s/downloadfolder/gridFile?rootId=%s?currentId=%s&_search=false&nd=&rows=100000&page=1&sidx=file_type&sord=asc", host, id, id));
         if (br.containsHTML("\"records\":0,\"total\":0,\"") || br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
