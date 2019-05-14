@@ -21,8 +21,22 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map.Entry;
+
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.simplejson.JSonFactory;
+import org.appwork.storage.simplejson.JSonObject;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.views.downloads.columns.ETAColumn;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.PluginTaskID;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -41,16 +55,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginProgress;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  * 24.11.15 Update by Bilal Ghouri:
@@ -85,6 +92,9 @@ public class LinkSnappyCom extends antiDDoSForHost {
     private boolean          resumes               = true;
     private int              chunks                = 0;
     private String           dllink                = null;
+    private String           linkHash              = null;
+    private String           isCache               = null;
+    private static final int CACHE_WAIT_THRESHOLD  = 10 * 60000;
     protected static Object  ACCLOCK               = new Object();
 
     @Override
@@ -162,7 +172,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + message, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             }
-            List<String> supportedHosts = new ArrayList<String>();
+            final ArrayList<String> supportedHosts = new ArrayList<String>();
             /* connection info map */
             final HashMap<String, HashMap<String, Object>> con = new HashMap<String, HashMap<String, Object>>();
             LinkedHashMap<String, Object> hosterInformation;
@@ -227,7 +237,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
                 supportedHosts.add(host);
             }
             currentAcc.setProperty("accountProperties", con);
-            supportedHosts = ac.setMultiHostSupport(this, supportedHosts);
+            ac.setMultiHostSupport(this, supportedHosts);
             return ac;
         }
     }
@@ -259,6 +269,100 @@ public class LinkSnappyCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nTageslimit erreicht!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nDaily limit reached!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
+        }
+    }
+
+    /**
+     * Check with linksnappy server if file needs to get downloaded first before the user can download it from there (2019-05-14: E.g.
+     * rapidgator.net URLs).
+     **/
+    private void cacheDLChecker() throws Exception {
+        if (isCache != null) {
+            final String id = linkHash.toString();
+            final PluginProgress waitProgress = new PluginProgress(0, 100, null) {
+                protected long lastCurrent    = -1;
+                protected long lastTotal      = -1;
+                protected long startTimeStamp = -1;
+
+                @Override
+                public PluginTaskID getID() {
+                    return PluginTaskID.WAIT;
+                }
+
+                @Override
+                public String getMessage(Object requestor) {
+                    if (requestor instanceof ETAColumn) {
+                        final long eta = getETA();
+                        if (eta >= 0) {
+                            return TimeFormatter.formatMilliSeconds(eta, 0);
+                        }
+                        return "";
+                    }
+                    return "Preparing your file";
+                }
+
+                @Override
+                public void updateValues(long current, long total) {
+                    super.updateValues(current, total);
+                    if (startTimeStamp == -1 || lastTotal == -1 || lastTotal != total || lastCurrent == -1 || lastCurrent > current) {
+                        lastTotal = total;
+                        lastCurrent = current;
+                        startTimeStamp = System.currentTimeMillis();
+                        // this.setETA(-1);
+                        return;
+                    }
+                    long currentTimeDifference = System.currentTimeMillis() - startTimeStamp;
+                    if (currentTimeDifference <= 0) {
+                        return;
+                    }
+                    long speed = (current * 10000) / currentTimeDifference;
+                    if (speed == 0) {
+                        return;
+                    }
+                    long eta = ((total - current) * 10000) / speed;
+                    this.setETA(eta);
+                }
+            };
+            waitProgress.setIcon(new AbstractIcon(IconKey.ICON_WAIT, 16));
+            waitProgress.setProgressSource(this);
+            try {
+                long lastProgressChange = System.currentTimeMillis();
+                int lastProgress = -1;
+                while (System.currentTimeMillis() - lastProgressChange < CACHE_WAIT_THRESHOLD) {
+                    if (isAbort()) {
+                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                    }
+                    br.getPage("https://" + this.getHost() + "/api/CACHEDLSTATUS?id=" + Encoding.urlEncode(id));
+                    final JSonObject dlNode = (JSonObject) new JSonFactory(br.toString().replaceAll("\\\\/", "/")).parse();
+                    final JSonObject downloadNode = (JSonObject) dlNode.get("return");
+                    final String status = dlNode.get("status").toString();
+                    if ("ERROR".equalsIgnoreCase(status)) {
+                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                    }
+                    final Integer currentProgress = Integer.parseInt(downloadNode.get("percent").toString());
+                    // download complete?
+                    if (currentProgress.intValue() == 100) {
+                        // cache finished, lets go to download part
+                        break;
+                    } else {
+                        currentLink.addPluginProgress(waitProgress);
+                        waitProgress.updateValues(currentProgress.intValue(), 100);
+                        for (int sleepRound = 0; sleepRound < 10; sleepRound++) {
+                            if (isAbort()) {
+                                throw new PluginException(LinkStatus.ERROR_RETRY);
+                            } else {
+                                Thread.sleep(1000);
+                            }
+                        }
+                        if (currentProgress.intValue() != lastProgress) {
+                            lastProgressChange = System.currentTimeMillis();
+                            lastProgress = currentProgress.intValue();
+                        }
+                    }
+                }
+            } finally {
+                currentLink.removePluginProgress(waitProgress);
             }
         }
     }
@@ -321,6 +425,14 @@ public class LinkSnappyCom extends antiDDoSForHost {
             handleDownloadErrors();
         }
         link.setProperty("linksnappycomdirectlink", dllink);
+        try {
+            final String server_filename = getFileNameFromDispositionHeader(dl.getConnection());
+            if (server_filename.contains("%")) {
+                /* Fix html-encoded filename */
+                link.setFinalFileName(Encoding.htmlDecode(server_filename));
+            }
+        } catch (final Throwable e) {
+        }
         try {
             if (!this.dl.startDownload()) {
                 try {
@@ -444,7 +556,17 @@ public class LinkSnappyCom extends antiDDoSForHost {
                     if ("ERROR Code: 087".equalsIgnoreCase(err)) {
                         // "status":"FAILED","error":"ERROR Code: 087"
                         // I assume offline (webui says his host is offline, but not the api host list.
-                        mhm.putError(currentAcc, currentLink, 10 * 60 * 1000l, "hoster offline");
+                        mhm.putError(currentAcc, currentLink, 10 * 60 * 1000l, "Filehost offline");
+                    } else if ("No server available for this filehost, Please retry after few minutes".equalsIgnoreCase(err)) {
+                        // if no server available for the filehost
+                        mhm.putError(currentAcc, currentLink, 5 * 60 * 1000l, "hoster offline");
+                    } else if (new Regex(err, "Couldn't (re-)?start download in system").matches()) {
+                        mhm.putError(currentAcc, currentLink, 5 * 60 * 1000l, "Can't start cache. Possibly daily limit reached");
+                    } else if (new Regex(err, "You have reached max download request").matches()) {
+                        mhm.putError(currentAcc, currentLink, 5 * 60 * 1000l, "Too many requests. Please wait 5 minutes");
+                    } else if (new Regex(err, "You have reached max download limit of").matches()) {
+                        currentAcc.getAccountInfo().setTrafficLeft(0);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nLimit Reached. Please purchase elite membership!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                     } else if (new Regex(err, "Invalid .*? link\\. Cannot find Filename\\.").matches()) {
                         logger.info("Error: Disabling current host");
                         mhm.putError(currentAcc, currentLink, 5 * 60 * 1000l, "Multihoster issue");
@@ -467,10 +589,13 @@ public class LinkSnappyCom extends antiDDoSForHost {
                 }
             }
             dllink = PluginJSonUtils.getJsonValue(br, "generated");
+            isCache = PluginJSonUtils.getJsonValue(br, "cacheDL");
+            linkHash = PluginJSonUtils.getJsonValue(br, "hash");
             if (dllink == null || StringUtils.isEmpty(dllink) || "false".equals(dllink)) {
                 logger.info("Direct downloadlink not found");
                 mhm.handleErrorGeneric(currentAcc, currentLink, "dllinkmissing", 2, 5 * 60 * 1000l);
             }
+            cacheDLChecker();
         }
         dlResponseCode = -1;
         try {
@@ -515,6 +640,12 @@ public class LinkSnappyCom extends antiDDoSForHost {
              * router or isps' also can do this. a full retry should happen
              */
             throw new PluginException(LinkStatus.ERROR_RETRY, "Your ip has been changed. Please retry");
+        } else if (dlResponseCode == 425) {
+            /*
+             * This error code will occur only when the link is being cached in our system. You have to wait till its finished. Check
+             * "/api/CACHEDLSTATUS" for current progress
+             */
+            throw new PluginException(LinkStatus.ERROR_RETRY, "Link is being cached. Please wait.");
         }
         // generic, apparently can't be in a else statement...
         logger.info("Attempt failed: " + dlResponseCode + "  error for link: " + dllink);
@@ -569,7 +700,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
             super.prepBrowser(prepBr, host);
             prepBr.getHeaders().put("User-Agent", "JDownloader " + getVersion());
             // linksnappy mentioned codes
-            prepBr.addAllowedResponseCodes(new int[] { 429, 502, 503, 504, 507 });
+            prepBr.addAllowedResponseCodes(new int[] { 425, 429, 502, 503, 504, 507 });
             prepBr.setConnectTimeout(2 * 60 * 1000);
             prepBr.setReadTimeout(2 * 60 * 1000);
             prepBr.setFollowRedirects(true);
