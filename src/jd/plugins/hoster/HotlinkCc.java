@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import org.appwork.utils.StringUtils;
@@ -22,6 +23,7 @@ import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -88,34 +90,80 @@ public class HotlinkCc extends XFileSharingProBasic {
     }
 
     @Override
+    public Form findFormF1() {
+        /* 2019-05-15: Special */
+        final Form formf1Free = super.findFormF1();
+        /* Should only be required for premium but we're doing it for free mode anyways! */
+        fixFormF1(formf1Free);
+        return formf1Free;
+    }
+
+    @Override
+    public Form findFormF1Premium() throws Exception {
+        /* 2019-05-15: Special */
+        final Form formf1Premium = super.findFormF1Premium();
+        fixFormF1(formf1Premium);
+        return formf1Premium;
+    }
+
+    private Form fixFormF1(final Form formf1) {
+        if (formf1 != null && formf1.hasInputFieldByName("dl_bittorrent")) {
+            formf1.remove("dl_bittorrent");
+            formf1.put("dl_bittorrent", "0");
+        }
+        return formf1;
+    }
+
+    @Override
+    public ArrayList<String> getCleanupHTMLRegexes() {
+        /*
+         * 2019-05-15: Special: Return empty Array as default values will kill free mode of this plugin (important html code will get
+         * removed!)
+         */
+        return new ArrayList<String>();
+    }
+
+    @Override
+    public String regexWaittime() {
+        /* 2019-05-15: Special */
+        String waitStr = super.regexWaittime();
+        if (StringUtils.isEmpty(waitStr)) {
+            waitStr = new Regex(correctedBR, "class=\"seconds yellow\"><b>(\\d+)</b>").getMatch(0);
+            if (StringUtils.isEmpty(waitStr)) {
+                waitStr = new Regex(correctedBR, "class=\"seconds[^\"]+\"><b>(\\d+)</b>").getMatch(0);
+            }
+        }
+        return waitStr;
+    }
+
+    @Override
     public boolean supports_https() {
         return true;
     }
 
     @Override
     public boolean isAudiohoster() {
-        return false;
+        return super.isAudiohoster();
     }
 
     @Override
     public boolean isVideohoster() {
-        return false;
+        return super.isVideohoster();
     }
 
     @Override
     public boolean isVideohoster_2() {
-        return false;
+        return super.isVideohoster_2();
     }
 
     @Override
     public boolean isVideohoster_enforce_video_filename() {
-        return false;
+        return super.isVideohoster_enforce_video_filename();
     }
 
     @Override
     public boolean supports_precise_expire_date() {
-        // remove after next full core update, pattern changes pending in XFileSharingPro
-        return false;
+        return super.supports_precise_expire_date();
     }
 
     @Override
@@ -128,7 +176,7 @@ public class HotlinkCc extends XFileSharingProBasic {
 
     @Override
     public boolean isImagehoster() {
-        return false;
+        return super.isImagehoster();
     }
 
     @Override
