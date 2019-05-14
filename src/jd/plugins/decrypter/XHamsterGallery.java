@@ -103,6 +103,7 @@ public class XHamsterGallery extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpname.trim()));
         int pageIndex = 1;
+        int imageIndex = 1;
         Boolean next = true;
         while (next) {
             if (this.isAbort()) {
@@ -126,6 +127,13 @@ public class XHamsterGallery extends PluginForDecrypt {
                         if (imageURL != null) {
                             // logger.info("imageURL: " + imageURL);
                             final DownloadLink dl = createDownloadlink(imageURL);
+                            final String extension = getFileNameExtensionFromString(imageURL, ".jpg");
+                            if (total_numberof_picsStr != null) {
+                                dl.setFinalFileName(StringUtils.fillPre(Integer.toString(imageIndex), "0", total_numberof_picsStr.length()) + "_" + total_numberof_picsStr + extension);
+                            } else {
+                                dl.setFinalFileName(Integer.toString(imageIndex) + extension);
+                            }
+                            imageIndex++;
                             dl.setAvailable(true);
                             dl._setFilePackage(fp);
                             distribute(dl);
