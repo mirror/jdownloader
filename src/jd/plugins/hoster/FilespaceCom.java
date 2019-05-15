@@ -93,6 +93,7 @@ public class FilespaceCom extends XFileSharingProBasic {
         if (md5hash != null) {
             link.setMD5Hash(md5hash);
         }
+        super.handleCaptcha(link, captchaForm);
     }
 
     @Override
