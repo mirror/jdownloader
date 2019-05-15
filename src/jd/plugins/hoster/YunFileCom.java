@@ -24,6 +24,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Pattern;
 
 import javax.script.Invocable;
 import javax.script.ScriptEngine;
@@ -55,13 +56,14 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunfile.com" }, urls = { "https?://(www|(p(?:age)?\\d|share)\\.)?(?:yunfile|filemarkets|yfdisk|needisk|5xpan|dix3|dfpan|pwpan|srcpan|skpan|gmpan|tadown|putpan)\\.com/(file/(down/)?[a-z0-9]+/[a-z0-9]+|fs/[a-z0-9]+/?)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class YunFileCom extends PluginForHost {
-    private static final String            MAINPAGE       = "http://www.dfpan.com/";
     private static final String            CAPTCHAPART    = "/verifyimg/getPcv";
     private static Object                  LOCK           = new Object();
     private static AtomicReference<String> agent          = new AtomicReference<String>();
-    private static final String            DOMAINS        = "(?:yunfile|filemarkets|yfdisk|needisk|5xpan|dix3|dfpan|pwpan|srcpan|skpan|gmpan|tadown|putpan)\\.com";
+    /** KEEP THE FOLLOWING 3 OBJECTS UP TO DATE!! */
+    private static final String[]          domains        = { "yunfile.com", "filemarkets.com", "yfdisk.com", "needisk.com", "5xpan.com", "dix3.com", "dfpan.com", "pwpan.com", "srcpan.com", "skpan.com", "gmpan.com", "tadown.com", "putpan.com", "fourpan.com" };
+    private static final String            MAINPAGE       = "http://www.dfpan.com/";
     private static final String            domain_current = "dfpan.com";
 
     // Works like HowFileCom
@@ -69,6 +71,40 @@ public class YunFileCom extends PluginForHost {
         super(wrapper);
         this.enablePremium(MAINPAGE + "user/premiumMembership.html");
         // this.setStartIntervall(15 * 1000l);
+    }
+
+    public static String[] getAnnotationNames() {
+        return new String[] { domains[0] };
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return domains;
+    }
+
+    /**
+     * returns the annotation pattern array: 'https?://(?:www\\.)?(?:domain1|domain2)/bla'
+     *
+     */
+    public static String[] getAnnotationUrls() {
+        // construct pattern
+        final String host = getHostsPattern();
+        return new String[] { host + "/(file/(down/)?[a-z0-9_]+/[a-z0-9_]+|fs/[a-z0-9_]+/?)" };
+    }
+
+    /** returns 'https?://(?:bla\\.)?(?:domain1|domain2)' */
+    private static String getHostsPattern() {
+        final String hosts = "https?://(?:www|(p(?:age)?\\d|share)\\.)?" + "(?:" + getHostsPatternPart() + ")";
+        return hosts;
+    }
+
+    /** Returns '(?:domain1|domain2)' */
+    public static String getHostsPatternPart() {
+        final StringBuilder pattern = new StringBuilder();
+        for (final String name : domains) {
+            pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
+        }
+        return pattern.toString();
     }
 
     @Override
@@ -103,8 +139,8 @@ public class YunFileCom extends PluginForHost {
 
     @Override
     public String rewriteHost(final String host) {
-        if ("yunfile.com".equals(this.getHost())) {
-            if (host == null || "filemarkets.com".equals(host) || "yfdisk.com".equals(host) || "needisk.com".equals(host) || "5xpan.com".equals(host) || "dix3.com".equals(host) || "dfpan.com".equals(host)) {
+        for (final String domainTmp : domains) {
+            if (domainTmp.equalsIgnoreCase(host)) {
                 return "yunfile.com";
             }
         }
@@ -240,13 +276,13 @@ public class YunFileCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 1 * 60 * 1001l);
             }
             checkErrors();
-            final Regex siteInfo = br.getRegex("<span style=\"font-weight:bold;\">&nbsp;&nbsp;<a href=\"(https?://[a-z0-9]+\\." + DOMAINS + "/ls/([A-Za-z0-9\\-_]+)/)\"");
+            final Regex siteInfo = br.getRegex("<span style=\"font-weight:bold;\">&nbsp;&nbsp;<a href=\"(https?://[a-z0-9_\\-]+\\." + getHostsPatternPart() + "/ls/([A-Za-z0-9\\-_]+)/)\"");
             userid = siteInfo.getMatch(1);
             if (userid == null) {
-                userid = br.getRegex("userId=([A-Za-z0-9]+)").getMatch(0);
+                userid = br.getRegex("userId=([A-Za-z0-9_\\-]+)").getMatch(0);
             }
             if (fileid == null) {
-                fileid = br.getRegex("fileId=([A-Za-z0-9]+)").getMatch(0);
+                fileid = br.getRegex("fileId=([A-Za-z0-9_\\-]+)").getMatch(0);
             }
             String freelink = this.br.getRegex("var url\\s*?=\\s*?\"(/file/down/[^<>\"\\']+\\.html)\";").getMatch(0);
             if (freelink == null && userid != null && fileid != null) {
@@ -345,7 +381,7 @@ public class YunFileCom extends PluginForHost {
             for (String language : new String[] { "zh_cn", "en_au" }) {
                 br.setCookie(br.getURL(), "language", language);
                 br.getPage(br.getURL());
-                final String vid1 = br.getRegex("\"vid1\", \"([a-z0-9]+)\"").getMatch(0);
+                final String vid1 = br.getRegex("\"vid1\", \"([a-z0-9_\\-]+)\"").getMatch(0);
                 for (String dllink : br.getRegex("\"(https?://[^/]+/downfile/[^<>\"]*?)\"").getColumn(0)) {
                     dllinkVidMap.put(dllink, vid1);
                 }
