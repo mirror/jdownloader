@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Random;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -26,7 +28,10 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "urlgalleries.net" }, urls = { "https?://(?:[a-z0-9_]+\\.)?urlgalleries\\.net/porn-gallery-\\d+/.*" })
@@ -51,7 +56,6 @@ public class RlGalleriesNt extends PluginForDecrypt {
         br.getPage(parameter);
         br.followRedirect();
         if (br.containsHTML("<title> - urlgalleries\\.net</title>|>ERROR - NO IMAGES AVAILABLE") || br.getURL().contains("/not_found_adult.php")) {
-            logger.info("Link offline: " + parameter);
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
@@ -69,7 +73,14 @@ public class RlGalleriesNt extends PluginForDecrypt {
             return null;
         }
         int counter = 1;
-        final Browser brc = br.cloneBrowser();
+        final boolean tryToAvoidCaptcha = false;
+        // TODO
+        Browser brc;
+        if (tryToAvoidCaptcha) {
+            brc = new Browser();
+        } else {
+            brc = br.cloneBrowser();
+        }
         final HashSet<String> dups = new HashSet<String>();
         for (final String item[] : items) {
             if (isAbort()) {
@@ -83,13 +94,36 @@ public class RlGalleriesNt extends PluginForDecrypt {
             logger.info("Decrypting link " + counter + " of " + items.length);
             sleep(new Random().nextInt(3) + 1000, param);
             try {
-                brc.getPage(aLink);
+                if (tryToAvoidCaptcha) {
+                    brc = new Browser();
+                    brc.getHeaders().put("User-Agent", UserAgents.stringUserAgent());
+                    brc.getPage(parameter);
+                }
+                brc.getPage("https://" + this.getHost() + aLink);
             } catch (final Exception e) {
                 logger.info("Link timed out: " + aLink);
                 counter++;
                 continue;
             }
-            final String finallink = brc.getRedirectLocation();
+            String finallink = brc.getRedirectLocation();
+            if (brc.containsHTML("Suspicious activity detected, please confirm")) {
+                final String rcKey = brc.getRegex("data\\-sitekey=\"([^<>\"]+)\"").getMatch(0);
+                if (rcKey == null) {
+                    logger.warning("Captcha handling failed");
+                    break;
+                }
+                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, rcKey).getToken();
+                // {\"data\":{\"response\":\"\"}}
+                brc.postPageRaw("/unban.php", "{\"response\":\"" + recaptchaV2Response + "\"}");
+                brc.getPage(aLink);
+                final String error = PluginJSonUtils.getJson(brc, "error");
+                if (error != null) {
+                    /* 2019-05-15: E.g. "{"error":"Captcha not ok"}" */
+                    logger.info("Captcha failure");
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+                finallink = brc.getRedirectLocation();
+            }
             if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
