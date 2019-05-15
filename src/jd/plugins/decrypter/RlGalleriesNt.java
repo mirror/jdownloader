@@ -73,6 +73,7 @@ public class RlGalleriesNt extends PluginForDecrypt {
             return null;
         }
         int counter = 1;
+        /* 2019-05-15: Via browser it sometimes worked when using a private tab but so far I havent found a way to avoid their captcha. */
         final boolean tryToAvoidCaptcha = false;
         // TODO
         Browser brc;

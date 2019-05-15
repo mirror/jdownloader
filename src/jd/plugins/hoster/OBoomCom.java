@@ -15,6 +15,12 @@ import javax.crypto.spec.PBEKeySpec;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -31,12 +37,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "oboom.com" }, urls = { "https?://(www\\.)?oboom\\.com/(#(id=)?|#/)?[A-Z0-9]{8}" })
 public class OBoomCom extends antiDDoSForHost {
@@ -238,6 +238,7 @@ public class OBoomCom extends antiDDoSForHost {
                 if (infos == null || forceNew || forceNewIfSession != null && forceNewIfSession.equals(infos.get("guestSession"))) {
                     br.setFollowRedirects(true);
                     getPage("https://www.oboom.com/1/guestsession?source=" + APPID);
+                    handleErrorResponseCodes();
                     String guestSession = br.getRegex("200,.*?\"(.*?)\"").getMatch(0);
                     if (guestSession == null) {
                         if (br.containsHTML("<h1>OBOOM.com is currently under heavy attack</h1>")) {
@@ -447,11 +448,18 @@ public class OBoomCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(waitTime) * 1000l);
         }
         if (/*
-         * HAS NOTHING TODO WITH ACCOUNT SEE http://board.jdownloader.org/showthread.php?p=317616#post317616 jdlog://6507583568141/
-         * account != null &&
-         */
-                br.getRegex("421,\"connections\",(\\d+)").getMatch(0) != null) {
+             * HAS NOTHING TODO WITH ACCOUNT SEE http://board.jdownloader.org/showthread.php?p=317616#post317616 jdlog://6507583568141/
+             * account != null &&
+             */
+        br.getRegex("421,\"connections\",(\\d+)").getMatch(0) != null) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Already downloading?", 5 * 60 * 1000l);
+        }
+        handleErrorResponseCodes();
+    }
+
+    private void handleErrorResponseCodes() throws PluginException {
+        if (br.getHttpConnection().getResponseCode() == 503) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "503 Website is under maintenance", 30 * 60 * 1000l);
         }
     }
 

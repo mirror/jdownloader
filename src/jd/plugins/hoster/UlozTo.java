@@ -309,110 +309,117 @@ public class UlozTo extends PluginForHost {
         br.setFollowRedirects(true);
         String dllink = checkDirectLink(downloadLink, "directlink_free");
         if (dllink == null) {
-            if (passwordProtected) {
-                handlePassword(downloadLink);
-            }
-            boolean failed = true;
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            Browser cbr = null;
-            for (int i = 0; i <= 5; i++) {
-                if (i == 5) {
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            boolean captcha_failed = false;
+            /* 2019-05-15: New: Free download without captcha */
+            dllink = br.getRegex("(/[^\"<>]+\\?do=slowDirectDownload[^\"<>]*?)\"").getMatch(0);
+            if (dllink == null) {
+                if (passwordProtected) {
+                    handlePassword(downloadLink);
                 }
-                cbr = br.cloneBrowser();
-                cbr.getPage("/reloadXapca.php?rnd=" + System.currentTimeMillis());
-                if (cbr.getRequest().getHttpConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
-                }
-                final String hash = PluginJSonUtils.getJsonValue(cbr, "hash");
-                final String timestamp = PluginJSonUtils.getJsonValue(cbr, "timestamp");
-                final String salt = PluginJSonUtils.getJsonValue(cbr, "salt");
-                String captchaUrl = PluginJSonUtils.getJsonValue(cbr, "image");
-                Form captchaForm = br.getFormbyProperty("id", "frm-downloadDialog-freeDownloadForm");
-                if (captchaForm == null) {
-                    captchaForm = br.getFormbyProperty("id", "frm-download-freeDownloadTab-freeDownloadForm");
-                }
-                if (captchaForm == null || captchaUrl == null || hash == null || timestamp == null || salt == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                final String code = getCaptchaCode(captchaUrl, downloadLink);
-                if (code == null) {
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                }
-                captchaForm.put("captcha_value", Encoding.urlEncode(code));
-                captchaForm.remove(null);
-                captchaForm.remove("freeDownload");
-                captchaForm.put("timestamp", timestamp);
-                captchaForm.put("salt", salt);
-                captchaForm.put("hash", hash);
-                /* 2018-08-30: Wait some seconds or we might run into an error. */
-                this.sleep(3000, downloadLink);
-                br.submitForm(captchaForm);
-                // If captcha fails, throrotws exception
-                // If in automatic mode, clears saved data
-                if (br.containsHTML("\"errors\"\\s*:\\s*\\[\\s*\"(Error rewriting the text|Rewrite the text from the picture|Text je opsán špatně|An error ocurred while)")) {
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                } else if (br.containsHTML("\"errors\"\\s*:\\s*\\[\\s*\"Chyba při ověření uživatele")) {
-                    if (account != null) {
-                        synchronized (account) {
-                            account.clearCookies("");
-                        }
-                        throw new PluginException(LinkStatus.ERROR_RETRY);
-                    } else {
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                Browser cbr = null;
+                captcha_failed = true;
+                for (int i = 0; i <= 5; i++) {
+                    if (i == 5) {
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
+                    cbr = br.cloneBrowser();
+                    cbr.getPage("/reloadXapca.php?rnd=" + System.currentTimeMillis());
+                    if (cbr.getRequest().getHttpConnection().getResponseCode() == 404) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+                    }
+                    final String hash = PluginJSonUtils.getJsonValue(cbr, "hash");
+                    final String timestamp = PluginJSonUtils.getJsonValue(cbr, "timestamp");
+                    final String salt = PluginJSonUtils.getJsonValue(cbr, "salt");
+                    String captchaUrl = PluginJSonUtils.getJsonValue(cbr, "image");
+                    Form captchaForm = br.getFormbyProperty("id", "frm-downloadDialog-freeDownloadForm");
+                    if (captchaForm == null) {
+                        captchaForm = br.getFormbyProperty("id", "frm-download-freeDownloadTab-freeDownloadForm");
+                    }
+                    if (captchaForm == null || captchaUrl == null || hash == null || timestamp == null || salt == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                }
-                dllink = PluginJSonUtils.getJsonValue(br, "url");
-                if (dllink == null) {
-                    break;
-                }
-                dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 1);
-                if (!dl.getConnection().getContentType().contains("html") || dl.getConnection().isContentDisposition()) {
-                    failed = false;
-                    break;
-                } else {
-                    try {
-                        br.followConnection();
-                    } catch (final IOException e) {
-                        logger.log(e);
+                    final String code = getCaptchaCode(captchaUrl, downloadLink);
+                    if (code == null) {
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
-                    if (account != null) {
-                        if (br.containsHTML("Pro rychlé stažení") || br.containsHTML("You do not have  enough") || br.containsHTML("Nie masz wystarczającego")) {
-                            throw new AccountUnavailableException("Not enough premium traffic available", 1 * 60 * 60 * 1000l);
-                        }
-                    }
-                    if (br.containsHTML("Stránka nenalezena")) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    } else if (br.containsHTML("dla_backend/uloz\\.to\\.overloaded\\.html")) {
-                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available", 10 * 60 * 1000l);
-                    } else if (br.containsHTML("Chyba při ověření uživatele|Nastala chyba při odeslání textu\\. Znovu opiš text z obrázku\\.")) {
+                    captchaForm.put("captcha_value", Encoding.urlEncode(code));
+                    captchaForm.remove(null);
+                    captchaForm.remove("freeDownload");
+                    captchaForm.put("timestamp", timestamp);
+                    captchaForm.put("salt", salt);
+                    captchaForm.put("hash", hash);
+                    /* 2018-08-30: Wait some seconds or we might run into an error. */
+                    this.sleep(3000, downloadLink);
+                    br.submitForm(captchaForm);
+                    // If captcha fails, throrotws exception
+                    // If in automatic mode, clears saved data
+                    if (br.containsHTML("\"errors\"\\s*:\\s*\\[\\s*\"(Error rewriting the text|Rewrite the text from the picture|Text je opsán špatně|An error ocurred while)") || br.containsHTML("\"new_captcha_data\"")) {
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    } else if (br.containsHTML("\"errors\"\\s*:\\s*\\[\\s*\"Chyba při ověření uživatele")) {
+                        /* 2019-05-15: This may also happen when user is not using an account */
                         if (account != null) {
                             synchronized (account) {
                                 account.clearCookies("");
                             }
                             throw new PluginException(LinkStatus.ERROR_RETRY);
                         } else {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                         }
                     }
-                    br.clearCookies("ulozto.net");
-                    br.clearCookies("uloz.to");
-                    dllink = handleDownloadUrl(downloadLink);
-                    if (dllink != null) {
-                        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 1);
-                        if (!dl.getConnection().getContentType().contains("html") || dl.getConnection().isContentDisposition()) {
-                            failed = false;
-                            break;
-                        } else {
-                            try {
-                                br.followConnection();
-                            } catch (final IOException e) {
-                                logger.log(e);
+                    dllink = PluginJSonUtils.getJsonValue(br, "url");
+                    if (dllink == null) {
+                        break;
+                    }
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 1);
+                    if (!dl.getConnection().getContentType().contains("html") || dl.getConnection().isContentDisposition()) {
+                        captcha_failed = false;
+                        break;
+                    } else {
+                        try {
+                            br.followConnection();
+                        } catch (final IOException e) {
+                            logger.log(e);
+                        }
+                        if (account != null) {
+                            if (br.containsHTML("Pro rychlé stažení") || br.containsHTML("You do not have  enough") || br.containsHTML("Nie masz wystarczającego")) {
+                                throw new AccountUnavailableException("Not enough premium traffic available", 1 * 60 * 60 * 1000l);
                             }
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
+                        if (br.containsHTML("Stránka nenalezena")) {
+                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                        } else if (br.containsHTML("dla_backend/uloz\\.to\\.overloaded\\.html")) {
+                            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available", 10 * 60 * 1000l);
+                        } else if (br.containsHTML("Chyba při ověření uživatele|Nastala chyba při odeslání textu\\. Znovu opiš text z obrázku\\.")) {
+                            if (account != null) {
+                                synchronized (account) {
+                                    account.clearCookies("");
+                                }
+                                throw new PluginException(LinkStatus.ERROR_RETRY);
+                            } else {
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
+                        }
+                        br.clearCookies("ulozto.net");
+                        br.clearCookies("uloz.to");
+                        dllink = handleDownloadUrl(downloadLink);
+                        if (dllink != null) {
+                            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 1);
+                            if (!dl.getConnection().getContentType().contains("html") || dl.getConnection().isContentDisposition()) {
+                                captcha_failed = false;
+                                break;
+                            } else {
+                                try {
+                                    br.followConnection();
+                                } catch (final IOException e) {
+                                    logger.log(e);
+                                }
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
+                        }
+                        continue;
                     }
-                    continue;
                 }
             }
             if (account != null) {
@@ -425,7 +432,7 @@ public class UlozTo extends PluginForHost {
             } else if (dllink.contains("/error404/?fid=file_not_found")) {
                 logger.info("The user entered the correct captcha but this file is offline...");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (failed) {
+            } else if (captcha_failed) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
         }
@@ -457,7 +464,7 @@ public class UlozTo extends PluginForHost {
             logger.warning("The finallink doesn't seem to be a file: " + dllink);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty("directlink_free", dllink);
+        downloadLink.setProperty("directlink_free", dl.getConnection().getURL().toString());
         try {
             /* add a download slot */
             controlFree(+1);
