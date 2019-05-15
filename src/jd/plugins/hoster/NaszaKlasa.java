@@ -13,18 +13,14 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import jd.PluginWrapper;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -33,9 +29,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nk.pl" }, urls = { "http://(www\\.)?nk\\.decryptednaszaplasa/profile/\\d+/gallery/album/\\d+/\\d+\\?naszaplasalink" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nk.pl" }, urls = { "https?://(?:www\\.)?nk\\.decryptednaszaplasa/profile/\\d+/gallery/album/\\d+/\\d+\\?naszaplasalink" })
 public class NaszaKlasa extends PluginForHost {
-
     private static Object       LOCK     = new Object();
     private static final String MAINPAGE = "nk.pl";
     private static final String USERTEXT = "Only downloadable for registered users!";
@@ -61,6 +56,7 @@ public class NaszaKlasa extends PluginForHost {
         }
         ai.setUnlimitedTraffic();
         ai.setStatus("Registered (free) User");
+        account.setType(AccountType.FREE);
         return ai;
     }
 
@@ -71,14 +67,7 @@ public class NaszaKlasa extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
-        try {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        } catch (final Throwable e) {
-            if (e instanceof PluginException) {
-                throw (PluginException) e;
-            }
-        }
-        throw new PluginException(LinkStatus.ERROR_FATAL, USERTEXT);
+        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
 
     @Override
@@ -103,49 +92,32 @@ public class NaszaKlasa extends PluginForHost {
         dl.startDownload();
     }
 
-    @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
-            // Load cookies
-            final Object ret = account.getProperty("cookies", null);
-            boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-            if (acmatch) {
-                acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-            }
-            if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                if (cookies.containsKey("remember_me") && account.isValid()) {
-                    for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                        final String key = cookieEntry.getKey();
-                        final String value = cookieEntry.getValue();
-                        br.setCookie(MAINPAGE, key, value);
-                    }
-                    return;
-                }
+            br.setFollowRedirects(true);
+            final Cookies cookies = account.loadCookies("");
+            if (cookies != null && !force) {
+                br.setCookies(this.getHost(), cookies);
+                return;
             }
             Form dlForm = new Form();
             String loginPage = "https://nk.pl/login?captcha=0";
             boolean captcha = false;
             int tryouts = 0;
-
             while (true) {
                 br.getPage(loginPage);
-                dlForm = br.getFormbyProperty("id", "login_form");
-
+                dlForm = br.getFormbyAction("/logowanie");
                 dlForm.put("target", "");
                 dlForm.put("login", Encoding.urlEncode(account.getUser()));
                 dlForm.put("password", Encoding.urlEncode(account.getPass()));
                 dlForm.put("remember", "1");
                 if (captcha) {
                     final DownloadLink dummyLink = new DownloadLink(this, "Account", "nk.pl", "http://nk.pl", true);
-
-                    String captchaCode = getCaptchaCode("http://nk.pl/captcha?" + Math.floor(Math.random() * 10000), dummyLink);
+                    final String captchaCode = getCaptchaCode("https://nk.pl/captcha?" + Math.floor(Math.random() * 10000), dummyLink);
                     // dlForm.setProperty("__captcha", captchaCode);
                     dlForm.put("__captcha", captchaCode);
-
                 }
                 br.submitForm(dlForm);
-
                 // br.postPage("https://nk.pl/login", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" +
                 // Encoding.urlEncode(account.getPass()) + "&remember=1&form_name=login_form&target=&manual=1");
                 if ((!captcha && br.containsHTML("https://nk\\.pl/login\\?captcha=1")) || (captcha && br.containsHTML("<strong>Kod z obrazka: nieprawidłowy kod</strong>"))) {
@@ -159,19 +131,10 @@ public class NaszaKlasa extends PluginForHost {
                     break;
                 }
             }
-
             if (br.getCookie(MAINPAGE, "remember_me") == null || br.getCookie(MAINPAGE, "lltkck") == null) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-            // Save cookies
-            final HashMap<String, String> cookies = new HashMap<String, String>();
-            final Cookies add = br.getCookies(MAINPAGE);
-            for (final Cookie c : add.getCookies()) {
-                cookies.put(c.getKey(), c.getValue());
-            }
-            account.setProperty("name", Encoding.urlEncode(account.getUser()));
-            account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-            account.setProperty("cookies", cookies);
+            account.saveCookies(br.getCookies(br.getHost()), "");
         }
     }
 

@@ -13,12 +13,12 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.LinkedHashMap;
 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -36,7 +36,6 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vice.com" }, urls = { "https?://([A-Za-z0-9]+\\.)?vicedecrypted\\.com/.+" })
 public class ViceCom extends PluginForHost {
-
     public ViceCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -45,7 +44,6 @@ public class ViceCom extends PluginForHost {
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("vicedecrypted.com/", "vice.com/"));
     }
-
     /* DEV NOTES */
     /* Tags: ooyala.com, ooyala Player, ooyala player API */
     // protocol: no https
@@ -61,7 +59,6 @@ public class ViceCom extends PluginForHost {
      *
      * And: https://github.com/rg3/youtube-dl/blob/e3216b82bf6ef54db63984f7fece4e95fbc3b981/youtube_dl/extractor/ooyala.py
      */
-
     /*
      * Small documentation of the vice.com (NOT ooyala) API which we cannot really use at this point as the articleIDs seem not to be
      * available via desktop website.
@@ -80,14 +77,11 @@ public class ViceCom extends PluginForHost {
     /**
      * TODO: If in the future, other plugins also need the ooyala player handling, make generic handling for it!
      */
-
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     public static final String   HTML_VIDEO_EXISTS = "class=\"video\\-wrapper\"";
-
     private String               dllink            = null;
 
     @Override
@@ -98,6 +92,7 @@ public class ViceCom extends PluginForHost {
     @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        downloadLink.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         String ext = null;
         dllink = null;
         this.setBrowserExclusive();
@@ -126,7 +121,6 @@ public class ViceCom extends PluginForHost {
         /* Possible and working for supportedFormats: mp4, m3u8 */
         /* Possible and NOT working for supportedFormats: wv_hls and wv_wvm (returns empty stream array if used) */
         /* Default for supportedFormats: mp4%2Cm3u8%2Cwv_hls%2Cwv_wvm%2Cwv_mp4 */
-
         /* Remove cookies/headers */
         this.br = new Browser();
         /* This UA is not necessarily needed. */
