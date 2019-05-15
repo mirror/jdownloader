@@ -36,7 +36,6 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -48,7 +47,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 
 import org.appwork.storage.JSonStorage;
@@ -57,7 +55,6 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaShowDialogTwo;
 import org.jdownloader.captcha.v2.challenge.xsolver.CaptXSolver;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -107,21 +104,6 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
         private static String e(int c, int a) {
             return (c < a ? "" : e(c / a, a)) + String.valueOf((char) (c % a + 161));
         }
-    }
-
-    public static String IMAGEREGEX(final String b) {
-        final KeyCaptchaShowDialogTwo v = new KeyCaptchaShowDialogTwo();
-        /*
-         * CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset!
-         */
-        final byte[] o = JDHash.getMD5(Encoding.Base64Decode("Yzg0MDdhMDhiM2M3MWVhNDE4ZWM5ZGM2NjJmMmE1NmU0MGNiZDZkNWExMTRhYTUwZmIxZTEwNzllMTdmMmI4Mw==") + JDHash.getMD5("V2UgZG8gbm90IGVuZG9yc2UgdGhlIHVzZSBvZiBKRG93bmxvYWRlci4=")).getBytes();
-        /*
-         * CHECK: we should always use new String (bytes,charset) to avoid issues with system charset and utf-8
-         */
-        if (b != null) {
-            return new String(v.D(o, JDHexUtils.getByteArray(b)));
-        }
-        return new String(v.D(o, JDHexUtils.getByteArray("E3CEACB19040D08244C9E5C29D115AE220F83AB417")));
     }
 
     private final HashMap<String, String> map = new HashMap<String, String>();
