@@ -19,6 +19,7 @@ import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -39,6 +40,7 @@ import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaShowDialogTwo;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -390,6 +392,22 @@ public class TurbobitCore extends antiDDoSForHost {
         partTwo(link);
     }
 
+    protected String IMAGEREGEX(final String b) {
+        final KeyCaptchaShowDialogTwo v = new KeyCaptchaShowDialogTwo();
+        /*
+         * CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset!
+         */
+        final byte[] o = JDHash.getMD5(Encoding.Base64Decode("Yzg0MDdhMDhiM2M3MWVhNDE4ZWM5ZGM2NjJmMmE1NmU0MGNiZDZkNWExMTRhYTUwZmIxZTEwNzllMTdmMmI4Mw==") + JDHash.getMD5("V2UgZG8gbm90IGVuZG9yc2UgdGhlIHVzZSBvZiBKRG93bmxvYWRlci4=")).getBytes();
+        /*
+         * CHECK: we should always use new String (bytes,charset) to avoid issues with system charset and utf-8
+         */
+        if (b != null) {
+            return new String(v.D(o, JDHexUtils.getByteArray(b)));
+        } else {
+            return new String(v.D(o, JDHexUtils.getByteArray("E3CEACB19040D08244C9E5C29D115AE220F83AB417")));
+        }
+    }
+
     private final void partTwo(final DownloadLink link) throws Exception {
         Form captchaform = null;
         final Form[] allForms = br.getForms();
@@ -457,7 +475,7 @@ public class TurbobitCore extends antiDDoSForHost {
         simulateBrowser();
         /** 2019-05-09: TODO: Remove this old overcomplicated handling */
         /* Ticket Time */
-        String ttt = parseImageUrl(br.getRegex(jd.plugins.decrypter.LnkCrptWs.IMAGEREGEX(null)).getMatch(0), true);
+        String ttt = parseImageUrl(br.getRegex(IMAGEREGEX(null)).getMatch(0), true);
         int maxWait = 9999, realWait = 0;
         for (String s : br.getRegex(tb(11)).getColumn(0)) {
             realWait = Integer.parseInt(s);
@@ -1047,7 +1065,7 @@ public class TurbobitCore extends antiDDoSForHost {
          * we have to load the plugin first! we must not reference a plugin class without loading it before
          */
         JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-        return JDHexUtils.toString(jd.plugins.decrypter.LnkCrptWs.IMAGEREGEX(s[i]));
+        return JDHexUtils.toString(IMAGEREGEX(s[i]));
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */

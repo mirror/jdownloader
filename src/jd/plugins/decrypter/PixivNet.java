@@ -53,7 +53,8 @@ public class PixivNet extends PluginForDecrypt {
     private static final String TYPE_GALLERY_MANGA  = ".+/member_illust\\.php\\?mode=manga\\&illust_id=\\d+";
 
     private Integer getPageCount(Browser br, final String lid) {
-        final String userIllust = br.getRegex("(\\{[^{]*\"illustId\"\\s*:\\s*\"" + lid + "[^{]*\\})").getMatch(0);
+        // bookmarkData only exists when link is bookmarked
+        final String userIllust = br.getRegex("(\\{[^{]*\"illustId\"\\s*:\\s*\"" + lid + "(?:[^{]*\"bookmarkData\"\\s*:\\s*\\{)?[^{]*\\})").getMatch(0);
         final String pageCount = new Regex(userIllust, "\"pageCount\"\\s*:\\s*(\\d+)").getMatch(0);
         if (pageCount != null) {
             return Integer.parseInt(pageCount);
