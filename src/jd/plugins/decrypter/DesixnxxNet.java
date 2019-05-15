@@ -40,7 +40,7 @@ public class DesixnxxNet extends PluginForDecrypt {
         }
         /* 2017-05-31: Usually openload.co URLs */
         final String finallink = this.br.getRegex("<iframe src=\"(https?[^<>\"]+)\"").getMatch(0);
-        if (finallink != null) {
+        if (finallink != null && !finallink.contains("ads-iframe-display")) {
             decryptedLinks.add(createDownloadlink(finallink));
         } else {
             /* Pass url to hosterplugin */
