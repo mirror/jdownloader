@@ -95,16 +95,6 @@ public class Flix555Com extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean isAudiohoster() {
-        return super.isAudiohoster();
-    }
-
-    @Override
-    public boolean isVideohoster() {
-        return super.isVideohoster();
-    }
-
-    @Override
     public boolean isVideohoster_2() {
         /* 2019-04-29: Special */
         return true;
@@ -117,25 +107,9 @@ public class Flix555Com extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean isImagehoster() {
-        return super.isImagehoster();
-    }
-
-    @Override
     public boolean supports_availablecheck_alt() {
         /* 2019-04-29: Special */
         return false;
-    }
-
-    @Override
-    public boolean supports_availablecheck_filesize_alt_fast() {
-        /* 2019-04-29: Special */
-        return false;
-    }
-
-    @Override
-    public boolean prefer_availablecheck_filesize_alt_type_old() {
-        return super.prefer_availablecheck_filesize_alt_type_old();
     }
 
     @Override
@@ -147,6 +121,12 @@ public class Flix555Com extends XFileSharingProBasic {
     @Override
     public boolean supports_availablecheck_filesize_html() {
         /* 2019-04-29: Special */
+        return false;
+    }
+
+    @Override
+    public boolean supports_availablecheck_filesize_via_videohoster_2_directurl() {
+        /* 2019-05-16: Special */
         return false;
     }
 

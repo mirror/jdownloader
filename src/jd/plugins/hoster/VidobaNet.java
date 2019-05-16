@@ -95,16 +95,6 @@ public class VidobaNet extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean isAudiohoster() {
-        return super.isAudiohoster();
-    }
-
-    @Override
-    public boolean isVideohoster() {
-        return super.isVideohoster();
-    }
-
-    @Override
     public boolean isVideohoster_2() {
         return true;
     }
@@ -115,23 +105,8 @@ public class VidobaNet extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean isImagehoster() {
-        return super.isImagehoster();
-    }
-
-    @Override
     public boolean supports_availablecheck_alt() {
         return false;
-    }
-
-    @Override
-    public boolean supports_availablecheck_filesize_alt_fast() {
-        return false;
-    }
-
-    @Override
-    public boolean prefer_availablecheck_filesize_alt_type_old() {
-        return super.prefer_availablecheck_filesize_alt_type_old();
     }
 
     @Override
@@ -147,6 +122,11 @@ public class VidobaNet extends XFileSharingProBasic {
     @Override
     public boolean requires_WWW() {
         return super.requires_WWW();
+    }
+
+    @Override
+    public boolean supports_availablecheck_filesize_via_videohoster_2_directurl() {
+        return false;
     }
 
     public static String[] getAnnotationNames() {
