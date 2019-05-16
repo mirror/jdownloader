@@ -138,7 +138,7 @@ public class PremiumTo extends UseNet {
         String apikey = null;
         try {
             /* Do not fail here */
-            getAndStoreAPIKey(account, false);
+            apikey = getAndStoreAPIKey(account);
         } catch (final Throwable e) {
         }
         /* Find storage hosts and add them to array of supported hosts as well */
@@ -166,9 +166,9 @@ public class PremiumTo extends UseNet {
      * 2019-04-15: Required for downloading from STORAGE hosts. This apikey will always be the same until the user changes his password
      * (which he then also has to change in JDownloader)!
      */
-    private String getAndStoreAPIKey(final Account account, final boolean forceRenew) throws Exception {
+    private String getAndStoreAPIKey(final Account account) throws Exception {
         String apikey = account.getStringProperty("apikey");
-        if (apikey == null || forceRenew) {
+        if (apikey == null) {
             br.getPage(API_BASE + "api/getauthcode.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
             /* 2019-04-15: apikey = username+hash */
             if (br.toString().length() > account.getUser().length()) {
@@ -332,7 +332,7 @@ public class PremiumTo extends UseNet {
                  * file to storage via JD, downloads file via JD, lets JD delete the file from storage right after he downloaded it)
                  */
                 /* Storage download */
-                final String apikey = getAndStoreAPIKey(account, false);
+                final String apikey = getAndStoreAPIKey(account);
                 /* Check if that URL has already been downloaded to their cloud. */
                 br.getPage(API_BASE_STORAGE + "/check.php?apikey=" + apikey + "&url=" + url);
                 handleErrorsStorageAPI();
