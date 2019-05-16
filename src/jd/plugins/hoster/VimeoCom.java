@@ -30,6 +30,7 @@ import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -174,7 +175,7 @@ public class VimeoCom extends PluginForHost {
         final String forced_referer = getForcedReferer(downloadLink);
         final AtomicReference<String> referer = new AtomicReference<String>(forced_referer);
         final boolean alwaysLogin = getPluginConfig().getBooleanProperty(VimeoCom.ALWAYS_LOGIN, false);
-        final Account account = AccountController.getInstance().getValidAccount(this);
+        final Account account = (alwaysLogin || (Thread.currentThread() instanceof SingleDownloadController)) ? AccountController.getInstance().getValidAccount(this) : null;
         if (account != null) {
             try {
                 login(br, account);
@@ -400,7 +401,6 @@ public class VimeoCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        login(br, account);
         handleFree(link);
     }
 
