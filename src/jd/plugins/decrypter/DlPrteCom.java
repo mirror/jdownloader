@@ -20,9 +20,6 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Random;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -35,6 +32,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  *
@@ -150,9 +150,13 @@ public class DlPrteCom extends antiDDoSForDecrypt {
         }
         {
             // additional form
-            final Form continu = br.getFormBySubmitvalue("Continuer");
+            Form continu = br.getFormBySubmitvalue("Continuer");
             if (continu != null) {
                 submitForm(continu);
+                continu = br.getFormBySubmitvalue("Continuer");
+                if (continu != null) {
+                    submitForm(continu);
+                }
                 // test link had no magic/captcha
                 final String link = br.getRegex("<div class=\"lienet\"><a[^<>]*href=\"(.*?)\">").getMatch(0);
                 if (link != null) {
