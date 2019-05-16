@@ -27,17 +27,6 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -62,6 +51,17 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.hoster.RTMPDownload;
+
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 public class XFileSharingProBasic extends antiDDoSForHost {
     public XFileSharingProBasic(PluginWrapper wrapper) {
@@ -319,8 +319,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * See also function getFilesizeViaAvailablecheckAlt! <br />
      * <b> Enabling this will eventually lead to at least one additional website-request! </b>
      *
-     * @return true: Implies that website supports getFilesizeViaAvailablecheckAlt call as an alternative source for filesize-parsing.
-     *         <br />
+     * @return true: Implies that website supports getFilesizeViaAvailablecheckAlt call as an alternative source for filesize-parsing. <br />
      *         false: Implies that website does NOT support getFilesizeViaAvailablecheckAlt. <br />
      *         default: true
      */
@@ -376,12 +375,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /**
-     * This is designed to find the filesize during availablecheck for videohosts - videohosts usually don't display the filesize anywhere!
-     * <br />
+     * This is designed to find the filesize during availablecheck for videohosts - videohosts usually don't display the filesize anywhere! <br />
      * CAUTION: Only set this to true if a filehost: <br />
      * 1. Allows users to embed videos via '/embed-<fuid>.html'. <br />
-     * 2. Does not display a filesize anywhere inside html code or other calls where we do not have to do an http request on a directurl.
-     * <br />
+     * 2. Does not display a filesize anywhere inside html code or other calls where we do not have to do an http request on a directurl. <br />
      * 3. Allows a lot of simultaneous connections. <br />
      * 4. Is FAST - if it is not fast, this will noticably slow down the linkchecking procedure!
      *
@@ -1414,11 +1411,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     public String checkDirectLink(final DownloadLink downloadLink, final String property) {
         final String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
-            final boolean directurlIsOK = checkDirectLinkAndSetFilesize(downloadLink, dllink, false);
-            if (directurlIsOK) {
-                return dllink;
+            final String ret = checkDirectLinkAndSetFilesize(downloadLink, dllink, false);
+            if (ret != null) {
+                return ret;
             } else {
-                downloadLink.setProperty(property, Property.NULL);
+                downloadLink.removeProperty(property);
                 return null;
             }
         }
@@ -1436,45 +1433,46 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * @param setFilesize
      *            : true = setVerifiedFileSize filesize if directurl is really downloadable
      */
-    public boolean checkDirectLinkAndSetFilesize(final DownloadLink link, final String directurl, final boolean setFilesize) {
+    public String checkDirectLinkAndSetFilesize(final DownloadLink link, final String directurl, final boolean setFilesize) {
         if (StringUtils.isEmpty(directurl) || !directurl.startsWith("http")) {
-            return false;
-        }
-        boolean isOK = false;
-        URLConnectionAdapter con = null;
-        try {
-            final Browser br2 = br.cloneBrowser();
-            con = openAntiDDoSRequestConnection(br2, br2.createHeadRequest(directurl));
-            /* For video streams we often don't get a Content-Disposition header. */
-            final boolean isFile = con.isContentDisposition() || (con.getContentType() != null && con.getContentType().contains("video"));
-            if (con.getResponseCode() == 503) {
-                /* Ok */
-                /*
-                 * Too many connections but that does not mean that our downloadlink is valid. Accept it and if it still returns 503 on
-                 * download-attempt this error will get displayed to the user.
-                 */
-                logger.info("directurl lead to 503 | too many connections");
-                isOK = true;
-            } else if (!con.getContentType().contains("html") && con.getLongContentLength() > -1 && con.isOK() && isFile) {
-                isOK = true;
-                if (setFilesize) {
-                    link.setVerifiedFileSize(con.getLongContentLength());
-                }
-            } else {
-                /* Failure */
-                isOK = false;
-            }
-        } catch (final Exception e) {
-            /* Failure */
-            logger.log(e);
-            return isOK;
-        } finally {
+            return null;
+        } else {
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (final Throwable e) {
+                final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(true);
+                con = openAntiDDoSRequestConnection(br2, br2.createHeadRequest(directurl));
+                /* For video streams we often don't get a Content-Disposition header. */
+                final boolean isFile = con.isContentDisposition() || StringUtils.containsIgnoreCase(con.getContentType(), "video") || StringUtils.containsIgnoreCase(con.getContentType(), "audio") || StringUtils.containsIgnoreCase(con.getContentType(), "application");
+                if (con.getResponseCode() == 503) {
+                    /* Ok */
+                    /*
+                     * Too many connections but that does not mean that our downloadlink is valid. Accept it and if it still returns 503 on
+                     * download-attempt this error will get displayed to the user.
+                     */
+                    logger.info("directurl lead to 503 | too many connections");
+                    return directurl;
+                } else if (!con.getContentType().contains("html") && con.getLongContentLength() > -1 && con.isOK() && isFile) {
+                    if (setFilesize) {
+                        link.setVerifiedFileSize(con.getLongContentLength());
+                    }
+                    return directurl;
+                } else {
+                    /* Failure */
+                }
+            } catch (final Exception e) {
+                /* Failure */
+                logger.log(e);
+            } finally {
+                if (con != null) {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
+                }
             }
+            return null;
         }
-        return isOK;
     }
 
     @Override
