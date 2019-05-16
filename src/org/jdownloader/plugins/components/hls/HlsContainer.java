@@ -14,7 +14,7 @@ import org.jdownloader.downloader.hls.M3U8Playlist;
 
 public class HlsContainer {
     public static List<HlsContainer> findBestVideosByBandwidth(final List<HlsContainer> media) {
-        if (media == null) {
+        if (media == null || media.size() == 0) {
             return null;
         }
         final Map<String, List<HlsContainer>> hlsContainer = new HashMap<String, List<HlsContainer>>();
@@ -59,55 +59,54 @@ public class HlsContainer {
     public static List<HlsContainer> getHlsQualities(final Browser br) throws Exception {
         final ArrayList<HlsContainer> hlsqualities = new ArrayList<HlsContainer>();
         final String[][] streams = br.getRegex("#EXT-X-STREAM-INF:?([^\r\n]+)[\r\n]+([^\r\n]+)").getMatches();
-        if (streams == null) {
-            return null;
-        }
-        for (final String stream[] : streams) {
-            if (StringUtils.isNotEmpty(stream[1])) {
-                final String streamInfo = stream[0];
-                // final String quality = new Regex(media, "(?:,|^)\\s*NAME\\s*=\\s*\"(.*?)\"").getMatch(0);
-                final String programID = new Regex(streamInfo, "(?:,|^)\\s*PROGRAM-ID\\s*=\\s*(\\d+)").getMatch(0);
-                final String bandwidth = new Regex(streamInfo, "(?:,|^)\\s*BANDWIDTH\\s*=\\s*(\\d+)").getMatch(0);
-                final String average_bandwidth = new Regex(streamInfo, "(?:,|^)\\s*AVERAGE-BANDWIDTH\\s*=\\s*(\\d+)").getMatch(0);
-                final String resolution = new Regex(streamInfo, "(?:,|^)\\s*RESOLUTION\\s*=\\s*(\\d+x\\d+)").getMatch(0);
-                final String framerate = new Regex(streamInfo, "(?:,|^)\\s*FRAME-RATE\\s*=\\s*(\\d+)").getMatch(0);
-                final String codecs = new Regex(streamInfo, "(?:,|^)\\s*CODECS\\s*=\\s*\"([^<>\"]+)\"").getMatch(0);
-                final String name = new Regex(streamInfo, "(?:,|^)\\s*NAME\\s*=\\s*\"([^<>\"]+)\"").getMatch(0);
-                final String url = br.getURL(stream[1]).toString();
-                final HlsContainer hls = new HlsContainer();
-                if (programID != null) {
-                    hls.programID = Integer.parseInt(programID);
-                } else {
-                    hls.programID = -1;
+        if (streams != null) {
+            for (final String stream[] : streams) {
+                if (StringUtils.isNotEmpty(stream[1])) {
+                    final String streamInfo = stream[0];
+                    // final String quality = new Regex(media, "(?:,|^)\\s*NAME\\s*=\\s*\"(.*?)\"").getMatch(0);
+                    final String programID = new Regex(streamInfo, "(?:,|^)\\s*PROGRAM-ID\\s*=\\s*(\\d+)").getMatch(0);
+                    final String bandwidth = new Regex(streamInfo, "(?:,|^)\\s*BANDWIDTH\\s*=\\s*(\\d+)").getMatch(0);
+                    final String average_bandwidth = new Regex(streamInfo, "(?:,|^)\\s*AVERAGE-BANDWIDTH\\s*=\\s*(\\d+)").getMatch(0);
+                    final String resolution = new Regex(streamInfo, "(?:,|^)\\s*RESOLUTION\\s*=\\s*(\\d+x\\d+)").getMatch(0);
+                    final String framerate = new Regex(streamInfo, "(?:,|^)\\s*FRAME-RATE\\s*=\\s*(\\d+)").getMatch(0);
+                    final String codecs = new Regex(streamInfo, "(?:,|^)\\s*CODECS\\s*=\\s*\"([^<>\"]+)\"").getMatch(0);
+                    final String name = new Regex(streamInfo, "(?:,|^)\\s*NAME\\s*=\\s*\"([^<>\"]+)\"").getMatch(0);
+                    final String url = br.getURL(stream[1]).toString();
+                    final HlsContainer hls = new HlsContainer();
+                    if (programID != null) {
+                        hls.programID = Integer.parseInt(programID);
+                    } else {
+                        hls.programID = -1;
+                    }
+                    if (bandwidth != null) {
+                        hls.bandwidth = Integer.parseInt(bandwidth);
+                    } else {
+                        hls.bandwidth = -1;
+                    }
+                    if (name != null) {
+                        hls.name = name.trim();
+                    }
+                    if (average_bandwidth != null) {
+                        hls.average_bandwidth = Integer.parseInt(average_bandwidth);
+                    } else {
+                        hls.average_bandwidth = -1;
+                    }
+                    if (codecs != null) {
+                        hls.codecs = codecs.trim();
+                    }
+                    hls.downloadurl = url;
+                    if (resolution != null) {
+                        final String[] resolution_info = resolution.split("x");
+                        final String width = resolution_info[0];
+                        final String height = resolution_info[1];
+                        hls.width = Integer.parseInt(width);
+                        hls.height = Integer.parseInt(height);
+                    }
+                    if (framerate != null) {
+                        hls.framerate = Integer.parseInt(framerate);
+                    }
+                    hlsqualities.add(hls);
                 }
-                if (bandwidth != null) {
-                    hls.bandwidth = Integer.parseInt(bandwidth);
-                } else {
-                    hls.bandwidth = -1;
-                }
-                if (name != null) {
-                    hls.name = name.trim();
-                }
-                if (average_bandwidth != null) {
-                    hls.average_bandwidth = Integer.parseInt(average_bandwidth);
-                } else {
-                    hls.average_bandwidth = -1;
-                }
-                if (codecs != null) {
-                    hls.codecs = codecs.trim();
-                }
-                hls.downloadurl = url;
-                if (resolution != null) {
-                    final String[] resolution_info = resolution.split("x");
-                    final String width = resolution_info[0];
-                    final String height = resolution_info[1];
-                    hls.width = Integer.parseInt(width);
-                    hls.height = Integer.parseInt(height);
-                }
-                if (framerate != null) {
-                    hls.framerate = Integer.parseInt(framerate);
-                }
-                hlsqualities.add(hls);
             }
         }
         return hlsqualities;

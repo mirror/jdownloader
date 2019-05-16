@@ -211,6 +211,15 @@ public class M3U8Playlist {
      * https://tools.ietf.org/html/draft-pantos-http-live-streaming-20
      */
     public static List<M3U8Playlist> loadM3U8(final String m3u8, final Browser br, final boolean X_BYTERANGE_SUPPORT) throws IOException {
+        br.getPage(m3u8);
+        br.followRedirect();
+        if (br.getHttpConnection().getResponseCode() != 200 && br.getHttpConnection().getResponseCode() != 206) {
+            throw new IOException("ResponseCode must be 200 or 206!");
+        }
+        return parseM3U8(br, X_BYTERANGE_SUPPORT);
+    }
+
+    public static List<M3U8Playlist> parseM3U8(final Browser br, final Boolean X_BYTERANGE_SUPPORT) throws IOException {
         final List<M3U8Playlist> ret = new ArrayList<M3U8Playlist>();
         M3U8Playlist current = new M3U8Playlist();
         long lastSegmentDuration = -1;
@@ -219,11 +228,6 @@ public class M3U8Playlist {
         M3U8Segment.X_KEY_METHOD xKeyMethod = M3U8Segment.X_KEY_METHOD.NONE;
         String xKeyIV = null;
         String xKeyURI = null;
-        br.getPage(m3u8);
-        br.followRedirect();
-        if (br.getHttpConnection().getResponseCode() != 200 && br.getHttpConnection().getResponseCode() != 206) {
-            throw new IOException("ResponseCode must be 200 or 206!");
-        }
         for (final String line : Regex.getLines(br.toString())) {
             if (StringUtils.isEmpty(line)) {
                 continue;

@@ -192,7 +192,13 @@ public class BoxCom extends antiDDoSForDecrypt {
                     } else {
                         // directory
                         final String duid = new Regex(result, "\"typedID\":\"d_(\\d+)\"").getMatch(0);
-                        final String link = cryptedlink + "/folder/" + duid;
+                        final String rootFolder = new Regex(cryptedlink, "(.+)/folder/\\d+").getMatch(0);
+                        final String link;
+                        if (rootFolder != null) {
+                            link = rootFolder + "/folder/" + duid;
+                        } else {
+                            link = cryptedlink + "/folder/" + duid;
+                        }
                         if (!dupe.add(link)) {
                             continue;
                         }

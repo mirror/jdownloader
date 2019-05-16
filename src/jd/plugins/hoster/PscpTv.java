@@ -16,10 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
+import java.util.List;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
@@ -31,6 +28,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pscp.tv" }, urls = { "https?://(?:www\\.)?pscp\\.tv/w/.+" })
 public class PscpTv extends PluginForHost {
@@ -75,13 +77,23 @@ public class PscpTv extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String dllink = PluginJSonUtils.getJson(br, "replay_url");
-        if (StringUtils.isEmpty(dllink)) {
+        final String replayURL = PluginJSonUtils.getJson(br, "replay_url");
+        if (StringUtils.isEmpty(replayURL)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.getPage(dllink);
+        br.getPage(replayURL);
         final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
-        dllink = hlsbest.getDownloadurl();
+        final String dllink;
+        if (hlsbest != null) {
+            dllink = hlsbest.getDownloadurl();
+        } else {
+            final List<M3U8Playlist> m3u8 = M3U8Playlist.parseM3U8(br, false);
+            if (m3u8 != null && m3u8.size() > 0) {
+                dllink = replayURL;
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
         checkFFmpeg(downloadLink, "Download a HLS Stream");
         dl = new HLSDownloader(downloadLink, br, dllink);
         dl.startDownload();
