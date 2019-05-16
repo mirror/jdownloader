@@ -21,10 +21,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -38,6 +34,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  *
@@ -322,13 +322,16 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
                 br.getHeaders().put("Origin", "https://" + br.getHost());
-                String waitStr = br.getRegex(">Please Wait (\\d+)s<").getMatch(0);
+                String waitStr = br.getRegex("\"counter_value\"\\s*:\\s*\"(\\d+)\"").getMatch(0);
                 if (waitStr == null) {
-                    /* 2018-12-12: E.g. rawabbet.com[RIP 2019-02-21] */
-                    waitStr = br.getRegex("class=\"timer\">\\s*?(\\d+)\\s*?<").getMatch(0);
+                    waitStr = br.getRegex(">\\s*Please Wait\\s*(\\d+)s\\s*<").getMatch(0);
+                    if (waitStr == null) {
+                        /* 2018-12-12: E.g. rawabbet.com[RIP 2019-02-21] */
+                        waitStr = br.getRegex("class=\"timer\">\\s*?(\\d+)\\s*?<").getMatch(0);
+                    }
                 }
                 if (!skipWait) {
-                    int wait = 10;
+                    int wait = 15;
                     if (waitStr != null) {
                         logger.info("Found waittime in html, waiting (seconds): " + waitStr);
                         wait = Integer.parseInt(waitStr) * +1;
