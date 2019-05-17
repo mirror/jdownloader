@@ -130,18 +130,19 @@ public class DirectHTTP extends antiDDoSForHost {
         if (url != null) {
             if (StringUtils.startsWithCaseInsensitive(url, "directhttp")) {
                 return true;
-            }
-            url = url.toLowerCase(Locale.ENGLISH);
-            if (url.contains("facebook.com/l.php")) {
-                return false;
-            } else if (url.contains("facebook.com/ajax/sharer/")) {
-                return false;
-            } else if (url.contains("youtube.com/videoplayback") && url.startsWith("http")) {
-                return false;
-            } else if (url.matches(".*?://.*?/.*\\?.*\\.\\d+$")) {
-                return false;
             } else {
-                return true;
+                url = url.toLowerCase(Locale.ENGLISH);
+                if (url.contains("facebook.com/l.php")) {
+                    return false;
+                } else if (url.contains("facebook.com/ajax/sharer/")) {
+                    return false;
+                } else if (url.contains("youtube.com/videoplayback") && url.startsWith("http")) {
+                    return false;
+                } else if (url.matches(".*?://.*?/.*\\?.*\\.\\d+$")) {
+                    return false;
+                } else {
+                    return true;
+                }
             }
         }
         return false;
