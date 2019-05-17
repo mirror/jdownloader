@@ -28,6 +28,22 @@ import java.util.Locale;
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
 
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
+import org.jdownloader.auth.AuthenticationController;
+import org.jdownloader.auth.AuthenticationInfo;
+import org.jdownloader.auth.AuthenticationInfo.Type;
+import org.jdownloader.auth.Login;
+import org.jdownloader.gui.views.SelectionInfo.PluginView;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -55,22 +71,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.download.Downloadable;
 import jd.utils.locale.JDL;
-
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
-import org.jdownloader.auth.AuthenticationController;
-import org.jdownloader.auth.AuthenticationInfo;
-import org.jdownloader.auth.AuthenticationInfo.Type;
-import org.jdownloader.auth.Login;
-import org.jdownloader.gui.views.SelectionInfo.PluginView;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 /**
  * TODO: remove after next big update of core to use the public static methods!
@@ -134,17 +134,15 @@ public class DirectHTTP extends antiDDoSForHost {
             url = url.toLowerCase(Locale.ENGLISH);
             if (url.contains("facebook.com/l.php")) {
                 return false;
-            }
-            if (url.contains("facebook.com/ajax/sharer/")) {
+            } else if (url.contains("facebook.com/ajax/sharer/")) {
                 return false;
-            }
-            if (url.contains("youtube.com/videoplayback") && url.startsWith("http")) {
+            } else if (url.contains("youtube.com/videoplayback") && url.startsWith("http")) {
                 return false;
-            }
-            if (url.matches(".*?://.*?/.*\\?.*\\.\\d+$")) {
+            } else if (url.matches(".*?://.*?/.*\\?.*\\.\\d+$")) {
                 return false;
+            } else {
+                return true;
             }
-            return true;
         }
         return false;
     }
