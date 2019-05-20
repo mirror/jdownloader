@@ -13,12 +13,9 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.LinkedHashMap;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -33,9 +30,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "yande.re" }, urls = { "https?://yande\\.re/post/show/\\d+" })
 public class YandeRe extends PluginForHost {
-
     public YandeRe(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -44,12 +42,10 @@ public class YandeRe extends PluginForHost {
     // Tags:
     // protocol: https
     // other:
-
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = 5;
-
     private String               DLLINK            = null;
 
     @Override
@@ -70,7 +66,6 @@ public class YandeRe extends PluginForHost {
         final String json = this.br.getRegex("Post\\.register_resp\\((.*?)\\);").getMatch(0);
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
         entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "posts/{0}");
-
         long filesize = 0;
         String ext = null;
         final String url_filename = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
@@ -80,23 +75,19 @@ public class YandeRe extends PluginForHost {
         } else {
             filename = url_filename;
         }
-        ext = ".png";
         DLLINK = (String) entries.get("file_url");
         filesize = JavaScriptEngineFactory.toLong(entries.get("file_size"), 0);
         if (DLLINK == null) {
-            ext = ".jpg";
             DLLINK = (String) entries.get("jpeg_url");
             filesize = JavaScriptEngineFactory.toLong(entries.get("jpeg_file_size"), 0);
         }
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        ext = getFileNameExtensionFromString(DLLINK, ".png");
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        if (ext == null) {
-            ext = getFileNameExtensionFromString(DLLINK, ".jpg");
-        }
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
@@ -112,7 +103,7 @@ public class YandeRe extends PluginForHost {
                 } catch (final BrowserException e) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                if (!con.getContentType().contains("html")) {
+                if (con.isOK() && !con.getContentType().contains("html")) {
                     filesize = con.getLongContentLength();
                 } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
