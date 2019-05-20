@@ -42,7 +42,6 @@ import org.appwork.utils.Application;
 public class SubConfiguration extends Property implements Serializable {
     private static final long                                   serialVersionUID = 7803718581558607222L;
     protected final String                                      name;
-    protected final boolean                                     valid;
     protected final File                                        file;
     protected final AtomicLong                                  setMark          = new AtomicLong(0);
     protected final AtomicLong                                  writeMark        = new AtomicLong(0);
@@ -86,9 +85,13 @@ public class SubConfiguration extends Property implements Serializable {
         this.setProperties(null);
     }
 
+    public static File getSubConfigurationFile(final String name) {
+        return Application.getResource("cfg/subconf_" + name + ".ejs");
+    }
+
     private SubConfiguration(final String name) {
         this.name = name;
-        file = Application.getResource("cfg/subconf_" + name + ".ejs");
+        file = getSubConfigurationFile(name);
         if (file.isFile()) {
             writeMark.set(0);
             /* load existing file */
@@ -102,21 +105,32 @@ public class SubConfiguration extends Property implements Serializable {
                 org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
             }
         }
-        valid = true;
     }
 
     public void save() {
-        if (valid && file != null) {
-            long lastSetMark = setMark.get();
+        if (file != null) {
+            final long lastSetMark = setMark.get();
             if (writeMark.getAndSet(lastSetMark) != lastSetMark) {
                 try {
                     org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Save Name:" + getName() + "|SetMark:" + lastSetMark + "|File:" + file);
-                    final byte[] json = JSonStorage.getMapper().objectToByteArray(getProperties());
+                    final Map<String, Object> properties = getProperties();
+                    final byte[] json = properties.size() > 0 ? JSonStorage.getMapper().objectToByteArray(properties) : null;
                     writeMark.set(setMark.get());
                     final Runnable run = new Runnable() {
                         @Override
                         public void run() {
-                            JSonStorage.saveTo(file, false, KEY, json);
+                            if (json == null || json.length == 0) {
+                                final Object lock = JSonStorage.requestLock(file);
+                                try {
+                                    synchronized (lock) {
+                                        file.delete();
+                                    }
+                                } finally {
+                                    JSonStorage.unLock(file);
+                                }
+                            } else {
+                                JSonStorage.saveTo(file, false, KEY, json);
+                            }
                         }
                     };
                     StorageHandler.enqueueWrite(run, file.getAbsolutePath(), true);
@@ -133,8 +147,8 @@ public class SubConfiguration extends Property implements Serializable {
 
     @Override
     public boolean setProperty(final String key, final Object value) {
-        boolean change = super.setProperty(key, value);
-        if (valid && change) {
+        final boolean change = super.setProperty(key, value);
+        if (change) {
             setMark.incrementAndGet();
             SAVEDELAYER.run();
         }
@@ -148,10 +162,8 @@ public class SubConfiguration extends Property implements Serializable {
     @Override
     public void setProperties(Map<String, Object> properties) {
         super.setProperties(properties);
-        if (valid) {
-            setMark.incrementAndGet();
-            SAVEDELAYER.run();
-        }
+        setMark.incrementAndGet();
+        SAVEDELAYER.run();
     }
 
     @Override
@@ -170,7 +182,7 @@ public class SubConfiguration extends Property implements Serializable {
     }
 
     private static synchronized void unLock(String name) {
-        AtomicInteger lock = LOCKS.get(name);
+        final AtomicInteger lock = LOCKS.get(name);
         if (lock != null) {
             if (lock.decrementAndGet() == 0) {
                 LOCKS.remove(name);
@@ -183,7 +195,7 @@ public class SubConfiguration extends Property implements Serializable {
         if (ret != null) {
             return ret;
         } else {
-            Object lock = requestLock(name);
+            final Object lock = requestLock(name);
             try {
                 synchronized (lock) {
                     /* shared lock to allow parallel creation of new SubConfigurations */
@@ -194,7 +206,7 @@ public class SubConfiguration extends Property implements Serializable {
                     final SubConfiguration cfg = new SubConfiguration(name);
                     synchronized (LOCKS) {
                         /* global lock to replace the SUB_CONFIGS */
-                        HashMap<String, SubConfiguration> newSUB_CONFIGS = new HashMap<String, SubConfiguration>(SUB_CONFIGS);
+                        final HashMap<String, SubConfiguration> newSUB_CONFIGS = new HashMap<String, SubConfiguration>(SUB_CONFIGS);
                         newSUB_CONFIGS.put(name, cfg);
                         SUB_CONFIGS = newSUB_CONFIGS;
                     }
