@@ -49,7 +49,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "3sat.de" }, urls = { "https?://(?:www\\.)?3sat\\.de/mediathek/.+obj=\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "3sat.de" }, urls = { "https?://(?:www\\.)?3sat\\.de/mediathek/.+obj=\\d+" })
 public class DreiSatDe extends PluginForHost {
     public DreiSatDe(final PluginWrapper wrapper) {
         super(wrapper);
@@ -411,7 +411,6 @@ public class DreiSatDe extends PluginForHost {
 
         @AboutConfig
         @DefaultBooleanValue(true)
-        @TakeValueFromSubconfig("Q_LOW")
         boolean isLoadLowVersionEnabled();
 
         void setLoadLowVersionEnabled(boolean b);

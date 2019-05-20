@@ -13,13 +13,11 @@ import java.util.jar.JarInputStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jd.config.Configuration;
 import jd.controlling.reconnect.ipcheck.IP;
 import jd.controlling.reconnect.ipcheck.IPController;
 import jd.controlling.reconnect.pluginsinc.batch.ExternBatchReconnectPlugin;
 import jd.controlling.reconnect.pluginsinc.easybox804.EasyBox804;
 import jd.controlling.reconnect.pluginsinc.extern.ExternReconnectPlugin;
-import jd.controlling.reconnect.pluginsinc.liveheader.CLRConverter;
 import jd.controlling.reconnect.pluginsinc.liveheader.LiveHeaderReconnect;
 import jd.controlling.reconnect.pluginsinc.speedporthybrid.SpeedPortHybrid;
 import jd.controlling.reconnect.pluginsinc.upnp.UPNPRouterPlugin;
@@ -131,33 +129,6 @@ public class ReconnectPluginController {
     }
 
     /**
-     * Maps old reconnect panel, to new one. can be removed after 2.*
-     *
-     * @return
-     */
-    private String convertFromOldSystem() {
-        final int id = JDUtilities.getConfiguration().getIntegerProperty("RECONNECT_TYPE", 0);
-        String[] ret;
-        switch (id) {
-        case 0:
-            return LiveHeaderReconnect.ID;
-        case 1:
-            return ExternReconnectPlugin.ID;
-        case 2:
-            return ExternBatchReconnectPlugin.ID;
-        case 3:
-            // we need to convert clr script
-            final String clr = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS_CLR);
-            ret = CLRConverter.createLiveHeader(clr);
-            if (ret != null) {
-                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_REQUESTS, ret[1]);
-            }
-            return LiveHeaderReconnect.ID;
-        }
-        return DummyRouterPlugin.getInstance().getID();
-    }
-
-    /**
      * Performs a reconnect with plugin plg.
      *
      * @param retry
@@ -208,10 +179,6 @@ public class ReconnectPluginController {
     public RouterPlugin getActivePlugin() {
         // convert only once
         String id = storage.getActivePluginID();
-        if (id == null) {
-            id = this.convertFromOldSystem();
-            this.storage.setActivePluginID(id);
-        }
         RouterPlugin active = ReconnectPluginController.getInstance().getPluginByID(id);
         if (active == null) {
             active = DummyRouterPlugin.getInstance();

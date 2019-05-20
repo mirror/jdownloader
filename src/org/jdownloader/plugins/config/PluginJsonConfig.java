@@ -43,12 +43,12 @@ public class PluginJsonConfig {
     private static final WeakHashMap<ClassLoader, HashMap<String, WeakReference<ConfigInterface>>> CONFIG_CACHE  = new WeakHashMap<ClassLoader, HashMap<String, WeakReference<ConfigInterface>>>();
     private static final HashMap<String, JsonKeyValueStorage>                                      STORAGE_CACHE = new HashMap<String, JsonKeyValueStorage>();
     protected static final DelayedRunnable                                                         SAVEDELAYER   = new DelayedRunnable(5000, 30000) {
-        @Override
-        public void delayedrun() {
-            saveAll();
-            cleanup();
-        }
-    };
+                                                                                                                     @Override
+                                                                                                                     public void delayedrun() {
+                                                                                                                         saveAll();
+                                                                                                                         cleanup();
+                                                                                                                     }
+                                                                                                                 };
     private final static boolean                                                                   DEBUG         = false;
     static {
         File pluginsFolder = Application.getResource("cfg/plugins/");
@@ -225,7 +225,7 @@ public class PluginJsonConfig {
         };
         intf = (T) Proxy.newProxyInstance(configInterface.getClassLoader(), new Class<?>[] { configInterface }, storageHandler);
         classLoaderMap.put(ID, new WeakReference<ConfigInterface>(intf));
-        SubConfiguration oldSub = SubConfiguration.getConfig(host, true);
+        SubConfiguration oldSub = SubConfiguration.getConfig(host);
         if (oldSub != null) {
             for (KeyHandler handler : storageHandler.getKeyHandler()) {
                 TakeValueFromSubconfig takeFrom = (TakeValueFromSubconfig) handler.getAnnotation(TakeValueFromSubconfig.class);

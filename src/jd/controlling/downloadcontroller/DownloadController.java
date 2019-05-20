@@ -40,7 +40,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-import jd.config.NoOldJDDataBaseFoundException;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.controlling.packagecontroller.PackageController;
@@ -484,14 +483,6 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                         logger.log(e);
                     }
                 }
-                try {
-                    if (lpackages == null) {
-                        logger.info("Try to import old LinkList");
-                        lpackages = loadDownloadLinks();
-                    }
-                } catch (final Throwable e) {
-                    logger.log(e);
-                }
                 if (lpackages != null) {
                     int links = 0;
                     for (FilePackage fp : lpackages) {
@@ -604,15 +595,15 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
 
         private final ArrayList<IndexedDownloadLink>         downloadLinks = new ArrayList<IndexedDownloadLink>();
         private final static Comparator<IndexedDownloadLink> COMPARATOR    = new Comparator<IndexedDownloadLink>() {
-            private final int compare(int x, int y) {
-                return (x < y) ? -1 : ((x == y) ? 0 : 1);
-            }
+                                                                               private final int compare(int x, int y) {
+                                                                                   return (x < y) ? -1 : ((x == y) ? 0 : 1);
+                                                                               }
 
-            @Override
-            public int compare(IndexedDownloadLink o1, IndexedDownloadLink o2) {
-                return compare(o1.getIndex(), o2.getIndex());
-            }
-        };
+                                                                               @Override
+                                                                               public int compare(IndexedDownloadLink o1, IndexedDownloadLink o2) {
+                                                                                   return compare(o1.getIndex(), o2.getIndex());
+                                                                               }
+                                                                           };
 
         private FilePackage getLoadedPackage() {
             final FilePackage filePackage = this.filePackage;
@@ -832,33 +823,6 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
             }
         }
         return ret;
-    }
-
-    /**
-     * load FilePackages and DownloadLinks from database
-     *
-     * @return
-     * @throws Exception
-     */
-    private LinkedList<FilePackage> loadDownloadLinks() throws Exception {
-        Object obj = null;
-        try {
-            obj = JDUtilities.getDatabaseConnector().getLinks();
-        } catch (final NoOldJDDataBaseFoundException e) {
-            return null;
-        }
-        if (obj != null && obj instanceof ArrayList && (((java.util.List<?>) obj).size() == 0 || ((java.util.List<?>) obj).size() > 0 && ((java.util.List<?>) obj).get(0) instanceof FilePackage)) {
-            final LinkedList<FilePackage> ret = new LinkedList<FilePackage>((java.util.List<FilePackage>) obj);
-            if (ret != null) {
-                for (final FilePackage fp : ret) {
-                    for (final DownloadLink link : fp.getChildren()) {
-                        link.setParentNode(fp);
-                    }
-                }
-            }
-            return ret;
-        }
-        throw new Exception("Linklist incompatible");
     }
 
     public void processFinalLinkState(DownloadLink localLink) {

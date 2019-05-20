@@ -30,11 +30,6 @@ public class ContainerPluginController {
     public void init() {
         final List<PluginsC> plugins = new ArrayList<PluginsC>();
         try {
-            plugins.add(new org.jdownloader.container.JD1Import());
-        } catch (final Throwable e) {
-            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
-        }
-        try {
             plugins.add(new org.jdownloader.container.NZB());
         } catch (final Throwable e) {
             org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
