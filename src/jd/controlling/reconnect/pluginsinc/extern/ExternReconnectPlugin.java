@@ -16,6 +16,15 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
 import javax.swing.event.DocumentEvent;
 
+import jd.controlling.reconnect.ReconnectException;
+import jd.controlling.reconnect.ReconnectInvoker;
+import jd.controlling.reconnect.RouterPlugin;
+import jd.controlling.reconnect.pluginsinc.extern.translate.T;
+import jd.gui.UserIO;
+import jd.gui.swing.components.ComboBrowseFile;
+import jd.utils.JDUtilities;
+import net.miginfocom.swing.MigLayout;
+
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storage;
 import org.appwork.utils.Application;
@@ -26,38 +35,19 @@ import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.AbstractIcon;
 
-import jd.controlling.reconnect.ReconnectException;
-import jd.controlling.reconnect.ReconnectInvoker;
-import jd.controlling.reconnect.RouterPlugin;
-import jd.controlling.reconnect.pluginsinc.extern.translate.T;
-import jd.gui.UserIO;
-import jd.gui.swing.components.ComboBrowseFile;
-import jd.utils.JDUtilities;
-import net.miginfocom.swing.MigLayout;
-
 /**
  * Plugin to use an extern tool for reconnection
  */
 public class ExternReconnectPlugin extends RouterPlugin implements ActionListener {
-
     private static final String COMMAND                 = "COMMAND";
-
     private static final String DUMMY_BATCH_ENABLED     = "DUMMY_BATCH_ENABLED";
-
     private static final String WAIT_FOR_RETURN_SECONDS = "WAIT_FOR_RETURN_SECONDS";
-
     private static final String PARAMETER               = "PARAMETER";
-
     public static final String  ID                      = "ExternReconnect";
-
     private JTextPane           txtParameter;
-
     private JCheckBox           chbDummyBatch;
-
     private ComboBrowseFile     browse;
-
     private Icon                icon;
-
     private ReconnectInvoker    invoker;
 
     public ExternReconnectPlugin() {
@@ -101,13 +91,10 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
                 if (command.length() == 0) {
                     throw new ReconnectException("Command Invalid: " + command);
                 }
-
                 final File f = new File(command);
                 if (!f.exists()) {
                     throw new ReconnectException("Command does not exist: " + f.getAbsolutePath());
-
                 }
-
                 final String t = f.getAbsolutePath();
                 final String executeIn = t.substring(0, t.indexOf(f.getName()) - 1).trim();
                 if (CrossSystem.isWindows() && isDummyBatchEnabled()) {
@@ -117,7 +104,6 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
                     final File bat = getDummyBat();
                     if (bat == null) {
                         throw new ReconnectException("Could not create Dummy Batch");
-
                     }
                     BufferedWriter output = null;
                     try {
@@ -182,13 +168,11 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
      * @return
      */
     private String getCommand() {
-        // TODO Auto-generated method stub
-        return this.getStorage().get(ExternReconnectPlugin.COMMAND, JDUtilities.getConfiguration().getStringProperty("InteractionExternReconnect_Command", ""));
+        return this.getStorage().get(ExternReconnectPlugin.COMMAND, "");
     }
 
     @Override
     public JComponent getGUI() {
-
         final JPanel p = new JPanel(new MigLayout("ins 0,wrap 2", "[][grow,fill]", "[][][grow,fill][]"));
         p.setOpaque(false);
         this.browse = new ComboBrowseFile(this.getID());
@@ -197,7 +181,6 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
         this.browse.setDialogType(JFileChooser.OPEN_DIALOG);
         this.txtParameter = new JTextPane();
         this.chbDummyBatch = new JCheckBox();
-
         p.add(new JLabel(T.T.interaction_externreconnect_command()), "sg left");
         p.add(this.browse);
         this.browse.addActionListener(this);
@@ -208,13 +191,10 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
             p.add(this.chbDummyBatch);
         }
         this.chbDummyBatch.addActionListener(this);
-
         new TextComponentChangeListener(this.txtParameter) {
             @Override
             protected void onChanged(final DocumentEvent e) {
-
                 ExternReconnectPlugin.this.setParameter(ExternReconnectPlugin.this.txtParameter.getText());
-
             }
         };
         this.updateGUI();
@@ -237,9 +217,7 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
      * @return
      */
     private String getParameterString() {
-
-        return this.getStorage().get(ExternReconnectPlugin.PARAMETER, JDUtilities.getConfiguration().getStringProperty("EXTERN_RECONNECT__PARAMETER"));
-
+        return this.getStorage().get(ExternReconnectPlugin.PARAMETER, "");
     }
 
     /**
@@ -248,9 +226,7 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
      * @return
      */
     private int getWaitForReturn() {
-
-        return this.getStorage().get(ExternReconnectPlugin.WAIT_FOR_RETURN_SECONDS, JDUtilities.getConfiguration().getIntegerProperty("WAIT_FOR_RETURN5", 0));
-
+        return this.getStorage().get(ExternReconnectPlugin.WAIT_FOR_RETURN_SECONDS, 0);
     }
 
     /**
@@ -260,8 +236,7 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
      * @return
      */
     private boolean isDummyBatchEnabled() {
-
-        return this.getStorage().get(ExternReconnectPlugin.DUMMY_BATCH_ENABLED, JDUtilities.getConfiguration().getBooleanProperty("PROPERTY_RECONNECT_DUMMYBAT", true));
+        return this.getStorage().get(ExternReconnectPlugin.DUMMY_BATCH_ENABLED, true);
     }
 
     private void setCommand(final String text) {
@@ -301,14 +276,11 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
                     // is a changelistener of this field's document
                 }
             }
-
         };
-
     }
 
     @Override
     public ReconnectInvoker getReconnectInvoker() {
         return invoker;
     }
-
 }

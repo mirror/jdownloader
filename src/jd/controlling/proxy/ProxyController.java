@@ -21,6 +21,22 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
 
+import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
+import jd.controlling.downloadcontroller.DownloadLinkCandidate;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkchecker.LinkCheckerThread;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.http.Browser;
+import jd.http.ClonedProxy;
+import jd.http.ProxySelectorInterface;
+import jd.http.Request;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Account;
+import jd.plugins.Plugin;
+import jd.plugins.PluginForHost;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.shutdown.ShutdownController;
@@ -78,23 +94,6 @@ import com.btr.proxy.util.Logger;
 import com.btr.proxy.util.Logger.LogBackEnd;
 import com.btr.proxy.util.Logger.LogLevel;
 
-import jd.config.SubConfiguration;
-import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
-import jd.controlling.downloadcontroller.DownloadLinkCandidate;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkchecker.LinkCheckerThread;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
-import jd.http.Browser;
-import jd.http.ClonedProxy;
-import jd.http.ProxySelectorInterface;
-import jd.http.Request;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.Account;
-import jd.plugins.Plugin;
-import jd.plugins.PluginForHost;
-
 //import com.btr.proxy.search.ProxySearchStrategy;
 //import com.btr.proxy.search.browser.firefox.FirefoxProxySearchStrategy;
 //import com.btr.proxy.search.desktop.DesktopProxySearchStrategy;
@@ -110,11 +109,11 @@ import jd.plugins.PluginForHost;
 //import com.btr.proxy.util.Logger.LogLevel;
 public class ProxyController implements ProxySelectorInterface {
     public static final URLStreamHandler SOCKETURLSTREAMHANDLER = new URLStreamHandler() {
-                                                                    @Override
-                                                                    protected URLConnection openConnection(URL u) throws IOException {
-                                                                        throw new IOException("not implemented");
-                                                                    }
-                                                                };
+        @Override
+        protected URLConnection openConnection(URL u) throws IOException {
+            throw new IOException("not implemented");
+        }
+    };
     private static final ProxyController INSTANCE               = new ProxyController();
 
     public static final ProxyController getInstance() {
@@ -126,27 +125,21 @@ public class ProxyController implements ProxySelectorInterface {
     private final InternetConnectionSettings                                config;
     private final LogSource                                                 logger;
     private final Queue                                                     QUEUE           = new Queue(getClass().getName()) {
-                                                                                                @Override
-                                                                                                public void killQueue() {
-                                                                                                    LogController.CL().log(new Throwable("YOU CANNOT KILL ME!"));
-                                                                                                                                                                 /*
-                                                                                                                                                                  * this
-                                                                                                                                                                  * queue
-                                                                                                                                                                  * can
-                                                                                                                                                                  * '
-                                                                                                                                                                  * t
-                                                                                                                                                                  * be
-                                                                                                                                                                  * killed
-                                                                                                                                                                  */
-                                                                                                }
-                                                                                            };
+        @Override
+        public void killQueue() {
+            LogController.CL().log(new Throwable("YOU CANNOT KILL ME!"));
+                                                                                                    /*
+                                                                                                     * this queue can ' t be killed
+                                                                                                     */
+        }
+    };
     private final ConfigEventSender<Object>                                 customProxyListEventSender;
     private final EventSuppressor<ConfigEvent>                              eventSuppressor = new EventSuppressor<ConfigEvent>() {
-                                                                                                @Override
-                                                                                                public boolean suppressEvent(ConfigEvent eventType) {
-                                                                                                    return true;
-                                                                                                }
-                                                                                            };
+        @Override
+        public boolean suppressEvent(ConfigEvent eventType) {
+            return true;
+        }
+    };
 
     public Queue getQUEUE() {
         return QUEUE;
@@ -198,16 +191,16 @@ public class ProxyController implements ProxySelectorInterface {
         });
         getEventSender().addListener(new DefaultEventListener<ProxyEvent<AbstractProxySelectorImpl>>() {
             final DelayedRunnable asyncSaving = new DelayedRunnable(5000l, 60000l) {
-                @Override
-                public void delayedrun() {
-                    ProxyController.this.saveProxySettings();
-                }
+                                                  @Override
+                                                  public void delayedrun() {
+                                                      ProxyController.this.saveProxySettings();
+                                                  }
 
-                @Override
-                public String getID() {
-                    return "ProxyController";
-                }
-            };
+                                                  @Override
+                                                  public String getID() {
+                                                      return "ProxyController";
+                                                  }
+                                              };
 
             @Override
             public void onEvent(final ProxyEvent<AbstractProxySelectorImpl> event) {
@@ -736,44 +729,6 @@ public class ProxyController implements ProxySelectorInterface {
                     }
                 }
             }
-            /* convert from old system */
-            final List<HTTPProxy> reto = restoreFromOldConfig();
-            for (final HTTPProxy proxyData : reto) {
-                try {
-                    switch (proxyData.getType()) {
-                    case NONE:
-                        final NoProxySelector none = new NoProxySelector(proxyData);
-                        if (proxies.add(none)) {
-                            logger.info("Restore None: " + none);
-                        }
-                        break;
-                    case DIRECT:
-                        final SingleDirectGatewaySelector direct = new SingleDirectGatewaySelector(proxyData);
-                        if (proxies.add(direct)) {
-                            logger.info("Restore Direct: " + direct);
-                        }
-                        break;
-                    case HTTP:
-                    case HTTPS:
-                        final SingleBasicProxySelectorImpl basic = new SingleBasicProxySelectorImpl(proxyData);
-                        if (proxies.add(basic)) {
-                            logger.info("Restore Basic: " + basic);
-                        }
-                        break;
-                    case SOCKS4:
-                    case SOCKS5:
-                        final SingleBasicProxySelectorImpl socks = new SingleBasicProxySelectorImpl(proxyData);
-                        if (proxies.add(socks)) {
-                            logger.info("Restore Soskcs: " + socks);
-                        }
-                        break;
-                    default:
-                        continue;
-                    }
-                } catch (final Throwable e) {
-                    logger.log(e);
-                }
-            }
             /* import proxies from system properties */
             final List<HTTPProxy> sproxy = HTTPProxy.getFromSystemProperties();
             for (final HTTPProxy proxyData : sproxy) {
@@ -835,50 +790,6 @@ public class ProxyController implements ProxySelectorInterface {
                 }
             });
         }
-    }
-
-    private List<HTTPProxy> restoreFromOldConfig() {
-        final java.util.List<HTTPProxy> ret = new ArrayList<HTTPProxy>();
-        try {
-            final SubConfiguration oldConfig = SubConfiguration.getConfig("DOWNLOAD", true);
-            if (oldConfig.getBooleanProperty("USE_PROXY", false)) {
-                /* import old http proxy settings */
-                final String host = oldConfig.getStringProperty("PROXY_HOST", "");
-                final int port = oldConfig.getIntegerProperty("PROXY_PORT", 8080);
-                final String user = oldConfig.getStringProperty("PROXY_USER", "");
-                final String pass = oldConfig.getStringProperty("PROXY_PASS", "");
-                if (!StringUtils.isEmpty(host)) {
-                    final HTTPProxy pr = new HTTPProxy(HTTPProxy.TYPE.HTTP, host, port);
-                    if (!StringUtils.isEmpty(user)) {
-                        pr.setUser(user);
-                    }
-                    if (!StringUtils.isEmpty(pass)) {
-                        pr.setPass(pass);
-                    }
-                    ret.add(pr);
-                }
-            }
-            if (oldConfig.getBooleanProperty("USE_SOCKS", false)) {
-                /* import old socks5 settings */
-                final String user = oldConfig.getStringProperty("PROXY_USER_SOCKS", "");
-                final String pass = oldConfig.getStringProperty("PROXY_PASS_SOCKS", "");
-                final String host = oldConfig.getStringProperty("SOCKS_HOST", "");
-                final int port = oldConfig.getIntegerProperty("SOCKS_PORT", 1080);
-                if (!StringUtils.isEmpty(host)) {
-                    final HTTPProxy pr = new HTTPProxy(HTTPProxy.TYPE.SOCKS5, host, port);
-                    if (!StringUtils.isEmpty(user)) {
-                        pr.setUser(user);
-                    }
-                    if (!StringUtils.isEmpty(pass)) {
-                        pr.setPass(pass);
-                    }
-                    ret.add(pr);
-                }
-            }
-        } catch (final Throwable e) {
-            logger.log(e);
-        }
-        return ret;
     }
 
     private void saveProxySettings() {

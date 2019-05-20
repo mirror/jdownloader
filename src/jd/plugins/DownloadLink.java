@@ -16,9 +16,6 @@
 package jd.plugins;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectInputStream.GetField;
 import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -28,7 +25,6 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -99,81 +95,81 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         }
     }
 
-    private static final String                         PROPERTY_MD5                        = "MD5";
-    private static final String                         PROPERTY_HASHINFO                   = "HASHINFO";
-    private static final String                         PROPERTY_MIRRORID                   = "MID";
-    private static final String                         PROPERTY_SHA1                       = "SHA1";
-    private static final String                         PROPERTY_SHA256                     = "SHA256";
-    private static final String                         PROPERTY_PASS                       = "pass";
-    private static final String                         PROPERTY_FINALFILENAME              = "FINAL_FILENAME";
-    private static final String                         PROPERTY_FORCEDFILENAME             = "FORCED_FILENAME";
-    private static final String                         PROPERTY_COMMENT                    = "COMMENT";
-    private static final String                         PROPERTY_PRIORITY                   = "PRIORITY2";
-    private static final String                         PROPERTY_FINISHTIME                 = "FINISHTIME";
-    private static final String                         PROPERTY_PWLIST                     = "PWLIST";
-    private static final String                         PROPERTY_LINKDUPEID                 = "LINKDUPEID";
-    private static final String                         PROPERTY_SPEEDLIMIT                 = "SPEEDLIMIT";
-    private static final String                         PROPERTY_VERIFIEDFILESIZE           = "VERIFIEDFILESIZE";
-    public static final String                          PROPERTY_RESUMEABLE                 = "PROPERTY_RESUMEABLE";
-    public static final String                          PROPERTY_CUSTOM_LOCALFILENAME       = "CUSTOM_LOCALFILENAME";
-    public static final String                          PROPERTY_CUSTOM_LOCALFILENAMEAPPEND = "CUSTOM_LOCALFILENAMEAPPEND";
-    public static final String                          PROPERTY_DOWNLOADTIME               = "DOWNLOADTIME";
-    public static final String                          PROPERTY_ARCHIVE_ID                 = "ARCHIVE_ID";
-    public static final String                          PROPERTY_EXTRACTION_STATUS          = "EXTRACTION_STATUS";
-    public static final String                          PROPERTY_CUSTOM_MESSAGE             = "CUSTOM_MESSAGE";
-    public static final String                          PROPERTY_MIME_HINT                  = "MIME_HINT";
-    private static final long                           serialVersionUID                    = 1981079856214268373L;
-    private static final String                         UNKNOWN_FILE_NAME                   = "unknownFileName";
-    private static final String                         PROPERTY_CHUNKS                     = "CHUNKS";
-    private static final String                         URL_ORIGIN                          = "URL_ORIGIN";
-    private static final String                         URL_REFERRER                        = "URL_REFERRER";
-    private static final String                         URL_CONTAINER                       = "URL_CONTAINER";
-    private static final String                         URL_CONTENT                         = "URL_CONTENT";
-    private static final String                         URL_CUSTOM                          = "URL_CUSTOM";
-    private static final String                         VARIANT_SUPPORT                     = "VARIANT_SUPPORT";
-    public static final String                          PROPERTY_JOB_ID                     = "JOB_ID";
-    private transient volatile AvailableStatus          availableStatus                     = AvailableStatus.UNCHECKED;
+    private static final String               PROPERTY_MD5                        = "MD5";
+    private static final String               PROPERTY_HASHINFO                   = "HASHINFO";
+    private static final String               PROPERTY_MIRRORID                   = "MID";
+    private static final String               PROPERTY_SHA1                       = "SHA1";
+    private static final String               PROPERTY_SHA256                     = "SHA256";
+    private static final String               PROPERTY_PASS                       = "pass";
+    private static final String               PROPERTY_FINALFILENAME              = "FINAL_FILENAME";
+    private static final String               PROPERTY_FORCEDFILENAME             = "FORCED_FILENAME";
+    private static final String               PROPERTY_COMMENT                    = "COMMENT";
+    private static final String               PROPERTY_PRIORITY                   = "PRIORITY2";
+    private static final String               PROPERTY_FINISHTIME                 = "FINISHTIME";
+    private static final String               PROPERTY_PWLIST                     = "PWLIST";
+    private static final String               PROPERTY_LINKDUPEID                 = "LINKDUPEID";
+    private static final String               PROPERTY_SPEEDLIMIT                 = "SPEEDLIMIT";
+    private static final String               PROPERTY_VERIFIEDFILESIZE           = "VERIFIEDFILESIZE";
+    public static final String                PROPERTY_RESUMEABLE                 = "PROPERTY_RESUMEABLE";
+    public static final String                PROPERTY_CUSTOM_LOCALFILENAME       = "CUSTOM_LOCALFILENAME";
+    public static final String                PROPERTY_CUSTOM_LOCALFILENAMEAPPEND = "CUSTOM_LOCALFILENAMEAPPEND";
+    public static final String                PROPERTY_DOWNLOADTIME               = "DOWNLOADTIME";
+    public static final String                PROPERTY_ARCHIVE_ID                 = "ARCHIVE_ID";
+    public static final String                PROPERTY_EXTRACTION_STATUS          = "EXTRACTION_STATUS";
+    public static final String                PROPERTY_CUSTOM_MESSAGE             = "CUSTOM_MESSAGE";
+    public static final String                PROPERTY_MIME_HINT                  = "MIME_HINT";
+    private static final long                 serialVersionUID                    = 1981079856214268373L;
+    private static final String               UNKNOWN_FILE_NAME                   = "unknownFileName";
+    private static final String               PROPERTY_CHUNKS                     = "CHUNKS";
+    private static final String               URL_ORIGIN                          = "URL_ORIGIN";
+    private static final String               URL_REFERRER                        = "URL_REFERRER";
+    private static final String               URL_CONTAINER                       = "URL_CONTAINER";
+    private static final String               URL_CONTENT                         = "URL_CONTENT";
+    private static final String               URL_CUSTOM                          = "URL_CUSTOM";
+    private static final String               VARIANT_SUPPORT                     = "VARIANT_SUPPORT";
+    public static final String                PROPERTY_JOB_ID                     = "JOB_ID";
+    private volatile AvailableStatus          availableStatus                     = AvailableStatus.UNCHECKED;
     @Deprecated
-    private long[]                                      chunksProgress                      = null;
+    private long[]                            chunksProgress                      = null;
     /** Aktuell heruntergeladene Bytes der Datei */
-    private long                                        downloadCurrent                     = 0;
-    private transient volatile SingleDownloadController downloadLinkController              = null;
+    private long                              downloadCurrent                     = 0;
+    private volatile SingleDownloadController downloadLinkController              = null;
     /** Maximum der heruntergeladenen Datei (Dateilaenge) */
-    private long                                        downloadMax                         = -1;
-    private FilePackage                                 filePackage;
+    private long                              downloadMax                         = -1;
+    private FilePackage                       filePackage;
     /** Hoster des Downloads */
-    private String                                      host;
-    private boolean                                     isEnabled;
+    private String                            host;
+    private boolean                           isEnabled;
     /** Beschreibung des Downloads */
     /* kann sich noch ändern, NICHT final */
-    private String                                      name;
-    private transient PluginForHost                     defaultplugin;
-    private transient PluginForHost                     liveplugin;
+    private String                            name;
+    private PluginForHost                     defaultplugin;
+    private PluginForHost                     liveplugin;
     /**
      * Do not rename urlDownload. We need this field to restore old downloadlinks from the jd09 database
      */
-    private String                                      urlDownload;
-    private transient volatile List<PluginProgress>     pluginProgress                      = null;
-    private long                                        created                             = -1l;
-    private transient UniqueAlltimeID                   uniqueID                            = null;
-    private transient AbstractNodeNotifier              propertyListener;
-    private transient DomainInfo                        domainInfo                          = null;
-    private transient volatile SkipReason               skipReason                          = null;
-    private transient volatile ConditionalSkipReason    conditionalSkipReason               = null;
-    private transient volatile FinalLinkState           finalLinkState                      = null;
-    private transient UniqueAlltimeID                   previousParent                      = null;
-    private transient volatile ExtractionStatus         extractionStatus                    = null;
-    private transient Property                          tempProperties                      = null;
-    private transient DownloadLinkView                  view                                = null;
-    private transient LinkInfo                          linkInfo                            = null;
-    private transient volatile long                     lastAvailableStatusChange           = -1;
-    private transient volatile FilePackage              lastValidFilePackage                = null;
-    private transient volatile String[]                 cachedName                          = null;
-    private transient UrlProtection                     urlProtection                       = UrlProtection.UNSET;
-    private transient List<HistoryEntry>                history                             = null;
-    private transient Boolean                           partOfAnArchive                     = null;
-    private transient List<String>                      sourcePluginPasswordList            = null;
-    public static final String                          RELATIVE_DOWNLOAD_FOLDER_PATH       = "subfolderbyplugin";
+    private String                            urlDownload;
+    private volatile List<PluginProgress>     pluginProgress                      = null;
+    private long                              created                             = -1l;
+    private UniqueAlltimeID                   uniqueID                            = null;
+    private AbstractNodeNotifier              propertyListener;
+    private DomainInfo                        domainInfo                          = null;
+    private volatile SkipReason               skipReason                          = null;
+    private volatile ConditionalSkipReason    conditionalSkipReason               = null;
+    private volatile FinalLinkState           finalLinkState                      = null;
+    private UniqueAlltimeID                   previousParent                      = null;
+    private volatile ExtractionStatus         extractionStatus                    = null;
+    private Property                          tempProperties                      = null;
+    private DownloadLinkView                  view                                = null;
+    private LinkInfo                          linkInfo                            = null;
+    private volatile long                     lastAvailableStatusChange           = -1;
+    private volatile FilePackage              lastValidFilePackage                = null;
+    private volatile String[]                 cachedName                          = null;
+    private UrlProtection                     urlProtection                       = UrlProtection.UNSET;
+    private List<HistoryEntry>                history                             = null;
+    private Boolean                           partOfAnArchive                     = null;
+    private List<String>                      sourcePluginPasswordList            = null;
+    public static final String                RELATIVE_DOWNLOAD_FOLDER_PATH       = "subfolderbyplugin";
 
     public Boolean isPartOfAnArchive() {
         return partOfAnArchive;
@@ -295,125 +291,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     public void setCreated(long created) {
         this.created = created;
-    }
-
-    private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
-        /* deserialize object and then fill other stuff(transient..) */
-        final GetField fields = stream.readFields();
-        setView(new DefaultDownloadLinkViewImpl());
-        history = null;
-        extractionStatus = null;
-        linkInfo = null;
-        availableStatus = AvailableStatus.UNCHECKED;
-        try {
-            final int linkType = fields.get("linkType", 0);
-            if (linkType == 0) {
-                urlProtection = UrlProtection.UNSET;
-            } else {
-                urlProtection = UrlProtection.PROTECTED_CONTAINER;
-            }
-        } catch (final Throwable e) {
-            urlProtection = UrlProtection.UNSET;
-            e.printStackTrace();
-        }
-        try {
-            final String sourcePluginComment = (String) fields.get("sourcePluginComment", null);
-            if (sourcePluginComment != null) {
-                setComment(sourcePluginComment);
-            }
-        } catch (final Throwable e) {
-            e.printStackTrace();
-        }
-        try {
-            final Object sourcePluginPasswordList = fields.get("sourcePluginPasswordList", null);
-            if (sourcePluginPasswordList != null && sourcePluginPasswordList instanceof List && ((List) sourcePluginPasswordList).size() > 0) {
-                final List<String> list = (List<String>) sourcePluginPasswordList;
-                list.remove("autopostpw");
-                list.remove("{}");
-                final Iterator<String> it = list.iterator();
-                while (it.hasNext()) {
-                    final String next = it.next();
-                    if (StringUtils.startsWithCaseInsensitive(next, "http://") || StringUtils.startsWithCaseInsensitive(next, "https://")) {
-                        it.remove();
-                    }
-                }
-                if (list.size() > 0) {
-                    this.sourcePluginPasswordList = list;
-                }
-            }
-        } catch (final Throwable e) {
-            e.printStackTrace();
-        }
-        try {
-            this.created = fields.get("created", -1l);
-        } catch (final Throwable e) {
-            this.created = System.currentTimeMillis();
-            e.printStackTrace();
-        }
-        try {
-            this.downloadCurrent = fields.get("downloadCurrent", 0l);
-        } catch (final Throwable e) {
-            this.downloadCurrent = 0;
-            e.printStackTrace();
-        }
-        try {
-            chunksProgress = (long[]) fields.get("chunksProgress", null);
-        } catch (final Throwable e) {
-            this.chunksProgress = null;
-            downloadCurrent = 0;
-            e.printStackTrace();
-        }
-        try {
-            this.downloadMax = fields.get("downloadMax", -1l);
-        } catch (final Throwable e) {
-            this.downloadMax = -1l;
-            e.printStackTrace();
-        }
-        try {
-            this.isEnabled = fields.get("isEnabled", true);
-        } catch (final Throwable e) {
-            this.isEnabled = true;
-            e.printStackTrace();
-        }
-        try {
-            this.urlDownload = (String) fields.get("urlDownload", null);
-        } catch (final Throwable e) {
-            e.printStackTrace();
-        }
-        try {
-            final String name = (String) fields.get("name", null);
-            if (name != null) {
-                setName(name);
-            }
-        } catch (final Throwable e) {
-            e.printStackTrace();
-        }
-        try {
-            this.host = (String) fields.get("host", null);
-        } catch (final Throwable e) {
-            e.printStackTrace();
-        }
-        try {
-            final String finalFileName = (String) fields.get("finalFileName", null);
-            if (finalFileName != null) {
-                this.setFinalFileName(finalFileName);
-            }
-        } catch (final Throwable e) {
-            e.printStackTrace();
-        }
-        try {
-            final LinkStatus linkStatus = (LinkStatus) fields.get("linkStatus", null);
-            if (linkStatus != null) {
-                if (linkStatus.getStatus() == LinkStatus.FINISHED || linkStatus.hasStatus(LinkStatus.FINISHED)) {
-                    setFinalLinkState(FinalLinkState.FINISHED);
-                } else if (linkStatus.getStatus() == LinkStatus.ERROR_FILE_NOT_FOUND || linkStatus.hasStatus(LinkStatus.ERROR_FILE_NOT_FOUND)) {
-                    setFinalLinkState(FinalLinkState.OFFLINE);
-                } else if (linkStatus.getStatus() == LinkStatus.ERROR_FATAL || linkStatus.hasStatus(LinkStatus.ERROR_FATAL)) {
-                    setFinalLinkState(FinalLinkState.FAILED_FATAL);
-                }
-            }
-        } catch (final Throwable e) {
-        }
     }
 
     public List<String> getOldPluginPasswordList() {

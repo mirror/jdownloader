@@ -24,8 +24,6 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import jd.utils.JDUtilities;
-
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
@@ -43,11 +41,11 @@ import org.appwork.utils.Application;
  */
 public class SubConfiguration extends Property implements Serializable {
     private static final long                                   serialVersionUID = 7803718581558607222L;
-    protected String                                            name;
-    protected transient boolean                                 valid            = false;
-    protected transient final File                              file;
-    private final AtomicLong                                    setMark          = new AtomicLong(0);
-    private final AtomicLong                                    writeMark        = new AtomicLong(0);
+    protected final String                                      name;
+    protected final boolean                                     valid;
+    protected final File                                        file;
+    protected final AtomicLong                                  setMark          = new AtomicLong(0);
+    protected final AtomicLong                                  writeMark        = new AtomicLong(0);
     protected static volatile HashMap<String, SubConfiguration> SUB_CONFIGS      = new HashMap<String, SubConfiguration>();
     protected static final HashMap<String, AtomicInteger>       LOCKS            = new HashMap<String, AtomicInteger>();
     protected static final byte[]                               KEY              = new byte[] { 0x01, 0x02, 0x11, 0x01, 0x01, 0x54, 0x01, 0x01, 0x01, 0x01, 0x12, 0x01, 0x01, 0x01, 0x22, 0x01 };
@@ -84,20 +82,14 @@ public class SubConfiguration extends Property implements Serializable {
         }
     }
 
-    public SubConfiguration() {
-        /* keep for serialization */
-        file = null;
-        valid = false;
-    }
-
     public void reset() {
         this.setProperties(null);
     }
 
-    private SubConfiguration(final String name, boolean importOnly) {
+    private SubConfiguration(final String name) {
         this.name = name;
         file = Application.getResource("cfg/subconf_" + name + ".ejs");
-        if (file.exists()) {
+        if (file.isFile()) {
             writeMark.set(0);
             /* load existing file */
             try {
@@ -109,26 +101,8 @@ public class SubConfiguration extends Property implements Serializable {
             } catch (final Throwable e) {
                 org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
             }
-        } else {
-            /* import old DataBase if existing */
-            try {
-                final Object props = JDUtilities.getDatabaseConnector().getData(name);
-                if (props != null && props instanceof Map) {
-                    final Map<String, Object> tmp = (Map<String, Object>) props;
-                    /* remove obsolet variables from old stable (09581) */
-                    tmp.remove("USE_PLUGIN");
-                    tmp.remove("AGB_CHECKED");
-                    if (tmp.size() > 0) {
-                        writeMark.set(-1);
-                        setProperties(tmp);
-                    }
-                }
-            } catch (final NoOldJDDataBaseFoundException e) {
-            } catch (final Throwable e) {
-                org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
-            }
         }
-        valid = !importOnly;
+        valid = true;
     }
 
     public void save() {
@@ -204,7 +178,7 @@ public class SubConfiguration extends Property implements Serializable {
         }
     }
 
-    public static SubConfiguration getConfig(final String name, boolean importOnly) {
+    public static SubConfiguration getConfig(final String name) {
         SubConfiguration ret = SUB_CONFIGS.get(name);
         if (ret != null) {
             return ret;
@@ -217,7 +191,7 @@ public class SubConfiguration extends Property implements Serializable {
                     if (ret != null) {
                         return ret;
                     }
-                    final SubConfiguration cfg = new SubConfiguration(name, importOnly);
+                    final SubConfiguration cfg = new SubConfiguration(name);
                     synchronized (LOCKS) {
                         /* global lock to replace the SUB_CONFIGS */
                         HashMap<String, SubConfiguration> newSUB_CONFIGS = new HashMap<String, SubConfiguration>(SUB_CONFIGS);
@@ -230,9 +204,5 @@ public class SubConfiguration extends Property implements Serializable {
                 unLock(name);
             }
         }
-    }
-
-    public static SubConfiguration getConfig(final String name) {
-        return getConfig(name, false);
     }
 }

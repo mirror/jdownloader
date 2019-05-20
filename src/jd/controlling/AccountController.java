@@ -23,11 +23,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 
-import jd.config.SubConfiguration;
 import jd.controlling.accountchecker.AccountChecker;
 import jd.controlling.accountchecker.AccountCheckerThread;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -80,11 +78,11 @@ public class AccountController implements AccountControllerListener, AccountProp
     private final HashMap<String, List<Account>>                                 MULTIHOSTER_ACCOUNTS;
     private static AccountController                                             INSTANCE         = new AccountController();
     private final Eventsender<AccountControllerListener, AccountControllerEvent> broadcaster      = new Eventsender<AccountControllerListener, AccountControllerEvent>() {
-        @Override
-        protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
-            listener.onAccountControllerEvent(event);
-        }
-    };
+                                                                                                      @Override
+                                                                                                      protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
+                                                                                                          listener.onAccountControllerEvent(event);
+                                                                                                      }
+                                                                                                  };
 
     public Eventsender<AccountControllerListener, AccountControllerEvent> getEventSender() {
         return broadcaster;
@@ -115,7 +113,7 @@ public class AccountController implements AccountControllerListener, AccountProp
                 return "ShutdownEvent: Save AccountController";
             }
         });
-        ACCOUNTS = loadAccounts(config, true);
+        ACCOUNTS = loadAccounts(config);
         MULTIHOSTER_ACCOUNTS = new HashMap<String, List<Account>>();
         delayedSaver = new DelayedRunnable(5000, 30000) {
             @Override
@@ -495,15 +493,8 @@ public class AccountController implements AccountControllerListener, AccountProp
         return INSTANCE;
     }
 
-    private synchronized HashMap<String, List<Account>> loadAccounts(AccountSettings config, boolean allowRestore) {
+    private synchronized HashMap<String, List<Account>> loadAccounts(AccountSettings config) {
         HashMap<String, ArrayList<AccountData>> dat = config.getAccounts();
-        if (dat == null && allowRestore) {
-            try {
-                dat = restore();
-            } catch (final Throwable e) {
-                LogController.CL().log(e);
-            }
-        }
         if (dat == null) {
             dat = new HashMap<String, ArrayList<AccountData>>();
         }
@@ -546,51 +537,6 @@ public class AccountController implements AccountControllerListener, AccountProp
                 }
             }
         }
-        return ret;
-    }
-
-    /**
-     * Restores accounts from old database
-     *
-     * @return
-     */
-    private HashMap<String, ArrayList<AccountData>> restore() {
-        SubConfiguration sub = SubConfiguration.getConfig("AccountController", true);
-        HashMap<String, ArrayList<AccountData>> ret = new HashMap<String, ArrayList<AccountData>>();
-        Object mapRet = sub.getProperty("accountlist");
-        if (mapRet != null && mapRet instanceof Map) {
-            Map<String, Object> tree = (Map<String, Object>) mapRet;
-            for (Iterator<Entry<String, Object>> it = tree.entrySet().iterator(); it.hasNext();) {
-                Entry<String, Object> next = it.next();
-                if (next.getValue() instanceof ArrayList) {
-                    List<Object> accList = (List<Object>) next.getValue();
-                    if (accList.size() > 0) {
-                        ArrayList<AccountData> list = new ArrayList<AccountData>();
-                        ret.put(next.getKey(), list);
-                        if (accList.get(0) instanceof Account) {
-                            List<Account> accList2 = (List<Account>) next.getValue();
-                            for (Account a : accList2) {
-                                AccountData ac;
-                                list.add(ac = new AccountData());
-                                ac.setUser(a.getUser());
-                                ac.setPassword(a.getPass());
-                                ac.setEnabled(a.isEnabled());
-                            }
-                        } else if (accList.get(0) instanceof Map) {
-                            List<Map<String, Object>> accList2 = (List<Map<String, Object>>) next.getValue();
-                            for (Map<String, Object> a : accList2) {
-                                AccountData ac;
-                                list.add(ac = new AccountData());
-                                ac.setUser((String) a.get("user"));
-                                ac.setPassword((String) a.get("pass"));
-                                ac.setEnabled(a.containsKey("enabled"));
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        config.setAccounts(ret);
         return ret;
     }
 
@@ -939,7 +885,7 @@ public class AccountController implements AccountControllerListener, AccountProp
         /* TODO: add cleanup to avoid memleak */
         final AccountSettings cfg = JsonConfig.create(new File(f.getParent(), "org.jdownloader.settings.AccountSettings"), AccountSettings.class);
         final long timeStamp = System.currentTimeMillis();
-        final HashMap<String, List<Account>> accounts = loadAccounts(cfg, false);
+        final HashMap<String, List<Account>> accounts = loadAccounts(cfg);
         final ArrayList<Account> added = new ArrayList<Account>();
         for (final Entry<String, List<Account>> es : accounts.entrySet()) {
             for (final Account ad : es.getValue()) {

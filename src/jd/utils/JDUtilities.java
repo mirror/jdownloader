@@ -28,9 +28,6 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import jd.SecondLevelLaunch;
-import jd.config.Configuration;
-import jd.config.DatabaseConnector;
-import jd.config.NoOldJDDataBaseFoundException;
 import jd.nutils.Executer;
 import jd.nutils.Formatter;
 import jd.nutils.io.JDIO;
@@ -59,36 +56,10 @@ public class JDUtilities {
     /**
      * Die Konfiguration
      */
-    private static Configuration     CONFIGURATION = null;
-    private static DatabaseConnector DB_CONNECT    = null;
-    private static File              JD_HOME       = null;
-    private static String            REVISION;
-    private static long              REVISIONINT   = -1;
-    private static Boolean           oldDBExists   = null;
-
-    /**
-     * returns old Configuration (if available) or creates dummy one (in new JD2) so we can import existing configs into current version
-     *
-     * @return
-     */
-    @Deprecated
-    public static synchronized Configuration getConfiguration() {
-        if (CONFIGURATION == null) {
-            try {
-                Object obj = JDUtilities.getDatabaseConnector().getData(Configuration.NAME);
-                if (obj != null) {
-                    CONFIGURATION = (Configuration) obj;
-                }
-            } catch (NoOldJDDataBaseFoundException e) {
-            } catch (Throwable e) {
-                LogController.CL().log(e);
-            }
-        }
-        if (CONFIGURATION == null) {
-            CONFIGURATION = new Configuration();
-        }
-        return CONFIGURATION;
-    }
+    private static File    JD_HOME     = null;
+    private static String  REVISION;
+    private static long    REVISIONINT = -1;
+    private static Boolean oldDBExists = null;
 
     /**
      * Diese Funktion gibt den Pfad zum JAC-Methodenverzeichniss zurueck
@@ -251,30 +222,6 @@ public class JDUtilities {
         exec.start();
         exec.waitTimeout();
         return exec.getOutputStream() + " \r\n " + exec.getErrorStream();
-    }
-
-    public synchronized static DatabaseConnector getDatabaseConnector() throws NoOldJDDataBaseFoundException {
-        if (oldDBExists == null) {
-            oldDBExists = Application.getResource("/config/database.script").exists();
-        }
-        if (Boolean.FALSE.equals(oldDBExists)) {
-            throw new NoOldJDDataBaseFoundException();
-        }
-        if (DB_CONNECT != null) {
-            return DB_CONNECT;
-        }
-        if (DB_CONNECT == null) {
-            try {
-                DB_CONNECT = new DatabaseConnector();
-            } catch (Throwable e) {
-                /* we no longer use old DataBase, so no need to retry or create fresh one */
-                LogController.CL().severe("Rename old Database to avoid loading it again!: " + Application.getResource("/config/database.script").renameTo(Application.getResource("/config/database.scriptBAK")));
-                LogController.CL().log(e);
-                oldDBExists = false;
-                throw new NoOldJDDataBaseFoundException();
-            }
-        }
-        return DB_CONNECT;
     }
 
     public static Document parseXmlString(final String xmlString, final boolean validating) {

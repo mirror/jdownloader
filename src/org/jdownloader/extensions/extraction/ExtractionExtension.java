@@ -27,7 +27,6 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.regex.Pattern;
 
 import jd.SecondLevelLaunch;
-import jd.config.SubConfiguration;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkcollector.LinkCollector;
@@ -549,44 +548,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
     // }
     @Override
     protected void initExtension() throws StartException {
-        /* import old passwordlist */
-        boolean oldPWListImported = false;
         ArchiveValidator.EXTENSION = this;
-        try {
-            if ((oldPWListImported = getSettings().isOldPWListImported()) == false) {
-                final SubConfiguration oldConfig = SubConfiguration.getConfig("PASSWORDLIST", true);
-                if (oldConfig.getProperties() != null) {
-                    final Object oldList = oldConfig.getProperties().get("LIST2");
-                    if (oldList != null && oldList instanceof List) {
-                        final HashSet<String> dups = new HashSet<String>();
-                        List<String> currentList = getSettings().getPasswordList();
-                        if (currentList == null) {
-                            currentList = new ArrayList<String>();
-                        } else {
-                            for (final String pw : currentList) {
-                                dups.add(pw);
-                            }
-                        }
-                        for (final Object item : (List<?>) oldList) {
-                            if (item != null && item instanceof String) {
-                                final String pw = (String) item;
-                                if (dups.add(pw)) {
-                                    currentList.add(pw);
-                                }
-                            }
-                        }
-                        getSettings().setPasswordList(currentList);
-                    }
-                }
-            }
-        } catch (final Throwable e) {
-            logger.info("Could not Restore old Database");
-            logger.log(e);
-        } finally {
-            if (oldPWListImported == false) {
-                getSettings().setOldPWListImported(true);
-            }
-        }
     }
 
     @Override

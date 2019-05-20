@@ -13,14 +13,6 @@ import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.event.DocumentEvent;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.Storage;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.EDTRunner;
-import org.appwork.utils.swing.TextComponentChangeListener;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.images.AbstractIcon;
-
 import jd.config.SubConfiguration;
 import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.ReconnectInvoker;
@@ -31,41 +23,37 @@ import jd.gui.swing.components.ComboBrowseFile;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.Storage;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.TextComponentChangeListener;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
+
 /**
  * Plugin to use an extern tool for reconnection
  */
 public class ExternBatchReconnectPlugin extends RouterPlugin implements ActionListener {
-
     private static final String BATCH_TEXT              = "BATCH_COMMAND";
-
     private static final String TERMINAL_COMMAND        = "TERMINAL";
-
     private static final String EXECUTE_IN              = "EXECUTE_IN";
-
     private static final String WAIT_FOR_RETURN_SECONDS = "WAIT_FOR_RETURN_SECONDS";
-
     public static final String  ID                      = "ExternBatchReconnect";
-
     private JTextField          txtCommand;
-
     private ComboBrowseFile     browse;
-
     private JTextPane           txtBatch;
-
     private Icon                icon;
-
     private ReconnectInvoker    invoker;
 
     public ExternBatchReconnectPlugin() {
         super();
         icon = new AbstractIcon(IconKey.ICON_BATCH, 16);
         invoker = new ReconnectInvoker(this) {
-
             @Override
             public void run() throws ReconnectException {
                 final int waitForReturn = getWaitForReturn();
                 final String executeIn = getExecuteIn();
-
                 String command = getTerminalCommand();
                 if (command != null) {
                     final String[] cmds = command.split("\\ ");
@@ -74,9 +62,7 @@ public class ExternBatchReconnectPlugin extends RouterPlugin implements ActionLi
                     for (int i = 0; i < cmdsLength1; i++) {
                         cmds[i] = cmds[i + 1];
                     }
-
                     final String batch = getBatchText();
-
                     final String[] lines = org.appwork.utils.Regex.getLines(batch);
                     logger.info("Using Batch-Mode: using " + command + " as interpreter! (default: windows(cmd.exe) linux&mac(/bin/bash) )");
                     for (final String element : lines) {
@@ -93,9 +79,7 @@ public class ExternBatchReconnectPlugin extends RouterPlugin implements ActionLi
             protected void testRun() throws ReconnectException, InterruptedException {
                 run();
             }
-
         };
-
     }
 
     public void actionPerformed(final ActionEvent e) {
@@ -116,11 +100,9 @@ public class ExternBatchReconnectPlugin extends RouterPlugin implements ActionLi
 
     @Override
     public JComponent getGUI() {
-
         final JPanel p = new JPanel(new MigLayout("ins 0,wrap 2", "[][grow,fill]", "[][][grow,fill][]"));
         p.setOpaque(false);
         this.txtCommand = new JTextField();
-
         this.txtBatch = new JTextPane();
         this.browse = new ComboBrowseFile(this.getID());
         this.browse.setEditable(true);
@@ -129,27 +111,20 @@ public class ExternBatchReconnectPlugin extends RouterPlugin implements ActionLi
         this.browse.setDialogType(JFileChooser.SAVE_DIALOG);
         p.add(new JLabel(T.T.interaction_batchreconnect_terminal()), "sg left");
         p.add(this.txtCommand);
-
         p.add(new JLabel(T.T.interaction_batchreconnect_batch()), "newline,spanx,sg left");
         p.add(new JScrollPane(this.txtBatch), "spanx,newline,pushx,growx");
-
         p.add(new JLabel(T.T.interaction_batchreconnect_executein()), "sg left");
         p.add(this.browse);
         new TextComponentChangeListener(this.txtCommand) {
             @Override
             protected void onChanged(final DocumentEvent e) {
-
                 ExternBatchReconnectPlugin.this.setCommand(ExternBatchReconnectPlugin.this.txtCommand.getText());
-
             }
-
         };
         new TextComponentChangeListener(this.txtBatch) {
             @Override
             protected void onChanged(final DocumentEvent e) {
-
                 ExternBatchReconnectPlugin.this.setBatchText(ExternBatchReconnectPlugin.this.txtBatch.getText());
-
             }
         };
         this.updateGUI();
@@ -180,9 +155,7 @@ public class ExternBatchReconnectPlugin extends RouterPlugin implements ActionLi
      * @return
      */
     private int getWaitForReturn() {
-
-        return this.getStorage().get(ExternBatchReconnectPlugin.WAIT_FOR_RETURN_SECONDS, JDUtilities.getConfiguration().getIntegerProperty("WAIT_FOR_RETURN5", 0));
-
+        return this.getStorage().get(ExternBatchReconnectPlugin.WAIT_FOR_RETURN_SECONDS, 0);
     }
 
     private void setBatchText(final String text) {
@@ -222,9 +195,7 @@ public class ExternBatchReconnectPlugin extends RouterPlugin implements ActionLi
                     // is a changelistener of this field's document
                 }
             }
-
         };
-
     }
 
     @Override
@@ -236,5 +207,4 @@ public class ExternBatchReconnectPlugin extends RouterPlugin implements ActionLi
     public ReconnectInvoker getReconnectInvoker() {
         return invoker;
     }
-
 }
