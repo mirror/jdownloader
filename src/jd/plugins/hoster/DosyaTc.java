@@ -28,7 +28,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dosya.tc" }, urls = { "http://[\\w\\.]*?dosya\\.tc/(?!index).+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dosya.tc" }, urls = { "https?://[\\w\\.]*?dosya\\.tc/(?!index).+\\.html" })
 public class DosyaTc extends PluginForHost {
     public DosyaTc(PluginWrapper wrapper) {
         super(wrapper);
@@ -83,7 +83,7 @@ public class DosyaTc extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         // String dllink = br.getRegex("value=\"Download\" onClick=\"window\\.location=.*?(http.*?).'\">").getMatch(0);
-        String dllink = br.getRegex("\\{\\s*window\\.open\\(\"(http.*?)\"").getMatch(0);
+        String dllink = br.getRegex("window\\.open\\(\"(https?://[^\"]*dosya.*?)\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("<a href=\"([^\"]+)\" id=\"download\"").getMatch(0);
         }
