@@ -27,6 +27,17 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -51,17 +62,6 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.hoster.RTMPDownload;
-
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 public class XFileSharingProBasic extends antiDDoSForHost {
     public XFileSharingProBasic(PluginWrapper wrapper) {
@@ -319,7 +319,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * See also function getFilesizeViaAvailablecheckAlt! <br />
      * <b> Enabling this will eventually lead to at least one additional website-request! </b>
      *
-     * @return true: Implies that website supports getFilesizeViaAvailablecheckAlt call as an alternative source for filesize-parsing. <br />
+     * @return true: Implies that website supports getFilesizeViaAvailablecheckAlt call as an alternative source for filesize-parsing.
+     *         <br />
      *         false: Implies that website does NOT support getFilesizeViaAvailablecheckAlt. <br />
      *         default: true
      */
@@ -375,10 +376,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /**
-     * This is designed to find the filesize during availablecheck for videohosts - videohosts usually don't display the filesize anywhere! <br />
+     * This is designed to find the filesize during availablecheck for videohosts - videohosts usually don't display the filesize anywhere!
+     * <br />
      * CAUTION: Only set this to true if a filehost: <br />
      * 1. Allows users to embed videos via '/embed-<fuid>.html'. <br />
-     * 2. Does not display a filesize anywhere inside html code or other calls where we do not have to do an http request on a directurl. <br />
+     * 2. Does not display a filesize anywhere inside html code or other calls where we do not have to do an http request on a directurl.
+     * <br />
      * 3. Allows a lot of simultaneous connections. <br />
      * 4. Is FAST - if it is not fast, this will noticably slow down the linkchecking procedure!
      *
@@ -1447,8 +1450,9 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 if (con.getResponseCode() == 503) {
                     /* Ok */
                     /*
-                     * Too many connections but that does not mean that our downloadlink is valid. Accept it and if it still returns 503 on
-                     * download-attempt this error will get displayed to the user.
+                     * Too many connections but that does not mean that our directlink is invalid. Accept it and if it still returns 503 on
+                     * download-attempt this error will get displayed to the user - such directlinks should work again once there are less
+                     * active connections to the host!
                      */
                     logger.info("directurl lead to 503 | too many connections");
                     return directurl;
