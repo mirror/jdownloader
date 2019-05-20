@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.config;
 
 import java.io.IOException;
@@ -38,7 +37,6 @@ import org.appwork.utils.Application;
  *
  */
 public class Property implements Serializable {
-
     private static final long       serialVersionUID = -6093927038856757256L;
     /**
      * Nullvalue used to remove a key completly.
@@ -75,7 +73,6 @@ public class Property implements Serializable {
         if (ret == null) {
             return null;
         }
-
         if (typeRef.getType().equals(ret.getClass())) {
             return (T) ret;
         }
@@ -296,8 +293,9 @@ public class Property implements Serializable {
     private static String deDuplicateString(String string) {
         if (string != null && Application.getJavaVersion() >= Application.JAVA17) {
             return string.intern();
+        } else {
+            return string;
         }
-        return string;
     }
 
     /**
@@ -350,5 +348,4 @@ public class Property implements Serializable {
             }
         }
     }
-
 }
