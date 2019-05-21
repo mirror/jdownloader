@@ -26,6 +26,8 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FilespaceCom extends XFileSharingProBasic {
@@ -97,6 +99,15 @@ public class FilespaceCom extends XFileSharingProBasic {
     }
 
     @Override
+    public void checkErrors(final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
+        /* 2019-05-21: Special */
+        super.checkErrors(link, account, checkAll);
+        if (correctedBR.contains(">You, or someone with the same IP address, are downloading the")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Server error 'You're using all download slots for IP'", 10 * 60 * 1001l);
+        }
+    }
+
+    @Override
     public String regexWaittime() {
         /* 2019-04-29: Special */
         String wait = super.regexWaittime();
@@ -117,18 +128,8 @@ public class FilespaceCom extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean isAudiohoster() {
-        return super.isAudiohoster();
-    }
-
-    @Override
-    public boolean isVideohoster() {
-        return super.isVideohoster();
-    }
-
-    @Override
-    public boolean isVideohoster_2() {
-        return super.isVideohoster_2();
+    public boolean isVideohosterEmbed() {
+        return super.isVideohosterEmbed();
     }
 
     @Override

@@ -95,7 +95,7 @@ public class Flix555Com extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean isVideohoster_2() {
+    public boolean isVideohosterEmbed() {
         /* 2019-04-29: Special */
         return true;
     }
@@ -125,7 +125,7 @@ public class Flix555Com extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean supports_availablecheck_filesize_via_videohoster_2_directurl() {
+    public boolean supports_availablecheck_filesize_via_embedded_video() {
         /* 2019-05-16: Special */
         return false;
     }

@@ -95,7 +95,7 @@ public class VidobaNet extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean isVideohoster_2() {
+    public boolean isVideohosterEmbed() {
         return true;
     }
 
@@ -125,7 +125,7 @@ public class VidobaNet extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean supports_availablecheck_filesize_via_videohoster_2_directurl() {
+    public boolean supports_availablecheck_filesize_via_embedded_video() {
         return false;
     }
 

@@ -95,7 +95,7 @@ public class UqloadCom extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean isVideohoster_2() {
+    public boolean isVideohosterEmbed() {
         return true;
     }
 
@@ -115,11 +115,6 @@ public class UqloadCom extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean prefer_availablecheck_filesize_alt_type_old() {
-        return false;
-    }
-
-    @Override
     public boolean supports_availablecheck_filename_abuse() {
         return false;
     }
@@ -130,7 +125,7 @@ public class UqloadCom extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean supports_availablecheck_filesize_via_videohoster_2_directurl() {
+    public boolean supports_availablecheck_filesize_via_embedded_video() {
         /* 2019-05-16: Special, experimental */
         return true;
     }
