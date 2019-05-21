@@ -95,19 +95,13 @@ public class HugesharingNet extends XFileSharingProBasic {
         return super.supports_precise_expire_date();
     }
 
-    @Override
-    public boolean isAudiohoster() {
-        return super.isAudiohoster();
-    }
+    
+
+    
 
     @Override
-    public boolean isVideohoster() {
-        return super.isVideohoster();
-    }
-
-    @Override
-    public boolean isVideohoster_2() {
-        return super.isVideohoster_2();
+    public boolean isVideohosterEmbed() {
+        return super.isVideohosterEmbed();
     }
 
     @Override

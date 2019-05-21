@@ -17,12 +17,10 @@ package jd.plugins.hoster;
 
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -88,19 +86,6 @@ public class BrUploadNet extends XFileSharingProBasic {
     }
 
     @Override
-    public String[] scanInfo(final String[] fileInfo) {
-        /* 2019-04-17: Special */
-        final Regex specialRegex = new Regex(correctedBR, "<textarea readonly style=\"[^\"]+\">\\[URL=[^\\]]+" + this.fuid + "\\]([^<>\"]+)\\s*?\\-\\s*?(\\d+)\\[/URL\\]</textarea>");
-        fileInfo[0] = specialRegex.getMatch(0);
-        fileInfo[1] = specialRegex.getMatch(1);
-        if (StringUtils.isEmpty(fileInfo[1])) {
-            fileInfo[1] = new Regex(correctedBR, ">(?:t|T)amanho</span>\\s+<span>([^<>\"]+)</span>").getMatch(0);
-        }
-        super.scanInfo(fileInfo);
-        return fileInfo;
-    }
-
-    @Override
     public String getFnameViaAbuseLink(final Browser br, final DownloadLink dl, final String fallbackFilename) throws Exception {
         String filename = super.getFnameViaAbuseLink(br, dl, fallbackFilename);
         if (filename == null || filename.equalsIgnoreCase(fallbackFilename)) {
@@ -123,18 +108,8 @@ public class BrUploadNet extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean isAudiohoster() {
-        return super.isAudiohoster();
-    }
-
-    @Override
-    public boolean isVideohoster() {
-        return super.isVideohoster();
-    }
-
-    @Override
-    public boolean isVideohoster_2() {
-        return super.isVideohoster_2();
+    public boolean isVideohosterEmbed() {
+        return super.isVideohosterEmbed();
     }
 
     @Override

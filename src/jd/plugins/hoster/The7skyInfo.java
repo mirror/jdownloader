@@ -99,19 +99,13 @@ public class The7skyInfo extends XFileSharingProBasic {
         return super.supports_https();
     }
 
-    @Override
-    public boolean isAudiohoster() {
-        return super.isAudiohoster();
-    }
+    
+
+    
 
     @Override
-    public boolean isVideohoster() {
-        return super.isVideohoster();
-    }
-
-    @Override
-    public boolean isVideohoster_2() {
-        return super.isVideohoster_2();
+    public boolean isVideohosterEmbed() {
+        return super.isVideohosterEmbed();
     }
 
     @Override
