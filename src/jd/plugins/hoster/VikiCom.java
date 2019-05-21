@@ -130,6 +130,7 @@ public class VikiCom extends PluginForHost {
             if (apiUrl == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            apiUrl = apiUrl.replace("api-internal.viki.io", "api.viki.io");
             apiUrl = apiUrl.replaceFirst("\\.json", "/streams.json");
             apiUrl += "?app=" + APP_ID + "&t=" + System.currentTimeMillis() / 1000 + "&site=www.viki.com";
             apiUrl += "&sig=" + getSignature(apiUrl.replaceFirst("https?://[^/]+", ""));

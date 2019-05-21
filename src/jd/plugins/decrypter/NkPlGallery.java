@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.io.IOException;
@@ -40,17 +39,15 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nk.pl" }, urls = { "http://(www\\.)?nk\\.pl/#?profile/\\d+/gallery(/album/\\d+(/\\d+)?|/\\d+|#(!|%21)(q(\\?|%3F))*?album(=|%3D)\\d+|\\?src=profile_(box_see_more|button)#(!|%21)album(=|%3D)\\d+)?" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nk.pl" }, urls = { "https?://(www\\.)?nk\\.pl/#?profile/\\d+/gallery(/album/\\d+(/\\d+)?|/\\d+|#(!|%21)(q(\\?|%3F))*?album(=|%3D)\\d+|\\?src=profile_(box_see_more|button)#(!|%21)album(=|%3D)\\d+)?" })
 public class NkPlGallery extends PluginForDecrypt {
-
     /* must be static so all plugins share same lock */
     private static Object       LOCK            = new Object();
-
     private static final String MAINPAGE        = "http://nk.pl/";
     private static final String POSTPAGE        = "https://nk.pl/login";
     private static final String DOMAIN          = "nk.pl";
-    private static final String FINALLINKREGEX1 = "<img id=\"photo_img\" alt=\"zdjęcie\" src=\"(http://.*?)\"";
-    private static final String FINALLINKREGEX2 = "\"(http://photos\\.nasza-klasa\\.pl/\\d+/\\d+/main/.*?)\"";
+    private static final String FINALLINKREGEX1 = "<img id=\"photo_img\" alt=\"zdjęcie\" src=\"(https?://.*?)\"";
+    private static final String FINALLINKREGEX2 = "\"(https?://photos\\.nasza-klasa\\.pl/\\d+/\\d+/main/.*?)\"";
 
     public NkPlGallery(final PluginWrapper wrapper) {
         super(wrapper);
@@ -64,7 +61,6 @@ public class NkPlGallery extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replaceAll("%3D|%3d", "=").replaceAll("%3F|%3f", "?").replaceAll("\\?src=profile_(box_see_more|button)", "").replace("/profile/", "/#profile/");
-
         br.setCookiesExclusive(true);
         synchronized (LOCK) {
             if (!getUserLogin()) {
@@ -92,14 +88,14 @@ public class NkPlGallery extends PluginForDecrypt {
                 }
                 final String galleryID = new Regex(parameter, "album=(\\d+)").getMatch(0);
                 final String profileNumber = new Regex(parameter, "nk.pl/#profile/(\\d+)").getMatch(0);
-                br.getPage("http://nk.pl/profile/" + profileNumber + "/gallery?src=profile_button");
+                br.getPage("https://nk.pl/profile/" + profileNumber + "/gallery?src=profile_button");
                 String profilName = br.getRegex("href=\"/profile/" + profileNumber + "\" title=\"([^<>\"]*?)\"").getMatch(0);
                 if (profilName == null) {
                     profilName = profileNumber;
                 }
                 profilName = Encoding.htmlDecode(profilName.trim());
                 prepBrAjax();
-                br.getPage("http://nk.pl/profile/" + profileNumber + "/gallery/album/" + galleryID + "/ajax/0/0?t=" + basicAuth);
+                br.getPage("https://nk.pl/profile/" + profileNumber + "/gallery/album/" + galleryID + "/ajax/0/0?t=" + basicAuth);
                 final String galleryCount = br.getRegex("\"count\":(\\d+)").getMatch(0);
                 if (galleryCount == null) {
                     logger.warning("Gallery not found for url: " + parameter);
@@ -113,12 +109,10 @@ public class NkPlGallery extends PluginForDecrypt {
                     galleryName += "_" + galleryID + "_" + profilName + "_profile" + profileNumber;
                 }
                 galleryName = Encoding.htmlDecode(galleryName.replaceAll("\\s+", "_"));
-
                 // calculating ajax requests
                 final int count = Integer.parseInt(galleryCount);
                 final int reqNum = (count - count % 16) / 16;
                 final String link = correctCryptedLink(parameter);
-
                 progress.setRange(count);
                 final DecimalFormat df = new DecimalFormat("0000");
                 int c = 1;
@@ -141,7 +135,6 @@ public class NkPlGallery extends PluginForDecrypt {
                     }
                     sleep(1000l, param);
                 }
-
                 final FilePackage fp = FilePackage.getInstance();
                 fp.setName(galleryName.trim());
                 fp.addLinks(decryptedLinks);
@@ -154,7 +147,6 @@ public class NkPlGallery extends PluginForDecrypt {
             }
             return decryptedLinks;
         }
-
     }
 
     /**
@@ -231,5 +223,4 @@ public class NkPlGallery extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
