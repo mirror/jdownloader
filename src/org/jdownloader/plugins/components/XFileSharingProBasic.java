@@ -796,7 +796,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             }
         }
         /* Next - RegExes for videohosts */
-        fileInfo[0] = null;
         if (StringUtils.isEmpty(fileInfo[0])) {
             fileInfo[0] = new Regex(correctedBR, sharebox3_videohost).getMatch(0);
             if (StringUtils.isEmpty(fileInfo[0])) {
