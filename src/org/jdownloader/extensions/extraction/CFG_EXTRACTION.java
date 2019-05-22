@@ -87,7 +87,6 @@ public class CFG_EXTRACTION {
      * Enabled usage of custom extractionpaths
      **/
     public static final BooleanKeyHandler                CUSTOM_EXTRACTION_PATH_ENABLED                                   = SH.getKeyHandler("CustomExtractionPathEnabled", BooleanKeyHandler.class);
-    public static final BooleanKeyHandler                OLD_PWLIST_IMPORTED                                              = SH.getKeyHandler("OldPWListImported", BooleanKeyHandler.class);
     /**
      * Show Bubbles for Extration Jobs
      **/
