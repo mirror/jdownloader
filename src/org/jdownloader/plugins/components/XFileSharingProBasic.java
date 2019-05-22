@@ -129,11 +129,9 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * with standard browser behaviours.
      ****************************
      * mods: See overridden functions<br />
-     * TODO: Check out XFS App/API: https://play.google.com/store/apps/details?id=net.sibsoft.xfsuploader (Using User-Agent "XFS-Mobile" on
-     * "https://<host>/cgi-bin/uapi.cgi") More versions see here: https://xfilesharing.com/<br />
      * TODO: Check if we can find any XFS host which has API support e.g.
      * https://xvideosharing.docs.apiary.io/#reference/file/file-info/get-info/check-file(s) Demo page with API:
-     * http://xvideosharing.com/?op=my_account <br/>
+     * http://xvideosharing.com/?op=my_account https://xfilesharingpro.docs.apiary.io/# <br/>
      * limit-info:<br />
      * captchatype-info: null 4dignum solvemedia reCaptchaV2<br />
      * Last compatible XFileSharingProBasic template: Version 2.7.8.7 in revision 40351 other:<br />
@@ -2436,7 +2434,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     }
                     submitForm(loginform);
                     /* Missing login cookies or we still have the loginform --> Login failed */
-                    final boolean loginCookieOkay = br.getCookie(getMainPage(), "login") != null || br.getCookie(getMainPage(), "xfss") != null;
+                    final boolean loginCookieOkay = !StringUtils.isEmpty(br.getCookie(getMainPage(), "login", Cookies.NOTDELETEDPATTERN)) || !StringUtils.isEmpty(br.getCookie(getMainPage(), "xfss", Cookies.NOTDELETEDPATTERN));
                     final boolean loginFormOkay = findLoginform(this.br) == null;
                     final boolean loginURLOkay = br.getURL().contains("op=") && !br.getURL().contains("op=login");
                     if (!loginCookieOkay && !loginFormOkay && !loginURLOkay) {
@@ -2451,6 +2449,63 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         } else {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                         }
+                    }
+                }
+                account.saveCookies(br.getCookies(getMainPage()), "");
+            } catch (final PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
+                throw e;
+            }
+        }
+    }
+
+    /**
+     * 2019-05-22: This is only EXPERIMENTAL! App-login: https://play.google.com/store/apps/details?id=net.sibsoft.xfsuploader <br/>
+     * This is not a real API as it will return html code. Around 2016 this has been implemented for some XFS websites but was never really
+     * used. Fragments of it may still work for official DEMO-website 'xfilesharing.com'.
+     */
+    protected final void loginAPP(final Account account, final boolean force) throws Exception {
+        synchronized (account) {
+            try {
+                /* Load cookies */
+                br.setCookiesExclusive(true);
+                final Cookies cookies = account.loadCookies("");
+                boolean loggedInViaCookies = false;
+                if (cookies != null) {
+                    br.setCookies(getMainPage(), cookies);
+                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l && !force) {
+                        /* We trust these cookies as they're not that old --> Do not check them */
+                        logger.info("Trust cookies without checking as they're still fresh");
+                        return;
+                    }
+                    logger.info("Verifying login-cookies");
+                    getPage(getMainPage() + "/");
+                    loggedInViaCookies = isLoggedinHTML();
+                }
+                if (loggedInViaCookies) {
+                    /* No additional check required --> We know cookies are valid and we're logged in --> Done! */
+                    logger.info("Successfully logged in via cookies");
+                } else {
+                    logger.info("Performing full login");
+                    br.clearCookies(getMainPage());
+                    br.setHeader("User-Agent", "XFS-Mobile");
+                    br.setHeader("Content-Type", "application/x-www-form-urlencoded");
+                    // getPage(this.getMainPage());
+                    Form loginform = new Form();
+                    loginform.setAction(getMainPage());
+                    loginform.put("op", "api_get_limits");
+                    loginform.put("login", Encoding.urlEncode(account.getUser()));
+                    loginform.put("password", Encoding.urlEncode(account.getPass()));
+                    submitForm(loginform);
+                    /* Missing login cookies? --> Login failed */
+                    if (StringUtils.isEmpty(br.getCookie(getMainPage(), "xfss", Cookies.NOTDELETEDPATTERN))) {
+                        if (correctedBR.contains("op=resend_activation")) {
+                            /* User entered correct logindata but has not activated his account ... */
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYour account has not yet been activated!\r\nActivate it via the URL you should have received via E-Mail and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
                 account.saveCookies(br.getCookies(getMainPage()), "");
