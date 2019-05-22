@@ -75,6 +75,7 @@ public class StackstorageCom extends antiDDoSForDecrypt {
         br.getHeaders().put("X-CSRF-Token", csrftoken);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("Omit-Authentication-Header", "true");
+        boolean isSingleFile = false;
         do {
             if (this.isAbort()) {
                 break;
@@ -85,8 +86,13 @@ public class StackstorageCom extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
             LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-            final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("nodes");
-            if (ressourcelist == null) {
+            ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("nodes");
+            if (page == 0 && ressourcelist == null && entries != null && entries.containsKey("fileId")) {
+                /* Looks like we got a single file only! */
+                ressourcelist = new ArrayList<Object>();
+                ressourcelist.add(entries);
+                isSingleFile = true;
+            } else if (ressourcelist == null) {
                 /* Probably end of pagination */
                 break;
             }
@@ -143,7 +149,11 @@ public class StackstorageCom extends antiDDoSForDecrypt {
                         dl.setDownloadPassword(passCode);
                     }
                     dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, path_without_filename);
-                    dl.setProperty("download_path", path_with_filename);
+                    if (isSingleFile) {
+                        dl.setProperty("download_path", "/");
+                    } else {
+                        dl.setProperty("download_path", path_with_filename);
+                    }
                 }
                 decryptedLinks.add(dl);
                 distribute(dl);

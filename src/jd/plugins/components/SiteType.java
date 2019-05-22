@@ -284,14 +284,14 @@ public class SiteType {
          */
         AbdulIbrahim_URLShortener,
         /**
-         * <a href="https://codecanyon.net/item/url-shortener-script-with-statistics/4461940">URL Shortener Script with Statistics @
-         * codecanyon.net market place</a> & <a href="https://codepulsar.com/short1/index.php?a=short">demo site</a> <br />
+         * <b>Product:</b> <a href="https://codecanyon.net/item/url-shortener-script-with-statistics/4461940">URL Shortener Script with
+         * Statistics @ codecanyon.net market place</a> & <a href="https://codepulsar.com/short1/index.php?a=short">demo site</a> <br />
          *
          */
         PricopAlexandru_URLShorterner1,
         /**
-         * <a href="https://codecanyon.net/item/advanced-php-url-shortener/3450738">Advanced PHP URL Shortener @ codecanyon.net market
-         * place</a> & <a href="https://codepulsar.com/short2/index.php?a=short">demo site</a> <br/>
+         * <b>Product:</b> <a href="https://codecanyon.net/item/advanced-php-url-shortener/3450738">Advanced PHP URL Shortener @
+         * codecanyon.net market place</a> & <a href="https://codepulsar.com/short2/index.php?a=short">demo site</a> <br/>
          * his user/profile name is Pricop, on demo site for url shortener it has his <a href="https://twitter.com/pricop2007">twitter
          * profile</a> mentioned (also profile picture on twitter is the same as codecanyon). In which his
          * <a href="https://pricop.info/">personal website</a> is then linked <br />
@@ -299,6 +299,15 @@ public class SiteType {
          * chain link image top left in title bar next to site name.
          */
         PricopAlexandru_URLShorterner2,
+        /**
+         * <b>Product:</b> <a href="https://codecanyon.net/item/simple-file-sharer/4562987">Simple Fire Sharer @ codecanyon.net market place
+         * by 'The Mac'</a> <br/>
+         * <b>Coder:</b> <a href="https://codecanyon.net/user/themac">The Mac</a> <br/>
+         * <b>Demo:</b> No demo available (2019-05-22) <br/>
+         * <b>Example 1:</b> <a href="https://rghost.fun/">rghost.fun</a><br/>
+         * <b>Example 2:</b> <a href="https://peredayka.com/">peredayka.com</a><br/>
+         */
+        SimpleFileSharer,
         /**
          * @keywords hex, 'var link', 'var _0xdc0b' <br />
          *           note: the above keywords are shown within /file/ output page and not detect on homepage.

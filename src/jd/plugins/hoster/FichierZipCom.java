@@ -25,35 +25,23 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
+import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.PluginJSonUtils;
-import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "peredayka.com" }, urls = { "https?://(?:www\\.)?peredayka\\.com/(?:download/[a-f0-9]{32}\\.html|files/[a-f0-9]{32})" })
-public class PeredaykaCom extends PluginForHost {
-    public PeredaykaCom(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fichier-zip.com" }, urls = { "https?://(?:www\\.)?(fichier\\-zip\\.com/\\d{4}/\\d{2}/\\d{2}/[^<>/]+/|fzip\\.li/[A-Za-z0-9]+)" })
+public class FichierZipCom extends PluginForHost {
+    public FichierZipCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://peredayka.com/contact.php";
-    }
-
-    @Override
-    public String getLinkID(final DownloadLink link) {
-        final String linkid = new Regex(link.getPluginPatternMatcher(), "/([a-f0-9]{32})").getMatch(0);
-        if (linkid != null) {
-            return linkid;
-        } else {
-            return super.getLinkID(link);
-        }
+        return "https://www.fichier-zip.com/contact/";
     }
 
     /* Connection stuff */
@@ -74,19 +62,25 @@ public class PeredaykaCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\\'text\\-danger\\'")) {
+        br.getPage(link.getPluginPatternMatcher());
+        if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("/notfound.php")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("class=\\'dfname\\'>([^<>\"]+)<").getMatch(0);
-        String filesize = br.getRegex("<small>(\\d+[^<>\"]+)</small>").getMatch(0);
+        final String linkid = br.getRegex("timer\\.php\\?id=(\\d+)").getMatch(0);
+        String filename = br.getRegex("<h2 class=\"title\">([^<>\"]+)</h2>").getMatch(0);
         if (StringUtils.isEmpty(filename)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            filename = this.getLinkID(link);
         }
+        String filesize = br.getRegex("\\(\\.zip, (\\d+ [A-Za-z]+)\\)</h2>").getMatch(0);
         filename = Encoding.htmlDecode(filename).trim();
         link.setName(filename);
         if (filesize != null) {
+            filesize = filesize.replace("Ko", "Kb");
+            filesize = filesize.replace("Mo", "Mb");
             link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
+        if (linkid != null) {
+            link.setLinkID(linkid);
         }
         return AvailableStatus.TRUE;
     }
@@ -100,18 +94,10 @@ public class PeredaykaCom extends PluginForHost {
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
-            dllink = br.getRegex("(/files/[^<>\"\\']+)").getMatch(0);
+            dllink = br.getRegex("<a href=\"(/[^<>\"]+)\"><img border=\"0\" width=\"50\" height=\"50\"").getMatch(0);
             if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-            br.getPage("/js.vars.php");
-            int wait = 10;
-            final String waitStr = PluginJSonUtils.getJson(br, "downloadSeconds");
-            if (waitStr != null && waitStr.matches("\\d+")) {
-                wait = Integer.parseInt(waitStr);
-            }
-            this.sleep(wait * 1001l, downloadLink);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -154,6 +140,15 @@ public class PeredaykaCom extends PluginForHost {
 
     @Override
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        if (acc == null) {
+            /* no account, yes we can expect captcha */
+            return true;
+        }
+        if (acc.getType() == AccountType.FREE) {
+            /* Free accounts can have captchas */
+            return true;
+        }
+        /* Premium accounts do not have captchas */
         return false;
     }
 
@@ -168,10 +163,5 @@ public class PeredaykaCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-    }
-
-    @Override
-    public SiteTemplate siteTemplateType() {
-        return SiteTemplate.SimpleFileSharer;
     }
 }
