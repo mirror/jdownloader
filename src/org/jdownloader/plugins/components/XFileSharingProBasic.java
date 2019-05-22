@@ -129,8 +129,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * with standard browser behaviours.
      ****************************
      * mods: See overridden functions<br />
-     * TODO: Check out XFS App/API: https://play.google.com/store/apps/details?id=net.sibsoft.xfsuploader More versions see here:
-     * https://xfilesharing.com/<br />
+     * TODO: Check out XFS App/API: https://play.google.com/store/apps/details?id=net.sibsoft.xfsuploader (Using User-Agent "XFS-Mobile" on
+     * "https://<host>/cgi-bin/uapi.cgi") More versions see here: https://xfilesharing.com/<br />
+     * TODO: Check if we can find any XFS host which has API support e.g.
+     * https://xvideosharing.docs.apiary.io/#reference/file/file-info/get-info/check-file(s) Demo page with API:
+     * http://xvideosharing.com/?op=my_account <br/>
      * limit-info:<br />
      * captchatype-info: null 4dignum solvemedia reCaptchaV2<br />
      * Last compatible XFileSharingProBasic template: Version 2.7.8.7 in revision 40351 other:<br />
