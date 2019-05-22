@@ -50,7 +50,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DropboxCom.DropboxConfig;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropbox.com" }, urls = { "https?://(?:www\\.)?dropbox\\.com/(?:(?:sh|sc|s)/[^<>\"]+|l/[A-Za-z0-9]+)(?:\\&crawl_subfolders=(?:true|false))?|https?://(www\\.)?db\\.tt/[A-Za-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropbox.com" }, urls = { "https?://(?:www\\.)?dropbox\\.com/(?:(?:sh|sc|s)/[^<>\"]+|l/[A-Za-z0-9]+)(?:\\&crawl_subfolders=(?:true|false))?|https?://(www\\.)?db\\.tt/[A-Za-z0-9]+|https?://dl\\.dropboxusercontent\\.com/s/.+" })
 public class DropBoxCom extends PluginForDecrypt {
     public DropBoxCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -62,7 +62,7 @@ public class DropBoxCom extends PluginForDecrypt {
     }
 
     private static final String TYPE_NORMAL     = "https?://(www\\.)?dropbox\\.com/(sh|sc)/.+";
-    private static final String TYPE_S          = "https?://(www\\.)?dropbox\\.com/s/.+";
+    private static final String TYPE_S_AND_SH   = "https?://[^/]+/((?:s|sh)/.+)";
     private static final String TYPE_REDIRECT   = "https?://(www\\.)?dropbox\\.com/l/[A-Za-z0-9]+";
     private static final String TYPE_SHORT      = "https://(www\\.)?db\\.tt/[A-Za-z0-9]+";
     /* Unsupported linktypes which can occur during the decrypt process */
@@ -84,8 +84,8 @@ public class DropBoxCom extends PluginForDecrypt {
             current = current.getSourceLink();
         }
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString().replace("?dl=1", "");
-        if (parameter.matches(TYPE_S)) {
+        String parameter = param.toString().replaceAll("\\?dl=(1|0)", "");
+        if (parameter.matches(TYPE_S_AND_SH)) {
             decryptedLinks.add(createSingleDownloadLink(parameter));
             return decryptedLinks;
         }
@@ -160,7 +160,7 @@ public class DropBoxCom extends PluginForDecrypt {
                     final DownloadLink direct = createDownloadlink("directhttp://" + link);
                     decryptedLinks.add(direct);
                     return decryptedLinks;
-                } else if (link.matches(TYPE_S)) {
+                } else if (link.matches(TYPE_S_AND_SH)) {
                     decryptedLinks.add(createSingleDownloadLink(link));
                     return decryptedLinks;
                 } else if (link.matches(TYPE_REFERRAL)) {
@@ -178,7 +178,7 @@ public class DropBoxCom extends PluginForDecrypt {
             if (redirect != null) {
                 br.getPage(redirect);
             }
-            if (this.br.containsHTML("sharing/error_shmodel|class=\"not-found\">")) {
+            if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("sharing/error_shmodel|class=\"not-found\">")) {
                 final DownloadLink dl = this.createOfflinelink(link);
                 decryptedLinks.add(dl);
                 return decryptedLinks;
@@ -191,7 +191,7 @@ public class DropBoxCom extends PluginForDecrypt {
             } catch (Throwable e) {
             }
         }
-        // Decrypt file- and folderlinks
+        /* Decrypt file- and folderlinks */
         String fpName = br.getRegex("content=\"([^<>/]*?)\" property=\"og:title\"").getMatch(0);
         if (fpName == null) {
             fpName = br.getRegex("<title>\\s*(.*?)\\s*</title>").getMatch(0);
@@ -223,10 +223,11 @@ public class DropBoxCom extends PluginForDecrypt {
         boolean hasMore = false;
         boolean isShared = false;
         boolean askedUserIfHeWantsSubfolders = false;
-        int page = 1;
+        final int page_start = 1;
+        int page = page_start;
         String json_source = null;
         do {
-            if (page == 0) {
+            if (page == page_start) {
                 json_source = getSharedJsonSource(br);
                 if (json_source != null) {
                     isShared = true;
@@ -405,10 +406,9 @@ public class DropBoxCom extends PluginForDecrypt {
         return json_source;
     }
 
-    private DownloadLink createSingleDownloadLink(String parameter) {
-        parameter = parameter.replace("www.", "");
-        parameter = parameter.replace("dropbox.com/", "dropboxdecrypted.com/");
-        final DownloadLink dl = createDownloadlink(parameter);
+    private DownloadLink createSingleDownloadLink(final String parameter) {
+        final String urlpart = new Regex(parameter, TYPE_S_AND_SH).getMatch(0);
+        final DownloadLink dl = createDownloadlink(String.format("https://dropboxdecrypted.com/%s", urlpart));
         dl.setProperty("decrypted", true);
         if (StringUtils.isNotEmpty(subFolder)) {
             dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subFolder);

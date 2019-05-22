@@ -357,7 +357,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      *         false: Implies that website does NOT support getFilesizeViaAvailablecheckAlt without Form-handling. <br />
      *         default: true
      */
-    public boolean supports_availablecheck_filesize_alt_fast() {
+    protected boolean supports_availablecheck_filesize_alt_fast() {
         return true;
     }
 
@@ -1096,55 +1096,23 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     /** Handles pre-download forms & captcha for free (anonymous) + FREE ACCOUNT modes. */
     public void doFree(final DownloadLink link, final Account account) throws Exception, PluginException {
-        /* 1. Bring up saved final links */
+        /* First bring up saved final links */
         final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
         /*
          * 2019-05-21: TODO: Maybe try download right away instead of checking this here --> This could speed-up the
          * download-start-procedure!
          */
         String dllink = checkDirectLink(link, directlinkproperty);
-        /* 2. Check for streaming/direct links on the first page */
+        /**
+         * Try to find a downloadlink. Check different methods sorted from "usually available" to "rarely available" (e.g. there are a lot
+         * of sites which support video embedding but nearly none support mp3-embedding).
+         */
+        /* Check for streaming/direct links on the first page. */
         if (dllink == null) {
             checkErrors(link, account, false);
             dllink = getDllink(link, account);
         }
-        /* 3. Do they provide audio hosting? EXTREMELY rare case! */
-        if (dllink == null && link.getName().endsWith(".mp3") && this.isAudiohoster()) {
-            try {
-                logger.info("Trying to get link via mp3embed");
-                final Browser brv = br.cloneBrowser();
-                getPage(brv, "/mp3embed-" + fuid, false);
-                dllink = brv.getRedirectLocation();
-                if (dllink == null) {
-                    dllink = brv.getRegex("flashvars=\"file=(https?://[^<>\"]*?\\.mp3)\"").getMatch(0);
-                }
-                if (dllink == null) {
-                    logger.info("Failed to get link via mp3embed because: " + br.toString());
-                } else {
-                    logger.info("Successfully found link via mp3embed");
-                }
-            } catch (final Throwable e) {
-                logger.info("Failed to get link via mp3embed");
-            }
-        }
-        /* 4. Do they provide video hosting? */
-        if (dllink == null && this.isVideohosterDirect()) {
-            /* Legacy - most XFS videohosts do not support this anymore! */
-            try {
-                logger.info("Trying to get link via vidembed");
-                final Browser brv = br.cloneBrowser();
-                getPage(brv, "/vidembed-" + fuid, false);
-                dllink = brv.getRedirectLocation();
-                if (dllink == null) {
-                    logger.info("Failed to get link via vidembed because: " + br.toString());
-                } else {
-                    logger.info("Successfully found link via vidembed");
-                }
-            } catch (final Throwable e) {
-                logger.info("Failed to get link via vidembed");
-            }
-        }
-        /* 5. Do they provide video hosting #2? */
+        /* Do they support standard video embedding? */
         if (dllink == null && this.internal_isVideohosterEmbed()) {
             try {
                 logger.info("Trying to get link via embed");
@@ -1163,7 +1131,43 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 getPage(link.getPluginPatternMatcher());
             }
         }
-        /* 6. Do we have an imagehost? */
+        /* Do they provide direct video URLs? */
+        if (dllink == null && this.isVideohosterDirect()) {
+            /* Legacy - most XFS videohosts do not support this anymore! */
+            try {
+                logger.info("Trying to get link via vidembed");
+                final Browser brv = br.cloneBrowser();
+                getPage(brv, "/vidembed-" + fuid, false);
+                dllink = brv.getRedirectLocation();
+                if (dllink == null) {
+                    logger.info("Failed to get link via vidembed because: " + br.toString());
+                } else {
+                    logger.info("Successfully found link via vidembed");
+                }
+            } catch (final Throwable e) {
+                logger.info("Failed to get link via vidembed");
+            }
+        }
+        /* Do they provide audio hosting? EXTREMELY rare case! */
+        if (dllink == null && link.getName().endsWith(".mp3") && this.isAudiohoster()) {
+            try {
+                logger.info("Trying to get link via mp3embed");
+                final Browser brv = br.cloneBrowser();
+                getPage(brv, "/mp3embed-" + fuid, false);
+                dllink = brv.getRedirectLocation();
+                if (dllink == null) {
+                    dllink = brv.getRegex("flashvars=\"file=(https?://[^<>\"]*?\\.mp3)\"").getMatch(0);
+                }
+                if (dllink == null) {
+                    logger.info("Failed to get link via mp3embed because: " + br.toString());
+                } else {
+                    logger.info("Successfully found link via mp3embed");
+                }
+            } catch (final Throwable e) {
+                logger.info("Failed to get link via mp3embed");
+            }
+        }
+        /* Do we have an imagehost? */
         if (dllink == null && this.isImagehoster()) {
             checkErrors(link, account, false);
             Form imghost_next_form = null;
@@ -1183,7 +1187,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 }
             } while (imghost_next_form != null);
         }
-        /* 7. Continue like normal */
+        /* Continue like normal */
         if (dllink == null) {
             /*
              * Check errors here because if we don't and a link is premiumonly, download1 Form will be present, plugin will send it and most
