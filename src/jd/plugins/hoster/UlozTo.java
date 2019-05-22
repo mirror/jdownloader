@@ -19,10 +19,6 @@ import java.io.IOException;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -43,6 +39,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to", "ulozto.net", "pornfile.cz" }, urls = { "https?://(?:www\\.)?(?:uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)/(?!soubory/)[\\!a-zA-Z0-9]+/[^\\?\\s]+", "https?://(?:www\\.)?ulozto\\.net/(?!soubory/)[\\!a-zA-Z0-9]+(?:/[^\\?\\s]+)?", "https?://(?:www\\.)?(?:pornfile\\.cz|pornfile\\.ulozto\\.net)/[\\!a-zA-Z0-9]+/[^\\?\\s]+" })
 public class UlozTo extends PluginForHost {
@@ -647,26 +647,34 @@ public class UlozTo extends PluginForHost {
                 setBrowserExclusive();
                 br.setFollowRedirects(true);
                 prepBR(this.br);
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null && !force) {
+                Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
                     this.br.setCookies(this.getHost(), cookies);
-                    return;
+                    this.br.getPage("https://" + account.getHoster());
+                    handleAgeRestrictedRedirects(null);
+                    if (br.containsHTML("do=web-login")) {
+                        cookies = null;
+                    } else if (br.getCookie(this.br.getHost(), "permanentLogin2", Cookies.NOTDELETEDPATTERN) == null) {
+                        cookies = null;
+                    }
                 }
-                this.br.getPage("https://" + account.getHoster() + "/login");
-                handleAgeRestrictedRedirects(null);
-                final Form loginform = br.getFormbyKey("username");
-                if (loginform == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                if (loginform.hasInputFieldByName("remember")) {
-                    loginform.remove("remember");
-                }
-                loginform.put("remember", "on");
-                loginform.put("username", Encoding.urlEncode(account.getUser()));
-                loginform.put("password", Encoding.urlEncode(account.getPass()));
-                br.submitForm(loginform);
-                if (br.getCookie(this.br.getHost(), "permanentLogin2") == null) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (cookies == null) {
+                    this.br.getPage("https://" + account.getHoster() + "/login");
+                    handleAgeRestrictedRedirects(null);
+                    final Form loginform = br.getFormbyKey("username");
+                    if (loginform == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    if (loginform.hasInputFieldByName("remember")) {
+                        loginform.remove("remember");
+                    }
+                    loginform.put("remember", "on");
+                    loginform.put("username", Encoding.urlEncode(account.getUser()));
+                    loginform.put("password", Encoding.urlEncode(account.getPass()));
+                    br.submitForm(loginform);
+                    if (br.getCookie(this.br.getHost(), "permanentLogin2", Cookies.NOTDELETEDPATTERN) == null) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
                 account.saveCookies(br.getCookies(account.getHoster()), "");
             } catch (final PluginException e) {
@@ -718,7 +726,8 @@ public class UlozTo extends PluginForHost {
         if (trafficleft == null) {
             trafficleft = br.getRegex("\"fi fi-user\">\\s*</i>\\s*<em>.*?</em>\\s*\\((.*?)\\)\\s*<").getMatch(0);
             if (trafficleft == null) {
-                trafficleft = br.getRegex("\"t-header-username\">\\s*<em[^<]*>.*?</em>\\s*<em[^<]*>\\s*\\(([0-9\\.,]+\\s*[BMTGK]+)\\)\\s*<").getMatch(0);
+                final String span = br.getRegex("<span\\s*class\\s*=\\s*\"t-header-username\">\\s*(.*?)\\s*</span>").getMatch(0);
+                trafficleft = new Regex(span, ">\\s*\\(([0-9\\.,]+\\s*[BMTGK]+)\\)\\s*<").getMatch(0);
             }
         }
         ai.setTrafficRefill(false);

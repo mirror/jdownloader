@@ -268,7 +268,10 @@ public class TurbobitCore extends antiDDoSForHost {
         }
         ai.setUnlimitedTraffic();
         // >Turbo access till 27.09.2015</span>
-        final String expire = br.getRegex(">Turbo access till\\s*?(.*?)\\s*?</span>").getMatch(0);
+        String expire = br.getRegex(">Turbo access till\\s*(.*?)\\s*</span>").getMatch(0);
+        if (expire == null) {
+            expire = br.getRegex("'/premium'\\s*>\\s*(\\d+\\.\\d+\\.\\d+)\\s*<").getMatch(0);
+        }
         if (expire != null) {
             if (br.containsHTML("<span class='glyphicon glyphicon-ok banturbo'>") || ((br.containsHTML("You have reached") && br.containsHTML("limit of premium downloads")))) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "You have reached limit of premium downloads", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
