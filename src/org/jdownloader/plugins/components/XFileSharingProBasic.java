@@ -68,42 +68,48 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         super(wrapper);
         // this.enablePremium(super.getPremiumLink());
     }
-
     // private static String[] domains = new String[] { "xvideosharing.com" };
-    //
+    // @Override
+    // public String rewriteHost(String host) {
+    // for (final String domain : domains) {
+    // if (domain.equalsIgnoreCase(host)) {
+    // return domains[0];
+    // }
+    // }
+    // return super.rewriteHost(host);
+    // }
     // public static String[] getAnnotationNames() {
-    // return new String[] { domains[0] };
+    // return domains;
     // }
     //
     // @Override
     // public String[] siteSupportedNames() {
     // return domains;
     // }
-    //
-    // /**
-    // * returns the annotation pattern array: 'https?://(?:www\\.)?(?:domain1|domain2)/(?:embed\\-)?[a-z0-9]{12}'
-    // *
-    // */
     // public static String[] getAnnotationUrls() {
-    // // construct pattern
-    // final String host = getHostsPattern();
-    // return new String[] { host + "/(?:embed\\-)?[a-z0-9]{12}(?:/[^/]+\\.html)?" };
+    // final List<String> ret = new ArrayList<String>();
+    // for (int i = 0; i < domains.length; i++) {
+    // if (i == 0) {
+    // /* Match all URLs on first (=current) domain */
+    // ret.add("https?://(?:www\\.)?" + getHostsPatternPart() + "/(?:embed\\-)?[a-z0-9]{12}(?:/[^/]+\\.html)?");
+    // } else {
+    // ret.add("");
     // }
-    //
-    // /** returns 'https?://(?:www\\.)?(?:domain1|domain2)' */
-    // private static String getHostsPattern() {
-    // final String hosts = "https?://(?:www\\.)?" + "(?:" + getHostsPatternPart() + ")";
-    // return hosts;
+    // }
+    // return ret.toArray(new String[0]);
     // }
     //
     // /** Returns '(?:domain1|domain2)' */
     // public static String getHostsPatternPart() {
     // final StringBuilder pattern = new StringBuilder();
+    // pattern.append("(?:");
     // for (final String name : domains) {
     // pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
     // }
+    // pattern.append(")");
     // return pattern.toString();
     // }
+
     /* Used variables */
     public String                correctedBR                  = "";
     protected String             fuid                         = null;
@@ -123,6 +129,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * with standard browser behaviours.
      ****************************
      * mods: See overridden functions<br />
+     * TODO: Check out XFS App/API: https://play.google.com/store/apps/details?id=net.sibsoft.xfsuploader More versions see here:
+     * https://xfilesharing.com/<br />
      * limit-info:<br />
      * captchatype-info: null 4dignum solvemedia reCaptchaV2<br />
      * Last compatible XFileSharingProBasic template: Version 2.7.8.7 in revision 40351 other:<br />

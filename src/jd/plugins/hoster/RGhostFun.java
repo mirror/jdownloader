@@ -35,15 +35,15 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "peredayka.com" }, urls = { "https?://(?:www\\.)?peredayka\\.com/(?:download/[a-f0-9]{32}\\.html|files/[a-f0-9]{32})" })
-public class PeredaykaCom extends PluginForHost {
-    public PeredaykaCom(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rghost.fun" }, urls = { "https?://(?:www\\.)?rghost\\.fun/(?:download/[a-f0-9]{32}\\.html|files/[a-f0-9]{32})" })
+public class RGhostFun extends PluginForHost {
+    public RGhostFun(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://peredayka.com/contact.php";
+        return "https://rghost.fun/contact.php";
     }
 
     @Override
@@ -57,8 +57,8 @@ public class PeredaykaCom extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME       = true;
-    private static final int     FREE_MAXCHUNKS    = 0;
+    private static final boolean FREE_RESUME       = false;
+    private static final int     FREE_MAXCHUNKS    = 1;
     private static final int     FREE_MAXDOWNLOADS = 20;
 
     // private static final boolean ACCOUNT_FREE_RESUME = true;
@@ -106,7 +106,7 @@ public class PeredaykaCom extends PluginForHost {
             }
             br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
             br.getPage("/js.vars.php");
-            int wait = 10;
+            int wait = 0;
             final String waitStr = PluginJSonUtils.getJson(br, "downloadSeconds");
             if (waitStr != null && waitStr.matches("\\d+")) {
                 wait = Integer.parseInt(waitStr);
