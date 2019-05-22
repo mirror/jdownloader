@@ -664,8 +664,7 @@ public class UlozTo extends PluginForHost {
                     final Form loginform = br.getFormbyKey("username");
                     if (loginform == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    if (loginform.hasInputFieldByName("remember")) {
+                    } else if (loginform.hasInputFieldByName("remember")) {
                         loginform.remove("remember");
                     }
                     loginform.put("remember", "on");
@@ -682,8 +681,6 @@ public class UlozTo extends PluginForHost {
                     account.clearCookies("");
                 }
                 throw e;
-            } finally {
-                // setBasicAuthHeader(account);
             }
         }
     }
