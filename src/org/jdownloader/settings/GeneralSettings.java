@@ -3,6 +3,8 @@ package org.jdownloader.settings;
 import java.io.File;
 import java.util.ArrayList;
 
+import jd.controlling.downloadcontroller.DownloadLinkCandidateSelector;
+
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.AbstractCustomValueGetter;
@@ -25,28 +27,18 @@ import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.domainrules.DomainRule;
 import org.jdownloader.gui.translate._GUI;
 
-import jd.controlling.downloadcontroller.DownloadLinkCandidateSelector;
-import jd.utils.JDUtilities;
-
 public interface GeneralSettings extends ConfigInterface {
     class DefaultDownloadFolder extends AbstractDefaultFactory<String> {
         @Override
         public String getDefaultValue() {
-            /* convert old value */
-            final String oldDownloadDirectory = JDUtilities.getConfiguration().getStringProperty("DOWNLOAD_DIRECTORY", null);
-            if (!StringUtils.isEmpty(oldDownloadDirectory)) {
-                final File file = new File(oldDownloadDirectory);
-                if (file.exists() && file.isDirectory()) {
-                    return oldDownloadDirectory;
-                }
-            }
             if (CrossSystem.isLinux()) {
-                // special handling for 3rd party nas packages
-                if (new File("/var/packages/JDownloader/scripts/start-stop-status").exists()) {
-                    // Synology 3rd Party Package
-                    final String defaultDownloadFolder = "/volume1/public";
-                    if (new File(defaultDownloadFolder).exists()) {
-                        return defaultDownloadFolder;
+                if (new File("/volume1/@appstore").exists()) {
+                    // synology
+                    final String defaultFolders[] = new String[] { "/volume1/@download", "/volume1/public" };
+                    for (String defaultFolder : defaultFolders) {
+                        if (new File(defaultFolder).isDirectory()) {
+                            return defaultFolder;
+                        }
                     }
                 }
             }
@@ -657,6 +649,4 @@ public interface GeneralSettings extends ConfigInterface {
     // boolean isJxBrowserEnabled();
     //
     // void setJxBrowserEnabled(boolean b);
-
-
 }
