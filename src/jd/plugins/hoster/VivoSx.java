@@ -26,13 +26,13 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vivo.sx" }, urls = { "https?://(www\\.)?vivo\\.sx/[a-z0-9]{10}" })
-public class VivoSx extends PluginForHost {
+public class VivoSx extends antiDDoSForHost {
     public VivoSx(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -50,7 +50,7 @@ public class VivoSx extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        getPage(br, link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">The file you have requested does not exist")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -103,7 +103,7 @@ public class VivoSx extends PluginForHost {
                 if (expires != null) {
                     postData += "&expires=" + expires;
                 }
-                br.postPage(br.getURL(), postData);
+                postPage(br, br.getURL(), postData);
                 dllink = br.getRegex("class=\"stream-content\" data-url=\"(http[^<>\"]*?)\"").getMatch(0);
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -115,7 +115,7 @@ public class VivoSx extends PluginForHost {
             brc.getHeaders().put("Accept", "*/*");
             brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             brc.getHeaders().put("", "");
-            brc.postPage("/request", "action=view&abs=false&hash=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+            postPage(brc, "/request", "action=view&abs=false&hash=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
         } catch (final Throwable e) {
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 1);
@@ -130,17 +130,22 @@ public class VivoSx extends PluginForHost {
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
         String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
+            URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                con = openAntiDDoSRequestConnection(br2, br2.createGetRequest(dllink));
+                if (!con.isOK() || con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
                 }
-                con.disconnect();
             } catch (final Exception e) {
+                logger.log(e);
                 downloadLink.setProperty(property, Property.NULL);
                 dllink = null;
+            } finally {
+                if (con != null) {
+                    con.disconnect();
+                }
             }
         }
         return dllink;
