@@ -1,5 +1,5 @@
 AutoDetectAction_run_failed=JDownloader non ha trovato uno script LiveHeader funzionante.\nAssicurati di aver inserito le informazioni corrette, e di avere una connessione con  IP dinamico.
-BadQueryException=Ricerca Errata.\r\nControlla che i caratteri della ricerca non siano lunghi 1 o 2 caratteri.
+BadQueryException=Ricerca errata.\r\nControlla che i caratteri della ricerca non siano lunghi 1 o 2 caratteri.
 DataCompareDialog_DataCompareDialog_=Compara informazioni router
 DataCompareDialog_layoutDialogContent__desc=Controlla le seguenti informazioni, e prova a compilare i campi più accuratamente possibile.
 DataCompareDialog_layoutDialogContent_firmware=Firmware/versione
@@ -59,7 +59,7 @@ confirm_success_message=Il tuo IP è  cambiato. Per JDownloader, sembra che tutt
 confirm_success_title=Ha funzionato?
 confirm_upload_script=JDownloader caricherà lo script di riconnessione.\r\nControllare tutti i parametri e annullare il processo se questo contiene dati privati che non vuoi condividere.
 details=Dettagli
-edit_script=Questa finestra di dialogo visualizza come questo Script di Riconnessione funziona.\nSe vuoi conoscere lo script raw, o modificarlo, clicca sul pulsante [modifica]
+edit_script=Questa finestra di dialogo visualizza come questo Script di Riconnessione funziona.\nSe vuoi conoscere lo script raw, o modificarlo, fai clic sul pulsante 'Modifica'.
 failure_variable_overwrite_variable=Riconnessione fallita: Errore nell'aggiornamento della variabile: %s1
 failure_variable_parser=Riconnessione fallita: Non trovo una variabile: %s1
 failure_variable_request=Riconnessione fallita: Una richesta è fallita molte volte:\r\n%s1 - %s2
