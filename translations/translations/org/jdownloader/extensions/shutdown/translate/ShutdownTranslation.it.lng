@@ -19,7 +19,7 @@ interaction_shutdown_dialog_msg_logoff=<h2><font color="red">L'utente verrà dis
 interaction_shutdown_dialog_msg_shutdown=<h2><font color="red">Il sistema verrà spento!</font></h2>
 interaction_shutdown_dialog_msg_standby=<h2><font color="red">Il sistema verrà posto in standby!</font></h2>
 interaction_shutdown_dialog_title_closejd=Vuoi chiudere JD?
-interaction_shutdown_dialog_title_hibernate=Ibernare?
+interaction_shutdown_dialog_title_hibernate=Vuoi ibernare il PC?
 interaction_shutdown_dialog_title_logoff=Disconnettersi?
 interaction_shutdown_dialog_title_shutdown=Spegnere?
 interaction_shutdown_dialog_title_standby=Standby?
@@ -27,5 +27,5 @@ jd_plugins_optional_jdshutdown=Chiusura JD
 jd_plugins_optional_jdshutdown_description=Spegni automaticamente, sospendi, iberna il tuo PC o chiudi JDownloader alla fine dei download.
 lit_shutdownn=Spegni
 show_admin=Per configurare JDownload per ibernazione o standby sono richiesti i diritti di amministratore
-shutdown_toggle_action_disable=Disabilita l'estensione di spegnimento dopo il download
+shutdown_toggle_action_disable=Disabilita estensione spegnimento dopo il download
 shutdown_toggle_action_enable=Abilita l'estensione di spegnimento dopo i download
