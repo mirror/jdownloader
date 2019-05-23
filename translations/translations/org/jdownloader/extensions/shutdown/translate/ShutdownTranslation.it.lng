@@ -1,11 +1,11 @@
-action_tooltip=Abilita lo spegnimento del sistema alla fine dei download
+action_tooltip=Abilita spegnimento del sistema a download completati
 addons_jdshutdown_statusmessage_disabled=JDownloader NON arresterà il sistema alla termine dei download
 addons_jdshutdown_statusmessage_enabled=JDownloader arresterà il sistema alla termine dei download
 config_active_by_default=Mantieni spegnimento abilitato
 config_toolbarbutton=Barra strumenti visibile
 gui_config_jdshutdown_close=Chiudi JD
 gui_config_jdshutdown_forceshutdown=Forza l'arresto (non per tutti i S.O.)
-gui_config_jdshutdown_hibernate=Iberna (non disponibile in tutti i S.O.)
+gui_config_jdshutdown_hibernate=Iberna (non per tutti i S.O.)
 gui_config_jdshutdown_logoff=Disconnetti
 gui_config_jdshutdown_mode=Modo:
 gui_config_jdshutdown_shutdown=Spegni
