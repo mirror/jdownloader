@@ -1660,6 +1660,7 @@ added_date_column_invalid=n.d.
 added_date_column_title=Data inserimento
 are_you_sure_disabled_premium=Sei sicuro? Stai disabilitando tutti gli account premium.\r\nSe continui, JDownloader non utilizzerà più gli account premium a meno che non riabiliti questa funzionalità.
 ask=Chiedimi
+authtablemodel_column_always=Sempre
 authtablemodel_column_enabled=Usa accessi
 authtablemodel_column_host=Host/URL
 authtablemodel_column_password=Password
