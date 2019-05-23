@@ -313,9 +313,11 @@ public class FavIcons {
         Color bg = Color.WHITE;
         LOGGER.info("Create Favicon: " + host);
         try {
-            bg = LAFOptions.getInstance().getColorForPanelHeaderBackground();
+            if (!Application.isHeadless()) {
+                bg = LAFOptions.getInstance().getColorForPanelHeaderBackground();
+            }
         } catch (final Throwable e) {
-            e.printStackTrace();
+            LogController.CL().log(e);
         }
         final BufferedImage image = new BufferedImage(w, h, Transparency.TRANSLUCENT);
         final Graphics2D g = image.createGraphics();
