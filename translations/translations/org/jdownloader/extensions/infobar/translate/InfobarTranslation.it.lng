@@ -1,3 +1,8 @@
+EnableInfoBarGuiAction=Visualizza barra informazioni
+InfoBarGuiToggleAction_deselected=Apri barra informazioni
+InfoBarGuiToggleAction_deselected_tt=Apre la barra informazioni
+InfoBarGuiToggleAction_selected=Chiudi barra informazioni
+InfoBarGuiToggleAction_selected_tt=Chiude la barra informazioni
 jd_plugins_optional_infobar_InfoDialog_help=Zona Drag'N'Drop
 jd_plugins_optional_infobar_InfoDialog_help_tooltip2=Rilascia qui URL, collegamenti ipertestuali o file DLC!
 jd_plugins_optional_infobar_InfoDialog_hideWindow=Nascondi barra informazioni
