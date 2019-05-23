@@ -18,7 +18,7 @@ interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">Il sistema verra
 interaction_shutdown_dialog_msg_logoff=<h2><font color="red">L'utente verrà disconnesso!</font></h2>
 interaction_shutdown_dialog_msg_shutdown=<h2><font color="red">Il sistema verrà spento!</font></h2>
 interaction_shutdown_dialog_msg_standby=<h2><font color="red">Il sistema verrà posto in standby!</font></h2>
-interaction_shutdown_dialog_title_closejd=Chiudere JD?
+interaction_shutdown_dialog_title_closejd=Vuoi chiudere JD?
 interaction_shutdown_dialog_title_hibernate=Ibernare?
 interaction_shutdown_dialog_title_logoff=Disconnettersi?
 interaction_shutdown_dialog_title_shutdown=Spegnere?
