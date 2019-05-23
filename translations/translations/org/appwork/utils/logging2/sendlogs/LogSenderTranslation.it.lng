@@ -1,6 +1,6 @@
 LogAction_actionPerformed_wait_=Attendi...
 LogAction_actionPerformed_zip_title_=Crea pacchetto registro eventi
-LogAction_getString_uploading_=Preparazione del registro eventi
+LogAction_getString_uploading_=Preparazione registro eventi
 LogModel_getStringValue_between_=Tra %s1 e %s2
 LogModel_initColumns_time_=Ora
 LogModel_initColumns_x_=Verifica
