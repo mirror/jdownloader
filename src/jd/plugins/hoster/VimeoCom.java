@@ -142,7 +142,7 @@ public class VimeoCom extends PluginForHost {
         if (finalURL != null) {
             try {
                 /* @since JD2 */
-                con = br.openHeadConnection(finalURL);
+                con = br.openGetConnection(finalURL);
                 if (con.getContentType() != null && !con.getContentType().contains("json") && !con.getContentType().contains("html") && !con.getContentType().contains("vnd.apple.mpegurl") && con.isOK()) {
                     downloadLink.setVerifiedFileSize(con.getLongContentLength());
                     downloadLink.setFinalFileName(getFormattedFilename(downloadLink));
@@ -238,7 +238,7 @@ public class VimeoCom extends PluginForHost {
         case WEB:
         case SUBTITLE:
             try {
-                con = br.openHeadConnection(finalURL);
+                con = br.openGetConnection(finalURL);
                 if (StringUtils.containsIgnoreCase(con.getContentType(), "json") || StringUtils.containsIgnoreCase(finalURL, "cold_request=1")) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Defrosting download, please wait", 30 * 60 * 1000l);
                 } else if (!StringUtils.containsIgnoreCase(con.getContentType(), "html") && con.isOK()) {
