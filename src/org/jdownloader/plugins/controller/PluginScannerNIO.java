@@ -19,9 +19,7 @@ import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 
 public class PluginScannerNIO<T extends Plugin> {
-
     private final static boolean      isJava16orOlder = Application.getJavaVersion() <= Application.JAVA16;
-
     private final PluginController<T> pluginController;
 
     protected PluginController<T> getPluginController() {
@@ -32,7 +30,7 @@ public class PluginScannerNIO<T extends Plugin> {
         this.pluginController = pluginController;
     }
 
-    protected List<PluginInfo<T>> scan(LogSource logger, String hosterpath, final List<? extends LazyPlugin<T>> pluginCache, final AtomicLong lastFolderModification) throws Exception {
+    protected List<PluginInfo<T>> scan(LogSource logger, String hosterpath, final List<? extends LazyPlugin<T>> pluginCache, final AtomicLong lastFolderModification) throws Exception, OutOfMemoryError {
         DirectoryStream<Path> stream = null;
         final ArrayList<PluginInfo<T>> ret = new ArrayList<PluginInfo<T>>();
         final long timeStamp = System.currentTimeMillis();
@@ -108,6 +106,10 @@ public class PluginScannerNIO<T extends Plugin> {
                             } else {
                                 continue;
                             }
+                        } catch (final OutOfMemoryError e) {
+                            logger.finer("Failed: " + className);
+                            logger.log(e);
+                            throw e;
                         } catch (final Throwable e) {
                             logger.finer("Failed: " + className);
                             logger.log(e);
@@ -119,7 +121,10 @@ public class PluginScannerNIO<T extends Plugin> {
                         // logger.finer("Scaned: " + className + "|" + lazyPluginClass.getRevision());
                         ret.add(pluginInfo);
                     }
-
+                } catch (final OutOfMemoryError e) {
+                    logger.finer("Failed: " + path);
+                    logger.log(e);
+                    throw e;
                 } catch (Throwable e) {
                     logger.finer("Failed: " + path);
                     logger.log(e);

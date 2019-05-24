@@ -276,24 +276,24 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     try {
                         try {
                             // TODO: add another plugin option to use original url first
-                            jd.plugins.hoster.VimeoCom.accessVimeoURL(this.br, parameter, urlType, referer, loggedIn ? VIMEO_URL_TYPE.RAW : null);
+                            jd.plugins.hoster.VimeoCom.accessVimeoURL(this, this.br, parameter, urlType, referer, loggedIn ? VIMEO_URL_TYPE.RAW : null);
                         } catch (final PluginException e) {
                             if (isEmbeddedForbidden(e, br) && VIMEO_URL_TYPE.PLAYER.equals(urlType.get()) && orgParameter.matches(type_normal)) {
-                                jd.plugins.hoster.VimeoCom.accessVimeoURL(this.br, parameter, urlType, referer, VIMEO_URL_TYPE.RAW);
+                                jd.plugins.hoster.VimeoCom.accessVimeoURL(this, this.br, parameter, urlType, referer, VIMEO_URL_TYPE.RAW);
                             } else {
                                 throw e;
                             }
                         }
                     } catch (final PluginException e2) {
                         if (retryWithCustomReferer(param, e2, br, referer)) {
-                            jd.plugins.hoster.VimeoCom.accessVimeoURL(this.br, parameter, urlType, referer, VIMEO_URL_TYPE.RAW.equals(urlType.get()) ? VIMEO_URL_TYPE.RAW : null);
+                            jd.plugins.hoster.VimeoCom.accessVimeoURL(this, this.br, parameter, urlType, referer, VIMEO_URL_TYPE.RAW.equals(urlType.get()) ? VIMEO_URL_TYPE.RAW : null);
                         } else {
                             throw e2;
                         }
                     }
                 } catch (PluginException e) {
                     if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND && orgParameter.matches(type_player) && !VIMEO_URL_TYPE.RAW.equals(urlType.get())) {
-                        jd.plugins.hoster.VimeoCom.accessVimeoURL(this.br, orgParameter, urlType, referer, VIMEO_URL_TYPE.RAW);
+                        jd.plugins.hoster.VimeoCom.accessVimeoURL(this, this.br, orgParameter, urlType, referer, VIMEO_URL_TYPE.RAW);
                         parameter = orgParameter;
                     } else {
                         throw e;

@@ -188,7 +188,7 @@ public class VimeoCom extends PluginForHost {
                 }
             }
         }
-        accessVimeoURL(this.br, downloadLink.getPluginPatternMatcher(), null, referer, getVimeoUrlType(downloadLink));
+        accessVimeoURL(this, this.br, downloadLink.getPluginPatternMatcher(), null, referer, getVimeoUrlType(downloadLink));
         handlePW(downloadLink, br);
         /* Video titles can be changed afterwards by the puloader - make sure that we always got the currrent title! */
         String videoTitle = null;
@@ -285,25 +285,40 @@ public class VimeoCom extends PluginForHost {
         NORMAL
     }
 
+    public static VIMEO_URL_TYPE getUrlType(final String url) {
+        if (url != null) {
+            final String unlistedHash = jd.plugins.decrypter.VimeoComDecrypter.getUnlistedHashFromURL(url);
+            if (unlistedHash != null) {
+                return VIMEO_URL_TYPE.UNLISTED;
+            } else if (url.matches("^https?://player\\.vimeo.com/.+")) {
+                return VIMEO_URL_TYPE.PLAYER;
+            }
+        }
+        return VIMEO_URL_TYPE.RAW;
+    }
+
     /**
      * Use this to access a vimeo URL for the first time! Make sure to call password handling afterwards! <br />
      * Important: Execute password handling afterwards!!
      */
-    public static VIMEO_URL_TYPE accessVimeoURL(final Browser br, final String url_source, final AtomicReference<VIMEO_URL_TYPE> urlTypeUsed, final AtomicReference<String> forced_referer, final VIMEO_URL_TYPE urlTypeRequested) throws Exception {
+    public static VIMEO_URL_TYPE accessVimeoURL(final Plugin plugin, final Browser br, final String url_source, final AtomicReference<VIMEO_URL_TYPE> urlTypeUsed, final AtomicReference<String> forced_referer, final VIMEO_URL_TYPE urlTypeRequested) throws Exception {
         final String videoID = jd.plugins.decrypter.VimeoComDecrypter.getVideoidFromURL(url_source);
         final String unlistedHash = jd.plugins.decrypter.VimeoComDecrypter.getUnlistedHashFromURL(url_source);
         // final String reviewHash = jd.plugins.decrypter.VimeoComDecrypter.getReviewHashFromURL(url_source);
         final String referer = forced_referer != null ? forced_referer.get() : null;
         if (referer != null) {
+            plugin.getLogger().info("Referer:" + referer);
             br.getHeaders().put("Referer", referer);
         }
+        plugin.getLogger().info("urlTypeRequested:" + urlTypeUsed);
         final VIMEO_URL_TYPE ret;
         if (urlTypeRequested == VIMEO_URL_TYPE.RAW || (urlTypeRequested == null && url_source.matches("https?://.*?vimeo\\.com.*?/review/.+")) || videoID == null) {
             /*
              * 2019-02-20: Special: We have to access 'review' URLs same way as via browser - if we don't, we will get response 403/404!
              * Review-URLs may contain a reviewHash which is required! If then, inside their json, the unlistedHash is present,
              */
-            ret = VIMEO_URL_TYPE.RAW;
+            ret = getUrlType(url_source);
+            plugin.getLogger().info("getUrlType:" + url_source + "->" + ret);
             if (urlTypeUsed != null) {
                 urlTypeUsed.set(ret);
             }
@@ -545,6 +560,7 @@ public class VimeoCom extends PluginForHost {
         /*
          * little pause needed so the next call does not return trash
          */
+        plugin.getLogger().info("urlTypeUsed:" + urlTypeUsed);
         Thread.sleep(1000);
         boolean debug = false;
         String configURL = ibr.getRegex("data-config-url=\"(https?://player\\.vimeo\\.com/(v2/)?video/\\d+/config.*?)\"").getMatch(0);
