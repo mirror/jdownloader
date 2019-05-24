@@ -246,7 +246,7 @@ public class VimeoCom extends PluginForHost {
             try {
                 con = br.openHeadConnection(finalURL);
                 if (StringUtils.containsIgnoreCase(con.getContentType(), "json") || StringUtils.containsIgnoreCase(finalURL, "cold_request=1")) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Preparing download, please wait", 15 * 60 * 1000l);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Defrosting download, please wait", 30 * 60 * 1000l);
                 } else if (!StringUtils.containsIgnoreCase(con.getContentType(), "html") && con.isOK()) {
                     downloadLink.setVerifiedFileSize(con.getLongContentLength());
                 } else {
