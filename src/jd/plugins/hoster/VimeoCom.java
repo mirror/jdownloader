@@ -149,7 +149,7 @@ public class VimeoCom extends PluginForHost {
             try {
                 /* @since JD2 */
                 con = br.openHeadConnection(finalURL);
-                if (con.getContentType() != null && !con.getContentType().contains("html") && !con.getContentType().contains("vnd.apple.mpegurl") && con.isOK()) {
+                if (con.getContentType() != null && !con.getContentType().contains("json") && !con.getContentType().contains("html") && !con.getContentType().contains("vnd.apple.mpegurl") && con.isOK()) {
                     downloadLink.setVerifiedFileSize(con.getLongContentLength());
                     downloadLink.setFinalFileName(getFormattedFilename(downloadLink));
                     return AvailableStatus.TRUE;
@@ -245,8 +245,12 @@ public class VimeoCom extends PluginForHost {
         case SUBTITLE:
             try {
                 con = br.openHeadConnection(finalURL);
-                if (con.getContentType() != null && !con.getContentType().contains("html") && con.isOK()) {
+                if (StringUtils.containsIgnoreCase(con.getContentType(), "json") || StringUtils.containsIgnoreCase(finalURL, "cold_request=1")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Preparing download, please wait", 15 * 60 * 1000l);
+                } else if (!StringUtils.containsIgnoreCase(con.getContentType(), "html") && con.isOK()) {
                     downloadLink.setVerifiedFileSize(con.getLongContentLength());
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             } finally {
                 if (con != null) {
@@ -384,7 +388,7 @@ public class VimeoCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (!finalURL.contains(".m3u8")) {
             dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, finalURL, true, 0);
-            if (dl.getConnection().getContentType().contains("html")) {
+            if (StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "html") || StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "json")) {
                 logger.warning("The final dllink seems not to be a file!");
                 try {
                     br.followConnection();
