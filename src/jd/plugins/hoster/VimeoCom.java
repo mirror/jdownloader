@@ -717,7 +717,8 @@ public class VimeoCom extends PluginForHost {
             final GetRequest request = brc.createGetRequest("https://" + plugin.getHost() + "/" + ID + "?action=load_download_config");
             request.getHeaders().put("Accept", "*/*");
             request.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            request.getHeaders().put("Content-Type", "application/json");
+            request.getHeaders().put("Cache-Control", "no-cache");
+            request.getHeaders().put("Pragma", "no-cache");
             final String json = brc.getPage(request);
             final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
             if (entries != null) {
