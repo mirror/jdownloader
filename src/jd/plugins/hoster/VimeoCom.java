@@ -310,7 +310,7 @@ public class VimeoCom extends PluginForHost {
             plugin.getLogger().info("Referer:" + referer);
             br.getHeaders().put("Referer", referer);
         }
-        plugin.getLogger().info("urlTypeRequested:" + urlTypeUsed);
+        plugin.getLogger().info("urlTypeRequested:" + urlTypeRequested);
         final VIMEO_URL_TYPE ret;
         if (urlTypeRequested == VIMEO_URL_TYPE.RAW || (urlTypeRequested == null && url_source.matches("https?://.*?vimeo\\.com.*?/review/.+")) || videoID == null) {
             /*
