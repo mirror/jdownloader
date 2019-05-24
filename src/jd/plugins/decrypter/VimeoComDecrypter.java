@@ -706,7 +706,6 @@ public class VimeoComDecrypter extends PluginForDecrypt {
     private boolean subtitle;
 
     public void init(final SubConfiguration cfg) {
-        //
         qMOBILE = cfg.getBooleanProperty(jd.plugins.hoster.VimeoCom.Q_MOBILE, true);
         qHD = cfg.getBooleanProperty(jd.plugins.hoster.VimeoCom.Q_HD, true);
         qSD = cfg.getBooleanProperty(jd.plugins.hoster.VimeoCom.Q_SD, true);
