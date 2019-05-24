@@ -564,7 +564,7 @@ public class VimeoCom extends PluginForHost {
          * little pause needed so the next call does not return trash
          */
         plugin.getLogger().info("urlTypeUsed:" + urlTypeUsed);
-        Thread.sleep(2000);
+        Thread.sleep(1000);
         boolean debug = false;
         String configURL = ibr.getRegex("data-config-url=\"(https?://player\\.vimeo\\.com/(v2/)?video/\\d+/config.*?)\"").getMatch(0);
         if (StringUtils.isEmpty(configURL)) {
@@ -718,13 +718,14 @@ public class VimeoCom extends PluginForHost {
     private static List<VimeoContainer> handleDownloadConfig(Plugin plugin, final Browser ibr, final String ID) throws InterruptedException {
         final ArrayList<VimeoContainer> ret = new ArrayList<VimeoContainer>();
         try {
-            Thread.sleep(2000);
+            Thread.sleep(500);
             final Browser brc = ibr.cloneBrowser();
             final GetRequest request = brc.createGetRequest("https://" + plugin.getHost() + "/" + ID + "?action=load_download_config");
             request.getHeaders().put("Accept", "*/*");
             request.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             request.getHeaders().put("Cache-Control", "no-cache");
             request.getHeaders().put("Pragma", "no-cache");
+            request.getHeaders().put("Connection", "closed");
             final String json = brc.getPage(request);
             final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
             if (entries != null) {
