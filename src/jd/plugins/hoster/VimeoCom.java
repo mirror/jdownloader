@@ -169,9 +169,11 @@ public class VimeoCom extends PluginForHost {
         final AtomicReference<String> referer = new AtomicReference<String>(forced_referer);
         final boolean alwaysLogin = getPluginConfig().getBooleanProperty(VimeoCom.ALWAYS_LOGIN, false);
         final Account account = (alwaysLogin || (Thread.currentThread() instanceof SingleDownloadController)) ? AccountController.getInstance().getValidAccount(this) : null;
+        Object lock = new Object();
         if (account != null) {
             try {
                 login(this, br, account);
+                lock = account;
             } catch (PluginException e) {
                 logger.log(e);
                 final LogInterface logger = getLogger();
@@ -182,90 +184,94 @@ public class VimeoCom extends PluginForHost {
                 }
             }
         }
-        accessVimeoURL(this, this.br, downloadLink.getPluginPatternMatcher(), null, referer, getVimeoUrlType(downloadLink));
-        handlePW(downloadLink, br);
-        /* Video titles can be changed afterwards by the puloader - make sure that we always got the currrent title! */
-        String videoTitle = null;
-        try {
-            final String json = jd.plugins.decrypter.VimeoComDecrypter.getJsonFromHTML(this.br);
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "vimeo_esi/config/clipData");
-            if (entries != null) {
-                videoTitle = (String) entries.get("title");
-            }
-        } catch (final Throwable e) {
-        }
-        // now we nuke linkids for videos.. crazzy... only remove the last one, _ORIGINAL comes from variant system
-        final String downloadlinkId = downloadLink.getLinkID().replaceFirst("_ORIGINAL$", "");
-        final String videoQuality = downloadLink.getStringProperty("videoQuality", null);
-        final boolean isSubtitle = StringUtils.endsWithCaseInsensitive(videoQuality, "SUBTITLE") || StringUtils.endsWithCaseInsensitive(downloadlinkId, "SUBTITLE");
-        final boolean isHLS = StringUtils.endsWithCaseInsensitive(videoQuality, "HLS") || StringUtils.endsWithCaseInsensitive(downloadlinkId, "HLS");
-        final boolean isDownload = StringUtils.endsWithCaseInsensitive(videoQuality, "DOWNLOAD") || StringUtils.endsWithCaseInsensitive(downloadlinkId, "DOWNLOAD");
-        final boolean isStream = !isHLS && !isDownload;
-        final List<VimeoContainer> qualities = find(this, getVimeoUrlType(downloadLink), br, videoID, isDownload || !isHLS, isStream, isHLS, isSubtitle);
-        if (qualities.isEmpty()) {
-            logger.warning("vimeo.com: Qualities could not be found");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        VimeoContainer container = null;
-        if (downloadlinkId != null) {
-            for (VimeoContainer quality : qualities) {
-                final String linkdupeid = quality.createLinkID(videoID);
-                // match refreshed qualities to stored reference, to make sure we have the same format for resume! we never want to cross
-                // over!
-                if (StringUtils.equalsIgnoreCase(linkdupeid, downloadlinkId)) {
-                    container = quality;
-                    break;
-                }
-            }
-        }
-        if (container == null && videoQuality != null) {
-            for (VimeoContainer quality : qualities) {
-                // match refreshed qualities to stored reference, to make sure we have the same format for resume! we never want to cross
-                // over!
-                if (videoQuality.equalsIgnoreCase(quality.getQuality().toString())) {
-                    container = quality;
-                    break;
-                }
-            }
-        }
-        if (container == null || container.getDownloadurl() == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        finalURL = container.getDownloadurl();
-        switch (container.getSource()) {
-        case DOWNLOAD:
-        case WEB:
-        case SUBTITLE:
+        synchronized (lock) {
+            accessVimeoURL(this, this.br, downloadLink.getPluginPatternMatcher(), null, referer, getVimeoUrlType(downloadLink));
+            handlePW(downloadLink, br);
+            /* Video titles can be changed afterwards by the puloader - make sure that we always got the currrent title! */
+            String videoTitle = null;
             try {
-                con = br.openGetConnection(finalURL);
-                if (StringUtils.containsIgnoreCase(con.getContentType(), "json") || StringUtils.containsIgnoreCase(finalURL, "cold_request=1")) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Defrosting download, please wait", 30 * 60 * 1000l);
-                } else if (!StringUtils.containsIgnoreCase(con.getContentType(), "html") && con.isOK()) {
-                    downloadLink.setVerifiedFileSize(con.getLongContentLength());
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                final String json = jd.plugins.decrypter.VimeoComDecrypter.getJsonFromHTML(this.br);
+                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "vimeo_esi/config/clipData");
+                if (entries != null) {
+                    videoTitle = (String) entries.get("title");
                 }
-            } finally {
-                if (con != null) {
-                    con.disconnect();
+            } catch (final Throwable e) {
+            }
+            // now we nuke linkids for videos.. crazzy... only remove the last one, _ORIGINAL comes from variant system
+            final String downloadlinkId = downloadLink.getLinkID().replaceFirst("_ORIGINAL$", "");
+            final String videoQuality = downloadLink.getStringProperty("videoQuality", null);
+            final boolean isSubtitle = StringUtils.endsWithCaseInsensitive(videoQuality, "SUBTITLE") || StringUtils.endsWithCaseInsensitive(downloadlinkId, "SUBTITLE");
+            final boolean isHLS = StringUtils.endsWithCaseInsensitive(videoQuality, "HLS") || StringUtils.endsWithCaseInsensitive(downloadlinkId, "HLS");
+            final boolean isDownload = StringUtils.endsWithCaseInsensitive(videoQuality, "DOWNLOAD") || StringUtils.endsWithCaseInsensitive(downloadlinkId, "DOWNLOAD");
+            final boolean isStream = !isHLS && !isDownload;
+            final List<VimeoContainer> qualities = find(this, getVimeoUrlType(downloadLink), br, videoID, isDownload || !isHLS, isStream, isHLS, isSubtitle);
+            if (qualities.isEmpty()) {
+                logger.warning("vimeo.com: Qualities could not be found");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            VimeoContainer container = null;
+            if (downloadlinkId != null) {
+                for (VimeoContainer quality : qualities) {
+                    final String linkdupeid = quality.createLinkID(videoID);
+                    // match refreshed qualities to stored reference, to make sure we have the same format for resume! we never want to
+                    // cross
+                    // over!
+                    if (StringUtils.equalsIgnoreCase(linkdupeid, downloadlinkId)) {
+                        container = quality;
+                        break;
+                    }
                 }
             }
-            downloadLink.setProperty("directURL", finalURL);
-            break;
-        case HLS:
-            if (container.getEstimatedSize() != null) {
-                downloadLink.setDownloadSize(container.getEstimatedSize());
+            if (container == null && videoQuality != null) {
+                for (VimeoContainer quality : qualities) {
+                    // match refreshed qualities to stored reference, to make sure we have the same format for resume! we never want to
+                    // cross
+                    // over!
+                    if (videoQuality.equalsIgnoreCase(quality.getQuality().toString())) {
+                        container = quality;
+                        break;
+                    }
+                }
             }
-            break;
-        default:
-            break;
+            if (container == null || container.getDownloadurl() == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            finalURL = container.getDownloadurl();
+            switch (container.getSource()) {
+            case DOWNLOAD:
+            case WEB:
+            case SUBTITLE:
+                try {
+                    con = br.openGetConnection(finalURL);
+                    if (StringUtils.containsIgnoreCase(con.getContentType(), "json") || StringUtils.containsIgnoreCase(finalURL, "cold_request=1")) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Defrosting download, please wait", 30 * 60 * 1000l);
+                    } else if (!StringUtils.containsIgnoreCase(con.getContentType(), "html") && con.isOK()) {
+                        downloadLink.setVerifiedFileSize(con.getLongContentLength());
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                } finally {
+                    if (con != null) {
+                        con.disconnect();
+                    }
+                }
+                downloadLink.setProperty("directURL", finalURL);
+                break;
+            case HLS:
+                if (container.getEstimatedSize() != null) {
+                    downloadLink.setDownloadSize(container.getEstimatedSize());
+                }
+                break;
+            default:
+                break;
+            }
+            if (!StringUtils.isEmpty(videoTitle)) {
+                downloadLink.setProperty("videoTitle", videoTitle);
+            }
+            downloadLink.setFinalFileName(getFormattedFilename(downloadLink));
+            return AvailableStatus.TRUE;
         }
-        if (!StringUtils.isEmpty(videoTitle)) {
-            downloadLink.setProperty("videoTitle", videoTitle);
-        }
-        downloadLink.setFinalFileName(getFormattedFilename(downloadLink));
-        return AvailableStatus.TRUE;
     }
 
     public static String getVideoID(final DownloadLink dl) {
