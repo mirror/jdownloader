@@ -199,7 +199,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             if (totalVideoNum != null) {
                 totalVids = Integer.parseInt(totalVideoNum.replace(",", ""));
             } else {
-                /* Assume number of videos. */
+                /* Assume number of videos/page. 12 at the moment,24.05.2019 */
                 totalVids = numberofPages * 12;
             }
             final Set<String> dups = new HashSet<String>();
