@@ -34,6 +34,7 @@ import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
+import jd.http.requests.GetRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -47,8 +48,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-import jd.plugins.components.UserAgents;
-import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.locale.JDL;
 
 import org.appwork.storage.JSonStorage;
@@ -66,7 +65,7 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "decryptedforVimeoHosterPlugin://.+" })
 public class VimeoCom extends PluginForHost {
-    private static final String MAINPAGE        = "http://vimeo.com";
+    private static final String MAINPAGE        = "https://vimeo.com";
     private String              finalURL;
     public static final String  Q_MOBILE        = "Q_MOBILE";
     public static final String  Q_ORIGINAL      = "Q_ORIGINAL";
@@ -115,30 +114,25 @@ public class VimeoCom extends PluginForHost {
         return -1;
     }
 
-    private static AtomicReference<String> userAgent = new AtomicReference<String>(null);
-
-    public static Browser prepBrGeneral(final DownloadLink dl, final Browser prepBr) {
+    public static Browser prepBrGeneral(Plugin plugin, final DownloadLink dl, final Browser prepBr) {
         final String vimeo_forced_referer = dl != null ? getForcedReferer(dl) : null;
         if (vimeo_forced_referer != null) {
             prepBr.getHeaders().put("Referer", vimeo_forced_referer);
         }
         /* we do not want German headers! */
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
-        synchronized (userAgent) {
-            if (userAgent.get() == null) {
-                userAgent.set(UserAgents.stringUserAgent(BrowserName.Chrome));
-            }
-            prepBr.getHeaders().put("User-Agent", userAgent.get());
-        }
         prepBr.setAllowedResponseCodes(new int[] { 418, 451, 406 });
+        prepBr.setCookiesExclusive(true);
+        prepBr.clearCookies(plugin.getHost());
+        prepBr.setCookie(plugin.getHost(), "language", "en");
         return prepBr;
     }
 
     /* API - might be useful for the future: https://github.com/bromix/plugin.video.vimeo/blob/master/resources/lib/vimeo/client.py */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        br = prepBrGeneral(this, downloadLink, br);
         setBrowserExclusive();
-        prepBrGeneral(downloadLink, br);
         if (downloadLink.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -169,8 +163,7 @@ public class VimeoCom extends PluginForHost {
             /* This should never happen! */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        setBrowserExclusive();
-        br = prepBrGeneral(downloadLink, new Browser());
+        br = prepBrGeneral(this, downloadLink, new Browser());
         br.setFollowRedirects(true);
         final String forced_referer = getForcedReferer(downloadLink);
         final AtomicReference<String> referer = new AtomicReference<String>(forced_referer);
@@ -178,8 +171,9 @@ public class VimeoCom extends PluginForHost {
         final Account account = (alwaysLogin || (Thread.currentThread() instanceof SingleDownloadController)) ? AccountController.getInstance().getValidAccount(this) : null;
         if (account != null) {
             try {
-                login(br, account);
+                login(this, br, account);
             } catch (PluginException e) {
+                logger.log(e);
                 final LogInterface logger = getLogger();
                 if (logger instanceof LogSource) {
                     handleAccountException(account, (LogSource) logger, e);
@@ -436,7 +430,7 @@ public class VimeoCom extends PluginForHost {
                 }
             }
             setBrowserExclusive();
-            login(br, account);
+            login(this, br, account);
             if (br.getRequest() == null || !StringUtils.containsIgnoreCase(br.getHost(), "vimeo.com")) {
                 br.getPage(MAINPAGE);
             }
@@ -471,10 +465,10 @@ public class VimeoCom extends PluginForHost {
         }
     }
 
-    public static void login(Browser br, Account account) throws PluginException, IOException {
+    public static void login(final Plugin plugin, Browser br, Account account) throws PluginException, IOException {
         synchronized (account) {
             try {
-                prepBrGeneral(null, br);
+                br = prepBrGeneral(plugin, null, br);
                 br.setFollowRedirects(true);
                 Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
@@ -525,7 +519,6 @@ public class VimeoCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        br.setCookie(br.getHost(), "xsrft", xsrft);
         return xsrft;
     }
 
@@ -565,7 +558,7 @@ public class VimeoCom extends PluginForHost {
          * little pause needed so the next call does not return trash
          */
         plugin.getLogger().info("urlTypeUsed:" + urlTypeUsed);
-        Thread.sleep(1000);
+        Thread.sleep(2000);
         boolean debug = false;
         String configURL = ibr.getRegex("data-config-url=\"(https?://player\\.vimeo\\.com/(v2/)?video/\\d+/config.*?)\"").getMatch(0);
         if (StringUtils.isEmpty(configURL)) {
@@ -597,17 +590,21 @@ public class VimeoCom extends PluginForHost {
             }
         } else {
             /* As stated in the other case, if we access the main video page first, it should contain this information. */
-            download_might_be_possible = PluginJSonUtils.getJson(ibr, "file_transfer_url") != null;
+            final String file_transfer_url = PluginJSonUtils.getJson(ibr, "file_transfer_url");
+            download_might_be_possible = file_transfer_url != null;
             if (!download_might_be_possible) {
                 try {
                     final String json = jd.plugins.decrypter.VimeoComDecrypter.getJsonFromHTML(ibr);
                     final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
                     /* Empty Array = download possible, null = download NOT possible! */
                     final Object download_might_be_possibleO = entries.get("download_config");
+                    plugin.getLogger().info("download_config:" + download_might_be_possibleO);
                     download_might_be_possible = download_might_be_possibleO != null;
                 } catch (final Throwable e) {
                     plugin.getLogger().log(e);
                 }
+            } else {
+                plugin.getLogger().info("file_transfer_url:" + file_transfer_url);
             }
         }
         plugin.getLogger().info("Download possible:" + download_might_be_possible);
@@ -622,13 +619,13 @@ public class VimeoCom extends PluginForHost {
         if ((tryToFindStreams || subtitles) && (configURL != null || ibr.getURL().contains("player.vimeo.com/"))) {
             plugin.getLogger().info("try to find streams");
             // iconify_down_b could fail, revert to the following if statements.
-            final Browser gq = ibr.cloneBrowser();
-            gq.getHeaders().put("Accept", "*/*");
-            String json;
+            String json = null;
             if (configURL != null) {
+                final Browser brc = ibr.cloneBrowser();
+                brc.getHeaders().put("Accept", "*/*");
                 configURL = configURL.replaceAll("&amp;", "&");
-                gq.getPage(configURL);
-                json = gq.toString();
+                Thread.sleep(100);
+                json = brc.getPage(configURL);
             } else {
                 json = ibr.getRegex("a\\s*=\\s*(\\s*\\{\\s*\"cdn_url\".*?);if\\(\\!?a\\.request\\)").getMatch(0);
                 if (json == null) {
@@ -712,14 +709,16 @@ public class VimeoCom extends PluginForHost {
     }
 
     /** Crawls official downloadURLs if available */
-    private static List<VimeoContainer> handleDownloadConfig(Plugin plugin, final Browser ibr, final String ID) {
+    private static List<VimeoContainer> handleDownloadConfig(Plugin plugin, final Browser ibr, final String ID) throws InterruptedException {
         final ArrayList<VimeoContainer> ret = new ArrayList<VimeoContainer>();
         try {
-            final Browser gq = ibr.cloneBrowser();
-            /* With dl button */
-            gq.getHeaders().put("Accept", "*/*");
-            gq.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            final String json = gq.getPage("https://" + plugin.getHost() + "/" + ID + "?action=load_download_config");
+            Thread.sleep(2000);
+            final Browser brc = ibr.cloneBrowser();
+            final GetRequest request = brc.createGetRequest("https://" + plugin.getHost() + "/" + ID + "?action=load_download_config");
+            request.getHeaders().put("Accept", "*/*");
+            request.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            request.getHeaders().put("Content-Type", "application/json");
+            final String json = brc.getPage(request);
             final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
             if (entries != null) {
                 final ArrayList<Object> official_downloads_all = new ArrayList<Object>();
@@ -765,6 +764,9 @@ public class VimeoCom extends PluginForHost {
                     ret.add(vvc);
                 }
             }
+        } catch (final InterruptedException e) {
+            plugin.getLogger().log(e);
+            throw e;
         } catch (final Throwable t) {
             plugin.getLogger().log(t);
         }
