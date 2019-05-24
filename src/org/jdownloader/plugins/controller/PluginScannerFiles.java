@@ -16,7 +16,6 @@ import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 
 public class PluginScannerFiles<T extends Plugin> {
-
     private final static boolean      isJava16orOlder = Application.getJavaVersion() <= Application.JAVA16;
     private final PluginController<T> pluginController;
 
@@ -28,7 +27,7 @@ public class PluginScannerFiles<T extends Plugin> {
         this.pluginController = pluginController;
     }
 
-    protected List<PluginInfo<T>> scan(LogSource logger, String hosterpath, final List<? extends LazyPlugin<T>> pluginCache, final AtomicLong lastFolderModification) throws Exception {
+    protected List<PluginInfo<T>> scan(LogSource logger, String hosterpath, final List<? extends LazyPlugin<T>> pluginCache, final AtomicLong lastFolderModification) throws Exception, OutOfMemoryError {
         final ArrayList<PluginInfo<T>> ret = new ArrayList<PluginInfo<T>>();
         final long timeStamp = System.currentTimeMillis();
         try {
@@ -43,7 +42,6 @@ public class PluginScannerFiles<T extends Plugin> {
                 return ret;
             }
             final String pkg = hosterpath.replace("/", ".");
-
             final HashMap<String, List<LazyPlugin<T>>> lazyPluginClassMap;
             if (pluginCache != null && pluginCache.size() > 0) {
                 lazyPluginClassMap = new HashMap<String, List<LazyPlugin<T>>>();
@@ -104,6 +102,10 @@ public class PluginScannerFiles<T extends Plugin> {
                                 } else {
                                     continue;
                                 }
+                            } catch (final OutOfMemoryError e) {
+                                logger.finer("Failed: " + className);
+                                logger.log(e);
+                                throw e;
                             } catch (final Throwable e) {
                                 logger.finer("Failed: " + className);
                                 logger.log(e);
@@ -115,6 +117,10 @@ public class PluginScannerFiles<T extends Plugin> {
                             ret.add(pluginInfo);
                         }
                     }
+                } catch (final OutOfMemoryError e) {
+                    logger.finer("Failed: " + path);
+                    logger.log(e);
+                    throw e;
                 } catch (Throwable e) {
                     logger.finer("Failed: " + path);
                     logger.log(e);
