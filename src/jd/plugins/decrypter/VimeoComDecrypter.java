@@ -260,142 +260,138 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 /* This should never happen but can happen when adding support for new linktypes. */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            Object lock = new Object();
             boolean loggedIn = false;
             if (alwaysLogin) {
                 final ArrayList<Account> accs = AccountController.getInstance().getValidAccounts(getHost());
                 if (accs != null) {
-                    loggedIn = login(accs.get(0));
+                    final Account acc = accs.get(0);
+                    loggedIn = login(acc);
+                    if (loggedIn) {
+                        lock = acc;
+                    }
                 }
             }
             /* Log in if required */
             if (loggedIn == false && StringUtils.containsIgnoreCase(parameter, "/ondemand/")) {
                 logger.info("Account required to crawl this link");
                 final ArrayList<Account> accs = AccountController.getInstance().getValidAccounts(getHost());
-                loggedIn = accs != null && login(accs.get(0));
+                final Account acc = accs != null ? accs.get(0) : null;
+                loggedIn = acc != null && login(acc);
                 if (!loggedIn) {
                     logger.info("Cannot crawl this link without account");
                     return decryptedLinks;
+                } else {
+                    lock = acc;
                 }
             }
-            final AtomicReference<VIMEO_URL_TYPE> urlType = new AtomicReference<VimeoCom.VIMEO_URL_TYPE>(null);
-            try {
+            synchronized (lock) {
+                final AtomicReference<VIMEO_URL_TYPE> urlType = new AtomicReference<VimeoCom.VIMEO_URL_TYPE>(null);
                 try {
                     try {
                         try {
-                            // TODO: add another plugin option to use original url first
-                            jd.plugins.hoster.VimeoCom.accessVimeoURL(this, this.br, parameter, urlType, referer, loggedIn ? VIMEO_URL_TYPE.RAW : null);
-                        } catch (final PluginException e) {
-                            if (isEmbeddedForbidden(e, br) && VIMEO_URL_TYPE.PLAYER.equals(urlType.get()) && orgParameter.matches(type_normal)) {
-                                jd.plugins.hoster.VimeoCom.accessVimeoURL(this, this.br, parameter, urlType, referer, VIMEO_URL_TYPE.RAW);
+                            try {
+                                // TODO: add another plugin option to use original url first
+                                jd.plugins.hoster.VimeoCom.accessVimeoURL(this, this.br, parameter, urlType, referer, loggedIn ? VIMEO_URL_TYPE.RAW : null);
+                            } catch (final PluginException e) {
+                                if (isEmbeddedForbidden(e, br) && VIMEO_URL_TYPE.PLAYER.equals(urlType.get()) && orgParameter.matches(type_normal)) {
+                                    jd.plugins.hoster.VimeoCom.accessVimeoURL(this, this.br, parameter, urlType, referer, VIMEO_URL_TYPE.RAW);
+                                } else {
+                                    throw e;
+                                }
+                            }
+                        } catch (final PluginException e2) {
+                            if (retryWithCustomReferer(param, e2, br, referer)) {
+                                jd.plugins.hoster.VimeoCom.accessVimeoURL(this, this.br, parameter, urlType, referer, VIMEO_URL_TYPE.RAW.equals(urlType.get()) ? VIMEO_URL_TYPE.RAW : null);
                             } else {
-                                throw e;
+                                throw e2;
                             }
                         }
-                    } catch (final PluginException e2) {
-                        if (retryWithCustomReferer(param, e2, br, referer)) {
-                            jd.plugins.hoster.VimeoCom.accessVimeoURL(this, this.br, parameter, urlType, referer, VIMEO_URL_TYPE.RAW.equals(urlType.get()) ? VIMEO_URL_TYPE.RAW : null);
+                    } catch (PluginException e) {
+                        if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND && orgParameter.matches(type_player) && !VIMEO_URL_TYPE.RAW.equals(urlType.get())) {
+                            jd.plugins.hoster.VimeoCom.accessVimeoURL(this, this.br, orgParameter, urlType, referer, VIMEO_URL_TYPE.RAW);
+                            parameter = orgParameter;
                         } else {
-                            throw e2;
+                            throw e;
                         }
                     }
-                } catch (PluginException e) {
-                    if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND && orgParameter.matches(type_player) && !VIMEO_URL_TYPE.RAW.equals(urlType.get())) {
-                        jd.plugins.hoster.VimeoCom.accessVimeoURL(this, this.br, orgParameter, urlType, referer, VIMEO_URL_TYPE.RAW);
-                        parameter = orgParameter;
+                } catch (final PluginException e2) {
+                    if (e2.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
+                        decryptedLinks.add(createOfflinelink(parameter, videoID, null));
+                        return decryptedLinks;
                     } else {
-                        throw e;
+                        throw e2;
                     }
                 }
-            } catch (final PluginException e2) {
-                if (e2.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
-                    decryptedLinks.add(createOfflinelink(parameter, videoID, null));
-                    return decryptedLinks;
-                } else {
-                    throw e2;
+                if (isPasswordProtected(this.br)) {
+                    try {
+                        password = handlePW(param, videoID, this.br);
+                    } catch (final DecrypterException edc) {
+                        logger.info("User entered too many wrong passwords --> Cannot decrypt link: " + parameter);
+                        decryptedLinks.add(createOfflinelink(parameter, videoID, null));
+                        return decryptedLinks;
+                    }
                 }
-            }
-            if (isPasswordProtected(this.br)) {
+                final String cleanVimeoURL = br.getURL();
+                /*
+                 * We used to simply change the vimeo.com/player/XXX links to normal vimeo.com/XXX links but in some cases, videos can only
+                 * be accessed via their 'player'-link with a specified Referer - if the referer is not given in such a case the site will
+                 * say that our video would be a private video.
+                 */
+                String ownerName = null;
+                String ownerUrl = null;
+                String unlistedHash = getUnlistedHashFromURL(orgParameter);
+                String reviewHash = null;
+                String date = null;
+                String channelName = null;
+                String channelUrl = null;
+                String title = null;
+                String description = null;
                 try {
-                    password = handlePW(param, videoID, this.br);
-                } catch (final DecrypterException edc) {
-                    logger.info("User entered too many wrong passwords --> Cannot decrypt link: " + parameter);
-                    decryptedLinks.add(createOfflinelink(parameter, videoID, null));
-                    return decryptedLinks;
-                }
-            }
-            final String cleanVimeoURL = br.getURL();
-            /*
-             * We used to simply change the vimeo.com/player/XXX links to normal vimeo.com/XXX links but in some cases, videos can only be
-             * accessed via their 'player'-link with a specified Referer - if the referer is not given in such a case the site will say that
-             * our video would be a private video.
-             */
-            String ownerName = null;
-            String ownerUrl = null;
-            String unlistedHash = getUnlistedHashFromURL(orgParameter);
-            String reviewHash = null;
-            String date = null;
-            String channelName = null;
-            String channelUrl = null;
-            String title = null;
-            String description = null;
-            try {
-                final String json = getJsonFromHTML(this.br);
-                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
-                if (entries.containsKey("vimeo_esi")) {
-                    /* E.g. 'review' URLs */
-                    final LinkedHashMap<String, Object> clipData = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "vimeo_esi/config/clipData");
-                    final LinkedHashMap<String, Object> ownerMap = (LinkedHashMap<String, Object>) clipData.get("user");
-                    title = (String) clipData.get("title");
-                    if (StringUtils.isEmpty(unlistedHash)) {
-                        unlistedHash = (String) clipData.get("unlistedHash");
-                    }
-                    if (StringUtils.isEmpty(reviewHash)) {
-                        reviewHash = (String) clipData.get("reviewHash");
-                    }
-                } else if (entries.containsKey("video")) {
-                    /* player.vimeo.com or normal vimeo.com */
-                    final LinkedHashMap<String, Object> video = (LinkedHashMap<String, Object>) entries.get("video");
-                    if (video.containsKey("owner")) {
-                        final LinkedHashMap<String, Object> ownerMap = (LinkedHashMap<String, Object>) video.get("owner");
-                        ownerUrl = new Regex(ownerMap.get("url"), "vimeo\\.com/(.+)").getMatch(0);
-                        ownerName = (String) ownerMap.get("name");
-                    }
-                    title = (String) video.get("title");
-                    if (StringUtils.isEmpty(unlistedHash)) {
-                        unlistedHash = (String) video.get("unlisted_hash");
-                    }
-                } else if (entries.containsKey("clip")) {
-                    /* E.g. normal URLs */
-                    final LinkedHashMap<String, Object> clip = (LinkedHashMap<String, Object>) entries.get("clip");
-                    if (clip.containsKey("owner")) {
-                        final LinkedHashMap<String, Object> ownerMap = (LinkedHashMap<String, Object>) clip.get("owner");
-                        ownerUrl = new Regex(ownerMap.get("url"), "vimeo\\.com/(.+)").getMatch(0);
-                        ownerName = (String) ownerMap.get("name");
-                    } else if (entries != null && entries.containsKey("owner")) {
-                        final LinkedHashMap<String, Object> ownerMap = (LinkedHashMap<String, Object>) entries.get("owner");
-                        ownerUrl = new Regex(ownerMap.get("url"), "vimeo\\.com/(.+)").getMatch(0);
-                        ownerName = (String) ownerMap.get("name");
-                    }
-                    title = (String) clip.get("title");
-                    if (StringUtils.isEmpty(unlistedHash)) {
-                        unlistedHash = (String) clip.get("unlisted_hash");
-                    }
-                } else if (StringUtils.containsIgnoreCase(parameter, "/ondemand/")) {
-                    List<Map<String, Object>> clips = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "clips/extras_groups/{0}/clips");
-                    if (clips != null) {
-                        for (final Map<String, Object> clip : clips) {
-                            if (StringUtils.equals(videoID, String.valueOf(clip.get("id")))) {
-                                title = (String) clip.get("name");
-                                break;
-                            }
+                    final String json = getJsonFromHTML(this.br);
+                    final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
+                    if (entries.containsKey("vimeo_esi")) {
+                        /* E.g. 'review' URLs */
+                        final LinkedHashMap<String, Object> clipData = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "vimeo_esi/config/clipData");
+                        final LinkedHashMap<String, Object> ownerMap = (LinkedHashMap<String, Object>) clipData.get("user");
+                        title = (String) clipData.get("title");
+                        if (StringUtils.isEmpty(unlistedHash)) {
+                            unlistedHash = (String) clipData.get("unlistedHash");
                         }
-                    }
-                    if (StringUtils.isEmpty(title)) {
-                        clips = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "clips/main_groups/{0}/clips");
+                        if (StringUtils.isEmpty(reviewHash)) {
+                            reviewHash = (String) clipData.get("reviewHash");
+                        }
+                    } else if (entries.containsKey("video")) {
+                        /* player.vimeo.com or normal vimeo.com */
+                        final LinkedHashMap<String, Object> video = (LinkedHashMap<String, Object>) entries.get("video");
+                        if (video.containsKey("owner")) {
+                            final LinkedHashMap<String, Object> ownerMap = (LinkedHashMap<String, Object>) video.get("owner");
+                            ownerUrl = new Regex(ownerMap.get("url"), "vimeo\\.com/(.+)").getMatch(0);
+                            ownerName = (String) ownerMap.get("name");
+                        }
+                        title = (String) video.get("title");
+                        if (StringUtils.isEmpty(unlistedHash)) {
+                            unlistedHash = (String) video.get("unlisted_hash");
+                        }
+                    } else if (entries.containsKey("clip")) {
+                        /* E.g. normal URLs */
+                        final LinkedHashMap<String, Object> clip = (LinkedHashMap<String, Object>) entries.get("clip");
+                        if (clip.containsKey("owner")) {
+                            final LinkedHashMap<String, Object> ownerMap = (LinkedHashMap<String, Object>) clip.get("owner");
+                            ownerUrl = new Regex(ownerMap.get("url"), "vimeo\\.com/(.+)").getMatch(0);
+                            ownerName = (String) ownerMap.get("name");
+                        } else if (entries != null && entries.containsKey("owner")) {
+                            final LinkedHashMap<String, Object> ownerMap = (LinkedHashMap<String, Object>) entries.get("owner");
+                            ownerUrl = new Regex(ownerMap.get("url"), "vimeo\\.com/(.+)").getMatch(0);
+                            ownerName = (String) ownerMap.get("name");
+                        }
+                        title = (String) clip.get("title");
+                        if (StringUtils.isEmpty(unlistedHash)) {
+                            unlistedHash = (String) clip.get("unlisted_hash");
+                        }
+                    } else if (StringUtils.containsIgnoreCase(parameter, "/ondemand/")) {
+                        List<Map<String, Object>> clips = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "clips/extras_groups/{0}/clips");
                         if (clips != null) {
-                            if (videoID == null && clips.size() == 1) {
-                                videoID = String.valueOf(clips.get(0).get("id"));
-                            }
                             for (final Map<String, Object> clip : clips) {
                                 if (StringUtils.equals(videoID, String.valueOf(clip.get("id")))) {
                                     title = (String) clip.get("name");
@@ -403,204 +399,218 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                                 }
                             }
                         }
-                    }
-                    if (StringUtils.isEmpty(title)) {
-                        title = (String) entries.get("name");
-                    }
-                }
-            } catch (final Throwable e) {
-                logger.log(e);
-            }
-            final boolean tryToFindOfficialDownloadURLs = this.qORG;
-            final List<VimeoContainer> containers = jd.plugins.hoster.VimeoCom.find(this, urlType.get(), br, videoID, tryToFindOfficialDownloadURLs, qALL || qMOBILE || qMOBILE || qHD, qALL || qMOBILE || qMOBILE || qHD, subtitle);
-            if (containers == null) {
-                return null;
-            }
-            if (containers.size() == 0) {
-                return decryptedLinks;
-            }
-            /*
-             * Both APIs we use as fallback to find additional information can only be used to display public content - it will not help us
-             * if the user has e.g. added a private/password protected video.
-             */
-            final boolean isPublicContent = VIMEO_URL_TYPE.NORMAL.equals(urlType.get()) || VIMEO_URL_TYPE.RAW.equals(urlType.get());
-            String embed_privacy = null;
-            try {
-                if (!StringUtils.isAllNotEmpty(title, date, description, ownerName, ownerUrl) && isPublicContent) {
-                    final Browser brc = br.cloneBrowser();
-                    brc.setRequest(null);
-                    brc.getPage("https://vimeo.com/api/v2/video/" + videoID + ".xml");
-                    if (StringUtils.isEmpty(title)) {
-                        title = brc.getRegex("<title>\\s*(.*?)\\s*</title>").getMatch(0);
-                        title = Encoding.htmlOnlyDecode(title);
-                    }
-                    if (StringUtils.isEmpty(date)) {
-                        date = brc.getRegex("<upload_date>\\s*(.*?)\\s*</upload_date>").getMatch(0);
-                    }
-                    if (StringUtils.isEmpty(ownerName)) {
-                        ownerName = brc.getRegex("<user_name>\\s*(.*?)\\s*</user_name>").getMatch(0);
-                    }
-                    if (StringUtils.isEmpty(ownerUrl)) {
-                        ownerUrl = new Regex(brc.getRegex("<user_url>\\s*(.*?)\\s*</user_url>").getMatch(0), "vimeo\\.com/([^/]+)").getMatch(0);
-                    }
-                    if (StringUtils.isEmpty(description)) {
-                        description = brc.getRegex("<description>\\s*(.*?)\\s*</description>").getMatch(0);
-                        description = Encoding.htmlOnlyDecode(description);
-                    }
-                    embed_privacy = brc.getRegex("<description>\\s*(.*?)\\s*</description>").getMatch(0);
-                }
-            } catch (final Throwable e) {
-                logger.log(e);
-            }
-            try {
-                /* Fallback to find additional information */
-                if (StringUtils.equalsIgnoreCase(embed_privacy, "anywhere") && !StringUtils.isAllNotEmpty(title, date, description, ownerName, ownerUrl) && isPublicContent) {
-                    /*
-                     * We're doing this request ONLY to find additional information which we were not able to get before (upload_date,
-                     * description) - also this can be used as a fallback to find data which should have been found before (e.g. title,
-                     * channel_name).
-                     */
-                    final Browser brc = br.cloneBrowser();
-                    brc.setRequest(null);
-                    /* https://developer.vimeo.com/api/oembed/videos */
-                    brc.getPage("https://vimeo.com/api/oembed.json?url=" + URLEncode.encodeURIComponent(parameter));
-                    final String author_url = PluginJSonUtils.getJson(brc, "author_url");
-                    if (StringUtils.isEmpty(title)) {
-                        title = PluginJSonUtils.getJson(brc, "title");
-                    }
-                    if (StringUtils.isEmpty(channelName)) {
-                        channelName = PluginJSonUtils.getJson(brc, "channel_name");
-                    }
-                    if (StringUtils.isEmpty(ownerName)) {
-                        ownerName = PluginJSonUtils.getJson(brc, "author_name");
-                    }
-                    if (StringUtils.isEmpty(ownerUrl) && author_url != null) {
-                        ownerUrl = new Regex(author_url, "/(user\\d+)$").getMatch(0);
-                        if (StringUtils.isEmpty(ownerUrl)) {
-                            ownerUrl = new Regex(author_url, "^https?://[^/]+/(.+)$").getMatch(0);
+                        if (StringUtils.isEmpty(title)) {
+                            clips = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "clips/main_groups/{0}/clips");
+                            if (clips != null) {
+                                if (videoID == null && clips.size() == 1) {
+                                    videoID = String.valueOf(clips.get(0).get("id"));
+                                }
+                                for (final Map<String, Object> clip : clips) {
+                                    if (StringUtils.equals(videoID, String.valueOf(clip.get("id")))) {
+                                        title = (String) clip.get("name");
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        if (StringUtils.isEmpty(title)) {
+                            title = (String) entries.get("name");
                         }
                     }
-                    if (StringUtils.isEmpty(channelUrl)) {
-                        channelUrl = new Regex(PluginJSonUtils.getJson(brc, "channel_url"), "vimeo\\.com/channels/([^/]+)").getMatch(0);
+                } catch (final Throwable e) {
+                    logger.log(e);
+                }
+                final boolean tryToFindOfficialDownloadURLs = this.qORG;
+                final List<VimeoContainer> containers = jd.plugins.hoster.VimeoCom.find(this, urlType.get(), br, videoID, tryToFindOfficialDownloadURLs, qALL || qMOBILE || qMOBILE || qHD, qALL || qMOBILE || qMOBILE || qHD, subtitle);
+                if (containers == null) {
+                    return null;
+                }
+                if (containers.size() == 0) {
+                    return decryptedLinks;
+                }
+                /*
+                 * Both APIs we use as fallback to find additional information can only be used to display public content - it will not help
+                 * us if the user has e.g. added a private/password protected video.
+                 */
+                final boolean isPublicContent = VIMEO_URL_TYPE.NORMAL.equals(urlType.get()) || VIMEO_URL_TYPE.RAW.equals(urlType.get());
+                String embed_privacy = null;
+                try {
+                    if (!StringUtils.isAllNotEmpty(title, date, description, ownerName, ownerUrl) && isPublicContent) {
+                        final Browser brc = br.cloneBrowser();
+                        brc.setRequest(null);
+                        brc.getPage("https://vimeo.com/api/v2/video/" + videoID + ".xml");
+                        if (StringUtils.isEmpty(title)) {
+                            title = brc.getRegex("<title>\\s*(.*?)\\s*</title>").getMatch(0);
+                            title = Encoding.htmlOnlyDecode(title);
+                        }
+                        if (StringUtils.isEmpty(date)) {
+                            date = brc.getRegex("<upload_date>\\s*(.*?)\\s*</upload_date>").getMatch(0);
+                        }
+                        if (StringUtils.isEmpty(ownerName)) {
+                            ownerName = brc.getRegex("<user_name>\\s*(.*?)\\s*</user_name>").getMatch(0);
+                        }
+                        if (StringUtils.isEmpty(ownerUrl)) {
+                            ownerUrl = new Regex(brc.getRegex("<user_url>\\s*(.*?)\\s*</user_url>").getMatch(0), "vimeo\\.com/([^/]+)").getMatch(0);
+                        }
+                        if (StringUtils.isEmpty(description)) {
+                            description = brc.getRegex("<description>\\s*(.*?)\\s*</description>").getMatch(0);
+                            description = Encoding.htmlOnlyDecode(description);
+                        }
+                        embed_privacy = brc.getRegex("<description>\\s*(.*?)\\s*</description>").getMatch(0);
                     }
-                    if (StringUtils.isEmpty(date)) {
-                        date = PluginJSonUtils.getJson(brc, "upload_date");
+                } catch (final Throwable e) {
+                    logger.log(e);
+                }
+                try {
+                    /* Fallback to find additional information */
+                    if (StringUtils.equalsIgnoreCase(embed_privacy, "anywhere") && !StringUtils.isAllNotEmpty(title, date, description, ownerName, ownerUrl) && isPublicContent) {
+                        /*
+                         * We're doing this request ONLY to find additional information which we were not able to get before (upload_date,
+                         * description) - also this can be used as a fallback to find data which should have been found before (e.g. title,
+                         * channel_name).
+                         */
+                        final Browser brc = br.cloneBrowser();
+                        brc.setRequest(null);
+                        /* https://developer.vimeo.com/api/oembed/videos */
+                        brc.getPage("https://vimeo.com/api/oembed.json?url=" + URLEncode.encodeURIComponent(parameter));
+                        final String author_url = PluginJSonUtils.getJson(brc, "author_url");
+                        if (StringUtils.isEmpty(title)) {
+                            title = PluginJSonUtils.getJson(brc, "title");
+                        }
+                        if (StringUtils.isEmpty(channelName)) {
+                            channelName = PluginJSonUtils.getJson(brc, "channel_name");
+                        }
+                        if (StringUtils.isEmpty(ownerName)) {
+                            ownerName = PluginJSonUtils.getJson(brc, "author_name");
+                        }
+                        if (StringUtils.isEmpty(ownerUrl) && author_url != null) {
+                            ownerUrl = new Regex(author_url, "/(user\\d+)$").getMatch(0);
+                            if (StringUtils.isEmpty(ownerUrl)) {
+                                ownerUrl = new Regex(author_url, "^https?://[^/]+/(.+)$").getMatch(0);
+                            }
+                        }
+                        if (StringUtils.isEmpty(channelUrl)) {
+                            channelUrl = new Regex(PluginJSonUtils.getJson(brc, "channel_url"), "vimeo\\.com/channels/([^/]+)").getMatch(0);
+                        }
+                        if (StringUtils.isEmpty(date)) {
+                            date = PluginJSonUtils.getJson(brc, "upload_date");
+                        }
+                        if (StringUtils.isEmpty(description)) {
+                            description = PluginJSonUtils.getJson(brc, "description");
+                        }
                     }
-                    if (StringUtils.isEmpty(description)) {
-                        description = PluginJSonUtils.getJson(brc, "description");
+                } catch (final Throwable e) {
+                    logger.log(e);
+                }
+                if (StringUtils.isEmpty(channelName)) {
+                    channelName = ownerName;
+                }
+                if (StringUtils.isEmpty(title)) {
+                    /* Fallback */
+                    title = videoID;
+                }
+                final HashMap<String, DownloadLink> dedupeMap = new HashMap<String, DownloadLink>();
+                final List<DownloadLink> subtitles = new ArrayList<DownloadLink>();
+                for (final VimeoContainer container : containers) {
+                    final boolean isSubtitle = VimeoContainer.Source.SUBTITLE.equals(container.getSource());
+                    if (!isSubtitle && (!qualityAllowed(container) || !pRatingAllowed(container))) {
+                        skippedLinks++;
+                        continue;
+                    }
+                    // there can be multiple hd/sd etc need to identify with framesize.
+                    final String linkdupeid = container.createLinkID(videoID);
+                    final DownloadLink link = createDownloadlink(parameter.replaceAll("https?://", "decryptedforVimeoHosterPlugin://"));
+                    link.setLinkID(linkdupeid);
+                    final VIMEO_URL_TYPE vimeoUrlType = urlType.get();
+                    if (vimeoUrlType != null) {
+                        link.setProperty(VimeoCom.VIMEOURLTYPE, vimeoUrlType);
+                    }
+                    link.setProperty("videoID", videoID);
+                    if (unlistedHash != null) {
+                        link.setProperty("specialVideoID", unlistedHash);
+                    }
+                    // videoTitle is required!
+                    link.setProperty("videoTitle", title);
+                    link.setContentUrl(cleanVimeoURL);
+                    if (password != null) {
+                        link.setDownloadPassword(password);
+                    }
+                    if (referer.get() != null) {
+                        link.setProperty("vimeo_forced_referer", referer.get());
+                    }
+                    if (date != null) {
+                        link.setProperty("originalDate", date);
+                    }
+                    if (ownerUrl != null) {
+                        link.setProperty("ownerUrl", ownerUrl);
+                    }
+                    if (ownerName != null) {
+                        link.setProperty("ownerName", ownerName);
+                    }
+                    if (channelUrl != null) {
+                        link.setProperty("channelUrl", channelUrl);
+                    }
+                    if (channelName != null) {
+                        link.setProperty("channel", channelName);
+                    }
+                    if (container != null) {
+                        link.setProperty("directURL", container.getDownloadurl());
+                    }
+                    link.setProperty(jd.plugins.hoster.VimeoCom.VVC, container);
+                    link.setFinalFileName(getFormattedFilename(link));
+                    if (container.getFilesize() > -1) {
+                        link.setDownloadSize(container.getFilesize());
+                    } else if (container.getEstimatedSize() != null) {
+                        link.setDownloadSize(container.getEstimatedSize());
+                    }
+                    if (!StringUtils.isEmpty(description)) {
+                        link.setComment(description);
+                    }
+                    link.setAvailable(true);
+                    if (isSubtitle) {
+                        subtitles.add(link);
+                    } else {
+                        final DownloadLink best = dedupeMap.get(container.bestString());
+                        /* we wont use size as its not always shown for different qualities. use quality preference */
+                        final int ordial_current = container.getSource().ordinal();
+                        if (best == null || container.getSource().ordinal() > (jd.plugins.hoster.VimeoCom.getVimeoVideoContainer(best, false)).getSource().ordinal()) {
+                            dedupeMap.put(container.bestString(), link);
+                        }
                     }
                 }
-            } catch (final Throwable e) {
-                logger.log(e);
-            }
-            if (StringUtils.isEmpty(channelName)) {
-                channelName = ownerName;
-            }
-            if (StringUtils.isEmpty(title)) {
-                /* Fallback */
-                title = videoID;
-            }
-            final HashMap<String, DownloadLink> dedupeMap = new HashMap<String, DownloadLink>();
-            final List<DownloadLink> subtitles = new ArrayList<DownloadLink>();
-            for (final VimeoContainer container : containers) {
-                final boolean isSubtitle = VimeoContainer.Source.SUBTITLE.equals(container.getSource());
-                if (!isSubtitle && (!qualityAllowed(container) || !pRatingAllowed(container))) {
-                    skippedLinks++;
-                    continue;
-                }
-                // there can be multiple hd/sd etc need to identify with framesize.
-                final String linkdupeid = container.createLinkID(videoID);
-                final DownloadLink link = createDownloadlink(parameter.replaceAll("https?://", "decryptedforVimeoHosterPlugin://"));
-                link.setLinkID(linkdupeid);
-                final VIMEO_URL_TYPE vimeoUrlType = urlType.get();
-                if (vimeoUrlType != null) {
-                    link.setProperty(VimeoCom.VIMEOURLTYPE, vimeoUrlType);
-                }
-                link.setProperty("videoID", videoID);
-                if (unlistedHash != null) {
-                    link.setProperty("specialVideoID", unlistedHash);
-                }
-                // videoTitle is required!
-                link.setProperty("videoTitle", title);
-                link.setContentUrl(cleanVimeoURL);
-                if (password != null) {
-                    link.setDownloadPassword(password);
-                }
-                if (referer.get() != null) {
-                    link.setProperty("vimeo_forced_referer", referer.get());
-                }
-                if (date != null) {
-                    link.setProperty("originalDate", date);
-                }
-                if (ownerUrl != null) {
-                    link.setProperty("ownerUrl", ownerUrl);
-                }
-                if (ownerName != null) {
-                    link.setProperty("ownerName", ownerName);
-                }
-                if (channelUrl != null) {
-                    link.setProperty("channelUrl", channelUrl);
-                }
-                if (channelName != null) {
-                    link.setProperty("channel", channelName);
-                }
-                if (container != null) {
-                    link.setProperty("directURL", container.getDownloadurl());
-                }
-                link.setProperty(jd.plugins.hoster.VimeoCom.VVC, container);
-                link.setFinalFileName(getFormattedFilename(link));
-                if (container.getFilesize() > -1) {
-                    link.setDownloadSize(container.getFilesize());
-                } else if (container.getEstimatedSize() != null) {
-                    link.setDownloadSize(container.getEstimatedSize());
-                }
-                if (!StringUtils.isEmpty(description)) {
-                    link.setComment(description);
-                }
-                link.setAvailable(true);
-                if (isSubtitle) {
-                    subtitles.add(link);
-                } else {
-                    final DownloadLink best = dedupeMap.get(container.bestString());
-                    /* we wont use size as its not always shown for different qualities. use quality preference */
-                    final int ordial_current = container.getSource().ordinal();
-                    if (best == null || container.getSource().ordinal() > (jd.plugins.hoster.VimeoCom.getVimeoVideoContainer(best, false)).getSource().ordinal()) {
-                        dedupeMap.put(container.bestString(), link);
+                if (dedupeMap.size() > 0 || subtitles.size() > 0) {
+                    decryptedLinks.addAll(subtitles);
+                    if (cfg.getBooleanProperty(jd.plugins.hoster.VimeoCom.Q_BEST, false)) {
+                        decryptedLinks.add(determineBest(dedupeMap));
+                    } else {
+                        decryptedLinks.addAll(dedupeMap.values());
                     }
-                }
-            }
-            if (dedupeMap.size() > 0 || subtitles.size() > 0) {
-                decryptedLinks.addAll(subtitles);
-                if (cfg.getBooleanProperty(jd.plugins.hoster.VimeoCom.Q_BEST, false)) {
-                    decryptedLinks.add(determineBest(dedupeMap));
-                } else {
-                    decryptedLinks.addAll(dedupeMap.values());
-                }
-                String fpName = "";
-                if (StringUtils.isNotEmpty(channelName)) {
-                    fpName += Encoding.htmlDecode(channelName.trim()) + " - ";
-                }
-                if (date != null) {
-                    try {
-                        final String userDefinedDateFormat = cfg.getStringProperty("CUSTOM_DATE_3", "dd.MM.yyyy_HH-mm-ss");
-                        SimpleDateFormat formatter = jd.plugins.hoster.VimeoCom.getFormatterForDate(date);
-                        Date dateStr = formatter.parse(date);
-                        String formattedDate = formatter.format(dateStr);
-                        Date theDate = formatter.parse(formattedDate);
-                        formatter = new SimpleDateFormat(userDefinedDateFormat);
-                        formattedDate = formatter.format(theDate);
-                        fpName += formattedDate + " - ";
-                    } catch (final Throwable e) {
-                        LogSource.exception(logger, e);
+                    String fpName = "";
+                    if (StringUtils.isNotEmpty(channelName)) {
+                        fpName += Encoding.htmlDecode(channelName.trim()) + " - ";
                     }
-                }
-                if (StringUtils.isNotEmpty(title)) {
-                    fpName += title;
-                }
-                if (StringUtils.isNotEmpty(fpName)) {
-                    final FilePackage fp = FilePackage.getInstance();
-                    fp.setName(fpName);
-                    fp.addLinks(decryptedLinks);
+                    if (date != null) {
+                        try {
+                            final String userDefinedDateFormat = cfg.getStringProperty("CUSTOM_DATE_3", "dd.MM.yyyy_HH-mm-ss");
+                            SimpleDateFormat formatter = jd.plugins.hoster.VimeoCom.getFormatterForDate(date);
+                            Date dateStr = formatter.parse(date);
+                            String formattedDate = formatter.format(dateStr);
+                            Date theDate = formatter.parse(formattedDate);
+                            formatter = new SimpleDateFormat(userDefinedDateFormat);
+                            formattedDate = formatter.format(theDate);
+                            fpName += formattedDate + " - ";
+                        } catch (final Throwable e) {
+                            LogSource.exception(logger, e);
+                        }
+                    }
+                    if (StringUtils.isNotEmpty(title)) {
+                        fpName += title;
+                    }
+                    if (StringUtils.isNotEmpty(fpName)) {
+                        final FilePackage fp = FilePackage.getInstance();
+                        fp.setName(fpName);
+                        fp.addLinks(decryptedLinks);
+                    }
                 }
             }
         }
