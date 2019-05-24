@@ -21,9 +21,11 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
@@ -151,8 +153,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         }
         // when testing and dropping to frame, components will fail without clean browser.
         br = new Browser();
-        setBrowserExclusive();
-        prepBrowser(br);
+        br = prepBrowser(br);
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(new int[] { 400, 410 });
         String password = null;
@@ -201,12 +202,14 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 /* Assume number of videos. */
                 totalVids = numberofPages * 12;
             }
+            final Set<String> dups = new HashSet<String>();
             for (int i = 1; i <= numberofPages; i++) {
                 if (this.isAbort()) {
                     logger.info("Decrypt process aborted by user: " + parameter);
                     return decryptedLinks;
                 }
                 if (i > 1) {
+                    sleep(1000, param);
                     br.getPage(urlpart_pagination + "/page:" + i + "/sort:date/format:detail");
                 }
                 final String[] videoIDs = br.getRegex("id=\"clip_(\\d+)\"").getColumn(0);
@@ -215,7 +218,11 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     break;
                 }
                 for (final String videoID : videoIDs) {
-                    decryptedLinks.add(createDownloadlink("http://vimeo.com/" + videoID));
+                    if (dups.add(videoID)) {
+                        decryptedLinks.add(createDownloadlink("http://vimeo.com/" + videoID));
+                    } else {
+                        logger.info("duplicate video detected:" + videoID);
+                    }
                 }
                 logger.info("Decrypted page: " + i + " of " + numberofPages);
                 logger.info("Found " + videoIDs.length + " videolinks on current page");
@@ -639,9 +646,10 @@ public class VimeoComDecrypter extends PluginForDecrypt {
 
     public boolean login(Account account) throws Exception {
         try {
-            VimeoCom.login(br, account);
+            VimeoCom.login(this, br, account);
             return true;
         } catch (PluginException e) {
+            logger.log(e);
             handleAccountException(account, e);
             return false;
         }
@@ -763,7 +771,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
 
     private Browser prepBrowser(final Browser ibr) throws PluginException {
         pluginLoaded();
-        return ((jd.plugins.hoster.VimeoCom) vimeo_hostPlugin).prepBrGeneral(null, ibr);
+        return ((jd.plugins.hoster.VimeoCom) vimeo_hostPlugin).prepBrGeneral(this, null, ibr);
     }
 
     private PluginForHost vimeo_hostPlugin = null;
