@@ -19,19 +19,26 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.utils.locale.JDL;
+
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DdlTo extends XFileSharingProBasic {
+    private final String   MaxSimultaneousDownloads_LIMIT = "MaxSimultaneousDownloads_LIMIT";
+    private final String[] MaxSimultaneousDownloads       = new String[] { "2", "1" };
+
     public DdlTo(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
+        setConfigElements();
     }
 
     /**
@@ -71,14 +78,26 @@ public class DdlTo extends XFileSharingProBasic {
         }
     }
 
+    public int getMaxDownloadSelect() {
+        final int chosenDownloadLimit = getPluginConfig().getIntegerProperty(MaxSimultaneousDownloads_LIMIT, 0);
+        String downloadmaxlimit = null;
+        try {
+            downloadmaxlimit = MaxSimultaneousDownloads[chosenDownloadLimit];
+        } catch (final Throwable e) {
+            logger.log(e);
+            downloadmaxlimit = MaxSimultaneousDownloads[0];
+        }
+        return Integer.parseInt(downloadmaxlimit);
+    }
+
     @Override
     public int getMaxSimultaneousFreeAnonymousDownloads() {
-        return 2;
+        return getMaxDownloadSelect();
     }
 
     @Override
     public int getMaxSimultaneousFreeAccountDownloads() {
-        return 2;
+        return getMaxDownloadSelect();
     }
 
     @Override
@@ -157,5 +176,9 @@ public class DdlTo extends XFileSharingProBasic {
         }
         pattern.append(")");
         return pattern.toString();
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), MaxSimultaneousDownloads_LIMIT, MaxSimultaneousDownloads, JDL.L("", "Max. Downloads (Free) per connection")).setDefaultValue(0));
     }
 }
