@@ -676,11 +676,10 @@ public abstract class PluginForDecrypt extends Plugin {
     }
 
     protected void setBrowserExclusive() {
-        if (br == null) {
-            return;
+        if (br != null) {
+            br.setCookiesExclusive(true);
+            br.clearCookies(getHost());
         }
-        br.setCookiesExclusive(true);
-        br.clearCookies(getHost());
     }
 
     /**

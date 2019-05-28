@@ -439,8 +439,6 @@ public class NitroFlareCom extends antiDDoSForHost {
         ajax.postPage(url, post);
     }
 
-    protected static Object LOCK = new Object();
-
     /**
      * Validates account and returns correct account info, when user has provided incorrect user pass fields to JD client. Or Throws
      * exception indicating users mistake, when it's a irreversible mistake.
@@ -450,7 +448,7 @@ public class NitroFlareCom extends antiDDoSForHost {
      * @throws PluginException
      */
     private String validateAccount(final Account account) throws PluginException {
-        synchronized (LOCK) {
+        synchronized (account) {
             final String user = account.getUser().toLowerCase(Locale.ENGLISH);
             final String pass = account.getPass();
             if (inValidate(pass)) {
@@ -510,7 +508,7 @@ public class NitroFlareCom extends antiDDoSForHost {
     }
 
     private AccountInfo fetchAccountInfoWeb(final Account account, boolean fullLogin, boolean fullInfo) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             if (!account.getUser().matches(".+@.+")) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYou haven't provided a valid username (must be email address)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
@@ -536,6 +534,9 @@ public class NitroFlareCom extends antiDDoSForHost {
                         // lets do a test
                         final Browser br2 = br.cloneBrowser();
                         getPage(br2, "https://www.nitroflare.com/");
+                        if (br2.containsHTML(">\\s*Your password has expired") || br2.containsHTML(">\\s*Change Password\\s*<")) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your password has expired. Please visit website and set new password!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
                         final String user = br2.getCookie("nitroflare.com", "user");
                         if (user != null && !"deleted".equalsIgnoreCase(user)) {
                             if (!fullInfo) {
@@ -581,6 +582,9 @@ public class NitroFlareCom extends antiDDoSForHost {
                     }
                     if (f != null) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nIncorrect User/Password", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                    if (br.containsHTML(">\\s*Your password has expired") || br.containsHTML(">\\s*Change Password\\s*<")) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your password has expired. Please visit website and set new password!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                     // final failover, we expect 'user' cookie
                     final String user = br.getCookie("nitroflare.com", "user");
@@ -655,9 +659,11 @@ public class NitroFlareCom extends antiDDoSForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Non Valid Account", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } catch (final PluginException e) {
-                account.setProperty("name", Property.NULL);
-                account.setProperty("pass", Property.NULL);
-                account.setProperty("cookies", Property.NULL);
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.setProperty("name", Property.NULL);
+                    account.setProperty("pass", Property.NULL);
+                    account.setProperty("cookies", Property.NULL);
+                }
                 throw e;
             }
         }
@@ -723,7 +729,7 @@ public class NitroFlareCom extends antiDDoSForHost {
             // I don't see why this would happening logs contain no proxy!
             throw new PluginException(LinkStatus.ERROR_FATAL, err1);
         } else if (account != null && br.getHttpConnection() != null && (br.toString().equals("Your premium has reached the maximum volume for today") || br.containsHTML("<p id=\"error\"[^>]+>Your premium has reached the maximum volume for today|>This download exceeds the daily download limit"))) {
-            synchronized (LOCK) {
+            synchronized (account) {
                 final AccountInfo ai = account.getAccountInfo();
                 ai.setTrafficLeft(0);
                 account.setAccountInfo(ai);

@@ -97,9 +97,18 @@ public class MultiupOrg extends antiDDoSForDecrypt {
             return null;
         }
         for (String singleLink : links) {
-            if (singleLink.startsWith("http")) {
-                singleLink = singleLink.trim().replaceFirst(":/+", "://");
-                final DownloadLink downloadLink = createDownloadlink(singleLink);
+            String finalURL = null;
+            if (StringUtils.containsIgnoreCase(singleLink, "/redirect-to-host/")) {
+                singleLink = br.getURL(singleLink).toString();
+                final Browser brc = br.cloneBrowser();
+                brc.setFollowRedirects(false);
+                brc.getPage(singleLink);
+                finalURL = brc.getRedirectLocation();
+            } else if (singleLink.startsWith("http")) {
+                finalURL = singleLink.trim().replaceFirst(":/+", "://");
+            }
+            if (finalURL != null) {
+                final DownloadLink downloadLink = createDownloadlink(finalURL);
                 if (filename != null) {
                     downloadLink.setFinalFileName(filename);
                 }

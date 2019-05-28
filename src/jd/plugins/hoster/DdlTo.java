@@ -80,14 +80,12 @@ public class DdlTo extends XFileSharingProBasic {
 
     public int getMaxDownloadSelect() {
         final int chosenDownloadLimit = getPluginConfig().getIntegerProperty(MaxSimultaneousDownloads_LIMIT, 0);
-        String downloadmaxlimit = null;
         try {
-            downloadmaxlimit = MaxSimultaneousDownloads[chosenDownloadLimit];
+            return Integer.parseInt(MaxSimultaneousDownloads[chosenDownloadLimit]);
         } catch (final Throwable e) {
             logger.log(e);
-            downloadmaxlimit = MaxSimultaneousDownloads[0];
+            return Integer.parseInt(MaxSimultaneousDownloads[0]);
         }
-        return Integer.parseInt(downloadmaxlimit);
     }
 
     @Override
