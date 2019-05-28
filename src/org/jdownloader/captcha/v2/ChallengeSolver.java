@@ -23,11 +23,11 @@ import org.jdownloader.captcha.v2.solverjob.SolverJob;
 
 public abstract class ChallengeSolver<T> {
     public static final ChallengeSolver EXTERN = new ChallengeSolver<Object>() {
-                                                   @Override
-                                                   public void solve(SolverJob<Object> solverJob) throws InterruptedException, SolverException, SkipException {
-                                                       throw new WTFException("Not Implemented");
-                                                   }
-                                               };
+        @Override
+        public void solve(SolverJob<Object> solverJob) throws InterruptedException, SolverException, SkipException {
+            throw new WTFException("Not Implemented");
+        }
+    };
 
     private ChallengeSolver() {
     }
@@ -161,17 +161,24 @@ public abstract class ChallengeSolver<T> {
         return resultType;
     }
 
-    public boolean canHandle(Challenge<?> c) {
+    protected boolean isChallengeSupported(Challenge<?> c) {
         if (c instanceof AbstractBrowserChallenge) {
             return false;
+        } else {
+            return true;
         }
-        if (!getResultType().isAssignableFrom(c.getResultType())) {
+    }
+
+    public boolean canHandle(Challenge<?> c) {
+        if (!isChallengeSupported(c)) {
             return false;
-        }
-        if (!validateBlackWhite(c)) {
+        } else if (!getResultType().isAssignableFrom(c.getResultType())) {
             return false;
+        } else if (!validateBlackWhite(c)) {
+            return false;
+        } else {
+            return true;
         }
-        return true;
     }
 
     public boolean validateBlackWhite(Challenge<?> c) {

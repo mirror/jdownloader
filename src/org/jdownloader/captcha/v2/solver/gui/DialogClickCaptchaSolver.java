@@ -1,5 +1,9 @@
 package org.jdownloader.captcha.v2.solver.gui;
 
+import jd.controlling.captcha.CaptchaSettings;
+import jd.controlling.captcha.ClickCaptchaDialogHandler;
+import jd.controlling.captcha.SkipException;
+
 import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickCaptchaChallenge;
@@ -8,19 +12,14 @@ import org.jdownloader.captcha.v2.challenge.stringcaptcha.ClickCaptchaResponse;
 import org.jdownloader.captcha.v2.solver.jac.JACSolver;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
-import jd.controlling.captcha.CaptchaSettings;
-import jd.controlling.captcha.ClickCaptchaDialogHandler;
-import jd.controlling.captcha.SkipException;
 
 public class DialogClickCaptchaSolver extends AbstractDialogSolver<ClickedPoint> {
-
     private CaptchaSettings           config;
     private ClickCaptchaDialogHandler handler;
 
     private DialogClickCaptchaSolver() {
         super(1);
         config = JsonConfig.create(CaptchaSettings.class);
-
         AdvancedConfigManager.getInstance().register(JsonConfig.create(DialogCaptchaSolverConfig.class));
     }
 
@@ -31,15 +30,8 @@ public class DialogClickCaptchaSolver extends AbstractDialogSolver<ClickedPoint>
     }
 
     @Override
-    public boolean canHandle(Challenge<?> c) {
-        return super.canHandle(c);
-    }
-
-    public void enqueue(SolverJob<ClickedPoint> solverJob) {
-        if (solverJob.getChallenge() instanceof ClickCaptchaChallenge) {
-            super.enqueue(solverJob);
-        }
-
+    protected boolean isChallengeSupported(Challenge<?> c) {
+        return c instanceof ClickCaptchaChallenge;
     }
 
     public void requestFocus(Challenge<?> challenge) {
@@ -63,15 +55,11 @@ public class DialogClickCaptchaSolver extends AbstractDialogSolver<ClickedPoint>
                 ClickCaptchaChallenge captchaChallenge = (ClickCaptchaChallenge) solverJob.getChallenge();
                 checkInterruption();
                 handler = new ClickCaptchaDialogHandler(captchaChallenge);
-
                 handler.run();
-
                 if (handler.getPoint() != null) {
                     solverJob.addAnswer(new ClickCaptchaResponse(captchaChallenge, this, handler.getPoint(), 100));
                 }
             }
         }
-
     }
-
 }

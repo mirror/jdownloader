@@ -17,8 +17,8 @@ public class AccountOAuthSolver extends ChallengeSolver<Boolean> {
     }
 
     @Override
-    public boolean canHandle(Challenge<?> c) {
-        return c != null && (c instanceof OAuthChallenge);
+    protected boolean isChallengeSupported(Challenge<?> c) {
+        return c instanceof OAuthChallenge;
     }
 
     @Override

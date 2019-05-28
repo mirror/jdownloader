@@ -47,15 +47,8 @@ public class AntiCaptchaComSolver extends AbstractAntiCaptchaComSolver<String> {
     }
 
     @Override
-    public boolean canHandle(Challenge<?> c) {
-        if (!validateBlackWhite(c)) {
-            return false;
-        }
-        if (c instanceof RecaptchaV2Challenge) {
-            // does not accept this annoted image yet
-            return true;
-        }
-        return c instanceof BasicCaptchaChallenge && super.canHandle(c);
+    protected boolean isChallengeSupported(Challenge<?> c) {
+        return c instanceof RecaptchaV2Challenge || c instanceof BasicCaptchaChallenge;
     }
 
     private void errorHandling(AntiCaptchaComAccount account, Map<String, Object> response) throws Exception {

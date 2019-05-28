@@ -16,7 +16,6 @@ import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.SolverStatus;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.CESChallengeSolver;
 import org.jdownloader.captcha.v2.solver.CESSolverJob;
@@ -57,15 +56,8 @@ public class EndCaptchaSolver extends CESChallengeSolver<String> {
     }
 
     @Override
-    public boolean canHandle(Challenge<?> c) {
-        if (!validateBlackWhite(c)) {
-            return false;
-        }
-        if (c instanceof RecaptchaV2Challenge) {
-            // endcaptcha does not support them
-            return false;
-        }
-        return c instanceof BasicCaptchaChallenge && super.canHandle(c);
+    protected boolean isChallengeSupported(Challenge<?> c) {
+        return c instanceof BasicCaptchaChallenge;
     }
 
     private void errorHandling(Browser br) throws Exception {

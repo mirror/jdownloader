@@ -25,8 +25,8 @@ public class OAuthDialogSolver extends ChallengeSolver<Boolean> {
     }
 
     @Override
-    public boolean canHandle(Challenge<?> c) {
-        return c != null && ((c instanceof OAuthChallenge));
+    protected boolean isChallengeSupported(Challenge<?> c) {
+        return c instanceof OAuthChallenge;
     }
 
     private OAuthDialogSolver() {
@@ -34,7 +34,6 @@ public class OAuthDialogSolver extends ChallengeSolver<Boolean> {
     }
 
     // protected BrowserCaptchaSolverConfig config;
-
     private OAuthDialogHandler handler;
 
     @Override
@@ -55,7 +54,6 @@ public class OAuthDialogSolver extends ChallengeSolver<Boolean> {
                 break;
             case DISABLE_DIALOG_SOLVER:
                 job.getEventSender().addListener(new ChallengeSolverJobListener() {
-
                     @Override
                     public void onSolverTimedOut(ChallengeSolver<?> parameter) {
                     }
@@ -87,7 +85,6 @@ public class OAuthDialogSolver extends ChallengeSolver<Boolean> {
     }
 
     public void requestFocus(Challenge<?> challenge) {
-
         OAuthDialogHandler hndlr = handler;
         if (hndlr != null) {
             hndlr.requestFocus();
@@ -97,19 +94,14 @@ public class OAuthDialogSolver extends ChallengeSolver<Boolean> {
     @Override
     public void solve(final SolverJob<Boolean> job) throws InterruptedException, SolverException, SkipException {
         synchronized (DialogBasicCaptchaSolver.getInstance()) {
-
             ChallengeSolverJobListener jacListener = null;
             checkSilentMode(job);
-
             handler = new OAuthDialogHandler((OAuthChallenge) job.getChallenge());
-
             try {
                 ResponseList<Boolean> resp = job.getResponse();
-
                 checkInterruption();
                 job.getChallenge().sendStatsSolving(this);
                 handler.run();
-
             } catch (SkipException e) {
                 throw e;
             } catch (Exception e) {
@@ -122,8 +114,6 @@ public class OAuthDialogSolver extends ChallengeSolver<Boolean> {
                 }
                 handler = null;
             }
-
         }
     }
-
 }

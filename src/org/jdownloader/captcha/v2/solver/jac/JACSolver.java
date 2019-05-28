@@ -29,7 +29,6 @@ import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.logging.LogController;
 
 public class JACSolver extends ChallengeSolver<String> {
-
     private static final double              _0_85             = 0.85;
     private final JACSolverConfig            config;
     private static final JACSolver           INSTANCE          = new JACSolver();
@@ -65,18 +64,15 @@ public class JACSolver extends ChallengeSolver<String> {
             this.threshold = new HashMap<String, AutoTrust>(threshold);
         }
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
-
             @Override
             public void onShutdown(ShutdownRequest shutdownRequest) {
                 config.setJACThreshold(JACSolver.this.threshold);
             }
         });
-
     }
 
     @Override
     public long getTimeout() {
-
         return 30000;
     }
 
@@ -116,9 +112,7 @@ public class JACSolver extends ChallengeSolver<String> {
                 final JAntiCaptcha jac = new JAntiCaptcha(captchaChallenge.getTypeID());
                 checkInterruption();
                 Image captchaImage;
-
                 captchaImage = ImageProvider.read(captchaChallenge.getImageFile());
-
                 checkInterruption();
                 final Captcha captcha = jac.createCaptcha(captchaImage);
                 checkInterruption();
@@ -134,15 +128,12 @@ public class JACSolver extends ChallengeSolver<String> {
                     final LetterComperator[] lcs = captcha.getLetterComperators();
                     double vp = 0.0;
                     if (lcs == null) {
-
                     } else {
-
                         for (final LetterComperator element : lcs) {
                             if (element == null) {
                                 vp = 0;
                                 break;
                             }
-
                             vp += element.getValityPercent();
                         }
                         vp /= lcs.length;
@@ -166,12 +157,9 @@ public class JACSolver extends ChallengeSolver<String> {
                             }
                         }
                     }
-
                     // we need to invert th
                     job.addAnswer(new JACCaptchaResponse(captchaChallenge, this, captchaCode, trust, orgTrust));
-
                 }
-
             }
         } catch (IOException e) {
             job.getChallenge().sendStatsError(this, e);
@@ -237,5 +225,4 @@ public class JACSolver extends ChallengeSolver<String> {
         }
         return false;
     }
-
 }

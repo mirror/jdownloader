@@ -1,5 +1,9 @@
 package org.jdownloader.captcha.v2.solver.gui;
 
+import jd.controlling.captcha.BasicCaptchaDialogHandler;
+import jd.controlling.captcha.CaptchaSettings;
+import jd.controlling.captcha.SkipException;
+
 import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
@@ -12,16 +16,9 @@ import org.jdownloader.captcha.v2.solverjob.ResponseList;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
 
-import jd.controlling.captcha.BasicCaptchaDialogHandler;
-import jd.controlling.captcha.CaptchaSettings;
-import jd.controlling.captcha.SkipException;
-
 public class DialogBasicCaptchaSolver extends AbstractDialogSolver<String> {
-
     private CaptchaSettings                       config;
-
     private BasicCaptchaDialogHandler             handler;
-
     private Thread                                waitingThread;
     private boolean                               focusRequested;
     private static final DialogBasicCaptchaSolver INSTANCE = new DialogBasicCaptchaSolver();
@@ -35,23 +32,14 @@ public class DialogBasicCaptchaSolver extends AbstractDialogSolver<String> {
         return String.class;
     }
 
-    public void enqueue(SolverJob<String> job) {
-        if (job.getChallenge() instanceof BasicCaptchaChallenge) {
-            super.enqueue(job);
-        }
-
-    }
-
     @Override
-    public boolean canHandle(Challenge<?> c) {
-
-        return super.canHandle(c);
+    protected boolean isChallengeSupported(Challenge<?> c) {
+        return c instanceof BasicCaptchaChallenge;
     }
 
     private DialogBasicCaptchaSolver() {
         super(1);
         config = JsonConfig.create(CaptchaSettings.class);
-
         AdvancedConfigManager.getInstance().register(JsonConfig.create(DialogCaptchaSolverConfig.class));
     }
 
@@ -69,7 +57,6 @@ public class DialogBasicCaptchaSolver extends AbstractDialogSolver<String> {
                 }
             }
         }
-
     }
 
     /**
@@ -80,14 +67,11 @@ public class DialogBasicCaptchaSolver extends AbstractDialogSolver<String> {
      * @throws SkipException
      */
     public String solveBasicCaptchaChallenge(final SolverJob<String> job, BasicCaptchaChallenge captchaChallenge) throws InterruptedException, SkipException {
-
         job.getLogger().info("Waiting for Other Solvers");
         try {
-
             focusRequested = false;
             waitingThread = Thread.currentThread();
             job.waitFor(9, JACSolver.getInstance());
-
         } catch (InterruptedException e) {
             e.printStackTrace();
             if (!focusRequested) {
@@ -101,11 +85,9 @@ public class DialogBasicCaptchaSolver extends AbstractDialogSolver<String> {
         job.getLogger().info("Waits are done. Response so far: " + job.getResponse());
         ChallengeSolverJobListener jacListener = null;
         checkSilentMode(job);
-
         // we do not need another queue
         handler = new BasicCaptchaDialogHandler(captchaChallenge);
         job.getEventSender().addListener(jacListener = new ChallengeSolverJobListener() {
-
             @Override
             public void onSolverTimedOut(ChallengeSolver<?> parameter) {
             }
@@ -119,12 +101,10 @@ public class DialogBasicCaptchaSolver extends AbstractDialogSolver<String> {
                 ResponseList<String> resp = job.getResponse();
                 handler.setSuggest(resp.getValue());
                 job.getLogger().info("Received Suggestion: " + resp);
-
             }
 
             @Override
             public void onSolverDone(ChallengeSolver<?> solver) {
-
             }
         });
         try {
@@ -134,14 +114,11 @@ public class DialogBasicCaptchaSolver extends AbstractDialogSolver<String> {
             }
             checkInterruption();
             if (!captchaChallenge.getImageFile().exists()) {
-
                 job.getLogger().info("Cannot solve. image does not exist");
                 return null;
             }
-
             handler.run();
             return handler.getCaptchaCode();
-
         } finally {
             job.getLogger().info("Dialog closed. Response far: " + job.getResponse());
             if (jacListener != null) {
@@ -149,7 +126,6 @@ public class DialogBasicCaptchaSolver extends AbstractDialogSolver<String> {
             }
             handler = null;
         }
-
     }
 
     public void requestFocus(Challenge<?> challenge) {
@@ -162,5 +138,4 @@ public class DialogBasicCaptchaSolver extends AbstractDialogSolver<String> {
             hndlr.requestFocus();
         }
     }
-
 }

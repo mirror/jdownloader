@@ -37,18 +37,13 @@ import org.jdownloader.myjdownloader.client.json.MyCaptchaSolution;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
 public class CaptchaMyJDSolver extends CESChallengeSolver<String> {
-
     private final CaptchaMyJDSolverConfig  config;
-
     private final LogSource                logger;
-
     private final ArrayList<Request>       lastChallenge;
-
     private static final CaptchaMyJDSolver INSTANCE = new CaptchaMyJDSolver();
 
     @Override
     protected void solveBasicCaptchaChallenge(CESSolverJob<String> job, BasicCaptchaChallenge challenge) throws SolverException {
-
         // not used solveCES Overwritten
     }
 
@@ -62,7 +57,6 @@ public class CaptchaMyJDSolver extends CESChallengeSolver<String> {
     }
 
     private class Request {
-
         public Request(String id2) {
             this.id = id2;
             timestamp = System.currentTimeMillis();
@@ -70,7 +64,6 @@ public class CaptchaMyJDSolver extends CESChallengeSolver<String> {
 
         public long   timestamp;
         public String id;
-
     }
 
     @Override
@@ -114,7 +107,6 @@ public class CaptchaMyJDSolver extends CESChallengeSolver<String> {
 
     public boolean isEnabled() {
         if (!CFG_GENERAL.CFG.isMyJDownloaderCaptchaSolverEnabled()) {
-
             return false;
         }
         return getService().getConfig().isEnabled();
@@ -156,15 +148,11 @@ public class CaptchaMyJDSolver extends CESChallengeSolver<String> {
     protected void solveCES(CESSolverJob<String> job) throws InterruptedException, SolverException {
         BasicCaptchaChallenge challenge = (BasicCaptchaChallenge) job.getChallenge();
         job.getLogger().info(this + ": Start. GetTypeID: " + challenge.getTypeID() + " - Plugin: " + challenge.getPlugin());
-
         // int timeoutthing = (JsonConfig.create(CaptchaSettings.class).getCaptchaDialogMyJDCESTimeout() / 1000);
-
         job.getLogger().info(this + ": Upload Captcha. GetTypeID: " + challenge.getTypeID() + " - Plugin: " + challenge.getPlugin());
         try {
-
             // job.showBubble(this);
             checkInterruption();
-
             // Browser br = new Browser();
             // br.setAllowedResponseCodes(new int[] { 500 });
             job.showBubble(this, 0);
@@ -185,7 +173,6 @@ public class CaptchaMyJDSolver extends CESChallengeSolver<String> {
             final Base64OutputStream b64os = new Base64OutputStream(bos);
             b64os.write(IO.readFile(challenge.getImageFile()));
             b64os.close();
-
             ch.setDataURL("data:image/" + Files.getExtension(challenge.getImageFile().getName()) + ";base64," + new String(bos.toByteArray(), "UTF-8"));
             ch.setSource(challenge.getPlugin().getHost());
             if (!StringUtils.equals(challenge.getTypeID(), ch.getSource())) {
@@ -198,11 +185,9 @@ public class CaptchaMyJDSolver extends CESChallengeSolver<String> {
             }
             long startTime = System.currentTimeMillis();
             // Encoding.urlEncode(challenge.getTypeID())
-
             // ret = br.postPage(getAPIROOT() + "index.cgi", "&oldsource=" + Encoding.urlEncode(challenge.getTypeID()) + "&apikey=" +
             // Encoding.urlEncode(config.getApiKey()) + "&captchaSource=jdPlugin&maxtimeout=" + timeoutthing +
             // "&version=1.2&base64=1&file-upload-01=" + Encoding.urlEncode(org.appwork.utils.encoding.Base64.encodeToString(data, false)));
-
             job.setStatus(SolverStatus.SOLVING);
             try {
                 Thread.sleep(3000);
@@ -235,19 +220,15 @@ public class CaptchaMyJDSolver extends CESChallengeSolver<String> {
                 }
                 throw e;
             }
-
             // polling
-
         } catch (IOException e) {
             job.getChallenge().sendStatsError(this, e);
             job.getLogger().log(e);
             throw new SolverException(e);
         } catch (MyJDownloaderException e) {
             job.getChallenge().sendStatsError(this, e);
-
             throw new SolverException(e);
         }
-
     }
 
     @Override
@@ -259,7 +240,6 @@ public class CaptchaMyJDSolver extends CESChallengeSolver<String> {
             } catch (Throwable e) {
                 logger.log(e);
             }
-
         }
         return false;
     }
@@ -272,7 +252,6 @@ public class CaptchaMyJDSolver extends CESChallengeSolver<String> {
                 return true;
             } catch (Throwable e) {
                 logger.log(e);
-
             }
         }
         return false;
@@ -311,5 +290,4 @@ public class CaptchaMyJDSolver extends CESChallengeSolver<String> {
         ret.setStatus(MyJDCESStatus.ENABLED);
         return ret;
     }
-
 }

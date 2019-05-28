@@ -14,7 +14,6 @@ import org.jdownloader.captcha.v2.solver.CESSolverJob;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 
 public class Captcha9kwSolverClick extends AbstractCaptcha9kwSolver<ClickedPoint> {
-
     private static final Captcha9kwSolverClick INSTANCE = new Captcha9kwSolverClick();
 
     public static Captcha9kwSolverClick getInstance() {
@@ -29,7 +28,6 @@ public class Captcha9kwSolverClick extends AbstractCaptcha9kwSolver<ClickedPoint
     private Captcha9kwSolverClick() {
         super();
         NineKwSolverService.getInstance().setClickSolver(this);
-
     }
 
     @Override
@@ -38,14 +36,12 @@ public class Captcha9kwSolverClick extends AbstractCaptcha9kwSolver<ClickedPoint
     }
 
     @Override
-    public boolean canHandle(Challenge<?> c) {
-        // do not use && config.isEnabled() here. config.ismouse() is the enable config for the mouse solver
-        return c instanceof ClickCaptchaChallenge && super.canHandle(c);
+    protected boolean isChallengeSupported(Challenge<?> c) {
+        return c instanceof ClickCaptchaChallenge;
     }
 
     @Override
     protected void solveCES(CESSolverJob<ClickedPoint> solverJob) throws InterruptedException, SolverException {
-
         checkInterruption();
         ClickCaptchaChallenge captchaChallenge = (ClickCaptchaChallenge) solverJob.getChallenge();
         RequestOptions options = prepare(solverJob);
@@ -58,22 +54,17 @@ public class Captcha9kwSolverClick extends AbstractCaptcha9kwSolver<ClickedPoint
             final byte[] data = IO.readFile(captchaChallenge.getImageFile());
             UrlQuery qi = createQueryForUpload(solverJob, options, data).appendEncoded("mouse", "1");
             UrlQuery queryPoll = createQueryForPolling().appendEncoded("mouse", "1");
-
             Browser br = new Browser();
             br.setAllowedResponseCodes(new int[] { 500 });
             String captchaID = upload(br, solverJob, qi);
-
             poll(br, options, solverJob, captchaID, queryPoll);
-
         } catch (IOException e) {
             solverJob.getChallenge().sendStatsError(this, e);
             setdebug(solverJob, "Interrupted: " + e);
             counterInterrupted.incrementAndGet();
             solverJob.getLogger().log(e);
         } finally {
-
         }
-
     }
 
     @Override
@@ -86,5 +77,4 @@ public class Captcha9kwSolverClick extends AbstractCaptcha9kwSolver<ClickedPoint
         String[] splitResult = antwort.split("x");
         solverJob.setAnswer(new Captcha9kwClickResponse(captchaChallenge, this, new ClickedPoint(Integer.parseInt(splitResult[0]), Integer.parseInt(splitResult[1])), 100, captchaID));
     }
-
 }

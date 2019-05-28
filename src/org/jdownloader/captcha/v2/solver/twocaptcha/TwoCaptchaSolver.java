@@ -24,7 +24,6 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_TWO_CAPTCHA;
 
 public class TwoCaptchaSolver extends AbstractTwoCaptchaSolver<String> {
-
     private static final TwoCaptchaSolver INSTANCE = new TwoCaptchaSolver();
 
     public static TwoCaptchaSolver getInstance() {
@@ -47,15 +46,8 @@ public class TwoCaptchaSolver extends AbstractTwoCaptchaSolver<String> {
     }
 
     @Override
-    public boolean canHandle(Challenge<?> c) {
-        if (!validateBlackWhite(c)) {
-            return false;
-        }
-        if (c instanceof RecaptchaV2Challenge) {
-            // does not accept this annoted image yet
-            return true;
-        }
-        return c instanceof BasicCaptchaChallenge && super.canHandle(c);
+    protected boolean isChallengeSupported(Challenge<?> c) {
+        return c instanceof RecaptchaV2Challenge || c instanceof BasicCaptchaChallenge;
     }
 
     @Override
