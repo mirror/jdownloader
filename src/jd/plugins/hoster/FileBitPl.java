@@ -195,27 +195,38 @@ public class FileBitPl extends PluginForHost {
         }
         int loop = 0;
         boolean serverDownloadFinished = false;
-        String infoMessage = null;
-        String progress = null;
         do {
             if (isAbort()) {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
             br.getPage(API_BASE + "?a=checkFileStatus&sessident=" + SESSIONID + "&fileId=" + fileId);
-            serverDownloadFinished = "3".equals(PluginJSonUtils.getJson(br, "status"));
-            infoMessage = PluginJSonUtils.getJson(br, "info");
-            /* Progress is only available when status == 2 */
-            progress = PluginJSonUtils.getJson(br, "progress");
-            if (StringUtils.isEmpty(infoMessage)) {
-                infoMessage = "File is in queue to be prepared";
+            final String error = PluginJSonUtils.getJson(br, "error");
+            final String errno = PluginJSonUtils.getJson(br, "errno");
+            if ("1".equals(error)) {
+                if ("207".equals(errno)) {
+                    mhm.putError(account, link, 30 * 60 * 1000l, "Not enough traffic");
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            infoMessage += ": %s%%";
-            if (StringUtils.isEmpty(progress)) {
-                progress = "0";
+            final String status = PluginJSonUtils.getJson(br, "status");
+            serverDownloadFinished = "3".equals(status);
+            if (serverDownloadFinished) {
+                break;
+            } else {
+                /* Progress is only available when status == 2 */
+                String progress = PluginJSonUtils.getJson(br, "progress");
+                String info = PluginJSonUtils.getJson(br, "info");
+                if (StringUtils.isEmpty(info)) {
+                    info = "File is in queue to be prepared";
+                }
+                info += ": %s%%";
+                if (StringUtils.isEmpty(progress)) {
+                    progress = "0";
+                }
+                info = String.format(info, progress);
+                sleep(5000l, link, info);
+                loop++;
             }
-            infoMessage = String.format(infoMessage, progress);
-            sleep(5000l, link, infoMessage);
-            loop++;
         } while (!serverDownloadFinished && loop <= 200);
         if (!serverDownloadFinished) {
             /* Rare case */
