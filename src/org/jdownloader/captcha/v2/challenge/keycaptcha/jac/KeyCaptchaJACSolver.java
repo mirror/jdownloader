@@ -21,8 +21,8 @@ public class KeyCaptchaJACSolver extends ChallengeSolver<String> {
     }
 
     @Override
-    public boolean canHandle(Challenge<?> c) {
-        return c != null && (c instanceof KeyCaptchaPuzzleChallenge) && !((KeyCaptchaPuzzleChallenge) c).isNoAutoSolver();
+    protected boolean isChallengeSupported(Challenge<?> c) {
+        return c instanceof KeyCaptchaPuzzleChallenge && !((KeyCaptchaPuzzleChallenge) c).isNoAutoSolver();
     }
 
     private KeyCaptchaJACSolver() {

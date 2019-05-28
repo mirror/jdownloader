@@ -15,6 +15,7 @@ import org.appwork.timetracker.TimeTracker;
 import org.appwork.timetracker.TimeTrackerController;
 import org.appwork.timetracker.TrackerRule;
 import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
@@ -119,7 +120,7 @@ public class ChallengeResponseController {
     public void init() {
         if (init.compareAndSet(false, true)) {
             addSolver(JACSolver.getInstance());
-            if (CFG_GENERAL.CFG.isMyJDownloaderCaptchaSolverEnabled()) {
+            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && CFG_GENERAL.CFG.isMyJDownloaderCaptchaSolverEnabled()) {
                 addSolver(CaptchaMyJDSolver.getInstance());
             }
             addSolver(DeathByCaptchaSolver.getInstance());

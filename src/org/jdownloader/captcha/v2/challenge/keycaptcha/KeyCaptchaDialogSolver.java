@@ -2,6 +2,10 @@ package org.jdownloader.captcha.v2.challenge.keycaptcha;
 
 import java.io.IOException;
 
+import jd.controlling.captcha.SkipException;
+import jd.controlling.captcha.SkipRequest;
+import jd.gui.swing.jdgui.JDGui;
+
 import org.appwork.exceptions.WTFException;
 import org.jdownloader.captcha.v2.AbstractDialogHandler;
 import org.jdownloader.captcha.v2.AbstractResponse;
@@ -18,10 +22,6 @@ import org.jdownloader.captcha.v2.solverjob.ResponseList;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
 
-import jd.controlling.captcha.SkipException;
-import jd.controlling.captcha.SkipRequest;
-import jd.gui.swing.jdgui.JDGui;
-
 public class KeyCaptchaDialogSolver extends ChallengeSolver<String> {
     private static final KeyCaptchaDialogSolver INSTANCE = new KeyCaptchaDialogSolver();
 
@@ -30,8 +30,8 @@ public class KeyCaptchaDialogSolver extends ChallengeSolver<String> {
     }
 
     @Override
-    public boolean canHandle(Challenge<?> c) {
-        return c != null && ((c instanceof KeyCaptchaPuzzleChallenge) || c instanceof KeyCaptchaCategoryChallenge);
+    protected boolean isChallengeSupported(Challenge<?> c) {
+        return c instanceof KeyCaptchaPuzzleChallenge || c instanceof KeyCaptchaCategoryChallenge;
     }
 
     private KeyCaptchaDialogSolver() {
@@ -39,7 +39,6 @@ public class KeyCaptchaDialogSolver extends ChallengeSolver<String> {
     }
 
     // protected BrowserCaptchaSolverConfig config;
-
     private AbstractDialogHandler<?, ?, ?> handler;
 
     @Override
@@ -54,7 +53,6 @@ public class KeyCaptchaDialogSolver extends ChallengeSolver<String> {
                 break;
             case DISABLE_DIALOG_SOLVER:
                 job.getEventSender().addListener(new ChallengeSolverJobListener() {
-
                     @Override
                     public void onSolverTimedOut(ChallengeSolver<?> parameter) {
                     }
@@ -86,7 +84,6 @@ public class KeyCaptchaDialogSolver extends ChallengeSolver<String> {
     }
 
     public void requestFocus(Challenge<?> challenge) {
-
         AbstractDialogHandler<?, ?, ?> hndlr = handler;
         if (hndlr != null) {
             hndlr.requestFocus();
@@ -96,7 +93,6 @@ public class KeyCaptchaDialogSolver extends ChallengeSolver<String> {
     @Override
     public void solve(final SolverJob<String> job) throws InterruptedException, SolverException, SkipException {
         synchronized (DialogBasicCaptchaSolver.getInstance()) {
-
             ChallengeSolverJobListener jacListener = null;
             checkSilentMode(job);
             KeyCaptcha helper = null;
@@ -110,7 +106,6 @@ public class KeyCaptchaDialogSolver extends ChallengeSolver<String> {
                 return;
             }
             job.getEventSender().addListener(jacListener = new ChallengeSolverJobListener() {
-
                 @Override
                 public void onSolverTimedOut(ChallengeSolver<?> parameter) {
                 }
@@ -124,12 +119,10 @@ public class KeyCaptchaDialogSolver extends ChallengeSolver<String> {
                     ResponseList<String> resp = job.getResponse();
                     handler.setSuggest(resp.getValue());
                     job.getLogger().info("Received Suggestion: " + resp);
-
                 }
 
                 @Override
                 public void onSolverDone(ChallengeSolver<?> solver) {
-
                 }
             });
             try {
@@ -146,21 +139,17 @@ public class KeyCaptchaDialogSolver extends ChallengeSolver<String> {
                     if (response == null) {
                         return;
                     }
-
                     token = helper.sendPuzzleResult(response.getMouseArray(), response.getOut());
                 } else if (job.getChallenge() instanceof KeyCaptchaCategoryChallenge) {
                     String response = ((KeyCaptchaCategoryDialogHandler) handler).getDialog().getReturnValue();
                     if (response == null) {
                         return;
                     }
-
                     token = helper.sendCategoryResult(response);
                 }
-
                 if (token != null) {
                     job.addAnswer(new KeyCaptchaResponse(job.getChallenge(), this, token, 100));
                 }
-
             } catch (IOException e) {
                 job.getChallenge().sendStatsError(this, e);
                 throw new WTFException(e);
@@ -176,8 +165,6 @@ public class KeyCaptchaDialogSolver extends ChallengeSolver<String> {
                 }
                 handler = null;
             }
-
         }
     }
-
 }

@@ -67,15 +67,8 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> {
     }
 
     @Override
-    public boolean canHandle(Challenge<?> c) {
-        if (!validateBlackWhite(c) || !isAccountLoginSupported(c)) {
-            return false;
-        }
-        if (c instanceof BasicCaptchaChallenge || c instanceof RecaptchaV2Challenge) {
-            return true;
-        } else {
-            return false;
-        }
+    protected boolean isChallengeSupported(Challenge<?> c) {
+        return c instanceof RecaptchaV2Challenge || c instanceof BasicCaptchaChallenge;
     }
 
     @Override

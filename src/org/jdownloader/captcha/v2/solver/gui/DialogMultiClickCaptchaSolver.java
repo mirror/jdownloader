@@ -1,5 +1,9 @@
 package org.jdownloader.captcha.v2.solver.gui;
 
+import jd.controlling.captcha.CaptchaSettings;
+import jd.controlling.captcha.MultiClickCaptchaDialogHandler;
+import jd.controlling.captcha.SkipException;
+
 import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.challenge.multiclickcaptcha.MultiClickCaptchaChallenge;
@@ -8,19 +12,14 @@ import org.jdownloader.captcha.v2.challenge.stringcaptcha.MultiClickCaptchaRespo
 import org.jdownloader.captcha.v2.solver.jac.JACSolver;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
-import jd.controlling.captcha.CaptchaSettings;
-import jd.controlling.captcha.MultiClickCaptchaDialogHandler;
-import jd.controlling.captcha.SkipException;
 
 public class DialogMultiClickCaptchaSolver extends AbstractDialogSolver<MultiClickedPoint> {
-
     private CaptchaSettings                config;
     private MultiClickCaptchaDialogHandler handler;
 
     private DialogMultiClickCaptchaSolver() {
         super(1);
         config = JsonConfig.create(CaptchaSettings.class);
-
         AdvancedConfigManager.getInstance().register(JsonConfig.create(DialogCaptchaSolverConfig.class));
     }
 
@@ -31,15 +30,8 @@ public class DialogMultiClickCaptchaSolver extends AbstractDialogSolver<MultiCli
     }
 
     @Override
-    public boolean canHandle(Challenge<?> c) {
-        return super.canHandle(c);
-    }
-
-    public void enqueue(SolverJob<MultiClickedPoint> solverJob) {
-        if (solverJob.getChallenge() instanceof MultiClickCaptchaChallenge) {
-            super.enqueue(solverJob);
-        }
-
+    protected boolean isChallengeSupported(Challenge<?> c) {
+        return c instanceof MultiClickCaptchaChallenge;
     }
 
     public void requestFocus(Challenge<?> challenge) {
@@ -63,15 +55,11 @@ public class DialogMultiClickCaptchaSolver extends AbstractDialogSolver<MultiCli
                 MultiClickCaptchaChallenge captchaChallenge = (MultiClickCaptchaChallenge) solverJob.getChallenge();
                 checkInterruption();
                 handler = new MultiClickCaptchaDialogHandler(captchaChallenge);
-
                 handler.run();
-
                 if (handler.getPoint() != null) {
                     solverJob.addAnswer(new MultiClickCaptchaResponse(captchaChallenge, this, handler.getPoint(), 100));
                 }
             }
         }
-
     }
-
 }

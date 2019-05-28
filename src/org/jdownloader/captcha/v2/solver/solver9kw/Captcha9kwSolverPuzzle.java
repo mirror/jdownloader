@@ -17,7 +17,6 @@ import org.jdownloader.captcha.v2.solver.CESSolverJob;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 
 public class Captcha9kwSolverPuzzle extends AbstractCaptcha9kwSolver<String> {
-
     private static Captcha9kwSolverPuzzle INSTANCE = new Captcha9kwSolverPuzzle();
 
     public static Captcha9kwSolverPuzzle getInstance() {
@@ -32,12 +31,11 @@ public class Captcha9kwSolverPuzzle extends AbstractCaptcha9kwSolver<String> {
     private Captcha9kwSolverPuzzle() {
         super();
         NineKwSolverService.getInstance().setPuzzleSolver(this);
-
     }
 
     @Override
-    public boolean canHandle(Challenge<?> c) {
-        return c instanceof KeyCaptchaPuzzleChallenge && super.canHandle(c);
+    protected boolean isChallengeSupported(Challenge<?> c) {
+        return c instanceof KeyCaptchaPuzzleChallenge;
     }
 
     @Override
@@ -51,40 +49,30 @@ public class Captcha9kwSolverPuzzle extends AbstractCaptcha9kwSolver<String> {
             options.setConfirm(config.isconfirm());
         }
         try {
-
             UrlQuery qi = createQueryForUpload(solverJob, options, null);
             qi.appendEncoded("puzzle", "1");
-
             KeyCaptchaImages images = captchaChallenge.getHelper().getPuzzleData().getImages();
             LinkedList<BufferedImage> piecesAll = new LinkedList<BufferedImage>(images.pieces);
             qi.appendEncoded("file-upload-01", Base64.encodeToString(IconIO.toJpgBytes(images.backgroundImage), false));
             qi.appendEncoded("file-upload-02", Base64.encodeToString(IconIO.toJpgBytes(images.sampleImage), false));
-
             String allfiledata = "";
             for (int c = 0; c < piecesAll.size(); c++) {
                 BufferedImage image = piecesAll.get(c);
                 int x = c + 3;
                 qi.appendEncoded("file-upload-0" + x, Base64.encodeToString(IconIO.toJpgBytes(image), false));
-
             }
-
             UrlQuery queryPoll = createQueryForPolling().appendEncoded("puzzle", "1");
-
             Browser br = new Browser();
             br.setAllowedResponseCodes(new int[] { 500 });
             String captchaID = upload(br, solverJob, qi);
-
             poll(br, options, solverJob, captchaID, queryPoll);
-
         } catch (IOException e) {
             solverJob.getChallenge().sendStatsError(this, e);
             setdebug(solverJob, "Interrupted: " + e);
             counterInterrupted.incrementAndGet();
             solverJob.getLogger().log(e);
         } finally {
-
         }
-
     }
 
     @Override

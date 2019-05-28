@@ -54,11 +54,8 @@ public class ImageTyperzCaptchaSolver extends CESChallengeSolver<String> {
     }
 
     @Override
-    public boolean canHandle(Challenge<?> c) {
-        if (c instanceof RecaptchaV2Challenge) {
-            return true;
-        }
-        return c instanceof BasicCaptchaChallenge && super.canHandle(c);
+    protected boolean isChallengeSupported(Challenge<?> c) {
+        return c instanceof RecaptchaV2Challenge || c instanceof BasicCaptchaChallenge;
     }
 
     @Override

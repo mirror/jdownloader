@@ -53,23 +53,8 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
     private CaptchaAPISolverEventSender              eventSender;
 
     @Override
-    public boolean canHandle(Challenge<?> c) {
-        if (!validateBlackWhite(c)) {
-            return false;
-        }
-        if (c instanceof KeyCaptchaPuzzleChallenge && super.canHandle(c)) {
-            return true;
-        }
-        if (c instanceof KeyCaptchaCategoryChallenge && super.canHandle(c)) {
-            return true;
-        }
-        if (c instanceof RecaptchaV2Challenge) {
-            return true;
-        }
-        if (c instanceof AccountLoginOAuthChallenge) {
-            return true;
-        }
-        return c instanceof ImageCaptchaChallenge && super.canHandle(c);
+    protected boolean isChallengeSupported(Challenge<?> c) {
+        return c instanceof KeyCaptchaPuzzleChallenge || c instanceof KeyCaptchaCategoryChallenge || c instanceof RecaptchaV2Challenge || c instanceof AccountLoginOAuthChallenge || c instanceof ImageCaptchaChallenge;
     }
 
     @Override

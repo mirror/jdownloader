@@ -32,13 +32,19 @@ public abstract class AbstractBrowserSolver extends ChallengeSolver<String> {
     }
 
     @Override
+    protected boolean isChallengeSupported(Challenge<?> c) {
+        return c instanceof AbstractBrowserChallenge;
+    }
+
+    @Override
     public boolean canHandle(Challenge<?> c) {
         if (super.canHandle(c)) {
             final String[] browserCommandLine = BrowserSolverService.getInstance().getConfig().getBrowserCommandline();
             if (!CrossSystem.isOpenBrowserSupported() && (browserCommandLine == null || browserCommandLine.length == 0)) {
                 return false;
+            } else {
+                return true;
             }
-            return true;
         } else {
             return false;
         }

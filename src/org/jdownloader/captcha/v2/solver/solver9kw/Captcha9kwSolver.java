@@ -32,6 +32,11 @@ public class Captcha9kwSolver extends AbstractCaptcha9kwSolver<String> {
     }
 
     @Override
+    protected boolean isChallengeSupported(Challenge<?> c) {
+        return c instanceof RecaptchaV2Challenge || c instanceof BasicCaptchaChallenge;
+    }
+
+    @Override
     public boolean canHandle(Challenge<?> c) {
         if (c instanceof RecaptchaV2Challenge) {
             try {
@@ -39,17 +44,14 @@ public class Captcha9kwSolver extends AbstractCaptcha9kwSolver<String> {
             } catch (SolverException e) {
                 return false;
             }
-            return true;
-        }
-        if (c instanceof BasicCaptchaChallenge && super.canHandle(c)) {
+        } else if (c instanceof BasicCaptchaChallenge) {
             try {
                 checkForEnoughCredits();
             } catch (SolverException e) {
                 return false;
             }
-            return true;
         }
-        return false;
+        return super.canHandle(c);
     }
 
     @Override
