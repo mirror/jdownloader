@@ -98,10 +98,10 @@ public class NewsDemonCom extends UseNet {
             final String trafficUsed = br.getRegex("Used:.*?>([0-9\\.]+)</span>\\s*GB").getMatch(0);
             final String trafficAvailable = br.getRegex("Remaining:.*?>([0-9\\.]+)</span>\\s*GB").getMatch(0);
             if (trafficUsed != null && trafficAvailable != null) {
-                final long max = SizeFormatter.getSize(trafficAvailable) + SizeFormatter.getSize(trafficUsed);
-                final long left = SizeFormatter.getSize(trafficAvailable);
+                final long available = SizeFormatter.getSize(trafficAvailable + " GB");
+                final long max = available + SizeFormatter.getSize(trafficUsed + " GB");
                 ai.setTrafficMax(max);
-                ai.setTrafficLeft(left);
+                ai.setTrafficLeft(available);
             }
             final String status = br.getRegex("Status:</li>.*?span class=.*?>(.*?)</span").getMatch(0);
             if (!"Active".equals(status)) {
