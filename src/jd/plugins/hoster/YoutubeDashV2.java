@@ -83,7 +83,6 @@ import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.appwork.utils.net.HTTPHeader;
-import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
 import org.appwork.utils.net.httpserver.HttpServer;
@@ -1239,17 +1238,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
         };
         final YoutubeConfig youtubeConfig = PluginJsonConfig.get(YoutubeConfig.class);
         final String[] segments = streamData.getSegments();
-        final GetRequest request;
-        final boolean rateByPass;
-        if (youtubeConfig.isRateBypassEnabled() && segments == null && downloadLink.getTempProperties().getBooleanProperty("ratebypass", Boolean.TRUE)) {
-            final String url = streamData.getBaseUrl();
-            rateByPass = true;
-            // they auto add ratebypass for some of the higher quality itags. if you get two duplicate you will get 403. -raztoki
-            request = new GetRequest(URLHelper.parseLocation(new URL(url), (!containsParameter(url, "ratebypass=yes") ? "&ratebypass=yes" : "")));
-        } else {
-            rateByPass = false;
-            request = new GetRequest(streamData.getBaseUrl());
-        }
+        final GetRequest request = new GetRequest(streamData.getBaseUrl());
         if (segments != null) {
             dl = new SegmentDownloader(dashLink, dashDownloadable, br, new URL(request.getUrl()), segments);
             final boolean ret = dl.startDownload();
@@ -1262,21 +1251,18 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
         request.setProxy((possibleProxies == null || possibleProxies.size() == 0) ? null : possibleProxies.get(0));
         dl = BrowserAdapter.openDownload(br, dashDownloadable, request, true, getChunksPerStream(youtubeConfig));
         if (!this.dl.getConnection().isContentDisposition() && !this.dl.getConnection().getContentType().startsWith("video") && !this.dl.getConnection().getContentType().startsWith("audio") && !this.dl.getConnection().getContentType().startsWith("application")) {
-            if (dl.getConnection().getResponseCode() == 403 && rateByPass) {
-                downloadLink.getTempProperties().setProperty("ratebypass", Boolean.FALSE);
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
             if (dl.getConnection().getResponseCode() == 500) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _GUI.T.hoster_servererror("Youtube"), 5 * 60 * 1000l);
             }
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        boolean ret = dl.startDownload();
+        final boolean ret = dl.startDownload();
         if (dl.externalDownloadStop()) {
             return null;
+        } else {
+            return ret;
         }
-        return ret;
     }
 
     private boolean containsParameter(String url, String string) {

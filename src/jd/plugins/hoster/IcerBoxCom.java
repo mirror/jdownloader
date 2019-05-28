@@ -290,6 +290,8 @@ public class IcerBoxCom extends antiDDoSForHost {
                         handleApiErrors(ajax, account, null);
                         if (ajax.getHttpConnection().getResponseCode() == 429 || ajax.getHttpConnection().getResponseCode() == 422) {
                             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        } else if (ajax.getHttpConnection().getResponseCode() == 401) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                         }
                     }
                     // token
@@ -300,20 +302,24 @@ public class IcerBoxCom extends antiDDoSForHost {
                     account.setProperty("token", token);
                     ajax.getHeaders().put("Authorization", "Bearer " + token);
                     getPage(ajax, apiURL + "/user/account");
+                    final String err = PluginJSonUtils.getJsonValue(ajax, "err");
+                    if (StringUtils.equals("PASSWORD_RENEW", err)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Password expired. Enter your Account page and change it.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
                 final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
                 final Boolean is_premium = (Boolean) JavaScriptEngineFactory.walkJson(entries, "data/has_premium");
                 final String expire = (String) JavaScriptEngineFactory.walkJson(entries, "data/premium/date");
-                final Long dailyTrafficMax = (Long) JavaScriptEngineFactory.walkJson(entries, "data/package/volume");
-                final Long dailyTrafficUsed = ((Number) JavaScriptEngineFactory.walkJson(entries, "data/downloaded_today")).longValue();
+                final Number dailyTrafficMax = (Number) JavaScriptEngineFactory.walkJson(entries, "data/package/volume");
+                final Number dailyTrafficUsed = ((Number) JavaScriptEngineFactory.walkJson(entries, "data/downloaded_today"));
                 // free account
                 if (Boolean.FALSE.equals(is_premium)) {
                     // jdlog://8835079150841
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Free Accounts on this provider are not supported", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else {
                     // available traffic
-                    ai.setTrafficLeft(dailyTrafficMax - dailyTrafficUsed);
-                    ai.setTrafficMax(dailyTrafficMax);
+                    ai.setTrafficLeft(dailyTrafficMax.longValue() - dailyTrafficUsed.longValue());
+                    ai.setTrafficMax(dailyTrafficMax.longValue());
                     // date
                     ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.replaceFirst("\\.0{6}", ""), "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH), ajax);
                     if (Boolean.TRUE.equals(is_premium) && !ai.isExpired()) {

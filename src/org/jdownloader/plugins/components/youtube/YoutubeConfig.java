@@ -239,7 +239,6 @@ public interface YoutubeConfig extends PluginConfigInterface {
     // boolean isPreferHttpsEnabled();
     //
     // void setPreferHttpsEnabled(boolean b);
-
     // @DefaultBooleanValue(true)
     // @AboutConfig
     // boolean isBestGroupVariantEnabled();
@@ -517,12 +516,6 @@ public interface YoutubeConfig extends PluginConfigInterface {
     boolean isSegmentLoadingEnabled();
 
     void setSegmentLoadingEnabled(boolean b);
-
-    @AboutConfig
-    @DefaultBooleanValue(false)
-    boolean isRateBypassEnabled();
-
-    void setRateBypassEnabled(boolean b);
 
     @AboutConfig
     @DefaultBooleanValue(true)

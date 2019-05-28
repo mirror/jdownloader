@@ -198,6 +198,9 @@ public class FileBitPl extends PluginForHost {
         String infoMessage = null;
         String progress = null;
         do {
+            if (isAbort()) {
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
             br.getPage(API_BASE + "?a=checkFileStatus&sessident=" + SESSIONID + "&fileId=" + fileId);
             serverDownloadFinished = "3".equals(PluginJSonUtils.getJson(br, "status"));
             infoMessage = PluginJSonUtils.getJson(br, "info");
@@ -241,12 +244,13 @@ public class FileBitPl extends PluginForHost {
             try {
                 final Browser br2 = br.cloneBrowser();
                 URLConnectionAdapter con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                if (!!con.isOK() || con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
                 }
                 con.disconnect();
             } catch (final Exception e) {
+                logger.log(e);
                 downloadLink.setProperty(property, Property.NULL);
                 dllink = null;
             }
