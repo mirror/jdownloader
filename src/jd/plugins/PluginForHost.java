@@ -181,14 +181,14 @@ import org.jdownloader.updatev2.UpdateController;
 public abstract class PluginForHost extends Plugin {
     private static final String    COPY_MOVE_FILE = "CopyMoveFile";
     private static final Pattern[] PATTERNS       = new Pattern[] {
-                                                  /**
-                                                   * these patterns should split filename and fileextension (extension must include the
-                                                   * point)
-                                                   */
-                                                  // multipart rar archives
-            Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
-            // normal files with extension
-            Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
+        /**
+         * these patterns should split filename and fileextension (extension must include the
+         * point)
+         */
+        // multipart rar archives
+        Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
+        // normal files with extension
+        Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
     private LazyHostPlugin         lazyP          = null;
     /**
      * Is true if the user has answered a captcha challenge. does not say anything whether if the answer was correct or not
@@ -1183,16 +1183,16 @@ public abstract class PluginForHost extends Plugin {
     public void handleMultiHost(DownloadLink downloadLink, Account account) throws Exception {
         /*
          * fetchAccountInfo must fill ai.setMultiHostSupport to signal all supported multiHosts
-         * 
+         *
          * please synchronized on accountinfo and the ArrayList<String> when you change something in the handleMultiHost function
-         * 
+         *
          * in fetchAccountInfo we don't have to synchronize because we create a new instance of AccountInfo and fill it
-         * 
+         *
          * if you need customizable maxDownloads, please use getMaxSimultanDownload to handle this you are in multihost when account host
          * does not equal link host!
-         * 
-         * 
-         * 
+         *
+         *
+         *
          * will update this doc about error handling
          */
         logger.severe("invalid call to handleMultiHost: " + downloadLink.getName() + ":" + downloadLink.getHost() + " to " + getHost() + ":" + this.getVersion() + " with " + account);
@@ -1414,6 +1414,14 @@ public abstract class PluginForHost extends Plugin {
         return link;
     }
 
+    /**
+     * to signal rewrite support this method must return destination host(eg getHost()) for host==null
+     *
+     * see implementsRewriteHost
+     *
+     * @param host
+     * @return
+     */
     public String rewriteHost(String host) {
         if (host != null && host.equals(getHost())) {
             return getHost();
@@ -1427,8 +1435,9 @@ public abstract class PluginForHost extends Plugin {
             link.setHost(getHost());
             link.setDefaultPlugin(this);
             return true;
+        } else {
+            return false;
         }
-        return false;
     }
 
     public boolean assignPlugin(final Account account) {
@@ -1445,8 +1454,9 @@ public abstract class PluginForHost extends Plugin {
             account.setHoster(getHost());
             account.setPlugin(this);
             return true;
+        } else {
+            return false;
         }
-        return false;
     }
 
     public static boolean implementsRewriteHost(PluginForHost plugin) {
@@ -1455,12 +1465,16 @@ public abstract class PluginForHost extends Plugin {
                 final Method method = plugin.getClass().getMethod("rewriteHost", new Class[] { String.class });
                 final boolean implementsHandlePremium = method.getDeclaringClass() != PluginForHost.class;
                 return implementsHandlePremium && plugin.rewriteHost((String) null) != null;
+            } else {
+                return false;
             }
         } catch (NoSuchMethodException e) {
+            LogController.CL().log(e);
+            return false;
         } catch (Throwable e) {
             LogController.CL().log(e);
+            return false;
         }
-        return false;
     }
 
     public static boolean implementsAllowHandle(PluginForHost plugin) {
@@ -1469,12 +1483,15 @@ public abstract class PluginForHost extends Plugin {
                 final Method method = plugin.getClass().getMethod("allowHandle", new Class[] { DownloadLink.class, PluginForHost.class });
                 final boolean implementsHandlePremium = method.getDeclaringClass() != PluginForHost.class;
                 return implementsHandlePremium;
+            } else {
+                return false;
             }
         } catch (NoSuchMethodException e) {
+            return false;
         } catch (Throwable e) {
             LogController.CL().log(e);
+            return false;
         }
-        return false;
     }
 
     public static boolean implementsCheckLinks(PluginForHost plugin) {
@@ -1483,12 +1500,15 @@ public abstract class PluginForHost extends Plugin {
                 final Method method = plugin.getClass().getMethod("checkLinks", new DownloadLink[0].getClass());
                 final boolean hasMassCheck = method.getDeclaringClass() != PluginForHost.class;
                 return hasMassCheck;
+            } else {
+                return false;
             }
         } catch (NoSuchMethodException e) {
+            return false;
         } catch (Throwable e) {
             LogController.CL().log(e);
+            return false;
         }
-        return false;
     }
 
     public static boolean implementsHandlePremium(PluginForHost plugin) {
@@ -1497,12 +1517,15 @@ public abstract class PluginForHost extends Plugin {
                 final Method method = plugin.getClass().getMethod("handlePremium", new Class[] { DownloadLink.class, Account.class });
                 final boolean implementsHandlePremium = method.getDeclaringClass() != PluginForHost.class;
                 return implementsHandlePremium;
+            } else {
+                return false;
             }
         } catch (NoSuchMethodException e) {
+            return false;
         } catch (Throwable e) {
             LogController.CL().log(e);
+            return false;
         }
-        return false;
     }
 
     public static boolean implementsSortDownloadLink(PluginForHost plugin) {
@@ -1511,12 +1534,15 @@ public abstract class PluginForHost extends Plugin {
                 final Method method = plugin.getClass().getMethod("sortDownloadLinks", new Class[] { Account.class, List.class });
                 final boolean implementsSortDownloadLink = method.getDeclaringClass() != PluginForHost.class;
                 return implementsSortDownloadLink;
+            } else {
+                return false;
             }
         } catch (NoSuchMethodException e) {
+            return false;
         } catch (Throwable e) {
             LogController.CL().log(e);
+            return false;
         }
-        return false;
     }
 
     /**
