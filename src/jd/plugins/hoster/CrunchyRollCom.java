@@ -466,6 +466,7 @@ public class CrunchyRollCom extends antiDDoSForHost {
                 boolean freshLogin = true;
                 if (cookies != null) {
                     br.setCookies(getHost(), cookies);
+                    br.setFollowRedirects(true);
                     getPage("https://www.crunchyroll.com");
                     if (br.getCookie(this.getHost(), "c_userid", Cookies.NOTDELETEDPATTERN) == null || br.getCookie(this.getHost(), "c_userkey", Cookies.NOTDELETEDPATTERN) == null) {
                         br.clearCookies(getHost());
@@ -474,6 +475,7 @@ public class CrunchyRollCom extends antiDDoSForHost {
                     }
                 }
                 if (freshLogin) {
+                    br.setFollowRedirects(true);
                     getPage("https://www.crunchyroll.com/login");
                     final Form login = br.getFormbyActionRegex("/login");
                     if (login == null) {
@@ -676,20 +678,20 @@ public class CrunchyRollCom extends antiDDoSForHost {
         // Calculate magic number
         final int magic1 = (int) Math.floor(Math.sqrt(6.9) * Math.pow(2, 25));
         final long magic2 = id ^ magic1 ^ (id ^ magic1) >>> 3 ^ (magic1 ^ id) * 32l;
-        magicStr += magic2;
-        // Calculate the hash using SHA-1
-        final MessageDigest md = MessageDigest.getInstance("SHA-1");
-        /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
-        final byte[] magicBytes = magicStr.getBytes();
-        md.update(magicBytes, 0, magicBytes.length);
-        final byte[] hashBytes = md.digest();
-        // Create the key using the given length
-        final byte[] key = new byte[size];
-        Arrays.fill(key, (byte) 0);
-        for (int i = 0; i < key.length && i < hashBytes.length; i++) {
-            key[i] = hashBytes[i];
-        }
-        return key;
+                    magicStr += magic2;
+                    // Calculate the hash using SHA-1
+                    final MessageDigest md = MessageDigest.getInstance("SHA-1");
+                    /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
+                    final byte[] magicBytes = magicStr.getBytes();
+                    md.update(magicBytes, 0, magicBytes.length);
+                    final byte[] hashBytes = md.digest();
+                    // Create the key using the given length
+                    final byte[] key = new byte[size];
+                    Arrays.fill(key, (byte) 0);
+                    for (int i = 0; i < key.length && i < hashBytes.length; i++) {
+                        key[i] = hashBytes[i];
+                    }
+                    return key;
     }
 
     /**
