@@ -160,7 +160,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         if (parameter.matches(LINKTYPE_USER) || parameter.matches(LINKTYPE_GROUP)) {
             if (alwaysLogin) {
                 final ArrayList<Account> accs = AccountController.getInstance().getValidAccounts(getHost());
-                if (accs != null) {
+                if (accs != null && accs.size() > 0) {
                     login(accs.get(0));
                 }
             }
@@ -264,7 +264,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             boolean loggedIn = false;
             if (alwaysLogin) {
                 final ArrayList<Account> accs = AccountController.getInstance().getValidAccounts(getHost());
-                if (accs != null) {
+                if (accs != null && accs.size() > 0) {
                     final Account acc = accs.get(0);
                     loggedIn = login(acc);
                     if (loggedIn) {
@@ -276,7 +276,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             if (loggedIn == false && StringUtils.containsIgnoreCase(parameter, "/ondemand/")) {
                 logger.info("Account required to crawl this link");
                 final ArrayList<Account> accs = AccountController.getInstance().getValidAccounts(getHost());
-                final Account acc = accs != null ? accs.get(0) : null;
+                final Account acc = accs != null && accs.size() > 0 ? accs.get(0) : null;
                 loggedIn = acc != null && login(acc);
                 if (!loggedIn) {
                     logger.info("Cannot crawl this link without account");
