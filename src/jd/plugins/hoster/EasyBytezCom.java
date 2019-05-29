@@ -825,14 +825,14 @@ public class EasyBytezCom extends PluginForHost {
         } else {
             account.setProperty("free", false);
             ai.setStatus("Premium Account");
-            account.setMaxSimultanDownloads(5);
-            account.setProperty("totalMaxSim", 5);
+            account.setMaxSimultanDownloads(10);
+            account.setProperty("totalMaxSim", 10);
         }
     }
 
     @SuppressWarnings("unchecked")
     public HashMap<String, String> login(final Account account, final boolean force) throws Exception {
-        synchronized (ACCLOCK) {
+        synchronized (account) {
             try {
                 /** Load cookies */
                 prepBrowser(br);
@@ -914,7 +914,7 @@ public class EasyBytezCom extends PluginForHost {
         requestFileInformation(downloadLink);
         boolean fresh = false;
         Object after = null;
-        synchronized (ACCLOCK) {
+        synchronized (account) {
             Object before = account.getProperty("cookies", null);
             after = login(account, false);
             fresh = before != after;
@@ -933,7 +933,7 @@ public class EasyBytezCom extends PluginForHost {
             getPage(downloadLink.getDownloadURL());
             // if the cached cookie expired, relogin.
             if ((br.getCookie(COOKIE_HOST, "login")) == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
-                synchronized (ACCLOCK) {
+                synchronized (account) {
                     if (after == account.getProperty("cookies", null)) {
                         account.setProperty("cookies", Property.NULL);
                     }
@@ -957,7 +957,7 @@ public class EasyBytezCom extends PluginForHost {
                 }
                 // if the cached cookie expired, relogin.
                 if ((br.getCookie(COOKIE_HOST, "login")) == null || br.getCookie(COOKIE_HOST, "xfss") == null || (br.containsHTML(">Become Premium to") && br.containsHTML("download this file fast"))) {
-                    synchronized (ACCLOCK) {
+                    synchronized (account) {
                         if (after == account.getProperty("cookies", null)) {
                             account.setProperty("cookies", Property.NULL);
                         }
@@ -1102,7 +1102,6 @@ public class EasyBytezCom extends PluginForHost {
     private static AtomicReference<String>                          userAgent              = new AtomicReference<String>(null);
     private static HashMap<String, String>                          cloudflareCookies      = new HashMap<String, String>();
     private static HashMap<Account, HashMap<String, AtomicInteger>> hostMap                = new HashMap<Account, HashMap<String, AtomicInteger>>();
-    public static Object                                            ACCLOCK                = new Object();
     private static Object                                           CTRLLOCK               = new Object();
 
     /**

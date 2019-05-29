@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -34,9 +33,8 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "easybytez.com" }, urls = { "http://(www\\.)?easybytez.com/users/[^<>\"\\?\\&]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "easybytez.com" }, urls = { "http://(www\\.)?easybytez.com/users/[^<>\"\\?\\&]+" })
 public class EasyBytezComFolder extends PluginForDecrypt {
-
     public EasyBytezComFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -139,7 +137,7 @@ public class EasyBytezComFolder extends PluginForDecrypt {
             try {
                 boolean fresh = false;
                 Object after = null;
-                synchronized (jd.plugins.hoster.EasyBytezCom.ACCLOCK) {
+                synchronized (aa) {
                     Object before = aa.getProperty("cookies", null);
                     after = ((jd.plugins.hoster.EasyBytezCom) plugin).login(aa, false);
                     fresh = before != after;
@@ -169,5 +167,4 @@ public class EasyBytezComFolder extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
