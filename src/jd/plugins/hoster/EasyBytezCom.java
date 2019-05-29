@@ -820,6 +820,7 @@ public class EasyBytezCom extends PluginForHost {
             ai.setValidUntil(-1);
             account.setProperty("free", true);
             ai.setStatus("Free Account");
+            account.setMaxSimultanDownloads(0);
             account.setProperty("totalMaxSim", 5);
         } else {
             account.setProperty("free", false);
