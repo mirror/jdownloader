@@ -144,7 +144,10 @@ public class DdlTo extends XFileSharingProBasic {
     }
 
     public static String[] getAnnotationNames() {
-        return domains;
+        /*
+         * only return the first/valid domain, else rewrite won't happen when the other domain is still signaled as existing!
+         */
+        return new String[] { domains[0] };
     }
 
     @Override
@@ -159,7 +162,7 @@ public class DdlTo extends XFileSharingProBasic {
                 /* Match all URLs on first (=current) domain */
                 ret.add("https?://(?:www\\.)?" + getHostsPatternPart() + "/(?:embed\\-)?[a-z0-9]{12}(?:/[^/]+\\.html)?");
             } else {
-                ret.add("");
+                break;
             }
         }
         return ret.toArray(new String[0]);

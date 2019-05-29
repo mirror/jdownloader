@@ -21,22 +21,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map.Entry;
-
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.simplejson.JSonFactory;
-import org.appwork.storage.simplejson.JSonObject;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.views.downloads.columns.ETAColumn;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.PluginTaskID;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -58,6 +44,21 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginProgress;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.simplejson.JSonFactory;
+import org.appwork.storage.simplejson.JSonObject;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.views.downloads.columns.ETAColumn;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.PluginTaskID;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  * 24.11.15 Update by Bilal Ghouri:
@@ -237,7 +238,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
                 supportedHosts.add(host);
             }
             currentAcc.setProperty("accountProperties", con);
-            ac.setMultiHostSupport(this, supportedHosts);
+            final List<String> mapped = ac.setMultiHostSupport(this, supportedHosts);
             return ac;
         }
     }

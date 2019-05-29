@@ -19,13 +19,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class WupfileCom extends XFileSharingProBasic {
@@ -45,6 +45,10 @@ public class WupfileCom extends XFileSharingProBasic {
 
     @Override
     public String rewriteHost(String host) {
+        if (host == null) {
+            // signal rewrite support!
+            return domains[0];
+        }
         /* 2019-05-22: Special: salefiles.com is now wupfile.com */
         for (final String domain : domains) {
             if (domain.equalsIgnoreCase(host)) {
@@ -138,7 +142,10 @@ public class WupfileCom extends XFileSharingProBasic {
     }
 
     public static String[] getAnnotationNames() {
-        return domains;
+        /*
+         * only return the first/valid domain, else rewrite won't happen when the other domain is still signaled as existing!
+         */
+        return new String[] { domains[0] };
     }
 
     @Override
@@ -153,7 +160,8 @@ public class WupfileCom extends XFileSharingProBasic {
                 /* Match all URLs on first (=current) domain */
                 ret.add("https?://(?:www\\.)?" + getHostsPatternPart() + "/(?:embed\\-)?[a-z0-9]{12}(?:/[^/]+\\.html)?");
             } else {
-                ret.add("");
+                /* see getAnnotationNames */
+                break;
             }
         }
         return ret.toArray(new String[0]);

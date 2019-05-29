@@ -824,6 +824,7 @@ public class EasyBytezCom extends PluginForHost {
         } else {
             account.setProperty("free", false);
             ai.setStatus("Premium Account");
+            account.setMaxSimultanDownloads(5);
             account.setProperty("totalMaxSim", 5);
         }
     }
@@ -894,8 +895,10 @@ public class EasyBytezCom extends PluginForHost {
                 account.setProperty("lastlogin", System.currentTimeMillis());
                 return cookies;
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
-                account.setProperty("lastlogin", Property.NULL);
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.setProperty("cookies", Property.NULL);
+                    account.setProperty("lastlogin", Property.NULL);
+                }
                 throw e;
             }
         }
