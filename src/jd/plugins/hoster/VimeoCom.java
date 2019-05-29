@@ -781,6 +781,11 @@ public class VimeoCom extends PluginForHost {
         return ret;
     }
 
+    @Override
+    public boolean isSpeedLimited(DownloadLink link, Account account) {
+        return false;
+    }
+
     /** Handles http streams (stream download!) */
     private static List<VimeoContainer> handleProgessive(Plugin plugin, Browser br, final Map<String, Object> files) {
         final ArrayList<VimeoContainer> ret = new ArrayList<VimeoContainer>();

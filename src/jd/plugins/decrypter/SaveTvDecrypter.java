@@ -29,10 +29,6 @@ import java.util.regex.Pattern;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -50,6 +46,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.SaveTv;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "save.tv" }, urls = { "https?://(www\\.)?save\\.tv/STV/M/obj/archive/(?:Horizontal)?VideoArchive\\.cfm" })
 public class SaveTvDecrypter extends PluginForDecrypt {
@@ -129,7 +129,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         }
         try {
             final ArrayList<Account> all_stv_accounts = AccountController.getInstance().getValidAccounts(this.getHost());
-            totalAccountsNum = all_stv_accounts.size();
+            totalAccountsNum = all_stv_accounts != null ? all_stv_accounts.size() : 0;
             if (totalAccountsNum == 0) {
                 logger.info("At least one account needed to use this crawler");
                 return decryptedLinks;

@@ -84,6 +84,11 @@ public class TwitchTv extends PluginForHost {
         return -1;
     }
 
+    @Override
+    public boolean isSpeedLimited(DownloadLink link, Account account) {
+        return false;
+    }
+
     private final String        FASTLINKCHECK             = "FASTLINKCHECK";
     private final String        NOCHUNKS                  = "NOCHUNKS";
     private final static String CUSTOM_DATE_2             = "CUSTOM_DATE_2";
