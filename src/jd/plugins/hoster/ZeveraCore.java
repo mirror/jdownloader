@@ -418,8 +418,8 @@ abstract public class ZeveraCore extends UseNet {
         SubConfiguration config = null;
         try {
             config = getPluginConfig();
-            if (showAlways || config.getBooleanProperty("featuredialog_all_Shown", Boolean.FALSE) == false) {
-                if (showAlways || config.getProperty("featuredialog_all_Shown2") == null) {
+            if (showAlways || config.getBooleanProperty("featuredialog_login_Shown", Boolean.FALSE) == false) {
+                if (showAlways || config.getProperty("featuredialog_login_Shown2") == null) {
                     showFreeModeLoginInformation(url);
                 } else {
                     config = null;
@@ -430,8 +430,8 @@ abstract public class ZeveraCore extends UseNet {
         } catch (final Throwable e) {
         } finally {
             if (config != null) {
-                config.setProperty("featuredialog_all_Shown", Boolean.TRUE);
-                config.setProperty("featuredialog_all_Shown2", "shown");
+                config.setProperty("featuredialog_login_Shown", Boolean.TRUE);
+                config.setProperty("featuredialog_login_Shown2", "shown");
                 config.save();
             }
         }
@@ -471,8 +471,8 @@ abstract public class ZeveraCore extends UseNet {
         SubConfiguration config = null;
         try {
             config = getPluginConfig();
-            if (showAlways || config.getBooleanProperty("featuredialog_all_Shown", Boolean.FALSE) == false) {
-                if (showAlways || config.getProperty("featuredialog_all_Shown2") == null) {
+            if (showAlways || config.getBooleanProperty("featuredialog_download_Shown", Boolean.FALSE) == false) {
+                if (showAlways || config.getProperty("featuredialog_download_Shown2") == null) {
                     showFreeModeDownloadInformation(url);
                 } else {
                     config = null;
@@ -483,8 +483,8 @@ abstract public class ZeveraCore extends UseNet {
         } catch (final Throwable e) {
         } finally {
             if (config != null) {
-                config.setProperty("featuredialog_all_Shown", Boolean.TRUE);
-                config.setProperty("featuredialog_all_Shown2", "shown");
+                config.setProperty("featuredialog_download_Shown", Boolean.TRUE);
+                config.setProperty("featuredialog_download_Shown2", "shown");
                 config.save();
             }
         }
