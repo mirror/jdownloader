@@ -15,6 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Pattern;
 
 import org.jdownloader.plugins.components.XFileSharingProBasic;
@@ -94,10 +96,6 @@ public class IsraCloud extends XFileSharingProBasic {
         return super.supports_precise_expire_date();
     }
 
-    
-
-    
-
     @Override
     public boolean isVideohosterEmbed() {
         return super.isVideohosterEmbed();
@@ -117,8 +115,6 @@ public class IsraCloud extends XFileSharingProBasic {
     public boolean supports_availablecheck_alt() {
         return super.supports_availablecheck_alt();
     }
-
-    
 
     @Override
     public boolean prefer_availablecheck_filesize_alt_type_old() {
@@ -141,7 +137,7 @@ public class IsraCloud extends XFileSharingProBasic {
     }
 
     public static String[] getAnnotationNames() {
-        return new String[] { domains[0] };
+        return domains;
     }
 
     @Override
@@ -149,28 +145,27 @@ public class IsraCloud extends XFileSharingProBasic {
         return domains;
     }
 
-    /**
-     * returns the annotation pattern array: 'https?://(?:www\\.)?(?:domain1|domain2)/(?:embed\\-)?[a-z0-9]{12}'
-     *
-     */
     public static String[] getAnnotationUrls() {
-        // construct pattern
-        final String host = getHostsPattern();
-        return new String[] { host + "/(?:embed\\-)?[a-z0-9]{12}(?:/[^/]+\\.html)?" };
-    }
-
-    /** returns 'https?://(?:www\\.)?(?:domain1|domain2)' */
-    private static String getHostsPattern() {
-        final String hosts = "https?://(?:www\\.)?" + "(?:" + getHostsPatternPart() + ")";
-        return hosts;
+        final List<String> ret = new ArrayList<String>();
+        for (int i = 0; i < domains.length; i++) {
+            if (i == 0) {
+                /* Match all URLs on first (=current) domain */
+                ret.add("https?://(?:www\\.)?" + getHostsPatternPart() + "/(?:embed\\-)?[a-z0-9]{12}(?:/[^/]+\\.html)?");
+            } else {
+                ret.add("");
+            }
+        }
+        return ret.toArray(new String[0]);
     }
 
     /** Returns '(?:domain1|domain2)' */
     public static String getHostsPatternPart() {
         final StringBuilder pattern = new StringBuilder();
+        pattern.append("(?:");
         for (final String name : domains) {
             pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
         }
+        pattern.append(")");
         return pattern.toString();
     }
 }

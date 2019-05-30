@@ -1,5 +1,6 @@
 package jd.plugins.hoster;
 
+import java.net.URL;
 //jDownloader - Downloadmanager
 //Copyright (C) 2013  JD-Team support@jdownloader.org
 //
@@ -19,12 +20,17 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 
+import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
+
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
@@ -45,10 +51,11 @@ import jd.plugins.components.PluginJSonUtils;
 //IMPORTANT: this class must stay in jd.plugins.hoster because it extends another plugin (UseNet) which is only available through PluginClassLoader
 abstract public class ZeveraCore extends UseNet {
     /* Connection limits */
-    private static final boolean  ACCOUNT_PREMIUM_RESUME    = true;
-    private static final int      ACCOUNT_PREMIUM_MAXCHUNKS = 0;
+    private static final boolean  ACCOUNT_PREMIUM_RESUME       = true;
+    private static final int      ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     // private static Object LOCK = new Object();
-    private MultiHosterManagement mhm                       = null;
+    private MultiHosterManagement mhm                          = null;
+    private static final boolean  allow_free_account_downloads = false;
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
@@ -186,7 +193,7 @@ abstract public class ZeveraCore extends UseNet {
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
         if (isDirectURL(downloadLink) && account == null) {
-            // generated links do not require an account
+            /* Generated links can be downloaded without account. */
             return true;
         } else {
             return account != null;
@@ -392,13 +399,133 @@ abstract public class ZeveraCore extends UseNet {
         // final ArrayList<String> cache = (ArrayList<String>) entries.get("cache");
         final HashSet<String> list = new HashSet<String>();
         if ("premiumize.me".equalsIgnoreCase(account.getHoster())) {
+            /* Some premiumize-only features */
             list.add("usenet");
+            if (account.getType() == AccountType.FREE && allow_free_account_downloads) {
+                handleFreeModeLoginDialog("https://www.premiumize.me/free");
+            }
         }
         if (directdl != null) {
             list.addAll(directdl);
         }
         ai.setMultiHostSupport(this, new ArrayList<String>(list));
         return ai;
+    }
+
+    @SuppressWarnings("deprecation")
+    private void handleFreeModeLoginDialog(final String url) {
+        final boolean showAlways = false;
+        SubConfiguration config = null;
+        try {
+            config = getPluginConfig();
+            if (showAlways || config.getBooleanProperty("featuredialog_all_Shown", Boolean.FALSE) == false) {
+                if (showAlways || config.getProperty("featuredialog_all_Shown2") == null) {
+                    showFreeModeLoginInformation(url);
+                } else {
+                    config = null;
+                }
+            } else {
+                config = null;
+            }
+        } catch (final Throwable e) {
+        } finally {
+            if (config != null) {
+                config.setProperty("featuredialog_all_Shown", Boolean.TRUE);
+                config.setProperty("featuredialog_all_Shown2", "shown");
+                config.save();
+            }
+        }
+    }
+
+    private void showFreeModeLoginInformation(final String url) {
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        String message = "";
+                        String title = null;
+                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                            title = br.getHost() + " ermöglicht ab sofort auch kostenlose Downloads";
+                            message += "Hallo liebe(r) " + br.getHost() + " NutzerIn\r\n";
+                            message += "Ab sofort kannst du diesen Anbieter auch nutzen ohne zu bezahlen!\r\n";
+                            message += "Mehr infos dazu findest du unter:\r\n" + new URL(url) + "\r\n";
+                        } else {
+                            title = br.getHost() + " allows free downloads from now on";
+                            message += "Hello dear " + br.getHost() + " user\r\n";
+                            message += "From now on this service lets you download for free as well.\r\n";
+                            message += "More information:\r\n" + new URL(url) + "\r\n";
+                        }
+                        JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
+                    } catch (Throwable e) {
+                    }
+                }
+            });
+        } catch (Throwable e) {
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    private void handleFreeModeDownloadDialog(final String url) {
+        final boolean showAlways = true;
+        SubConfiguration config = null;
+        try {
+            config = getPluginConfig();
+            if (showAlways || config.getBooleanProperty("featuredialog_all_Shown", Boolean.FALSE) == false) {
+                if (showAlways || config.getProperty("featuredialog_all_Shown2") == null) {
+                    showFreeModeDownloadInformation(url);
+                } else {
+                    config = null;
+                }
+            } else {
+                config = null;
+            }
+        } catch (final Throwable e) {
+        } finally {
+            if (config != null) {
+                config.setProperty("featuredialog_all_Shown", Boolean.TRUE);
+                config.setProperty("featuredialog_all_Shown2", "shown");
+                config.save();
+            }
+        }
+    }
+
+    private void showFreeModeDownloadInformation(final String url) {
+        try {
+            final boolean xSystem = CrossSystem.isOpenBrowserSupported();
+            SwingUtilities.invokeAndWait(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        String message = "";
+                        String title = null;
+                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                            title = br.getHost() + " möchte einen kostenlosen Download starten";
+                            message += "Hallo liebe(r) " + br.getHost() + " NutzerIn\r\n";
+                            if (xSystem) {
+                                message += "Um kostenlos von diesem Anbieter herunterladen zu können musst du den 'free mode' im Fenster das sich gleich öffnet aktivieren.\r\n";
+                            } else {
+                                message += "Um kostenlos von diesem Anbieter herunterladen zu können musst du den 'free mode' unter dieser Adresse aktivieren:\r\n" + new URL(url) + "\r\n";
+                            }
+                        } else {
+                            title = br.getHost() + " wants to start a free download";
+                            message += "Hello dear " + br.getHost() + " user\r\n";
+                            if (xSystem) {
+                                message += "To be able to use the free mode of this service, you will have to enable it in the browser-window which will open soon.\r\n";
+                            } else {
+                                message += "To be able to use the free mode of this service, you will have to enable it here:\r\n" + new URL(url) + "\r\n";
+                            }
+                        }
+                        JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
+                        if (xSystem) {
+                            CrossSystem.openURL(url);
+                        }
+                    } catch (Throwable e) {
+                    }
+                }
+            });
+        } catch (Throwable e) {
+        }
     }
 
     public void setFreeAccountTraffic(final AccountInfo ai) {
@@ -446,7 +573,13 @@ abstract public class ZeveraCore extends UseNet {
                 message = errortype;
             }
             if ("topup_required".equalsIgnoreCase(errortype)) {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, message);
+                /* {"status":"error","error":"topup_required","message":"Please purchase premium membership or activate free mode."} */
+                if (account != null && account.getType() == AccountType.FREE && allow_free_account_downloads) {
+                    handleFreeModeDownloadDialog("https://www." + this.br.getHost() + "/free");
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, message, 30 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, message);
+                }
             } else if ("content not in cache".equalsIgnoreCase(message)) {
                 /* 2019-02-19: Not all errors have an errortype given */
                 /* E.g. {"status":"error","message":"content not in cache"} */
