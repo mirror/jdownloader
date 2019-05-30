@@ -15,14 +15,25 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.gui.views.SelectionInfo.PluginView;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
+import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -40,13 +51,6 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.HashInfo;
-import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.gui.views.SelectionInfo.PluginView;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alldebrid.com" }, urls = { "https?://(?:[a-z]\\d+\\.alldebrid\\.com|[a-z0-9]+\\.alld\\.io)/dl/[a-z0-9]+/.+" })
 public class AllDebridCom extends antiDDoSForHost {
@@ -71,15 +75,17 @@ public class AllDebridCom extends antiDDoSForHost {
         }
     }
 
-    private static MultiHosterManagement mhm              = new MultiHosterManagement("alldebrid.com");
-    private static String                api              = "https://api.alldebrid.com";
-    private static final String          NOCHUNKS         = "NOCHUNKS";
-    private Account                      currAcc          = null;
-    private DownloadLink                 currDownloadLink = null;
-    private String                       token            = null;
-    private static Object                accLock          = new Object();
+    private static MultiHosterManagement mhm                             = new MultiHosterManagement("alldebrid.com");
+    private static String                api_base                        = "https://api.alldebrid.com";
+    private Account                      currAcc                         = null;
+    private DownloadLink                 currDownloadLink                = null;
+    private String                       token                           = null;
+    private static Object                accLock                         = new Object();
     // this is used by provider which calculates unique token to agent/client.
-    private static final String          agent            = "agent=JDownloader";
+    private static final String          agent                           = "agent=JDownloader";
+    /* False = use old username&password login (Deprecated!) */
+    private static final boolean         pinLOGIN                        = true;
+    private static final String          PROPERTY_TOKEN_EXPIRE_TIMESTAMP = "TOKEN_EXPIRE_TIMESTAMP";
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
@@ -87,12 +93,62 @@ public class AllDebridCom extends antiDDoSForHost {
         setConstants(account, null);
         synchronized (accLock) {
             if (token != null) {
-                getPage(api + "/user/login?" + agent + "&token=" + token);
+                /*
+                 * 2019-05-31: TODO: Also check validity of that token and renew it if it (nearly) expired, see:
+                 * PROPERTY_TOKEN_EXPIRE_TIMESTAMP
+                 */
+                getPage(api_base + "/user/login?" + agent + "&token=" + token);
             }
             {
-                final int error = parseError();
+                /* Full login */
+                int error = parseError();
                 if (token == null || error == 1 || error == 5) {
-                    getPage(api + "/user/login?" + agent + "&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                    logger.info("Performing full login");
+                    if (pinLOGIN) {
+                        /*
+                         * 2019-05-31: TODO: This way, a user could add one account XX times as username/password are not required. Find an
+                         * identifier so we can prohibit this. Username/E-Mail combination should do the trick.
+                         */
+                        getPage(api_base + "/pin/get?" + agent);
+                        final String user_url = PluginJSonUtils.getJson(br, "user_url");
+                        final String check_url = PluginJSonUtils.getJson(br, "check_url");
+                        if (StringUtils.isEmpty(user_url) || StringUtils.isEmpty(check_url)) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        handlePINLoginDialog(user_url);
+                        for (int i = 0; i <= 19; i++) {
+                            logger.info("Waiting for user to authorize application: " + i);
+                            getPage(check_url);
+                            error = parseError();
+                            if (error != -1) {
+                                /* Something went wrong */
+                                break;
+                            }
+                            Thread.sleep(3000);
+                            token = PluginJSonUtils.getJson(br, "token");
+                            if (!StringUtils.isEmpty(token)) {
+                                break;
+                                // final String error = PluginJSonUtils.getJson(br, "error");
+                            }
+                        }
+                        if (StringUtils.isEmpty(token)) {
+                            throw new AccountInvalidException("User failed to authorize PIN");
+                        }
+                        final String expires_in_secondsStr = PluginJSonUtils.getJson(br, "expires_in");
+                        if (expires_in_secondsStr != null && expires_in_secondsStr.matches("\\d+")) {
+                            /* 2019-05-31: TODO: Check how long this token really lasts. */
+                            account.setProperty(PROPERTY_TOKEN_EXPIRE_TIMESTAMP, System.currentTimeMillis() + (Long.parseLong(expires_in_secondsStr) - 30) * 1000);
+                        }
+                        getPage(api_base + "/user/login?" + agent + "&token=" + token);
+                    } else {
+                        /* Old method - do not use this anymore! */
+                        getPage(api_base + "/user/login?" + agent + "&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                        if (StringUtils.isEmpty(token)) {
+                            throw new AccountInvalidException();
+                        }
+                    }
+                } else {
+                    logger.info("Token login successful");
                 }
             }
             handleErrors();
@@ -101,7 +157,6 @@ public class AllDebridCom extends antiDDoSForHost {
                 if (!isPremium) {
                     throw new AccountInvalidException("Free accounts are not supported!");
                 }
-                token = PluginJSonUtils.getJson(br, "token");
                 account.setProperty("token", token);
                 final String premiumUntil = PluginJSonUtils.getJson(br, "premiumUntil");
                 ac.setValidUntil(Long.parseLong(premiumUntil) * 1000l);
@@ -109,7 +164,7 @@ public class AllDebridCom extends antiDDoSForHost {
         }
         {
             // /hosts/domains will return offline hosts.
-            getPage(api + "/hosts");
+            getPage(api_base + "/hosts");
             final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             final ArrayList<Object> hosts = (ArrayList<Object>) entries.get("hosts");
             if (hosts != null) {
@@ -141,6 +196,79 @@ public class AllDebridCom extends antiDDoSForHost {
         return ac;
     }
 
+    @SuppressWarnings("deprecation")
+    private void handlePINLoginDialog(final String pin_url) {
+        final boolean showAlways = true;
+        SubConfiguration config = null;
+        try {
+            config = getPluginConfig();
+            if (showAlways || config.getBooleanProperty("featuredialog_all_Shown", Boolean.FALSE) == false) {
+                if (showAlways || config.getProperty("featuredialog_all_Shown2") == null) {
+                    showPINLoginInformation(pin_url);
+                } else {
+                    config = null;
+                }
+            } else {
+                config = null;
+            }
+        } catch (final Throwable e) {
+        } finally {
+            if (config != null) {
+                config.setProperty("featuredialog_all_Shown", Boolean.TRUE);
+                config.setProperty("featuredialog_all_Shown2", "shown");
+                config.save();
+            }
+        }
+    }
+
+    private static void showPINLoginInformation(final String pin_url) {
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        String message = "";
+                        String title = null;
+                        final boolean xSystem = CrossSystem.isOpenBrowserSupported();
+                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                            title = "Alldebrid.com - neue Login-Methode";
+                            message += "Hallo liebe(r) alldebrid.com NutzerIn\r\n";
+                            message += "Seit diesem Update hat sich die Login-Methode dieses Anbieters geändert um die sicherheit zu erhöhen!\r\n";
+                            message += "Um deinen Account weiterhin in JDownloader verwenden zu können musst du folgende Schritte beachten:\r\n";
+                            message += "1. Gehe sicher, dass du im Browser in deinem Alldebrid Account eingeloggt bist.\r\n";
+                            if (xSystem) {
+                                message += "2. Nach dem Bestätigen dieses Dialogs wird sich ein Link öffnen.\r\n";
+                            } else {
+                                message += "2. Öffne diesen Link im Browser:\r\n" + new URL(pin_url) + "\r\n";
+                            }
+                            message += "3. Bestätige die PIN im Browser.\r\n";
+                            message += "Dein Account sollte nach einigen Sekunden von JDownloader akzeptiert werden.\r\n";
+                        } else {
+                            title = "Alldebrid.com - New login method";
+                            message += "Hello dear alldebrid.com user\r\n";
+                            message += "This update has changed the login method of alldebrid.com in favor of security.\r\n";
+                            message += "In order to keep using this service in JDownloader you need to follow these steps:\r\n";
+                            message += "1. Make sure that you're logged in your alldebrid.com account with your default browser.\r\n";
+                            if (xSystem) {
+                                message += "2. After confirming this dialog, a browser window will open.\r\n";
+                            } else {
+                                message += "2. Open this URL in your browser:\r\n" + new URL(pin_url) + "\r\n";
+                            }
+                            message += "3. Confirm the PIN you see in the browser window.\r\n";
+                            message += "Your account should be accepted in JDownloader within a few seconds.\r\n";
+                        }
+                        JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
+                        if (xSystem) {
+                            CrossSystem.openURL(pin_url);
+                        }
+                    } catch (Throwable e) {
+                    }
+                }
+            });
+        } catch (Throwable e) {
+        }
+    }
+
     private Integer parseError() {
         final String error = PluginJSonUtils.getJsonValue(br, "errorCode");
         if (error == null || !error.matches("\\d+")) {
@@ -162,7 +290,7 @@ public class AllDebridCom extends antiDDoSForHost {
         // everything is aok
         case -1:
             return;
-            // login related
+        // login related
         case 2:
             throw new AccountInvalidException("Invalid User/Password!");
         case 3:
@@ -248,7 +376,7 @@ public class AllDebridCom extends antiDDoSForHost {
         synchronized (accLock) {
             final boolean cache = loadToken(account, link);
             logger.info("Cached 'token' = " + String.valueOf(cache));
-            final String unlock = api + "/link/unlock?" + agent + "&link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this));
+            final String unlock = api_base + "/link/unlock?" + agent + "&link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this));
             getPage(unlock + "&token=" + token);
             if (11 == parseError()) {
                 loadToken(account, link);
@@ -274,10 +402,6 @@ public class AllDebridCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         showMessage(link, "Task 2: Download begins!");
-        int maxChunks = 0;
-        if (link.getBooleanProperty(AllDebridCom.NOCHUNKS, false)) {
-            maxChunks = 1;
-        }
         final boolean useVerifiedFileSize;
         if (br != null && PluginJSonUtils.parseBoolean(PluginJSonUtils.getJsonValue(br, "paws"))) {
             logger.info("don't use verified filesize because 'paws'!");
@@ -336,7 +460,7 @@ public class AllDebridCom extends antiDDoSForHost {
                 return host;
             }
         };
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLinkDownloadable, br.createGetRequest(genlink), true, maxChunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLinkDownloadable, br.createGetRequest(genlink), true, 0);
         if (dl.getConnection().getResponseCode() == 404) {
             /* file offline */
             dl.getConnection().disconnect();
@@ -366,22 +490,7 @@ public class AllDebridCom extends antiDDoSForHost {
         if (!isDirectLink(link)) {
             link.setProperty("genLinkAllDebrid", genlink);
         }
-        if (!dl.startDownload()) {
-            try {
-                if (dl.externalDownloadStop()) {
-                    return;
-                }
-            } catch (final Throwable e) {
-            }
-            final String errormessage = link.getLinkStatus().getErrorMessage();
-            if (errormessage != null && (errormessage.startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload")) || errormessage.equals("Unerwarteter Mehrfachverbindungsfehlernull") || "Unexpected rangeheader format:null".equals(errormessage))) {
-                /* unknown error, we disable multiple chunks */
-                if (link.getBooleanProperty(AllDebridCom.NOCHUNKS, false) == false) {
-                    link.setProperty(AllDebridCom.NOCHUNKS, Boolean.valueOf(true));
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-            }
-        }
+        dl.startDownload();
     }
 
     private boolean loadToken(final Account account, final DownloadLink downloadLink) throws Exception {
