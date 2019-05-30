@@ -141,7 +141,7 @@ public class VimeoCom extends PluginForHost {
         finalURL = downloadLink.getStringProperty("directURL", null);
         if (finalURL != null) {
             try {
-                /* Some videos are hosted on Amazon S3, don't use head requests for those */
+                /* Some videos are hosted on Amazon S3, don't use head requests for this reason */
                 con = br.openGetConnection(finalURL);
                 if (con.getContentType() != null && !con.getContentType().contains("json") && !con.getContentType().contains("html") && !con.getContentType().contains("vnd.apple.mpegurl") && con.isOK()) {
                     downloadLink.setVerifiedFileSize(con.getLongContentLength());
@@ -243,7 +243,7 @@ public class VimeoCom extends PluginForHost {
             case WEB:
             case SUBTITLE:
                 try {
-                    /* Some videos are hosted on Amazon S3, don't use head requests for those */
+                    /* Some videos are hosted on Amazon S3, don't use head requests for this reason */
                     con = br.openGetConnection(finalURL);
                     if (StringUtils.containsIgnoreCase(con.getContentType(), "json") || StringUtils.containsIgnoreCase(finalURL, "cold_request=1")) {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Defrosting download, please wait", 30 * 60 * 1000l);
