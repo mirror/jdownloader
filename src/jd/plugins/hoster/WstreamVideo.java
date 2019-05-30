@@ -131,11 +131,7 @@ public class WstreamVideo extends XFileSharingProBasic {
         return false;
     }
 
-    @Override
-    public boolean supports_availablecheck_filesize_alt_fast() {
-        /* 2019-04-24: Special */
-        return false;
-    }
+    
 
     @Override
     public boolean prefer_availablecheck_filesize_alt_type_old() {

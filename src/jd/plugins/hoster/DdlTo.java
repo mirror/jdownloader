@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -26,9 +28,6 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-import jd.utils.locale.JDL;
-
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DdlTo extends XFileSharingProBasic {
@@ -180,6 +179,6 @@ public class DdlTo extends XFileSharingProBasic {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), MaxSimultaneousDownloads_LIMIT, MaxSimultaneousDownloads, JDL.L("", "Max. Downloads (Free) per connection")).setDefaultValue(0));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), MaxSimultaneousDownloads_LIMIT, MaxSimultaneousDownloads, "Max. simultaneous downloads (Free+Free account)").setDefaultValue(0));
     }
 }

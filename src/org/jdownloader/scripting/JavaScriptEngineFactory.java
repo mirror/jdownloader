@@ -1107,18 +1107,26 @@ public class JavaScriptEngineFactory {
      * 2. Our parser decides whether to use Long or Integer but most times we need Long also we always need more code to ensure to get the
      * connect data type. This makes it easier.
      */
-    public static long toLong(final Object value, final long defaultvalue) {
+    public static long toLong(final Object value, final long fallback) {
         try {
             if (value instanceof String) {
-                return Long.parseLong((String) value);
+                final String numberStr = (String) value;
+                if (numberStr.matches("\\d+")) {
+                    return Long.parseLong((String) value);
+                } else if (numberStr.matches("\\d+\\.\\d+")) {
+                    return (long) Double.parseDouble(numberStr);
+                } else {
+                    /* No number at all --> Return fallback */
+                    return fallback;
+                }
             } else if (value instanceof Number) {
                 return ((Number) value).longValue();
             } else {
-                return defaultvalue;
+                return fallback;
             }
         } catch (final Throwable e) {
             LogController.CL(true).log(e);
-            return defaultvalue;
+            return fallback;
         }
     }
 

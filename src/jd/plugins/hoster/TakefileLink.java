@@ -96,10 +96,6 @@ public class TakefileLink extends XFileSharingProBasic {
         return super.supports_precise_expire_date();
     }
 
-    
-
-    
-
     @Override
     public boolean isVideohosterEmbed() {
         return super.isVideohosterEmbed();
@@ -121,16 +117,6 @@ public class TakefileLink extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean supports_availablecheck_filesize_alt_fast() {
-        return super.supports_availablecheck_filesize_alt_fast();
-    }
-
-    @Override
-    public boolean prefer_availablecheck_filesize_alt_type_old() {
-        return super.prefer_availablecheck_filesize_alt_type_old();
-    }
-
-    @Override
     public boolean supports_availablecheck_filename_abuse() {
         return super.supports_availablecheck_filename_abuse();
     }
@@ -143,7 +129,7 @@ public class TakefileLink extends XFileSharingProBasic {
     @Override
     public boolean isOffline(final DownloadLink link) {
         final String fuid = super.getFUIDFromURL(link);
-        boolean isOffline = super.isOffline(this.br, link);
+        boolean isOffline = super.isOffline(link);
         if (!br.getURL().contains(fuid) || (br.getRedirectLocation() != null && !br.getRedirectLocation().contains(fuid))) {
             /* 2018-11-15: Special - redirect to: https://takefile.link/upgrade */
             isOffline = true;
