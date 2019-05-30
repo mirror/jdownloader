@@ -2613,7 +2613,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                // /* Returns ballance, space, days(?premium days remaining?) */
+                // /* Returns ballance, space, days(?premium days remaining?) - this call is not supported by all XFS sites - in this case
+                // it'll return 404. */
                 // final Form statsform = new Form();
                 // statsform.setMethod(MethodType.POST);
                 // statsform.setAction(getMainPage() + "/cgi-bin/uapi.cgi");
