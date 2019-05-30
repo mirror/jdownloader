@@ -121,10 +121,7 @@ public class FourfileNet extends XFileSharingProBasic {
         return super.supports_availablecheck_alt();
     }
 
-    @Override
-    public boolean supports_availablecheck_filesize_alt_fast() {
-        return super.supports_availablecheck_filesize_alt_fast();
-    }
+    
 
     @Override
     public boolean prefer_availablecheck_filesize_alt_type_old() {

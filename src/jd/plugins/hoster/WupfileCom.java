@@ -19,13 +19,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class WupfileCom extends XFileSharingProBasic {
@@ -46,7 +46,7 @@ public class WupfileCom extends XFileSharingProBasic {
     @Override
     public String rewriteHost(String host) {
         if (host == null) {
-            // signal rewrite support!
+            /* signal rewrite support! */
             return domains[0];
         }
         /* 2019-05-22: Special: salefiles.com is now wupfile.com */

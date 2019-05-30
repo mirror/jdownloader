@@ -25,19 +25,32 @@ import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XvideosharingCom extends XFileSharingProBasic {
     public XvideosharingCom(final PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium(super.getPremiumLink());
+        this.enablePremium(super.getPurchasePremiumURL());
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        /* 2019-05-30: Special: redirects to /<fuid>.html !! */
+        final boolean followRedirects = this.br.isFollowingRedirects();
+        if (!followRedirects) {
+            this.br.setFollowRedirects(true);
+        }
+        final AvailableStatus status = super.requestFileInformation(link);
+        this.br.setFollowRedirects(followRedirects);
+        return status;
     }
 
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
-     * limit-info:<br />
+     * limit-info: 2019-05-30: Tested<br />
      * captchatype-info: 2019-02-08: null<br />
      * other:<br />
      */
@@ -55,7 +68,11 @@ public class XvideosharingCom extends XFileSharingProBasic {
 
     @Override
     public boolean supports_availablecheck_filesize_html() {
-        return false;
+        /*
+         * 2019-05-30: Special - usually videohosts do not display filesizes! This videohosts displays filesizes but only in logged-in
+         * state!
+         */
+        return true;
     }
 
     @Override
@@ -107,8 +124,9 @@ public class XvideosharingCom extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean supports_availablecheck_filesize_via_embedded_video() {
-        return super.supports_availablecheck_filesize_via_embedded_video();
+    protected boolean supports_api() {
+        /* 2019-05-30: Special */
+        return true;
     }
 
     /** 2019-02-08: Special */

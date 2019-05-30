@@ -72,6 +72,12 @@ public class XfilesharingCom extends XFileSharingProBasic {
     }
 
     @Override
+    public void loginWebsite(final Account account, final boolean force) throws Exception {
+        /* 2019-05-29: Special and experimental */
+        loginAPP(account, force);
+    }
+
+    @Override
     public int getMaxSimultaneousFreeAnonymousDownloads() {
         return -1;
     }
