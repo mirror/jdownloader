@@ -2646,6 +2646,9 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
+                if (!getAPIKey(account).matches("[a-z0-9]+")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid APIKEY - only lowercase characters and numbers are allowed!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 getPage(this.getMainPage() + "/api/account/info?key=" + getAPIKey(account));
                 final String msg = PluginJSonUtils.getJson(br, "msg");
                 final String status = PluginJSonUtils.getJson(br, "status");
