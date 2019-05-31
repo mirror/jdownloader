@@ -65,8 +65,7 @@ public class FileCryptCc extends PluginForDecrypt {
         return 1;
     }
 
-    private final String NO_SOLVEMEDIA = "1";
-    private String       userretrys    = "10";
+    private final String NEXT_RETRY = "0";
 
     public FileCryptCc(PluginWrapper wrapper) {
         super(wrapper);
@@ -104,7 +103,7 @@ public class FileCryptCc extends PluginForDecrypt {
         }
         // Separate password and captcha. this is easier for count reasons!
         int counter = -1;
-        final int retry = Integer.parseInt(userretrys);
+        final int retry = 10;
         final List<String> passwords = getPreSetPasswords();
         final HashSet<String> avoidRetry = new HashSet<String>();
         final String lastUsedPassword = this.getPluginConfig().getStringProperty("last_used_password", null);
@@ -188,32 +187,28 @@ public class FileCryptCc extends PluginForDecrypt {
                 captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 submitForm(captchaForm);
             } else if (captchaForm != null && captchaForm.containsHTML("solvemedia\\.com/papi/")) {
-                if (getPluginConfig().getBooleanProperty(NO_SOLVEMEDIA, false) == false) {
-                    final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
-                    File cf = null;
-                    try {
-                        cf = sm.downloadCaptcha(getLocalCaptchaFile());
-                    } catch (final Exception e) {
-                        if (org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
-                            throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
-                        }
-                        throw e;
+                final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
+                File cf = null;
+                try {
+                    cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                } catch (final Exception e) {
+                    if (org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
                     }
-                    final String code = getCaptchaCode("solvemedia", cf, param);
-                    if (StringUtils.isEmpty(code)) {
-                        if (counter + 1 < retry) {
-                            continue;
-                        } else {
-                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                        }
-                    }
-                    final String chid = sm.getChallenge(code);
-                    captchaForm.put("adcopy_response", Encoding.urlEncode(code));
-                    captchaForm.put("adcopy_challenge", chid);
-                    submitForm(captchaForm);
-                } else {
-                    continue;
+                    throw e;
                 }
+                final String code = getCaptchaCode("solvemedia", cf, param);
+                if (StringUtils.isEmpty(code)) {
+                    if (counter + 1 < retry) {
+                        continue;
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
+                }
+                final String chid = sm.getChallenge(code);
+                captchaForm.put("adcopy_response", Encoding.urlEncode(code));
+                captchaForm.put("adcopy_challenge", chid);
+                submitForm(captchaForm);
             } else if (captchaForm != null && captchaForm.containsHTML("capcode")) {
                 Challenge<String> challenge = new KeyCaptcha(this, br, createDownloadlink(parameter)).createChallenge(this);
                 try {
@@ -236,12 +231,9 @@ public class FileCryptCc extends PluginForDecrypt {
                     continue;
                 }
                 submitForm(captchaForm);
-            } else if (captchaForm != null && captchaForm.containsHTML("class=\"coinhive\\-captcha\"")) {
-                logger.info("Coinhive captcha is not yet supported");
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             } else if (StringUtils.containsIgnoreCase(captcha, "cutcaptcha")) {
                 logger.info("cutcaptcha captcha is not yet supported:retry left:" + cutCaptcha);
-                if (cutCaptcha-- == 0 || true) {
+                if (cutCaptcha-- == 0 || true && getPluginConfig().getBooleanProperty(NEXT_RETRY, false) == false) {
                     // fallback to rc2 no longer working
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 } else {
@@ -526,16 +518,7 @@ public class FileCryptCc extends PluginForDecrypt {
         cleanUpHTML();
     }
 
-    private void setConfiguredDomain() {
-        final int chosenRetrys = getPluginConfig().getIntegerProperty(retrys, 0);
-        userretrys = this.allretrys[chosenRetrys];
-    }
-
-    private final String   retrys    = "retrys";
-    private final String[] allretrys = new String[] { "10", "15", "20" };
-
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), NO_SOLVEMEDIA, JDL.L("plugins.decrypter.filecryptcc.nosolvemedia", "No solvemedia?")).setDefaultValue(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), retrys, allretrys, JDL.L("plugins.decrypter.filecryptcc.retrys", "Retrys")).setDefaultValue(0));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), NEXT_RETRY, JDL.L("plugins.decrypter.filecryptcc.retry", "Retrys?")).setDefaultValue(false));
     }
 }
