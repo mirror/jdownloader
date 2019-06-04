@@ -25,7 +25,8 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.net.usenet.InvalidAuthException;
 import org.jdownloader.gui.dialog.AskDownloadPasswordDialogInterface;
-import org.jdownloader.gui.dialog.AskForPasswordDialog;
+import org.jdownloader.gui.dialog.AskForDownloadLinkDialog;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 
@@ -181,7 +182,7 @@ public class XSUseNetCom extends UseNet {
             } catch (InvalidAuthException e) {
                 logger.log(e);
                 final DownloadLink dummyLink = new DownloadLink(this, "Account:" + getUsername(account), getHost(), "https://www.xsusenet.com/", true);
-                final AskDownloadPasswordDialogInterface handle = UIOManager.I().show(AskDownloadPasswordDialogInterface.class, new AskForPasswordDialog("Please enter your XSUsenet Usenet Password", dummyLink));
+                final AskDownloadPasswordDialogInterface handle = UIOManager.I().show(AskDownloadPasswordDialogInterface.class, new AskForDownloadLinkDialog(_GUI.T.AskForPasswordDialog_AskForPasswordDialog_title_(), "Please enter your XSUsenet Usenet Password", dummyLink));
                 if (handle.getCloseReason() == CloseReason.OK) {
                     password = handle.getText();
                     if (StringUtils.isNotEmpty(password)) {

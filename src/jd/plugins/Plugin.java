@@ -73,10 +73,11 @@ import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.dialog.AskCrawlerPasswordDialogInterface;
 import org.jdownloader.gui.dialog.AskDownloadPasswordDialogInterface;
-import org.jdownloader.gui.dialog.AskForCryptedLinkPasswordDialog;
-import org.jdownloader.gui.dialog.AskForPasswordDialog;
+import org.jdownloader.gui.dialog.AskForCryptedLinkDialog;
+import org.jdownloader.gui.dialog.AskForDownloadLinkDialog;
 import org.jdownloader.gui.dialog.AskForUserAndPasswordDialog;
 import org.jdownloader.gui.dialog.AskUsernameAndPasswordDialogInterface;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.UserIOProgress;
@@ -302,27 +303,22 @@ public abstract class Plugin implements ActionListener {
      * @throws DecrypterException
      *             if the user aborts the input
      */
-    public static String getUserInput(final String message, final CryptedLink link) throws DecrypterException {
-        // final String password = PluginUtils.askPassword(message, link);
-        // if (password == null) { throw new DecrypterException(DecrypterException.PASSWORD); }
-        // return password;
-        // UserIOProgress prg = new UserIOProgress(message);
-        // PluginProgress old = null;
-        try {
-            // old = link.setPluginProgress(prg);
-            AskCrawlerPasswordDialogInterface handle = UIOManager.I().show(AskCrawlerPasswordDialogInterface.class, new AskForCryptedLinkPasswordDialog(message, link, getCurrentActivePlugin()));
-            if (handle.getCloseReason() == CloseReason.OK) {
-                String password = handle.getText();
-                if (StringUtils.isEmpty(password)) {
-                    throw new DecrypterException(DecrypterException.PASSWORD);
-                }
-                return password;
-            } else {
+    public static String getUserInput(final String title, final String message, final CryptedLink link) throws DecrypterException {
+        final AskCrawlerPasswordDialogInterface handle = UIOManager.I().show(AskCrawlerPasswordDialogInterface.class, new AskForCryptedLinkDialog(title, message, link, getCurrentActivePlugin()));
+        if (handle.getCloseReason() == CloseReason.OK) {
+            final String password = handle.getText();
+            if (StringUtils.isEmpty(password)) {
                 throw new DecrypterException(DecrypterException.PASSWORD);
+            } else {
+                return password;
             }
-        } finally {
-            // link.compareAndSetPluginProgress(prg, old);
+        } else {
+            throw new DecrypterException(DecrypterException.PASSWORD);
         }
+    }
+
+    public static String getUserInput(final String message, final CryptedLink link) throws DecrypterException {
+        return getUserInput(_GUI.T.AskForPasswordDialog_AskForPasswordDialog_title_(), message, link);
     }
 
     public static Plugin getCurrentActivePlugin() {
@@ -442,7 +438,7 @@ public abstract class Plugin implements ActionListener {
      * @throws PluginException
      *             if the user aborts the input
      */
-    public static String getUserInput(String message, final DownloadLink link) throws PluginException {
+    public static String getUserInput(final String title, String message, final DownloadLink link) throws PluginException {
         if (message == null) {
             message = "Please enter the password to continue...";
         }
@@ -451,19 +447,24 @@ public abstract class Plugin implements ActionListener {
         prg.setDisplayInProgressColumnEnabled(false);
         try {
             link.addPluginProgress(prg);
-            AskDownloadPasswordDialogInterface handle = UIOManager.I().show(AskDownloadPasswordDialogInterface.class, new AskForPasswordDialog(message, link));
+            final AskDownloadPasswordDialogInterface handle = UIOManager.I().show(AskDownloadPasswordDialogInterface.class, new AskForDownloadLinkDialog(title, message, link));
             if (handle.getCloseReason() == CloseReason.OK) {
-                String password = handle.getText();
+                final String password = handle.getText();
                 if (StringUtils.isEmpty(password)) {
                     throw new PluginException(LinkStatus.ERROR_FATAL, _JDT.T.plugins_errors_wrongpassword());
+                } else {
+                    return password;
                 }
-                return password;
             } else {
                 throw new PluginException(LinkStatus.ERROR_FATAL, _JDT.T.plugins_errors_wrongpassword());
             }
         } finally {
             link.removePluginProgress(prg);
         }
+    }
+
+    public static String getUserInput(String message, final DownloadLink link) throws PluginException {
+        return getUserInput(null, message, link);
     }
 
     private volatile ConfigContainer config;
