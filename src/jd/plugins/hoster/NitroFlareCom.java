@@ -17,16 +17,12 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import javax.swing.JOptionPane;
-import javax.swing.SwingUtilities;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -50,7 +46,6 @@ import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
@@ -460,26 +455,6 @@ public class NitroFlareCom extends antiDDoSForHost {
             if (pass.matches("(?-i)NF[a-zA-Z0-9]{10}")) {
                 // no need to urlencode, this is always safe.
                 // return "user=&premiumKey=" + pass;
-                try {
-                    SwingUtilities.invokeAndWait(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                String title = "Nitroflare no longer accepts PremiumKeys";
-                                String message = "You are using PremiumKey! These are no longer accepted on Nitroflare.\r\n";
-                                message += "You will need to bind your PremiumKey to account. Please Click -YES- for more information.";
-                                if (CrossSystem.isOpenBrowserSupported()) {
-                                    int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null);
-                                    if (JOptionPane.OK_OPTION == result) {
-                                        CrossSystem.openURL(new URL(baseURL + "/upgradeTutorial"));
-                                    }
-                                }
-                            } catch (Throwable e) {
-                            }
-                        }
-                    });
-                } catch (Throwable e) {
-                }
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPremiumKeys not accepted, you need to use Account (email and password).", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
             if (inValidate(user) || !user.matches(".+@.+")) {
