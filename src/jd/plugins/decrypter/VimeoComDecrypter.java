@@ -112,7 +112,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
 
     private boolean retryWithCustomReferer(final CryptedLink param, final PluginException e, final Browser br, final AtomicReference<String> referer) throws Exception {
         if (isEmbeddedForbidden(e, br) && SubConfiguration.getConfig("vimeo.com").getBooleanProperty("ASK_REF", Boolean.TRUE)) {
-            final String vimeo_asked_referer = getUserInput("Please enter referer for this link", param);
+            final String vimeo_asked_referer = getUserInput("Referer?", "Please enter referer for this link", param);
             if (StringUtils.isNotEmpty(vimeo_asked_referer) && !StringUtils.equalsIgnoreCase(Browser.getHost(vimeo_asked_referer), "vimeo.com")) {
                 referer.set(vimeo_asked_referer);
                 return true;

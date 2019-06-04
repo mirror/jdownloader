@@ -970,7 +970,7 @@ public class ScriptEnvironment {
 
             @Override
             public void pack() {
-                this.getDialog().pack();
+                getDialog().pack();
             }
         });
     }

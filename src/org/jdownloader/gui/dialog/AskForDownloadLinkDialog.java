@@ -3,6 +3,9 @@ package org.jdownloader.gui.dialog;
 import java.awt.Component;
 import java.awt.Dialog.ModalityType;
 import java.awt.Font;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowFocusListener;
+import java.util.ArrayList;
 
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -10,8 +13,9 @@ import javax.swing.JPanel;
 import javax.swing.JTextPane;
 import javax.swing.SwingConstants;
 
-import jd.plugins.CryptedLink;
-import jd.plugins.Plugin;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
 import org.appwork.swing.MigPanel;
 import org.appwork.uio.UIOManager;
@@ -23,17 +27,16 @@ import org.appwork.utils.swing.dialog.InputDialog;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.images.AbstractIcon;
 
-public class AskForCryptedLinkPasswordDialog extends InputDialog implements AskCrawlerPasswordDialogInterface {
-    private CryptedLink link;
-    private Plugin      plugin;
+public class AskForDownloadLinkDialog extends InputDialog implements AskDownloadPasswordDialogInterface {
+    private DownloadLink downloadLink;
 
-    public AskForCryptedLinkPasswordDialog(String message, CryptedLink link, Plugin plugin) {
-        super(UIOManager.LOGIC_COUNTDOWN, _GUI.T.AskForPasswordDialog_AskForPasswordDialog_title_(), message, null, new AbstractIcon(IconKey.ICON_PASSWORD, 32), _GUI.T.lit_continue(), null);
-        this.link = link;
+    public AskForDownloadLinkDialog(final String title, String message, DownloadLink link) {
+        super(UIOManager.LOGIC_COUNTDOWN, title, message, null, new AbstractIcon(IconKey.ICON_PASSWORD, 32), _GUI.T.lit_continue(), null);
+        this.downloadLink = link;
         setTimeout(10 * 60 * 1000);
-        this.plugin = plugin;
     }
 
     @Override
@@ -66,10 +69,15 @@ public class AskForCryptedLinkPasswordDialog extends InputDialog implements AskC
             // prefered textFIled size here.
             textField.setPreferredSize(textField.getPreferredSize());
         }
-        p.add(SwingUtils.toBold(new JLabel(_GUI.T.lit_url())), "split 2,sizegroup left,alignx left");
-        p.add(leftLabel(link.getCryptedUrl()));
-        p.add(SwingUtils.toBold(new JLabel(_GUI.T.lit_plugin())), "split 2,sizegroup left,alignx left");
-        DomainInfo di = DomainInfo.getInstance(plugin.getHost());
+        String packagename = downloadLink.getParentNode().getName();
+        p.add(SwingUtils.toBold(new JLabel(_GUI.T.lit_filename())), "split 2,sizegroup left,alignx left");
+        p.add(leftLabel(downloadLink.getView().getDisplayName()));
+        if (downloadLink.getParentNode() != FilePackage.getDefaultFilePackage()) {
+            p.add(SwingUtils.toBold(new JLabel(_GUI.T.IfFileExistsDialog_layoutDialogContent_package())), "split 2,sizegroup left,alignx left");
+            p.add(leftLabel(packagename));
+        }
+        p.add(SwingUtils.toBold(new JLabel(_GUI.T.lit_hoster())), "split 2,sizegroup left,alignx left");
+        DomainInfo di = downloadLink.getDomainInfo();
         JLabel ret = new JLabel(di.getTld());
         ret.setHorizontalAlignment(SwingConstants.LEFT);
         ret.setIcon(di.getFavIcon());
@@ -79,6 +87,18 @@ public class AskForCryptedLinkPasswordDialog extends InputDialog implements AskC
         input.setText(defaultMessage);
         p.add(SwingUtils.toBold(new JLabel(_GUI.T.ExtractionListenerList_layoutDialogContent_password())), "split 2,sizegroup left,alignx left");
         p.add((JComponent) input, "w 450,pushx,growx");
+        getDialog().addWindowFocusListener(new WindowFocusListener() {
+            @Override
+            public void windowLostFocus(WindowEvent e) {
+            }
+
+            @Override
+            public void windowGainedFocus(WindowEvent e) {
+                final ArrayList<AbstractNode> selection = new ArrayList<AbstractNode>();
+                selection.add(downloadLink);
+                DownloadsTableModel.getInstance().setSelectedObjects(selection);
+            }
+        });
         return p;
     }
 
@@ -94,12 +114,25 @@ public class AskForCryptedLinkPasswordDialog extends InputDialog implements AskC
     }
 
     @Override
-    public String getPluginHost() {
-        return plugin.getHost();
+    public long getLinkID() {
+        return downloadLink.getUniqueID().getID();
     }
 
     @Override
-    public String getUrl() {
-        return link.getCryptedUrl();
+    public String getLinkName() {
+        return downloadLink.getView().getDisplayName();
+    }
+
+    @Override
+    public String getLinkHost() {
+        return downloadLink.getDomainInfo().getTld();
+    }
+
+    @Override
+    public String getPackageName() {
+        if (downloadLink.getParentNode() == FilePackage.getDefaultFilePackage()) {
+            return null;
+        }
+        return downloadLink.getParentNode().getName();
     }
 }
