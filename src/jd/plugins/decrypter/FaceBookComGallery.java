@@ -21,15 +21,10 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.regex.Pattern;
 
-import javax.swing.JOptionPane;
-import javax.swing.SwingUtilities;
-
 import jd.PluginWrapper;
-import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.LinkCrawlerThread;
-import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
@@ -1353,53 +1348,14 @@ public class FaceBookComGallery extends PluginForDecrypt {
     private boolean login() throws Exception {
         /** Login stuff begin */
         final PluginForHost facebookPlugin = JDUtilities.getPluginForHost("facebook.com");
-        Account aa = AccountController.getInstance().getValidAccount(facebookPlugin);
-        boolean addAcc = false;
-        if (aa == null) {
-            SubConfiguration config = null;
-            try {
-                config = this.getPluginConfig();
-                if (config.getBooleanProperty("infoShown", Boolean.FALSE) == false) {
-                    if (config.getProperty("infoShown2") == null) {
-                        showFreeDialog();
-                    } else {
-                        config = null;
-                    }
-                } else {
-                    config = null;
-                }
-            } catch (final Throwable e) {
-            } finally {
-                if (config != null) {
-                    config.setProperty("infoShown", Boolean.TRUE);
-                    config.setProperty("infoShown2", "shown");
-                    config.save();
-                }
-            }
-            // User wants to use the account
-            if (this.DIALOGRETURN == 0) {
-                String username = UserIO.getInstance().requestInputDialog("Enter Loginname for facebook.com :");
-                if (username == null) {
-                    return false;
-                }
-                String password = UserIO.getInstance().requestInputDialog("Enter password for facebook.com :");
-                if (password == null) {
-                    return false;
-                }
-                aa = new Account(username, password);
-                addAcc = true;
-            }
-        }
+        final Account aa = AccountController.getInstance().getValidAccount(facebookPlugin);
         if (aa != null) {
             try {
                 ((jd.plugins.hoster.FaceBookComVideos) facebookPlugin).login(aa, this.br);
                 // New account is valid, let's add it to the premium overview
-                if (addAcc) {
-                    AccountController.getInstance().addAccount(facebookPlugin, aa);
-                }
                 return true;
             } catch (final PluginException e) {
-                aa.setValid(false);
+                handleAccountException(aa, e);
                 logger.info("Account seems to be invalid, returnung empty linklist!");
                 return false;
             }
@@ -1447,39 +1403,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
         };
         this.setLogger(logger);
         ((LinkCrawlerThread) Thread.currentThread()).setLogger(logger);
-    }
-
-    private void showFreeDialog() {
-        try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        final String lng = System.getProperty("user.language");
-                        String message = null;
-                        String title = null;
-                        if ("de".equalsIgnoreCase(lng)) {
-                            title = "Facebook.com Gallerie/Photo Download";
-                            message = "Du versucht gerade, eine Facebook Gallerie/Photo zu laden.\r\n";
-                            message += "Für die meisten dieser Links wird ein gültiger Facebook Account benötigt!\r\n";
-                            message += "Deinen Account kannst du in den Einstellungen als Premiumaccount hinzufügen.\r\n";
-                            message += "Solltest du dies nicht tun, kann JDownloader nur Facebook Links laden, die keinen Account benötigen!\r\n";
-                            message += "Willst du deinen Facebook Account jetzt hinzufügen?\r\n";
-                        } else {
-                            title = "Facebook.com gallery/photo download";
-                            message = "You're trying to download a Facebook gallery/photo.\r\n";
-                            message += "For most of these links, a valid Facebook account is needed!\r\n";
-                            message += "You can add your account as a premium account in the settings.\r\n";
-                            message += "Note that if you don't do that, JDownloader will only be able to download Facebook links which do not need a login.\r\n";
-                            message += "Do you want to enter your Facebook account now?\r\n";
-                        }
-                        DIALOGRETURN = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null);
-                    } catch (Throwable e) {
-                    }
-                }
-            });
-        } catch (Throwable e) {
-        }
     }
 
     /* NO OVERRIDE!! */

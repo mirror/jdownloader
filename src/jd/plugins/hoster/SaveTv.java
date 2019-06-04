@@ -25,18 +25,6 @@ import java.util.Locale;
 import java.util.Random;
 import java.util.regex.Pattern;
 
-import javax.swing.JOptionPane;
-import javax.swing.SwingUtilities;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.jdownloader.translate._JDT;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -61,6 +49,16 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
+
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.jdownloader.translate._JDT;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "save.tv" }, urls = { "https?://(?:www\\.)?save\\.tv/STV/M/obj/(?:archive/VideoArchiveDetails|archive/VideoArchiveStreaming|TC/SendungsDetails)\\.cfm\\?TelecastID=\\d+(?:\\&adsfree=(?:true|false|unset))?(?:\\&preferformat=[0-9])?|https?://[A-Za-z0-9\\-]+\\.save\\.tv/\\d+_\\d+_.+" })
 public class SaveTv extends PluginForHost {
@@ -2521,31 +2519,21 @@ public class SaveTv extends PluginForHost {
         }
     }
 
-    private static void showAccNeededDialog() {
+    private void showAccNeededDialog() {
         try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        String message = "";
-                        String title = null;
-                        title = "Save.tv - Account benötigt";
-                        message += "Hallo lieber save.tv Nutzer.\r\n";
-                        message += "Um über JDownloader Videos aus deinem save.tv Archiv herunterladen zu können musst du\r\nzunächst deinen save.tv Account in JDownloader eintragen.";
-                        message += "\r\n";
-                        message += "Das geht unter:\r\n";
-                        message += "Einstellungen -> Accountverwaltung -> Hinzufügen -> save.tv\r\n";
-                        message += "\r\n";
-                        message += "Sobald du deinen Account eingetragen hast kannst du aus deinem save.tv Archiv\r\n";
-                        message += "Links dieses Formats in JDownloader einfügen und herunterladen:\r\n";
-                        message += "https://www.save.tv/STV/M/obj/archive/VideoArchive.cfm";
-                        message += getMessageEnd();
-                        JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
-                    } catch (Throwable e) {
-                    }
-                }
-            });
+            String message = "Hallo lieber save.tv Nutzer.\r\n";
+            message += "Um über JDownloader Videos aus deinem save.tv Archiv herunterladen zu können musst du\r\nzunächst deinen save.tv Account in JDownloader eintragen.";
+            message += "\r\n";
+            message += "Das geht unter:\r\n";
+            message += "Einstellungen -> Accountverwaltung -> Hinzufügen -> save.tv\r\n";
+            message += "\r\n";
+            message += "Sobald du deinen Account eingetragen hast kannst du aus deinem save.tv Archiv\r\n";
+            message += "Links dieses Formats in JDownloader einfügen und herunterladen:\r\n";
+            message += "https://www.save.tv/STV/M/obj/archive/VideoArchive.cfm";
+            message += getMessageEnd();
+            UIOManager.I().showMessageDialog(message);
         } catch (Throwable e) {
+            logger.log(e);
         }
     }
 
@@ -2573,32 +2561,22 @@ public class SaveTv extends PluginForHost {
         }
     }
 
-    private static void showFeatureDialogAll() {
+    private void showFeatureDialogAll() {
         try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        String message = "";
-                        String title = null;
-                        title = "Save.tv Plugin - Features";
-                        message += "Hallo lieber save.tv Nutzer/liebe save.tv Nutzerin\r\n";
-                        message += "Das save.tv Plugin bietet folgende Features:\r\n";
-                        message += "- Automatisierter Download von save.tv Links (telecast-IDs)\r\n";
-                        message += "- Laden des kompletten save.tv Archivs über wenige Klicks\r\n";
-                        message += "-- > Oder wahlweise nur alle Links der letzten X Tage/Stunden\r\n";
-                        message += "- Benutzerdefinierte Dateinamen über ein Tag-System mit vielen Möglichkeiten\r\n";
-                        message += "- Alles unter beachtung der Schnittlisten-Einstellungen und des Formats\r\n";
-                        message += "- Und viele mehr...\r\n";
-                        message += "\r\n";
-                        message += "Diese Einstellungen sind in der Version JDownloader 2 verfügbar unter:\r\nEinstellungen -> Plugin Einstellungen -> save.tv";
-                        message += getMessageEnd();
-                        JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
-                    } catch (Throwable e) {
-                    }
-                }
-            });
+            String message = "Hallo lieber save.tv Nutzer/liebe save.tv Nutzerin\r\n";
+            message += "Das save.tv Plugin bietet folgende Features:\r\n";
+            message += "- Automatisierter Download von save.tv Links (telecast-IDs)\r\n";
+            message += "- Laden des kompletten save.tv Archivs über wenige Klicks\r\n";
+            message += "-- > Oder wahlweise nur alle Links der letzten X Tage/Stunden\r\n";
+            message += "- Benutzerdefinierte Dateinamen über ein Tag-System mit vielen Möglichkeiten\r\n";
+            message += "- Alles unter beachtung der Schnittlisten-Einstellungen und des Formats\r\n";
+            message += "- Und viele mehr...\r\n";
+            message += "\r\n";
+            message += "Diese Einstellungen sind in der Version JDownloader 2 verfügbar unter:\r\nEinstellungen -> Plugin Einstellungen -> save.tv";
+            message += getMessageEnd();
+            UIOManager.I().showMessageDialog(message);
         } catch (Throwable e) {
+            logger.log(e);
         }
     }
 
@@ -2626,31 +2604,21 @@ public class SaveTv extends PluginForHost {
         }
     }
 
-    private static void showFeatureDialogCrawler() {
+    private void showFeatureDialogCrawler() {
         try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        String message = "";
-                        String title = null;
-                        title = "Save.tv Plugin - Crawler Features";
-                        message += "Hallo lieber save.tv Nutzer/liebe save.tv NutzerIn\r\n";
-                        message += "Das save.tv Crawler Plugin bietet folgende Features:\r\n";
-                        message += "- Info-Dialoge\r\n";
-                        message += "- Die Möglichkeit, immer nur neue abgeschlossene Aufnahmen zu crawlen\r\n";
-                        message += "- Die Möglichkeit, wahlweise alle oder nur Aufnahmen der letzten X Stunden zu crawlen\r\n";
-                        message += "\r\n";
-                        message += "Um den Crawler nutzen zu können, musst du ihn erst in den Plugin Einstellungen aktivieren.\r\n";
-                        message += "\r\n";
-                        message += "Die Crawler Einstellungen sind in der Version JDownloader 2 verfügbar unter:\r\nEinstellungen -> Plugin Einstellungen -> save.tv";
-                        message += getMessageEnd();
-                        JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
-                    } catch (Throwable e) {
-                    }
-                }
-            });
+            String message = "Hallo lieber save.tv Nutzer/liebe save.tv NutzerIn\r\n";
+            message += "Das save.tv Crawler Plugin bietet folgende Features:\r\n";
+            message += "- Info-Dialoge\r\n";
+            message += "- Die Möglichkeit, immer nur neue abgeschlossene Aufnahmen zu crawlen\r\n";
+            message += "- Die Möglichkeit, wahlweise alle oder nur Aufnahmen der letzten X Stunden zu crawlen\r\n";
+            message += "\r\n";
+            message += "Um den Crawler nutzen zu können, musst du ihn erst in den Plugin Einstellungen aktivieren.\r\n";
+            message += "\r\n";
+            message += "Die Crawler Einstellungen sind in der Version JDownloader 2 verfügbar unter:\r\nEinstellungen -> Plugin Einstellungen -> save.tv";
+            message += getMessageEnd();
+            UIOManager.I().showMessageDialog(message);
         } catch (Throwable e) {
+            logger.log(e);
         }
     }
 
@@ -2679,30 +2647,20 @@ public class SaveTv extends PluginForHost {
         }
     }
 
-    private static void showFeatureDialogNew() {
+    private void showFeatureDialogNew() {
         try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        String message = "";
-                        String title = null;
-                        title = "20.09.2017 - Save.tv Plugin - Neue Features";
-                        message += "Hallo lieber save.tv Nutzer/liebe save.tv NutzerIn\r\n";
-                        message += "Das save.tv Plugin bietet neben Fehlerbehebungen seit dem 20.09.2017 folgende neue Features:\r\n";
-                        message += "- Abgeschlossene Downloads bekommen einen 'Download vollständig' Verweis; zu sehen auf der telecastID Save.tv Seite unter 'Tags' (da wo auch sowas steht wie 'Länge werbefreie Aufnahme: 22:56')\r\n";
-                        message += "- Einstellung zum erzwungenen Download ohne Schnittliste (falls keine verfügbar) wurde vereinfacht\r\n";
-                        message += "- Berechnung der Dateigröße ist nun viel genauer[bis auf 10 MB]\r\n";
-                        message += "- Und vieles mehr ...\r\n";
-                        message += "\r\n";
-                        message += "Die Plugin Einstellungen sind in der Version JDownloader 2 verfügbar unter:\r\nEinstellungen -> Plugin Einstellungen -> save.tv";
-                        message += getMessageEnd();
-                        JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
-                    } catch (Throwable e) {
-                    }
-                }
-            });
+            String message = "Hallo lieber save.tv Nutzer/liebe save.tv NutzerIn\r\n";
+            message += "Das save.tv Plugin bietet neben Fehlerbehebungen seit dem 20.09.2017 folgende neue Features:\r\n";
+            message += "- Abgeschlossene Downloads bekommen einen 'Download vollständig' Verweis; zu sehen auf der telecastID Save.tv Seite unter 'Tags' (da wo auch sowas steht wie 'Länge werbefreie Aufnahme: 22:56')\r\n";
+            message += "- Einstellung zum erzwungenen Download ohne Schnittliste (falls keine verfügbar) wurde vereinfacht\r\n";
+            message += "- Berechnung der Dateigröße ist nun viel genauer[bis auf 10 MB]\r\n";
+            message += "- Und vieles mehr ...\r\n";
+            message += "\r\n";
+            message += "Die Plugin Einstellungen sind in der Version JDownloader 2 verfügbar unter:\r\nEinstellungen -> Plugin Einstellungen -> save.tv";
+            message += getMessageEnd();
+            UIOManager.I().showMessageDialog(message);
         } catch (Throwable e) {
+            logger.log(e);
         }
     }
 

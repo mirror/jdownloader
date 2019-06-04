@@ -138,8 +138,17 @@ public class DownloadLinkSandBox {
     public Object getProperty(String key) {
         if (downloadLink != null) {
             return downloadLink.getProperty(key);
+        } else {
+            return null;
         }
-        return null;
+    }
+
+    public Object getTempProperty(String key) {
+        if (downloadLink != null) {
+            return downloadLink.getTempProperties().getProperty(key);
+        } else {
+            return null;
+        }
     }
 
     public Object getSessionProperty(final String key) {
@@ -206,9 +215,28 @@ public class DownloadLinkSandBox {
         }
     }
 
+    public void setTempProperty(String key, Object value) {
+        if (downloadLink != null) {
+            if (value != null) {
+                if (!canStore(value)) {
+                    throw new WTFException("Type " + value.getClass().getSimpleName() + " is not supported");
+                }
+            }
+            downloadLink.getTempProperties().setProperty(key, value);
+        }
+    }
+
     public Map<String, Object> getProperties() {
         if (downloadLink != null) {
             return downloadLink.getProperties();
+        } else {
+            return null;
+        }
+    }
+
+    public Map<String, Object> getTempProperties() {
+        if (downloadLink != null) {
+            return downloadLink.getTempProperties().getProperties();
         } else {
             return null;
         }

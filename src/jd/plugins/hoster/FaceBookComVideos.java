@@ -17,13 +17,9 @@ package jd.plugins.hoster;
 
 import java.io.File;
 
-import javax.swing.JOptionPane;
-import javax.swing.SwingUtilities;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -665,9 +661,6 @@ public class FaceBookComVideos extends PluginForHost {
                 /* Save cookies */
                 account.saveCookies(br.getCookies(FACEBOOKMAINPAGE), "");
                 account.setValid(true);
-                synchronized (LOCK) {
-                    checkFeatureDialog();
-                }
             } catch (PluginException e) {
                 if (e.getLinkStatus() == PluginException.VALUE_ID_PREMIUM_DISABLE) {
                     account.removeProperty("");
@@ -707,59 +700,6 @@ public class FaceBookComVideos extends PluginForHost {
 
     private String getajaxpipeToken() {
         return PluginJSonUtils.getJsonValue(br, "ajaxpipe_token");
-    }
-
-    private void checkFeatureDialog() {
-        SubConfiguration config = null;
-        try {
-            config = getPluginConfig();
-            if (config.getBooleanProperty("featuredialog_Shown", Boolean.FALSE) == false) {
-                if (config.getProperty("featuredialog_Shown2") == null) {
-                    showFeatureDialogAll();
-                } else {
-                    config = null;
-                }
-            } else {
-                config = null;
-            }
-        } catch (final Throwable e) {
-        } finally {
-            if (config != null) {
-                config.setProperty("featuredialog_Shown", Boolean.TRUE);
-                config.setProperty("featuredialog_Shown2", "shown");
-                config.save();
-            }
-        }
-    }
-
-    private static void showFeatureDialogAll() {
-        try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        String message = "";
-                        String title = null;
-                        title = "Facebook.com Plugin";
-                        final String lang = System.getProperty("user.language");
-                        if ("de".equalsIgnoreCase(lang)) {
-                            message += "Du benutzt deinen Facebook Account zum ersten mal in JDownloader.\r\n";
-                            message += "Da JDownloader keine Facebook App ist loggt er sich genau wie du per Browser ein.\r\n";
-                            message += "Es gibt also keinen Austausch (privater) Facebook Daten mit JD.\r\n";
-                            message += "Wir wahren deine Privatsphäre!";
-                        } else {
-                            message += "You're using your Facebook account in JDownloader for the first time.\r\n";
-                            message += "Because JDownloader is not a Facebook App it logs in Facebook just like you via browser.\r\n";
-                            message += "There is no (private) data exchange between JD and Facebook!\r\n";
-                            message += "We respect your privacy!";
-                        }
-                        JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
-                    } catch (Throwable e) {
-                    }
-                }
-            });
-        } catch (Throwable e) {
-        }
     }
 
     @Override

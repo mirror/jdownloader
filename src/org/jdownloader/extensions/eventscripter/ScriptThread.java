@@ -49,8 +49,27 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
     private Context                      cx;
     private final LogSource              logger;
     private final EventScripterExtension extension;
-    private boolean                      checkPermissions = true;
-    private Set<String>                  permissions      = new HashSet<String>();
+    private boolean                      checkPermissions   = true;
+    private boolean                      disableOnException = true;
+    private boolean                      notifyOnException  = true;
+
+    public boolean isNotifyOnException() {
+        return notifyOnException;
+    }
+
+    public void setNotifyOnException(boolean notifyOnException) {
+        this.notifyOnException = notifyOnException;
+    }
+
+    public boolean isDisableOnException() {
+        return disableOnException;
+    }
+
+    public void setDisableOnException(boolean disableOnException) {
+        this.disableOnException = disableOnException;
+    }
+
+    private final Set<String> permissions = new HashSet<String>();
 
     public boolean isPermissionSet(String permission) {
         synchronized (permission) {
@@ -159,8 +178,10 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
     }
 
     public void notifyAboutException(Throwable e) {
-        Dialog.getInstance().showExceptionDialog("An Error Occured", e.getMessage(), e);
-        if (script != null) {
+        if (isNotifyOnException()) {
+            Dialog.getInstance().showExceptionDialog("An Error Occured", e.getMessage(), e);
+        }
+        if (script != null && isDisableOnException()) {
             script.setEnabled(false);
             extension.refreshScripts();
         }

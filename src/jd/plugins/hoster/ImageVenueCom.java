@@ -17,8 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -29,6 +27,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imagevenue.com" }, urls = { "https?://(?:www\\.)?img[0-9]+\\.imagevenue\\.com/img\\.php\\?(loc=[^&]+\\&)?image=.{4,300}" })
 public class ImageVenueCom extends PluginForHost {
@@ -64,6 +64,10 @@ public class ImageVenueCom extends PluginForHost {
         }
         String filename = null;
         dllink = br.getRegex("id=(?:\"|\\')thepic(?:\"|\\')[^>]*?.*?SRC=(?:\"|\\')(.*?)(?:\"|\\')").getMatch(0);
+        if (dllink == null && br.containsHTML("Continue to your image")) {
+            br.getPage(link.getDownloadURL());
+            dllink = br.getRegex("id=(?:\"|\\')thepic(?:\"|\\')[^>]*?.*?SRC=(?:\"|\\')(.*?)(?:\"|\\')").getMatch(0);
+        }
         if (dllink == null) {
             if (br.containsHTML("tempval\\.focus\\(\\)")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -86,9 +90,12 @@ public class ImageVenueCom extends PluginForHost {
             con = openConnection(this.br, dllink);
             if (!con.isOK()) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                final long size = con.getLongContentLength();
+                if (size > 0) {
+                    link.setDownloadSize(size);
+                }
             }
-            long size = con.getLongContentLength();
-            link.setDownloadSize(Long.valueOf(size));
         } finally {
             try {
                 con.disconnect();
@@ -109,7 +116,7 @@ public class ImageVenueCom extends PluginForHost {
     }
 
     private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
-        URLConnectionAdapter con;
+        final URLConnectionAdapter con;
         if (isJDStable()) {
             con = br.openGetConnection(directlink);
         } else {
