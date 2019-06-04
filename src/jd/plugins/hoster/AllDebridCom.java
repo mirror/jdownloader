@@ -15,25 +15,14 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
-import javax.swing.SwingUtilities;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.gui.views.SelectionInfo.PluginView;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
-import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -51,6 +40,17 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.HashInfo;
+
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.views.SelectionInfo.PluginView;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alldebrid.com" }, urls = { "https?://(?:[a-z]\\d+\\.alldebrid\\.com|[a-z0-9]+\\.alld\\.io)/dl/[a-z0-9]+/.+" })
 public class AllDebridCom extends antiDDoSForHost {
@@ -77,207 +77,189 @@ public class AllDebridCom extends antiDDoSForHost {
 
     private static MultiHosterManagement mhm                             = new MultiHosterManagement("alldebrid.com");
     private static String                api_base                        = "https://api.alldebrid.com";
-    private Account                      currAcc                         = null;
-    private DownloadLink                 currDownloadLink                = null;
-    private String                       token                           = null;
-    private static Object                accLock                         = new Object();
     // this is used by provider which calculates unique token to agent/client.
     private static final String          agent                           = "agent=JDownloader";
     /* False = use old username&password login (Deprecated!) */
-    private static final boolean         pinLOGIN                        = true;
     private static final String          PROPERTY_TOKEN_EXPIRE_TIMESTAMP = "TOKEN_EXPIRE_TIMESTAMP";
 
-    @Override
-    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        AccountInfo ac = new AccountInfo();
-        setConstants(account, null);
-        synchronized (accLock) {
-            if (token != null) {
-                /*
-                 * 2019-05-31: TODO: Also check validity of that token and renew it if it (nearly) expired, see:
-                 * PROPERTY_TOKEN_EXPIRE_TIMESTAMP
-                 */
-                getPage(api_base + "/user/login?" + agent + "&token=" + token);
-            }
-            {
+    public String fetchToken(final Account account, final AccountInfo accountInfo) throws Exception {
+        synchronized (account) {
+            try {
+                String token = account.getStringProperty(TOKEN, null);
+                if (token != null) {
+                    /*
+                     * 2019-05-31: TODO: Also check validity of that token and renew it if it (nearly) expired, see:
+                     * PROPERTY_TOKEN_EXPIRE_TIMESTAMP
+                     */
+                    loginAccount(account, accountInfo, token);
+                }
                 /* Full login */
                 int error = parseError();
                 if (token == null || error == 1 || error == 5) {
                     logger.info("Performing full login");
-                    if (pinLOGIN) {
-                        /*
-                         * 2019-05-31: TODO: This way, a user could add one account XX times as username/password are not required. Find an
-                         * identifier so we can prohibit this. Username/E-Mail combination should do the trick.
-                         */
-                        getPage(api_base + "/pin/get?" + agent);
-                        final String user_url = PluginJSonUtils.getJson(br, "user_url");
-                        final String check_url = PluginJSonUtils.getJson(br, "check_url");
-                        if (StringUtils.isEmpty(user_url) || StringUtils.isEmpty(check_url)) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                        handlePINLoginDialog(user_url);
-                        for (int i = 0; i <= 19; i++) {
+                    /*
+                     * 2019-05-31: TODO: This way, a user could add one account XX times as username/password are not required. Find an
+                     * identifier so we can prohibit this. Username/E-Mail combination should do the trick.
+                     */
+                    /**
+                     * TODO: we could login with username/password and accept the pin automatically
+                     */
+                    getPage(api_base + "/pin/get?" + agent);
+                    final String user_url = PluginJSonUtils.getJson(br, "user_url");
+                    final String check_url = PluginJSonUtils.getJson(br, "check_url");
+                    if (StringUtils.isEmpty(user_url) || StringUtils.isEmpty(check_url)) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    final Thread dialog = showPINLoginInformation(user_url);
+                    try {
+                        for (int i = 0; i <= 23; i++) {
                             logger.info("Waiting for user to authorize application: " + i);
+                            Thread.sleep(5000);
                             getPage(check_url);
                             error = parseError();
                             if (error != -1) {
                                 /* Something went wrong */
                                 break;
+                            } else {
+                                token = PluginJSonUtils.getJson(br, "token");
+                                if (!StringUtils.isEmpty(token)) {
+                                    break;
+                                } else if (!dialog.isAlive()) {
+                                    logger.info("Dialog closed!");
+                                    break;
+                                }
                             }
-                            Thread.sleep(3000);
-                            token = PluginJSonUtils.getJson(br, "token");
-                            if (!StringUtils.isEmpty(token)) {
-                                break;
-                                // final String error = PluginJSonUtils.getJson(br, "error");
-                            }
                         }
-                        if (StringUtils.isEmpty(token)) {
-                            throw new AccountInvalidException("User failed to authorize PIN");
-                        }
-                        final String expires_in_secondsStr = PluginJSonUtils.getJson(br, "expires_in");
-                        if (expires_in_secondsStr != null && expires_in_secondsStr.matches("\\d+")) {
-                            /* 2019-05-31: TODO: Check how long this token really lasts. */
-                            account.setProperty(PROPERTY_TOKEN_EXPIRE_TIMESTAMP, System.currentTimeMillis() + (Long.parseLong(expires_in_secondsStr) - 30) * 1000);
-                        }
-                        getPage(api_base + "/user/login?" + agent + "&token=" + token);
-                    } else {
-                        /* Old method - do not use this anymore! */
-                        getPage(api_base + "/user/login?" + agent + "&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                        if (StringUtils.isEmpty(token)) {
-                            throw new AccountInvalidException();
-                        }
+                    } finally {
+                        dialog.interrupt();
                     }
+                    if (StringUtils.isEmpty(token)) {
+                        throw new AccountInvalidException("User failed to authorize PIN");
+                    }
+                    final String expires_in_secondsStr = PluginJSonUtils.getJson(br, "expires_in");
+                    if (expires_in_secondsStr != null && expires_in_secondsStr.matches("\\d+")) {
+                        /* 2019-05-31: TODO: Check how long this token really lasts. */
+                        account.setProperty(PROPERTY_TOKEN_EXPIRE_TIMESTAMP, System.currentTimeMillis() + (Long.parseLong(expires_in_secondsStr) - 30) * 1000);
+                    }
+                    loginAccount(account, accountInfo, token);
                 } else {
                     logger.info("Token login successful");
                 }
-            }
-            handleErrors();
-            {
-                final Boolean isPremium = PluginJSonUtils.parseBoolean(PluginJSonUtils.getJson(br, "isPremium"));
-                if (!isPremium) {
-                    throw new AccountInvalidException("Free accounts are not supported!");
+                return token;
+            } catch (PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.removeProperty(TOKEN);
                 }
-                account.setProperty("token", token);
-                final String premiumUntil = PluginJSonUtils.getJson(br, "premiumUntil");
-                ac.setValidUntil(Long.parseLong(premiumUntil) * 1000l);
+                throw e;
             }
         }
-        {
-            // /hosts/domains will return offline hosts.
-            getPage(api_base + "/hosts");
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-            final ArrayList<Object> hosts = (ArrayList<Object>) entries.get("hosts");
-            if (hosts != null) {
-                final ArrayList<String> supportedHosts = new ArrayList<String>();
-                for (final Object host : hosts) {
-                    final LinkedHashMap<String, Object> entry = (LinkedHashMap<String, Object>) host;
-                    if (Boolean.FALSE.equals(entry.get("status"))) {
-                        continue;
-                    }
-                    final String hostPrimary = (String) entry.get("domain");
-                    // seen null values within their map..
-                    if (hostPrimary == null) {
-                        continue;
-                    }
-                    supportedHosts.add(hostPrimary);
-                    final ArrayList<String> hostSecondary = (ArrayList<String>) entry.get("altDomains");
-                    if (hostSecondary != null) {
-                        for (final String sh : hostSecondary) {
-                            // prevention is better than cure?
-                            if (sh != null) {
-                                supportedHosts.add(sh);
-                            }
-                        }
-                    }
-                }
-                ac.setMultiHostSupport(this, supportedHosts);
-            }
-        }
-        return ac;
     }
 
-    @SuppressWarnings("deprecation")
-    private void handlePINLoginDialog(final String pin_url) {
-        final boolean showAlways = true;
-        SubConfiguration config = null;
-        try {
-            config = getPluginConfig();
-            if (showAlways || config.getBooleanProperty("featuredialog_all_Shown", Boolean.FALSE) == false) {
-                if (showAlways || config.getProperty("featuredialog_all_Shown2") == null) {
-                    showPINLoginInformation(pin_url);
-                } else {
-                    config = null;
-                }
+    private void loginAccount(final Account account, final AccountInfo accountInfo, final String token) throws Exception {
+        synchronized (account) {
+            getPage(api_base + "/user/login?" + agent + "&token=" + token);
+            handleErrors(account, null);
+            final boolean isPremium = PluginJSonUtils.parseBoolean(PluginJSonUtils.getJson(br, "isPremium"));
+            if (!isPremium) {
+                throw new AccountInvalidException("Free accounts are not supported!");
             } else {
-                config = null;
-            }
-        } catch (final Throwable e) {
-        } finally {
-            if (config != null) {
-                config.setProperty("featuredialog_all_Shown", Boolean.TRUE);
-                config.setProperty("featuredialog_all_Shown2", "shown");
-                config.save();
+                final String premiumUntil = PluginJSonUtils.getJson(br, "premiumUntil");
+                final long until = Long.parseLong(premiumUntil) * 1000l;
+                if (accountInfo != null) {
+                    accountInfo.setValidUntil(until);
+                }
+                if (until > System.currentTimeMillis()) {
+                    account.setProperty(TOKEN, token);
+                } else {
+                    throw new AccountInvalidException("Premium status expired!");
+                }
             }
         }
     }
 
-    private static void showPINLoginInformation(final String pin_url) {
-        try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        String message = "";
-                        String title = null;
-                        final boolean xSystem = CrossSystem.isOpenBrowserSupported();
-                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                            title = "Alldebrid.com - neue Login-Methode";
-                            message += "Hallo liebe(r) alldebrid.com NutzerIn\r\n";
-                            message += "Seit diesem Update hat sich die Login-Methode dieses Anbieters geändert um die sicherheit zu erhöhen!\r\n";
-                            message += "Um deinen Account weiterhin in JDownloader verwenden zu können musst du folgende Schritte beachten:\r\n";
-                            message += "1. Gehe sicher, dass du im Browser in deinem Alldebrid Account eingeloggt bist.\r\n";
-                            if (xSystem) {
-                                message += "2. Nach dem Bestätigen dieses Dialogs wird sich ein Link öffnen.\r\n";
-                            } else {
-                                message += "2. Öffne diesen Link im Browser:\r\n" + new URL(pin_url) + "\r\n";
-                            }
-                            message += "3. Bestätige die PIN im Browser.\r\n";
-                            message += "Dein Account sollte nach einigen Sekunden von JDownloader akzeptiert werden.\r\n";
-                        } else {
-                            title = "Alldebrid.com - New login method";
-                            message += "Hello dear alldebrid.com user\r\n";
-                            message += "This update has changed the login method of alldebrid.com in favor of security.\r\n";
-                            message += "In order to keep using this service in JDownloader you need to follow these steps:\r\n";
-                            message += "1. Make sure that you're logged in your alldebrid.com account with your default browser.\r\n";
-                            if (xSystem) {
-                                message += "2. After confirming this dialog, a browser window will open.\r\n";
-                            } else {
-                                message += "2. Open this URL in your browser:\r\n" + new URL(pin_url) + "\r\n";
-                            }
-                            message += "3. Confirm the PIN you see in the browser window.\r\n";
-                            message += "Your account should be accepted in JDownloader within a few seconds.\r\n";
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo accountInfo = new AccountInfo();
+        fetchToken(account, accountInfo);
+        // /hosts/domains will return offline hosts.
+        getPage(api_base + "/hosts");
+        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final ArrayList<Object> hosts = (ArrayList<Object>) entries.get("hosts");
+        if (hosts != null) {
+            final ArrayList<String> supportedHosts = new ArrayList<String>();
+            for (final Object host : hosts) {
+                final LinkedHashMap<String, Object> entry = (LinkedHashMap<String, Object>) host;
+                if (Boolean.FALSE.equals(entry.get("status"))) {
+                    continue;
+                }
+                final String hostPrimary = (String) entry.get("domain");
+                // seen null values within their map..
+                if (hostPrimary == null) {
+                    continue;
+                }
+                supportedHosts.add(hostPrimary);
+                final ArrayList<String> hostSecondary = (ArrayList<String>) entry.get("altDomains");
+                if (hostSecondary != null) {
+                    for (final String sh : hostSecondary) {
+                        // prevention is better than cure?
+                        if (sh != null) {
+                            supportedHosts.add(sh);
                         }
-                        JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
-                        if (xSystem) {
-                            CrossSystem.openURL(pin_url);
-                        }
-                    } catch (Throwable e) {
                     }
                 }
-            });
-        } catch (Throwable e) {
+            }
+            accountInfo.setMultiHostSupport(this, supportedHosts);
         }
+        return accountInfo;
+    }
+
+    private Thread showPINLoginInformation(final String pin_url) {
+        final Thread thread = new Thread() {
+            public void run() {
+                String message = "";
+                final String title;
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    title = "Alldebrid.com - neue Login-Methode";
+                    message += "Hallo liebe(r) alldebrid.com NutzerIn\r\n";
+                    message += "Seit diesem Update hat sich die Login-Methode dieses Anbieters geändert um die sicherheit zu erhöhen!\r\n";
+                    message += "Um deinen Account weiterhin in JDownloader verwenden zu können musst du folgende Schritte beachten:\r\n";
+                    message += "1. Gehe sicher, dass du im Browser in deinem Alldebrid Account eingeloggt bist.\r\n";
+                    message += "2. Öffne diesen Link im Browser:\r\n\t'" + pin_url + "'\t\r\n";
+                    message += "3. Bestätige die PIN im Browser.\r\n";
+                    message += "Dein Account sollte nach einigen Sekunden von JDownloader akzeptiert werden.\r\n";
+                } else {
+                    title = "Alldebrid.com - New login method";
+                    message += "Hello dear alldebrid.com user\r\n";
+                    message += "This update has changed the login method of alldebrid.com in favor of security.\r\n";
+                    message += "In order to keep using this service in JDownloader you need to follow these steps:\r\n";
+                    message += "1. Make sure that you're logged in your alldebrid.com account with your default browser.\r\n";
+                    message += "2. Open this URL in your browser:\r\n\t'" + pin_url + "'\t\r\n";
+                    message += "3. Confirm the PIN you see in the browser window.\r\n";
+                    message += "Your account should be accepted in JDownloader within a few seconds.\r\n";
+                }
+                final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
+                dialog.setTimeout(2 * 60 * 1000);
+                if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
+                    CrossSystem.openURL(pin_url);
+                }
+                final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
+                System.out.println(ret);
+            };
+        };
+        thread.start();
+        return thread;
     }
 
     private Integer parseError() {
         final String error = PluginJSonUtils.getJsonValue(br, "errorCode");
         if (error == null || !error.matches("\\d+")) {
             return -1;
+        } else {
+            return Integer.parseInt(error);
         }
-        return Integer.parseInt(error);
     }
 
-    private void handleErrors() throws PluginException, Exception {
+    private void handleErrors(final Account account, final DownloadLink downloadLink) throws PluginException, Exception {
         // 1 Invalid token.
         // 2 Invalid user or password.
         // 3 Geolock protection active, please login on the website.
@@ -290,7 +272,7 @@ public class AllDebridCom extends antiDDoSForHost {
         // everything is aok
         case -1:
             return;
-        // login related
+            // login related
         case 2:
             throw new AccountInvalidException("Invalid User/Password!");
         case 3:
@@ -306,8 +288,14 @@ public class AllDebridCom extends antiDDoSForHost {
         }
         case 1:
         case 5: {
-            this.currAcc.removeProperty("token");
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 5 * 60 * 1000l);
+            if (account != null) {
+                synchronized (account) {
+                    account.removeProperty("token");
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 5 * 60 * 1000l);
+                }
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         // download related
         // 30 This link is not valid or not supported.
@@ -323,7 +311,7 @@ public class AllDebridCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unsupported link", 30 * 60 * 1000l);
         }
         case 32:
-            mhm.putError(null, this.currDownloadLink, 30 * 60 * 1000l, "Down for maintance");
+            mhm.putError(account, downloadLink, 30 * 60 * 1000l, "Down for maintance");
         case 33:
             // {"error":"You have reached the free trial limit (7 days \/\/ 25GB downloaded or host uneligible for free
             // trial)","errorCode":33}
@@ -333,7 +321,7 @@ public class AllDebridCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
         case 35: {
             // {"error":"All servers are full for this host, please retry later","errorCode":35}
-            mhm.handleErrorGeneric(null, this.currDownloadLink, "No available slots for this host", 10, 5 * 60 * 1000l);
+            mhm.handleErrorGeneric(account, downloadLink, "No available slots for this host", 10, 5 * 60 * 1000l);
         }
         }
     }
@@ -370,19 +358,18 @@ public class AllDebridCom extends antiDDoSForHost {
     }
 
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        setConstants(account, link);
-        mhm.runCheck(this.currAcc, this.currDownloadLink);
+        mhm.runCheck(account, link);
         showMessage(link, "Phase 1/2: Generating link");
-        synchronized (accLock) {
-            final boolean cache = loadToken(account, link);
-            logger.info("Cached 'token' = " + String.valueOf(cache));
+        synchronized (account) {
+            String token = loadToken(account);
             final String unlock = api_base + "/link/unlock?" + agent + "&link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this));
             getPage(unlock + "&token=" + token);
             if (11 == parseError()) {
-                loadToken(account, link);
+                account.removeProperty(TOKEN);
+                token = loadToken(account);
                 getPage(unlock + "&token=" + token);
             }
-            handleErrors();
+            handleErrors(account, link);
         }
         final String genlink = PluginJSonUtils.getJsonValue(br, "link");
         if (genlink == null || !genlink.matches("https?://.+")) {
@@ -472,7 +459,7 @@ public class AllDebridCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Premium required to download this file.");
             } else if (br.containsHTML(">An error occured while processing your request<")) {
                 logger.info("Retrying: Failed to generate alldebrid.com link because API connection failed for host link: " + link.getDownloadURL());
-                mhm.handleErrorGeneric(this.currAcc, this.currDownloadLink, "Unknown error", 3, 30 * 60 * 1000l);
+                mhm.handleErrorGeneric(acc, link, "Unknown error", 3, 30 * 60 * 1000l);
             }
             if (!isDirectLink(link)) {
                 if (br.containsHTML("range not ok")) {
@@ -481,7 +468,7 @@ public class AllDebridCom extends antiDDoSForHost {
                 /* unknown error */
                 logger.severe("Error: Unknown Error");
                 // disable hoster for 5min
-                mhm.putError(this.currAcc, this.currDownloadLink, 5 * 60 * 1000l, "Unknown Error");
+                mhm.putError(acc, link, 5 * 60 * 1000l, "Unknown Error");
             } else {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             }
@@ -493,17 +480,21 @@ public class AllDebridCom extends antiDDoSForHost {
         dl.startDownload();
     }
 
-    private boolean loadToken(final Account account, final DownloadLink downloadLink) throws Exception {
-        synchronized (accLock) {
-            if (token == null || account.getProperty("token", null) == null) {
-                fetchAccountInfo(account);
-                if (token == null) {
+    private final String TOKEN = "token";
+
+    private String loadToken(final Account account) throws Exception {
+        synchronized (account) {
+            String ret = account.getStringProperty(TOKEN, null);
+            if (ret == null) {
+                ret = fetchToken(account, null);
+                if (ret == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
+                    return ret;
                 }
-                setConstants(account, downloadLink);
-                return false;
+            } else {
+                return ret;
             }
-            return true;
         }
     }
 
@@ -524,27 +515,25 @@ public class AllDebridCom extends antiDDoSForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink dl) throws Exception {
-        setConstants(null, dl);
         prepBrowser(br, dl.getDownloadURL());
         URLConnectionAdapter con = null;
         try {
             con = openAntiDDoSRequestConnection(br, br.createGetRequest(dl.getDownloadURL()));
-            if ((con.isContentDisposition() || con.isOK()) && !con.getContentType().contains("html")) {
+            if (con.isOK() && (con.isContentDisposition() || !con.getContentType().contains("html"))) {
                 if (dl.getFinalFileName() == null) {
                     dl.setFinalFileName(getFileNameFromHeader(con));
                 }
-                dl.setVerifiedFileSize(con.getLongContentLength());
+                if (con.getLongContentLength() > 0) {
+                    dl.setVerifiedFileSize(con.getLongContentLength());
+                }
                 dl.setAvailable(true);
                 return AvailableStatus.TRUE;
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-        } catch (final Throwable e) {
-            getLogger().log(e);
-            if (e instanceof PluginException) {
-                throw (PluginException) e;
-            }
-            dl.setAvailable(false);
+        } catch (PluginException e) {
+            throw e;
+        } catch (final Exception e) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, null, e);
         } finally {
             try {
@@ -552,16 +541,6 @@ public class AllDebridCom extends antiDDoSForHost {
                 con.disconnect();
             } catch (final Throwable e) {
             }
-        }
-    }
-
-    private void setConstants(final Account acc, final DownloadLink dl) {
-        this.currAcc = acc;
-        this.currDownloadLink = dl;
-        if (this.currAcc != null) {
-            this.token = this.currAcc.getStringProperty("token", null);
-        } else {
-            this.token = null;
         }
     }
 
