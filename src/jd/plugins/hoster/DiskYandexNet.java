@@ -21,14 +21,10 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 
-import javax.swing.JOptionPane;
-import javax.swing.SwingUtilities;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
-import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -387,7 +383,6 @@ public class DiskYandexNet extends PluginForHost {
         if (downloadLink.getPluginPatternMatcher().matches(TYPE_ALBUM)) {
             handleDownloadAlbum(downloadLink);
         } else if (downloadLink.getPluginPatternMatcher().matches(TYPE_DISK)) {
-            checkDiskFeatureDialog();
             if (downloadableViaAccountOnly(downloadLink)) {
                 /*
                  * link is only downloadable via account because the public overall download limit (traffic limit) is exceeded. In this case
@@ -1135,65 +1130,6 @@ public class DiskYandexNet extends PluginForHost {
         final ConfigEntry moveFilesToAcc = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), MOVE_FILES_TO_ACCOUNT, JDL.L("plugins.hoster.DiskYandexNet.MoveFilesToAccount", "1. Move files to account before downloading them to get higher download speeds?")).setDefaultValue(false);
         getConfig().addEntry(moveFilesToAcc);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DELETE_FROM_ACCOUNT_AFTER_DOWNLOAD, JDL.L("plugins.hoster.DiskYandexNet.EmptyTrashAfterSuccessfulDownload", "2. Delete moved files & empty trash after downloadlink-generation?")).setEnabledCondidtion(moveFilesToAcc, true).setDefaultValue(false));
-    }
-
-    private void checkDiskFeatureDialog() {
-        SubConfiguration config = null;
-        try {
-            config = getPluginConfig();
-            if (config.getBooleanProperty("featuredialog_Shown", Boolean.FALSE) == false) {
-                if (config.getProperty("featuredialog_Shown2") == null) {
-                    showDiskFeatureDialogAll();
-                } else {
-                    config = null;
-                }
-            } else {
-                config = null;
-            }
-        } catch (final Throwable e) {
-        } finally {
-            if (config != null) {
-                config.setProperty("featuredialog_Shown", Boolean.TRUE);
-                config.setProperty("featuredialog_Shown2", "shown");
-                config.save();
-            }
-        }
-    }
-
-    private static void showDiskFeatureDialogAll() {
-        try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        String message = "";
-                        String title = null;
-                        title = "Disk.yandex.net Plugin";
-                        final String lang = System.getProperty("user.language");
-                        if ("de".equalsIgnoreCase(lang)) {
-                            message += "Du benutzt disk.yandex.net zum ersten mal in JDownloader.\r\n";
-                            message += "Momentan lädst du ohne Account und somit begrenzt yandex.net deine Downloadgeschwindigkeit auf nur " + STANDARD_FREE_SPEED + ".\r\n";
-                            message += "Indem du dir einen KOSTENLOSEN Account (das ist KEINE Werbung!) anlegst und ihn in JDownloader einträgst,\r\n";
-                            message += "kannst du ohne Limits von diesem Hoster laden.\r\n";
-                            message += "\r\n";
-                            message += "Wir wünschen dir weiterhin viel Spaß mit JDownloader.\r\n";
-                            message += "Fragen oder Probleme? Melde dich in unserem Support Forum!";
-                        } else {
-                            message += "You're using disk.yandex.net for the frist time in JDownloader.\r\n";
-                            message += "Because you're downloading without Account, yandex.net limits your speed to only " + STANDARD_FREE_SPEED + ".\r\n";
-                            message += "By creating a FREE account (this is NOT advertising!) and adding it to JDownloader\r\n";
-                            message += "you will be able to download without any limits from this host.\r\n";
-                            message += "\r\n";
-                            message += "Furthermore have fun using JDownloader.\r\n";
-                            message += "In case there are any questions or problems, you can contact us via our support forum!";
-                        }
-                        JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
-                    } catch (Throwable e) {
-                    }
-                }
-            });
-        } catch (Throwable e) {
-        }
     }
 
     @Override

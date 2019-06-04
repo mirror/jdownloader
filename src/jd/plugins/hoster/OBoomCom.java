@@ -1,7 +1,6 @@
 package jd.plugins.hoster;
 
 import java.io.UnsupportedEncodingException;
-import java.net.URL;
 import java.net.URLEncoder;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
@@ -12,14 +11,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
-import javax.swing.JOptionPane;
-import javax.swing.SwingUtilities;
-
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -37,6 +28,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "oboom.com" }, urls = { "https?://(www\\.)?oboom\\.com/(#(id=)?|#/)?[A-Z0-9]{8}" })
 public class OBoomCom extends antiDDoSForHost {
@@ -448,10 +444,10 @@ public class OBoomCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(waitTime) * 1000l);
         }
         if (/*
-             * HAS NOTHING TODO WITH ACCOUNT SEE http://board.jdownloader.org/showthread.php?p=317616#post317616 jdlog://6507583568141/
-             * account != null &&
-             */
-        br.getRegex("421,\"connections\",(\\d+)").getMatch(0) != null) {
+         * HAS NOTHING TODO WITH ACCOUNT SEE http://board.jdownloader.org/showthread.php?p=317616#post317616 jdlog://6507583568141/
+         * account != null &&
+         */
+                br.getRegex("421,\"connections\",(\\d+)").getMatch(0) != null) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Already downloading?", 5 * 60 * 1000l);
         }
         handleErrorResponseCodes();
@@ -505,45 +501,6 @@ public class OBoomCom extends antiDDoSForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         handleFree(link, null);
-    }
-
-    protected void showFreeDialog(final String domain) {
-        if (System.getProperty("org.jdownloader.revision") != null) { /* JD2 ONLY! */
-            super.showFreeDialog(domain);
-        } else {
-            try {
-                SwingUtilities.invokeAndWait(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            String lng = System.getProperty("user.language");
-                            String message = null;
-                            String title = null;
-                            String tab = "                        ";
-                            if ("de".equalsIgnoreCase(lng)) {
-                                title = domain + " Free Download";
-                                message = "Du lädst im kostenlosen Modus von " + domain + ".\r\n";
-                                message += "Wie bei allen anderen Hostern holt JDownloader auch hier das Beste für dich heraus!\r\n\r\n";
-                                message += tab + "  Falls du allerdings mehrere Dateien\r\n" + "          - und das möglichst mit Fullspeed und ohne Unterbrechungen - \r\n" + "             laden willst, solltest du dir den Premium Modus anschauen.\r\n\r\nUnserer Erfahrung nach lohnt sich das - Aber entscheide am besten selbst. Jetzt ausprobieren?  ";
-                            } else {
-                                title = domain + " Free Download";
-                                message = "You are using the " + domain + " Free Mode.\r\n";
-                                message += "JDownloader always tries to get the best out of each hoster's free mode!\r\n\r\n";
-                                message += tab + "   However, if you want to download multiple files\r\n" + tab + "- possibly at fullspeed and without any wait times - \r\n" + tab + "you really should have a look at the Premium Mode.\r\n\r\nIn our experience, Premium is well worth the money. Decide for yourself, though. Let's give it a try?   ";
-                            }
-                            if (CrossSystem.isOpenBrowserSupported()) {
-                                int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null);
-                                if (JOptionPane.OK_OPTION == result) {
-                                    CrossSystem.openURL(new URL("http://update3.jdownloader.org/jdserv/BuyPremiumInterface/redirect?" + domain + "&freedialog"));
-                                }
-                            }
-                        } catch (Throwable e) {
-                        }
-                    }
-                });
-            } catch (Throwable e) {
-            }
-        }
     }
 
     @Override

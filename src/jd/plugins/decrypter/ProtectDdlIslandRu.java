@@ -40,7 +40,7 @@ public class ProtectDdlIslandRu extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private final String invalidLinks = "http://(www\\.)?" + Pattern.quote(getHost()) + "/(img|other)";
+    private final String invalidLinks = "https?://(www\\.)?" + Pattern.quote(getHost()) + "/(img|other)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -73,7 +73,10 @@ public class ProtectDdlIslandRu extends PluginForDecrypt {
                 decryptedLinks.add(createOfflinelink(parameter, fuid, null));
                 return decryptedLinks;
             }
-            String finallink = br.getRegex(">Lien :</b></td><td><a href=\"(http[^<>\"]*?)\"").getMatch(0);
+            String finallink = br.getRegex(">Lien :</b></td><td><a href=\"(https?[^<>\"]*?)\"").getMatch(0);
+            if (finallink == null) {
+                finallink = br.getRegex("<tr><td><a href=\"(https?[^<>\"]*?)\"").getMatch(0);
+            }
             if (finallink != null) {
                 decryptedLinks.add(createDownloadlink(finallink));
             } else {
@@ -101,7 +104,10 @@ public class ProtectDdlIslandRu extends PluginForDecrypt {
                 }
             }
         }
-        final String finallink = br.getRegex(">Lien :</b></td><td><a href=\"(http[^<>\"]*?)\"").getMatch(0);
+        String finallink = br.getRegex(">Lien :</b></td><td><a href=\"(https?[^<>\"]*?)\"").getMatch(0);
+        if (finallink == null) {
+            finallink = br.getRegex("<tr><td><a href=\"(https?[^<>\"]*?)\"").getMatch(0);
+        }
         if (finallink != null) {
             decryptedLinks.add(createDownloadlink(finallink));
         }

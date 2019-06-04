@@ -56,16 +56,15 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private String       userApiToken = null;
-    private String       userId       = null;
-    private final String clientID     = "mov1ay9d49l14f7siur0q8k9gny15aw"; // This clientID is for JDownloader only
+    private String userApiToken = null;
+    private String userId       = null;
 
     private Browser ajaxGetPage(final String string) throws IOException {
         final Browser ajax = br.cloneBrowser();
         ajax.getHeaders().put("Accept", "application/vnd.twitchtv.v3+json");
         ajax.getHeaders().put("Referer", "https://api.twitch.tv/crossdomain/receiver.html?v=2");
         ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        ajax.getHeaders().put("Client-ID", clientID);
+        ajax.getHeaders().put("Client-ID", jd.plugins.hoster.TwitchTv.clientID);
         if (userApiToken != null) {
             ajax.getHeaders().put("Twitch-Api-Token", userApiToken);
         }
@@ -75,7 +74,7 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
 
     private Browser ajaxGetPagePlayer(final String string) throws IOException {
         final Browser ajax = br.cloneBrowser();
-        ajax.getHeaders().put("Client-ID", clientID);
+        ajax.getHeaders().put("Client-ID", jd.plugins.hoster.TwitchTv.clientID);
         ajax.getHeaders().put("X-Requested-With", "ShockwaveFlash/22.0.0.192");
         ajax.getPage(string);
         return ajax;
@@ -505,7 +504,7 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
         try {
             ((jd.plugins.hoster.TwitchTv) plugin).login(this.br, aa, force);
         } catch (final PluginException e) {
-            aa.setValid(false);
+            handleAccountException(aa, e);
             return false;
         }
         // set from cookie value after login.

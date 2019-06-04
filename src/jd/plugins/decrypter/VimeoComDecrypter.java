@@ -122,7 +122,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
     }
 
     private boolean isEmbeddedForbidden(PluginException e, Browser br) {
-        return e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND && br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 403;
+        return e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND && ((br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 403) || (br.containsHTML(">\\s*Private Video on Vimeo\\s*<")));
     }
 
     @Override
@@ -148,8 +148,6 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         } else if (parameter.matches(type_player_private_external)) {
             parameter = parameter.replace("/external/", "/video/");
-        } else if (!parameter.matches(type_player_private_forced_referer) && parameter.matches(type_player)) {
-            parameter = "https://vimeo.com/" + new Regex(parameter, "https?://player.vimeo.com/video/(\\d+)").getMatch(0);
         }
         // when testing and dropping to frame, components will fail without clean browser.
         br = new Browser();
@@ -285,37 +283,20 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     lock = acc;
                 }
             }
+            final VIMEO_URL_TYPE urlType = jd.plugins.hoster.VimeoCom.getUrlType(parameter);
             synchronized (lock) {
-                final AtomicReference<VIMEO_URL_TYPE> urlType = new AtomicReference<VimeoCom.VIMEO_URL_TYPE>(null);
                 try {
                     try {
-                        try {
-                            try {
-                                // TODO: add another plugin option to use original url first
-                                jd.plugins.hoster.VimeoCom.accessVimeoURL(this, this.br, parameter, urlType, referer, loggedIn ? VIMEO_URL_TYPE.RAW : null);
-                            } catch (final PluginException e) {
-                                if (isEmbeddedForbidden(e, br) && VIMEO_URL_TYPE.PLAYER.equals(urlType.get()) && orgParameter.matches(type_normal)) {
-                                    jd.plugins.hoster.VimeoCom.accessVimeoURL(this, this.br, parameter, urlType, referer, VIMEO_URL_TYPE.RAW);
-                                } else {
-                                    throw e;
-                                }
-                            }
-                        } catch (final PluginException e2) {
-                            if (retryWithCustomReferer(param, e2, br, referer)) {
-                                jd.plugins.hoster.VimeoCom.accessVimeoURL(this, this.br, parameter, urlType, referer, VIMEO_URL_TYPE.RAW.equals(urlType.get()) ? VIMEO_URL_TYPE.RAW : null);
-                            } else {
-                                throw e2;
-                            }
-                        }
-                    } catch (PluginException e) {
-                        if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND && orgParameter.matches(type_player) && !VIMEO_URL_TYPE.RAW.equals(urlType.get())) {
-                            jd.plugins.hoster.VimeoCom.accessVimeoURL(this, this.br, orgParameter, urlType, referer, VIMEO_URL_TYPE.RAW);
-                            parameter = orgParameter;
+                        jd.plugins.hoster.VimeoCom.accessVimeoURL(this, this.br, parameter, referer, urlType);
+                    } catch (final PluginException e2) {
+                        if (retryWithCustomReferer(param, e2, br, referer)) {
+                            jd.plugins.hoster.VimeoCom.accessVimeoURL(this, this.br, parameter, referer, urlType);
                         } else {
-                            throw e;
+                            throw e2;
                         }
                     }
                 } catch (final PluginException e2) {
+                    logger.log(e2);
                     if (e2.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
                         decryptedLinks.add(createOfflinelink(parameter, videoID, null));
                         return decryptedLinks;
@@ -421,7 +402,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     logger.log(e);
                 }
                 final boolean tryToFindOfficialDownloadURLs = this.qORG;
-                final List<VimeoContainer> containers = jd.plugins.hoster.VimeoCom.find(this, urlType.get(), br, videoID, tryToFindOfficialDownloadURLs, qALL || qMOBILE || qMOBILE || qHD, qALL || qMOBILE || qMOBILE || qHD, subtitle);
+                final List<VimeoContainer> containers = jd.plugins.hoster.VimeoCom.find(this, urlType, br, videoID, tryToFindOfficialDownloadURLs, qALL || qMOBILE || qMOBILE || qHD, qALL || qMOBILE || qMOBILE || qHD, subtitle);
                 if (containers == null) {
                     return null;
                 }
@@ -432,7 +413,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                  * Both APIs we use as fallback to find additional information can only be used to display public content - it will not help
                  * us if the user has e.g. added a private/password protected video.
                  */
-                final boolean isPublicContent = VIMEO_URL_TYPE.NORMAL.equals(urlType.get()) || VIMEO_URL_TYPE.RAW.equals(urlType.get());
+                final boolean isPublicContent = VIMEO_URL_TYPE.NORMAL.equals(urlType) || VIMEO_URL_TYPE.RAW.equals(urlType);
                 String embed_privacy = null;
                 try {
                     if (!StringUtils.isAllNotEmpty(title, date, description, ownerName, ownerUrl) && isPublicContent) {
@@ -521,10 +502,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     final String linkdupeid = container.createLinkID(videoID);
                     final DownloadLink link = createDownloadlink(parameter.replaceAll("https?://", "decryptedforVimeoHosterPlugin://"));
                     link.setLinkID(linkdupeid);
-                    final VIMEO_URL_TYPE vimeoUrlType = urlType.get();
-                    if (vimeoUrlType != null) {
-                        link.setProperty(VimeoCom.VIMEOURLTYPE, vimeoUrlType);
-                    }
+                    link.setProperty(VimeoCom.VIMEOURLTYPE, urlType);
                     link.setProperty("videoID", videoID);
                     if (unlistedHash != null) {
                         link.setProperty("specialVideoID", unlistedHash);

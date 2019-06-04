@@ -26,7 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagevenue.com" }, urls = { "http://(www\\.)?img\\d+\\.imagevenue\\.com/galshow\\.php\\?gal=gallery_.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagevenue.com" }, urls = { "https?://(www\\.)?img\\d+\\.imagevenue\\.com/galshow\\.php\\?gal=gallery_.+" })
 public class ImageVenueComGallery extends PluginForDecrypt {
     public ImageVenueComGallery(PluginWrapper wrapper) {
         super(wrapper);
@@ -45,7 +45,7 @@ public class ImageVenueComGallery extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final String[] links = br.getRegex("<a href=\"(http://img\\d+\\.imagevenue\\.com/img\\.php\\?image=[^<>\"]*?)\" target=\"_blank\"><img src=\"").getColumn(0);
+        final String[] links = br.getRegex("<a href=\"(https?://img\\d+\\.imagevenue\\.com/img\\.php\\?image=[^<>\"]*?)\" target=\"_blank\"><img src=\"").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

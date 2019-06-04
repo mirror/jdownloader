@@ -25,20 +25,19 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map.Entry;
-import java.util.Random;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
+import jd.http.requests.GetRequest;
+import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -56,9 +55,9 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.raf.FileBytesMap;
 import jd.utils.locale.JDL;
 
+import org.appwork.storage.JSonStorage;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.controlling.ffmpeg.FFmpegMetaData;
 import org.jdownloader.controlling.ffmpeg.json.Stream;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
@@ -587,124 +586,63 @@ public class TwitchTv extends PluginForHost {
         return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
     }
 
-    private static final String MAINPAGE    = "http://twitch.tv";
-    private static Object       accountLock = new Object();
-    private static Object       ctrlLock    = new Object();
+    private static Object      ctrlLock = new Object();
+    public static final String clientID = "mov1ay9d49l14f7siur0q8k9gny15aw"; // This clientID is for JDownloader only
 
-    @SuppressWarnings("unchecked")
     public void login(Browser br, final Account account, final boolean force) throws Exception {
-        synchronized (accountLock) {
+        synchronized (account) {
             try {
+                br.addAllowedResponseCodes(400);
                 // Load cookies
                 br.setCookiesExclusive(true);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                boolean login = true;
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?>) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            br.setCookie(MAINPAGE, key, value);
-                        }
-                        br.setFollowRedirects(true);
-                        br.getPage("https://www.twitch.tv");
-                        final Form logout = br.getFormbyAction("/logout");
-                        if (logout != null) {
-                            login = false;
-                        } else if (force) {
-                            br.clearCookies(getHost());
-                        } else {
-                            return;
-                        }
+                Cookies cookies = account.loadCookies("");
+                String access_token = account.getStringProperty("access_token", null);
+                if (cookies != null && access_token != null) {
+                    br.setCookies(getHost(), cookies);
+                    br.getPage("https://www.twitch.tv/");
+                    final GetRequest request = br.createGetRequest("https://api.twitch.tv/kraken/user");
+                    request.getHeaders().put("Authorization", "OAuth " + access_token);
+                    br.getPage(request);
+                    if (request.getHttpConnection().getResponseCode() == 200) {
+                        account.saveCookies(br.getCookies(getHost()), "");
+                        return;
                     }
                 }
-                if (login) {
-                    br.setFollowRedirects(true);
-                    // they don't allow requests to home page to handshake with https.. very poor.
-                    boolean recaptcha = false;
-                    int round = 0;
-                    while (true) {
-                        if (++round > 5) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                        }
-                        br.setRequest(null);
-                        br.getPage("https://www.twitch.tv/user/login_popup");
-                        // two iframes. one signup, one login.
-                        final String[] iframes = br.getRegex("<iframe [^>]*src\\s*=\\s*(\"|')(.*?)\\1").getColumn(1);
-                        if (iframes == null) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                        for (String iframe : iframes) {
-                            iframe = Encoding.htmlOnlyDecode(iframe);
-                            if (StringUtils.containsIgnoreCase(iframe, "/authentications/new") || StringUtils.containsIgnoreCase(iframe, "username=")) {
-                                br.getPage(iframe);
-                                break;
-                            }
-                        }
-                        // form time!
-                        final Form f = br.getFormbyProperty("id", "loginForm");
-                        if (f == null) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                        if (recaptcha) {
-                            final DownloadLink dummyLink = new DownloadLink(this, "Account Login", getHost(), getHost(), true);
-                            final DownloadLink odl = this.getDownloadLink();
-                            this.setDownloadLink(dummyLink);
-                            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6Ld65QcTAAAAAMBbAE8dkJq4Wi4CsJy7flvKhYqX").getToken();
-                            if (odl != null) {
-                                this.setDownloadLink(odl);
-                            }
-                            f.put("captcha", Encoding.urlEncode(recaptchaV2Response));
-                        }
-                        f.put("username", Encoding.urlEncode(account.getUser()));
-                        f.put("password", Encoding.urlEncode(account.getPass()));
-                        f.put("redirect_path", Encoding.urlEncode("https://www.twitch.tv/"));
-                        f.put("time_to_submit", (4 + new Random().nextInt(4)) + "." + new Random().nextInt(9) + "" + new Random().nextInt(9) + "" + new Random().nextInt(9));
-                        // json now!
-                        final Browser ajax = ajaxSubmitForm(f);
-                        // correct will redirect, with no cookies until following redirect; incorrect has error message && no cookies.
-                        String redirect = PluginJSonUtils.getJsonValue(ajax, "redirect");
-                        if (redirect == null) {
-                            redirect = PluginJSonUtils.getJsonValue(ajax, "redirect_path");
-                        }
-                        if (redirect != null) {
-                            // not with json headers
-                            ajax.getPage(redirect);
-                            br = ajax;
-                            break;
-                        } else {
-                            final String captcha = PluginJSonUtils.getJsonValue(ajax, "captcha");
-                            final String message = PluginJSonUtils.getJsonValue(ajax, "message");
-                            if ("Please complete the CAPTCHA correctly.".equals(message) || "true".equals(captcha)) {
-                                recaptcha = true;
-                                continue;
-                            }
-                            if ("Incorrect username or password.".equals(message) || "Benutzername oder Passwort fehlerhaft.".equals(message)) {
-                                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                                } else {
-                                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                                }
-                            }
-                        }
+                br.setFollowRedirects(true);
+                br.getPage("https://www.twitch.tv/");
+                final Map<String, String> map = new HashMap<String, String>();
+                map.put("username", account.getUser());
+                map.put("password", account.getPass());
+                map.put("client_id", clientID);
+                final PostRequest request = br.createJSonPostRequest("https://passport.twitch.tv/login", JSonStorage.toString(map));
+                br.getPage(request);
+                if (request.getHttpConnection().getResponseCode() == 400) {
+                    final String error_code = PluginJSonUtils.getJsonValue(request.getHtmlCode(), "error_code");
+                    if ("1000".equals(error_code)) {
+                        // captcha, not yet supported
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    } else if ("1014".equals(error_code)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "user does not exist", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else if ("3001".equals(error_code)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "user credentials incorrect", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(MAINPAGE);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
+                final String redirect = PluginJSonUtils.getJsonValue(request.getHtmlCode(), "redirect_path");
+                access_token = PluginJSonUtils.getJsonValue(request.getHtmlCode(), "access_token");
+                if (access_token == null || redirect == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
+                    account.setProperty("access_token", access_token);
+                    br.getPage(redirect);
+                    br.setCookie(getHost(), "api_token", access_token);
+                    account.saveCookies(br.getCookies(getHost()), "");
                 }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
