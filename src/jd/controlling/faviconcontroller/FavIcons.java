@@ -2,6 +2,7 @@ package jd.controlling.faviconcontroller;
 
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.Transparency;
@@ -13,6 +14,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -40,6 +42,7 @@ import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
+import org.appwork.utils.Exceptions;
 import org.appwork.utils.Files;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -325,7 +328,7 @@ public class FavIcons {
             try {
                 final String fontName = ImageProvider.getDrawFontName();
                 g.setFont(new Font(fontName, Font.BOLD, size));
-                g.getFontMetrics(); // check for missing fonts/headless java
+                final FontMetrics fontmetrics = g.getFontMetrics(); // check for missing fonts/headless java
                 String tld = Files.getExtension(host);
                 if (tld != null) {
                     tld = tld.toLowerCase(Locale.ENGLISH);
@@ -349,29 +352,29 @@ public class FavIcons {
                 // Graphics2D g = image.createGraphics();
                 g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 g.setFont(new Font(fontName, Font.BOLD, size));
-                RoundRectangle2D roundedRectangle = new RoundRectangle2D.Float(0, 0, w - 1, h - 1, 5, 5);
+                final RoundRectangle2D roundedRectangle = new RoundRectangle2D.Float(0, 0, w - 1, h - 1, 5, 5);
                 g.setColor(bg);
                 g.fill(roundedRectangle);
                 g.setColor(bg.darker());
                 g.draw(roundedRectangle);
                 g.setColor(fg);
-                Rectangle2D bounds = g.getFontMetrics().getStringBounds(dummy, g);
+                Rectangle2D bounds = fontmetrics.getStringBounds(dummy, g);
                 g.drawString(dummy, (int) (w - bounds.getWidth()) / 2, (int) (-bounds.getY() + (h - bounds.getHeight()) / 2) - (tld == null ? 0 : 1));
                 if (tld != null) {
                     g.setFont(new Font(fontName, 0, 6));
-                    bounds = g.getFontMetrics().getStringBounds("." + tld, g);
+                    bounds = fontmetrics.getStringBounds("." + tld, g);
                     g.drawString("." + tld, (int) (w - bounds.getWidth()) - 2, (h) - 2);
                 }
                 return image;
-            } catch (NullPointerException e) {
-                // java.lang.NullPointerException
+            } catch (Exception e) {
+                // java.lang.NullPointerException or java.lang.reflect.InvocationTargetException(jdk12)
                 // at sun.awt.FontConfiguration.getVersion(FontConfiguration.java:1264)
                 // at sun.awt.FontConfiguration.readFontConfigFile(FontConfiguration.java:219)
                 // at sun.awt.FontConfiguration.init(FontConfiguration.java:107)
-                if (Application.isHeadless()) {
+                if (Application.isHeadless() && (Exceptions.getInstanceof(e, NullPointerException.class) != null || Exceptions.getInstanceof(e, InvocationTargetException.class) != null)) {
                     return IconIO.toBufferedImage(new AbstractIcon(IconKey.ICON_ERROR, 16));
                 } else {
-                    throw e;
+                    throw new RuntimeException(e);
                 }
             }
         } finally {
