@@ -69,8 +69,6 @@ public class TvnowDe extends PluginForHost {
     /* Old + new movie-linktype */
     public static final String            TYPE_MOVIE_OLD                 = "https?://[^/]+/[^/]+/[^/]+";
     public static final String            TYPE_MOVIE_NEW                 = "https?://[^/]+/filme/.+";
-    public static final String            TYPE_SERIES_NEW                = "^https?://[^/]+/(?:serien|shows)/([^/]+)(?:/staffel\\-\\d+)?";
-    public static final String            TYPE_SERIES_NEW_SPECIAL        = "^https?://[^/]+/specials/[^/]+$";
     public static final String            TYPE_SERIES_SINGLE_EPISODE_NEW = "https?://[^/]+/(?:serien|shows)/([^/]+)/(?:[^/]+/)?(?!staffel\\-\\d+)([^/]+)$";
     public static final String            TYPE_DEEPLINK                  = "^[a-z]+://link\\.[^/]+/.+";
     public static final String            API_BASE                       = "https://api.tvnow.de/v3";
@@ -93,7 +91,7 @@ public class TvnowDe extends PluginForHost {
     }
 
     public static boolean isMovie_old(final String url) {
-        return url.matches(TYPE_MOVIE_OLD) && !url.matches(TYPE_MOVIE_NEW) && !url.matches(TYPE_SERIES_SINGLE_EPISODE_NEW) && !url.matches(TYPE_SERIES_NEW);
+        return url.matches(TYPE_MOVIE_OLD) && !url.matches(TYPE_MOVIE_NEW) && !isSeriesSingleEpisodeNew(url) && !isSeriesNew(url);
     }
 
     public static boolean isSeriesSingleEpisodeNew(final String url) {
@@ -102,7 +100,7 @@ public class TvnowDe extends PluginForHost {
     }
 
     public static boolean isSeriesNew(final String url) {
-        return (url.matches(TYPE_SERIES_NEW) && !isSeriesSingleEpisodeNew(url)) || url.matches(TYPE_SERIES_NEW_SPECIAL);
+        return (url.matches("^https?://[^/]+/(?:serien|shows)/([^/]+)(?:/staffel\\-\\d+)?") || url.matches(".+/premium\\?typ=format\\&formatname=.+") || url.matches("^https?://[^/]+/specials/[^/]+$") && !isSeriesSingleEpisodeNew(url));
     }
 
     @Override
@@ -344,9 +342,11 @@ public class TvnowDe extends PluginForHost {
         final boolean isDRM = downloadLink.getBooleanProperty("isDRM", false);
         // final boolean isStrictDrm1080p;
         if (this.usingNewAPI) {
+            /* New API was already used in availablecheck (special case) */
             /* TODO: Find out what this means? 1080p = DRM protected, other qualities not? */
             // isStrictDrm1080p = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "rights/isStrictDrm1080p"));
         } else {
+            /* Old API was used in availablecheck until now. */
             final String movieID = Long.toString(JavaScriptEngineFactory.toLong(entries.get("id"), -1));
             if (movieID.equals("-1")) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -480,7 +480,7 @@ public class TvnowDe extends PluginForHost {
         final String episodeID = link.getStringProperty("id_episode", null);
         if (StringUtils.isEmpty(episodeID)) {
             logger.info("id_episode is null - content is not downloadable without this id");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         br.getPage(API_NEW_BASE + "/module/player/" + episodeID);
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -685,7 +685,7 @@ public class TvnowDe extends PluginForHost {
         episodename = episodename.replaceAll("^episode\\-\\d+\\-", "");
         /* This part is tricky - we have to filter-out stuff which does not belong to their intern title ... */
         /* Examples: which shall NOT be modified: "super-8-kamera-von-1965", "folge-w-05" */
-        if (!episodename.matches(".*?(folge|teil)\\-\\d+$") && !episodename.matches(".+\\d{4}\\-\\d{2}-\\d{2}-\\d{2}-\\d{2}-\\d{2}$") && !episodename.matches(".+\\-[12]\\d{3}")) {
+        if (!episodename.matches(".*?(folge|teil)\\-\\d+$") && !episodename.matches(".+\\d{4}\\-\\d{2}-\\d{2}-\\d{2}-\\d{2}-\\d{2}\\-\\d+$") && !episodename.matches(".+\\-[12]\\d{3}")) {
             episodename = episodename.replaceAll("\\-\\d+$", "");
         }
         return episodename;

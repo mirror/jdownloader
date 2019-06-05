@@ -43,9 +43,7 @@ import jd.plugins.components.PluginJSonUtils;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "multihoster8.com" }, urls = { "" })
 public class Multihoster8Com extends PluginForHost {
     private static final String          API_BASE            = "https://www.multihoster8.com/api";
-    private static final String          NICE_HOST           = "multihoster8.com";
     private static MultiHosterManagement mhm                 = new MultiHosterManagement("multihoster8.com");
-    private static final String          NICE_HOSTproperty   = NICE_HOST.replaceAll("(\\.|\\-)", "");
     private static final int             defaultMAXDOWNLOADS = -1;
     private static final int             defaultMAXCHUNKS    = 0;
     private static final boolean         defaultRESUME       = true;
@@ -96,7 +94,7 @@ public class Multihoster8Com extends PluginForHost {
     }
 
     private void handleDL(final Account account, final DownloadLink link) throws Exception {
-        String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
+        String dllink = checkDirectLink(link, account.getHoster() + "directlink");
         br.setFollowRedirects(true);
         if (dllink == null) {
             br.getPage(API_BASE + "/getdirecturl?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&url=" + Encoding.urlEncode(link.getPluginPatternMatcher()));
@@ -106,10 +104,10 @@ public class Multihoster8Com extends PluginForHost {
                 mhm.handleErrorGeneric(account, link, "dllinknull", 10, 5 * 60 * 1000l);
             }
             if (!StringUtils.isEmpty(direct_url_end_time) && direct_url_end_time.matches("\\d+")) {
-                link.setProperty(NICE_HOSTproperty + "direct_url_end_time", Long.parseLong(direct_url_end_time));
+                link.setProperty(account.getHoster() + "direct_url_end_time", Long.parseLong(direct_url_end_time));
             }
         }
-        link.setProperty(NICE_HOSTproperty + "directlink", dllink);
+        link.setProperty(account.getHoster() + "directlink", dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, defaultRESUME, defaultMAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

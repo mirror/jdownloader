@@ -13,12 +13,12 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
@@ -28,6 +28,7 @@ import jd.http.Browser.BrowserException;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -39,7 +40,6 @@ import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fakku.net" }, urls = { "https://books\\.fakku\\.net/images/manga/[^/]+/.+" })
 public class FakkuNet extends antiDDoSForHost {
-
     public FakkuNet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.fakku.net/");
@@ -51,7 +51,6 @@ public class FakkuNet extends antiDDoSForHost {
     }
 
     private static final String  TYPE_PREMIUM              = "https://books\\.fakku\\.net/images/manga/[^/]+/.+";
-
     /* Connection stuff */
     private static final boolean FREE_RESUME               = false;
     private static final int     FREE_MAXCHUNKS            = 1;
@@ -59,10 +58,8 @@ public class FakkuNet extends antiDDoSForHost {
     private static final boolean ACCOUNT_FREE_RESUME       = false;
     private static final int     ACCOUNT_FREE_MAXCHUNKS    = 1;
     private static final int     ACCOUNT_FREE_MAXDOWNLOADS = 20;
-
     /* don't touch the following! */
     private static AtomicInteger maxPrem                   = new AtomicInteger(1);
-
     private String               dllink                    = null;
 
     @SuppressWarnings("deprecation")
@@ -147,21 +144,50 @@ public class FakkuNet extends antiDDoSForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    private static final String MAINPAGE = "http://fakku.net";
+    private static final String MAINPAGE = "https://fakku.net";
     private static Object       LOCK     = new Object();
 
     public boolean login(final Browser br, final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 br.setCookiesExclusive(true);
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null && !force) {
-                    br.setCookies(MAINPAGE, cookies);
-                    return true;
-                }
                 br.setFollowRedirects(true);
-                postPage(br, "https://www.fakku.net/login/submit", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                if (br.getCookie(MAINPAGE, "fakku_sid") == null) {
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    /* Try to avoid login-captcha! */
+                    br.setCookies(MAINPAGE, cookies);
+                    getPage("https://www." + account.getHoster() + "/login");
+                    if (isLoggedin()) {
+                        return true;
+                    }
+                    /* Full login required */
+                    br.setCookies(MAINPAGE, cookies);
+                }
+                getPage("https://www." + account.getHoster() + "/login");
+                final Form loginform = br.getFormbyProperty("name", "login");
+                if (loginform == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                if (br.containsHTML("")) {
+                    /* Handle login-captcha if required */
+                    final DownloadLink dlinkbefore = this.getDownloadLink();
+                    final DownloadLink dl_dummy;
+                    if (dlinkbefore != null) {
+                        dl_dummy = dlinkbefore;
+                    } else {
+                        dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
+                        this.setDownloadLink(dl_dummy);
+                    }
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    if (dlinkbefore != null) {
+                        this.setDownloadLink(dlinkbefore);
+                    }
+                }
+                loginform.put("username", account.getUser());
+                loginform.put("password", account.getPass());
+                this.submitForm(loginform);
+                if (!isLoggedin()) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -175,6 +201,10 @@ public class FakkuNet extends antiDDoSForHost {
             }
             return true;
         }
+    }
+
+    private boolean isLoggedin() {
+        return br.getCookie(MAINPAGE, "fakku_sid", Cookies.NOTDELETEDPATTERN) != null;
     }
 
     @SuppressWarnings("deprecation")
@@ -210,5 +240,4 @@ public class FakkuNet extends antiDDoSForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

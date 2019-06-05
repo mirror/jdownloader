@@ -44,11 +44,11 @@ public class DatPiffCom extends PluginForHost {
     private static final String ONLYREGISTEREDUSERTEXT   = "Only downloadable for registered users";
     private static final String CURRENTLYUNAVAILABLE     = ">This is most likely because the uploader is currently making changes";
     private static final String CURRENTLYUNAVAILABLETEXT = "Currently unavailable";
-    private static final String MAINPAGE                 = "http://www.datpiff.com/";
+    private static final String MAINPAGE                 = "https://www.datpiff.com/";
 
     public DatPiffCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www.datpiff.com/register");
+        this.enablePremium("https://www.datpiff.com/register");
     }
 
     @SuppressWarnings("deprecation")
@@ -63,7 +63,7 @@ public class DatPiffCom extends PluginForHost {
                 downID = br2.getRegex("mixtapePlayer(Tall)?\\.swf\\?mid=(.*?)\"").getMatch(0);
             }
             if (downID != null) {
-                link.setUrlDownload("http://www.datpiff.com/pop-mixtape-download.php?id=" + downID);
+                link.setUrlDownload("https://www.datpiff.com/pop-mixtape-download.php?id=" + downID);
             }
         }
     }
@@ -241,11 +241,11 @@ public class DatPiffCom extends PluginForHost {
 
     private void login(Account account) throws Exception {
         setBrowserExclusive();
-        br.postPage("http://www.datpiff.com/login", "cmd=login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+        br.postPage("https://www." + account.getHoster() + "/login", "cmd=login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
         if (br.getRedirectLocation() == null) { // Should be /account if OK, or /login if failed.
             for (int i = 0; i < 3; i++) { // Sometimes retry is needed, login page is displayed without redirect.
                 Thread.sleep(3 * 1000);
-                br.postPage("http://www.datpiff.com/login", "cmd=login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                br.postPage("https://www." + account.getHoster() + "/login", "cmd=login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (br.getRedirectLocation() != null) {
                     break;
                 }
@@ -278,7 +278,7 @@ public class DatPiffCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.datpiff.com/terms";
+        return "https://www.datpiff.com/terms";
     }
 
     @Override

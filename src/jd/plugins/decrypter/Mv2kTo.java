@@ -45,7 +45,12 @@ public class Mv2kTo extends antiDDoSForDecrypt {
      */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final String old_domain = Browser.getHost(param.toString());
-        final String parameter = param.toString().replace(old_domain, "movie4k.to/");
+        String parameter = param.toString().replace(old_domain, "movie4k.to/");
+        /*
+         * 2019-06-05: Some browser addons enforce https so users add urls with https although this service does not support https. This may
+         * end in Cloudflare --> 403
+         */
+        parameter = parameter.replace("https://", "http://");
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String initalMirror = parameter.substring(parameter.lastIndexOf("/") + 1);
         br.setFollowRedirects(true);

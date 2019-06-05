@@ -37,139 +37,175 @@ public class TvnowDe extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        String parameter = param.toString();
         String formatID = null;
-        String url_showname;
+        String url_showname = null;
         String url_singleEpisodeName = null;
         String singleEpisodeID = null;
-        boolean isMovie;
+        boolean isMovie = false;
         String url_old = null;
         String url_new = null;
-        String stationName;
+        String stationName = null;
+        final String url_params = new Regex(parameter, "(\\?.+)").getMatch(0);
+        if (url_params != null && !jd.plugins.hoster.TvnowDe.isSeriesNew(parameter)) {
+            parameter = parameter.replace(url_params, "");
+        }
+        /**
+         * 2019-06-05: The following part might get VERY confusing but please do NOT change it unless you really know what you're doing! If
+         * something does not work, please do NOT just "make it fit"!
+         */
         /* E.g. tvnow.de/shows/bla | tvnow.de/serien/bla */
-        if (parameter.matches(jd.plugins.hoster.TvnowDe.TYPE_MOVIE_NEW)) {
-            stationName = null;
-            url_showname = new Regex(parameter, "([^/]+)$").getMatch(0);
-            formatID = new Regex(url_showname, ".+\\-(\\d+)$").getMatch(0);
-            isMovie = true;
-            url_showname = jd.plugins.hoster.TvnowDe.cleanupShowTitle(url_showname);
-        } else if (parameter.matches(jd.plugins.hoster.TvnowDe.TYPE_DEEPLINK)) {
-            /*
-             * 2019-01-21: These URLs are sometimes still given (via json) but it seems like they do not work anymore! They will redirect to
-             * mainpage.
-             */
-            final boolean deeplinkOffline = true;
-            formatID = new Regex(parameter, "f=(\\d+)").getMatch(0);
-            singleEpisodeID = new Regex(parameter, "e=(\\d+)").getMatch(0);
-            if (deeplinkOffline) {
-                final DownloadLink offline = this.createOfflinelink(parameter);
-                offline.setFinalFileName(formatID + "_" + singleEpisodeID);
-                decryptedLinks.add(offline);
-                return decryptedLinks;
-            }
-            url_showname = null;
-            stationName = null;
-            br.getPage(parameter);
-            /* Additional offline-check */
-            if (br.getHttpConnection().getResponseCode() == 404) {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
-            }
-            url_old = br.getRegex("webLink = \\'(https?://[^/]+/[^<>\"\\']+)\\'").getMatch(0);
-            if (url_old != null) {
-                isMovie = jd.plugins.hoster.TvnowDe.isMovie_old(url_old);
-                if (isMovie) {
-                    final Regex urlInfo = new Regex(url_old, "tvnow\\.de/([^/]+)/([^/]+)");
-                    stationName = urlInfo.getMatch(0);
-                    url_showname = urlInfo.getMatch(1);
-                } else {
-                    /* We can only forward series directly to the host-plugin - we have to crawl movies via the main loop below! */
-                    final Regex urlInfo = new Regex(url_old, "tvnow\\.de/([^/]+)/([^/]+)/(.+)");
-                    stationName = urlInfo.getMatch(0);
-                    url_showname = urlInfo.getMatch(1);
-                    url_singleEpisodeName = urlInfo.getMatch(2);
-                }
-            } else {
-                isMovie = false;
-            }
-        } else if (jd.plugins.hoster.TvnowDe.isSeriesSingleEpisodeNew(parameter)) {
-            /* New single-series-episode linkformat */
-            final Regex urlInfo = new Regex(parameter, jd.plugins.hoster.TvnowDe.TYPE_SERIES_SINGLE_EPISODE_NEW);
-            stationName = null;
-            url_showname = urlInfo.getMatch(0);
-            formatID = new Regex(url_showname, "\\-(\\d+)$").getMatch(0);
-            final String url_singleEpisodeNameTmp = urlInfo.getMatch(1);
-            if (url_singleEpisodeNameTmp != null && !url_singleEpisodeNameTmp.matches("\\d{4}\\-\\d{2}")) {
-                /* Make sure that this is actually an episodeName and not e.g. just a date. */
-                url_singleEpisodeName = urlInfo.getMatch(1);
-                singleEpisodeID = new Regex(url_singleEpisodeName, ".+\\-(\\d+)$").getMatch(0);
-                url_singleEpisodeName = jd.plugins.hoster.TvnowDe.cleanupEpisodeTitle(url_singleEpisodeName);
-            }
-            url_showname = jd.plugins.hoster.TvnowDe.cleanupShowTitle(url_showname);
-            isMovie = false;
-        } else if (jd.plugins.hoster.TvnowDe.isSeriesNew(parameter)) {
-            /* New series linkformat */
-            stationName = null;
-            url_showname = new Regex(parameter, "/(?:serien|shows|specials)/([^/]+)").getMatch(0);
-            formatID = new Regex(url_showname, ".+\\-(\\d+)$").getMatch(0);
-            url_showname = jd.plugins.hoster.TvnowDe.cleanupShowTitle(url_showname);
-            isMovie = false;
-        } else if (jd.plugins.hoster.TvnowDe.isMovie_old(parameter)) {
-            /* Old movies linkformat */
-            url_old = parameter;
-            final Regex urlInfo = new Regex(parameter, "https?://[^/]+/([^/]+)/([^/]+)");
-            stationName = urlInfo.getMatch(0);
-            url_showname = urlInfo.getMatch(1);
-            isMovie = true;
-        } else if (parameter.matches("https?://[^/]+/[^/]+/[^/]+")) {
-            /* 2018-12-12: New linkformat */
-            stationName = null;
-            url_showname = new Regex(parameter, "/([^/]+)$").getMatch(0);
-            formatID = new Regex(url_showname, ".+\\-(\\d+)$").getMatch(0);
-            url_showname = jd.plugins.hoster.TvnowDe.cleanupShowTitle(url_showname);
-            isMovie = false;
-        } else {
-            /* Old linkformat/other */
-            url_old = parameter;
-            Regex urlInfo = new Regex(parameter, "https?://[^/]+/([^/]+)/([^/]+)/([^/]+).*?");
-            stationName = urlInfo.getMatch(0);
-            url_showname = urlInfo.getMatch(1);
-            url_singleEpisodeName = urlInfo.getMatch(2);
-            final boolean showname_url_is_unsafe = url_showname == null || (new Regex(url_showname, "(\\-\\d+){1}$").matches() && !new Regex(url_showname, "(\\-\\d+){2}$").matches());
-            if (showname_url_is_unsafe) {
-                logger.info("Expecting redirect from old linktype to new linktype");
-                br.setFollowRedirects(false);
-                br.getPage(url_old);
-                /* Old linkformat should redirect to new linkformat */
-                url_new = br.getRedirectLocation();
+        for (int i = 0; i <= 3; i++) {
+            if (parameter.matches(jd.plugins.hoster.TvnowDe.TYPE_MOVIE_NEW)) {
+                stationName = null;
+                url_showname = new Regex(parameter, "([^/]+)$").getMatch(0);
+                formatID = new Regex(url_showname, ".+\\-(\\d+)$").getMatch(0);
+                isMovie = true;
+                url_showname = jd.plugins.hoster.TvnowDe.cleanupShowTitle(url_showname);
+                break;
+            } else if (parameter.matches(jd.plugins.hoster.TvnowDe.TYPE_DEEPLINK)) {
                 /*
-                 * We accessed the main-URL so it makes sense to at least check for a 404 at this stage to avoid requestion potentially dead
-                 * URLs again via API!
+                 * 2019-01-21: These URLs are sometimes still given (via json) but it seems like they do not work anymore via
+                 * website/officially! They only redirect to mainpage.
                  */
+                final boolean deeplinkOffline = true;
+                formatID = new Regex(parameter, "f=(\\d+)").getMatch(0);
+                singleEpisodeID = new Regex(parameter, "e=(\\d+)").getMatch(0);
+                if (deeplinkOffline) {
+                    final DownloadLink offline = this.createOfflinelink(parameter);
+                    offline.setFinalFileName(formatID + "_" + singleEpisodeID);
+                    decryptedLinks.add(offline);
+                    return decryptedLinks;
+                }
+                url_showname = null;
+                stationName = null;
+                br.getPage(parameter);
+                /* Additional offline-check */
+                if (br.getHttpConnection().getResponseCode() == 404) {
+                    decryptedLinks.add(this.createOfflinelink(parameter));
+                    return decryptedLinks;
+                }
+                url_old = br.getRegex("webLink = \\'(https?://[^/]+/[^<>\"\\']+)\\'").getMatch(0);
+                if (url_old != null) {
+                    isMovie = jd.plugins.hoster.TvnowDe.isMovie_old(url_old);
+                    if (isMovie) {
+                        final Regex urlInfo = new Regex(url_old, "tvnow\\.de/([^/]+)/([^/]+)");
+                        stationName = urlInfo.getMatch(0);
+                        url_showname = urlInfo.getMatch(1);
+                    } else {
+                        /* We can only forward series directly to the host-plugin - we have to crawl movies via the main loop below! */
+                        final Regex urlInfo = new Regex(url_old, "tvnow\\.de/([^/]+)/([^/]+)/(.+)");
+                        stationName = urlInfo.getMatch(0);
+                        url_showname = urlInfo.getMatch(1);
+                        url_singleEpisodeName = urlInfo.getMatch(2);
+                    }
+                } else {
+                    isMovie = false;
+                }
+                break;
+            } else if (jd.plugins.hoster.TvnowDe.isSeriesSingleEpisodeNew(parameter)) {
+                /* New single-series-episode linkformat */
+                final Regex urlInfo = new Regex(parameter, jd.plugins.hoster.TvnowDe.TYPE_SERIES_SINGLE_EPISODE_NEW);
+                stationName = null;
+                url_showname = urlInfo.getMatch(0);
+                formatID = new Regex(url_showname, "\\-(\\d+)$").getMatch(0);
+                final String url_singleEpisodeNameTmp = urlInfo.getMatch(1);
+                if (url_singleEpisodeNameTmp != null && !url_singleEpisodeNameTmp.matches("\\d{4}\\-\\d{2}")) {
+                    /* Make sure that this is actually an episodeName and not e.g. just a date. */
+                    url_singleEpisodeName = urlInfo.getMatch(1);
+                    singleEpisodeID = new Regex(url_singleEpisodeName, ".+\\-(\\d+)$").getMatch(0);
+                    url_singleEpisodeName = jd.plugins.hoster.TvnowDe.cleanupEpisodeTitle(url_singleEpisodeName);
+                }
+                url_showname = jd.plugins.hoster.TvnowDe.cleanupShowTitle(url_showname);
+                isMovie = false;
+                break;
+            } else if (jd.plugins.hoster.TvnowDe.isSeriesNew(parameter)) {
+                /* New series linkformat */
+                stationName = null;
+                url_showname = new Regex(parameter, "(?:/(?:serien|shows|specials|rtlplus)/|formatname=)([^/]+)").getMatch(0);
+                formatID = new Regex(url_showname, ".+\\-(\\d+)$").getMatch(0);
+                url_showname = jd.plugins.hoster.TvnowDe.cleanupShowTitle(url_showname);
+                isMovie = false;
+                break;
+            } else if (parameter.matches("https?://[^/]+/rtlplus/.+")) {
+                /* New series linkformat without formatID in initial URL. */
+                br.setFollowRedirects(false);
+                br.getPage(parameter);
+                url_new = br.getRedirectLocation();
                 if (br.getHttpConnection().getResponseCode() == 404) {
                     decryptedLinks.add(this.createOfflinelink(parameter));
                     return decryptedLinks;
                 } else if (url_new == null) {
-                    logger.warning("Redirect to new linktype failed --> probably user has added invalid URLs");
+                    logger.warning("rtlplus URL did not redirect to new URL");
+                    decryptedLinks.add(this.createOfflinelink(parameter));
+                    return decryptedLinks;
+                } else if (!jd.plugins.hoster.TvnowDe.isSeriesNew(url_new)) {
+                    logger.warning("rtlplus URL did not redirect to supported URL");
                     decryptedLinks.add(this.createOfflinelink(parameter));
                     return decryptedLinks;
                 }
-                logger.info("URL_old: " + parameter + " | URL_new: " + url_new);
-                /* Find the values we need. */
-                urlInfo = new Regex(url_new, "https?://[^/]+/[^/]+/([^/]*?)/([^/]+/)?(.+)");
-                url_showname = urlInfo.getMatch(0);
+                parameter = url_new;
+                continue;
+            } else if (jd.plugins.hoster.TvnowDe.isMovie_old(parameter)) {
+                /* Old movies linkformat */
+                url_old = parameter;
+                final Regex urlInfo = new Regex(parameter, "https?://[^/]+/([^/]+)/([^/]+)");
+                stationName = urlInfo.getMatch(0);
+                url_showname = urlInfo.getMatch(1);
+                isMovie = true;
+                break;
+            } else if (parameter.matches("https?://[^/]+/[^/]+/[^/]+")) {
+                /* 2018-12-12: New linkformat */
+                stationName = null;
+                url_showname = new Regex(parameter, "/([^/]+)$").getMatch(0);
+                formatID = new Regex(url_showname, ".+\\-(\\d+)$").getMatch(0);
+                url_showname = jd.plugins.hoster.TvnowDe.cleanupShowTitle(url_showname);
+                isMovie = false;
+                break;
+            } else {
+                /* Old linkformat/other */
+                url_old = parameter;
+                Regex urlInfo = new Regex(parameter, "https?://[^/]+/([^/]+)/([^/]+)/([^/]+).*?");
+                stationName = urlInfo.getMatch(0);
+                url_showname = urlInfo.getMatch(1);
                 url_singleEpisodeName = urlInfo.getMatch(2);
-                if (StringUtils.isEmpty(url_showname) || StringUtils.isEmpty(url_singleEpisodeName)) {
-                    logger.warning("Failed to extract urlInfo from URL_new  --> probably user has added invalid URLs");
-                    decryptedLinks.add(this.createOfflinelink(parameter));
-                    return decryptedLinks;
+                final boolean showname_url_is_unsafe = url_showname == null || (new Regex(url_showname, "(\\-\\d+){1}$").matches() && !new Regex(url_showname, "(\\-\\d+){2}$").matches());
+                if (showname_url_is_unsafe) {
+                    logger.info("Expecting redirect from old linktype to new linktype");
+                    br.setFollowRedirects(false);
+                    br.getPage(url_old);
+                    /* Old linkformat should redirect to new linkformat */
+                    url_new = br.getRedirectLocation();
+                    /*
+                     * We accessed the main-URL so it makes sense to at least check for a 404 at this stage to avoid requestion potentially
+                     * dead URLs again via API!
+                     */
+                    if (br.getHttpConnection().getResponseCode() == 404) {
+                        decryptedLinks.add(this.createOfflinelink(parameter));
+                        return decryptedLinks;
+                    } else if (url_new == null) {
+                        logger.warning("Redirect to new linktype failed --> probably user has added invalid URLs");
+                        decryptedLinks.add(this.createOfflinelink(parameter));
+                        return decryptedLinks;
+                    }
+                    logger.info("URL_old: " + parameter + " | URL_new: " + url_new);
+                    /* Find the values we need. */
+                    urlInfo = new Regex(url_new, "https?://[^/]+/[^/]+/([^/]*?)/([^/]+/)?(.+)");
+                    url_showname = urlInfo.getMatch(0);
+                    url_singleEpisodeName = urlInfo.getMatch(2);
+                    if (StringUtils.isEmpty(url_showname) || StringUtils.isEmpty(url_singleEpisodeName)) {
+                        logger.warning("Failed to extract urlInfo from URL_new  --> probably user has added invalid URLs");
+                        decryptedLinks.add(this.createOfflinelink(parameter));
+                        return decryptedLinks;
+                    }
+                    singleEpisodeID = new Regex(url_singleEpisodeName, ".+\\-(\\d+)$").getMatch(0);
+                    url_singleEpisodeName = jd.plugins.hoster.TvnowDe.cleanupEpisodeTitle(url_singleEpisodeName);
                 }
-                singleEpisodeID = new Regex(url_singleEpisodeName, ".+\\-(\\d+)$").getMatch(0);
-                url_singleEpisodeName = jd.plugins.hoster.TvnowDe.cleanupEpisodeTitle(url_singleEpisodeName);
+                formatID = new Regex(url_showname, ".+\\-(\\d+)$").getMatch(0);
+                url_showname = jd.plugins.hoster.TvnowDe.cleanupShowTitle(url_showname);
+                isMovie = false;
+                break;
             }
-            formatID = new Regex(url_showname, ".+\\-(\\d+)$").getMatch(0);
-            url_showname = jd.plugins.hoster.TvnowDe.cleanupShowTitle(url_showname);
-            isMovie = false;
         }
         String formatTitle = null;
         LinkedHashMap<String, Object> entries = null;
