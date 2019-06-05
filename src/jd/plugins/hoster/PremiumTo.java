@@ -18,18 +18,23 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetConfigPanel;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
+import org.jdownloader.plugins.config.AccountConfigInterface;
+import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.controlling.proxy.AbstractProxySelectorImpl;
@@ -46,11 +51,12 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.DownloadLinkDownloadable;
-import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "https?://torrent[a-z0-9]*?\\.(premium\\.to|premium4\\.me)/(t|z)/[^<>/\"]+(/[^<>/\"]+){0,1}(/\\d+)*|https?://storage[a-z0-9]*?\\.(?:premium\\.to|premium4\\.me)/file/[A-Z0-9]+" })
 public class PremiumTo extends UseNet {
@@ -72,11 +78,51 @@ public class PremiumTo extends UseNet {
         super(wrapper);
         setStartIntervall(2 * 1000L);
         this.enablePremium("http://premium.to/");
-        setConfigElements();
     }
 
-    public static interface PremiumToConfigInterface extends UsenetAccountConfigInterface {
+    public static interface PremiumtoConfigInterface extends UsenetAccountConfigInterface {
+        public class Translation {
+            public String getClearDownloadHistory_label() {
+                return "Delete storage.premium.to file(s) in your account after each successful download?";
+            }
+        }
+
+        public static final PremiumtoConfigInterface.Translation TRANSLATION = new Translation();
+
+        @DefaultBooleanValue(true)
+        @Order(10)
+        boolean isClearDownloadHistory();
+
+        void setClearDownloadHistory(boolean b);
     };
+
+    @Override
+    protected PluginConfigPanelNG createConfigPanel() {
+        return new UsenetConfigPanel() {
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            protected boolean showKeyHandler(KeyHandler<?> keyHandler) {
+                return "cleardownloadhistory".equals(keyHandler.getKey());
+            }
+
+            @Override
+            protected boolean useCustomUI(KeyHandler<?> keyHandler) {
+                return !"cleardownloadhistory".equals(keyHandler.getKey());
+            }
+
+            @Override
+            protected void initAccountConfig(PluginForHost plgh, Account acc, Class<? extends AccountConfigInterface> cf) {
+                super.initAccountConfig(plgh, acc, cf);
+                extend(this, getHost(), getAvailableUsenetServer(), getAccountJsonConfig(acc));
+            }
+        };
+    }
+
+    @Override
+    public PremiumtoConfigInterface getAccountJsonConfig(Account acc) {
+        return (PremiumtoConfigInterface) super.getAccountJsonConfig(acc);
+    }
 
     private Browser prepBrowser(Browser prepBr) {
         prepBr.setFollowRedirects(true);
@@ -174,6 +220,9 @@ public class PremiumTo extends UseNet {
             if (br.toString().length() > account.getUser().length()) {
                 apikey = br.toString();
                 account.setProperty("apikey", apikey);
+                /* Cookie & header not required for all requests but for e.g. '/removeFile.php' */
+                this.br.setCookie("premium.to", "auth", this.getAndStoreAPIKey(account));
+                this.br.getHeaders().put("auth", this.getAndStoreAPIKey(account));
             } else {
                 account.setProperty("apikey", Property.NULL);
             }
@@ -287,6 +336,7 @@ public class PremiumTo extends UseNet {
                     }
                 }
             }
+            String serverside_filename = link.getStringProperty("serverside_filename", null);
             dl = null;
             String url = link.getDownloadURL().replaceFirst("https?://", "");
             /* this here is bullshit... multihoster side should do all the corrections. */
@@ -321,16 +371,8 @@ public class PremiumTo extends UseNet {
              * Multihost first and can then be downloaded by the user) while others can be used via normal download AND storage (e.g.
              * uploaded.net) - we prefer normal download and only use storage download if necessary.
              */
-            /*
-             * TODO: Finish implementation of this, maybe add a setting to remove files from storage after successful download because if we
-             * don't do this, users' storage accounts might soon be full (there is a 'max number of storage files' limit).
-             */
             final boolean requiresStorageDownload = hosts_storage != null && hosts_storage.contains(link.getHost());
             if (requiresStorageDownload) {
-                /**
-                 * 2019-04-25: TODO: Add support for the "CLEAR_DOWNLOAD_HISTORY_STORAGE" feature for this mode as well (e.g. user downloads
-                 * file to storage via JD, downloads file via JD, lets JD delete the file from storage right after he downloaded it)
-                 */
                 /* Storage download */
                 final String apikey = getAndStoreAPIKey(account);
                 /* Check if that URL has already been downloaded to their cloud. */
@@ -348,6 +390,8 @@ public class PremiumTo extends UseNet {
                     /* WTF */
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown status");
                 }
+                /* We might need this later. */
+                serverside_filename = PluginJSonUtils.getJson(br, "Filename");
             } else {
                 /* Normal (direct) download */
                 login(account, false);
@@ -373,6 +417,10 @@ public class PremiumTo extends UseNet {
                     return false;
                 }
             };
+            if (!StringUtils.isEmpty(serverside_filename)) {
+                /* We might need this information later */
+                link.setProperty("serverside_filename", serverside_filename);
+            }
             dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadable, br.createGetRequest(finalURL), true, connections);
             if (dl.getConnection().getResponseCode() == 404) {
                 /* file offline */
@@ -406,20 +454,54 @@ public class PremiumTo extends UseNet {
             }
             try {
                 /* Check if the download is successful && user wants JD to delete the file in his premium.to account afterwards. */
-                if (dl.startDownload() && this.getPluginConfig().getBooleanProperty(CLEAR_DOWNLOAD_HISTORY_STORAGE, default_clear_download_history_storage) && link.getDownloadURL().matches(type_storage)) {
+                final PremiumtoConfigInterface config = getAccountJsonConfig(account);
+                if (dl.startDownload() && config.isClearDownloadHistory()) {
+                    String storageID = null;
+                    if (link.getDownloadURL().matches(type_storage)) {
+                        storageID = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
+                    } else if (serverside_filename != null) {
+                        /*
+                         * 2019-06-05: This is a workaround!! Their API should better return the storageID via 'download.php' (see upper
+                         * code).
+                         */
+                        logger.info("Trying to find storageID");
+                        try {
+                            /* Make sure we're logged-IN via apikey! */
+                            this.getAndStoreAPIKey(account);
+                            br.getPage("https://storage.premium.to/status.php");
+                            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                            final ArrayList<Object> storage_objects = (ArrayList<Object>) entries.get("f");
+                            for (final Object fileO : storage_objects) {
+                                entries = (LinkedHashMap<String, Object>) fileO;
+                                final String serverside_filename_tmp = (String) entries.get("n");
+                                if (StringUtils.equals(serverside_filename_tmp, serverside_filename)) {
+                                    storageID = (String) entries.get("i");
+                                    break;
+                                }
+                            }
+                        } catch (final Throwable e) {
+                        }
+                        if (StringUtils.isEmpty(storageID)) {
+                            logger.warning("Failed to find storageID");
+                        } else {
+                            logger.info("Successfully found storageID");
+                        }
+                    }
                     boolean success = false;
                     try {
-                        /*
-                         * TODO: Check if there is a way to determine if the deletion was successful and add loggers for
-                         * successful/unsuccessful cases!
-                         */
-                        final String storageID = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
-                        if (storageID != null) {
-                            br.getPage("https://storage." + this.getHost() + "/removeFile.php?f=" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
-                            success = true;
+                        if (!StringUtils.isEmpty(storageID)) {
+                            logger.info("Trying to delete file from storage");
+                            br.getPage("https://storage." + this.getHost() + "/removeFile.php?f=" + storageID);
+                            /*
+                             * TODO: Check if there is a way to determine for sure whether the deletion was successful or not.
+                             */
+                            if (br.getHttpConnection().getResponseCode() == 200) {
+                                success = true;
+                            }
                         }
                     } catch (final Throwable e) {
                         /* Don't fail here */
+                        logger.warning("Failed to delete file from storage");
                     }
                     if (success) {
                         logger.info("Deletion of downloaded file seems to be successful");
@@ -587,17 +669,6 @@ public class PremiumTo extends UseNet {
             }
         }
         return false;
-    }
-
-    private final boolean default_clear_download_history_storage = false;
-
-    /*
-     * TODO: There is no easy way to add this setting for their torrent links as well because users can e.g. download specified files inside
-     * archives so we do not know if the user is currently downloading a complete single torrent or single files of it. To determine if
-     * there is any way to do this we'd have to compare the finallinks of complete torrent downloads and files inside them first.
-     */
-    public void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CLEAR_DOWNLOAD_HISTORY_STORAGE, JDL.L("plugins.hoster.premiumto.clear_serverside_download_history_storage", "Delete storage.premium.to file(s) in your account after each successful download?")).setDefaultValue(default_clear_download_history_storage));
     }
 
     @Override

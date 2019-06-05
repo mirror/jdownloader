@@ -21,20 +21,14 @@ import java.util.List;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetConfigPanel;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
-import org.jdownloader.plugins.config.AccountConfigInterface;
-import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.translate._JDT;
 
 import jd.PluginWrapper;
 import jd.gui.swing.components.linkbutton.JLink;
@@ -43,8 +37,6 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-import jd.plugins.PluginConfigPanelNG;
-import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumize.me" }, urls = { "premiumizedecrypted://.+" })
 public class PremiumizeMe extends ZeveraCore {
@@ -107,48 +99,12 @@ public class PremiumizeMe extends ZeveraCore {
         ai.setTrafficLeft(5000000000l);
     }
 
-    @Override
-    protected PluginConfigPanelNG createConfigPanel() {
-        return new UsenetConfigPanel() {
-            private static final long serialVersionUID = 1L;
-
-            @Override
-            protected boolean showKeyHandler(KeyHandler<?> keyHandler) {
-                return "ssldownloadsenabled".equals(keyHandler.getKey());
-            }
-
-            @Override
-            protected boolean useCustomUI(KeyHandler<?> keyHandler) {
-                return !"ssldownloadsenabled".equals(keyHandler.getKey());
-            }
-
-            @Override
-            protected void initAccountConfig(PluginForHost plgh, Account acc, Class<? extends AccountConfigInterface> cf) {
-                super.initAccountConfig(plgh, acc, cf);
-                extend(this, getHost(), getAvailableUsenetServer(), getAccountJsonConfig(acc));
-            }
-        };
-    }
-
     /**
      * TODO: Maybe add a setting to not add .nzb and .torrent files when adding cloud folders as JD will automatically add the contents of
      * .nzb files after downloading them but in this case that makes no sense as when users add cloud URLs these will contain the
      * downloaded- and extracted contents of .nzb(and .torrent) files already.
      */
     public static interface PremiumizeMeConfigInterface extends UsenetAccountConfigInterface {
-        public class Translation {
-            public String getSSLDownloadsEnabled_label() {
-                return _JDT.T.lit_ssl_enabled();
-            }
-        }
-
-        public static final PremiumizeMeConfigInterface.Translation TRANSLATION = new Translation();
-
-        @DefaultBooleanValue(true)
-        @Order(10)
-        boolean isSSLDownloadsEnabled();
-
-        void setSSLDownloadsEnabled(boolean b);
     };
 
     @Override
@@ -159,7 +115,7 @@ public class PremiumizeMe extends ZeveraCore {
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
         if (StringUtils.equals(getHost(), downloadLink.getHost()) && account == null) {
-            // generated links do not require an account
+            /* generated links do not require an account */
             return true;
         } else {
             return account != null;
