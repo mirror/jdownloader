@@ -113,6 +113,8 @@ public abstract class Plugin implements ActionListener {
         this.logger = logger;
     }
 
+    public abstract String getCrawlerLoggerID(CrawledLink link);
+
     public abstract void runCaptchaDDosProtection(String id) throws InterruptedException;
 
     protected String getBrowserReferrer() {

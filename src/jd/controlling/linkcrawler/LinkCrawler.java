@@ -2663,11 +2663,10 @@ public class LinkCrawler {
         if ((task = checkStartNotify(generation)) != null) {
             try {
                 final String[] sourceURLs = getAndClearSourceURLs(possibleCryptedLink);
-                PluginForHost wplg = null;
                 /*
                  * use a new PluginClassLoader here
                  */
-                wplg = pHost.newInstance(getPluginClassLoaderChild());
+                final PluginForHost wplg = pHost.newInstance(getPluginClassLoaderChild());
                 if (wplg != null) {
                     /* now we run the plugin and let it find some links */
                     final LinkCrawlerThread lct = getCurrentLinkCrawlerThread();
@@ -2677,7 +2676,7 @@ public class LinkCrawler {
                     boolean oldVerbose = false;
                     LogInterface oldLogger = null;
                     try {
-                        LogInterface logger = LogController.getFastPluginLogger(wplg.getHost() + "_" + pHost.getClassName());
+                        final LogInterface logger = LogController.getFastPluginLogger(wplg.getCrawlerLoggerID(possibleCryptedLink));
                         logger.info("Processing: " + possibleCryptedLink.getURL());
                         if (lct != null) {
                             /* mark thread to be used by crawler plugin */
@@ -3226,7 +3225,7 @@ public class LinkCrawler {
                 final String[] sourceURLs = getAndClearSourceURLs(cryptedLink);
                 processedLinksCounter.incrementAndGet();
                 /* set new PluginClassLoaderChild because ContainerPlugin maybe uses Hoster/Crawler */
-                PluginsC plg = null;
+                final PluginsC plg;
                 try {
                     plg = oplg.newPluginInstance();
                 } catch (final Throwable e) {
@@ -3392,7 +3391,7 @@ public class LinkCrawler {
                 LogInterface oldLogger = null;
                 boolean oldVerbose = false;
                 boolean oldDebug = false;
-                final LogInterface logger = LogController.getFastPluginLogger(wplg.getHost() + "_" + lazyC.getClassName());
+                final LogInterface logger = LogController.getFastPluginLogger(wplg.getCrawlerLoggerID(cryptedLink));
                 logger.info("Crawling: " + cryptedLink.getURL());
                 wplg.setLogger(logger);
                 /* now we run the plugin and let it find some links */

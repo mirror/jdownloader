@@ -88,26 +88,43 @@ public class MegaConz extends PluginForDecrypt {
         br.setReadTimeout(3 * 60 * 1000);
         // br.getHeaders().put("Origin", "https://mega.nz");
         br.getHeaders().put("APPID", "JDownloader");
-        final URLConnectionAdapter con = br.openRequestConnection(br.createJSonPostRequest("https://g.api.mega.co.nz/cs?id=" + CS.incrementAndGet() + "&n=" + folderID/*
-         * +
-         * "&domain=meganz
-         */, "[{\"a\":\"f\",\"c\":\"1\",\"r\":\"1\",\"ca\":1}]"));// ca=1
-        // ->
-        // !nocache,
-        // commands.cpp
-        final Object response;
-        try {
-            response = JSonStorage.getMapper().inputStreamToObject(con.getInputStream(), TypeRef.OBJECT);
-        } finally {
-            con.disconnect();
+        int retryCounter = 0;
+        final List<Map<String, Object>> nodes;
+        while (true) {
+            final URLConnectionAdapter con = br.openRequestConnection(br.createJSonPostRequest("https://g.api.mega.co.nz/cs?id=" + CS.incrementAndGet() + "&n=" + folderID/*
+             * +
+             * "&domain=meganz
+             */, "[{\"a\":\"f\",\"c\":\"1\",\"r\":\"1\",\"ca\":1}]"));// ca=1
+            // ->
+            // !nocache,
+            // commands.cpp
+            final Object response;
+            try {
+                response = JSonStorage.getMapper().inputStreamToObject(con.getInputStream(), TypeRef.OBJECT);
+            } finally {
+                con.disconnect();
+            }
+            if (response instanceof Number) {
+                if (((Number) response).intValue() == -3) {
+                    if (retryCounter < 10) {
+                        sleep(5000, parameter);
+                        retryCounter++;
+                        continue;
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                }
+                // https://help.servmask.com/knowledgebase/mega-error-codes/
+                // -3 for EAGAIN
+                return decryptedLinks;
+            } else if (!(response instanceof List)) {
+                logger.info(JSonStorage.toString(response));
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                nodes = (List<Map<String, Object>>) ((List<Map<String, Object>>) response).get(0).get("f");
+                break;
+            }
         }
-        if (response instanceof Number) {
-            return decryptedLinks;
-        } else if (!(response instanceof List)) {
-            logger.info(JSonStorage.toString(response));
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        final List<Map<String, Object>> nodes = (List<Map<String, Object>>) ((List<Map<String, Object>>) response).get(0).get("f");
         /*
          * p = parent node (ID)
          *

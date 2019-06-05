@@ -112,6 +112,11 @@ public abstract class PluginForDecrypt extends Plugin {
         return new FEATURE[0];
     }
 
+    @Override
+    public String getCrawlerLoggerID(CrawledLink link) {
+        return getHost() + "_" + getLazyC().getClassName();
+    }
+
     protected final List<String> getPreSetPasswords() {
         final List<String> ret = new ArrayList<String>();
         CrawledLink crawledLink = getCurrentLink();
@@ -719,8 +724,9 @@ public abstract class PluginForDecrypt extends Plugin {
         final LinkCrawlerGeneration generation = this.generation;
         if (generation != null) {
             return !generation.isValid() || Thread.currentThread().isInterrupted();
+        } else {
+            return super.isAbort();
         }
-        return super.isAbort();
     }
 
     public void setCrawler(LinkCrawler linkCrawler) {
@@ -730,8 +736,9 @@ public abstract class PluginForDecrypt extends Plugin {
     public LinkCrawler getCrawler() {
         if (crawler != null) {
             return crawler;
+        } else {
+            return super.getCrawler();
         }
-        return super.getCrawler();
     }
 
     public LinkCrawler getCustomNextCrawler() {

@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -22,8 +21,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
-
-import org.appwork.utils.formatter.TimeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -42,9 +39,10 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bandcamp.com" }, urls = { "https?://(www\\.)?[a-z0-9\\-]+\\.bandcamp\\.com/track/[a-z0-9\\-_]+" }) 
-public class BandCampCom extends PluginForHost {
+import org.appwork.utils.formatter.TimeFormatter;
 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bandcamp.com" }, urls = { "https?://(www\\.)?[a-z0-9\\-]+\\.bandcampdecrypted\\.com/track/[a-z0-9\\-_]+" })
+public class BandCampCom extends PluginForHost {
     private String DLLINK    = null;
     private String userAgent = null;
 
@@ -72,6 +70,13 @@ public class BandCampCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
+    }
+
+    @Override
+    public void correctDownloadLink(DownloadLink link) {
+        final String url = link.getPluginPatternMatcher().replaceFirst("bandcampdecrypted.com", "bandcamp.com");
+        link.setPluginPatternMatcher(url);
+        link.setLinkID(url);
     }
 
     @Override
@@ -108,17 +113,18 @@ public class BandCampCom extends PluginForHost {
             } else {
                 br.followConnection();
             }
-
         } catch (final Exception e) {
-        }
-        try {
-            con.disconnect();
-        } catch (Throwable e) {
+            logger.log(e);
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+            }
         }
         if (br.containsHTML("(>Sorry, that something isn't here|>start at the beginning</a> and you'll certainly find what)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        DLLINK = br.getRegex("\"file\":.*?\"((https?:)?//.*?)\"").getMatch(0);
+        DLLINK = br.getRegex("\"file\"\\s*:.*?\"((https?:)?//.*?)\"").getMatch(0);
         logger.info("DLLINK = " + DLLINK);
         if (DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -130,11 +136,13 @@ public class BandCampCom extends PluginForHost {
                 tracknumber = "1";
             }
             final int trackNum = Integer.parseInt(tracknumber);
-            DecimalFormat df = new DecimalFormat("00");
+            final DecimalFormat df;
             if (trackNum > 999) {
                 df = new DecimalFormat("0000");
             } else if (trackNum > 99) {
                 df = new DecimalFormat("000");
+            } else {
+                df = new DecimalFormat("00");
             }
             final String filename = br.getRegex("\"title\":\"([^<>\"]*?)\"").getMatch(0);
             String date = br.getRegex("<meta itemprop=\"datePublished\" content=\"(\\d+)\"/>").getMatch(0);
@@ -145,7 +153,7 @@ public class BandCampCom extends PluginForHost {
                 }
             }
             final Regex inforegex = br.getRegex("<title>(.*?) \\| (.*?)</title>");
-            String artist = br.getRegex("artist: \"([^<>\"]*?)\"").getMatch(0);
+            String artist = br.getRegex("artist\\s*:\\s*\"([^<>\"]*?)\"").getMatch(0);
             final String albumname = inforegex.getMatch(0);
             if (artist == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -180,7 +188,7 @@ public class BandCampCom extends PluginForHost {
         }
     }
 
-    public String getFormattedFilename(final DownloadLink downloadLink) throws ParseException {
+    public static String getFormattedFilename(final DownloadLink downloadLink) throws ParseException {
         final String songTitle = downloadLink.getStringProperty("directname", null);
         final String tracknumber = downloadLink.getStringProperty("directtracknumber", null);
         final String artist = downloadLink.getStringProperty("directartist", null);
@@ -200,16 +208,13 @@ public class BandCampCom extends PluginForHost {
         } else {
             ext = ".mp3";
         }
-
         String formattedDate = null;
         if (date != null && formattedFilename.contains("*date*")) {
             final String userDefinedDateFormat = cfg.getStringProperty(CUSTOM_DATE, "dd.MM.yyyy_HH-mm-ss");
             SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
             Date dateStr = formatter.parse(date);
-
             formattedDate = formatter.format(dateStr);
             Date theDate = formatter.parse(formattedDate);
-
             if (userDefinedDateFormat != null) {
                 try {
                     formatter = new SimpleDateFormat(userDefinedDateFormat);
@@ -243,14 +248,12 @@ public class BandCampCom extends PluginForHost {
         formattedFilename = formattedFilename.replace("*ext*", ext);
         // Insert filename at the end to prevent errors with tags
         formattedFilename = formattedFilename.replace("*songtitle*", songTitle);
-
         if (cfg.getBooleanProperty(jd.plugins.hoster.BandCampCom.FILENAMELOWERCASE, false)) {
             formattedFilename = formattedFilename.toLowerCase();
         }
         if (cfg.getBooleanProperty(jd.plugins.hoster.BandCampCom.FILENAMESPACE, false)) {
             formattedFilename = formattedFilename.replace(" ", "_");
         }
-
         return formattedFilename;
     }
 
