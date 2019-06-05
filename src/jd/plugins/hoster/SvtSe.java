@@ -60,7 +60,7 @@ public class SvtSe extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         link.setLinkID(this.videoid);
-        br.getPage("http://api.svt.se/video/" + this.videoid);
+        br.getPage("https://api.svt.se/video/" + this.videoid);
         if (br.getHttpConnection().getResponseCode() == 404) {
             /* Strange result on 404: {"message":"To many retry attempts to video API","status":404} */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
