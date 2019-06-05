@@ -54,6 +54,10 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
             "linclik.com", "oke.io", "vivads.net", "pnd.tl", "met.bz", "urlcloud.us", "clik.pw",
             /** shrinkearn.com domains */
             "shrinkearn.com", "wishes2.com",
+            /** bt4link.com domains */
+            "bt4link.com", "ur4link.com",
+            /***/
+            "shorted4us.com", "thefreech.com", "sewrn.com",
             /** asrar-alrb7.com domains */
             "asrar-alrb7.com", "savircity.com",
             /** cut1.ga domains */
