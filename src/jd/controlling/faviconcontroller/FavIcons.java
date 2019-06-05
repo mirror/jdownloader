@@ -366,7 +366,7 @@ public class FavIcons {
                     g.drawString("." + tld, (int) (w - bounds.getWidth()) - 2, (h) - 2);
                 }
                 return image;
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 // java.lang.NullPointerException or java.lang.reflect.InvocationTargetException(jdk12)
                 // at sun.awt.FontConfiguration.getVersion(FontConfiguration.java:1264)
                 // at sun.awt.FontConfiguration.readFontConfigFile(FontConfiguration.java:219)
