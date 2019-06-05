@@ -126,6 +126,19 @@ public class VimeoComDecrypter extends PluginForDecrypt {
     }
 
     @Override
+    public String getCrawlerLoggerID(CrawledLink link) {
+        final String url = link.getURL();
+        final String ret = super.getCrawlerLoggerID(link);
+        if (url.matches(LINKTYPE_USER)) {
+            return ret + "_user";
+        } else if (url.matches(LINKTYPE_GROUP)) {
+            return ret + "_group";
+        } else {
+            return ret;
+        }
+    }
+
+    @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final SubConfiguration cfg = SubConfiguration.getConfig("vimeo.com");

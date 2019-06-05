@@ -4,9 +4,11 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -56,6 +58,8 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
  */
 @HostPlugin(revision = "$Revision: 1 $", interfaceVersion = 1, names = { "pluralsight.com" }, urls = { "https?://app\\.pluralsight\\.com\\/player\\??.+" })
 public class PluralsightCom extends PluginForHost {
+    private static WeakHashMap<Account, List<Long>> map = new WeakHashMap<Account, List<Long>>();
+
     public PluralsightCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.pluralsight.com/pricing");
@@ -187,10 +191,37 @@ public class PluralsightCom extends PluginForHost {
         }
     }
 
+    public boolean antiAccountBlockProtection(final Account account) {
+        synchronized (map) {
+            List<Long> list = map.get(account);
+            if (list == null) {
+                list = new ArrayList<Long>();
+                map.put(account, list);
+            }
+            final long now = System.currentTimeMillis();
+            final long window = 60 * 60 * 1000l;
+            final int maxWindow = 150;
+            list.add(now);
+            if (list.size() > maxWindow) {
+                final Iterator<Long> it = list.iterator();
+                while (it.hasNext()) {
+                    final Long next = it.next();
+                    if (now - next.longValue() > window) {
+                        it.remove();
+                    }
+                }
+            }
+            return list.size() > maxWindow;
+        }
+    }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         final Account account = AccountController.getInstance().getValidAccount(this);
         if (account != null) {
+            if (antiAccountBlockProtection(account)) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Account block protection, please wait!", 5 * 60 * 1000l);
+            }
             try {
                 login(account, br, this, false);
                 return fetchFileInformation(link, account);

@@ -38,8 +38,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -51,14 +49,11 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private SubConfiguration CFG        = null;
-    private PluginForHost    hostPlugin = null;
-
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        CFG = SubConfiguration.getConfig("bandcamp.com");
+        final SubConfiguration CFG = SubConfiguration.getConfig("bandcamp.com");
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.containsHTML(">Sorry, that something isn\\'t here\\.<|trackinfo[\t\n\r ]*?:[\t\n\r ]*?\\[\\],") || this.br.getHttpConnection().getResponseCode() == 404) {
@@ -82,23 +77,21 @@ public class BandCampComDecrypter extends PluginForDecrypt {
                 return decryptedLinks;
             }
             logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         artist = Encoding.htmlDecode(artist.trim());
         album = Encoding.htmlDecode(album.trim());
-        DecimalFormat df = new DecimalFormat("00");
+        final DecimalFormat df;
         if (links.length > 999) {
             df = new DecimalFormat("0000");
         } else if (links.length > 99) {
             df = new DecimalFormat("000");
+        } else {
+            df = new DecimalFormat("00");
         }
         int trackcounter = 1;
-        hostPlugin = JDUtilities.getPluginForHost("bandcamp.com");
-        if (hostPlugin == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
         for (final String linkinfo[] : links) {
-            final String dllink = br.getURL(linkinfo[0]).toString();
+            final String dllink = br.getURL(linkinfo[0]).toString().replaceFirst("bandcamp\\.com", "bandcampdecrypted.com");
             final String fname = Encoding.htmlDecode(linkinfo[1].trim());
             final DownloadLink dl = createDownloadlink(dllink);
             dl.setProperty("fromdecrypter", true);
@@ -108,7 +101,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             dl.setProperty("directname", fname);
             dl.setProperty("type", "mp3");
             dl.setProperty("directtracknumber", df.format(trackcounter));
-            String formattedFilename = ((jd.plugins.hoster.BandCampCom) hostPlugin).getFormattedFilename(dl);
+            final String formattedFilename = jd.plugins.hoster.BandCampCom.getFormattedFilename(dl);
             dl.setName(formattedFilename);
             if (CFG.getBooleanProperty(jd.plugins.hoster.BandCampCom.FASTLINKCHECK, false)) {
                 dl.setAvailable(true);
@@ -133,7 +126,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             thumb.setProperty("directname", "thumbnail");
             thumb.setProperty("type", "jpg");
             thumb.setProperty("directtracknumber", df.format(0));
-            final String formattedFilename = ((jd.plugins.hoster.BandCampCom) hostPlugin).getFormattedFilename(thumb);
+            final String formattedFilename = jd.plugins.hoster.BandCampCom.getFormattedFilename(thumb);
             thumb.setFinalFileName(formattedFilename);
             decryptedLinks.add(thumb);
         }
@@ -185,7 +178,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             }
         }
         final FilePackage fp = FilePackage.getInstance();
-        final String formattedpackagename = getFormattedPackagename(artist, album, date);
+        final String formattedpackagename = getFormattedPackagename(CFG, artist, album, date);
         if (!CFG.getBooleanProperty(jd.plugins.hoster.BandCampCom.CLEANPACKAGENAME, false)) {
             fp.setProperty("CLEANUP_NAME", false);
         }
@@ -196,7 +189,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
 
     private final static String defaultCustomPackagename = "*artist* - *album*";
 
-    public String getFormattedPackagename(final String artist, final String album, final String date) throws ParseException {
+    public static String getFormattedPackagename(SubConfiguration CFG, final String artist, final String album, final String date) throws ParseException {
         String formattedpackagename = CFG.getStringProperty(jd.plugins.hoster.BandCampCom.CUSTOM_PACKAGENAME, defaultCustomPackagename);
         if (formattedpackagename == null || formattedpackagename.equals("")) {
             formattedpackagename = defaultCustomPackagename;
