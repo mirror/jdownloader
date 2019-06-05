@@ -634,6 +634,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, false);
+    }
+
+    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean downloadsStarted) throws Exception {
         final String[] fileInfo = getFileInfoArray();
         final String fallback_filename = this.getFallbackFilename(link);
         Browser altbr = null;
@@ -687,10 +691,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             return AvailableStatus.UNCHECKABLE;
         }
         scanInfo(fileInfo);
-        /**
-         * TODO: Consider executing these advanced checks for linkcheck only - NOT if the user has just started downloads (--> Faster
-         * downloadstart)
-         */
         /*
          * Filename abbreviated over x chars long (common serverside XFS bug) --> Use getFnameViaAbuseLink as a workaround to find the
          * full-length filename!
@@ -745,8 +745,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
         if (!StringUtils.isEmpty(fileInfo[1])) {
             link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
-        } else if (this.internal_isVideohosterEmbed() && supports_availablecheck_filesize_via_embedded_video()) {
-            /* Last chance to find filesize */
+        } else if (this.internal_isVideohosterEmbed() && supports_availablecheck_filesize_via_embedded_video() && !downloadsStarted) {
+            /*
+             * Last chance to find filesize - do NOT execute this when used has started the download of our current DownloadLink as this
+             * could lead to "Too many connections" errors!
+             */
             requestFileInformationVideoEmbed(link, null, true);
         }
         return AvailableStatus.TRUE;
@@ -1123,7 +1126,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
+        requestFileInformation(downloadLink, true);
         doFree(downloadLink, null);
     }
 
@@ -2672,18 +2675,18 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     protected final String getAPIKey(final Account account) {
-        return account.getUser();
+        return account.getUser().trim();
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         /* Perform linkcheck without logging in */
-        requestFileInformation(link);
+        requestFileInformation(link, true);
         final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
         if (AccountType.FREE.equals(account.getType())) {
             loginWebsite(account, false);
-            /* Perform linkcheck after logging in */
-            requestFileInformation(link);
+            /* Access main Content-URL */
+            this.getPage(link.getPluginPatternMatcher());
             doFree(link, account);
         } else {
             /*
