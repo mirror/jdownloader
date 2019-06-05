@@ -68,7 +68,15 @@ public class LinksvipNet extends PluginForHost {
         return "https://linksvip.net/";
     }
 
-    private Browser prepBR(final Browser br) {
+    private Browser prepBRWebsite(final Browser br) {
+        br.setCookiesExclusive(true);
+        /* 2019-06-05: They've blocked our User-Agent - do NOT use it anymore! */
+        // br.getHeaders().put("User-Agent", "JDownloader");
+        br.setFollowRedirects(true);
+        return br;
+    }
+
+    private Browser prepBRAPI(final Browser br) {
         br.setCookiesExclusive(true);
         br.getHeaders().put("User-Agent", "JDownloader");
         br.setFollowRedirects(true);
@@ -112,7 +120,7 @@ public class LinksvipNet extends PluginForHost {
 
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        this.br = prepBR(this.br);
+        this.br = prepBRWebsite(this.br);
         setConstants(account, link);
         mhm.runCheck(currentAcc, currentLink);
         synchronized (hostUnavailableMap) {
@@ -208,7 +216,7 @@ public class LinksvipNet extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         setConstants(account, null);
-        this.br = prepBR(this.br);
+        this.br = prepBRWebsite(this.br);
         final AccountInfo ai;
         if (USE_API) {
             ai = fetchAccountInfoAPI(account);
@@ -257,7 +265,7 @@ public class LinksvipNet extends PluginForHost {
         synchronized (LOCK) {
             /* Load cookies */
             br.setCookiesExclusive(true);
-            this.br = prepBR(this.br);
+            this.br = prepBRWebsite(this.br);
             if (USE_API) {
                 loginAPI(account, force);
             } else {
@@ -280,12 +288,13 @@ public class LinksvipNet extends PluginForHost {
                     return;
                 }
                 /* Clear cookies to prevent unknown errors as we'll perform a full login below now. */
-                this.br = prepBR(new Browser());
+                this.br = prepBRWebsite(new Browser());
             }
             br.getPage("https://" + this.getHost() + "/");
             br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            this.postAPISafe("/login/", "auto_login=true&u=" + Encoding.urlEncode(currentAcc.getUser()) + "&p=" + Encoding.urlEncode(currentAcc.getPass()));
+            br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+            this.postAPISafe("/login/", "auto_login=checked&u=" + Encoding.urlEncode(currentAcc.getUser()) + "&p=" + Encoding.urlEncode(currentAcc.getPass()));
             final String status = PluginJSonUtils.getJson(br, "status");
             if ("1".equals(status)) {
                 /* Login should be okay and we should get the cookies now! */

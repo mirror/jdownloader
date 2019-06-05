@@ -168,6 +168,7 @@ public class XHamsterCom extends PluginForHost {
         return false;
     }
 
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         return requestFileInformation(downloadLink, false);
     }
@@ -178,7 +179,7 @@ public class XHamsterCom extends PluginForHost {
             downloadLink.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
             br.setFollowRedirects(true);
             prepBr();
-            // quick fix to force old player
+            /* quick fix to force old player */
             br.setCookie(MAINPAGE, "playerVer", "old");
             String filename = null;
             final Account aa = AccountController.getInstance().getValidAccount(this);
@@ -227,10 +228,10 @@ public class XHamsterCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             filename = getSiteTitle();
-            final String onlyfor = br.getRegex(">([^<>\"]*?)</a>\\'s friends only</div>").getMatch(0);
+            final String onlyfor = videoOnlyForFriendsOf();
             if (onlyfor != null) {
                 downloadLink.getLinkStatus().setStatusText("Only downloadable for friends of " + onlyfor);
-                downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "movies/[0-9]+/(.*?)\\.html").getMatch(0) + ".mp4");
+                downloadLink.setName(getFID(downloadLink));
                 return AvailableStatus.TRUE;
             } else if (isPasswordProtected()) {
                 return AvailableStatus.TRUE;
@@ -264,6 +265,18 @@ public class XHamsterCom extends PluginForHost {
             }
             return AvailableStatus.TRUE;
         }
+    }
+
+    /**
+     * @returns: Not null = video is only available for friends of user XXX
+     */
+    private String videoOnlyForFriendsOf() {
+        String friendsname = br.getRegex(">([^<>\"]*?)</a>\\'s friends only</div>").getMatch(0);
+        if (StringUtils.isEmpty(friendsname)) {
+            /* 2019-06-05 */
+            friendsname = br.getRegex("This video is visible to <br>friends of <a href=\"[^\"]+\">([^<>\"]+)</a> only").getMatch(0);
+        }
+        return friendsname;
     }
 
     private boolean isPasswordProtected() {
@@ -508,7 +521,7 @@ public class XHamsterCom extends PluginForHost {
         // Access the page again to get a new direct link because by checking the availability the first linkisn't valid anymore
         String passCode = downloadLink.getStringProperty("pass", null);
         br.getPage(downloadLink.getDownloadURL());
-        final String onlyfor = br.getRegex(">([^<>\"]*?)</a>\\'s friends only</div>").getMatch(0);
+        final String onlyfor = videoOnlyForFriendsOf();
         if (onlyfor != null) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         } else if (isPasswordProtected()) {
@@ -725,7 +738,6 @@ public class XHamsterCom extends PluginForHost {
             login(account, true);
         }
         ai.setUnlimitedTraffic();
-        account.setValid(true);
         ai.setStatus("Free Account");
         account.setProperty("free", true);
         return ai;

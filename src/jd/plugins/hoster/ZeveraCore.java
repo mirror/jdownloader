@@ -20,11 +20,12 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 
-import javax.swing.JOptionPane;
-import javax.swing.SwingUtilities;
-
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -306,7 +307,7 @@ abstract public class ZeveraCore extends UseNet {
             final String hash_md5 = link.getMD5Hash();
             final String hash_sha1 = link.getSha1Hash();
             final String hash_sha256 = link.getSha256Hash();
-            String getdata = "?client_id=" + client_id + "&pin=" + Encoding.urlEncode(account.getPass()) + "&src=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, hostPlugin));
+            String getdata = "?client_id=" + client_id + "&pin=" + Encoding.urlEncode(getAPIKey(account)) + "&src=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, hostPlugin));
             if (hash_md5 != null) {
                 getdata += "&hash_md5=" + hash_md5;
             }
@@ -392,7 +393,7 @@ abstract public class ZeveraCore extends UseNet {
             account.setMaxSimultanDownloads(getMaxSimultaneousFreeAccountDownloads());
             setFreeAccountTraffic(ai);
         }
-        getPage(br, "/api/services/list?client_id=" + client_id + "&pin=" + Encoding.urlEncode(account.getPass()));
+        getPage(br, "/api/services/list?client_id=" + client_id + "&pin=" + Encoding.urlEncode(getAPIKey(account)));
         final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         // final ArrayList<String> supportedHosts = new ArrayList<String>();
         final ArrayList<String> directdl = (ArrayList<String>) entries.get("directdl");
@@ -437,32 +438,36 @@ abstract public class ZeveraCore extends UseNet {
         }
     }
 
-    private void showFreeModeLoginInformation(final String url) {
-        try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        String message = "";
-                        String title = null;
-                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                            title = br.getHost() + " ermöglicht ab sofort auch kostenlose Downloads";
-                            message += "Hallo liebe(r) " + br.getHost() + " NutzerIn\r\n";
-                            message += "Ab sofort kannst du diesen Anbieter auch nutzen ohne zu bezahlen!\r\n";
-                            message += "Mehr infos dazu findest du unter:\r\n" + new URL(url) + "\r\n";
-                        } else {
-                            title = br.getHost() + " allows free downloads from now on";
-                            message += "Hello dear " + br.getHost() + " user\r\n";
-                            message += "From now on this service lets you download for free as well.\r\n";
-                            message += "More information:\r\n" + new URL(url) + "\r\n";
-                        }
-                        JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
-                    } catch (Throwable e) {
+    private Thread showFreeModeLoginInformation(final String url) throws Exception {
+        final Thread thread = new Thread() {
+            public void run() {
+                try {
+                    String message = "";
+                    final String title;
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        title = br.getHost() + " ermöglicht ab sofort auch kostenlose Downloads";
+                        message += "Hallo liebe(r) " + br.getHost() + " NutzerIn\r\n";
+                        message += "Ab sofort kannst du diesen Anbieter auch nutzen ohne zu bezahlen!\r\n";
+                        message += "Mehr infos dazu findest du unter:\r\n" + new URL(url) + "\r\n";
+                    } else {
+                        title = br.getHost() + " allows free downloads from now on";
+                        message += "Hello dear " + br.getHost() + " user\r\n";
+                        message += "From now on this service lets you download for free as well.\r\n";
+                        message += "More information:\r\n" + new URL(url) + "\r\n";
                     }
+                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
+                    dialog.setTimeout(2 * 60 * 1000);
+                    if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
+                        CrossSystem.openURL(url);
+                    }
+                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
+                    System.out.println(ret);
+                } catch (final Throwable e) {
                 }
-            });
-        } catch (Throwable e) {
-        }
+            };
+        };
+        thread.start();
+        return thread;
     }
 
     @SuppressWarnings("deprecation")
@@ -490,42 +495,43 @@ abstract public class ZeveraCore extends UseNet {
         }
     }
 
-    private void showFreeModeDownloadInformation(final String url) {
-        try {
-            final boolean xSystem = CrossSystem.isOpenBrowserSupported();
-            SwingUtilities.invokeAndWait(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        String message = "";
-                        String title = null;
-                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                            title = br.getHost() + " möchte einen kostenlosen Download starten";
-                            message += "Hallo liebe(r) " + br.getHost() + " NutzerIn\r\n";
-                            if (xSystem) {
-                                message += "Um kostenlos von diesem Anbieter herunterladen zu können musst du den 'free mode' im Fenster das sich gleich öffnet aktivieren.\r\n";
-                            } else {
-                                message += "Um kostenlos von diesem Anbieter herunterladen zu können musst du den 'free mode' unter dieser Adresse aktivieren:\r\n" + new URL(url) + "\r\n";
-                            }
-                        } else {
-                            title = br.getHost() + " wants to start a free download";
-                            message += "Hello dear " + br.getHost() + " user\r\n";
-                            if (xSystem) {
-                                message += "To be able to use the free mode of this service, you will have to enable it in the browser-window which will open soon.\r\n";
-                            } else {
-                                message += "To be able to use the free mode of this service, you will have to enable it here:\r\n" + new URL(url) + "\r\n";
-                            }
-                        }
-                        JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
+    private Thread showFreeModeDownloadInformation(final String url) throws Exception {
+        final Thread thread = new Thread() {
+            public void run() {
+                try {
+                    final boolean xSystem = CrossSystem.isOpenBrowserSupported();
+                    String message = "";
+                    final String title;
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        title = br.getHost() + " möchte einen kostenlosen Download starten";
+                        message += "Hallo liebe(r) " + br.getHost() + " NutzerIn\r\n";
                         if (xSystem) {
-                            CrossSystem.openURL(url);
+                            message += "Um kostenlos von diesem Anbieter herunterladen zu können musst du den 'free mode' im Fenster das sich gleich öffnet aktivieren.\r\n";
+                        } else {
+                            message += "Um kostenlos von diesem Anbieter herunterladen zu können musst du den 'free mode' unter dieser Adresse aktivieren:\r\n" + new URL(url) + "\r\n";
                         }
-                    } catch (Throwable e) {
+                    } else {
+                        title = br.getHost() + " wants to start a free download";
+                        message += "Hello dear " + br.getHost() + " user\r\n";
+                        if (xSystem) {
+                            message += "To be able to use the free mode of this service, you will have to enable it in the browser-window which will open soon.\r\n";
+                        } else {
+                            message += "To be able to use the free mode of this service, you will have to enable it here:\r\n" + new URL(url) + "\r\n";
+                        }
                     }
+                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
+                    dialog.setTimeout(2 * 60 * 1000);
+                    if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
+                        CrossSystem.openURL(url);
+                    }
+                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
+                    System.out.println(ret);
+                } catch (final Throwable e) {
                 }
-            });
-        } catch (Throwable e) {
-        }
+            };
+        };
+        thread.start();
+        return thread;
     }
 
     public void setFreeAccountTraffic(final AccountInfo ai) {
@@ -543,15 +549,19 @@ abstract public class ZeveraCore extends UseNet {
     }
 
     public void loginAPI(final Browser br, final String clientID, final Account account, final boolean force) throws Exception {
-        getPage(br, "https://www." + account.getHoster() + "/api/account/info?client_id=" + clientID + "&pin=" + Encoding.urlEncode(account.getPass()));
+        getPage(br, "https://www." + account.getHoster() + "/api/account/info?client_id=" + clientID + "&pin=" + Encoding.urlEncode(getAPIKey(account)));
         final String status = PluginJSonUtils.getJson(br, "status");
         if (!"success".equalsIgnoreCase(status)) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "API-Key / PIN invalid! Make sure you entered your current API-Key / PIN which can be found here: " + account.getHoster() + "/account", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "API key invalid! Make sure you entered your current API key which can be found here: " + account.getHoster() + "/account", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         if (account.getHoster().equalsIgnoreCase("premiumize.me")) {
             /* 2019-02-10: Workaround for their Usenet support. Their Usenet login-servers only accept APIKEY:APIKEY. */
             account.setUser(account.getPass());
         }
+    }
+
+    private String getAPIKey(final Account account) {
+        return account.getPass().trim();
     }
 
     /**
