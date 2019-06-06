@@ -1317,48 +1317,49 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     /** Handles all kinds of captchas, also login-captcha - fills the given captchaForm. */
     public void handleCaptcha(final DownloadLink link, final Form captchaForm) throws Exception {
         /* Captcha START */
-        if (correctedBR.contains("class=\"g-recaptcha\"")) {
+        if (new Regex(correctedBR, Pattern.compile("\\$\\.post\\(\\s*?\"/ddl\"", Pattern.CASE_INSENSITIVE)).matches()) {
+            /* 2019-06-06: Rare case */
+            logger.info("Detected captcha method \"RecaptchaV2\" type 'special' for this host");
+            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
             /*
              * 2017-12-07: New - solve- and check reCaptchaV2 here via ajax call, then wait- and submit the main downloadform. This might as
-             * well be a workaround by the XFS developers to avoid expiring reCaptchaV2 challenges.
+             * well be a workaround by the XFS developers to avoid expiring reCaptchaV2 challenges. Example: filefox.cc
              */
-            logger.info("Detected captcha method \"RecaptchaV2\" for this host");
-            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-            if (new Regex(correctedBR, Pattern.compile("\\$\\.post\\(\\s*?\"/ddl\"", Pattern.CASE_INSENSITIVE)).matches()) {
-                /**
-                 * TODO: Maybe add a check here to ensure that this part does not get accessed during login process as that would be a fatal
-                 * failure!
-                 */
-                /* 2017-12-07: New - this case can only happen during download and cannot be part of the login process! */
-                /* Do not put the result in this Form as the check is handled below already */
-                captchaForm.put("g-recaptcha-response", "");
-                final Form ajaxCaptchaForm = new Form();
-                ajaxCaptchaForm.setMethod(MethodType.POST);
-                ajaxCaptchaForm.setAction("/ddl");
-                final InputField if_Rand = captchaForm.getInputFieldByName("rand");
-                final String file_id = PluginJSonUtils.getJson(br, "file_id");
-                if (if_Rand != null) {
-                    /* This is usually given */
-                    ajaxCaptchaForm.put("rand", if_Rand.getValue());
-                }
-                if (!StringUtils.isEmpty(file_id)) {
-                    /* This is usually given */
-                    ajaxCaptchaForm.put("file_id", file_id);
-                }
-                ajaxCaptchaForm.put("op", "captcha1");
-                ajaxCaptchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                /* User existing Browser object as we get a cookie which is required later. */
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                this.submitForm(br, ajaxCaptchaForm);
-                if (!br.toString().equalsIgnoreCase("OK")) {
-                    logger.warning("Fatal reCaptchaV2 ajax handling failure");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                br.getHeaders().remove("X-Requested-With");
-            } else {
-                /* 2019-02-08: 'Old' but still the most used case */
-                captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+            /**
+             * TODO: Maybe add a check here to ensure that this part does not get accessed during login process as that would be a fatal
+             * failure!
+             */
+            /* 2017-12-07: New - this case can only happen during download and cannot be part of the login process! */
+            /* Do not put the result in the given Form as the check itself is handled via Ajax right here! */
+            captchaForm.put("g-recaptcha-response", "");
+            final Form ajaxCaptchaForm = new Form();
+            ajaxCaptchaForm.setMethod(MethodType.POST);
+            ajaxCaptchaForm.setAction("/ddl");
+            final InputField if_Rand = captchaForm.getInputFieldByName("rand");
+            final String file_id = PluginJSonUtils.getJson(br, "file_id");
+            if (if_Rand != null) {
+                /* This is usually given */
+                ajaxCaptchaForm.put("rand", if_Rand.getValue());
             }
+            if (!StringUtils.isEmpty(file_id)) {
+                /* This is usually given */
+                ajaxCaptchaForm.put("file_id", file_id);
+            }
+            ajaxCaptchaForm.put("op", "captcha1");
+            ajaxCaptchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+            /* User existing Browser object as we get a cookie which is required later. */
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            this.submitForm(br, ajaxCaptchaForm);
+            if (!br.toString().equalsIgnoreCase("OK")) {
+                logger.warning("Fatal reCaptchaV2 ajax handling failure");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.getHeaders().remove("X-Requested-With");
+        } else if (correctedBR.contains("class=\"g-recaptcha\"")) {
+            /* 2019-06-06: Most widespread case */
+            logger.info("Detected captcha method \"RecaptchaV2\" type 'normal' for this host");
+            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+            captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
         } else {
             if (correctedBR.contains(";background:#ccc;text-align")) {
                 logger.info("Detected captcha method \"plaintext captchas\" for this host");
@@ -1797,7 +1798,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /** Returns pre-download-waittime (seconds) from inside HTML. */
-    public String regexWaittime() {
+    protected String regexWaittime() {
         /**
          * TODO: 2019-05-15: Try to grab the whole line which contains "id"="countdown" and then grab the waittime from inside that as it
          * would probably make this more reliable.
@@ -2077,7 +2078,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * as 403, 404 and 503. <br />
      * checkAll: If enabled, ,this will also check for wrong password, wrong captcha and 'Skipped countdown' errors.
      */
-    public void checkErrors(final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
+    protected void checkErrors(final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
         if (checkAll) {
             if (isPasswordProtectedHTM() && correctedBR.contains("Wrong password")) {
                 final String userEnteredPassword = link.getDownloadPassword();
@@ -2185,7 +2186,9 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         if (responsecode == 403) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
         } else if (responsecode == 404) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404#1", 5 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
+        } else if (responsecode == 416) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 5 * 60 * 1000l);
         } else if (responsecode == 503) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 503 connection limit reached, please contact our support!", 5 * 60 * 1000l);
         }
