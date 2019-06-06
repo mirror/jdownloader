@@ -174,6 +174,7 @@ public class Tf1Fr extends PluginForHost {
         } else {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();
