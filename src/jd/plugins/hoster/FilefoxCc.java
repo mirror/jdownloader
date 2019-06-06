@@ -19,9 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -36,6 +33,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FilefoxCc extends XFileSharingProBasic {
@@ -106,7 +106,7 @@ public class FilefoxCc extends XFileSharingProBasic {
     }
 
     @Override
-    protected String regexWaittime() {
+    public String regexWaittime() {
         /* 2019-06-06: Special */
         String waitStr = super.regexWaittime();
         if (StringUtils.isEmpty(waitStr)) {
@@ -127,7 +127,7 @@ public class FilefoxCc extends XFileSharingProBasic {
     }
 
     @Override
-    protected void checkErrors(final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
+    public void checkErrors(final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
         /* 2019-06-06: Special */
         super.checkErrors(link, account, checkAll);
         if (new Regex(correctedBR, "You have reached the daily download limit").matches()) {

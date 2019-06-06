@@ -106,6 +106,9 @@ public class Tf1Fr extends PluginForHost {
             video_id = br.getRegex("<meta property=\"og:video(:secure_url)?\" content=\"[^\"]+(\\d{6,8})\">").getMatch(1);
             if (video_id == null) {
                 video_id = br.getRegex("xtpage = \"[^;]+video\\-(\\d{6,8})\";").getMatch(0);
+                if (video_id == null) {
+                    video_id = br.getRegex("replay_(\\d{6,8})").getMatch(0);
+                }
             }
         }
         String finallink = getFinalLink(video_id);
