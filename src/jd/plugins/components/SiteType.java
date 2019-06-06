@@ -15,7 +15,7 @@ public class SiteType {
         ArlesImageWebPageCreator,
         /**
          * File host script first used for: <a href="http://www.chomikuj.pl/">chomikuj.pl</a><br />
-         * examples <a href="http:/diskokosmiko.mx/">diskokosmiko.mx</a>
+         * examples <a href="http:/chomikuj.pl/">chomikuj.pl</a>
          */
         ChomikujPlScript,
         /**

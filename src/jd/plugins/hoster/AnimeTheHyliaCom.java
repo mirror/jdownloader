@@ -22,7 +22,6 @@ import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -155,25 +154,19 @@ public class AnimeTheHyliaCom extends PluginForHost {
                 }
                 br.setFollowRedirects(false);
                 br.getPage("https://anime.thehylia.com/forums/index.php");
-                final String pwhash = JDHash.getMD5(account.getPass());
-                final Form loginform = this.br.getFormbyKey("cookieuser");
+                final String xftoken = br.getRegex("name=\"_xfToken\" value=\"([^<>\"]+)\"").getMatch(0);
+                br.getPage("https://anime.thehylia.com/forums/index.php?login/&_xfRequestUri=%2Fforums%2Findex.php&_xfWithData=1&_xfToken=" + Encoding.urlEncode(xftoken) + "&_xfResponseType=json");
+                final String html_fixed = br.toString().replaceAll("(\r|\t|\n)", "").replaceAll("\\\\", "");
+                br.getRequest().setHtmlCode(html_fixed);
+                final Form loginform = this.br.getFormbyKey("remember");
                 if (loginform == null) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                loginform.put("vb_login_username", account.getUser());
-                loginform.put("vb_login_password", "");
-                loginform.put("vb_login_md5password", pwhash);
-                loginform.put("vb_login_md5password_utf", pwhash);
-                loginform.remove("cookieuser");
-                loginform.put("cookieuser", "1");
+                loginform.put("login", account.getUser());
+                loginform.put("password", account.getPass());
+                loginform.put("remember", "1");
                 this.br.submitForm(loginform);
-                if (br.getCookie(MAINPAGE, "dcpassword") == null) {
+                if (br.getCookie(MAINPAGE, "xf_user", Cookies.NOTDELETEDPATTERN) == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {

@@ -17,15 +17,15 @@ package jd.plugins.hoster;
 
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FourfileNet extends XFileSharingProBasic {
@@ -97,10 +97,6 @@ public class FourfileNet extends XFileSharingProBasic {
         return super.supports_precise_expire_date();
     }
 
-    
-
-    
-
     @Override
     public boolean isVideohosterEmbed() {
         return super.isVideohosterEmbed();
@@ -121,8 +117,6 @@ public class FourfileNet extends XFileSharingProBasic {
         return super.supports_availablecheck_alt();
     }
 
-    
-
     @Override
     public boolean prefer_availablecheck_filesize_alt_type_old() {
         return super.prefer_availablecheck_filesize_alt_type_old();
@@ -141,8 +135,8 @@ public class FourfileNet extends XFileSharingProBasic {
 
     @Override
     public boolean requires_WWW() {
-        /* 2019-02-21: Special */
-        return false;
+        /* 2019-06-06: Special */
+        return true;
     }
 
     @Override
