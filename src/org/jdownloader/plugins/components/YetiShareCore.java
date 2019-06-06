@@ -398,7 +398,7 @@ public class YetiShareCore extends antiDDoSForHost {
                 getPage(link.getPluginPatternMatcher());
                 /* For premium mode, we might get our final downloadurl here already. */
                 final String redirect = this.br.getRedirectLocation();
-                if (redirect != null && isDllink(redirect)) {
+                if (redirect != null && isDownloadlink(redirect)) {
                     continue_link = br.getRedirectLocation();
                 } else if (redirect != null) {
                     /* Follow redirect */
@@ -438,13 +438,13 @@ public class YetiShareCore extends antiDDoSForHost {
                         continue_form.put("d", "1");
                     }
                     if (i == startValue && continue_form == null) {
-                        logger.info("No continue_form available, plugin broken");
+                        logger.info("No continue_form/continue_link available, plugin broken");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     } else if (continue_form == null) {
-                        logger.info("No continue_form available, stepping out of pre-download loop");
+                        logger.info("No continue_form/continue_link available, stepping out of pre-download loop");
                         break;
                     } else {
-                        logger.info("Found continue_form, continuing...");
+                        logger.info("Found continue_form/continue_link, continuing...");
                     }
                     final String rcID = br.getRegex("recaptcha/api/noscript\\?k=([^<>\"]*?)\"").getMatch(0);
                     if (br.containsHTML("data\\-sitekey=|g\\-recaptcha\\'")) {
@@ -488,7 +488,8 @@ public class YetiShareCore extends antiDDoSForHost {
                     } else {
                         success = true;
                         waitTime(link, timeBeforeCaptchaInput, skipWaittime);
-                        dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_form, resume, maxchunks);
+                        /* Use URL instead of Form - it is all we need! */
+                        dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, resume, maxchunks);
                     }
                 }
                 checkResponseCodeErrors(dl.getConnection());
@@ -521,7 +522,7 @@ public class YetiShareCore extends antiDDoSForHost {
         dl.startDownload();
     }
 
-    private String getContinueLink() {
+    protected String getContinueLink() {
         String continue_link = br.getRegex("\\$\\(\\'\\.download\\-timer\\'\\)\\.html\\(\"<a href=\\'(https?://[^<>\"]*?)\\'").getMatch(0);
         if (continue_link == null) {
             continue_link = br.getRegex("class=\\'btn btn\\-free\\' href=\\'(https?://[^<>\"]*?)\\'>").getMatch(0);
@@ -558,11 +559,7 @@ public class YetiShareCore extends antiDDoSForHost {
         return dllink;
     }
 
-    private boolean isDllink(final String url) {
-        return url.matches(".+download_token=.+");
-    }
-
-    private boolean isDownloadlink(final String url) {
+    public boolean isDownloadlink(final String url) {
         if (url == null) {
             return false;
         }

@@ -27,8 +27,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class UserscdnCom extends YetiShareCore {
-    public UserscdnCom(PluginWrapper wrapper) {
+public class SundryfilesCom extends YetiShareCore {
+    public SundryfilesCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(getPurchasePremiumURL());
     }
@@ -37,12 +37,12 @@ public class UserscdnCom extends YetiShareCore {
      * DEV NOTES YetiShare<br />
      ****************************
      * mods: See overridden functions<br />
-     * limit-info: 2019-06-06: Downloads were broken, set default limits!<br />
-     * captchatype-info: 2019-06-06: null<br />
+     * limit-info: 2019-06-07: No limits at all<br />
+     * captchatype-info: 2019-06-07: null<br />
      * other: <br />
      */
     /* 1st domain = current domain! */
-    public static String[] domains = new String[] { "userscdn.com" };
+    public static String[] domains = new String[] { "sundryfiles.com" };
 
     public static String[] getAnnotationNames() {
         return new String[] { domains[0] };
@@ -81,67 +81,51 @@ public class UserscdnCom extends YetiShareCore {
     public boolean isResumeable(final DownloadLink link, final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return false;
+            return true;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return false;
+            return true;
         } else {
             /* Free(anonymous) and unknown account type */
-            return false;
+            return true;
         }
     }
 
     public int getMaxChunks(final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return 1;
+            return 0;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return 1;
+            return 0;
         } else {
             /* Free(anonymous) and unknown account type */
-            return 1;
+            return 0;
         }
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return -1;
     }
 
     public int getMaxSimultaneousFreeAccountDownloads() {
-        return 1;
+        return -1;
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 1;
+        return -1;
     }
 
     @Override
     protected String getContinueLink() {
-        /* 2019-06-06: Special */
-        String continue_link = super.getContinueLink();
-        if (StringUtils.isEmpty(continue_link)) {
-            continue_link = br.getRegex("(?:\"|\\')(\\?(?:next|last)=[^<>\"\\']*?)(?:\"|\\')").getMatch(0);
+        String continueurl = super.getContinueLink();
+        if (StringUtils.isEmpty(continueurl)) {
+            /* 2019-06-07: E.g. first loop */
+            continueurl = br.getRegex("href=\\'(\\?view\\-ads=1)\\'>download / view now<").getMatch(0);
         }
-        if (StringUtils.isEmpty(continue_link)) {
-            continue_link = br.getRegex("id=\"download\\-btn\" [^<>]*? href=\"(https[^<>\"]+)").getMatch(0);
-        }
-        return continue_link;
-    }
-
-    @Override
-    public boolean isDownloadlink(final String url) {
-        /* 2019-06-06: Special */
-        if (url == null) {
-            return false;
-        }
-        boolean isdllink = super.isDownloadlink(url);
-        if (!isdllink) {
-            isdllink = url.contains("last=");
-        }
-        return isdllink;
+        return continueurl;
     }
 
     public boolean supports_https() {
