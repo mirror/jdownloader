@@ -58,6 +58,7 @@ import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.plugins.components.containers.VimeoContainer;
+import org.jdownloader.plugins.components.containers.VimeoContainer.Quality;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vimeo.com" }, urls = { "https?://(?:www\\.)?vimeo\\.com/(\\d+(?:/[a-f0-9]+)?|(?:[a-z]{2}/)?channels/[a-z0-9\\-_]+/\\d+|[A-Za-z0-9\\-_]+/videos|ondemand/[A-Za-z0-9\\-_]+(/\\d+)?|groups/[A-Za-z0-9\\-_]+(?:/videos/\\d+)?)|https?://player\\.vimeo.com/(?:video|external)/\\d+((\\?|#).+)?|https?://(?:www\\.)?vimeo\\.com/[a-z0-9]+/review/\\d+/[a-f0-9]+" })
@@ -666,15 +667,21 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         }
     }
 
-    private DownloadLink determineBest(HashMap<String, DownloadLink> bestMap) throws Exception {
+    private DownloadLink determineBest(final Map<String, DownloadLink> bestMap) throws Exception {
         DownloadLink bestLink = null;
-        int bestHeight = -1;
-        for (final Map.Entry<String, DownloadLink> best : bestMap.entrySet()) {
-            final DownloadLink link = best.getValue();
-            final int height = jd.plugins.hoster.VimeoCom.getVimeoVideoContainer(link, false).getHeight();
-            if (height > bestHeight) {
+        VimeoContainer bestContainer = null;
+        for (final Map.Entry<String, DownloadLink> entry : bestMap.entrySet()) {
+            final DownloadLink link = entry.getValue();
+            final VimeoContainer container = jd.plugins.hoster.VimeoCom.getVimeoVideoContainer(link, false);
+            if (bestLink == null || Quality.ORIGINAL.equals(container.getQuality())) {
                 bestLink = link;
-                bestHeight = height;
+                bestContainer = container;
+            } else if (container.getHeight() > bestContainer.getHeight()) {
+                bestLink = link;
+                bestContainer = container;
+            } else if (container.getHeight() == bestContainer.getHeight() && container.getSource().ordinal() > bestContainer.getSource().ordinal()) {
+                bestLink = link;
+                bestContainer = container;
             }
         }
         return bestLink;
