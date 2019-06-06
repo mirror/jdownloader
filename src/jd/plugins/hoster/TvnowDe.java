@@ -149,7 +149,7 @@ public class TvnowDe extends PluginForHost {
              * Some content (very rare case) can only be accessed via new API as we are sometimes unable to find the correct parameters for
              * the old API (well, or some content simply isn't accessible via old API anymore).
              */
-            logger.info("Attempting special offline workaround");
+            logger.info("Attempting special offline workaround via new API");
             /* If the content is offline (as we suspect), that function will throw ERROR_FILE_NOT_FOUND. */
             accessStreamInfoViaNewAPI(link);
             logger.info("Special offline workaround successful: Content is online");
@@ -665,9 +665,9 @@ public class TvnowDe extends PluginForHost {
     }
 
     /**
-     * Removes parts of the show-title which are not allowed for API requests e.g. the show-ID. <br />
-     * Keep ind mind that this may fail for Strings which end with numbers and do NOT contain a show-ID anymore e.g. BAD case: "koeln-1337".
-     * Good case: "koeln-1337-506928"
+     * Removes parts of the show-title which are not allowed for API requests e.g. the showID. <br />
+     * Keep ind mind that this may fail for Strings which end with numbers that are NOT a showID e.g. BAD case: "koeln-1337". Good case:
+     * "koeln-1337-506928"
      */
     public static String cleanupShowTitle(String showname) {
         if (showname == null) {
@@ -677,15 +677,18 @@ public class TvnowDe extends PluginForHost {
         return showname;
     }
 
-    /** Removes parts of the episode-title which are not allowed for API requests e.g. the show-ID. */
+    /** Removes parts of the episode-title which are not allowed for API requests e.g. the contentID. */
     public static String cleanupEpisodeTitle(String episodename) {
         if (episodename == null) {
             return null;
         }
         episodename = episodename.replaceAll("^episode\\-\\d+\\-", "");
-        /* This part is tricky - we have to filter-out stuff which does not belong to their intern title ... */
+        /*
+         * This part is tricky - we have to filter-out the contentID but the endings of some titles look like contentIDs but are NOT - we
+         * have to detect this and only remove these numbers if we're sure that that is the contentID!
+         */
         /* Examples: which shall NOT be modified: "super-8-kamera-von-1965", "folge-w-05" */
-        if (!episodename.matches(".*?(folge|teil)\\-\\d+$") && !episodename.matches(".+\\d{4}\\-\\d{2}-\\d{2}-\\d{2}-\\d{2}-\\d{2}\\-\\d+$") && !episodename.matches(".+\\-[12]\\d{3}")) {
+        if (!episodename.matches(".*?(folge|teil)\\-\\d+$") && !episodename.matches(".+\\d{4}\\-\\d{2}-\\d{2}-\\d{2}-\\d{2}-\\d{2}$") && !episodename.matches(".+\\-[12]\\d{3}")) {
             episodename = episodename.replaceAll("\\-\\d+$", "");
         }
         return episodename;

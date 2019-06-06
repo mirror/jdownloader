@@ -153,7 +153,7 @@ public class SeedrCc extends PluginForHost {
                     br.setCookies(account.getHoster(), cookies);
                     prepAjaxBr(br);
                     br.postPage("https://www." + this.getHost() + "/content.php?action=get_settings", "");
-                    if (!br.containsHTML("\"login_required\"")) {
+                    if (isLoggedIn(br)) {
                         /* Save new cookie timestamp */
                         account.saveCookies(br.getCookies(account.getHoster()), "");
                         return;
@@ -165,10 +165,21 @@ public class SeedrCc extends PluginForHost {
                     this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "http://" + account.getHoster(), true));
                 }
                 br.getPage("https://www." + this.getHost());
-                String reCaptchaKey = br.getRegex("data\\-sitekey=\"([^<>\"]+)\"").getMatch(0);
-                if (reCaptchaKey == null) {
+                String reCaptchaKey;
+                /*
+                 * 2019-06-06: Use static key because website contains two keys - one for registration and one for login! Using the wrong
+                 * key will result in login failure!
+                 */
+                final boolean useStaticReCaptchaKey = true;
+                if (useStaticReCaptchaKey) {
                     /* 2018-10-30 */
                     reCaptchaKey = "6LdNI3MUAAAAAKcY5lKxRTMxg4xFWHEJWzSNJGdE";
+                } else {
+                    reCaptchaKey = br.getRegex("data\\-sitekey=\"([^<>\"]+)\"").getMatch(0);
+                    if (reCaptchaKey == null) {
+                        /* 2018-10-30 */
+                        reCaptchaKey = "6LdNI3MUAAAAAKcY5lKxRTMxg4xFWHEJWzSNJGdE";
+                    }
                 }
                 final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, reCaptchaKey).getToken();
                 if (dlinkbefore != null) {
@@ -183,9 +194,9 @@ public class SeedrCc extends PluginForHost {
                 if (!StringUtils.isEmpty(error)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                this.br.postPage("https://www." + this.getHost() + "/content.php?action=get_devices", "");
-                if (br.getCookie(account.getHoster(), "remember") == null) {
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.postPage("https://www." + br.getHost() + "/content.php?action=get_devices", "");
+                if (!isLoggedIn(br)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(br.getCookies(account.getHoster()), "");
@@ -194,6 +205,10 @@ public class SeedrCc extends PluginForHost {
                 throw e;
             }
         }
+    }
+
+    private static boolean isLoggedIn(final Browser br) {
+        return br.getCookie(br.getHost(), "remember", Cookies.NOTDELETEDPATTERN) != null;
     }
 
     public static void prepAjaxBr(final Browser br) {
