@@ -17,19 +17,25 @@ package jd.plugins.hoster;
 
 import java.util.regex.Pattern;
 
-import org.jdownloader.plugins.components.UnknownHostingScriptCore;
-
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
+import org.jdownloader.plugins.components.UnknownHostingScriptCore;
+
 @HostPlugin(revision = "$Revision $", interfaceVersion = 2, names = {}, urls = {})
 public class AnonFileCom extends UnknownHostingScriptCore {
+    private final String   MaxSimultaneousDownloads_LIMIT = "MaxSimultaneousDownloads_LIMIT";
+    private final String[] MaxSimultaneousDownloads       = new String[] { "Unlimited", "1", "2", "3", "4", "5" };
+
     public AnonFileCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
+        setConfigElements();
     }
 
     /**
@@ -69,14 +75,28 @@ public class AnonFileCom extends UnknownHostingScriptCore {
         }
     }
 
+    public int getMaxDownloadSelect() {
+        final int chosenDownloadLimit = getPluginConfig().getIntegerProperty(MaxSimultaneousDownloads_LIMIT, 0);
+        try {
+            if (chosenDownloadLimit > 0) {
+                return Integer.parseInt(MaxSimultaneousDownloads[chosenDownloadLimit]);
+            } else {
+                return -1;
+            }
+        } catch (final Throwable e) {
+            logger.log(e);
+            return -1;
+        }
+    }
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return getMaxDownloadSelect();
     }
 
     @Override
     public int getMaxSimultaneousFreeAccountDownloads() {
-        return -1;
+        return getMaxDownloadSelect();
     }
 
     @Override
@@ -135,5 +155,9 @@ public class AnonFileCom extends UnknownHostingScriptCore {
     @Override
     public String[] siteSupportedNames() {
         return domains;
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), MaxSimultaneousDownloads_LIMIT, MaxSimultaneousDownloads, "Max. simultaneous downloads (Free+Free account)").setDefaultValue(0));
     }
 }
