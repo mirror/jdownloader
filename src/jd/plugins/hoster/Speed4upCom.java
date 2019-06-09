@@ -64,7 +64,7 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class Speed4upCom extends antiDDoSForHost {
     /* 1st domain = current domain! */
-    public static String[] domains = new String[] { "speed4up.com" };
+    public static String[] domains = new String[] { "speed4up.com", "speed4up.net" };
 
     public static String[] getAnnotationNames() {
         return new String[] { domains[0] };
