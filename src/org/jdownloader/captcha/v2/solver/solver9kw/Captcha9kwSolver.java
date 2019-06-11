@@ -104,6 +104,8 @@ public class Captcha9kwSolver extends AbstractCaptcha9kwSolver<String> {
             qi.appendEncoded("captchapermin", options.getCpm() + "");
             qi.appendEncoded("prio", options.getPriothing() + "");
             qi.appendEncoded("selfsolve", options.isSelfsolve() + "");
+            qi.appendEncoded("proxy", options.getproxyhostport() + "");
+            qi.appendEncoded("proxytype", options.getproxytype() + "");
             qi.appendEncoded("confirm", "false");
             qi.appendEncoded("maxtimeout", options.getTimeoutthing() + "");
             qi.addAll(options.getMoreoptions().list());

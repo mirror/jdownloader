@@ -28,7 +28,7 @@ public interface Captcha9kwSettings extends ChallengeSolverConfig {
     void setDebug(boolean b);
 
     @AboutConfig
-    @DefaultBooleanValue(false)
+    @DefaultBooleanValue(true)
     @DescriptionForConfigEntry("Activate the Mouse Captchas")
     boolean ismouse();
 
@@ -41,7 +41,7 @@ public interface Captcha9kwSettings extends ChallengeSolverConfig {
     void setEnabledGlobally(boolean b);
 
     @AboutConfig
-    @DefaultBooleanValue(false)
+    @DefaultBooleanValue(true)
     @DescriptionForConfigEntry("Activate the Puzzle Captchas")
     boolean ispuzzle();
 
@@ -205,6 +205,20 @@ public interface Captcha9kwSettings extends ChallengeSolverConfig {
     boolean getwhitelisttimeoutcheck();
 
     void setwhitelisttimeoutcheck(boolean b);
+
+    @AboutConfig
+    @DefaultStringValue("")
+    @DescriptionForConfigEntry("Proxy like host:port (max. 200 chars)")
+    String getproxyhostport();
+
+    void setproxyhostport(String jser);
+
+    @AboutConfig
+    @DefaultStringValue("")
+    @DescriptionForConfigEntry("Proxytype like http or socks5")
+    String getproxytype();
+
+    void setproxytype(String jser);
 
     @AboutConfig
     @DefaultBooleanValue(true)

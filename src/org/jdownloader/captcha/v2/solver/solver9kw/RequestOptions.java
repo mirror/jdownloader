@@ -3,6 +3,8 @@ package org.jdownloader.captcha.v2.solver.solver9kw;
 import org.appwork.utils.parser.UrlQuery;
 
 public class RequestOptions {
+    private String   proxyhostport;
+    private String   proxytype;
     private int      cph;
     private int      cpm;
     private int      priothing;
@@ -45,6 +47,14 @@ public class RequestOptions {
         return timeoutthing;
     }
 
+    public String getproxytype() {
+        return proxytype;
+    }
+
+    public String getproxyhostport() {
+        return proxyhostport;
+    }
+
     public void setTimeoutthing(int timeoutthing) {
         this.timeoutthing = timeoutthing;
     }
@@ -72,9 +82,10 @@ public class RequestOptions {
         cph = config.gethour();
         cpm = config.getminute();
         priothing = config.getprio();
+        proxyhostport = config.getproxyhostport();
+        proxytype = config.getproxytype();
         timeoutthing = (config.getDefaultMaxTimeout() / 1000);
         selfsolve = config.isSelfsolve();
         confirm = config.isconfirm();
     }
-
 }

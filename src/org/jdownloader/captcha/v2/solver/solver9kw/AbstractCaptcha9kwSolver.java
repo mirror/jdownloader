@@ -8,6 +8,9 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+
 import org.appwork.uio.MessageDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Regex;
@@ -29,9 +32,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
-
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
 
 public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> {
     private String                     accountStatusString;
@@ -432,7 +432,6 @@ public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> 
                 }
             }
         }
-
         String hosterOptions = config.gethosteroptions();
         if (hosterOptions != null && hosterOptions.length() > 5) {
             String[] list = hosterOptions.split(";");
@@ -474,6 +473,12 @@ public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> 
                             }
                             if (detailvalue[0].equals("math") && detailvalue[1].matches("^[0-9]+$")) {
                                 options.getMoreoptions().appendEncoded("math", detailvalue[1]);
+                            }
+                            if (detailvalue[0].equals("proxy")) {
+                                options.getMoreoptions().appendEncoded("proxy", detailvalue[1]);
+                            }
+                            if (detailvalue[0].equals("proxytype")) {
+                                options.getMoreoptions().appendEncoded("proxytype", detailvalue[1]);
                             }
                             if (detailvalue[0].equals("numeric") && detailvalue[1].matches("^[0-9]+$")) {
                                 options.getMoreoptions().appendEncoded("numeric", detailvalue[1]);
