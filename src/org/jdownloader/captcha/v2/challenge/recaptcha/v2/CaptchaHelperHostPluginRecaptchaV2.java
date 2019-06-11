@@ -3,6 +3,7 @@ package org.jdownloader.captcha.v2.challenge.recaptcha.v2;
 import java.util.ArrayList;
 
 import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.captcha.CaptchaSettings;
 import jd.controlling.captcha.SkipException;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -15,6 +16,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.captcha.blacklist.BlacklistEntry;
@@ -33,6 +35,8 @@ import org.jdownloader.plugins.CaptchaStepProgress;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRecaptchaV2<PluginForHost> {
+    private CaptchaSettings config;
+
     public CaptchaHelperHostPluginRecaptchaV2(final PluginForHost plugin, final Browser br, final String siteKey, final String secureToken, boolean boundToDomain) {
         super(plugin, br, siteKey, secureToken, boundToDomain);
     }
@@ -94,7 +98,8 @@ public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRec
             final RecaptchaV2Challenge c = createChallenge();
             try {
                 c.setTimeout(plugin.getChallengeTimeout(c));
-                if (insideAccountChecker || FilePackage.isDefaultFilePackage(link.getFilePackage())) {
+                config = JsonConfig.create(CaptchaSettings.class);
+                if (insideAccountChecker && config.isCaptchaWithAccountlogin() == false || FilePackage.isDefaultFilePackage(link.getFilePackage()) && config.isCaptchaWithAccountlogin() == false) {
                     // coalado: discuss why. FilePackage.isDefaultFilePackage(link.getFilePackage()) is triggered for captchas during online
                     // check es well
                     /**

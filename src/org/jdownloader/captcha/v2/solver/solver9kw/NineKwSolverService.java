@@ -49,7 +49,6 @@ public class NineKwSolverService extends AbstractSolverService implements Servic
     public void extendServicePabel(List<ServiceCollection<?>> services) {
         if (StringUtils.isNotEmpty(config.getApiKey()) && isEnabled()) {
             services.add(new ServiceCollection<Captcha9kwSolver>() {
-
                 /**
                  *
                  */
@@ -79,7 +78,6 @@ public class NineKwSolverService extends AbstractSolverService implements Servic
                 public ExtTooltip createTooltip(ServicePanel owner) {
                     return new ServicePanel9kwTooltip(owner, NineKwSolverService.this);
                 }
-
             });
         }
     }
@@ -96,17 +94,14 @@ public class NineKwSolverService extends AbstractSolverService implements Servic
         Browser br = new Browser();
         NineKWAccount ret = new NineKWAccount();
         String credits;
-
         ret.setRequests(textSolver.counter.get() + clickSolver.counter.get());
         ret.setSkipped(textSolver.counterInterrupted.get() + clickSolver.counterInterrupted.get());
         ret.setSolved(textSolver.counterSolved.get() + clickSolver.counterSolved.get());
-
         ret.setSend(textSolver.counterSend.get() + clickSolver.counterSend.get());
         ret.setSendError(textSolver.counterSendError.get() + clickSolver.counterSendError.get());
         ret.setOK(textSolver.counterOK.get() + clickSolver.counterOK.get());
         ret.setNotOK(textSolver.counterNotOK.get() + clickSolver.counterNotOK.get());
         ret.setUnused(textSolver.counterUnused.get() + clickSolver.counterUnused.get());
-
         try {
             String servercheck = br.getPage(getAPIROOT() + "grafik/servercheck.txt");
             LoggerFactory.getDefaultLogger().info("\r\n" + br.getRequest());
@@ -122,7 +117,6 @@ public class NineKwSolverService extends AbstractSolverService implements Servic
         } catch (NumberFormatException e) {
             ret.setError("API Error!");
         }
-
         if (!config.getApiKey().matches("^[a-zA-Z0-9]+$")) {
             ret.setError("API Key is not correct!");
         } else {
@@ -132,7 +126,6 @@ public class NineKwSolverService extends AbstractSolverService implements Servic
                 ret.setCreditBalance(Integer.parseInt(credits.trim()));
                 String userhistory1 = br.getPage(getAPIROOT() + "index.cgi?action=userhistory&short=1&apikey=" + Encoding.urlEncode(config.getApiKey()));
                 String userhistory2 = br.getPage(getAPIROOT() + "index.cgi?action=userhistory2&short=1&apikey=" + Encoding.urlEncode(config.getApiKey()));
-
                 ret.setAnswered9kw(Integer.parseInt(Regex.getLines(userhistory2)[0]));
                 ret.setSolved9kw(Integer.parseInt(Regex.getLines(userhistory1)[0]));
             } catch (NumberFormatException e) {
@@ -140,7 +133,6 @@ public class NineKwSolverService extends AbstractSolverService implements Servic
             }
         }
         return ret;
-
     }
 
     @Override
@@ -162,10 +154,11 @@ public class NineKwSolverService extends AbstractSolverService implements Servic
         }
     }
 
-    private Captcha9kwSettings     config;
-    private Captcha9kwSolver       textSolver;
-    private Captcha9kwSolverClick  clickSolver;
-    private Captcha9kwSolverPuzzle puzzleSolver;
+    private Captcha9kwSettings         config;
+    private Captcha9kwSolver           textSolver;
+    private Captcha9kwSolverClick      clickSolver;
+    private Captcha9kwSolverMultiClick multiclickSolver;
+    private Captcha9kwSolverPuzzle     puzzleSolver;
 
     private void updateServicePanel(boolean b) {
         if (!Application.isHeadless()) {
@@ -185,7 +178,6 @@ public class NineKwSolverService extends AbstractSolverService implements Servic
                 public void run() {
                     ServicePanel.getInstance().addExtender(NineKwSolverService.this);
                     CFG_9KWCAPTCHA.API_KEY.getEventSender().addListener(new GenericConfigEventListener<String>() {
-
                         @Override
                         public void onConfigValueModified(KeyHandler<String> keyHandler, String newValue) {
                             updateServicePanel(true);
@@ -196,7 +188,6 @@ public class NineKwSolverService extends AbstractSolverService implements Servic
                         }
                     });
                     CFG_9KWCAPTCHA.ENABLED_GLOBALLY.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
-
                         @Override
                         public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
                         }
@@ -207,7 +198,6 @@ public class NineKwSolverService extends AbstractSolverService implements Servic
                         }
                     });
                     CFG_9KWCAPTCHA.ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
-
                         @Override
                         public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
                         }
@@ -218,7 +208,6 @@ public class NineKwSolverService extends AbstractSolverService implements Servic
                         }
                     });
                     CFG_9KWCAPTCHA.MOUSE.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
-
                         @Override
                         public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
                         }
@@ -229,7 +218,6 @@ public class NineKwSolverService extends AbstractSolverService implements Servic
                         }
                     });
                     CFG_9KWCAPTCHA.PUZZLE.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
-
                         @Override
                         public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
                         }
@@ -294,8 +282,11 @@ public class NineKwSolverService extends AbstractSolverService implements Servic
         this.clickSolver = captcha9kwSolverClick;
     }
 
+    public void setMultiClickSolver(Captcha9kwSolverMultiClick captcha9kwSolverMultiClick) {
+        this.multiclickSolver = captcha9kwSolverMultiClick;
+    }
+
     public void setPuzzleSolver(Captcha9kwSolverPuzzle captcha9kwSolverPuzzle) {
         this.puzzleSolver = captcha9kwSolverPuzzle;
     }
-
 }

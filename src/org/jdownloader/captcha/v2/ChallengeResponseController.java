@@ -44,6 +44,7 @@ import org.jdownloader.captcha.v2.solver.jac.JACSolver;
 import org.jdownloader.captcha.v2.solver.myjd.CaptchaMyJDSolver;
 import org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver;
 import org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolverClick;
+import org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolverMultiClick;
 import org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolverPuzzle;
 import org.jdownloader.captcha.v2.solver.twocaptcha.TwoCaptchaSolver;
 import org.jdownloader.captcha.v2.solverjob.ResponseList;
@@ -132,6 +133,7 @@ public class ChallengeResponseController {
             addSolver(EndCaptchaSolver.getInstance());
             addSolver(Captcha9kwSolver.getInstance());
             addSolver(Captcha9kwSolverClick.getInstance());
+            addSolver(Captcha9kwSolverMultiClick.getInstance());
             addSolver(Captcha9kwSolverPuzzle.getInstance());
             if (!Application.isHeadless()) {
                 addSolver(DialogBasicCaptchaSolver.getInstance());

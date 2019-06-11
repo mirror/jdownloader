@@ -3,6 +3,7 @@ package org.jdownloader.captcha.v2.challenge.confidentcaptcha;
 import java.awt.Rectangle;
 
 import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.captcha.CaptchaSettings;
 import jd.controlling.captcha.SkipException;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -15,6 +16,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.captcha.blacklist.BlacklistEntry;
@@ -34,6 +36,8 @@ import org.jdownloader.plugins.CaptchaStepProgress;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class CaptchaHelperHostPluginConfidentCaptcha extends AbstractCaptchaHelperConfidentCaptcha<PluginForHost> {
+    private CaptchaSettings config;
+
     public CaptchaHelperHostPluginConfidentCaptcha(final PluginForHost plugin, final Browser br, final String siteKey) {
         super(plugin, br, siteKey);
     }
@@ -68,7 +72,8 @@ public class CaptchaHelperHostPluginConfidentCaptcha extends AbstractCaptchaHelp
                 }
             };
             c.setTimeout(plugin.getChallengeTimeout(c));
-            if (insideAccountChecker || FilePackage.isDefaultFilePackage(link.getFilePackage())) {
+            config = JsonConfig.create(CaptchaSettings.class);
+            if (insideAccountChecker && config.isCaptchaWithAccountlogin() == false || FilePackage.isDefaultFilePackage(link.getFilePackage()) && config.isCaptchaWithAccountlogin() == false) {
                 /**
                  * account login -> do not use anticaptcha services
                  */

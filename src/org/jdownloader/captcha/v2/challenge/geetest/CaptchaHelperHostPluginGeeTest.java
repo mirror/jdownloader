@@ -3,6 +3,7 @@ package org.jdownloader.captcha.v2.challenge.geetest;
 import java.awt.Rectangle;
 
 import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.captcha.CaptchaSettings;
 import jd.controlling.captcha.SkipException;
 import jd.controlling.captcha.SkipRequest;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
@@ -17,6 +18,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -38,6 +40,8 @@ import org.jdownloader.plugins.CaptchaStepProgress;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class CaptchaHelperHostPluginGeeTest extends AbstractCaptchaHelperGeeTest<PluginForHost> {
+    private CaptchaSettings config;
+
     public CaptchaHelperHostPluginGeeTest(PluginForHost plugin, Browser br, String siteKey) {
         super(plugin, br, siteKey);
     }
@@ -101,7 +105,8 @@ public class CaptchaHelperHostPluginGeeTest extends AbstractCaptchaHelperGeeTest
                 }
             };
             c.setTimeout(getPlugin().getChallengeTimeout(c));
-            if (insideAccountChecker || FilePackage.isDefaultFilePackage(link.getFilePackage())) {
+            config = JsonConfig.create(CaptchaSettings.class);
+            if (insideAccountChecker && config.isCaptchaWithAccountlogin() == false || FilePackage.isDefaultFilePackage(link.getFilePackage()) && config.isCaptchaWithAccountlogin() == false) {
                 /**
                  * account login -> do not use antiCaptcha services
                  */
@@ -123,7 +128,7 @@ public class CaptchaHelperHostPluginGeeTest extends AbstractCaptchaHelperGeeTest
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
             if (!c.isCaptchaResponseValid()) {
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA, "Captcha reponse value did not validate!");
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA, "Captcha response value did not validate!");
             }
             return c.getResult().getValue();
         } catch (InterruptedException e) {
