@@ -103,7 +103,11 @@ public class YetiShareCore extends antiDDoSForHost {
      * limit-info:<br />
      * captchatype: null, solvemedia, reCaptchaV2<br />
      * other: Last compatible YetiShareBasic Version: YetiShareBasic 1.2.0-psp<br />
-     * Another alternative method of linkchecking (displays filename only): host.tld/<fid>~s (statistics)
+     * Another alternative method of linkchecking (displays filename only): host.tld/<fid>~s (statistics) 2019-06-12: Consider adding API
+     * support: https://fhscript.com/admin/api_documentation.php#account-info Examples for websites which have the API enabled (but not
+     * necessarily unlocked for all users, usually only special-uploaders): zippy4share.com, userscdn.com. Insufficient rights will mostly
+     * result in response: "response": "Your account level does not have access to the file upload API. Please contact site support for more
+     * information."
      */
     @Override
     public String getAGBLink() {
@@ -284,6 +288,13 @@ public class YetiShareCore extends antiDDoSForHost {
                     return AvailableStatus.TRUE;
                 }
                 final boolean isFileWebsite = br.containsHTML("class=\"downloadPageTable(V2)?\"") || br.containsHTML("class=\"download\\-timer\"");
+                /*
+                 * 2019-06-12: TODO: E.g. special case: 'error.html?e=File+is+not+publicly+available.' --> File is online but can only be
+                 * downloaded by owner. E.g. an uploader uploaded something and then changed it to private - all other users accessing that
+                 * URL will get this errormessage. For now we'll leave it as it is and treat this case as offline but if the uploader
+                 * decided to re-puflish that content, it would be available again via the same URL! File-host used for tests:
+                 * sundryfiles.com.
+                 */
                 final boolean isErrorPage = br.getURL().contains("/error.html") || br.getURL().contains("/index.html");
                 final boolean isOffline = br.getHttpConnection().getResponseCode() == 404;
                 if (!isFileWebsite || isErrorPage || isOffline) {

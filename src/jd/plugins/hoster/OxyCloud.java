@@ -18,13 +18,19 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -36,6 +42,7 @@ import jd.plugins.PluginForHost;
 public class OxyCloud extends PluginForHost {
     public OxyCloud(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("https://oxy.cloud/partners");
     }
 
     @Override
@@ -54,16 +61,16 @@ public class OxyCloud extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME       = true;
-    private static final int     FREE_MAXCHUNKS    = 0;
-    private static final int     FREE_MAXDOWNLOADS = 20;
+    private static final boolean FREE_RESUME                  = true;
+    private static final int     FREE_MAXCHUNKS               = 0;
+    private static final int     FREE_MAXDOWNLOADS            = 20;
+    private static final boolean ACCOUNT_FREE_RESUME          = true;
+    private static final int     ACCOUNT_FREE_MAXCHUNKS       = 0;
+    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
+    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
 
-    // private static final boolean ACCOUNT_FREE_RESUME = true;
-    // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
-    // private static final boolean ACCOUNT_PREMIUM_RESUME = true;
-    // private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     //
     // /* don't touch the following! */
     // private static AtomicInteger maxPrem = new AtomicInteger(1);
@@ -150,6 +157,135 @@ public class OxyCloud extends PluginForHost {
             }
         }
         return dllink;
+    }
+
+    private static Object LOCK = new Object();
+
+    private void login(final Account account, final boolean force) throws Exception {
+        synchronized (LOCK) {
+            try {
+                br.setFollowRedirects(true);
+                br.setCookiesExclusive(true);
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    this.br.setCookies(this.getHost(), cookies);
+                    br.getPage("https://app.oxy.cloud/");
+                    if (isLoggedin()) {
+                        return;
+                    }
+                }
+                br.getPage("https://" + account.getHoster() + "/partners");
+                final Form loginform = br.getForm(0);
+                if (loginform == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                if (br.containsHTML("google\\.com/recaptcha")) {
+                    final DownloadLink dlinkbefore = this.getDownloadLink();
+                    final DownloadLink dl_dummy;
+                    if (dlinkbefore != null) {
+                        dl_dummy = dlinkbefore;
+                    } else {
+                        dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
+                        this.setDownloadLink(dl_dummy);
+                    }
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    if (dlinkbefore != null) {
+                        this.setDownloadLink(dlinkbefore);
+                    }
+                    // g-recaptcha-response
+                    loginform.put("g-recaptcha-response", recaptchaV2Response);
+                }
+                loginform.put("email", account.getUser());
+                loginform.put("password", account.getPass());
+                br.submitForm(loginform);
+                if (!isLoggedin()) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
+            } catch (final PluginException e) {
+                account.clearCookies("");
+                throw e;
+            }
+        }
+    }
+
+    private boolean isLoggedin() {
+        return br.getCookie(this.getHost(), "__ddgu", Cookies.NOTDELETEDPATTERN) != null || br.containsHTML("/logout");
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        try {
+            login(account, true);
+        } catch (final PluginException e) {
+            throw e;
+        }
+        ai.setUnlimitedTraffic();
+        int balance = 0;
+        String balanceStr = br.getRegex("class=\"user\\-status\\-balance\">(\\d+ [^<>\"]*?)<small>USD</small>").getMatch(0);
+        if (balanceStr != null) {
+            try {
+                balanceStr = balanceStr.trim();
+                balance = Integer.parseInt(balanceStr);
+            } catch (final Throwable e) {
+            }
+        }
+        if (balance <= 0) {
+            account.setType(AccountType.FREE);
+            /* free accounts can still have captcha */
+            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+            account.setConcurrentUsePossible(false);
+            ai.setStatus("Registered (free) user");
+        } else {
+            /* 2019-06-11: TODO: Add premium support */
+            account.setType(AccountType.PREMIUM);
+            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            account.setConcurrentUsePossible(true);
+            ai.setStatus("Premium account with balance: " + balance + " USD");
+        }
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link);
+        login(account, false);
+        br.getPage(link.getPluginPatternMatcher());
+        if (account.getType() == AccountType.FREE) {
+            doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
+        } else {
+            String dllink = this.checkDirectLink(link, "premium_directlink");
+            if (dllink == null) {
+                if (true) {
+                    logger.warning("This plugin does not yet have premium support");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                dllink = br.getRegex("").getMatch(0);
+                if (StringUtils.isEmpty(dllink)) {
+                    logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+            if (dl.getConnection().getContentType().contains("html")) {
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                }
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            link.setProperty("premium_directlink", dl.getConnection().getURL().toString());
+            dl.startDownload();
+        }
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return ACCOUNT_FREE_MAXDOWNLOADS;
     }
 
     @Override
