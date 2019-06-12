@@ -31,6 +31,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.downloader.hds.HDSDownloader;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hds.HDSContainer;
@@ -70,11 +71,14 @@ public class Tf1Fr extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         filename = br.getRegex("<meta name=\"name\" content=\"(.*?)\"").getMatch(0);
-        if (filename == null || filename.equals("")) {
+        if (StringUtils.isEmpty(filename)) {
             filename = br.getRegex("\\'premium:([^<>\"\\']*?)\\'").getMatch(0);
-        }
-        if (filename == null || filename.equals("")) {
-            filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\"").getMatch(0);
+            if (StringUtils.isEmpty(filename)) {
+                filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\"").getMatch(0);
+                if (StringUtils.isEmpty(filename)) {
+                    filename = br.getRegex("<title\\s*[^>]*>\\s*(.*?)\\s*(\\|\\s*TF1\\s*)?</title>").getMatch(0);
+                }
+            }
         }
         if (filename == null || filename.equals("")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -91,11 +95,12 @@ public class Tf1Fr extends PluginForHost {
     public String getFinalLink(final String video_id) throws Exception {
         if (video_id == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            final Browser br2 = br.cloneBrowser();
+            br2.getPage("http://www.wat.tv/get/webhtml/" + video_id);
+            final Map<String, Object> response = JSonStorage.restoreFromString(br2.toString(), TypeRef.HASHMAP);
+            return response != null ? (String) response.get("hls") : null;
         }
-        final Browser br2 = br.cloneBrowser();
-        br2.getPage("http://www.wat.tv/get/webhtml/" + video_id);
-        final Map<String, Object> response = JSonStorage.restoreFromString(br2.toString(), TypeRef.HASHMAP);
-        return response != null ? (String) response.get("hls") : null;
     }
 
     @Override
@@ -110,6 +115,13 @@ public class Tf1Fr extends PluginForHost {
                     video_id = br.getRegex("replay_(\\d{6,8})").getMatch(0);
                 }
             }
+        }
+        if (video_id == null) {
+            final Browser br2 = br.cloneBrowser();
+            final String slug = new Regex(downloadLink.getPluginPatternMatcher(), "/videos/(.*?)\\.html").getMatch(0);
+            final String programSlug = new Regex(downloadLink.getPluginPatternMatcher(), "/tf1/(.*?)/videos/").getMatch(0);
+            br2.getPage("https://www.tf1.fr/graphql/web?id=cb31e88def68451cba035272e5d7f987cbff7d273fb6132d6d662cf684f8de53&variables={%22slug%22:%22" + slug + "%22,%22programSlug%22:%22" + programSlug + "%22}");
+            video_id = br2.getRegex("\"streamId\"\\s*:\\s*\"(\\d{6,8})").getMatch(0);
         }
         String finallink = getFinalLink(video_id);
         if (finallink == null) {

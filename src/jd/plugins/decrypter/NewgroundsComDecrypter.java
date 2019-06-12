@@ -29,14 +29,14 @@ import jd.plugins.PluginForDecrypt;
 
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "newgrounds.com" }, urls = { "https?://(?!www\\.)[^/]+\\.newgrounds\\.com/(?:art|audio|movies|games)/" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "newgrounds.com" }, urls = { "https?://(\\w+\\.)?newgrounds\\.com/(?:art|audio|movies|games)(/|$)" })
 public class NewgroundsComDecrypter extends PluginForDecrypt {
     public NewgroundsComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String TYPE_ART   = ".+/art/";
-    private static final String TYPE_AUDIO = ".+/audio/";
+    private static final String TYPE_ART   = ".+/art(/|$)";
+    private static final String TYPE_AUDIO = ".+/audio(/|$)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -49,10 +49,13 @@ public class NewgroundsComDecrypter extends PluginForDecrypt {
         }
         final String fpName = new Regex(parameter, "https?://([^/]+)\\.newgrounds\\.com/").getMatch(0);
         if (parameter.matches(TYPE_AUDIO)) {
-            final String[][] urlinfo = br.getRegex("\"(?:https?:)?//(?:www\\.)?newgrounds\\.com/audio/listen/(\\d+)\">([^<>\"]+)</a>").getMatches();
+            String[][] urlinfo = br.getRegex("\"(?:https?:)?//(?:\\w+\\.)?newgrounds\\.com/audio/listen/(\\d+)\">([^<>\"]+)</a>").getMatches();
+            if (urlinfo == null || urlinfo.length == 0) {
+                urlinfo = br.getRegex("\\\\?\"(?:https?:)?\\\\?/\\\\?/(?:\\w+\\.)?newgrounds\\.com\\\\?/audio\\\\?/listen\\\\?/(\\d+)\\\\?\"[^>]*title\\s*=\\s*\\\\?\"(.*?)\\\\?\"").getMatches();
+            }
             for (final String[] urlinfosingle : urlinfo) {
                 final String fid = urlinfosingle[0];
-                final String title = urlinfosingle[1];
+                final String title = urlinfosingle[1].replace("\\", "");
                 final DownloadLink dl = createDownloadlink("https://www.newgrounds.com/audio/listen/" + fid);
                 dl.setAvailable(true);
                 dl.setName(Encoding.htmlDecode(title) + "_" + fid + ".mp3");
@@ -60,7 +63,7 @@ public class NewgroundsComDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(dl);
             }
         } else if (parameter.matches(TYPE_ART)) {
-            final String[] view_urls = br.getRegex("\"((?:https?:)?//(?:www\\.)?newgrounds\\.com/art/view/[^<>\"]*?)\"").getColumn(0);
+            final String[] view_urls = br.getRegex("\"((?:https?:)?//(?:\\w+\\.)?newgrounds\\.com/art/view/[^<>\"]*?)\"").getColumn(0);
             if (view_urls == null || view_urls.length == 0) {
                 return null;
             }
@@ -75,7 +78,7 @@ public class NewgroundsComDecrypter extends PluginForDecrypt {
             }
         } else {
             /* movies & games */
-            final String[] view_urls = br.getRegex("\"((?:https?:)?//(?:www\\.)?newgrounds\\.com/portal/view/[^<>\"]*?)\"").getColumn(0);
+            final String[] view_urls = br.getRegex("\"((?:https?:)?//(?:\\w+\\.)?newgrounds\\.com/portal/view/[^<>\"]*?)\"").getColumn(0);
             if (view_urls == null || view_urls.length == 0) {
                 return null;
             }

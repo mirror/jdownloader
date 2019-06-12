@@ -63,32 +63,24 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
     private JScrollPane                tableScrollPane;
     private LinkGrabberSidebar         sidebar;
-
     private HeaderScrollPane           sidebarScrollPane;
-
     private CustomizeableActionBar     rightBar;
     private CustomizeableActionBar     leftBar;
-
     private JComponent                 sidebarContainer;
     private LinkgrabberWidgetContainer widgetContainer;
 
     public LinkGrabberPanel() {
         super(new MigLayout("ins 0, wrap 2", "[grow,fill]2[]2[fill]", "[grow, fill]2[]"));
-
         tableModel = LinkGrabberTableModel.getInstance();
         table = new LinkGrabberTable(this, tableModel);
-
         tableScrollPane = new JScrollPane(table);
-
         tableScrollPane.addComponentListener(new ComponentListener() {
-
             @Override
             public void componentShown(ComponentEvent e) {
             }
 
             @Override
             public void componentResized(ComponentEvent e) {
-
                 table.scrollToSelection(-1);
             }
 
@@ -101,16 +93,12 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
             }
         });
         LAFOptions.getInstance().getExtension().customizeLinksTable(table, tableScrollPane);
-
         HorizontalScrollbarAction.setup(CFG_GUI.HORIZONTAL_SCROLLBARS_IN_LINKGRABBER_TABLE_ENABLED, table);
-
         // filteredAdd.setVisible(false);
         LinkCollector.getInstance().getEventsender().addListener(new LinkCollectorHighlightListener() {
-
             @Override
             public void onHighLight(CrawledLink parameter) {
                 new EDTRunner() {
-
                     @Override
                     protected void runInEDT() {
                         try {
@@ -134,7 +122,6 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                         }
                     }
                 };
-
             }
 
             @Override
@@ -161,13 +148,10 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
             @Override
             public void onLinkCrawlerFinished() {
             }
-
         });
-
         rightBar = new CustomizeableActionBar(MenuManagerLinkgrabberTabBottombar.getInstance()) {
             protected SelectionInfo<?, ?> getCurrentSelection() {
                 return table.getSelectionInfo(true, true);
-
             }
 
             protected MenuContainerRoot prepare(MenuContainerRoot menuData) {
@@ -191,13 +175,10 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                 super.updateGui();
                 table.updateContextShortcuts();
             }
-
         };
-
         leftBar = new CustomizeableActionBar(MenuManagerLinkgrabberTabBottombar.getInstance()) {
             protected SelectionInfo<?, ?> getCurrentSelection() {
                 return table.getSelectionInfo(true, true);
-
             }
 
             protected MenuContainerRoot prepare(MenuContainerRoot menuData) {
@@ -207,9 +188,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                     if (mi instanceof LeftRightDividerItem) {
                         break;
                     }
-
                     ret.add(mi);
-
                 }
                 return ret;
             }
@@ -219,16 +198,11 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                 super.updateGui();
                 table.updateContextShortcuts();
             }
-
         };
-
         // leftBar.add(Box.createGlue());
         layoutComponents();
-
         org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_SIDEBAR_VISIBLE.getEventSender().addListener(this);
-
         org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_BOTTOMBAR_POSITION.getEventSender().addListener(new GenericConfigEventListener<Enum>() {
-
             @Override
             public void onConfigValueModified(KeyHandler<Enum> keyHandler, Enum newValue) {
                 fireRelayout();
@@ -239,7 +213,6 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
             }
         });
         MenuManagerLinkgrabberTableContext.getInstance().setPanel(this);
-
     }
 
     private void layoutComponents() {
@@ -247,21 +220,16 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
             widgetContainer.save();
         }
         removeAll();
-
         switch (CFG_GUI.CFG.getLinkgrabberBottombarPosition()) {
         case NORTH:
-
             setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]" + LAFOptions.getInstance().getExtension().customizeLayoutGetDefaultGap() + "[fill]0", "[]" + LAFOptions.getInstance().getExtension().customizeLayoutGetDefaultGap() + "[grow, fill]0[]"));
-
             break;
         case SOUTH:
             setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]" + LAFOptions.getInstance().getExtension().customizeLayoutGetDefaultGap() + "[fill]0", "[grow, fill]0[]" + LAFOptions.getInstance().getExtension().customizeLayoutGetDefaultGap() + "[]"));
-
             break;
         }
         if (CFG_GUI.LINKGRABBER_BOTTOMBAR_POSITION.getValue() == DockingPosition.NORTH) {
             add(leftBar, "height 24!");
-
             add(rightBar, "height 24!");
         }
         String constrains = "spanx";
@@ -275,16 +243,13 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
             if (sidebarContainer == null) {
                 createSidebar();
             }
-
             add(sidebarContainer, "spany " + 2);
-
             add(widgetContainer);
         } else {
             this.add(tableScrollPane, "spanx");
             add(widgetContainer, "spanx");
             widgetContainer.relayout();
         }
-
         // if (propertiesPanelVisible) {
         //
         // add(this.propertiesPanel, constrains);
@@ -293,7 +258,6 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         // if (CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.isEnabled()) {
         // add(getOverView(), constrains);
         // }
-
         //
         // if (CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.isEnabled()) {
         // this.add(tableScrollPane, "");
@@ -316,10 +280,8 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         // }
         //
         // }
-
         if (CFG_GUI.LINKGRABBER_BOTTOMBAR_POSITION.getValue() != DockingPosition.NORTH) {
             add(leftBar, "height 24!");
-
             add(rightBar, "height 24!");
         }
     }
@@ -339,17 +301,15 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                 int scrollbarWidth = getVerticalScrollBar().getPreferredSize().width;
                 if (!(MainTabbedPane.getInstance().getSelectedView() instanceof LinkGrabberView)) {
                     int widthWithout = sidebar.getPreferredSize().width + scrollbarWidth + borderInsets.left + borderInsets.right;
-
                     ret.width = widthWithout;
-
                 }
-
                 return ret;
             }
 
             public Dimension getMinimumSize() {
                 Dimension pref = getPreferredSize();
                 pref.height = 0;
+                pref.width = 250;
                 return pref;
             }
 
@@ -362,14 +322,11 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
             // table.getTableHeader().getPreferredSize().getHeight();
             // }
         };
-
         // ScrollPaneUI udi = sp.getUI();
-
         LAFOptions.getInstance().applyPanelBackground(sidebarScrollPane);
         sidebarScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         sidebarScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
         sidebarScrollPane.setColumnHeaderView(new LinkGrabberSideBarHeader(table));
-
         sidebarContainer = LAFOptions.getInstance().getExtension().customizeLayoutWrapTitledPanels(sidebarScrollPane);
     }
 
@@ -379,7 +336,6 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         LinkCollector.getInstance().getEventsender().addListener(this);
         table.requestFocusInWindow();
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 if (widgetContainer != null) {
@@ -387,13 +343,11 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                 }
             }
         };
-
     }
 
     @Override
     protected void onHide() {
         LinkCollector.getInstance().getEventsender().removeListener(this);
-
         Point point = this.tableScrollPane.getViewport().getViewRect().getLocation();
         CFG_GUI.CFG.setLinkgrabberListScrollPosition(new int[] { table.getRowIndexByPoint(point), point.x });
     }
@@ -404,25 +358,20 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
     public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
         if (keyHandler != null && keyHandler == CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE && newValue == Boolean.TRUE) {
             new EDTRunner() {
-
                 @Override
                 protected void runInEDT() {
                     if (table.getSelectionModel().isSelectionEmpty()) {
                         if (table.getRowCount() == 0) {
-
                             if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
                                 HelpDialog.show(false, false, null, "propertiespanelvisible", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.LinkGrabberPanel_setPropertiesPanelVisible(), _GUI.T.LinkGrabberPanel_setPropertiesPanelVisible_help(), new AbstractIcon(IconKey.ICON_BOTTOMBAR, 32));
                             }
-
                         } else {
                             table.getSelectionModel().setSelectionInterval(0, 0);
                         }
                     }
                 }
             }.waitForEDT();
-
         }
-
         if (!newValue && keyHandler == org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_SIDEBAR_VISIBLE) {
             JDGui.help(_GUI.T.LinkGrabberPanel_onConfigValueModified_title_(), _GUI.T.LinkGrabberPanel_onConfigValueModified_msg_(), new AbstractIcon(IconKey.ICON_WARNING_GREEN, 32));
         }
@@ -431,14 +380,10 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
     public void fireRelayout() {
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
-
                 layoutComponents();
-
                 revalidate();
-
             }
         };
     }
@@ -500,5 +445,4 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
     @Override
     public void onLinkCrawlerFinished() {
     }
-
 }

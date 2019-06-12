@@ -66,7 +66,7 @@ public class NewgroundsCom extends antiDDoSForHost {
         return "http://www.newgrounds.com/wiki/help-information/terms-of-use";
     }
 
-    private static final String ARTLINK = "https?://(?:www\\.)?newgrounds\\.com/art/view/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+";
+    private static final String ARTLINK = "https?://(?:\\w+\\.)?newgrounds\\.com/art/view/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+";
 
     @SuppressWarnings("deprecation")
     @Override

@@ -181,16 +181,15 @@ import org.jdownloader.updatev2.UpdateController;
 public abstract class PluginForHost extends Plugin {
     private static final String    COPY_MOVE_FILE = "CopyMoveFile";
     private static final Pattern[] PATTERNS       = new Pattern[] {
-        /**
-         * these patterns should split filename and fileextension (extension must include the
-         * point)
-         */
-        // multipart rar archives
-        Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
-        // normal files with extension
-        Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
+                                                  /**
+                                                   * these patterns should split filename and fileextension (extension must include the
+                                                   * point)
+                                                   */
+                                                  // multipart rar archives
+            Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
+            // normal files with extension
+            Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
     private LazyHostPlugin         lazyP          = null;
-    private CaptchaSettings        config;
     /**
      * Is true if the user has answered a captcha challenge. does not say anything whether if the answer was correct or not
      */
@@ -499,6 +498,10 @@ public abstract class PluginForHost extends Plugin {
         }
     }
 
+    public boolean isAccountLoginCaptchaChallenge(final DownloadLink link, Challenge<?> c) {
+        return c.isCreatedInsideAccountChecker() || c.isAccountLogin() || Thread.currentThread() instanceof AccountCheckerThread || FilePackage.isDefaultFilePackage(link.getFilePackage());
+    }
+
     protected <T> T handleCaptchaChallenge(final DownloadLink link, Challenge<T> c) throws CaptchaException, PluginException, InterruptedException {
         if (c instanceof ImageCaptchaChallenge) {
             final File captchaFile = ((ImageCaptchaChallenge) c).getImageFile();
@@ -513,10 +516,9 @@ public abstract class PluginForHost extends Plugin {
         progress.setProgressSource(this);
         progress.setDisplayInProgressColumnEnabled(false);
         link.addPluginProgress(progress);
-        final boolean isAccountLogin = c.isCreatedInsideAccountChecker() || c.isAccountLogin() || Thread.currentThread() instanceof AccountCheckerThread || FilePackage.isDefaultFilePackage(link.getFilePackage());
+        final boolean isAccountLoginCaptchaChallenge = isAccountLoginCaptchaChallenge(link, c);
         try {
-            config = JsonConfig.create(CaptchaSettings.class);
-            if (isAccountLogin && config.isCaptchaWithAccountlogin() == false) {
+            if (isAccountLoginCaptchaChallenge) {
                 /**
                  * account login -> do not use anticaptcha services
                  */
@@ -542,7 +544,7 @@ public abstract class PluginForHost extends Plugin {
             throw e;
         } catch (SkipException e) {
             LogSource.exception(logger, e);
-            if (getDownloadLink() != null && !isAccountLogin) {
+            if (getDownloadLink() != null && !isAccountLoginCaptchaChallenge) {
                 switch (e.getSkipRequest()) {
                 case BLOCK_ALL_CAPTCHAS:
                     CaptchaBlackList.getInstance().add(new BlockAllDownloadCaptchasEntry());
@@ -1185,16 +1187,16 @@ public abstract class PluginForHost extends Plugin {
     public void handleMultiHost(DownloadLink downloadLink, Account account) throws Exception {
         /*
          * fetchAccountInfo must fill ai.setMultiHostSupport to signal all supported multiHosts
-         *
+         * 
          * please synchronized on accountinfo and the ArrayList<String> when you change something in the handleMultiHost function
-         *
+         * 
          * in fetchAccountInfo we don't have to synchronize because we create a new instance of AccountInfo and fill it
-         *
+         * 
          * if you need customizable maxDownloads, please use getMaxSimultanDownload to handle this you are in multihost when account host
          * does not equal link host!
-         *
-         *
-         *
+         * 
+         * 
+         * 
          * will update this doc about error handling
          */
         logger.severe("invalid call to handleMultiHost: " + downloadLink.getName() + ":" + downloadLink.getHost() + " to " + getHost() + ":" + this.getVersion() + " with " + account);

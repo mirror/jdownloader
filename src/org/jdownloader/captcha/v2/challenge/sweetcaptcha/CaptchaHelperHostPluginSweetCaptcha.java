@@ -2,8 +2,6 @@ package org.jdownloader.captcha.v2.challenge.sweetcaptcha;
 
 import java.awt.Rectangle;
 
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.captcha.CaptchaSettings;
 import jd.controlling.captcha.SkipException;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -13,12 +11,10 @@ import jd.parser.html.Form;
 import jd.plugins.CaptchaException;
 import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.captcha.blacklist.BlacklistEntry;
@@ -38,8 +34,6 @@ import org.jdownloader.plugins.CaptchaStepProgress;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class CaptchaHelperHostPluginSweetCaptcha extends AbstractCaptchaHelperSweetCaptcha<PluginForHost> {
-    private CaptchaSettings config;
-
     public CaptchaHelperHostPluginSweetCaptcha(final PluginForHost plugin, final Browser br, final String siteKey, final String appKey) {
         super(plugin, br, siteKey, appKey);
     }
@@ -73,20 +67,18 @@ public class CaptchaHelperHostPluginSweetCaptcha extends AbstractCaptchaHelperSw
         progress.setDisplayInProgressColumnEnabled(false);
         try {
             link.addPluginProgress(progress);
-            final boolean insideAccountChecker = Thread.currentThread() instanceof AccountCheckerThread;
-            final SweetCaptchaChallenge c = new SweetCaptchaChallenge(sitekey, appkey, plugin) {
+            final SweetCaptchaChallenge challenge = new SweetCaptchaChallenge(sitekey, appkey, plugin) {
                 @Override
                 public BrowserViewport getBrowserViewport(BrowserWindow screenResource, Rectangle elementBounds) {
                     return null;
                 }
             };
-            c.setTimeout(plugin.getChallengeTimeout(c));
-            config = JsonConfig.create(CaptchaSettings.class);
-            if (insideAccountChecker && config.isCaptchaWithAccountlogin() == false || FilePackage.isDefaultFilePackage(link.getFilePackage()) && config.isCaptchaWithAccountlogin() == false) {
+            challenge.setTimeout(plugin.getChallengeTimeout(challenge));
+            if (plugin.isAccountLoginCaptchaChallenge(link, challenge)) {
                 /**
                  * account login -> do not use anticaptcha services
                  */
-                c.setAccountLogin(true);
+                challenge.setAccountLogin(true);
             } else {
                 final SingleDownloadController controller = link.getDownloadLinkController();
                 if (controller != null) {
@@ -94,16 +86,16 @@ public class CaptchaHelperHostPluginSweetCaptcha extends AbstractCaptchaHelperSw
                 }
             }
             plugin.invalidateLastChallengeResponse();
-            final BlacklistEntry<?> blackListEntry = CaptchaBlackList.getInstance().matches(c);
+            final BlacklistEntry<?> blackListEntry = CaptchaBlackList.getInstance().matches(challenge);
             if (blackListEntry != null) {
                 logger.warning("Cancel. Blacklist Matching");
                 throw new CaptchaException(blackListEntry);
             }
-            ChallengeResponseController.getInstance().handle(c);
-            if (!c.isSolved()) {
+            ChallengeResponseController.getInstance().handle(challenge);
+            if (!challenge.isSolved()) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-            return c.getResult().getValue();
+            return challenge.getResult().getValue();
         } catch (InterruptedException e) {
             LogSource.exception(logger, e);
             throw e;

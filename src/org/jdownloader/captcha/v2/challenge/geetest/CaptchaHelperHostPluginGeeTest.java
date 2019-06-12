@@ -2,24 +2,17 @@ package org.jdownloader.captcha.v2.challenge.geetest;
 
 import java.awt.Rectangle;
 
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.captcha.CaptchaSettings;
 import jd.controlling.captcha.SkipException;
-import jd.controlling.captcha.SkipRequest;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkcrawler.LinkCrawlerThread;
 import jd.http.Browser;
 import jd.plugins.CaptchaException;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.captcha.blacklist.BlacklistEntry;
@@ -28,9 +21,7 @@ import org.jdownloader.captcha.blacklist.BlockDownloadCaptchasByHost;
 import org.jdownloader.captcha.blacklist.BlockDownloadCaptchasByLink;
 import org.jdownloader.captcha.blacklist.BlockDownloadCaptchasByPackage;
 import org.jdownloader.captcha.blacklist.CaptchaBlackList;
-import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
-import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.solver.browser.BrowserViewport;
 import org.jdownloader.captcha.v2.solver.browser.BrowserWindow;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
@@ -40,8 +31,6 @@ import org.jdownloader.plugins.CaptchaStepProgress;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class CaptchaHelperHostPluginGeeTest extends AbstractCaptchaHelperGeeTest<PluginForHost> {
-    private CaptchaSettings config;
-
     public CaptchaHelperHostPluginGeeTest(PluginForHost plugin, Browser br, String siteKey) {
         super(plugin, br, siteKey);
     }
@@ -61,56 +50,25 @@ public class CaptchaHelperHostPluginGeeTest extends AbstractCaptchaHelperGeeTest
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "GeeTest API Key can not be found");
             }
         }
+        final PluginForHost plugin = getPlugin();
         final DownloadLink link = getPlugin().getDownloadLink();
         final CaptchaStepProgress progress = new CaptchaStepProgress(0, 1, null);
         progress.setProgressSource(this);
         progress.setDisplayInProgressColumnEnabled(false);
         try {
             link.addPluginProgress(progress);
-            final boolean insideAccountChecker = Thread.currentThread() instanceof AccountCheckerThread;
-            final GeeTestChallenge c = new GeeTestChallenge(apiKey, getPlugin()) {
-                @Override
-                public boolean canBeSkippedBy(SkipRequest skipRequest, ChallengeSolver<?> solver, Challenge<?> challenge) {
-                    if (insideAccountChecker) {
-                        /* we don't want to skip login captcha inside fetchAccountInfo(Thread is AccountCheckerThread) */
-                        return false;
-                    }
-                    final Plugin challengePlugin = challenge.getPlugin();
-                    if (challengePlugin != null && !(challengePlugin instanceof PluginForHost)) {
-                        /* we only want block PluginForHost captcha here */
-                        return false;
-                    }
-                    switch (skipRequest) {
-                    case BLOCK_ALL_CAPTCHAS:
-                        /* user wants to block all captchas (current session) */
-                        return true;
-                    case BLOCK_HOSTER:
-                        /* user wants to block captchas from specific hoster */
-                        return StringUtils.equals(link.getHost(), challenge.getHost());
-                    case BLOCK_PACKAGE:
-                        /* user wants to block captchas from current FilePackage */
-                        final DownloadLink lLink = challenge.getDownloadLink();
-                        if (lLink == null || lLink.getDefaultPlugin() == null) {
-                            return false;
-                        }
-                        return link.getFilePackage() == lLink.getFilePackage();
-                    default:
-                        return false;
-                    }
-                }
-
+            final GeeTestChallenge challenge = new GeeTestChallenge(apiKey, getPlugin()) {
                 @Override
                 public BrowserViewport getBrowserViewport(BrowserWindow screenResource, Rectangle elementBounds) {
                     return null;
                 }
             };
-            c.setTimeout(getPlugin().getChallengeTimeout(c));
-            config = JsonConfig.create(CaptchaSettings.class);
-            if (insideAccountChecker && config.isCaptchaWithAccountlogin() == false || FilePackage.isDefaultFilePackage(link.getFilePackage()) && config.isCaptchaWithAccountlogin() == false) {
+            challenge.setTimeout(getPlugin().getChallengeTimeout(challenge));
+            if (plugin.isAccountLoginCaptchaChallenge(link, challenge)) {
                 /**
                  * account login -> do not use antiCaptcha services
                  */
-                c.setAccountLogin(true);
+                challenge.setAccountLogin(true);
             } else {
                 final SingleDownloadController controller = link.getDownloadLinkController();
                 if (controller != null) {
@@ -118,19 +76,19 @@ public class CaptchaHelperHostPluginGeeTest extends AbstractCaptchaHelperGeeTest
                 }
             }
             getPlugin().invalidateLastChallengeResponse();
-            final BlacklistEntry<?> blackListEntry = CaptchaBlackList.getInstance().matches(c);
+            final BlacklistEntry<?> blackListEntry = CaptchaBlackList.getInstance().matches(challenge);
             if (blackListEntry != null) {
                 logger.warning("Cancel. Blacklist Matching");
                 throw new CaptchaException(blackListEntry);
             }
-            ChallengeResponseController.getInstance().handle(c);
-            if (!c.isSolved()) {
+            ChallengeResponseController.getInstance().handle(challenge);
+            if (!challenge.isSolved()) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-            if (!c.isCaptchaResponseValid()) {
+            if (!challenge.isCaptchaResponseValid()) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA, "Captcha response value did not validate!");
             }
-            return c.getResult().getValue();
+            return challenge.getResult().getValue();
         } catch (InterruptedException e) {
             LogSource.exception(logger, e);
             throw e;

@@ -216,36 +216,41 @@ public class AllDebridCom extends antiDDoSForHost {
     private Thread showPINLoginInformation(final String pin_url) {
         final Thread thread = new Thread() {
             public void run() {
-                String message = "";
-                final String title;
-                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    title = "Alldebrid.com - neue Login-Methode";
-                    message += "Hallo liebe(r) alldebrid.com NutzerIn\r\n";
-                    message += "Seit diesem Update hat sich die Login-Methode dieses Anbieters geändert um die sicherheit zu erhöhen!\r\n";
-                    message += "Um deinen Account weiterhin in JDownloader verwenden zu können musst du folgende Schritte beachten:\r\n";
-                    message += "1. Gehe sicher, dass du im Browser in deinem Alldebrid Account eingeloggt bist.\r\n";
-                    message += "2. Öffne diesen Link im Browser:\r\n\t'" + pin_url + "'\t\r\n";
-                    message += "3. Bestätige die PIN im Browser.\r\n";
-                    message += "Dein Account sollte nach einigen Sekunden von JDownloader akzeptiert werden.\r\n";
-                } else {
-                    title = "Alldebrid.com - New login method";
-                    message += "Hello dear alldebrid.com user\r\n";
-                    message += "This update has changed the login method of alldebrid.com in favor of security.\r\n";
-                    message += "In order to keep using this service in JDownloader you need to follow these steps:\r\n";
-                    message += "1. Make sure that you're logged in your alldebrid.com account with your default browser.\r\n";
-                    message += "2. Open this URL in your browser:\r\n\t'" + pin_url + "'\t\r\n";
-                    message += "3. Confirm the PIN you see in the browser window.\r\n";
-                    message += "Your account should be accepted in JDownloader within a few seconds.\r\n";
+                try {
+                    String message = "";
+                    final String title;
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        title = "Alldebrid.com - neue Login-Methode";
+                        message += "Hallo liebe(r) alldebrid.com NutzerIn\r\n";
+                        message += "Seit diesem Update hat sich die Login-Methode dieses Anbieters geändert um die sicherheit zu erhöhen!\r\n";
+                        message += "Um deinen Account weiterhin in JDownloader verwenden zu können musst du folgende Schritte beachten:\r\n";
+                        message += "1. Gehe sicher, dass du im Browser in deinem Alldebrid Account eingeloggt bist.\r\n";
+                        message += "2. Öffne diesen Link im Browser:\r\n\t'" + pin_url + "'\t\r\n";
+                        message += "3. Bestätige die PIN im Browser.\r\n";
+                        message += "Dein Account sollte nach einigen Sekunden von JDownloader akzeptiert werden.\r\n";
+                    } else {
+                        title = "Alldebrid.com - New login method";
+                        message += "Hello dear alldebrid.com user\r\n";
+                        message += "This update has changed the login method of alldebrid.com in favor of security.\r\n";
+                        message += "In order to keep using this service in JDownloader you need to follow these steps:\r\n";
+                        message += "1. Make sure that you're logged in your alldebrid.com account with your default browser.\r\n";
+                        message += "2. Open this URL in your browser:\r\n\t'" + pin_url + "'\t\r\n";
+                        message += "3. Confirm the PIN you see in the browser window.\r\n";
+                        message += "Your account should be accepted in JDownloader within a few seconds.\r\n";
+                    }
+                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
+                    dialog.setTimeout(2 * 60 * 1000);
+                    if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
+                        CrossSystem.openURL(pin_url);
+                    }
+                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
+                    ret.throwCloseExceptions();
+                } catch (final Throwable e) {
+                    getLogger().log(e);
                 }
-                final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
-                dialog.setTimeout(2 * 60 * 1000);
-                if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
-                    CrossSystem.openURL(pin_url);
-                }
-                final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
-                System.out.println(ret);
             };
         };
+        thread.setDaemon(true);
         thread.start();
         return thread;
     }

@@ -1,8 +1,10 @@
 package org.jdownloader.captcha.v2.solver;
 
 import jd.SecondLevelLaunch;
+import jd.controlling.captcha.CaptchaSettings;
 import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -16,6 +18,8 @@ import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.plugins.SkipReason;
 
 public abstract class CESChallengeSolver<T> extends ChallengeSolver<T> {
+    protected final static CaptchaSettings SETTINGS = JsonConfig.create(CaptchaSettings.class);
+
     protected int getDefaultWaitForOthersTimeout() {
         return 60000;
     }
@@ -29,7 +33,7 @@ public abstract class CESChallengeSolver<T> extends ChallengeSolver<T> {
     }
 
     protected boolean isAccountLoginSupported(Challenge<?> c) {
-        return c.isAccountLogin() == false;
+        return !c.isAccountLogin() || SETTINGS.isCaptchaExchangeForAccountLoginEnabled();
     }
 
     public boolean canHandle(Challenge<?> c) {

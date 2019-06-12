@@ -20,15 +20,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -48,6 +39,15 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 //IMPORTANT: this class must stay in jd.plugins.hoster because it extends another plugin (UseNet) which is only available through PluginClassLoader
 abstract public class ZeveraCore extends UseNet {
@@ -461,11 +461,13 @@ abstract public class ZeveraCore extends UseNet {
                         CrossSystem.openURL(url);
                     }
                     final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
-                    System.out.println(ret);
+                    ret.throwCloseExceptions();
                 } catch (final Throwable e) {
+                    getLogger().log(e);
                 }
             };
         };
+        thread.setDaemon(true);
         thread.start();
         return thread;
     }
@@ -525,11 +527,13 @@ abstract public class ZeveraCore extends UseNet {
                         CrossSystem.openURL(url);
                     }
                     final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
-                    System.out.println(ret);
+                    ret.throwCloseExceptions();
                 } catch (final Throwable e) {
+                    getLogger().log(e);
                 }
             };
         };
+        thread.setDaemon(true);
         thread.start();
         return thread;
     }
