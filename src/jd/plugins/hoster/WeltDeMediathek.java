@@ -20,10 +20,6 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -35,16 +31,20 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "welt.de" }, urls = { "https?://(?:www\\.)?welt\\.de/mediathek/.*?/(?:video|sendung)\\d+/[A-Za-z0-9\\-]+\\.html" })
 public class WeltDeMediathek extends PluginForHost {
     public WeltDeMediathek(PluginWrapper wrapper) {
         super(wrapper);
     }
+
     /* DEV NOTES */
     // Tags:
     // protocol: https
     // other:
-
     /* Extension which will be used if no correct extension is found */
     private static final String  default_extension = ".mp4";
     /* Connection stuff */
@@ -97,20 +97,29 @@ public class WeltDeMediathek extends PluginForHost {
         try {
             entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source_videourl);
             dllink = (String) JavaScriptEngineFactory.walkJson(entries, "content/media/{0}/file");
+            if (dllink == null) {
+                dllink = br.getRegex("(https?://[^\"]*?([A-Za-z0-9_]+_),([0-9,]+)\\.mp4\\.csmil/master\\.m3u8)").getMatch(0);
+            }
             if (dllink.contains(".m3u8")) {
                 /* Convert hls --> http (sometimes required) */
-                final Regex hlsregex = new Regex(dllink, "https?://[^/]+/i/([^/]+)/([A-Za-z0-9_]+_),([0-9,]+)\\.mp4\\.csmil/master\\.m3u8");
+                final Regex hlsregex = new Regex(dllink, "https?://.*?/(?:i/)?(.*?)/([A-Za-z0-9_]+_),([0-9,]+)\\.mp4\\.csmil/master\\.m3u8");
                 /* Usually both IDs are the same */
                 final String id1 = hlsregex.getMatch(0);
                 final String id2 = hlsregex.getMatch(1);
                 /* Bitrates from lowest to highest. */
                 final String[] bitrates = hlsregex.getMatch(2).split(",");
-                final String highest_bitrate = bitrates[bitrates.length - 1];
-                if (id1 != null && id2 != null && highest_bitrate.matches("\\d+")) {
-                    dllink = String.format("https://weltn24lfthumb-a.akamaihd.net/%s/%s%s.mp4", id1, id2, highest_bitrate);
+                int highest = -1;
+                for (String bitrate : bitrates) {
+                    if (highest == -1 || Integer.parseInt(bitrate) > highest) {
+                        highest = Integer.parseInt(bitrate);
+                    }
+                }
+                if (id1 != null && id2 != null && highest > 0) {
+                    dllink = String.format("https://weltn24lfthumb-a.akamaihd.net/%s/%s%s.mp4", id1, id2, highest);
                 }
             }
         } catch (final Throwable e) {
+            getLogger().log(e);
         }
         final String ext;
         if (dllink != null && !dllink.equals("")) {
@@ -130,7 +139,7 @@ public class WeltDeMediathek extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
-                if (!con.getContentType().contains("html")) {
+                if (con.isOK() && !con.getContentType().contains("html")) {
                     link.setDownloadSize(con.getLongContentLength());
                     link.setProperty("directlink", dllink);
                 } else {
