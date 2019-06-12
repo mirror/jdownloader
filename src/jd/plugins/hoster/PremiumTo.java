@@ -80,14 +80,14 @@ public class PremiumTo extends UseNet {
         this.enablePremium("http://premium.to/");
     }
 
-    public static interface PremiumtoConfigInterface extends UsenetAccountConfigInterface {
+    public static interface PremiumDotToConfigInterface extends UsenetAccountConfigInterface {
         public class Translation {
             public String getClearDownloadHistory_label() {
                 return "Delete storage.premium.to file(s) in your account after each successful download?";
             }
         }
 
-        public static final PremiumtoConfigInterface.Translation TRANSLATION = new Translation();
+        public static final PremiumDotToConfigInterface.Translation TRANSLATION = new Translation();
 
         @DefaultBooleanValue(true)
         @Order(10)
@@ -120,8 +120,8 @@ public class PremiumTo extends UseNet {
     }
 
     @Override
-    public PremiumtoConfigInterface getAccountJsonConfig(Account acc) {
-        return (PremiumtoConfigInterface) super.getAccountJsonConfig(acc);
+    public PremiumDotToConfigInterface getAccountJsonConfig(Account acc) {
+        return (PremiumDotToConfigInterface) super.getAccountJsonConfig(acc);
     }
 
     private Browser prepBrowser(Browser prepBr) {
@@ -454,7 +454,7 @@ public class PremiumTo extends UseNet {
             }
             try {
                 /* Check if the download is successful && user wants JD to delete the file in his premium.to account afterwards. */
-                final PremiumtoConfigInterface config = getAccountJsonConfig(account);
+                final PremiumDotToConfigInterface config = getAccountJsonConfig(account);
                 if (dl.startDownload() && config.isClearDownloadHistory()) {
                     String storageID = null;
                     if (link.getDownloadURL().matches(type_storage)) {

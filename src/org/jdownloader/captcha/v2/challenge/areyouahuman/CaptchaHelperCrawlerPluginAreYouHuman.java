@@ -4,7 +4,6 @@ import jd.controlling.captcha.SkipException;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
-import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawler;
 import jd.controlling.linkcrawler.LinkCrawlerThread;
 import jd.http.Browser;
@@ -44,8 +43,6 @@ public class CaptchaHelperCrawlerPluginAreYouHuman extends AbstractCaptchaHelper
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "AreYouAHuman API Key can not be found");
             }
         }
-        final LinkCrawler currentCrawler = getPlugin().getCrawler();
-        final CrawledLink currentOrigin = getPlugin().getCurrentLink().getOriginLink();
         AreYouAHumanChallenge c = new AreYouAHumanChallenge(apiKey, getPlugin()) {
             @Override
             public BrowserViewport getBrowserViewport(BrowserWindow screenResource, java.awt.Rectangle elementBounds) {
@@ -63,11 +60,11 @@ public class CaptchaHelperCrawlerPluginAreYouHuman extends AbstractCaptchaHelper
             ChallengeResponseController.getInstance().handle(c);
             if (!c.isSolved()) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            }
-            if (!c.isCaptchaResponseValid()) {
+            } else if (!c.isCaptchaResponseValid()) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            } else {
+                return c.getResult().getValue();
             }
-            return c.getResult().getValue();
         } catch (InterruptedException e) {
             LogSource.exception(logger, e);
             throw e;

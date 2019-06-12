@@ -40,9 +40,9 @@ public interface CaptchaSettings extends ConfigInterface {
     @AboutConfig
     @DefaultBooleanValue(false)
     @DescriptionForConfigEntry("Enable the Captcha (e.g. CES) for Accountlogins. Use at your own risk!")
-    boolean isCaptchaWithAccountlogin();
+    boolean isCaptchaExchangeForAccountLoginEnabled();
 
-    void setCaptchaWithAccountlogin(boolean b);
+    void setCaptchaExchangeForAccountLoginEnabled(boolean b);
 
     @AboutConfig
     @DefaultBooleanValue(true)

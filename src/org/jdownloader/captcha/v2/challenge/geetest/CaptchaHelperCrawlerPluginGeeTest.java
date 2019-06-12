@@ -63,11 +63,11 @@ public class CaptchaHelperCrawlerPluginGeeTest extends AbstractCaptchaHelperGeeT
             ChallengeResponseController.getInstance().handle(c);
             if (!c.isSolved()) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            }
-            if (!c.isCaptchaResponseValid()) {
+            } else if (!c.isCaptchaResponseValid()) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            } else {
+                return c.getResult().getValue();
             }
-            return c.getResult().getValue();
         } catch (InterruptedException e) {
             LogSource.exception(logger, e);
             throw e;

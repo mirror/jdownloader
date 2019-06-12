@@ -16,18 +16,15 @@
 package jd.plugins.hoster;
 
 import java.io.File;
+import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -56,6 +53,14 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.URLHelper;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundcloud.com" }, urls = { "https://(www\\.)?soundclouddecrypted\\.com/[A-Za-z\\-_0-9]+/[A-Za-z\\-_0-9]+(/[A-Za-z\\-_0-9]+)?" })
 public class SoundcloudCom extends PluginForHost {
     public SoundcloudCom(PluginWrapper wrapper) {
@@ -66,6 +71,7 @@ public class SoundcloudCom extends PluginForHost {
 
     /*
      * Last clientid: 2t9loNQH90kzJcsFCODdigxfp325aq4z, b45b1aa10f1ac2941910a7f0d10f8e28 fDoItMDbsbZz8dY16ZzARCZmzgHBPotA
+     * 3904229f42df3999df223f6ebf39a8fe
      */
     public final static String   CLIENTID_8TRACKS                            = "3904229f42df3999df223f6ebf39a8fe";
     /* Another way to get final links: http://api.soundcloud.com/tracks/11111xxx_test_track_ID1111111/streams?format=json&consumer_key= */
@@ -247,7 +253,7 @@ public class SoundcloudCom extends PluginForHost {
                 dllink = Encoding.unicodeDecode(dllink);
                 dllink = Encoding.htmlDecode(dllink);
             } else {
-                dllink = getDirectlink(this, br.toString(), songid);
+                dllink = getDirectlink(this, br, songid);
                 if (StringUtils.isEmpty(dllink)) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -454,10 +460,11 @@ public class SoundcloudCom extends PluginForHost {
         return is_definitly_downloadable;
     }
 
-    public static String getDirectlink(final Plugin plugin, final String input, String track_id) throws InterruptedException {
-        final Browser br2 = new Browser();
+    public static String getDirectlink(final Plugin plugin, final Browser browser, String track_id) throws InterruptedException {
+        final Browser br2 = browser.cloneBrowser();
         String finallink = null;
         try {
+            final String input = browser.toString();
             Map<String, Object> json = getStartJsonMap(input);
             final boolean is_downloadable = isREALYDownloadable(json);
             final String secret_token = new Regex(input, "secret_token=([A-Za-z0-9\\-_]+)").getMatch(0);
@@ -478,6 +485,26 @@ public class SoundcloudCom extends PluginForHost {
                     finallink += "client_id=" + getClientId(null) + "&app_version=" + SoundcloudCom.getAppVersion(null);
                 }
             } else {
+                final Map<String, Object> media = (Map<String, Object>) json.get("media");
+                if (media != null && media.containsKey("transcodings")) {
+                    String streamUrl = null;
+                    final List<Map<String, Object>> transcodings = (List<Map<String, Object>>) media.get("transcodings");
+                    for (Map<String, Object> transcoding : transcodings) {
+                        streamUrl = (String) transcoding.get("url");
+                        if (transcoding.toString().contains("protocol=progressive")) {
+                            break;
+                        }
+                    }
+                    if (streamUrl != null) {
+                        streamUrl = URLHelper.parseLocation(new URL(streamUrl), "?client_id=" + getClientId(null)).toString();
+                        br2.getPage(streamUrl);
+                        final Map<String, Object> urlMap = JSonStorage.restoreFromString(br2.toString(), TypeRef.HASHMAP);
+                        finallink = (String) urlMap.get("url");
+                        if (finallink != null) {
+                            return finallink;
+                        }
+                    }
+                }
                 /* Normal- or hls stream */
                 final Request request;
                 if (secret_token != null) {

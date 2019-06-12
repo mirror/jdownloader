@@ -77,7 +77,8 @@ public class JACSolver extends ChallengeSolver<String> {
     }
 
     public boolean canHandle(Challenge<?> c) {
-        return c.isAccountLogin() == false && super.canHandle(c);
+        // JAC is too old/unsafe to use for account logins!
+        return !c.isAccountLogin() && super.canHandle(c);
     }
 
     @Override

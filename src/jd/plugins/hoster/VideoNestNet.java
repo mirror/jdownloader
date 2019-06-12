@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,14 +27,11 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
-import javax.swing.JOptionPane;
-import javax.swing.SwingUtilities;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -69,39 +65,38 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "videonest.net" }, urls = { "https?://(www\\.)?videonest\\.net/((vid)?embed-)?[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "videonest.net" }, urls = { "https?://(www\\.)?videonest\\.net/((vid)?embed-)?[a-z0-9]{12}" })
 @SuppressWarnings("deprecation")
 public class VideoNestNet extends PluginForHost {
     // Site Setters
     // primary website url, take note of redirects
-    private final String               COOKIE_HOST                  = "http://videonest.net";
+    private final String         COOKIE_HOST                  = "http://videonest.net";
     /* Linktypes */
-    private static final String        TYPE_NORMAL                  = "https?://[A-Za-z0-9\\-\\.]+/[a-z0-9]{12}";
-    private static final String        TYPE_EMBED                   = "https?://[A-Za-z0-9\\-\\.]+/embed\\-[a-z0-9]{12}";
+    private static final String  TYPE_NORMAL                  = "https?://[A-Za-z0-9\\-\\.]+/[a-z0-9]{12}";
+    private static final String  TYPE_EMBED                   = "https?://[A-Za-z0-9\\-\\.]+/embed\\-[a-z0-9]{12}";
     // domain names used within download links.
-    private final String               DOMAINS                      = "(videonest\\.net)";
-    private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
-    private final String               MAINTENANCE                  = ">This server is in maintenance mode";
-    private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+";
-    private final boolean              supportsHTTPS                = false;
-    private final boolean              enforcesHTTPS                = false;
-    private final boolean              useRUA                       = false;
-    private final boolean              useAltLinkCheck              = false;
-    private final boolean              useVidEmbed                  = false;
+    private final String         DOMAINS                      = "(videonest\\.net)";
+    private final String         PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
+    private final String         MAINTENANCE                  = ">This server is in maintenance mode";
+    private final String         dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+";
+    private final boolean        supportsHTTPS                = false;
+    private final boolean        enforcesHTTPS                = false;
+    private final boolean        useRUA                       = false;
+    private final boolean        useAltLinkCheck              = false;
+    private final boolean        useVidEmbed                  = false;
     /* NEEDED for this plugin */
-    private static final boolean       VIDEOHOSTER_2                = true;
-    private final boolean              useAltEmbed                  = true;
-    private final boolean              useAltExpire                 = true;
-    private final long                 useLoginIndividual           = 6 * 3480000l;
-    private final boolean              waitTimeSkipableReCaptcha    = true;
-    private final boolean              waitTimeSkipableSolveMedia   = false;
-    private final boolean              waitTimeSkipableKeyCaptcha   = false;
-    private final boolean              captchaSkipableSolveMedia    = false;
+    private static final boolean VIDEOHOSTER_2                = true;
+    private final boolean        useAltEmbed                  = true;
+    private final boolean        useAltExpire                 = true;
+    private final long           useLoginIndividual           = 6 * 3480000l;
+    private final boolean        waitTimeSkipableReCaptcha    = true;
+    private final boolean        waitTimeSkipableSolveMedia   = false;
+    private final boolean        waitTimeSkipableKeyCaptcha   = false;
+    private final boolean        captchaSkipableSolveMedia    = false;
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
@@ -1271,9 +1266,6 @@ public class VideoNestNet extends PluginForHost {
                 } else {
                     form.setAction(form.getAction().replaceFirst("https?://", "http://"));
                 }
-                if (!stableSucks.get()) {
-                    showSSLWarning(this.getHost());
-                }
             }
             br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
         }
@@ -1968,65 +1960,6 @@ public class VideoNestNet extends PluginForHost {
             return true;
         } else {
             return false;
-        }
-    }
-
-    private static AtomicBoolean stableSucks = new AtomicBoolean(false);
-
-    public static void showSSLWarning(final String domain) {
-        try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        String lng = System.getProperty("user.language");
-                        String message = null;
-                        String title = null;
-                        boolean xSystem = CrossSystem.isOpenBrowserSupported();
-                        if ("de".equalsIgnoreCase(lng)) {
-                            title = domain + " :: Java 7+ && HTTPS Post Requests.";
-                            message = "Wegen einem Bug in in Java 7+ in dieser JDownloader version koennen wir keine HTTPS Post Requests ausfuehren.\r\n";
-                            message += "Wir haben eine Notloesung ergaenzt durch die man weiterhin diese JDownloader Version nutzen kann.\r\n";
-                            message += "Bitte bedenke, dass HTTPS Post Requests als HTTP gesendet werden. Nutzung auf eigene Gefahr!\r\n";
-                            message += "Falls du keine unverschluesselten Daten versenden willst, update bitte auf JDownloader 2!\r\n";
-                            if (xSystem) {
-                                message += "JDownloader 2 Installationsanleitung und Downloadlink: Klicke -OK- (per Browser oeffnen)\r\n ";
-                            } else {
-                                message += "JDownloader 2 Installationsanleitung und Downloadlink:\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
-                            }
-                        } else if ("es".equalsIgnoreCase(lng)) {
-                            title = domain + " :: Java 7+ && HTTPS Solicitudes Post.";
-                            message = "Debido a un bug en Java 7+, al utilizar esta versión de JDownloader, no se puede enviar correctamente las solicitudes Post en HTTPS\r\n";
-                            message += "Por ello, hemos añadido una solución alternativa para que pueda seguir utilizando esta versión de JDownloader...\r\n";
-                            message += "Tenga en cuenta que las peticiones Post de HTTPS se envían como HTTP. Utilice esto a su propia discreción.\r\n";
-                            message += "Si usted no desea enviar información o datos desencriptados, por favor utilice JDownloader 2!\r\n";
-                            if (xSystem) {
-                                message += " Las instrucciones para descargar e instalar Jdownloader 2 se muestran a continuación: Hacer Click en -Aceptar- (El navegador de internet se abrirá)\r\n ";
-                            } else {
-                                message += " Las instrucciones para descargar e instalar Jdownloader 2 se muestran a continuación, enlace :\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
-                            }
-                        } else {
-                            title = domain + " :: Java 7+ && HTTPS Post Requests.";
-                            message = "Due to a bug in Java 7+ when using this version of JDownloader, we can not successfully send HTTPS Post Requests.\r\n";
-                            message += "We have added a work around so you can continue to use this version of JDownloader...\r\n";
-                            message += "Please be aware that HTTPS Post Requests are sent as HTTP. Use at your own discretion.\r\n";
-                            message += "If you do not want to send unecrypted data, please upgrade to JDownloader 2!\r\n";
-                            if (xSystem) {
-                                message += "Jdownloader 2 install instructions and download link: Click -OK- (open in browser)\r\n ";
-                            } else {
-                                message += "JDownloader 2 install instructions and download link:\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
-                            }
-                        }
-                        int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.CLOSED_OPTION, JOptionPane.CLOSED_OPTION);
-                        if (xSystem && JOptionPane.OK_OPTION == result) {
-                            CrossSystem.openURL(new URL("http://board.jdownloader.org/showthread.php?t=37365"));
-                        }
-                        stableSucks.set(true);
-                    } catch (Throwable e) {
-                    }
-                }
-            });
-        } catch (Throwable e) {
         }
     }
 

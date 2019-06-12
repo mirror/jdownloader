@@ -2,8 +2,6 @@ package org.jdownloader.captcha.v2.challenge.recaptcha.v2;
 
 import java.util.ArrayList;
 
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.captcha.CaptchaSettings;
 import jd.controlling.captcha.SkipException;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -11,12 +9,10 @@ import jd.controlling.linkcrawler.LinkCrawlerThread;
 import jd.http.Browser;
 import jd.plugins.CaptchaException;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.captcha.blacklist.BlacklistEntry;
@@ -35,8 +31,6 @@ import org.jdownloader.plugins.CaptchaStepProgress;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRecaptchaV2<PluginForHost> {
-    private CaptchaSettings config;
-
     public CaptchaHelperHostPluginRecaptchaV2(final PluginForHost plugin, final Browser br, final String siteKey, final String secureToken, boolean boundToDomain) {
         super(plugin, br, siteKey, secureToken, boundToDomain);
     }
@@ -94,18 +88,14 @@ public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRec
             if (link != null) {
                 link.addPluginProgress(progress);
             }
-            final boolean insideAccountChecker = Thread.currentThread() instanceof AccountCheckerThread;
-            final RecaptchaV2Challenge c = createChallenge();
+            final RecaptchaV2Challenge challenge = createChallenge();
             try {
-                c.setTimeout(plugin.getChallengeTimeout(c));
-                config = JsonConfig.create(CaptchaSettings.class);
-                if (insideAccountChecker && config.isCaptchaWithAccountlogin() == false || FilePackage.isDefaultFilePackage(link.getFilePackage()) && config.isCaptchaWithAccountlogin() == false) {
-                    // coalado: discuss why. FilePackage.isDefaultFilePackage(link.getFilePackage()) is triggered for captchas during online
-                    // check es well
+                challenge.setTimeout(plugin.getChallengeTimeout(challenge));
+                if (plugin.isAccountLoginCaptchaChallenge(link, challenge)) {
                     /**
                      * account login -> do not use anticaptcha services
                      */
-                    c.setAccountLogin(true);
+                    challenge.setAccountLogin(true);
                 } else {
                     final SingleDownloadController controller = link.getDownloadLinkController();
                     if (controller != null) {
@@ -113,22 +103,22 @@ public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRec
                     }
                 }
                 plugin.invalidateLastChallengeResponse();
-                final BlacklistEntry<?> blackListEntry = CaptchaBlackList.getInstance().matches(c);
+                final BlacklistEntry<?> blackListEntry = CaptchaBlackList.getInstance().matches(challenge);
                 if (blackListEntry != null) {
                     logger.warning("Cancel. Blacklist Matching");
                     throw new CaptchaException(blackListEntry);
                 }
-                jobs.add(ChallengeResponseController.getInstance().handle(c));
-                if (!c.isSolved()) {
+                jobs.add(ChallengeResponseController.getInstance().handle(challenge));
+                if (!challenge.isSolved()) {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                } else if (!c.isCaptchaResponseValid()) {
-                    final String value = c.getResult().getValue();
+                } else if (!challenge.isCaptchaResponseValid()) {
+                    final String value = challenge.getResult().getValue();
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Captcha reponse value did not validate:" + value);
                 } else {
-                    return c.getResult().getValue();
+                    return challenge.getResult().getValue();
                 }
             } finally {
-                c.cleanup();
+                challenge.cleanup();
             }
             // } catch (PluginException e) {
             // for (int i = 0; i < jobs.size(); i++) {

@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -42,12 +41,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "music.163.com" }, urls = { "http://(www\\.)?music\\.163\\.com/(?:#/)?(?:song|mv)\\?id=\\d+|decrypted://music\\.163\\.comcover\\d+" })
 public class Music163Com extends PluginForHost {
-
     @SuppressWarnings("deprecation")
     public Music163Com(PluginWrapper wrapper) {
         super(wrapper);
@@ -64,31 +63,25 @@ public class Music163Com extends PluginForHost {
     private static final String           GRAB_COVER              = "GRAB_COVER";
     private static final String           SETTING_CUSTOM_FILENAME = "SETTING_CUSTOM_FILENAME_2";
     private static final String           SETTING_CUSTOM_DATE     = "SETTING_CUSTOM_DATE";
-
     private static final String           TYPE_MUSIC              = "http://(www\\.)?music\\.163\\.com/(?:#/)?song\\?id=\\d+";
     private static final String           TYPE_VIDEO              = "http://(www\\.)?music\\.163\\.com/(?:#/)?mv\\?id=\\d+";
     private static final String           TYPE_COVER              = "decrypted://music\\.163\\.comcover\\d+";
-
     /** TODO 2016-02-??: server seem to have changed from m5.music.126.net to ?.music.126.net or linkformat has changed or encryption. */
     /* 2016-02-15 testing m9 server */
     private static final String           dlurl_format            = "http://m9.music.126.net/%s/%s.mp3";
-
     /* Qualities from highest to lowest in KB/s: 320, 160, 96. 'hMusic' is officially only available for logged-in users! */
     public static final String[]          audio_qualities         = { "hMusic", "mMusic", "lMusic", "bMusic" };
     public static final String[]          video_qualities         = { "1080", "720", "360", "240" };
     public static final String            dateformat_en           = "yyyy-MM-dd";
-
     /* Connection stuff */
     private static final boolean          FREE_RESUME             = true;
     private static final int              FREE_MAXCHUNKS          = 0;
     private static final int              FREE_MAXDOWNLOADS       = 20;
-
     private String                        DLLINK                  = null;
     private LinkedHashMap<String, Object> entries                 = null;
 
     // /* don't touch the following! */
     // private static AtomicInteger maxPrem = new AtomicInteger(1);
-
     /*
      * API documentation:
      * https://github.com/yanunon/NeteaseCloudMusic/wiki/%E7%BD%91%E6%98%93%E4%BA%91%E9%9F%B3%E4%B9%90API%E5%88%86%E6%9E%90
@@ -109,15 +102,12 @@ public class Music163Com extends PluginForHost {
         String name_album = null;
         DLLINK = null;
         entries = null;
-
         long filesize = 0;
         this.setBrowserExclusive();
         prepareAPI(this.br);
-
         if (contentid == null) {
             contentid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
         }
-
         if (link.getDownloadURL().matches(TYPE_COVER)) {
             DLLINK = link.getStringProperty("directlink", null);
             filesize = getFilesizeFromHeader(DLLINK);
@@ -133,7 +123,6 @@ public class Music163Com extends PluginForHost {
             entries = (LinkedHashMap<String, Object>) entries.get("data");
             artist = (String) entries.get("artistName");
             content_title = (String) entries.get("name");
-
             final String publishDate = (String) entries.get("publishTime");
             if (publishDate != null) {
                 publishedTimestamp = TimeFormatter.getMilliSeconds(publishDate, "yyyy-MM-dd", Locale.ENGLISH);
@@ -149,7 +138,6 @@ public class Music163Com extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             filesize = getFilesizeFromHeader(DLLINK);
-
             ext = "mp4";
         } else {
             link.setLinkID(new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
@@ -330,7 +318,7 @@ public class Music163Com extends PluginForHost {
             byte2[i] = (byte) (byte2[i] ^ byte1[i % byte1_len]);
         }
         final byte[] md5bytes = MessageDigest.getInstance("MD5").digest(byte2);
-        final String b64 = new sun.misc.BASE64Encoder().encode(md5bytes);
+        final String b64 = Base64.encodeToString(md5bytes);
         /*
          * In the above linked Python examples it seems like they remove the last character of the base64 String but it seems like this is
          * not necessary.
@@ -368,10 +356,8 @@ public class Music163Com extends PluginForHost {
         final String title = downloadLink.getStringProperty("directtitle", "-");
         final String contentid = downloadLink.getStringProperty("contentid", null);
         final String tracknumber = downloadLink.getStringProperty("tracknumber", "-");
-
         /* Date: Maybe add this in the future, if requested by a user. */
         final long date = downloadLink.getLongProperty("originaldate", -1);
-
         String formattedDate = null;
         if (date == -1) {
             /* No date given */
@@ -389,13 +375,10 @@ public class Music163Com extends PluginForHost {
                 formattedDate = "-";
             }
         }
-
         String formattedFilename = cfg.getStringProperty(SETTING_CUSTOM_FILENAME, defaultCustomFilename);
-
         if (!formattedFilename.contains("*title*") && !formattedFilename.contains("*contentid*") && !formattedFilename.contains("*ext*")) {
             formattedFilename = defaultCustomFilename;
         }
-
         formattedFilename = formattedFilename.replace("*contentid*", contentid);
         formattedFilename = formattedFilename.replace("*tracknumber*", tracknumber);
         formattedFilename = formattedFilename.replace("*date*", formattedDate);
@@ -413,24 +396,23 @@ public class Music163Com extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-        {
-            put("FAST_LINKCHECK", "Enable fast linkcheck for cover-urls?\r\nNOTE: If enabled, before mentioned linktypes will appear faster but filesize won't be shown before downloadstart.");
-            put("GRAB_COVER", "For albums & playlists: Grab cover?");
-            put("CUSTOM_DATE", "Enter your custom date:");
-            put("SETTING_TAGS", "Explanation of the available tags:\r\n*date* = Release date of the content (appears in the user defined format above)\r\n*artist* = Name of the artist\r\n*album* = Name of the album (not always available)\r\n*title* = Title of the content\r\n*tracknumber* = Position of a track (not always available)\r\n*contentid* = Internal id of the content e.g. '01485'\r\n*ext* = Extension of the file");
-            put("LABEL_FILENAME", "Define custom filename:");
-        }
-    };
-
+                                                  {
+                                                      put("FAST_LINKCHECK", "Enable fast linkcheck for cover-urls?\r\nNOTE: If enabled, before mentioned linktypes will appear faster but filesize won't be shown before downloadstart.");
+                                                      put("GRAB_COVER", "For albums & playlists: Grab cover?");
+                                                      put("CUSTOM_DATE", "Enter your custom date:");
+                                                      put("SETTING_TAGS", "Explanation of the available tags:\r\n*date* = Release date of the content (appears in the user defined format above)\r\n*artist* = Name of the artist\r\n*album* = Name of the album (not always available)\r\n*title* = Title of the content\r\n*tracknumber* = Position of a track (not always available)\r\n*contentid* = Internal id of the content e.g. '01485'\r\n*ext* = Extension of the file");
+                                                      put("LABEL_FILENAME", "Define custom filename:");
+                                                  }
+                                              };
     private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
-        {
-            put("FAST_LINKCHECK", "Aktiviere schnellen Linkcheck für cover-urls?\r\nWICHTIG: Falls aktiviert werden genannte Linktypen schneller im Linkgrabber erscheinen aber dafür ist deren Dateigröße erst beim Downloadstart sichtbar.");
-            put("GRAB_COVER", "Für Alben und Playlists: Cover auch herunterladen?");
-            put("CUSTOM_DATE", "Definiere dein gewünschtes Datumsformat:");
-            put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*date* = Erscheinungsdatum (erscheint im oben definierten Format)\r\n*artist* = Name des Authors\r\n*album* = Name des Albums (nicht immer verfügbar)\r\n*title* = Titel des Inhaltes\r\n*tracknumber* = Position eines Songs (nicht immer verfügbar)\r\n*contentid* = Interne id des Inhaltes z.B. '01485'\r\n*ext* = Dateiendung");
-            put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens an:");
-        }
-    };
+                                                  {
+                                                      put("FAST_LINKCHECK", "Aktiviere schnellen Linkcheck für cover-urls?\r\nWICHTIG: Falls aktiviert werden genannte Linktypen schneller im Linkgrabber erscheinen aber dafür ist deren Dateigröße erst beim Downloadstart sichtbar.");
+                                                      put("GRAB_COVER", "Für Alben und Playlists: Cover auch herunterladen?");
+                                                      put("CUSTOM_DATE", "Definiere dein gewünschtes Datumsformat:");
+                                                      put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*date* = Erscheinungsdatum (erscheint im oben definierten Format)\r\n*artist* = Name des Authors\r\n*album* = Name des Albums (nicht immer verfügbar)\r\n*title* = Titel des Inhaltes\r\n*tracknumber* = Position eines Songs (nicht immer verfügbar)\r\n*contentid* = Interne id des Inhaltes z.B. '01485'\r\n*ext* = Dateiendung");
+                                                      put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens an:");
+                                                  }
+                                              };
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
@@ -473,5 +455,4 @@ public class Music163Com extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

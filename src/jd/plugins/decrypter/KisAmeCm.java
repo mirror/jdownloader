@@ -125,7 +125,7 @@ public class KisAmeCm extends antiDDoSForDecrypt implements RefreshSessionLink {
             }
             final String skey = getSecretKeyManga();
             final String iv = "a5e8e2e9c2721be0a84ad660c472c1f3";
-            final String[] links = br.getRegex("lstImages\\.push\\(wrapKA\\(\"([a-zA-Z0-9\\+/]+)\"").getColumn(0);
+            final String[] links = br.getRegex("lstImages\\.push\\(wrapKA\\(\"([a-zA-Z0-9\\+/=]+)\"").getColumn(0);
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
@@ -371,7 +371,7 @@ public class KisAmeCm extends antiDDoSForDecrypt implements RefreshSessionLink {
         return skey;
     }
 
-    public String decodeSingleURL(final String encodedString, final String skey, final String iv) {
+    public String decodeSingleURL(final String encodedString, final String skey, final String iv) throws InterruptedException {
         String decode = null;
         try {
             byte[] encodedArray = Base64.decode(encodedString);
@@ -388,13 +388,14 @@ public class KisAmeCm extends antiDDoSForDecrypt implements RefreshSessionLink {
                 decode = new String(byteResult, "UTF-8");
             } catch (final Exception e) {
                 logger.info(e.toString());
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
             }
             // decode:
             // http://kissasian.com/Play?key=AaKw5OKkuxsCX+g11bWAThZKjXqDGPQWhjJWnuT5dTGj1fd1cpjSu3IoG+BS9DrWjnEmbfIX6hzW21Wg+0x1x2xKpQsxMSf2Qq+Sj0x1x2xXplONQDkgERfg+oOe+8gdidU13A97bfhucXMOZpuH+qEyMsodmaW+HdcTG3FwUxF3b2QSmHTllXLU3LLVSvxWtiICNbHITdp9r9yaf6r9fVHXTvmGgwvQqC7Kn6A2VYb8FDelQLZfIcXr8xP9Gcjp2rZw9UTCZetxz6tPFXxUAOBTNfMirs90x1x2xNgCaH3CY2Dd0CnmDWTetRbccDcEwQ0gwGnXUrtsjcjnRykZZ53lFlyfsoWk8RmJc4QQKF58fRMuZNcB9My7lmIO5km6Y+sr0x1x2xGUJqlPB9YV1GH4PiiR4YS8XYwFg21p0x1x2x1VjNDsCKIVQSwCWw622f5Fh45xaWNzys0x1x2xqPuIeYiXHYReyUodf6hoWtfatwxeenjIV71W7JNfuVaxvpjasM0ahDd3QevYcZa3WJLDmMxKVvFmfXdGu0Mp647bmb4FPOP0x1x2xwQfOiFNWfl4d974FAztZyGzGMNxBDFMR4oqaVKCG+U0x1x2xP3bDAVQjW+1Ig9aIifmHzusAchhcVI8vsa9m2SarsZ4mjVzC3hikmvP6+ojddwd99fJP3tupbAL6sI3FDmf8O4ipGD5jMPUDeR+BvtD90lLA12cQXg0Oj+91gv4FR4JRC5oHybnjkFCUnSRSYiB7AGg5YrpxHq6WV7m2JuEWHlqUpNh+OCZEXriY+SMbNOK+LLobcA9KF10nSA3TarRRyMBPpLZquyeGkKyjxThfpIP1RYppeUJPP6Dcogfc00ESESAK0rGZELE6ahHwpB2eA==
-            if (StringUtils.contains(decode, "kissasian.com/") || StringUtils.contains(decode, "blogspot.com/")) {
+            if (StringUtils.contains(decode, "kissasian.com/")) {
                 // this is redirect bullshit
                 final Browser test = br.cloneBrowser();
+                test.setRequest(null);
                 test.setFollowRedirects(false);
                 getPage(test, decode);
                 // timeout:
@@ -405,7 +406,10 @@ public class KisAmeCm extends antiDDoSForDecrypt implements RefreshSessionLink {
                 // 503:
                 decode = test.getRedirectLocation();
             }
+        } catch (InterruptedException e) {
+            throw e;
         } catch (final Throwable e) {
+            getLogger().log(e);
         }
         return decode;
     }

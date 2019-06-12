@@ -2,6 +2,7 @@ package org.jdownloader.extensions.eventscripter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.WeakHashMap;
@@ -37,21 +38,25 @@ public class IntervalController {
                     public void run() {
                         try {
                             while (Thread.currentThread() == scheduler.get()) {
-                                final ArrayList<ScriptEntry> scriptEntries = IntervalController.this.scriptEntries.get();
+                                final List<ScriptEntry> scriptEntries = IntervalController.this.scriptEntries.get();
                                 if (scriptEntries != null && scriptEntries.size() > 0) {
                                     long minwait = Long.MAX_VALUE;
                                     for (final ScriptEntry scriptEntry : scriptEntries) {
                                         if (scriptEntry.getEventTrigger() == EventTrigger.INTERVAL && scriptEntry.isEnabled()) {
                                             try {
-                                                Map<String, Object> settings = scriptEntry.getEventTriggerSettings();
+                                                final Map<String, Object> settings = scriptEntry.getEventTriggerSettings();
                                                 long interval = 1000;
-                                                if (settings.get("interval") != null) {
+                                                if (settings.get("interval") instanceof Number) {
                                                     interval = Math.max(1000, ((Number) settings.get("interval")).longValue());
+                                                } else {
+                                                    interval = 1000;
                                                 }
-                                                Object last = settings.get("lastFire");
-                                                long lastTs = 0l;
-                                                if (last != null) {
+                                                final Object last = settings.get("lastFire");
+                                                final long lastTs;
+                                                if (last != null && last instanceof Number) {
                                                     lastTs = ((Number) last).longValue();
+                                                } else {
+                                                    lastTs = System.currentTimeMillis();
                                                 }
                                                 long waitFor = interval - (System.currentTimeMillis() - lastTs);
                                                 if (waitFor <= 0) {
