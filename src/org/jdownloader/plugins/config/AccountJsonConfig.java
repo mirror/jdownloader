@@ -23,6 +23,7 @@ import org.appwork.storage.config.handler.ListHandler;
 import org.appwork.storage.config.handler.StorageHandler;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.IO;
+import org.appwork.utils.IO.SYNC;
 import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.logging.LogController;
@@ -245,6 +246,15 @@ public class AccountJsonConfig {
                     }
                 }
                 return size;
+            }
+
+            @Override
+            public SYNC getStorageSyncMode() {
+                return SYNC.META_AND_DATA;
+            }
+
+            @Override
+            public void setStorageSyncMode(SYNC storageSyncMode) {
             }
         };
         final StorageHandler<T> storageHandler = new StorageHandler<T>(configInterface) {
