@@ -639,26 +639,29 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final boolean downloadsStarted) throws Exception {
         final String[] fileInfo = getFileInfoArray();
-        final String fallback_filename = this.getFallbackFilename(link);
         Browser altbr = null;
         fuid = null;
         correctDownloadLink(link);
         /* First, set fallback-filename */
         setWeakFilename(link);
         getPage(link.getPluginPatternMatcher());
-        link.getContentUrl();
-        setFUID(link);
         if (isOffline(link)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        setFUID(link);
+        final String fallback_filename = this.getFallbackFilename(link);
         altbr = br.cloneBrowser();
         if (isWebsiteUnderMaintenance()) {
             /* In maintenance mode this sometimes is a way to find filenames! */
+            logger.info("Trying to find filename even though website is in maintenance mode");
             if (this.internal_supports_availablecheck_filename_abuse()) {
                 fileInfo[0] = this.getFnameViaAbuseLink(altbr, link, fileInfo[0]);
                 if (!StringUtils.isEmpty(fileInfo[0])) {
+                    logger.info("Found filename while website is in maintenance mode");
                     link.setName(Encoding.htmlOnlyDecode(fileInfo[0]).trim());
                     return AvailableStatus.TRUE;
+                } else {
+                    logger.info("Failed to find filename because website is in maintenance mode");
                 }
             }
             return AvailableStatus.UNCHECKABLE;
@@ -667,10 +670,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
              * Hosts whose urls are all premiumonly usually don't display any information about the URL at all - only maybe online/ofline.
              * There are 2 alternative ways to get this information anyways!
              */
-            logger.info("PREMIUMONLY handling: Trying alternative linkcheck");
+            logger.info("PREMIUMONLY linkcheck: Trying alternative linkcheck");
+            /* Find filename */
             if (this.internal_supports_availablecheck_filename_abuse()) {
                 fileInfo[0] = this.getFnameViaAbuseLink(altbr, link, fileInfo[0]);
             }
+            /* Find filesize */
             if (this.supports_availablecheck_alt()) {
                 fileInfo[1] = getFilesizeViaAvailablecheckAlt(altbr, link);
             }
@@ -687,7 +692,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 }
                 return AvailableStatus.TRUE;
             }
-            logger.warning("Alternative linkcheck failed!");
+            logger.warning("PREMIUMONLY linkcheck: Alternative linkcheck failed!");
             return AvailableStatus.UNCHECKABLE;
         }
         scanInfo(fileInfo);
@@ -699,18 +704,19 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             logger.warning("filename length is larrrge");
             fileInfo[0] = this.getFnameViaAbuseLink(altbr, link, fileInfo[0]);
         } else if (StringUtils.isEmpty(fileInfo[0]) && this.internal_supports_availablecheck_filename_abuse()) {
-            /* We failed to find the filename via html --> Try getFnameViaAbuseLink */
+            /* We failed to find the filename via html --> Try getFnameViaAbuseLink as workaround */
             logger.info("Failed to find filename, trying getFnameViaAbuseLink");
             fileInfo[0] = this.getFnameViaAbuseLink(altbr, link, fileInfo[0]);
         }
         if (StringUtils.isEmpty(fileInfo[0]) && this.isImagehoster()) {
             /*
              * Imagehosts often do not show any filenames, at least not on the first page plus they often have their abuse-url disabled. Add
-             * ".jpg" extension so that linkgrabber filtering is possible although we do not y<et have our final filename.
+             * ".jpg" extension so that linkgrabber filtering is possible although we do not y<et have our final filename. TODO: 2019-06-12:
+             * Consider removing this as fallback_filename is used for filehosts too (this has not always been the case!)
              */
             fileInfo[0] = fallback_filename;
         } else if (StringUtils.isEmpty(fileInfo[0]) && allow_fallback_filename_on_parser_failure()) {
-            /* Set fallback-filename if needed and allowed. */
+            /* Set fallback-filename if needed AND allowed. */
             fileInfo[0] = fallback_filename;
         }
         if (StringUtils.isEmpty(fileInfo[0])) {
@@ -815,6 +821,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         final String sharebox3_videohost = "\\[URL=https?://[^/]+/" + this.fuid + "[^/<>\\[\\]]*?\\]\\[IMG\\][^<>\"\\[\\]]+\\[/IMG\\]([^<>\"\\[\\]]+)\\[/URL\\]";
         /* standard traits from base page */
         if (StringUtils.isEmpty(fileInfo[0])) {
+            /* 2019-06-12: TODO: Update this RegEx for e.g. up-4ever.org */
             fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(?:www\\.)?[^/]+/" + fuid + "/(.*?)</font>").getMatch(0);
             if (StringUtils.isEmpty(fileInfo[0])) {
                 /* 2019-05-21: E.g. datoporn.co */
@@ -1943,7 +1950,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     /**
      * This fixes filenames from all xfs modules: file hoster, audio/video streaming (including transcoded video), or blocked link checking
-     * which is based on fuid.
+     * which is based on fuid. 2019-06-12: TODO: Review this, check if this is still required for ANY XFS host!
      *
      * @version 0.4
      * @author raztoki
@@ -1993,7 +2000,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * Sets XFS file-ID which is usually present inside the downloadurl added by the user. Usually it is [a-z0-9]{12}. <br />
      * Best to execute AFTER having accessed the downloadurl!
      */
-    protected void setFUID(final DownloadLink dl) throws PluginException {
+    protected final void setFUID(final DownloadLink dl) throws PluginException {
         fuid = getFUIDFromURL(dl);
         /*
          * Rare case: Hoster has exotic URLs (e.g. migrated from other script e.g. YetiShare to XFS) --> Correct (internal) fuid is only
@@ -2001,8 +2008,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
          */
         if (fuid == null) {
             /*
-             * E.g. for hosts which migrate from other scripts such as YetiShare to XFS (example: hugesharing.net) and still have their old
-             * URLs without XFS-fuid redirecting to the typical XFS URLs containing our fuid.
+             * E.g. for hosts which migrate from other scripts such as YetiShare to XFS (example: hugesharing.net, up-4ever.org) and still
+             * have their old URLs without XFS-fuid redirecting to the typical XFS URLs containing our fuid.
              */
             logger.info("fuid not given inside URL, trying to find it inside html");
             fuid = new Regex(correctedBR, "type=\"hidden\" name=\"id\" value=\"([a-z0-9]{12})\"").getMatch(0);
@@ -2013,7 +2020,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             if (fuid == null) {
                 /* fuid is crucial for us to have!! */
                 logger.warning("Failed to find fuid inside html");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                /*
+                 * 2019-06-12: Display such URLs as offline as this case is so rare that, if it happens, chances are very high that the file
+                 * is offline anyways!
+                 */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             logger.info("Found fuid inside html: " + fuid);
             correctDownloadLink(dl);
@@ -2048,7 +2059,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return null;
     }
 
-    /** Tries to get filename from URL and if this fails, will return <fuid> filename. */
+    /**
+     * Tries to get filename from URL and if this fails, will return <fuid> filename. <br/>
+     * Execute setFUID() BEFORE YOU EXECUTE THIS OR THE PLUGIN MAY FAIL TO FIND A (fallback-) FILENAME! In very rare cases (e.g. XFS owner
+     * migrated to XFS from other script) this is important! See description of setFUID for more information!
+     */
     public String getFallbackFilename(final DownloadLink dl) {
         String fallback_filename = this.getFilenameFromURL(dl);
         if (fallback_filename == null) {
