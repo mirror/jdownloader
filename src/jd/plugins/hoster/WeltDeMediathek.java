@@ -98,7 +98,10 @@ public class WeltDeMediathek extends PluginForHost {
             entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source_videourl);
             dllink = (String) JavaScriptEngineFactory.walkJson(entries, "content/media/{0}/file");
             if (dllink == null) {
-                dllink = br.getRegex("(https?://[^\"]*?([A-Za-z0-9_]+_),([0-9,]+)\\.mp4\\.csmil/master\\.m3u8)").getMatch(0);
+                dllink = br.getRegex("(https?://[^\"]*?[A-Za-z0-9_]+_(2000|1500|1000|200)\\.mp4)").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("(https?://[^\"]*?([A-Za-z0-9_]+_),([0-9,]+)\\.mp4\\.csmil/master\\.m3u8)").getMatch(0);
+                }
             }
             if (dllink.contains(".m3u8")) {
                 /* Convert hls --> http (sometimes required) */
