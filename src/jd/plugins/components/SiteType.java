@@ -40,6 +40,15 @@ public class SiteType {
          */
         EvilAngelNetwork,
         /**
+         * <b>Minimum requirements:</b> Website has to use fluidplayer: <a href="https:/fluidplayer.com/">fluidplayer.com</a> <br />
+         * <b>Additional requirements to be added to main class:</b> NO account support<br />
+         * <b>Main host class:</b> FluidPlayer<br />
+         * <b>Example that suits main host class:</b> <a href="https:/pornclipsxxx.com/">pornclipsxxx.com</a><br />
+         * <b>Example that does NOT suit main host class (needs separate class):</b> -<br />
+         * <b>Example that needs a decrypter class :</b> -<br />
+         */
+        FluidPlayer,
+        /**
          * <a href="http://gempixel.com/project/premium-url-shortener/">Premium URL Shortener</a><br />
          * sold on <a href="http://codecanyon.net/item/premium-url-shortener/3688135">codecanyon.net</a><br />
          * examples <a href="http://cehs.ch/">cehs.ch</a> <a href="http://www.csurl.it">csurl.it</a>
@@ -172,16 +181,17 @@ public class SiteType {
          * <b>Example that suits main host class:</b> <a href="http:/pornyeah.com/">pornyeah.com</a><br />
          * <b>Example that does NOT suit main host class (needs separate class):</b> <a href="http:/eroxia.com/">eroxia.com</a><br />
          * <b>Example that needs a decrypter class :</b> <a href="http:/eroxia.com/">eroxia.com</a><br />
+         * <b>Tags:</b> playerConfig.php
          */
         UnknownPornScript4,
         /**
-         * <b>Minimum requirements:</b> Usage of "jwplayer" <br />
-         * <b>Additional requirements to be added to main class:</b> Usage of "jwplayer" - one of the 2 basic jwplayer js/html sources, NO
-         * account support<br />
+         * TODO: 2019-06-13: The websites which have been tagged here do not really have any similarities. Do not add more websites "to this
+         * script" in the future!! <b>Minimum requirements:</b> Usage of this script <br />
          * <b>Main host class:</b> UnknownPornScript5<br />
          * <b>Example that suits main host class:</b> <a href="http:/boyfriendtv.com/">boyfriendtv.com</a><br />
          * <b>Example that does NOT suit main host class [needs separate class]:</b> <a href="http:/pornhd.com/">pornhd.com</a><br />
          * <b>Example that needs a decrypter class :</b> -<br />
+         * <b>Tags:</b> ---
          */
         UnknownPornScript5,
         /**
@@ -219,6 +229,7 @@ public class SiteType {
          * <b>Example that does NOT suit main host class [needs separate class]:</b> <a href="http:/drtuber.com/">drtuber.com</a><br />
          * <br />
          * <b>Example that needs a decrypter class :</b> -<br />
+         * <b>Tags:</b> htmlVideoPlayer, player_config_json
          */
         UnknownPornScript9,
         /**
