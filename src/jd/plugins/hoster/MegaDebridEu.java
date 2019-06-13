@@ -16,11 +16,13 @@
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
@@ -34,17 +36,14 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mega-debrid.eu" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
 public class MegaDebridEu extends PluginForHost {
-    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
-    private static final String                            NOCHUNKS           = "NOCHUNKS";
-    private final String                                   mName              = "www.mega-debrid.eu";
-    private final String                                   mProt              = "https://";
+    private final String                 mName = "www.mega-debrid.eu";
+    private final String                 mProt = "https://";
+    private static MultiHosterManagement mhm   = new MultiHosterManagement("mega-debrid.eu");
 
     public MegaDebridEu(PluginWrapper wrapper) {
         super(wrapper);
@@ -113,35 +112,26 @@ public class MegaDebridEu extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Host provider has server issues!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
             final String token = PluginJSonUtils.getJson(br, "token");
-            if (!"ok".equalsIgnoreCase(PluginJSonUtils.getJson(br, "response_code"))) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            final String responsecode = PluginJSonUtils.getJson(br, "response_code");
+            if (!"ok".equalsIgnoreCase(responsecode)) {
+                final String response_text = PluginJSonUtils.getJson(br, "response_text");
+                if (!StringUtils.isEmpty(response_text)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, response_text, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
             }
-            if (token != null) {
-                account.setProperty("token", token);
-            } else {
+            if (StringUtils.isEmpty(token)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            account.setProperty("token", token);
             return token;
         }
     }
 
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null) {
-                Long lastUnavailable = unavailableMap.get(link.getHost());
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    final long wait = lastUnavailable - System.currentTimeMillis();
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(link.getHost());
-                    if (unavailableMap.size() == 0) {
-                        hostUnavailableMap.remove(account);
-                    }
-                }
-            }
-        }
+        mhm.runCheck(account, link);
         String url = link.getDefaultPlugin().buildExternalDownloadURL(link, this);
         // link corrections
         if (link.getHost().matches("ddlstorage\\.com")) {
@@ -155,7 +145,6 @@ public class MegaDebridEu extends PluginForHost {
             url += "/n/" + link.getName();
         }
         url = Encoding.urlEncode(url);
-        showMessage(link, "Phase 1/2: Generate download link");
         prepBrowser(br);
         String token = account.getStringProperty("token", null);
         if (token == null) {
@@ -180,90 +169,31 @@ public class MegaDebridEu extends PluginForHost {
         }
         if (br.containsHTML("Erreur : Probl\\\\u00e8me D\\\\u00e9brideur")) {
             logger.warning("Unknown error, disabling current host for 10 minutes!");
-            tempUnavailableHoster(account, link, 10 * 60 * 1000l);
+            mhm.handleErrorGeneric(account, link, "unknown_error", 50, 1 * 60 * 1000l);
         } else if (br.containsHTML("Erreur : Lien incorrect")) {
-            tempUnavailableHoster(account, link, 10 * 60 * 1000l);
+            mhm.handleErrorGeneric(account, link, "link_incorrect", 50, 1 * 60 * 1000l);
         } else if (br.containsHTML("Unable to load file")) {
-            logger.info("'Unable to load file'");
-            int timesFailed = link.getIntegerProperty("timesfailedmegadebrideu_unabletoload", 0);
-            if (timesFailed <= 2) {
-                timesFailed++;
-                link.setProperty("timesfailedmegadebrideu_unabletoload", timesFailed);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
-            } else {
-                link.setProperty("timesfailedmegadebrideu_unabletoload", Property.NULL);
-                tempUnavailableHoster(account, link, 5 * 60 * 1000l);
-            }
+            mhm.handleErrorGeneric(account, link, "unable_to_load_file", 50, 1 * 60 * 1000l);
         } else if (br.containsHTML("\"debridLink\":\"cantDebridLink\"")) {
-            // no idea what this means
-            int timesFailed = link.getIntegerProperty("timesfailedmegadebrideu_cantDebridLink", 0);
-            if (timesFailed <= 2) {
-                timesFailed++;
-                link.setProperty("timesfailedmegadebrideu_cantDebridLink", timesFailed);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
-            } else {
-                link.setProperty("timesfailedmegadebrideu_cantDebridLink", Property.NULL);
-                tempUnavailableHoster(account, link, 5 * 60 * 1000l);
-            }
+            mhm.handleErrorGeneric(account, link, "cant_debrid_link", 50, 1 * 60 * 1000l);
         }
         String dllink = br.getRegex("\"debridLink\":\"(.*?)\"\\}").getMatch(0);
         if (dllink == null) {
             final String responseCode = PluginJSonUtils.getJson(br, "response_code");
-            if (br.containsHTML("Limite de lien dépassée pour cet hébergeur")) {
-                tempUnavailableHoster(account, link, 60 * 60 * 1000l);
-            } else if (br.containsHTML("Limite de trafic dépassée pour cet hébergeur")) {
-                tempUnavailableHoster(account, link, 10 * 60 * 1000l);
-            } else if ("UNALLOWED_IP".equals(responseCode)) {
+            if ("UNALLOWED_IP".equals(responseCode)) {
                 throw new AccountUnavailableException("UNALLOWED_IP", 6 * 60 * 1000l);
             } else if (br.containsHTML("VPN, proxy ou serveur détecté\\.")) {
                 throw new AccountInvalidException("VPN/Proxy/Dedicated Server Prohibitied");
-            } else if ("UNRESTRICTING_ERROR".equals(responseCode)) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            mhm.handleErrorGeneric(account, link, "unknown_error_2", 50, 1 * 60 * 1000l);
         }
         dllink = dllink.replace("\\", "").replace("\"", "");
-        showMessage(link, "Phase 2/2: Download");
-        int maxChunks = 0;
-        if (link.getBooleanProperty(NOCHUNKS, false)) {
-            maxChunks = 1;
-        }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, maxChunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML(">400 Bad Request<")) {
-                logger.info("Temporarily removing hoster from hostlist because of server error 400");
-                tempUnavailableHoster(account, link, 10 * 60 * 1000l);
-            } else if (br.containsHTML("Erreur#")) {
-                logger.info("Temporarily removing hoster from hostlist because of server error");
-                tempUnavailableHoster(account, link, 10 * 60 * 1000l);
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            mhm.handleErrorGeneric(account, link, "unknown_dl_error", 50, 1 * 60 * 1000l);
         }
-        try {
-            if (!this.dl.startDownload()) {
-                try {
-                    if (dl.externalDownloadStop()) {
-                        return;
-                    }
-                } catch (final Throwable e) {
-                }
-                /* unknown error, we disable multiple chunks */
-                if (link.getBooleanProperty(MegaDebridEu.NOCHUNKS, false) == false) {
-                    link.setProperty(MegaDebridEu.NOCHUNKS, Boolean.valueOf(true));
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-            }
-        } catch (final PluginException e) {
-            // New V2 errorhandling
-            /* unknown error, we disable multiple chunks */
-            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(MegaDebridEu.NOCHUNKS, false) == false) {
-                link.setProperty(MegaDebridEu.NOCHUNKS, Boolean.valueOf(true));
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
-            throw e;
-        }
+        this.dl.startDownload();
     }
 
     @Override
@@ -271,29 +201,9 @@ public class MegaDebridEu extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
 
-    private void showMessage(DownloadLink link, String message) {
-        link.getLinkStatus().setStatusText(message);
-    }
-
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         return AvailableStatus.UNCHECKABLE;
-    }
-
-    private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
-        if (downloadLink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
-        }
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap == null) {
-                unavailableMap = new HashMap<String, Long>();
-                hostUnavailableMap.put(account, unavailableMap);
-            }
-            /* wait to retry this host */
-            unavailableMap.put(downloadLink.getHost(), (System.currentTimeMillis() + timeout));
-        }
-        throw new PluginException(LinkStatus.ERROR_RETRY);
     }
 
     @Override
