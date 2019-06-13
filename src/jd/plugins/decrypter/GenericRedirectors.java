@@ -75,7 +75,6 @@ public class GenericRedirectors extends antiDDoSForDecrypt {
         if (declink != null) {
             decryptedLinks.add(createDownloadlink(declink));
         }
-        logger.info("Decryptedlink: " + declink);
         return decryptedLinks;
     }
 
