@@ -143,9 +143,11 @@ public class TakefileLink extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean isLoggedinHTML() {
-        boolean isLoggedinHTML = super.isLoggedinHTML();
-        isLoggedinHTML = br.containsHTML("/user_logout");
+    public boolean isLoggedin() {
+        boolean isLoggedinHTML = super.isLoggedin();
+        if (!isLoggedinHTML) {
+            isLoggedinHTML = br.containsHTML("/user_logout");
+        }
         return isLoggedinHTML;
     }
 

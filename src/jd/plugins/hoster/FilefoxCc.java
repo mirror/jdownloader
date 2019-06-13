@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
@@ -221,7 +222,7 @@ public class FilefoxCc extends XFileSharingProBasic {
                     }
                     logger.info("Verifying login-cookies");
                     getPage(getMainPage() + "/");
-                    loggedInViaCookies = isLoggedinHTML();
+                    loggedInViaCookies = isLoggedin();
                 }
                 if (loggedInViaCookies) {
                     /* No additional check required --> We know cookies are valid and we're logged in --> Done! */
@@ -254,11 +255,7 @@ public class FilefoxCc extends XFileSharingProBasic {
                         this.setDownloadLink(dlinkbefore);
                     }
                     submitForm(loginform);
-                    /* Missing login cookies or we still have the loginform --> Login failed */
-                    final boolean loginCookieOkay = !StringUtils.isEmpty(br.getCookie(getMainPage(), "login", Cookies.NOTDELETEDPATTERN)) || !StringUtils.isEmpty(br.getCookie(getMainPage(), "xfss", Cookies.NOTDELETEDPATTERN));
-                    final boolean loginFormOkay = findLoginform(this.br) == null;
-                    final boolean loginURLOkay = br.getURL().contains("op=") && !br.getURL().contains("op=login");
-                    if (!loginCookieOkay && !loginFormOkay && !loginURLOkay) {
+                    if (!isLoggedin()) {
                         if (correctedBR.contains("op=resend_activation")) {
                             /* User entered correct logindata but has not activated his account ... */
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYour account has not yet been activated!\r\nActivate it via the URL you should have received via E-Mail and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -282,6 +279,54 @@ public class FilefoxCc extends XFileSharingProBasic {
                     account.clearCookies("");
                 }
                 throw e;
+            }
+        }
+    }
+
+    @Override
+    public boolean isLoggedin() {
+        /* 2019-06-13: Special */
+        boolean isLoggedin = super.isLoggedin();
+        final boolean loginError = correctedBR.contains("Incorrect Login or Password");
+        if (isLoggedin && loginError) {
+            /*
+             * Special case: Login redirects to error-site so login-form is not present --> Upper code may think that we're logged-in -->
+             * Correct this
+             */
+            isLoggedin = false;
+        }
+        return isLoggedin;
+    }
+
+    @Override
+    public Form findFormF1Premium() throws Exception {
+        /* 2019-06-13: Special */
+        checkForSpecialCaptcha();
+        return super.findFormF1Premium();
+    }
+
+    public Form findFormDownload1() throws Exception {
+        /* 2019-06-13: Special */
+        checkForSpecialCaptcha();
+        return super.findFormDownload1();
+    }
+
+    private void checkForSpecialCaptcha() throws Exception {
+        if (br.getURL() != null && br.getURL().contains("op=captcha&id=")) {
+            /*
+             * 2019-01-23: Special - this may also happen in premium mode! This will only happen when accessing downloadurl. It gets e.g.
+             * triggered when accessing a lot of different downloadurls in a small timeframe.
+             */
+            /* Tags: XFS_IP_CHECK /ip_check/ */
+            final Form specialCaptchaForm = br.getFormbyProperty("name", "F1");
+            if (specialCaptchaForm != null) {
+                logger.info("Handling specialCaptchaForm");
+                final boolean redirectSetting = br.isFollowingRedirects();
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                specialCaptchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                br.setFollowRedirects(true);
+                super.submitForm(specialCaptchaForm);
+                br.setFollowRedirects(redirectSetting);
             }
         }
     }
