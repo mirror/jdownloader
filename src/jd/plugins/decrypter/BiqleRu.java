@@ -19,10 +19,6 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.encoding.Base64;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -31,10 +27,15 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "biqle.ru", "daxab.com", "divxcim.com" }, urls = { "https?://(?:www\\.)?biqle\\.(com|ru|org)/watch/(?:\\-)?\\d+_\\d+", "https?://(?:www\\.)?daxab\\.com/embed/(?:\\-)?\\d+_\\d+", "https?://(?:www\\.)?divxcim\\.com/video_ext\\.php\\?oid=(?:\\-)?\\d+\\&id=\\d+" })
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.encoding.Base64;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "biqle.ru", "daxab.com", "divxcim.com" }, urls = { "https?://(?:www\\.)?biqle\\.(com|ru|org)/watch/(?:\\-)?\\d+_\\d+", "https?://(?:www\\.)?(daxab\\.com|dxb\\.to)/embed/(?:\\-)?\\d+_\\d+", "https?://(?:www\\.)?divxcim\\.com/video_ext\\.php\\?oid=(?:\\-)?\\d+\\&id=\\d+" })
 public class BiqleRu extends PluginForDecrypt {
     public BiqleRu(PluginWrapper wrapper) {
         super(wrapper);
@@ -48,7 +49,7 @@ public class BiqleRu extends PluginForDecrypt {
             br.getPage(param.getCryptedUrl());
             br.followRedirect();
             final String title = br.getRegex("<title>\\s*(.*?)\\s*(— BIQLE Video)?</title>").getMatch(0);
-            final String daxab = br.getRegex("((?:https?:)?//daxab\\.com/player/[a-zA-Z0-9_\\-]+)\"").getMatch(0);
+            final String daxab = br.getRegex("((?:https?:)?//(?:daxab\\.com|dxb\\.to)/player/[a-zA-Z0-9_\\-]+)\"").getMatch(0);
             if (daxab != null) {
                 final Browser brc = br.cloneBrowser();
                 sleep(1000, param);
@@ -75,6 +76,11 @@ public class BiqleRu extends PluginForDecrypt {
                             downloadLink.setContainerUrl(param.getCryptedUrl());
                             ret.add(downloadLink);
                         }
+                    }
+                    if (title != null) {
+                        final FilePackage fp = FilePackage.getInstance();
+                        fp.setName(title);
+                        fp.addLinks(ret);
                     }
                     return ret;
                 } else {
@@ -120,7 +126,7 @@ public class BiqleRu extends PluginForDecrypt {
                 }
             } else {
                 // vk mode
-                final String daxabExt = br.getRegex("((?:https?:)?//daxab\\.com/ext\\.php\\?oid=[0-9\\-]+&id=\\d+&hash=[a-zA-Z0-9]+)\"").getMatch(0);
+                final String daxabExt = br.getRegex("((?:https?:)?//(?:daxab\\.com|dxb\\.to)/ext\\.php\\?oid=[0-9\\-]+&id=\\d+&hash=[a-zA-Z0-9]+)\"").getMatch(0);
                 final Browser brc = br.cloneBrowser();
                 brc.getPage(daxabExt);
                 String escapeString = brc.getRegex("unescape\\('([^']+)'").getMatch(0);

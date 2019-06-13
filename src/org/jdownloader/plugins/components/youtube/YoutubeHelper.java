@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
@@ -894,12 +895,14 @@ public class YoutubeHelper {
     String descrambleSignature(final String sig) throws IOException, PluginException {
         if (sig == null) {
             return null;
+        } else {
+            final String ret = descrambleSignatureNew(sig);
+            if (StringUtils.isNotEmpty(ret)) {
+                return ret;
+            } else {
+                return descrambleSignatureOld(sig);
+            }
         }
-        String ret = descrambleSignatureNew(sig);
-        if (StringUtils.isNotEmpty(ret)) {
-            return ret;
-        }
-        return descrambleSignatureOld(sig);
     }
 
     String descrambleSignatureNew(final String sig) throws IOException, PluginException {
@@ -1420,7 +1423,7 @@ public class YoutubeHelper {
         subtitleUrls = new HashSet<String>();
         mpdUrls = new LinkedHashSet<StreamMap>();
         videoInfo = new HashMap<String, String>();
-        vid.ageCheck = br.containsHTML("age-gate");
+        vid.ageCheck = br.containsHTML("\"status\"\\s*:\\s*\"LOGIN_REQUIRED\"");
         this.handleContentWarning(br);
         collectMapsFormHtmlSource(br.getRequest().getHtmlCode(), "base");
         Browser apiBrowser = null;
@@ -1573,6 +1576,7 @@ public class YoutubeHelper {
                     String newv = mpdUrl.mapData;
                     String scrambledSign = new Regex(mpdUrl.mapData, "/s/(.*?)/").getMatch(0);
                     if (StringUtils.isNotEmpty(scrambledSign)) {
+                        scrambledSign = URLDecoder.decode(scrambledSign, "UTF-8");
                         String sign = descrambleSignature(scrambledSign);
                         newv = mpdUrl.mapData.replaceAll("/s/(.*?)/", "/signature/" + sign + "/");
                     }
@@ -1901,21 +1905,19 @@ public class YoutubeHelper {
         if (query.containsKey("width") && query.containsKey("height")) {
             query.addIfNoAvailable("size", query.get("width") + "x" + query.get("height"));
         }
-        String signature = new Regex(url, "(sig|signature)=(.*?)(\\&|$)").getMatch(1);
-        if (StringUtils.isEmpty(signature)) {
-            // verified 7.1.24
-            // non dash?
-            signature = query.get("sig");
-        }
-        if (StringUtils.isEmpty(signature)) {
-            signature = query.get("signature");
-        }
-        if (StringUtils.isEmpty(signature)) {
-            // verified 7.1.213
-            signature = this.descrambleSignature(query.get("s"));
-        }
-        if (url != null && !url.contains("sig")) {
-            url = url + "&signature=" + signature;
+        if (query.containsKey("signature")) {
+            url = url + "&signature=" + query.get("signature");
+        } else if (query.containsKey("sig")) {
+            url = url + "&signature=" + query.get("sig");
+        } else if (query.containsKey("s")) {
+            String encrypted_sig = query.get("s");
+            encrypted_sig = URLDecoder.decode(encrypted_sig, "UTF-8");
+            final String signature = this.descrambleSignature(encrypted_sig);
+            if (query.containsKey("sp")) {
+                url = url + "&" + query.get("sp") + "=" + signature;
+            } else {
+                url = url + "&signature=" + signature;
+            }
         }
         String size = query.get("size");
         int width = -1;
@@ -2453,21 +2455,19 @@ public class YoutubeHelper {
         if (StringUtils.isEmpty(url)) {
             throw new WTFException("No Url found " + query);
         }
-        String signature = new Regex(url, "(sig|signature)=(.*?)(\\&|$)").getMatch(1);
-        if (StringUtils.isEmpty(signature)) {
-            // verified 7.1.24
-            // non dash?
-            signature = query.get("sig");
-        }
-        if (StringUtils.isEmpty(signature)) {
-            signature = query.get("signature");
-        }
-        if (StringUtils.isEmpty(signature) && query.get("s") != null) {
-            // verified 7.1.213
-            signature = this.descrambleSignature(query.get("s"));
-        }
-        if (url != null && !url.contains("sig")) {
-            url = url + "&signature=" + signature;
+        if (query.containsKey("signature")) {
+            url = url + "&signature=" + query.get("signature");
+        } else if (query.containsKey("sig")) {
+            url = url + "&signature=" + query.get("sig");
+        } else if (query.containsKey("s")) {
+            String encrypted_sig = query.get("s");
+            encrypted_sig = URLDecoder.decode(encrypted_sig, "UTF-8");
+            final String signature = this.descrambleSignature(encrypted_sig);
+            if (query.containsKey("sp")) {
+                url = url + "&" + query.get("sp") + "=" + signature;
+            } else {
+                url = url + "&signature=" + signature;
+            }
         }
         int bitrate = -1;
         String bitrateString = query.get("bitrate");
