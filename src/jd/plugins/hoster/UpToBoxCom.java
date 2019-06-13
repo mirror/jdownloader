@@ -83,7 +83,8 @@ public class UpToBoxCom extends antiDDoSForHost {
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.6.1-raz
-    // mods: heavily modified, do NOT upgrade!
+    // mods: heavily modified, do NOT upgrade! 2019-06-13: TODO: Upgrade to XFSv4 once we clearly know which workarounds are required and
+    // which ones we can leave behind ...
     // non account: 2 * 1
     // free account: 2 * 1
     // premium account: 20 * 3 = max 60 connections

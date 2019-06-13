@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -34,7 +33,6 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "epubbooks.com" }, urls = { "httpss?://(?:www\\.)?epubbooks\\.com/downloads/\\d+" })
 public class EpubbooksCom extends PluginForHost {
-
     public EpubbooksCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.epubbooks.com/sign_up");
@@ -120,7 +118,7 @@ public class EpubbooksCom extends PluginForHost {
                 if (csrftoken == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                final String postdata = "utf8=%E2%9C%93&authenticity_token=" + Encoding.urlEncode(csrftoken) + "&user%5Blogin%5D=" + Encoding.urlEncode(account.getUser()) + "&user%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()) + "&user%5Bremember_me%5D=0&user%5Bremember_me%5D=1&commit=Sign+in";
+                final String postdata = "utf8=%E2%9C%93&authenticity_token=" + Encoding.urlEncode(csrftoken) + "&user%5Bemail%5D=" + Encoding.urlEncode(account.getUser()) + "&user%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()) + "&user%5Bremember_me%5D=0&user%5Bremember_me%5D=1&commit=Sign+in";
                 br.postPage(br.getURL(), postdata);
                 if (br.getCookie(account.getHoster(), "remember_user_token") == null || !isLoggedinHtml(br)) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -182,5 +180,4 @@ public class EpubbooksCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

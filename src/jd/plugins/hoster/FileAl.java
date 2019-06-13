@@ -117,6 +117,26 @@ public class FileAl extends XFileSharingProBasic {
         return super.findFormDownload1();
     }
 
+    private void checkForSpecialCaptcha() throws Exception {
+        if (br.getURL() != null && br.getURL().contains("/ip_check/")) {
+            /*
+             * 2019-01-23: Special - this may also happen in premium mode! This will only happen when accessing downloadurl. It gets e.g.
+             * triggered when accessing a lot of different downloadurls in a small timeframe.
+             */
+            /* Tags: XFS_IP_CHECK /ip_check/ */
+            final Form specialCaptchaForm = br.getFormbyProperty("name", "F1");
+            if (specialCaptchaForm != null) {
+                logger.info("Handling specialCaptchaForm");
+                final boolean redirectSetting = br.isFollowingRedirects();
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                specialCaptchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                br.setFollowRedirects(true);
+                super.submitForm(specialCaptchaForm);
+                br.setFollowRedirects(redirectSetting);
+            }
+        }
+    }
+
     @Override
     public boolean supports_https() {
         return super.supports_https();
@@ -126,10 +146,6 @@ public class FileAl extends XFileSharingProBasic {
     public boolean supports_precise_expire_date() {
         return super.supports_precise_expire_date();
     }
-
-    
-
-    
 
     @Override
     public boolean isVideohosterEmbed() {
@@ -150,8 +166,6 @@ public class FileAl extends XFileSharingProBasic {
     public boolean supports_availablecheck_alt() {
         return super.supports_availablecheck_alt();
     }
-
-    
 
     @Override
     public boolean prefer_availablecheck_filesize_alt_type_old() {
@@ -205,25 +219,5 @@ public class FileAl extends XFileSharingProBasic {
             pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
         }
         return pattern.toString();
-    }
-
-    private void checkForSpecialCaptcha() throws Exception {
-        if (br.getURL() != null && br.getURL().contains("/ip_check/")) {
-            /*
-             * 2019-01-23: Special - this may also happen in premium mode! This will only happen when accessing downloadurl. It gets e.g.
-             * triggered when accessing a lot of different downloadurls in a small timeframe.
-             */
-            /* Tags: XFS_IP_CHECK /ip_check/ */
-            final Form specialCaptchaForm = br.getFormbyProperty("name", "F1");
-            if (specialCaptchaForm != null) {
-                logger.info("Handling specialCaptchaForm");
-                final boolean redirectSetting = br.isFollowingRedirects();
-                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                specialCaptchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                br.setFollowRedirects(true);
-                super.submitForm(specialCaptchaForm);
-                br.setFollowRedirects(redirectSetting);
-            }
-        }
     }
 }

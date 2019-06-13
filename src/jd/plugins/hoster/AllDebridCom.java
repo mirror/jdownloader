@@ -22,10 +22,23 @@ import java.util.LinkedHashMap;
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
 
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.views.SelectionInfo.PluginView;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
@@ -40,17 +53,6 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.HashInfo;
-
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.gui.views.SelectionInfo.PluginView;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alldebrid.com" }, urls = { "https?://(?:[a-z]\\d+\\.alldebrid\\.com|[a-z0-9]+\\.alld\\.io)/dl/[a-z0-9]+/.+" })
 public class AllDebridCom extends antiDDoSForHost {
@@ -79,6 +81,7 @@ public class AllDebridCom extends antiDDoSForHost {
     private static String                api_base                        = "https://api.alldebrid.com";
     // this is used by provider which calculates unique token to agent/client.
     private static final String          agent                           = "agent=JDownloader";
+    private static final String          agent_raw                       = "JDownloader";
     /* False = use old username&password login (Deprecated!) */
     private static final String          PROPERTY_TOKEN_EXPIRE_TIMESTAMP = "TOKEN_EXPIRE_TIMESTAMP";
 
@@ -277,7 +280,7 @@ public class AllDebridCom extends antiDDoSForHost {
         // everything is aok
         case -1:
             return;
-            // login related
+        // login related
         case 2:
             throw new AccountInvalidException("Invalid User/Password!");
         case 3:
@@ -322,6 +325,9 @@ public class AllDebridCom extends antiDDoSForHost {
             // trial)","errorCode":33}
             throw new AccountInvalidException("You have reached the free trial limit!");
         case 31:
+        case 38:
+            downloadLink.setDownloadPassword(null);
+            throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
         case 39:
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
         case 35: {
@@ -367,19 +373,41 @@ public class AllDebridCom extends antiDDoSForHost {
         showMessage(link, "Phase 1/2: Generating link");
         synchronized (account) {
             String token = loadToken(account);
-            final String unlock = api_base + "/link/unlock?" + agent + "&link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this));
-            getPage(unlock + "&token=" + token);
-            if (11 == parseError()) {
-                account.removeProperty(TOKEN);
-                token = loadToken(account);
-                getPage(unlock + "&token=" + token);
+            String downloadPassword = link.getDownloadPassword();
+            Form dlform = new Form();
+            dlform.setMethod(MethodType.GET);
+            dlform.setAction(api_base + "/link/unlock");
+            dlform.put("link", Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
+            dlform.put("agent", agent_raw);
+            dlform.put("token", token);
+            if (!StringUtils.isEmpty(downloadPassword)) {
+                dlform.put("password", Encoding.urlEncode(downloadPassword));
             }
+            int counter = 0;
+            do {
+                this.submitForm(dlform);
+                if (11 == parseError()) {
+                    /* Refresh token */
+                    account.removeProperty(TOKEN);
+                    token = loadToken(account);
+                    dlform.put("token", token);
+                    this.submitForm(dlform);
+                } else if (38 == parseError()) {
+                    /* Stored password was wrong or first attempt so now we know we need a download password. */
+                    /* {"error":"Link is password protected","errorCode":38} */
+                    downloadPassword = getUserInput("Password?", link);
+                    dlform.put("password", Encoding.urlEncode(downloadPassword));
+                }
+                counter++;
+            } while (38 == parseError() && counter <= 2);
             handleErrors(account, link);
+            if (!StringUtils.isEmpty(downloadPassword)) {
+                link.setDownloadPassword(downloadPassword);
+            }
         }
         final String genlink = PluginJSonUtils.getJsonValue(br, "link");
         if (genlink == null || !genlink.matches("https?://.+")) {
-            // we need a final error handling for situations when
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            mhm.handleErrorGeneric(account, link, "dllinknull", 50, 1 * 60 * 1000l);
         }
         final String filename = PluginJSonUtils.getJsonValue(br, "filename");
         if (StringUtils.equalsIgnoreCase(filename, "Ip not allowed.") || StringUtils.endsWithCaseInsensitive(genlink, "/alldebrid_server_not_allowed.txt")) {

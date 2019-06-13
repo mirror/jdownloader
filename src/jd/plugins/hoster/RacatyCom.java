@@ -95,6 +95,11 @@ public class RacatyCom extends XFileSharingProBasic {
     }
 
     @Override
+    public String getLoginURL() {
+        return this.getMainPage() + "/?op=login_ajax";
+    }
+
+    @Override
     public boolean supports_https() {
         return super.supports_https();
     }
