@@ -91,8 +91,8 @@ public class UsenetBucketCom extends UseNet {
                 br.getPage("https://member.usenetbucket.com/");
             }
             account.saveCookies(br.getCookies(getHost()), "");
-            final String userName = br.getRegex("<div>\\s*Username\\s*:\\s*(.*?)\\s*<").getMatch(0);
-            final String passWord = br.getRegex("<div>\\s*Password\\s*:\\s*(.*?)\\s*<").getMatch(0);
+            final String userName = br.getRegex("<div>\\s*(?:Username|Gebruikersnaam)\\s*:\\s*(.*?)\\s*<").getMatch(0);
+            final String passWord = br.getRegex("<div>\\s*(?:Password|Wachtwoord)\\s*:\\s*(.*?)\\s*<").getMatch(0);
             if (userName == null || passWord == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else {
@@ -105,8 +105,8 @@ public class UsenetBucketCom extends UseNet {
             } else {
                 account.setMaxSimultanDownloads(25);
             }
-            final String validUntil = br.getRegex("<div>\\s*Valid until\\s*:\\s*(.*?)</div>").getMatch(0);
-            final String daysRemaining = br.getRegex("(\\d+) days remaining").getMatch(0);
+            final String validUntil = br.getRegex("<div>\\s*(?:Valid until|Geldig tot)\\s*:\\s*(.*?)</div>").getMatch(0);
+            final String daysRemaining = br.getRegex("(\\d+) (?:days remaining|dagen resterend)").getMatch(0);
             final String bucketType = br.getRegex("\\s*((Basic|Comfort|Ultimate|Free) Bucket)").getMatch(0);
             if (bucketType != null) {
                 ai.setStatus(bucketType);
