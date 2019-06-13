@@ -15,6 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import org.appwork.utils.Regex;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -28,16 +30,14 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-import org.appwork.utils.Regex;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "free-sex-video.net", "hotclips24.com" }, urls = { "https?://(?:www\\.)?free-sex-video\\.net/video/[a-z0-9\\-]+\\d+\\.html", "https?://(?:www\\.)?hotclips24\\.com/video/[a-z0-9\\-]+\\d+\\.html" })
-public class FreeSexVideoNet extends PluginForHost {
-    public FreeSexVideoNet(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "free-sex-video.net", "hotclips24.com", "pornclipsxxx.com" }, urls = { "https?://(?:www\\.)?free-sex-video\\.net/video/[a-z0-9\\-]+\\d+\\.html", "https?://(?:www\\.)?hotclips24\\.com/video/[a-z0-9\\-]+\\d+\\.html", "https?://(?:www\\.)?pornclipsxxx\\.com/video/[a-z0-9\\-]+\\d+\\.html" })
+public class FluidPlayer extends PluginForHost {
+    public FluidPlayer(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* DEV NOTES */
-    // Tags:
+    // Tags: fluidplayer.com
     // protocol: no https
     // other:
     /* Connection stuff */
@@ -162,7 +162,7 @@ public class FreeSexVideoNet extends PluginForHost {
 
     @Override
     public SiteTemplate siteTemplateType() {
-        return SiteTemplate.UnknownPornScript5;
+        return SiteTemplate.FluidPlayer;
     }
 
     @Override
