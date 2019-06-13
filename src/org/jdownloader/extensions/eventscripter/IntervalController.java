@@ -16,6 +16,8 @@ public class IntervalController {
     private final AtomicReference<Thread>                 scheduler     = new AtomicReference<Thread>(null);
     private final AtomicReference<ArrayList<ScriptEntry>> scriptEntries = new AtomicReference<ArrayList<ScriptEntry>>(null);
     private final LogSource                               logger;
+    private final static String                           LASTFIRE      = "lastFire";
+    private final static String                           INTERVAL      = "interval";
 
     public IntervalController(EventScripterExtension eventScripterExtension) {
         this.extension = eventScripterExtension;
@@ -46,22 +48,23 @@ public class IntervalController {
                                             try {
                                                 final Map<String, Object> settings = scriptEntry.getEventTriggerSettings();
                                                 long interval = 1000;
-                                                if (settings.get("interval") instanceof Number) {
-                                                    interval = Math.max(1000, ((Number) settings.get("interval")).longValue());
+                                                if (settings.get(INTERVAL) instanceof Number) {
+                                                    interval = Math.max(1000, ((Number) settings.get(INTERVAL)).longValue());
                                                 } else {
                                                     interval = 1000;
                                                 }
-                                                final Object last = settings.get("lastFire");
+                                                final Object last = settings.get(LASTFIRE);
                                                 final long lastTs;
                                                 if (last != null && last instanceof Number) {
                                                     lastTs = ((Number) last).longValue();
                                                 } else {
                                                     lastTs = System.currentTimeMillis();
+                                                    settings.put(LASTFIRE, lastTs);
                                                 }
                                                 long waitFor = interval - (System.currentTimeMillis() - lastTs);
                                                 if (waitFor <= 0) {
                                                     if (fire(scriptEntry, interval)) {
-                                                        settings.put("lastFire", System.currentTimeMillis());
+                                                        settings.put(LASTFIRE, System.currentTimeMillis());
                                                     }
                                                     waitFor = interval;
                                                 }
@@ -124,7 +127,7 @@ public class IntervalController {
                         super.finalizeEnvironment();
                         try {
                             final Map<String, Object> settings = scriptEntry.getEventTriggerSettings();
-                            settings.put("interval", Math.max(1000, ((Number) props.get("interval")).longValue()));
+                            settings.put(INTERVAL, Math.max(1000, ((Number) props.get(INTERVAL)).longValue()));
                         } catch (final Throwable e) {
                             logger.log(e);
                         }

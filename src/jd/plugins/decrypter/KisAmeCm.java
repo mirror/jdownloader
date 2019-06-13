@@ -20,7 +20,9 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
@@ -123,7 +125,7 @@ public class KisAmeCm extends antiDDoSForDecrypt implements RefreshSessionLink {
             if (title != null) {
                 title = title.replace("[\r\n]+", " ").replaceAll("\\s+", " ");
             }
-            final String skey = getSecretKeyManga();
+            final List<String> skey = getSecretKeyManga();
             final String iv = "a5e8e2e9c2721be0a84ad660c472c1f3";
             final String[] links = br.getRegex("lstImages\\.push\\(wrapKA\\(\"([a-zA-Z0-9\\+/=]+)\"").getColumn(0);
             if (links == null || links.length == 0) {
@@ -156,21 +158,23 @@ public class KisAmeCm extends antiDDoSForDecrypt implements RefreshSessionLink {
                 // we have two things we need to base64decode
                 final String[][] quals = getQuals(br);
                 if (quals != null) {
-                    String skey = null;
+                    final List<String> skeys;
                     String iv = null;
                     switch (hostType) {
                     case KISS_ANIME:
-                        skey = getSecretKeyAnime();
+                        skeys = getSecretKeyAnime();
                         iv = "a5e8d2e9c1721ae0e84ad660c472c1f3";
                         break;
                     case KISS_ASIAN:
-                        skey = getSecretKeyAsian();
+                        skeys = getSecretKeyAsian();
                         iv = "32b812e9a1321ae0e84af660c4722b3a";
                         break;
                     case KISS_CARTOON:
-                        skey = getSecretKeyCartoon();
+                        skeys = getSecretKeyCartoon();
                         iv = "a5e8d2e9c1721ae0e84ad660c472c1f3";
+                        break;
                     default:
+                        skeys = new ArrayList<String>();
                         break;
                     }
                     for (final String qual[] : quals) {
@@ -179,7 +183,7 @@ public class KisAmeCm extends antiDDoSForDecrypt implements RefreshSessionLink {
                         case KISS_ANIME:
                         case KISS_ASIAN:
                         case KISS_CARTOON:
-                            decode = decodeSingleURL(qual[1], skey, iv);
+                            decode = decodeSingleURL(qual[1], skeys, iv);
                             break;
                         default:
                             break;
@@ -226,21 +230,23 @@ public class KisAmeCm extends antiDDoSForDecrypt implements RefreshSessionLink {
                     // can be obstructed also
                     final String obstruction = br.getRegex("\\$\\('#divContentVideo iframe'\\)\\.attr\\('src',\\s*\\$kissenc\\.decrypt\\('([^']+)'\\)").getMatch(0);
                     if (obstruction != null) {
-                        String skey = null;
+                        final List<String> skeys;
                         String iv = null;
                         switch (hostType) {
                         case KISS_ANIME:
-                            skey = getSecretKeyAnime();
+                            skeys = getSecretKeyAnime();
                             iv = "a5e8d2e9c1721ae0e84ad660c472c1f3";
                             break;
                         case KISS_ASIAN:
-                            skey = getSecretKeyAsian();
+                            skeys = getSecretKeyAsian();
                             iv = "32b812e9a1321ae0e84af660c4722b3a";
                             break;
                         case KISS_CARTOON:
-                            skey = getSecretKeyCartoon();
+                            skeys = getSecretKeyCartoon();
                             iv = "a5e8d2e9c1721ae0e84ad660c472c1f3";
+                            break;
                         default:
+                            skeys = new ArrayList<String>();
                             break;
                         }
                         String decode = null;
@@ -248,7 +254,7 @@ public class KisAmeCm extends antiDDoSForDecrypt implements RefreshSessionLink {
                         case KISS_ANIME:
                         case KISS_ASIAN:
                         case KISS_CARTOON:
-                            decode = decodeSingleURL(obstruction, skey, iv);
+                            decode = decodeSingleURL(obstruction, skeys, iv);
                             break;
                         default:
                             break;
@@ -282,7 +288,8 @@ public class KisAmeCm extends antiDDoSForDecrypt implements RefreshSessionLink {
         return quals;
     }
 
-    private String getSecretKeyAnime() {
+    private List<String> getSecretKeyAnime() {
+        final List<String> ret = new ArrayList<String>();
         String match1 = br.getRegex("<script[^>]*>\\s*var.*?\\[\"([^\"]+)\",.*?CryptoJS.SHA256\\(").getMatch(0);
         String skey = "nhasasdbasdtene7230asb";
         if (match1 != null) {
@@ -304,10 +311,12 @@ public class KisAmeCm extends antiDDoSForDecrypt implements RefreshSessionLink {
         if (match3b != null) {
             skey = skey.replace("a", Encoding.unicodeDecode(match3b));
         }
-        return skey;
+        ret.add(skey);
+        return ret;
     }
 
-    private String getSecretKeyAsian() throws Exception {
+    private List<String> getSecretKeyAsian() throws Exception {
+        final List<String> ret = new ArrayList<String>();
         final Browser ajax = br.cloneBrowser();
         ajax.getHeaders().put("Accept", "*/*");
         ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -327,7 +336,8 @@ public class KisAmeCm extends antiDDoSForDecrypt implements RefreshSessionLink {
         if (match3.length != 0) {
             skey = match3[0][0] + "uef" + skey + match3[0][1];
         }
-        return skey;
+        ret.add(skey);
+        return ret;
     }
 
     /**
@@ -336,7 +346,8 @@ public class KisAmeCm extends antiDDoSForDecrypt implements RefreshSessionLink {
      * @author raztoki
      * @author zt333
      */
-    private String getSecretKeyCartoon() throws Exception {
+    private List<String> getSecretKeyCartoon() throws Exception {
+        final List<String> ret = new ArrayList<String>();
         final Browser ajax = br.cloneBrowser();
         ajax.getHeaders().put("Accept", "*/*");
         ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -355,63 +366,77 @@ public class KisAmeCm extends antiDDoSForDecrypt implements RefreshSessionLink {
         if (match3 != null && match3.length != 0) {
             skey = match3[0] + "n1f" + skey + match3[1];
         }
-        return skey;
+        ret.add(skey);
+        return ret;
     }
 
-    private String getSecretKeyManga() throws Exception {
+    private List<String> getSecretKeyManga() throws Exception {
+        final List<String> ret = new ArrayList<String>();
         String skey = "mshsdf832nsdbash20asdm";
+        ret.add(skey);
         String match1 = br.getRegex("<script[^>]*>\\s*var.*?\\[\"([^\"]+)\"\\]; chko = _.*?CryptoJS.SHA256.*?</script>").getMatch(0);
         if (match1 != null) {
-            skey = Encoding.unicodeDecode(match1);
+            final String chko = Encoding.unicodeDecode(match1);
+            ret.add(chko);
+            skey = chko;
         }
         String match2 = br.getRegex("<script[^>]*>\\s*var.*?\\[\"([^\"]+)\"\\]; chko = chko.*?CryptoJS.SHA256.*?</script>").getMatch(0);
         if (match2 != null) {
-            skey += Encoding.unicodeDecode(match2);
+            final String chko = Encoding.unicodeDecode(match2);
+            ret.add(chko);
+            ret.add(skey + chko);
+            ret.add(chko + skey);
         }
-        return skey;
+        return ret;
     }
 
-    public String decodeSingleURL(final String encodedString, final String skey, final String iv) throws InterruptedException {
+    public String decodeSingleURL(final String encodedString, final List<String> skeys, final String iv) throws InterruptedException, PluginException {
         String decode = null;
-        try {
-            byte[] encodedArray = Base64.decode(encodedString);
-            String hash = Hash.getSHA256(skey);
-            // AES256
-            final byte[] byteKey = JDHexUtils.getByteArray(hash);
-            final byte[] byteIv = JDHexUtils.getByteArray(iv);
-            SecretKeySpec skeySpec = new SecretKeySpec(byteKey, "AES");
-            IvParameterSpec ivSpec = new IvParameterSpec(byteIv);
+        for (String skey : skeys) {
             try {
-                Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-                cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
-                byte[] byteResult = cipher.doFinal(encodedArray);
-                decode = new String(byteResult, "UTF-8");
-            } catch (final Exception e) {
-                logger.info(e.toString());
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
+                byte[] encodedArray = Base64.decode(encodedString);
+                String hash = Hash.getSHA256(skey);
+                // AES256
+                final byte[] byteKey = JDHexUtils.getByteArray(hash);
+                final byte[] byteIv = JDHexUtils.getByteArray(iv);
+                SecretKeySpec skeySpec = new SecretKeySpec(byteKey, "AES");
+                IvParameterSpec ivSpec = new IvParameterSpec(byteIv);
+                try {
+                    Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+                    cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
+                    byte[] byteResult = cipher.doFinal(encodedArray);
+                    decode = new String(byteResult, "UTF-8");
+                } catch (final BadPaddingException e) {
+                    logger.log(e);
+                    continue;
+                } catch (final Exception e) {
+                    logger.log(e);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
+                }
+                // decode:
+                // http://kissasian.com/Play?key=AaKw5OKkuxsCX+g11bWAThZKjXqDGPQWhjJWnuT5dTGj1fd1cpjSu3IoG+BS9DrWjnEmbfIX6hzW21Wg+0x1x2xKpQsxMSf2Qq+Sj0x1x2xXplONQDkgERfg+oOe+8gdidU13A97bfhucXMOZpuH+qEyMsodmaW+HdcTG3FwUxF3b2QSmHTllXLU3LLVSvxWtiICNbHITdp9r9yaf6r9fVHXTvmGgwvQqC7Kn6A2VYb8FDelQLZfIcXr8xP9Gcjp2rZw9UTCZetxz6tPFXxUAOBTNfMirs90x1x2xNgCaH3CY2Dd0CnmDWTetRbccDcEwQ0gwGnXUrtsjcjnRykZZ53lFlyfsoWk8RmJc4QQKF58fRMuZNcB9My7lmIO5km6Y+sr0x1x2xGUJqlPB9YV1GH4PiiR4YS8XYwFg21p0x1x2x1VjNDsCKIVQSwCWw622f5Fh45xaWNzys0x1x2xqPuIeYiXHYReyUodf6hoWtfatwxeenjIV71W7JNfuVaxvpjasM0ahDd3QevYcZa3WJLDmMxKVvFmfXdGu0Mp647bmb4FPOP0x1x2xwQfOiFNWfl4d974FAztZyGzGMNxBDFMR4oqaVKCG+U0x1x2xP3bDAVQjW+1Ig9aIifmHzusAchhcVI8vsa9m2SarsZ4mjVzC3hikmvP6+ojddwd99fJP3tupbAL6sI3FDmf8O4ipGD5jMPUDeR+BvtD90lLA12cQXg0Oj+91gv4FR4JRC5oHybnjkFCUnSRSYiB7AGg5YrpxHq6WV7m2JuEWHlqUpNh+OCZEXriY+SMbNOK+LLobcA9KF10nSA3TarRRyMBPpLZquyeGkKyjxThfpIP1RYppeUJPP6Dcogfc00ESESAK0rGZELE6ahHwpB2eA==
+                if (StringUtils.contains(decode, "kissasian.com/")) {
+                    // this is redirect bullshit
+                    final Browser test = br.cloneBrowser();
+                    test.setRequest(null);
+                    test.setFollowRedirects(false);
+                    getPage(test, decode);
+                    // timeout:
+                    // Location: /Message/UnknownError?aspxerrorpath=/Play
+                    // <html><head><title>Object moved</title></head><body>
+                    // <h2>Object moved to <a href="/Message/UnknownError?aspxerrorpath=/Play">here</a>.</h2>
+                    // </body></html>
+                    // 503:
+                    decode = test.getRedirectLocation();
+                }
+                return decode;
+            } catch (InterruptedException e) {
+                throw e;
+            } catch (final Throwable e) {
+                getLogger().log(e);
             }
-            // decode:
-            // http://kissasian.com/Play?key=AaKw5OKkuxsCX+g11bWAThZKjXqDGPQWhjJWnuT5dTGj1fd1cpjSu3IoG+BS9DrWjnEmbfIX6hzW21Wg+0x1x2xKpQsxMSf2Qq+Sj0x1x2xXplONQDkgERfg+oOe+8gdidU13A97bfhucXMOZpuH+qEyMsodmaW+HdcTG3FwUxF3b2QSmHTllXLU3LLVSvxWtiICNbHITdp9r9yaf6r9fVHXTvmGgwvQqC7Kn6A2VYb8FDelQLZfIcXr8xP9Gcjp2rZw9UTCZetxz6tPFXxUAOBTNfMirs90x1x2xNgCaH3CY2Dd0CnmDWTetRbccDcEwQ0gwGnXUrtsjcjnRykZZ53lFlyfsoWk8RmJc4QQKF58fRMuZNcB9My7lmIO5km6Y+sr0x1x2xGUJqlPB9YV1GH4PiiR4YS8XYwFg21p0x1x2x1VjNDsCKIVQSwCWw622f5Fh45xaWNzys0x1x2xqPuIeYiXHYReyUodf6hoWtfatwxeenjIV71W7JNfuVaxvpjasM0ahDd3QevYcZa3WJLDmMxKVvFmfXdGu0Mp647bmb4FPOP0x1x2xwQfOiFNWfl4d974FAztZyGzGMNxBDFMR4oqaVKCG+U0x1x2xP3bDAVQjW+1Ig9aIifmHzusAchhcVI8vsa9m2SarsZ4mjVzC3hikmvP6+ojddwd99fJP3tupbAL6sI3FDmf8O4ipGD5jMPUDeR+BvtD90lLA12cQXg0Oj+91gv4FR4JRC5oHybnjkFCUnSRSYiB7AGg5YrpxHq6WV7m2JuEWHlqUpNh+OCZEXriY+SMbNOK+LLobcA9KF10nSA3TarRRyMBPpLZquyeGkKyjxThfpIP1RYppeUJPP6Dcogfc00ESESAK0rGZELE6ahHwpB2eA==
-            if (StringUtils.contains(decode, "kissasian.com/")) {
-                // this is redirect bullshit
-                final Browser test = br.cloneBrowser();
-                test.setRequest(null);
-                test.setFollowRedirects(false);
-                getPage(test, decode);
-                // timeout:
-                // Location: /Message/UnknownError?aspxerrorpath=/Play
-                // <html><head><title>Object moved</title></head><body>
-                // <h2>Object moved to <a href="/Message/UnknownError?aspxerrorpath=/Play">here</a>.</h2>
-                // </body></html>
-                // 503:
-                decode = test.getRedirectLocation();
-            }
-        } catch (InterruptedException e) {
-            throw e;
-        } catch (final Throwable e) {
-            getLogger().log(e);
         }
-        return decode;
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
     public static boolean isOffline(final Browser br) {
@@ -626,24 +651,26 @@ public class KisAmeCm extends antiDDoSForDecrypt implements RefreshSessionLink {
         /* Find new directlink for original quality */
         final String[][] quals = getQuals(br);
         if (quals != null) {
-            String skey = null;
+            List<String> skeys;
             String iv = null;
             switch (hostType) {
             case KISS_ANIME:
-                skey = getSecretKeyAnime();
+                skeys = getSecretKeyAnime();
                 iv = "a5e8d2e9c1721ae0e84ad660c472c1f3";
                 break;
             case KISS_ASIAN:
-                skey = getSecretKeyAsian();
+                skeys = getSecretKeyAsian();
                 iv = "32b812e9a1321ae0e84af660c4722b3a";
                 break;
             case KISS_CARTOON:
-                skey = getSecretKeyCartoon();
+                skeys = getSecretKeyCartoon();
                 iv = "a5e8d2e9c1721ae0e84ad660c472c1f3";
             case KISS_MANGA:
-                skey = getSecretKeyManga();
+                skeys = getSecretKeyManga();
                 iv = "a5e8d2e9c1721ae0e84ad660c472c1f3";
+                break;
             default:
+                skeys = new ArrayList<String>();
                 break;
             }
             for (final String qual[] : quals) {
@@ -655,7 +682,7 @@ public class KisAmeCm extends antiDDoSForDecrypt implements RefreshSessionLink {
                 case KISS_ANIME:
                 case KISS_ASIAN:
                 case KISS_CARTOON:
-                    directlink = decodeSingleURL(qual[1], skey, iv);
+                    directlink = decodeSingleURL(qual[1], skeys, iv);
                     break;
                 default:
                     break;

@@ -26,12 +26,6 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -45,6 +39,12 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rai.tv" }, urls = { "https?://[A-Za-z0-9\\.]*?(?:rai\\.tv|raiyoyo\\.rai\\.it)/.+day=\\d{4}\\-\\d{2}\\-\\d{2}.*|https?://[A-Za-z0-9\\.]*?(?:rai\\.tv|rai\\.it|raiplay\\.it)/.+\\.html|https?://(?:www\\.)?raiplay\\.it/programmi/[^/]+/[^/]+" })
 public class RaiItDecrypter extends PluginForDecrypt {
@@ -219,7 +219,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
     private void decryptSingleVideo() throws DecrypterException, Exception {
         String dllink = null;
         String title = null;
-        String extension = ".mp4";
+        String extension = "mp4";
         String date = null;
         String date_formatted = null;
         String description = null;
@@ -454,7 +454,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
             final String http_url_part = new Regex(dllink, "https?://[^/]+/i/(podcastcdn/[^/]+/[^/]+/[^/]+/[^/]+_)[0-9,]+\\.mp4(?:\\.csmil)?/master\\.m3u8").getMatch(0);
             if (http_url_part != null) {
                 /*
-                 * 2017-02-09: Convert hls urls to http urls and add higher quality 1800 url!
+                 * 2017-02-09: Convert hls urls to http urls and add higher quality 1800 url! doesn't work for everyone
                  */
                 for (final String[] qualityInfo : bitrates) {
                     bitrate = qualityInfo[0];
@@ -467,19 +467,18 @@ public class RaiItDecrypter extends PluginForDecrypt {
                     }
                     decryptedLinks.add(dl);
                 }
-            } else {
-                this.br.getPage(dllink);
-                final List<HlsContainer> allqualities = HlsContainer.getHlsQualities(this.br);
-                for (final HlsContainer singleHlsQuality : allqualities) {
-                    final DownloadLink dl = this.createDownloadlink(singleHlsQuality.getDownloadurl());
-                    final String filename = title + "_" + singleHlsQuality.getStandardFilename();
-                    dl.setFinalFileName(filename);
-                    dl._setFilePackage(fp);
-                    if (description != null) {
-                        dl.setComment(description);
-                    }
-                    decryptedLinks.add(dl);
+            }
+            this.br.getPage(dllink);
+            final List<HlsContainer> allqualities = HlsContainer.getHlsQualities(this.br);
+            for (final HlsContainer singleHlsQuality : allqualities) {
+                final DownloadLink dl = this.createDownloadlink(singleHlsQuality.getDownloadurl());
+                final String filename = title + "_" + singleHlsQuality.getStandardFilename();
+                dl.setFinalFileName(filename);
+                dl._setFilePackage(fp);
+                if (description != null) {
+                    dl.setComment(description);
                 }
+                decryptedLinks.add(dl);
             }
         } else {
             /* Single http url --> We can sometimes grab multiple qualities */
