@@ -4,6 +4,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
+
 import jd.PluginWrapper;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -15,13 +21,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetServer;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "iload-usenet.com" }, urls = { "" }) public class ILoadUsenet extends UseNet {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "iload-usenet.com" }, urls = { "" })
+public class ILoadUsenet extends UseNet {
     public ILoadUsenet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.iload-usenet.com/prices");
@@ -63,7 +64,7 @@ import org.jdownloader.plugins.components.usenet.UsenetServer;
             if (br.getCookie(getHost(), "JSESSIONID") == null || (br.getCookie(getHost(), "SPRING_SECURITY_REMEMBER_ME_COOKIE") == null && br.getCookie(getHost(), "remember-me") == null)) {
                 account.clearCookies("");
                 br.setCookie(getHost(), "language", "en");
-                br.getPage("https://www.iload-usenet.com/home?_lang=en_US");
+                br.getPage("https://www.iload-usenet.com/login");
                 login = br.getFormbyActionRegex(".*dologin.*");
                 login.put("j_username", Encoding.urlEncode(account.getUser()));
                 login.put("j_password", Encoding.urlEncode(account.getPass()));
@@ -93,7 +94,7 @@ import org.jdownloader.plugins.components.usenet.UsenetServer;
                 regTimeStamp = -1;
             }
             final String packageType = br.getRegex("(?-s)(<strong>(.*?)</strong> of your <strong>.*?</strong>.+)").getMatch(0);
-            if (StringUtils.contains(packageType, "trial volume")) {
+            if (StringUtils.contains(packageType, "trial volume") || br.containsHTML("</strong>\\s*?trial volume consumed")) {
                 // free trial
                 ai.setStatus("Trial");
                 ai.setUnlimitedTraffic();

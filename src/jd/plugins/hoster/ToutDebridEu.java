@@ -45,7 +45,7 @@ import jd.plugins.components.MultiHosterManagement;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tout-debrid.eu" }, urls = { "" })
 public class ToutDebridEu extends PluginForHost {
-    private static final String                            PROTOCOL                  = "http://";
+    private static final String                            PROTOCOL                  = "https://";
     private static final String                            NICE_HOST                 = "tout-debrid.eu";
     private static final String                            NICE_HOSTproperty         = NICE_HOST.replaceAll("(\\.|\\-)", "");
     /* Connection limits */
@@ -69,7 +69,8 @@ public class ToutDebridEu extends PluginForHost {
 
     private Browser prepBR(final Browser br) {
         br.setCookiesExclusive(true);
-        br.getHeaders().put("User-Agent", "JDownloader");
+        /* 2019-06-13: They've blocked this User-Agent for unknown reasons. Accessing their login-page will return 403 when it is used! */
+        // br.getHeaders().put("User-Agent", "JDownloader");
         br.setFollowRedirects(true);
         return br;
     }
@@ -264,7 +265,7 @@ public class ToutDebridEu extends PluginForHost {
                  */
                 br.getPage(PROTOCOL + this.getHost() + "/debrideur");
                 if (isLoggedinHTML()) {
-                    logger.info("Login via cached cookies successful:" + account.getType() + "|CookieAge:" + cookieAge);
+                    logger.info("Login via cached cookies successful:" + account.getType() + " | CookieAge:" + cookieAge);
                     cookies = this.br.getCookies(this.getHost());
                     final Cookie owner = cookies.get("owner");
                     if (owner != null) {
@@ -273,7 +274,7 @@ public class ToutDebridEu extends PluginForHost {
                     account.saveCookies(cookies, "");
                     return;
                 } else {
-                    logger.info("Login via cached cookies failed:" + account.getType() + "|CookieAge:" + cookieAge);
+                    logger.info("Login via cached cookies failed:" + account.getType() + " | CookieAge:" + cookieAge);
                 }
                 /* Clear cookies to prevent unknown errors as we'll perform a full login below now. */
                 this.br = prepBR(new Browser());

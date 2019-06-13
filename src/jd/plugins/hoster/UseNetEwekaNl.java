@@ -4,21 +4,22 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
+
 import jd.PluginWrapper;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetServer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eweka.nl" }, urls = { "" })
 public class UseNetEwekaNl extends UseNet {
@@ -65,7 +66,7 @@ public class UseNetEwekaNl extends UseNet {
                 form.put("u", Encoding.urlEncode(account.getUser()));
                 form.put("p", Encoding.urlEncode(account.getPass()));
                 br.submitForm(form);
-                if (br.getCookie(getHost(), "PHPSESSID") == null || br.containsHTML("\\$\\('#login-form'\\);") || !"1".equals(br.toString())) {
+                if (br.getCookie(getHost(), "PHPSESSID", Cookies.NOTDELETEDPATTERN) == null || br.containsHTML("\\$\\('#login-form'\\);") || !"1".equals(br.toString())) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             }
@@ -89,12 +90,18 @@ public class UseNetEwekaNl extends UseNet {
             } else {
                 account.setProperty(USENET_USERNAME, userName);
             }
-            final String validUntil = br.getRegex("<td><b>Valid until</b></td>.*?<td.*?>\\s*?(\\d+-\\d+-\\d+\\s+\\d+:\\d+)").getMatch(0);
-            if (validUntil != null) {
+            final String validUntil = br.getRegex("<td><b>Valid until</b></td>.*?<td.*?>\\s*?([^<>\"\\' ]+)").getMatch(0);
+            if (validUntil != null && validUntil.matches("\\d+-\\d+-\\d+\\s+\\d+:\\d+")) {
                 final long date = TimeFormatter.getMilliSeconds(validUntil, "dd'-'MM'-'yyyy' 'HH:mm", null);
                 if (date > 0) {
                     ai.setValidUntil(date);
                 }
+                account.setType(AccountType.PREMIUM);
+            } else if (validUntil != null && validUntil.equalsIgnoreCase("Inactive")) {
+                account.setType(AccountType.FREE);
+                ai.setTrafficLeft(0);
+            } else {
+                account.setType(AccountType.UNKNOWN);
             }
         } catch (final PluginException e) {
             if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {

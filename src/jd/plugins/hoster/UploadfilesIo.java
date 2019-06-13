@@ -30,6 +30,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -72,13 +73,14 @@ public class UploadfilesIo extends antiDDoSForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>Uploadfiles\\.io \\- ([^<>\"]+)</title>").getMatch(0);
+        String filename = br.getRegex("<title>Uploadfiles\\.io \\- Download ([^<>\"]*?)(?: for free)?</title>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("property=\"og:title\" content=\"Uploadfiles\\.io \\- ([^<>\"]+)\"").getMatch(0);
+            filename = br.getRegex("property=\"og:title\" content=\"Uploadfiles\\.io \\- ([^<>\"]*?)(?: for free)?\"").getMatch(0);
         }
         String filesize = br.getRegex("Size: (\\d+[^<>\"]+)").getMatch(0);
         if (StringUtils.isEmpty(filename)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /* Fallback */
+            filename = this.getLinkID(link);
         }
         filename = Encoding.htmlDecode(filename).trim();
         link.setName(filename);
@@ -97,6 +99,9 @@ public class UploadfilesIo extends antiDDoSForHost {
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
+            if (br.containsHTML(">Premium Access Only")) {
+                throw new AccountRequiredException();
+            }
             dllink = "https://down.uploadfiles.io/get/" + this.getLinkID(downloadLink);
             if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
