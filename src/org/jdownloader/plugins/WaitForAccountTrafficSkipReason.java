@@ -18,7 +18,16 @@ public class WaitForAccountTrafficSkipReason implements ConditionalSkipReason, I
     private final static SIZEUNIT MAXSIZEUNIT = JsonConfig.create(GraphicalUserInterfaceSettings.class).getMaxSizeUnit();
     private final Account         account;
     private final Icon            icon;
-    private final long            trafficRequired;
+
+    public Icon getIcon() {
+        return icon;
+    }
+
+    private final long trafficRequired;
+
+    public long getTrafficRequired() {
+        return trafficRequired;
+    }
 
     public WaitForAccountTrafficSkipReason(Account account, long trafficRequired) {
         this.account = account;
@@ -36,13 +45,13 @@ public class WaitForAccountTrafficSkipReason implements ConditionalSkipReason, I
     }
 
     private final boolean hasEnoughTraffic() {
-        final AccountInfo ai = account.getAccountInfo();
+        final AccountInfo ai = getAccount().getAccountInfo();
         if (ai != null) {
             if (ai.isSpecialTraffic() || ai.isUnlimitedTraffic() || !ai.isTrafficRefill()) {
                 return true;
             } else {
                 final long trafficLeft = ai.getTrafficLeft();
-                return trafficLeft > 0 && trafficLeft >= trafficRequired;
+                return trafficLeft > 0 && trafficLeft >= getTrafficRequired();
             }
         } else {
             return true;
@@ -56,21 +65,30 @@ public class WaitForAccountTrafficSkipReason implements ConditionalSkipReason, I
 
     @Override
     public boolean isConditionReached() {
-        return account.isEnabled() == false || account.isValid() == false || account.getAccountController() == null || hasEnoughTraffic();
+        return getAccount().isEnabled() == false || getAccount().isValid() == false || getAccount().getAccountController() == null || hasEnoughTraffic();
     }
 
     @Override
     public String getMessage(Object requestor, AbstractNode node) {
-        if (trafficRequired < 0) {
-            return _JDT.T.gui_download_waittime_notenoughtraffic2();
+        if (requestor instanceof CustomConditionalSkipReasonMessageIcon) {
+            return ((CustomConditionalSkipReasonMessageIcon) requestor).getMessage(this, node);
         } else {
-            return _JDT.T.gui_download_waittime_notenoughtraffic(SIZEUNIT.formatValue(MAXSIZEUNIT, trafficRequired));
+            final long trafficRequired = getTrafficRequired();
+            if (trafficRequired < 0) {
+                return _JDT.T.gui_download_waittime_notenoughtraffic2();
+            } else {
+                return _JDT.T.gui_download_waittime_notenoughtraffic(SIZEUNIT.formatValue(MAXSIZEUNIT, trafficRequired));
+            }
         }
     }
 
     @Override
     public Icon getIcon(Object requestor, AbstractNode node) {
-        return icon;
+        if (requestor instanceof CustomConditionalSkipReasonMessageIcon) {
+            return ((CustomConditionalSkipReasonMessageIcon) requestor).getIcon(this, node);
+        } else {
+            return getIcon();
+        }
     }
 
     @Override

@@ -13,7 +13,6 @@ import org.jdownloader.api.downloads.v2.DownloadsAPIV2Impl;
 import org.jdownloader.gui.views.downloads.columns.TaskColumn;
 
 public class WaitWhileWaitingSkipReasonIsSet implements ConditionalSkipReason, DownloadLinkCondition, ValidatableConditionalSkipReason {
-
     private final WaitingSkipReason reason;
     private final DownloadLink      source;
     private boolean                 valid = true;
@@ -30,28 +29,36 @@ public class WaitWhileWaitingSkipReasonIsSet implements ConditionalSkipReason, D
 
     @Override
     public String getMessage(Object requestor, AbstractNode node) {
-        if (source == node) {
-            return reason.getMessage(requestor, node);
+        if (requestor instanceof CustomConditionalSkipReasonMessageIcon) {
+            return ((CustomConditionalSkipReasonMessageIcon) requestor).getMessage(this, node);
+        } else if (getDownloadLink() == node) {
+            return getConditionalSkipReason().getMessage(requestor, node);
+        } else if (requestor == this) {
+            return getConditionalSkipReason().getMessage(requestor, node);
         } else if (requestor instanceof TaskColumn || requestor instanceof FilePackageView || requestor instanceof HistoryEntry) {
-            return reason.getMessage(requestor, node);
+            return getConditionalSkipReason().getMessage(requestor, node);
         } else if (requestor instanceof DownloadControllerEventPublisher) {
-            return reason.getMessage(requestor, node);
+            return getConditionalSkipReason().getMessage(requestor, node);
         } else if (requestor instanceof DownloadsAPIV2Impl) {
-            return reason.getMessage(requestor, node);
+            return getConditionalSkipReason().getMessage(requestor, node);
         } else if (requestor instanceof ChannelCollector) {
-            return reason.getMessage(requestor, node);
+            return getConditionalSkipReason().getMessage(requestor, node);
+        } else {
+            return null;
         }
-        return null;
     }
 
     @Override
     public Icon getIcon(Object requestor, AbstractNode node) {
-        if (source == node) {
-            return reason.getIcon(requestor, node);
+        if (requestor instanceof CustomConditionalSkipReasonMessageIcon) {
+            return ((CustomConditionalSkipReasonMessageIcon) requestor).getIcon(this, node);
+        } else if (getDownloadLink() == node) {
+            return getConditionalSkipReason().getIcon(requestor, node);
         } else if (requestor instanceof TaskColumn || requestor instanceof FilePackageView || requestor instanceof HistoryEntry) {
-            return reason.getIcon(requestor, node);
+            return getConditionalSkipReason().getIcon(requestor, node);
+        } else {
+            return null;
         }
-        return null;
     }
 
     @Override
@@ -59,7 +66,7 @@ public class WaitWhileWaitingSkipReasonIsSet implements ConditionalSkipReason, D
     }
 
     public WaitingSkipReason.CAUSE getCause() {
-        return reason.getCause();
+        return getConditionalSkipReason().getCause();
     }
 
     @Override
@@ -67,7 +74,7 @@ public class WaitWhileWaitingSkipReasonIsSet implements ConditionalSkipReason, D
         return source;
     }
 
-    public ConditionalSkipReason getConditionalSkipReason() {
+    public WaitingSkipReason getConditionalSkipReason() {
         return reason;
     }
 
@@ -75,13 +82,13 @@ public class WaitWhileWaitingSkipReasonIsSet implements ConditionalSkipReason, D
     public boolean isValid() {
         if (valid == false) {
             return false;
+        } else {
+            return getConditionalSkipReason().isValid();
         }
-        return reason.isValid();
     }
 
     @Override
     public void invalidate() {
         valid = false;
     }
-
 }

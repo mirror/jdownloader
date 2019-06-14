@@ -38,7 +38,6 @@ import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.settings.UrlDisplayType;
 
 public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
-
     private final PackageControllerUtils<FilePackage, DownloadLink> packageControllerUtils;
 
     public DownloadsAPIV2Impl() {
@@ -48,19 +47,14 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
 
     @Override
     public List<FilePackageAPIStorableV2> queryPackages(PackageQueryStorable queryParams) throws BadParameterException {
-
         DownloadController dlc = DownloadController.getInstance();
-
         // filter out packages, if specific packageUUIDs given, else return all packages
         List<FilePackage> packages = null;
-
         if (queryParams.getPackageUUIDs() != null && queryParams.getPackageUUIDs().length > 0) {
             packages = packageControllerUtils.getPackages(queryParams.getPackageUUIDs());
-
         } else {
             packages = dlc.getPackagesCopy();
         }
-
         List<FilePackageAPIStorableV2> ret = new ArrayList<FilePackageAPIStorableV2>(packages.size());
         if (packages.size() == 0) {
             return ret;
@@ -76,14 +70,11 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
         if (maxResults < 0) {
             maxResults = packages.size();
         }
-
         for (int i = startWith; i < Math.min(startWith + maxResults, packages.size()); i++) {
             FilePackage fp = packages.get(i);
             boolean readL = fp.getModifyLock().readLock();
             try {
-
                 FilePackageAPIStorableV2 fps = toStorable(queryParams, fp, this);
-
                 ret.add(fps);
             } finally {
                 fp.getModifyLock().readUnlock(readL);
@@ -95,18 +86,15 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
     public static FilePackageAPIStorableV2 setStatus(FilePackageAPIStorableV2 fps, FilePackageView fpView) {
         PluginStateCollection ps = fpView.getPluginStates();
         if (ps.size() > 0) {
-
             fps.setStatusIconKey(RemoteAPIController.getInstance().getContentAPI().getIconKey(ps.getMergedIcon()));
             fps.setStatus(ps.isMultiline() ? "" : ps.getText());
             return fps;
         }
         if (fpView.isFinished()) {
-
             fps.setStatusIconKey(IconKey.ICON_TRUE);
             fps.setStatus(_GUI.T.TaskColumn_getStringValue_finished_());
             return fps;
         } else if (fpView.getETA() != -1) {
-
             fps.setStatus(_GUI.T.TaskColumn_getStringValue_running_());
             return fps;
         }
@@ -116,9 +104,7 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
     @Override
     public List<DownloadLinkAPIStorableV2> queryLinks(LinkQueryStorable queryParams) {
         List<DownloadLinkAPIStorableV2> result = new ArrayList<DownloadLinkAPIStorableV2>();
-
         DownloadController dlc = DownloadController.getInstance();
-
         final List<FilePackage> packages;
         if (queryParams.getPackageUUIDs() != null && queryParams.getPackageUUIDs().length > 0) {
             packages = packageControllerUtils.getPackages(queryParams.getPackageUUIDs());
@@ -154,14 +140,11 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
                 }
             }
         }
-
         if (links.isEmpty()) {
             return result;
         }
-
         int startWith = queryParams.getStartAt();
         int maxResults = queryParams.getMaxResults();
-
         if (startWith > links.size() - 1) {
             return result;
         }
@@ -171,7 +154,6 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
         if (maxResults < 0) {
             maxResults = links.size();
         }
-
         int until = Math.min(startWith + maxResults, links.size());
         for (int i = startWith; i < until; i++) {
             final DownloadLink dl = links.get(i);
@@ -189,10 +171,8 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
         if (queryParams.isPriority()) {
             fps.setPriority(org.jdownloader.myjdownloader.client.bindings.PriorityStorable.get(fp.getPriorityEnum().name()));
         }
-
         if (queryParams.isSaveTo()) {
             fps.setSaveTo(fpView.getDownloadDirectory());
-
         }
         if (queryParams.isBytesTotal()) {
             fps.setBytesTotal(fpView.getSize());
@@ -313,7 +293,6 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
             dls.setStatus(label);
             return dls;
         }
-
         ConditionalSkipReason conditionalSkipReason = link.getConditionalSkipReason();
         if (conditionalSkipReason != null && !conditionalSkipReason.isConditionReached()) {
             icon = conditionalSkipReason.getIcon(caller, null);
@@ -333,7 +312,6 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
         final FinalLinkState finalLinkState = link.getFinalLinkState();
         if (finalLinkState != null) {
             if (FinalLinkState.CheckFailed(finalLinkState)) {
-
                 label = finalLinkState.getExplanation(caller, link);
                 dls.setStatusIconKey(IconKey.ICON_FALSE);
                 dls.setStatus(label);
@@ -347,20 +325,16 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
                 case ERROR_CRC:
                 case ERROR_NOT_ENOUGH_SPACE:
                 case ERRROR_FILE_NOT_FOUND:
-
                     label = extractionStatus.getExplanation();
                     dls.setStatusIconKey(IconKey.ICON_EXTRACT_ERROR);
                     dls.setStatus(label);
                     return dls;
                 case SUCCESSFUL:
-
                     label = extractionStatus.getExplanation();
                     dls.setStatusIconKey(IconKey.ICON_EXTRACT_OK);
-
                     dls.setStatus(label);
                     return dls;
                 case RUNNING:
-
                     label = extractionStatus.getExplanation();
                     dls.setStatusIconKey(IconKey.ICON_EXTRACT);
                     dls.setStatus(label);
@@ -377,13 +351,11 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
             return dls;
         }
         if (link.getDownloadLinkController() != null) {
-
             dls.setStatusIconKey(IconKey.ICON_RUN);
             dls.setStatus(_GUI.T.TaskColumn_fillColumnHelper_starting());
             return dls;
         }
         return dls;
-
     }
 
     @Override

@@ -15,6 +15,10 @@ public class WaitForAccountSkipReason implements ConditionalSkipReason, Ignorabl
     private final Account account;
     private final Icon    icon;
 
+    public Icon getIcon() {
+        return icon;
+    }
+
     public WaitForAccountSkipReason(Account account) {
         this.account = account;
         icon = new AbstractIcon(IconKey.ICON_WAIT, 16);
@@ -26,7 +30,7 @@ public class WaitForAccountSkipReason implements ConditionalSkipReason, Ignorabl
 
     @Override
     public long getTimeOutTimeStamp() {
-        return account.getTmpDisabledTimeout();
+        return getAccount().getTmpDisabledTimeout();
     }
 
     @Override
@@ -46,22 +50,30 @@ public class WaitForAccountSkipReason implements ConditionalSkipReason, Ignorabl
 
     @Override
     public boolean isConditionReached() {
-        return account.isEnabled() == false || account.isValid() == false || account.getAccountController() == null || account.isTempDisabled() == false || getTimeOutLeft() == 0;
+        return getAccount().isEnabled() == false || getAccount().isValid() == false || getAccount().getAccountController() == null || getAccount().isTempDisabled() == false || getTimeOutLeft() == 0;
     }
 
     @Override
     public String getMessage(Object requestor, AbstractNode node) {
-        final long left = getTimeOutLeft();
-        if (left > 0) {
-            return _JDT.T.gui_download_waittime_status2(Formatter.formatSeconds(left / 1000));
+        if (requestor instanceof CustomConditionalSkipReasonMessageIcon) {
+            return ((CustomConditionalSkipReasonMessageIcon) requestor).getMessage(this, node);
         } else {
-            return _JDT.T.gui_download_waittime_status2("");
+            final long left = getTimeOutLeft();
+            if (left > 0) {
+                return _JDT.T.gui_download_waittime_status2(Formatter.formatSeconds(left / 1000));
+            } else {
+                return _JDT.T.gui_download_waittime_status2("");
+            }
         }
     }
 
     @Override
     public Icon getIcon(Object requestor, AbstractNode node) {
-        return icon;
+        if (requestor instanceof CustomConditionalSkipReasonMessageIcon) {
+            return ((CustomConditionalSkipReasonMessageIcon) requestor).getIcon(this, node);
+        } else {
+            return getIcon();
+        }
     }
 
     @Override
