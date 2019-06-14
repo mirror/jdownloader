@@ -58,7 +58,8 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
  */
 @HostPlugin(revision = "$Revision: 1 $", interfaceVersion = 1, names = { "pluralsight.com" }, urls = { "https?://app\\.pluralsight\\.com\\/player\\??.+" })
 public class PluralsightCom extends PluginForHost {
-    private static WeakHashMap<Account, List<Long>> map = new WeakHashMap<Account, List<Long>>();
+    private static WeakHashMap<Account, List<Long>> map100PerHour   = new WeakHashMap<Account, List<Long>>();
+    private static WeakHashMap<Account, List<Long>> map200Per4Hours = new WeakHashMap<Account, List<Long>>();
 
     public PluralsightCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -192,6 +193,12 @@ public class PluralsightCom extends PluginForHost {
     }
 
     public boolean antiAccountBlockProtection(final Account account) {
+        boolean ret = antiAccountBlockProtection(account, map100PerHour, 100, 60 * 60 * 1000l);
+        ret = ret && antiAccountBlockProtection(account, map200Per4Hours, 200, 4 * 60 * 60 * 1000l);
+        return ret;
+    }
+
+    public boolean antiAccountBlockProtection(final Account account, final Map<Account, List<Long>> map, final int maxWindow, final long window) {
         synchronized (map) {
             List<Long> list = map.get(account);
             if (list == null) {
@@ -199,8 +206,6 @@ public class PluralsightCom extends PluginForHost {
                 map.put(account, list);
             }
             final long now = System.currentTimeMillis();
-            final long window = 60 * 60 * 1000l;
-            final int maxWindow = 150;
             list.add(now);
             if (list.size() > maxWindow) {
                 final Iterator<Long> it = list.iterator();

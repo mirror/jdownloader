@@ -63,7 +63,6 @@ public class Captcha9kwSolverClick extends AbstractCaptcha9kwSolver<ClickedPoint
             setdebug(solverJob, "Interrupted: " + e);
             counterInterrupted.incrementAndGet();
             solverJob.getLogger().log(e);
-        } finally {
         }
     }
 

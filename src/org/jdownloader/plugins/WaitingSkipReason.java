@@ -45,7 +45,12 @@ public class WaitingSkipReason implements ConditionalSkipReason, TimeOutConditio
     private final long   timeOutTimeStamp;
     private final String message;
     private final Icon   icon;
-    private boolean      valid = true;
+
+    public Icon getIcon() {
+        return icon;
+    }
+
+    private boolean valid = true;
 
     public long getTimeOutTimeStamp() {
         return timeOutTimeStamp;
@@ -77,7 +82,7 @@ public class WaitingSkipReason implements ConditionalSkipReason, TimeOutConditio
 
     public String getMessage() {
         if (message == null) {
-            if (cause == CAUSE.RETRY_IN) {
+            if (getCause() == CAUSE.RETRY_IN) {
                 long left = getTimeOutLeft();
                 if (left > 0) {
                     return _JDT.T.gui_download_waittime_status2(Formatter.formatSeconds(left / 1000));
@@ -85,7 +90,7 @@ public class WaitingSkipReason implements ConditionalSkipReason, TimeOutConditio
                     return _JDT.T.gui_download_waittime_status2("");
                 }
             }
-            return cause.getExplanation();
+            return getCause().getExplanation();
         }
         return message;
     }
@@ -111,31 +116,31 @@ public class WaitingSkipReason implements ConditionalSkipReason, TimeOutConditio
 
     @Override
     public String getMessage(Object requestor, AbstractNode node) {
-        long left = getTimeOutLeft();
-        if (left > 0) {
-            if (requestor instanceof HistoryEntry) {
-                return getMessage();
+        if (requestor instanceof CustomConditionalSkipReasonMessageIcon) {
+            return ((CustomConditionalSkipReasonMessageIcon) requestor).getMessage(this, node);
+        } else {
+            final long left = getTimeOutLeft();
+            if (left > 0) {
+                if (requestor == this) {
+                    return getMessage();
+                } else if (requestor instanceof HistoryEntry) {
+                    return getMessage();
+                } else if (requestor instanceof TaskColumn) {
+                    return getMessage();
+                } else if (requestor instanceof DownloadControllerEventPublisher) {
+                    return getMessage();
+                } else if (requestor instanceof ChannelCollector) {
+                    return getMessage();
+                } else if (requestor instanceof DownloadsAPIV2Impl) {
+                    return getMessage();
+                } else if (requestor instanceof FilePackageView) {
+                    return getMessage();
+                } else if (requestor instanceof ETAColumn) {
+                    return Formatter.formatSeconds(left / 1000);
+                }
             }
-            if (requestor instanceof TaskColumn) {
-                return getMessage();
-            }
-            if (requestor instanceof DownloadControllerEventPublisher) {
-                return getMessage();
-            }
-            if (requestor instanceof ChannelCollector) {
-                return getMessage();
-            }
-            if (requestor instanceof DownloadsAPIV2Impl) {
-                return getMessage();
-            }
-            if (requestor instanceof FilePackageView) {
-                return getMessage();
-            }
-            if (requestor instanceof ETAColumn) {
-                return Formatter.formatSeconds(left / 1000);
-            }
+            return null;
         }
-        return null;
     }
 
     @Override

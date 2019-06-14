@@ -6,8 +6,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 
+import javax.swing.Icon;
+
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.PackageController;
 import jd.http.Browser;
 import jd.plugins.DownloadLink;
@@ -29,6 +32,7 @@ import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkA
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.plugins.ConditionalSkipReason;
+import org.jdownloader.plugins.CustomConditionalSkipReasonMessageIcon;
 import org.jdownloader.plugins.DownloadPluginProgress;
 import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.SkipReason;
@@ -88,43 +92,49 @@ public class DownloadLinkSandBox {
     public String getContentURL() {
         if (downloadLink != null) {
             return LinkTreeUtils.getUrlByType(UrlDisplayType.CONTENT, downloadLink);
+        } else {
+            return null;
         }
-        return null;
     }
 
     public String getContainerURL() {
         if (downloadLink != null) {
             return LinkTreeUtils.getUrlByType(UrlDisplayType.CONTAINER, downloadLink);
+        } else {
+            return null;
         }
-        return null;
     }
 
     public String getOriginURL() {
         if (downloadLink != null) {
             return LinkTreeUtils.getUrlByType(UrlDisplayType.ORIGIN, downloadLink);
+        } else {
+            return null;
         }
-        return null;
     }
 
     public String getReferrerURL() {
         if (downloadLink != null) {
             return LinkTreeUtils.getUrlByType(UrlDisplayType.REFERRER, downloadLink);
+        } else {
+            return null;
         }
-        return null;
     }
 
     public long getAddedDate() {
         if (downloadLink != null) {
             return downloadLink.getCreated();
+        } else {
+            return -1;
         }
-        return -1;
     }
 
     public long getFinishedDate() {
         if (downloadLink != null) {
             return downloadLink.getFinishedDate();
+        } else {
+            return -1;
         }
-        return -1;
     }
 
     public void abort() {
@@ -184,8 +194,9 @@ public class DownloadLinkSandBox {
     public String getUUID() {
         if (downloadLink != null) {
             return downloadLink.getUniqueID().toString();
+        } else {
+            return null;
         }
-        return null;
     }
 
     public boolean remove() {
@@ -318,8 +329,9 @@ public class DownloadLinkSandBox {
     public String getComment() {
         if (downloadLink != null) {
             return downloadLink.getComment();
+        } else {
+            return null;
         }
-        return null;
     }
 
     public void setComment(String comment) {
@@ -356,29 +368,33 @@ public class DownloadLinkSandBox {
     public String getUrl() {
         if (downloadLink != null) {
             return downloadLink.getView().getDisplayUrl();
+        } else {
+            return null;
         }
-        return null;
     }
 
     public long getBytesLoaded() {
         if (downloadLink != null) {
             return downloadLink.getView().getBytesLoaded();
+        } else {
+            return -1;
         }
-        return -1;
     }
 
     public long getBytesTotal() {
         if (downloadLink != null) {
             return downloadLink.getView().getBytesTotal();
+        } else {
+            return -1;
         }
-        return -1;
     }
 
     public String getName() {
         if (downloadLink == null) {
             return "Test.txt";
+        } else {
+            return downloadLink.getName();
         }
-        return downloadLink.getName();
     }
 
     public long getSpeed() {
@@ -392,7 +408,17 @@ public class DownloadLinkSandBox {
     public String getStatus() {
         if (downloadLink != null) {
             final DownloadLinkAPIStorableV2 ret = new DownloadLinkAPIStorableV2(downloadLink);
-            DownloadsAPIV2Impl.setStatus(ret, downloadLink, this);
+            DownloadsAPIV2Impl.setStatus(ret, downloadLink, new CustomConditionalSkipReasonMessageIcon() {
+                @Override
+                public String getMessage(ConditionalSkipReason conditionalSkipReason, AbstractNode node) {
+                    return conditionalSkipReason.getMessage(conditionalSkipReason, node);
+                }
+
+                @Override
+                public Icon getIcon(ConditionalSkipReason conditionalSkipReason, AbstractNode node) {
+                    return conditionalSkipReason.getIcon(conditionalSkipReason, node);
+                }
+            });
             return ret.getStatus();
         } else {
             return null;
@@ -436,6 +462,16 @@ public class DownloadLinkSandBox {
             final SkipReason skipped = downloadLink.getSkipReason();
             if (skipped != null) {
                 return skipped.name();
+            }
+        }
+        return null;
+    }
+
+    public ConditionalSkipReasonSandbox getConditionalSkipReason() {
+        if (downloadLink != null) {
+            final ConditionalSkipReason condition = downloadLink.getConditionalSkipReason();
+            if (condition != null) {
+                return new ConditionalSkipReasonSandbox(downloadLink, condition);
             }
         }
         return null;
@@ -538,8 +574,9 @@ public class DownloadLinkSandBox {
     public String getExtractionStatus() {
         if (downloadLink == null) {
             return null;
+        } else {
+            final ExtractionStatus ret = downloadLink.getExtractionStatus();
+            return ret == null ? null : ret.name();
         }
-        final ExtractionStatus ret = downloadLink.getExtractionStatus();
-        return ret == null ? null : ret.name();
     }
 }

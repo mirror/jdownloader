@@ -173,98 +173,74 @@ public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> 
     @Override
     public boolean setInvalid(final AbstractResponse<?> response) {
         if (config.isfeedback() && response instanceof Captcha9KWResponseInterface) {
-            threadPool.execute(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        final String captchaID = ((Captcha9KWResponseInterface) response).getCaptcha9kwID();
-                        final Browser br = new Browser();
-                        br.setAllowedResponseCodes(new int[] { 500 });
-                        for (int i = 0; i <= 3; i++) {
-                            final String ret = br.getPage(getAPIROOT() + "index.cgi?action=usercaptchacorrectback&source=jd2&correct=2&id=" + captchaID + "&apikey=" + Encoding.urlEncode(config.getApiKey()));
-                            LoggerFactory.getDefaultLogger().info("\r\n" + br.getRequest());
-                            if (ret.startsWith("OK")) {
-                                setdebug_short("CaptchaID " + captchaID + ": NotOK (Feedback 2)");
-                                counterNotOK.incrementAndGet();
-                                break;
-                            } else {
-                                Thread.sleep(2000);
-                            }
-                        }
-                    } catch (final Throwable e) {
-                        LogController.CL(true).log(e);
-                    }
-                }
-            });
+            final String captchaID = ((Captcha9KWResponseInterface) response).getCaptcha9kwID();
+            setFeedback(ResponseFeedback.INVALID, captchaID);
             return true;
+        } else {
+            return false;
         }
-        return false;
     }
 
     public synchronized void setlong_debuglog(String long_debuglog) {
         this.long_debuglog += long_debuglog + "\n";
     }
 
+    protected static enum ResponseFeedback {
+        UNUSED(3),
+        VALID(1),
+        INVALID(2);
+        protected final int code;
+
+        private ResponseFeedback(int code) {
+            this.code = code;
+        }
+    }
+
     @Override
     public boolean setUnused(final AbstractResponse<?> response) {
         if (config.isfeedback() && response instanceof Captcha9KWResponseInterface) {
-            threadPool.execute(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        final String captchaID = ((Captcha9KWResponseInterface) response).getCaptcha9kwID();
-                        final Browser br = new Browser();
-                        br.setAllowedResponseCodes(new int[] { 500 });
-                        for (int i = 0; i <= 3; i++) {
-                            final String ret = br.getPage(getAPIROOT() + "index.cgi?action=usercaptchacorrectback&source=jd2&correct=3&id=" + captchaID + "&apikey=" + Encoding.urlEncode(config.getApiKey()));
-                            LoggerFactory.getDefaultLogger().info("\r\n" + br.getRequest());
-                            if (ret.startsWith("OK")) {
-                                setdebug_short("CaptchaID " + captchaID + ": Unused (Feedback 3)");
-                                counterUnused.incrementAndGet();
-                                break;
-                            } else {
-                                Thread.sleep(2000);
-                            }
-                        }
-                    } catch (final Throwable e) {
-                        LogController.CL(true).log(e);
-                    }
-                }
-            });
+            final String captchaID = ((Captcha9KWResponseInterface) response).getCaptcha9kwID();
+            setFeedback(ResponseFeedback.UNUSED, captchaID);
             return true;
+        } else {
+            return false;
         }
-        return false;
+    }
+
+    protected void setFeedback(final ResponseFeedback feedback, final String captchaID) {
+        threadPool.execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    final Browser br = new Browser();
+                    br.setAllowedResponseCodes(new int[] { 500 });
+                    for (int i = 0; i <= 3; i++) {
+                        final String ret = br.getPage(getAPIROOT() + "index.cgi?action=usercaptchacorrectback&source=jd2&correct=" + feedback.code + "&id=" + captchaID + "&apikey=" + Encoding.urlEncode(config.getApiKey()));
+                        LoggerFactory.getDefaultLogger().info("\r\n" + br.getRequest());
+                        if (ret.startsWith("OK")) {
+                            setdebug_short("CaptchaID " + captchaID + ":" + feedback.name());
+                            counterUnused.incrementAndGet();
+                            break;
+                        } else {
+                            Thread.sleep(2000);
+                        }
+                    }
+                } catch (final Throwable e) {
+                    LogController.CL(true).log(e);
+                }
+            }
+        });
     }
 
     @Override
     public boolean setValid(final AbstractResponse<?> response) {
         if (config.isfeedback() && response instanceof Captcha9KWResponseInterface) {
-            threadPool.execute(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        final String captchaID = ((Captcha9KWResponseInterface) response).getCaptcha9kwID();
-                        final Browser br = new Browser();
-                        br.setAllowedResponseCodes(new int[] { 500 });
-                        for (int i = 0; i <= 3; i++) {
-                            final String ret = br.getPage(getAPIROOT() + "index.cgi?action=usercaptchacorrectback&source=jd2&correct=1&id=" + captchaID + "&apikey=" + Encoding.urlEncode(config.getApiKey()));
-                            LoggerFactory.getDefaultLogger().info("\r\n" + br.getRequest());
-                            if (ret.startsWith("OK")) {
-                                setdebug_short("CaptchaID " + captchaID + ": OK (Feedback 1)");
-                                counterOK.incrementAndGet();
-                                break;
-                            } else {
-                                Thread.sleep(2000);
-                            }
-                        }
-                    } catch (final Throwable e) {
-                        LogController.CL(true).log(e);
-                    }
-                }
-            });
+            final String captchaID = ((Captcha9KWResponseInterface) response).getCaptcha9kwID();
+            setFeedback(ResponseFeedback.VALID, captchaID);
             return true;
+        } else {
+            return false;
         }
-        return false;
     }
 
     protected void showMessageAndQuit(String title, String msg) throws SolverException {
@@ -283,35 +259,42 @@ public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> 
     }
 
     protected void poll(Browser br, RequestOptions options, CESSolverJob<T> solverJob, String captchaID, UrlQuery queryPoll) throws InterruptedException, IOException, SolverException {
-        long startTime = System.currentTimeMillis();
-        Thread.sleep(10000);
-        String ret = "";
-        Challenge<T> captchaChallenge = getChallenge(solverJob);
-        queryPoll.appendEncoded("id", captchaID);
-        while (true) {
-            ret = br.getPage(getAPIROOT() + "index.cgi?" + queryPoll.toString());
-            if (StringUtils.isEmpty(ret) || ret == "No htmlCode read") {
-                setdebug(solverJob, "CaptchaID " + captchaID + " - NO answer after " + ((System.currentTimeMillis() - startTime) / 1000) + "s ");
-            } else {
-                setdebug(solverJob, "CaptchaID " + captchaID + " - Answer after " + ((System.currentTimeMillis() - startTime) / 1000) + "s: " + ret);
+        final long startTime = System.currentTimeMillis();
+        boolean setUnused = true;
+        try {
+            Thread.sleep(10000);
+            final Challenge<T> captchaChallenge = getChallenge(solverJob);
+            queryPoll.appendEncoded("id", captchaID);
+            while (true) {
+                final String ret = br.getPage(getAPIROOT() + "index.cgi?" + queryPoll.toString());
+                if (StringUtils.isEmpty(ret) || ret == "No htmlCode read") {
+                    setdebug(solverJob, "CaptchaID " + captchaID + " - NO answer after " + ((System.currentTimeMillis() - startTime) / 1000) + "s ");
+                } else {
+                    setdebug(solverJob, "CaptchaID " + captchaID + " - Answer after " + ((System.currentTimeMillis() - startTime) / 1000) + "s: " + ret);
+                }
+                if (ret.startsWith("OK-answered-ERROR NO USER") || ret.startsWith("ERROR NO USER")) {
+                    counterInterrupted.incrementAndGet();
+                    Thread.sleep(15000);
+                    return;
+                } else if (ret.startsWith("OK-answered-")) {
+                    counterSolved.incrementAndGet();
+                    String antwort = ret.substring("OK-answered-".length());
+                    parseResponse(solverJob, captchaChallenge, captchaID, antwort);
+                    setUnused = false;
+                    return;
+                } else if (((System.currentTimeMillis() - startTime) / 1000) > (options.getTimeoutthing() + 10)) {
+                    counterInterrupted.incrementAndGet();
+                    return;
+                } else if (ret.matches("\\d\\d\\d\\d .*")) {
+                    // throw new SolverException(ret);
+                }
+                checkInterruption();
+                Thread.sleep(2000);
             }
-            if (ret.startsWith("OK-answered-ERROR NO USER") || ret.startsWith("ERROR NO USER")) {
-                counterInterrupted.incrementAndGet();
-                Thread.sleep(15000);
-                return;
-            } else if (ret.startsWith("OK-answered-")) {
-                counterSolved.incrementAndGet();
-                String antwort = ret.substring("OK-answered-".length());
-                parseResponse(solverJob, captchaChallenge, captchaID, antwort);
-                return;
-            } else if (((System.currentTimeMillis() - startTime) / 1000) > (options.getTimeoutthing() + 10)) {
-                counterInterrupted.incrementAndGet();
-                return;
-            } else if (ret.matches("\\d\\d\\d\\d .*")) {
-                // throw new SolverException(ret);
+        } finally {
+            if (setUnused) {
+                setFeedback(ResponseFeedback.UNUSED, captchaID);
             }
-            checkInterruption();
-            Thread.sleep(2000);
         }
     }
 
