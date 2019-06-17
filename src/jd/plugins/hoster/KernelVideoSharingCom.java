@@ -50,24 +50,24 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { /** Please add new entries to the END of this array! */
         "kvs-demo.com", "hotmovs.com", "cartoontube.xxx", "theclassicporn.com", "alphaporno.com", "updatetube.com", "thenewporn.com", "pinkrod.com", "hotshame.com", "tubewolf.com", "voyeurhit.com", "yourlust.com", "pornicom.com", "pervclips.com", "wankoz.com", "tubecup.com", "myxvids.com", "hellporno.com", "h2porn.com", "gayfall.com", "finevids.xxx", "freepornvs.com", "mylust.com", "pornoid.com", "pornwhite.com", "sheshaft.com", "tryboobs.com", "tubepornclassic.com", "vikiporn.com", "fetishshrine.com", "katestube.com", "sleazyneasy.com", "yeswegays.com", "wetplace.com", "xbabe.com", "hdzog.com", "sex3.com", "bravoteens.com", "yoxhub.com", "xxxymovies.com", "bravotube.net", "upornia.com", "xcafe.com", "txxx.com", "pornpillow.com", "anon-v.com", "hclips.com", "faptube.com", "vjav.com", "shameless.com", "evilhub.com", "japan-whores.com", "needgayporn.com", "pornyeah.com", "javwhores.com",
-        "analdin.com", "onlygayvideo.com", "bravoporn.com", "thisvid.com", "videocelebs.net", "xozilla.com", "pornhat.com", "porndr.com", "anyporn.com", "anysex.com", "uiporn.com", "xfig.net", "clipcake.com", "cliplips.com", "fapality.com" }, urls = { /**
-                                                                                                                                                                                                                                                             * Please
-                                                                                                                                                                                                                                                             * add
-                                                                                                                                                                                                                                                             * new
-                                                                                                                                                                                                                                                             * entries
-                                                                                                                                                                                                                                                             * to
-                                                                                                                                                                                                                                                             * the
-                                                                                                                                                                                                                                                             * END
-                                                                                                                                                                                                                                                             * of
-                                                                                                                                                                                                                                                             * this
-                                                                                                                                                                                                                                                             * array!
-                                                                                                                                                                                                                                                             */
+        "analdin.com", "onlygayvideo.com", "bravoporn.com", "thisvid.com", "videocelebs.net", "xozilla.com", "pornhat.com", "porndr.com", "anyporn.com", "anysex.com", "uiporn.com", "xfig.net", "clipcake.com", "cliplips.com", "fapality.com", "xcum.com" }, urls = { /**
+                                                                                                                                                                                                                                                                         * Please
+                                                                                                                                                                                                                                                                         * add
+                                                                                                                                                                                                                                                                         * new
+                                                                                                                                                                                                                                                                         * entries
+                                                                                                                                                                                                                                                                         * to
+                                                                                                                                                                                                                                                                         * the
+                                                                                                                                                                                                                                                                         * END
+                                                                                                                                                                                                                                                                         * of
+                                                                                                                                                                                                                                                                         * this
+                                                                                                                                                                                                                                                                         * array!
+                                                                                                                                                                                                                                                                         */
                 "https?://(?:www\\.)?kvs\\-demo\\.com/(?:videos/\\d+/[a-z0-9\\-]+/?|embed/\\d+)", "https?://(?:www\\.)?hotmovs\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?cartoontube\\.xxx/video\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?theclassicporn\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?alphaporno\\.com/videos/[a-z0-9\\-]+/?", "https?://(?:www\\.)?updatetube\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?thenewporn\\.com/videos/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?pinkrod\\.com/videos/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?hotshame\\.com/videos/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?tubewolf\\.com/movies/[a-z0-9\\-]+", "https?://(?:www\\.)?voyeurhit\\.com/videos/[a-z0-9\\-]+", "https?://(?:www\\.)?yourlust\\.com/videos/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?pornicom\\.com/videos/\\d+/[a-z0-9\\-]+/?",
                 "https?://(?:www\\.)?pervclips\\.com/tube/videos/[^<>\"/]+/?", "https?://(?:www\\.|m\\.)?wankoz\\.com/videos/\\d+/[a-z0-9\\-_]+/?", "https?://(?:www\\.)?tubecup\\.com/(?:videos/\\d+/[a-z0-9\\-_]+/|embed/\\d+)", "https?://(?:www\\.)?myxvids\\.com/(videos/\\d+/[a-z0-9\\-_]+/|embed/\\d+)", "https?://(?:www\\.)?hellporno\\.com/videos/[a-z0-9\\-]+/?", "https?://(?:www\\.)?h2porn\\.com/videos/[a-z0-9\\-]+/?", "https?://(?:www\\.)?gayfall\\.com/videos/[a-z0-9\\-]+/?", "https?://(?:www\\.)?finevids\\.xxx/videos/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?freepornvs\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?mylust\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?pornoid\\.com/videos/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?pornwhite\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?sheshaft\\.com/videos/\\d+/[a-z0-9\\-]+/?",
                 "https?://(?:www\\.)?tryboobs\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:\\w+\\.)?tubepornclassic\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?vikiporn\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?fetishshrine\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?katestube\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?sleazyneasy\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?yeswegays\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?wetplace\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(www\\.)?xbabe\\.com/videos/[a-z0-9\\-]+/?", "https?://(?:www\\.)?hdzog\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(www\\.)?sex3\\.com/\\d+/?", "https?://(?:www\\.)?bravoteens\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?yoxhub\\.com/videos/\\d+/[a-z0-9\\-]+/?",
                 "https?://(?:www\\.)?xxxymovies\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?bravotube\\.net/videos/[a-z0-9\\-]+", "https?://(?:www\\.)?upornia\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://xcafe\\.com/\\d+/?", "https?://(?:www\\.)?txxx\\.com/videos/\\d+/[a-z0-9\\-]+/|(https?://(?:www\\.)?txxx\\.com/embed/\\d+)", "https?://(?:www\\.)?pornpillow\\.com/\\d+/[^/]+\\.html", "https?://(?:www\\.)?anon\\-v\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?hclips\\.com/videos/[a-z0-9\\-]+/?", "https?://(?:www\\.)?faptube\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://([a-z]{2,3}\\.)?vjav\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?shameless\\.com/videos/[a-z0-9\\-]+/?", "https?://(?:www\\.)?evilhub\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?japan\\-whores\\.com/videos/\\d+/[a-z0-9\\-]+/?",
                 "https?://(?:www\\.)?needgayporn.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?pornyeah\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.)?javwhores\\.com/video/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?analdin\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?onlygayvideo\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?bravoporn\\.com/videos/\\d+/(?:[a-z0-9\\-]+/)?", "https?://(?:www\\.)?thisvid\\.com/videos/[a-z0-9\\-_]+/?", "https?://(?:www\\.)?videocelebs\\.net/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?xozilla\\.com/videos/\\d+/[a-z0-9\\-_]+/", "https?://(?:www\\.)?pornhat\\.com/video/[a-z0-9\\-_]+/", "https?://(?:www\\.)?porndr\\.com/(?:videos/\\d+/[a-z0-9\\-_]+/|embed/\\d+)", "https?://(?:www\\.)?anyporn\\.com/\\d+/", "https?://(?:www\\.)?anysex\\.com/(?:embed/)?\\d+/",
-                "https?://(?:www\\.)?uiporn\\.com/(?:videos/[a-z0-9\\-_]+/?|embed/\\d+)", "https?://(?:www\\.)?xfig\\.net/(?:videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)|https?://m\\.xfig\\.net/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?clipcake\\.com/(?:videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)|https?://m\\.clipcake\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?cliplips\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?fapality\\.com/(\\d+/?|embed/\\d+)$" })
+                "https?://(?:www\\.)?uiporn\\.com/(?:videos/[a-z0-9\\-_]+/?|embed/\\d+)", "https?://(?:www\\.)?xfig\\.net/(?:videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)|https?://m\\.xfig\\.net/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?clipcake\\.com/(?:videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)|https?://m\\.clipcake\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?cliplips\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?fapality\\.com/(\\d+/?|embed/\\d+)$", "https?://(?:www\\.)?xcum\\.com/v/\\d+/?" })
 public class KernelVideoSharingCom extends antiDDoSForHost {
     public KernelVideoSharingCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -153,16 +153,16 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
             /* <script type="text/javascript" src="http://www.hclips.com/js/KernelTeamVideoSharingSystem.js?v=3.8.1"></script> */
         }
         String filename = regexFilenameAuto(br, downloadLink);
-        if (inValidate(filename_url)) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("/404.php")) {
+            /* Definitly offline - set url filename to avoid bad names! */
+            if (!this.inValidate(filename_url)) {
+                downloadLink.setName(filename_url);
+            }
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (this.inValidate(filename_url)) {
             /* This should never happen */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("/404.php")) {
-            /* Definitly offline - set url filename to avoid bad names! */
-            downloadLink.setName(filename_url);
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        downloadLink.setName(filename);
         dllink = getDllink(br, this);
         final String ext;
         if (dllink != null && !dllink.contains(".m3u8")) {
@@ -678,8 +678,32 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
             /* Remove html crap and spaces at the beginning and end. */
             filename = Encoding.htmlDecode(filename);
             filename = filename.trim();
+            filename = cleanupFilename(br, filename);
         }
         return filename;
+    }
+
+    /**
+     * Removes parts of hostname from filename e.g. if host is "testhost.com", it will remove things such as " - TestHost", "testhost.com"
+     * and so on.
+     */
+    private static String cleanupFilename(final Browser br, String filename_normal) {
+        final String host = br.getHost();
+        if (host == null) {
+            return filename_normal;
+        }
+        final String host_without_tld = host.split("\\.")[0];
+        String filename_clean = filename_normal.replace(" - " + host, "");
+        filename_clean = filename_clean.replace("- " + host, "");
+        filename_clean = filename_clean.replace(" " + host, "");
+        filename_clean = filename_clean.replace(" - " + host, "");
+        filename_clean = filename_clean.replace("- " + host, "");
+        filename_clean = filename_clean.replace(" " + host, "");
+        if (StringUtils.isEmpty(filename_clean)) {
+            /* If e.g. filename only consisted of hostname, return original as fallback though this should never happen! */
+            return filename_normal;
+        }
+        return filename_clean;
     }
 
     public static String regexFilenameGeneral(final Browser br) {
