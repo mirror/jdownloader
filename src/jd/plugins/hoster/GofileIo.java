@@ -16,11 +16,12 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import jd.PluginWrapper;
-import jd.http.requests.PostRequest;
+import jd.http.Browser;
+import jd.http.requests.GetRequest;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -33,11 +34,10 @@ import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.net.HTTPHeader;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gofile.io" }, urls = { "https?://(?:www\\.)?gofile\\.io/\\?c=[A-Za-z0-9]+#index=\\d+&id=\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gofile.io" }, urls = { "https?://(?:www\\.)?gofile\\.io/\\?c=[A-Za-z0-9]+#file=\\d+" })
 public class GofileIo extends PluginForHost {
     public GofileIo(PluginWrapper wrapper) {
         super(wrapper);
@@ -53,9 +53,9 @@ public class GofileIo extends PluginForHost {
     }
 
     private String getFileID(final DownloadLink link) throws PluginException {
-        final String ret = new Regex(link.getPluginPatternMatcher(), "id=(\\d+)").getMatch(0);
+        final String ret = new Regex(link.getPluginPatternMatcher(), "file=(\\d+)").getMatch(0);
         if (ret == null) {
-            if (link.getPluginPatternMatcher().contains("#index=")) {
+            if (link.getPluginPatternMatcher().contains("#file=")) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -69,29 +69,47 @@ public class GofileIo extends PluginForHost {
     private static final boolean FREE_RESUME       = true;
     private static final int     FREE_MAXCHUNKS    = 0;
     private static final int     FREE_MAXDOWNLOADS = 20;
-    private int                  fileIndex         = -1;
+    private String               downloadURL       = null;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         final String c = getC(link);
         br.getPage("https://gofile.io/?c=" + c);
-        final PostRequest post = br.createPostRequest("https://api.gofile.io/getUpload.php?c=" + c, "");
+        final GetRequest server = br.createGetRequest("https://apiv2.gofile.io/getServer?c=" + c);
+        server.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ORIGIN, "https://gofile.io"));
+        Browser brc = br.cloneBrowser();
+        brc.getPage(server);
+        Map<String, Object> response = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+        String serverHost = null;
+        if ("ok".equals(response.get("status"))) {
+            final Map<String, Object> data = (Map<String, Object>) response.get("data");
+            serverHost = (String) data.get("server");
+        } else if ("error".equals(response.get("status"))) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (serverHost == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final GetRequest post = br.createGetRequest("https://" + serverHost + ".gofile.io/getUpload?c=" + c);
         post.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ORIGIN, "https://gofile.io"));
-        br.getPage(post);
-        final Map<String, Object> response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        brc = br.cloneBrowser();
+        brc.getPage(post);
+        response = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
         if ("ok".equals(response.get("status"))) {
             final String fileID = getFileID(link);
-            final List<Map<String, Object>> data = (List<Map<String, Object>>) response.get("data");
-            int index = 0;
-            for (Map<String, Object> entry : data) {
-                final Number id = JavaScriptEngineFactory.toLong(entry.get("id"), -1);
+            final Map<String, Object> data = (Map<String, Object>) response.get("data");
+            final Map<String, Map<String, Object>> files = (Map<String, Map<String, Object>>) data.get("files");
+            for (Entry<String, Map<String, Object>> file : files.entrySet()) {
+                final String id = file.getKey();
                 if (id.toString().equals(fileID)) {
-                    fileIndex = index;
+                    final Map<String, Object> entry = file.getValue();
+                    downloadURL = (String) entry.get("link");
                     final Number size = JavaScriptEngineFactory.toLong(entry.get("size"), -1);
                     if (size.longValue() >= 0) {
-                        // not verified!
-                        link.setDownloadSize(SizeFormatter.getSize(size.longValue() + "MB"));
+                        link.setDownloadSize(size.longValue());
                     }
                     final String name = (String) entry.get("name");
                     if (name != null) {
@@ -99,7 +117,6 @@ public class GofileIo extends PluginForHost {
                     }
                     return AvailableStatus.TRUE;
                 }
-                index++;
             }
         }
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -112,20 +129,7 @@ public class GofileIo extends PluginForHost {
     }
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks) throws Exception, PluginException {
-        final String c = getC(downloadLink);
-        final PostRequest post = br.createPostRequest("https://api.gofile.io/createLink.php?c=" + c, "");
-        post.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ORIGIN, "https://gofile.io"));
-        br.getPage(post);
-        final Map<String, Object> response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        final String downloadURL;
-        if ("ok".equals(response.get("status"))) {
-            final List<Map<String, Object>> data = (List<Map<String, Object>>) response.get("data");
-            final Map<String, Object> entry = data.get(fileIndex);
-            downloadURL = (String) entry.get("link");
-            if (StringUtils.isEmpty(downloadURL)) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        } else {
+        if (downloadURL == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadURL, true, 0);

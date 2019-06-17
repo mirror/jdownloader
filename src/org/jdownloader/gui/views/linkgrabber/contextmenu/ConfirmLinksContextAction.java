@@ -248,8 +248,8 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                 try {
                     // this validation step also copies the passwords from the CRawledlinks in the archive settings
                     final ExtractionExtension extension = ExtractionExtension.getInstance();
-                    if (extension != null) {
-                        ConfirmIncompleteArchiveAction doAction = CFG_GUI.CFG.getConfirmIncompleteArchiveAction();
+                    ConfirmIncompleteArchiveAction doAction = CFG_GUI.CFG.getConfirmIncompleteArchiveAction();
+                    if (extension != null && !ConfirmIncompleteArchiveAction.MOVE_TO_DOWNLOADLIST.equals(doAction)) {
                         final ArchiveValidation result = ArchiveValidator.validate(selection, false);
                         for (Archive a : result.getArchives()) {
                             ConfirmIncompleteArchiveAction doActionForTheCurrentArchive = doAction;
@@ -359,6 +359,8 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                                 break;
                             case MOVE_TO_DOWNLOADLIST:
                                 // do nothing
+                                break;
+                            default:
                                 break;
                             }
                         }

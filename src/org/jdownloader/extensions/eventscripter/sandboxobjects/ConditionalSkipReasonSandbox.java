@@ -1,10 +1,15 @@
 package org.jdownloader.extensions.eventscripter.sandboxobjects;
 
+import javax.swing.Icon;
+
+import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
 
 import org.jdownloader.plugins.ConditionalSkipReason;
+import org.jdownloader.plugins.CustomConditionalSkipReasonMessageIcon;
 import org.jdownloader.plugins.DownloadLinkCondition;
 import org.jdownloader.plugins.TimeOutCondition;
+import org.jdownloader.plugins.WaitWhileWaitingSkipReasonIsSet;
 import org.jdownloader.plugins.WaitingSkipReason;
 
 public class ConditionalSkipReasonSandbox {
@@ -21,7 +26,17 @@ public class ConditionalSkipReasonSandbox {
     }
 
     public String getMessage() {
-        return conditionalSkipReason.getMessage(conditionalSkipReason, downloadLink);
+        return conditionalSkipReason.getMessage(new CustomConditionalSkipReasonMessageIcon() {
+            @Override
+            public String getMessage(ConditionalSkipReason conditionalSkipReason, AbstractNode node) {
+                return conditionalSkipReason.getMessage(conditionalSkipReason, node);
+            }
+
+            @Override
+            public Icon getIcon(ConditionalSkipReason conditionalSkipReason, AbstractNode node) {
+                return conditionalSkipReason.getIcon(conditionalSkipReason, node);
+            }
+        }, downloadLink);
     }
 
     public String getClassName() {
@@ -49,7 +64,9 @@ public class ConditionalSkipReasonSandbox {
     }
 
     public String getWaitingSkipReason() {
-        if (conditionalSkipReason instanceof WaitingSkipReason) {
+        if (conditionalSkipReason instanceof WaitWhileWaitingSkipReasonIsSet) {
+            return ((WaitWhileWaitingSkipReasonIsSet) conditionalSkipReason).getCause().name();
+        } else if (conditionalSkipReason instanceof WaitingSkipReason) {
             return ((WaitingSkipReason) conditionalSkipReason).getCause().name();
         } else {
             return null;
