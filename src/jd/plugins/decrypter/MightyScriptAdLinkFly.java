@@ -54,6 +54,8 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
             "linclik.com", "oke.io", "vivads.net", "pnd.tl", "met.bz", "urlcloud.us", "clik.pw",
             /** shrinkearn.com domains */
             "shrinkearn.com", "wishes2.com",
+            /** clk.sh domains */
+            "clk.sh", "oko.sh",
             /** bt4link.com domains */
             "bt4link.com", "ur4link.com",
             /** shorted4us.com domains */
@@ -64,6 +66,8 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
             "cut1.ga", "shortit.ca",
             /** safelinku.com domains */
             "safelinku.com", "idsly.bid", "idsly.net", "updatetribun.org",
+            /** cepmuzikindir.me domains - NOTE: safelinku.NET != safelinku.COM */
+            "cepmuzikindir.me", "safelinku.net", "miui.space",
             /** uii.io domains */
             "uii.io", "szs.pw",
             /** short.pe domains */
@@ -188,7 +192,7 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
         }
         br.setFollowRedirects(true);
         if (redirect != null) {
-            br.getPage(redirect);
+            getPage(redirect);
         }
         if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));

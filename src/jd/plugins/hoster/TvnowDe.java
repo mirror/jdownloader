@@ -223,11 +223,6 @@ public class TvnowDe extends PluginForHost {
             episode = (int) Long.parseLong(episode_url_str);
         }
         /* Title or subtitle of a current series-episode */
-        String title = (String) entries.get("title");
-        if (title == null || formatTitle == null || date == null) {
-            /* This should never happen */
-            return AvailableStatus.UNCHECKABLE;
-        }
         String filename_beginning = "";
         final AvailableStatus status;
         if (isDRM) {
@@ -252,8 +247,13 @@ public class TvnowDe extends PluginForHost {
         link.setProperty("isDRM", isDRM);
         link.setProperty("isGEOBLOCKED", geoBLOCKED);
         final String final_filename = link.getFinalFileName();
-        /* Only set filename if we're using the old API or we're using the new API and crawler did not set filename before. */
-        final boolean set_filename = !newAPI || final_filename == null || !final_filename.endsWith(".mp4");
+        String title = (String) entries.get("title");
+        /*
+         * Only set filename if we're using the old API or we're using the new API and crawler did not set filename before. Especially for
+         * PREMIUMONLY content, new API will return nearly no information at all - basically only status and thumbnail!
+         */
+        final boolean filename_available = !StringUtils.isEmpty(title) && !StringUtils.isEmpty(formatTitle) && !StringUtils.isEmpty(date);
+        final boolean set_filename = (!newAPI || final_filename == null || !final_filename.endsWith(".mp4")) && filename_available;
         if (set_filename) {
             title = title.trim();
             data.setShow(formatTitle);
