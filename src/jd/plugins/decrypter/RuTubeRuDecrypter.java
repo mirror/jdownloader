@@ -26,12 +26,6 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -44,6 +38,12 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.RuTubeVariant;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rutube.ru" }, urls = { "https?://((?:www\\.)?rutube\\.ru/(tracks/\\d+\\.html|(play/|video/)?embed/\\d+(.*?p=[A-Za-z0-9\\-_]+)?|video/[a-f0-9]{32})|video\\.rutube.ru/([a-f0-9]{32}|\\d+))" })
 public class RuTubeRuDecrypter extends PluginForDecrypt {
@@ -72,7 +72,7 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
             if (vid != null) {
                 final boolean useNewAPI = true;
                 if (useNewAPI) {
-                    br.getPage("https://rutube.ru/api/play/options/" + vid + "/?format=json&no_404=true&referer=" + Encoding.urlEncode(parameter));
+                    getPage("https://rutube.ru/api/play/options/" + vid + "/?format=json&no_404=true&referer=" + Encoding.urlEncode(parameter));
                     uid = PluginJSonUtils.getJson(br, "effective_video");
                 } else {
                     // embed link, grab info since we are already on this page

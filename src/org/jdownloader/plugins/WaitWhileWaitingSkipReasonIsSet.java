@@ -12,7 +12,7 @@ import org.jdownloader.api.downloads.DownloadControllerEventPublisher;
 import org.jdownloader.api.downloads.v2.DownloadsAPIV2Impl;
 import org.jdownloader.gui.views.downloads.columns.TaskColumn;
 
-public class WaitWhileWaitingSkipReasonIsSet implements ConditionalSkipReason, DownloadLinkCondition, ValidatableConditionalSkipReason {
+public class WaitWhileWaitingSkipReasonIsSet implements ConditionalSkipReason, DownloadLinkCondition, ValidatableConditionalSkipReason, TimeOutCondition {
     private final WaitingSkipReason reason;
     private final DownloadLink      source;
     private boolean                 valid = true;
@@ -24,16 +24,16 @@ public class WaitWhileWaitingSkipReasonIsSet implements ConditionalSkipReason, D
 
     @Override
     public boolean isConditionReached() {
-        return source.getConditionalSkipReason() != this || reason.isConditionReached();
+        return getDownloadLink().getConditionalSkipReason() != this || getConditionalSkipReason().isConditionReached();
     }
 
     @Override
     public String getMessage(Object requestor, AbstractNode node) {
         if (requestor instanceof CustomConditionalSkipReasonMessageIcon) {
             return ((CustomConditionalSkipReasonMessageIcon) requestor).getMessage(this, node);
-        } else if (getDownloadLink() == node) {
-            return getConditionalSkipReason().getMessage(requestor, node);
         } else if (requestor == this) {
+            return getConditionalSkipReason().getMessage(getConditionalSkipReason(), node);
+        } else if (getDownloadLink() == node) {
             return getConditionalSkipReason().getMessage(requestor, node);
         } else if (requestor instanceof TaskColumn || requestor instanceof FilePackageView || requestor instanceof HistoryEntry) {
             return getConditionalSkipReason().getMessage(requestor, node);
@@ -80,15 +80,21 @@ public class WaitWhileWaitingSkipReasonIsSet implements ConditionalSkipReason, D
 
     @Override
     public boolean isValid() {
-        if (valid == false) {
-            return false;
-        } else {
-            return getConditionalSkipReason().isValid();
-        }
+        return valid && getConditionalSkipReason().isValid();
     }
 
     @Override
     public void invalidate() {
         valid = false;
+    }
+
+    @Override
+    public long getTimeOutTimeStamp() {
+        return getConditionalSkipReason().getTimeOutTimeStamp();
+    }
+
+    @Override
+    public long getTimeOutLeft() {
+        return getConditionalSkipReason().getTimeOutLeft();
     }
 }

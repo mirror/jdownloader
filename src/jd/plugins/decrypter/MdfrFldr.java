@@ -38,7 +38,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.StringUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "https?://(?!download)(\\w+\\.)?(mediafire\\.com|mfi\\.re|m\\.)/(watch/|listen/|imageview|folder/|view/|i/\\?|\\\\?sharekey=|view/\\?|view\\?|\\?|(?!download|file|\\?JDOWNLOADER|imgbnc\\.php))([a-z0-9]{12}/)?[a-z0-9,#]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "https?://(?!download)(\\w+\\.)?(mediafire\\.com|mfi\\.re|m\\.)/(watch/|listen/|imageview|folder/|view/|i/\\?|\\?sharekey=|view/\\?|view\\?|\\?|(?!download|file|\\?JDOWNLOADER|imgbnc\\.php))([a-z0-9]{12}/)?[a-z0-9,#]+" })
 public class MdfrFldr extends PluginForDecrypt {
     public MdfrFldr(PluginWrapper wrapper) {
         super(wrapper);
@@ -278,6 +278,7 @@ public class MdfrFldr extends PluginForDecrypt {
             if ("112".equals(this.ERRORCODE) || (isFile != null && isFolder == null)) {
                 // new pages can be folders, and do not work as UID from API. only way thing todo is find the uid and reprobe!
                 final Browser br2 = new Browser();
+                br2.setFollowRedirects(true);
                 br2.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.94 Safari/537.36");
                 br2.getHeaders().put("Accept-Language", "en-US,en;q=0.8");
                 br2.getHeaders().put("Connection", "keep-alive");

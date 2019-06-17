@@ -1,21 +1,23 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import jd.controlling.ProgressController;
-import jd.http.requests.PostRequest;
+import jd.http.Browser;
+import jd.http.requests.GetRequest;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
-import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.net.HTTPHeader;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -24,30 +26,46 @@ public class GoFileIo extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String id = new Regex(parameter.getCryptedUrl(), "(#download#|\\?c=)([A-Za-z0-9]+)").getMatch(1);
+        final String c = new Regex(parameter.getCryptedUrl(), "(#download#|\\?c=)([A-Za-z0-9]+)").getMatch(1);
         br.getPage(parameter.getCryptedUrl());
-        final PostRequest post = br.createPostRequest("https://api.gofile.io/getUpload.php?c=" + id, "");
-        post.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ORIGIN, "https://gofile.io"));
-        br.getPage(post);
-        final Map<String, Object> response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final GetRequest server = br.createGetRequest("https://apiv2.gofile.io/getServer?c=" + c);
+        server.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ORIGIN, "https://gofile.io"));
+        Browser brc = br.cloneBrowser();
+        brc.getPage(server);
+        Map<String, Object> response = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+        String serverHost = null;
         if ("ok".equals(response.get("status"))) {
-            int index = 0;
-            final List<Map<String, Object>> data = (List<Map<String, Object>>) response.get("data");
-            for (Map<String, Object> entry : data) {
-                final int fileIndex = index + 1;
-                index = fileIndex;
+            final Map<String, Object> data = (Map<String, Object>) response.get("data");
+            serverHost = (String) data.get("server");
+        } else if ("error".equals(response.get("status"))) {
+            return ret;
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (serverHost == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final GetRequest post = br.createGetRequest("https://" + serverHost + ".gofile.io/getUpload?c=" + c);
+        post.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ORIGIN, "https://gofile.io"));
+        brc = br.cloneBrowser();
+        brc.getPage(post);
+        response = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+        if ("ok".equals(response.get("status"))) {
+            final Map<String, Object> data = (Map<String, Object>) response.get("data");
+            final Map<String, Map<String, Object>> files = (Map<String, Map<String, Object>>) data.get("files");
+            for (final Entry<String, Map<String, Object>> file : files.entrySet()) {
+                final String fileID = file.getKey();
+                final DownloadLink link = createDownloadlink("https://gofile.io/?c=" + c + "#file=" + fileID);
+                final Map<String, Object> entry = file.getValue();
                 final Number size = JavaScriptEngineFactory.toLong(entry.get("size"), -1);
-                final Number fileID = JavaScriptEngineFactory.toLong(entry.get("id"), -1);
-                final DownloadLink link = createDownloadlink("https://gofile.io/?c=" + id + "#index=" + fileIndex + "&id=" + fileID);
-                link.setContentUrl(parameter.getCryptedUrl());
                 if (size.longValue() >= 0) {
-                    // not verified!
-                    link.setDownloadSize(SizeFormatter.getSize(size.longValue() + "MB"));
+                    link.setDownloadSize(size.longValue());
                 }
                 final String name = (String) entry.get("name");
                 if (name != null) {
                     link.setFinalFileName(name);
                 }
+                link.setAvailable(true);
                 ret.add(link);
             }
         }
