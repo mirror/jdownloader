@@ -89,6 +89,7 @@ public class MegaConz extends PluginForDecrypt {
         // br.getHeaders().put("Origin", "https://mega.nz");
         br.getHeaders().put("APPID", "JDownloader");
         int retryCounter = 0;
+        final Map<String, FilePackage> fpMap = new HashMap<String, FilePackage>();
         final List<Map<String, Object>> nodes;
         while (true) {
             final URLConnectionAdapter con = br.openRequestConnection(br.createJSonPostRequest("https://g.api.mega.co.nz/cs?id=" + CS.incrementAndGet() + "&n=" + folderID/*
@@ -195,13 +196,16 @@ public class MegaConz extends PluginForDecrypt {
                         continue;
                     }
                 }
-                final FilePackage fp;
+                FilePackage fp;
                 final String path;
                 if (folder != null) {
-                    fp = FilePackage.getInstance();
                     path = getRelPath(folder, folders);
-                    fp.setName(path.substring(1));
-                    fp.setProperty("ALLOW_MERGE", true);
+                    fp = fpMap.get(path);
+                    if (fp == null) {
+                        fp = FilePackage.getInstance();
+                        fp.setName(path.substring(path.lastIndexOf("/") + 1));
+                        fpMap.put(path, fp);
+                    }
                 } else {
                     fp = null;
                     path = null;
