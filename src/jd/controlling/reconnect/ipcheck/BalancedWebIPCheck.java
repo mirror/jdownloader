@@ -1,5 +1,6 @@
 package jd.controlling.reconnect.ipcheck;
 
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.regex.Matcher;
@@ -69,6 +70,7 @@ public class BalancedWebIPCheck implements IPCheckProvider {
             logger.setAllowTimeoutFlush(false);
             br.setLogger(logger);
             NoGateWayException noGateWayException = null;
+            UnknownHostException unknownHostException = null;
             for (String service : SERVICES) {
                 try {
                     /* call website and check for ip */
@@ -80,6 +82,8 @@ public class BalancedWebIPCheck implements IPCheckProvider {
                             return IP.getInstance(matcher.group(1));
                         }
                     }
+                } catch (final UnknownHostException e) {
+                    unknownHostException = e;
                 } catch (final NoGateWayException e) {
                     noGateWayException = e;
                 } catch (final Throwable e) {
@@ -93,6 +97,9 @@ public class BalancedWebIPCheck implements IPCheckProvider {
             }
             if (noGateWayException != null) {
                 logger.log(noGateWayException);
+            }
+            if (unknownHostException != null) {
+                logger.log(unknownHostException);
             }
             logger.severe("All balanced Services failed");
             logger.close();
