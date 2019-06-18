@@ -3,7 +3,9 @@ package org.jdownloader.extensions.eventscripter.sandboxobjects;
 import java.io.IOException;
 
 import jd.http.Browser;
+import jd.http.Request;
 
+import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.jdownloader.extensions.eventscripter.EnvironmentException;
 
 public class BrowserSandBox {
@@ -30,8 +32,21 @@ public class BrowserSandBox {
         }
     }
 
+    public void setCookie(String host, String key, String value) {
+        br.setCookie(host, key, value);
+    }
+
+    public String getCookie(String host, String key) {
+        return br.getCookie(host, key);
+    }
+
     public void setHeader(String field, String value) {
         br.setHeader(field, value);
+    }
+
+    public String getResponseHeader(String field) {
+        final Request request = br.getRequest();
+        return request != null ? request.getResponseHeader(field) : null;
     }
 
     @Override
@@ -53,6 +68,16 @@ public class BrowserSandBox {
 
     public BrowserSandBox cloneBrowser() {
         return new BrowserSandBox(br.cloneBrowser());
+    }
+
+    public boolean setProxy(final String proxyString) {
+        final HTTPProxy proxy = HTTPProxy.parseHTTPProxy(proxyString);
+        if (proxy != null) {
+            br.setProxy(proxy);
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public String postPage(final String url, final String postData) throws EnvironmentException {
