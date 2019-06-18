@@ -9,11 +9,14 @@ import java.lang.reflect.Method;
 
 import javax.swing.JFrame;
 
+import org.appwork.utils.JVMVersion;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.extmanager.Log;
 import org.jdownloader.crosssystem.windows.apache.sanselan.BinaryConstants;
 import org.jdownloader.crosssystem.windows.apache.sanselan.BinaryOutputStream;
 import org.jdownloader.crosssystem.windows.apache.sanselan.ImageWriteException;
+
+import sun.awt.AWTAccessor;
 
 import com.sun.jna.Function;
 import com.sun.jna.Memory;
@@ -26,6 +29,7 @@ import com.sun.jna.platform.win32.Ole32Util;
 import com.sun.jna.platform.win32.User32;
 import com.sun.jna.platform.win32.W32Errors;
 import com.sun.jna.platform.win32.WinDef;
+import com.sun.jna.platform.win32.WinDef.HWND;
 import com.sun.jna.platform.win32.WinNT;
 import com.sun.jna.ptr.PointerByReference;
 import com.sun.jna.win32.StdCallLibrary;
@@ -87,13 +91,11 @@ public class Win7TaskBar {
     }
 
     public static void writeTransparentIcoImageWithSanselan(BufferedImage src, OutputStream os) throws ImageWriteException, IOException {
-
         // LOG.assertTrue();
         boolean assertt = BufferedImage.TYPE_INT_ARGB == src.getType() || BufferedImage.TYPE_4BYTE_ABGR == src.getType();
         int bitCount = 32;
         // org.apache.sanselan.common.BinaryOutputStream.BinaryOutputStream(OutputStream, int)
         BinaryOutputStream bos = new BinaryOutputStream(os, BinaryConstants.BYTE_ORDER_INTEL);
-
         try {
             int scanline_size = (bitCount * src.getWidth() + 7) / 8;
             if ((scanline_size % 4) != 0) {
@@ -104,12 +106,10 @@ public class Win7TaskBar {
                 t_scanline_size += 4 - (t_scanline_size % 4); // pad scanline to 4 byte size.
             }
             int imageSize = 40 + src.getHeight() * scanline_size + src.getHeight() * t_scanline_size;
-
             // ICONDIR
             bos.write2Bytes(0); // reserved
             bos.write2Bytes(1); // 1=ICO, 2=CUR
             bos.write2Bytes(1); // count
-
             // ICONDIRENTRY
             int iconDirEntryWidth = src.getWidth();
             int iconDirEntryHeight = src.getHeight();
@@ -125,7 +125,6 @@ public class Win7TaskBar {
             bos.write2Bytes(bitCount);
             bos.write4Bytes(imageSize);
             bos.write4Bytes(22); // image offset
-
             // BITMAPINFOHEADER
             bos.write4Bytes(40); // size
             bos.write4Bytes(src.getWidth());
@@ -138,25 +137,21 @@ public class Win7TaskBar {
             bos.write4Bytes(0); // y pixels per meter
             bos.write4Bytes(0); // colors used, 0 = (1 << bitCount) (ignored)
             bos.write4Bytes(0); // colors important
-
             int bit_cache = 0;
             int bits_in_cache = 0;
             int row_padding = scanline_size - (bitCount * src.getWidth() + 7) / 8;
             for (int y = src.getHeight() - 1; y >= 0; y--) {
                 for (int x = 0; x < src.getWidth(); x++) {
                     int argb = src.getRGB(x, y);
-
                     bos.write(0xff & argb);
                     bos.write(0xff & (argb >> 8));
                     bos.write(0xff & (argb >> 16));
                     bos.write(0xff & (argb >> 24));
                 }
-
                 for (int x = 0; x < row_padding; x++) {
                     bos.write(0);
                 }
             }
-
             int t_row_padding = t_scanline_size - (src.getWidth() + 7) / 8;
             for (int y = src.getHeight() - 1; y >= 0; y--) {
                 for (int x = 0; x < src.getWidth(); x++) {
@@ -173,14 +168,12 @@ public class Win7TaskBar {
                         bits_in_cache = 0;
                     }
                 }
-
                 if (bits_in_cache > 0) {
                     bit_cache <<= (8 - bits_in_cache);
                     bos.write(0xff & bit_cache);
                     bit_cache = 0;
                     bits_in_cache = 0;
                 }
-
                 for (int x = 0; x < t_row_padding; x++) {
                     bos.write(0);
                 }
@@ -235,10 +228,13 @@ public class Win7TaskBar {
     public static void setProgress(JFrame frame, double value, boolean isOk) {
         if (!isEnabled()) {
             return;
+        } else {
+            final WinDef.HWND handle = getHandle(frame);
+            if (handle != null) {
+                mySetProgressState.invokeInt(new Object[] { myInterfacePointer, handle, isOk ? TBPF_NORMAL : TBPF_ERROR });
+                mySetProgressValue.invokeInt(new Object[] { myInterfacePointer, handle, new WinDef.ULONGLONG((long) (value * 100)), TOTAL_PROGRESS });
+            }
         }
-        WinDef.HWND handle = getHandle(frame);
-        mySetProgressState.invokeInt(new Object[] { myInterfacePointer, handle, isOk ? TBPF_NORMAL : TBPF_ERROR });
-        mySetProgressValue.invokeInt(new Object[] { myInterfacePointer, handle, new WinDef.ULONGLONG((long) (value * 100)), TOTAL_PROGRESS });
     }
 
     private static boolean isEnabled() {
@@ -248,8 +244,12 @@ public class Win7TaskBar {
     public static void hideProgress(JFrame frame) {
         if (!isEnabled()) {
             return;
+        } else {
+            final HWND handle = getHandle(frame);
+            if (handle != null) {
+                mySetProgressState.invokeInt(new Object[] { myInterfacePointer, handle, TBPF_NOPROGRESS });
+            }
         }
-        mySetProgressState.invokeInt(new Object[] { myInterfacePointer, getHandle(frame), TBPF_NOPROGRESS });
     }
 
     public static void setOverlayIcon(JFrame frame, Object icon, boolean dispose) {
@@ -259,7 +259,10 @@ public class Win7TaskBar {
         if (icon == null) {
             icon = Pointer.NULL;
         }
-        mySetOverlayIcon.invokeInt(new Object[] { myInterfacePointer, getHandle(frame), icon, Pointer.NULL });
+        final HWND handle = getHandle(frame);
+        if (handle != null) {
+            mySetOverlayIcon.invokeInt(new Object[] { myInterfacePointer, handle, icon, Pointer.NULL });
+        }
         if (dispose) {
             User32.INSTANCE.DestroyIcon((WinDef.HICON) icon);
         }
@@ -286,14 +289,23 @@ public class Win7TaskBar {
     public static void attention(JFrame frame, boolean critical) {
         if (!isEnabled()) {
             return;
+        } else {
+            final HWND handle = getHandle(frame);
+            if (handle != null) {
+                User32Ex.INSTANCE.FlashWindow(handle, true);
+            }
         }
-        User32Ex.INSTANCE.FlashWindow(getHandle(frame), true);
     }
 
     private static WinDef.HWND getHandle(JFrame frame) {
         try {
-            ComponentPeer peer = ((Component) frame).getPeer();
-            Method getHWnd = peer.getClass().getMethod("getHWnd");
+            final ComponentPeer peer;
+            if (JVMVersion.isMinimum(JVMVersion.JAVA19)) {
+                peer = AWTAccessor.getComponentAccessor().getPeer(frame);
+            } else {
+                peer = ((Component) frame).getPeer();
+            }
+            final Method getHWnd = peer.getClass().getMethod("getHWnd");
             return new WinDef.HWND(new Pointer((Long) getHWnd.invoke(peer)));
         } catch (Throwable e) {
             LOG.log(e);

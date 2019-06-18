@@ -22,11 +22,6 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -49,12 +44,18 @@ import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class YetiShareCore extends antiDDoSForHost {
     public YetiShareCore(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(getPurchasePremiumURL());
     }
+
     // /* 1st domain = current domain! */
     // public static String[] domains = new String[] { "dummyhost.tld" };
     //
@@ -75,7 +76,6 @@ public class YetiShareCore extends antiDDoSForHost {
     // final String host = getHostsPattern();
     // return new String[] { host + "/[A-Za-z0-9]+(?:/[^/<>]+)?" };
     // }
-
     //
     // /** Returns '(?:domain1|domain2)' */
     // private static String getHostsPatternPart() {
@@ -938,7 +938,7 @@ public class YetiShareCore extends antiDDoSForHost {
                 logger.info("Failed to find expire-date");
                 return ai;
             }
-            long expire_milliseconds = TimeFormatter.getMilliSeconds(expireStr, "MM/dd/yyyy hh:mm:ss", Locale.ENGLISH);
+            long expire_milliseconds = parseExpireTimeStamp(account, expireStr);
             isPremium = expire_milliseconds > System.currentTimeMillis();
             if (!isPremium) {
                 /* Expired premium == FREE */
@@ -956,6 +956,27 @@ public class YetiShareCore extends antiDDoSForHost {
         }
         ai.setUnlimitedTraffic();
         return ai;
+    }
+
+    protected long parseExpireTimeStamp(Account account, final String expireString) {
+        final String first = new Regex(expireString, "^(\\d+)/").getMatch(0);
+        final String second = new Regex(expireString, "^\\d+/(\\d+)").getMatch(0);
+        final int firstCheck = Integer.parseInt(first);
+        if (firstCheck > 12) {
+            // higher than 12, must be days
+            return TimeFormatter.getMilliSeconds(expireString, "dd/MM/yyyy hh:mm:ss", Locale.ENGLISH);
+        }
+        final int secondCheck = Integer.parseInt(second);
+        if (secondCheck > 12) {
+            // higher than 12, must be days
+            return TimeFormatter.getMilliSeconds(expireString, "MM/dd/yyyy hh:mm:ss", Locale.ENGLISH);
+        }
+        // default
+        return TimeFormatter.getMilliSeconds(expireString, getDefaultTimePattern(account, expireString), Locale.ENGLISH);
+    }
+
+    protected String getDefaultTimePattern(Account account, final String expireString) {
+        return "MM/dd/yyyy hh:mm:ss";
     }
 
     @Override
@@ -1022,9 +1043,9 @@ public class YetiShareCore extends antiDDoSForHost {
         final boolean setWeakFilename = link.getName() == null || (weak_fallback_filename != null && weak_fallback_filename.length() > link.getName().length());
         if (setWeakFilename) {
             link.setName(weak_fallback_filename);
-            /// * TODO: Find better way to determine whether a String contains a file-extension or not. */
+            // / * TODO: Find better way to determine whether a String contains a file-extension or not. */
             // final boolean fallback_filename_contains_file_extension = weak_fallback_filename != null &&
-            /// weak_fallback_filename.contains(".");
+            // / weak_fallback_filename.contains(".");
             // if (!fallback_filename_contains_file_extension) {
             // /* Only setMimeHint if weak filename does not contain filetype. */
             // if (this.isAudiohoster()) {

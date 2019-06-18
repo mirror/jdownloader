@@ -119,7 +119,7 @@ public class Tf1Fr extends PluginForHost {
         if (video_id == null) {
             final Browser br2 = br.cloneBrowser();
             final String slug = new Regex(downloadLink.getPluginPatternMatcher(), "/videos/(.*?)\\.html").getMatch(0);
-            final String programSlug = new Regex(downloadLink.getPluginPatternMatcher(), "/tf1/(.*?)/videos/").getMatch(0);
+            final String programSlug = new Regex(downloadLink.getPluginPatternMatcher(), ".*/(.*?)/videos/").getMatch(0);
             br2.getPage("https://www.tf1.fr/graphql/web?id=cb31e88def68451cba035272e5d7f987cbff7d273fb6132d6d662cf684f8de53&variables={%22slug%22:%22" + slug + "%22,%22programSlug%22:%22" + programSlug + "%22}");
             video_id = br2.getRegex("\"streamId\"\\s*:\\s*\"(\\d{6,8})").getMatch(0);
         }
