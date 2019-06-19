@@ -67,7 +67,7 @@ public class CrhyRllCom extends PluginForDecrypt {
     static private final Pattern RTMP_SWF    = Pattern.compile("<default:chromelessPlayerUrl>([^<>\"]+\\.swf.*)</default:chromelessPlayerUrl>", Pattern.CASE_INSENSITIVE);
     /* 2016-04-29: http://static.ak.crunchyroll.com/versioned_assets/StandardVideoPlayer.cc7e8515.swf */
     /* 2016-10-19: http://static.ak.crunchyroll.com/vendor/StandardVideoPlayer-10dff2a.swf */
-    static private final Pattern SWF_URL     = Pattern.compile("((https?://static\\.ak\\.crunchyroll\\.com/[a-z0-9\\-_]+/(?:[a-f0-9\\.]+/)?)StandardVideoPlayer(?:.+)?\\.swf)", Pattern.CASE_INSENSITIVE);
+    static private final Pattern SWF_URL     = Pattern.compile("((https?://(?:static\\.ak\\.|www\\.)?crunchyroll\\.com/[a-z0-9\\-_]+/(?:[a-f0-9\\.]+/)?)StandardVideoPlayer(?:.+)?\\.swf)", Pattern.CASE_INSENSITIVE);
     static private final String  SWF_DIR     = "http://static.ak.crunchyroll.com/flash/20120424185935.0acb0eac20ff1d5f75c78ac39a889d03/";
     private final int            EPISODE_PAD = 3;
     private final char           SEPARATOR   = '-';
@@ -217,11 +217,14 @@ public class CrhyRllCom extends PluginForDecrypt {
                     return decryptedLinks;
                 }
                 // Get the link to the XML file
-                final Regex configUrlSearch = this.br.getRegex("\"config_url\":\"(.+?)\"");
-                if (!configUrlSearch.matches()) {
+                String configUrlSearch = this.br.getRegex("\"config_url\":\"(.+?)\"").getMatch(0);
+                if (configUrlSearch == null) {
+                    configUrlSearch = this.br.getRegex("config_url=(https?.*?)\"").getMatch(0);
+                }
+                if (configUrlSearch == null) {
                     throw new DecrypterException("Failed to get config url");
                 }
-                final String configUrlDecode = Encoding.htmlDecode(configUrlSearch.getMatch(0));
+                final String configUrlDecode = Encoding.htmlDecode(configUrlSearch);
                 final Regex configUrl = new Regex(configUrlDecode, CrhyRllCom.CONFIG_URL);
                 if (!configUrl.matches()) {
                     if (configUrlDecode.contains("video_format=0") && !configUrlDecode.contains("video_quality")) {
@@ -234,12 +237,14 @@ public class CrhyRllCom extends PluginForDecrypt {
                     throw new DecrypterException("Invalid config url");
                 }
                 // Get the link to the SWF file
-                final Regex swfUrlSearch = this.br.getRegex("swfobject.embedSWF\\(\"(.*?)\"");
-                if (!swfUrlSearch.matches()) {
-                    logger.warning("WTF");
+                String swfUrlSearch = this.br.getRegex("swfobject.embedSWF\\(\"(.*?)\"").getMatch(0);
+                if (swfUrlSearch == null) {
+                    swfUrlSearch = br.getRegex("(http://www.crunchyroll.com/swf/StandardVideoPlayer.*?)(\"|\\?)").getMatch(0);
+                }
+                if (swfUrlSearch == null) {
                     throw new DecrypterException("Failed to get SWF url");
                 }
-                final String swfUrlDecode = Encoding.htmlDecode(swfUrlSearch.getMatch(0).replaceAll("\\\\/", "/"));
+                final String swfUrlDecode = Encoding.htmlDecode(swfUrlSearch.replaceAll("\\\\/", "/"));
                 final Regex swfUrl = new Regex(swfUrlDecode, CrhyRllCom.SWF_URL);
                 if (!swfUrl.matches()) {
                     throw new DecrypterException("Invalid SWF url");
