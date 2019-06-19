@@ -9,6 +9,9 @@ import javax.swing.JSeparator;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import jd.controlling.linkcrawler.CrawledLink;
+import net.miginfocom.swing.MigLayout;
+
 import org.appwork.swing.MigPanel;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
@@ -19,14 +22,9 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 import org.jdownloader.gui.views.linkgrabber.LinkgrabberSearchField;
 import org.jdownloader.images.AbstractIcon;
 
-import jd.controlling.linkcrawler.CrawledLink;
-import net.miginfocom.swing.MigLayout;
-
 public class GenericResetLinkgrabberRlyDialog extends ConfirmDialog {
-
     private List<CrawledLink> nodesToDelete;
     private boolean           containsOnline;
-
     private boolean           resetTableSorter;
     private boolean           clearSearchFilter;
     private boolean           clearFilteredLinks;
@@ -50,7 +48,6 @@ public class GenericResetLinkgrabberRlyDialog extends ConfirmDialog {
         this.clearFilteredLinks = ClearFilteredLinks;
         this.clearSearchFilter = ClearSearchFilter;
         this.resetTableSorter = ResetTableSorter;
-
     }
 
     public boolean isCancelCrawler() {
@@ -67,7 +64,6 @@ public class GenericResetLinkgrabberRlyDialog extends ConfirmDialog {
 
     public boolean isResetSearch() {
         return cbSearch == null ? clearSearchFilter : cbSearch.isSelected();
-
     }
 
     public boolean isClearFiltered() {
@@ -78,7 +74,6 @@ public class GenericResetLinkgrabberRlyDialog extends ConfirmDialog {
     protected void initDoNotShowAgainCheckbox(MigPanel bottom) {
         super.initDoNotShowAgainCheckbox(bottom);
         dontshowagain.addChangeListener(new ChangeListener() {
-
             @Override
             public void stateChanged(ChangeEvent e) {
                 if (!dontshowagain.isSelected()) {
@@ -87,16 +82,13 @@ public class GenericResetLinkgrabberRlyDialog extends ConfirmDialog {
                     cbSearch.setEnabled(!LinkgrabberSearchField.getInstance().isEmpty());
                     cbCrawler.setEnabled(LinkCollector.getInstance().isCollecting());
                     cbFiltered.setEnabled(LinkCollector.getInstance().getfilteredStuffSize() > 0);
-
                 } else {
                     cbLinks.setEnabled(false);
                     cbSort.setEnabled(false);
                     cbSearch.setEnabled(false);
                     cbCrawler.setEnabled(false);
                     cbFiltered.setEnabled(false);
-
                 }
-
                 lblLinks.setEnabled(cbLinks.isEnabled());
                 lblSort.setEnabled(cbSort.isEnabled());
                 lblSearch.setEnabled(cbSearch.isEnabled());
@@ -115,7 +107,6 @@ public class GenericResetLinkgrabberRlyDialog extends ConfirmDialog {
     public JComponent layoutDialogContent() {
         JComponent m = super.layoutDialogContent();
         m.setLayout(new MigLayout("ins 0,wrap 2", "[][]", "[]0"));
-
         m.add(new JSeparator(), "spanx,growx,pushx,newline,gaptop 10");
         m.add(new JLabel(_GUI.T.GenericResetLinkgrabberRlyDialog_layoutDialogContent_todo_()), "spanx,");
         m.add(lblLinks = createLabel(_GUI.T.ResetLinkGrabberOptionDialog_layoutDialogContent_remove_links2(nodesToDelete.size(), LinkCollector.getInstance().getChildrenCount() - nodesToDelete.size())), "hidemode 3");
@@ -133,20 +124,16 @@ public class GenericResetLinkgrabberRlyDialog extends ConfirmDialog {
         cbSearch.setVisible(!LinkgrabberSearchField.getInstance().isEmpty());
         cbCrawler.setVisible(LinkCollector.getInstance().isCollecting());
         cbFiltered.setVisible(LinkCollector.getInstance().getfilteredStuffSize() > 0);
-
         lblLinks.setVisible(cbLinks.isVisible());
         lblSort.setVisible(cbSort.isVisible());
         lblSearch.setVisible(cbSearch.isVisible());
         lblCrawler.setVisible(cbCrawler.isVisible());
         lblFiltered.setVisible(cbFiltered.isVisible());
-
         cbLinks.setSelected(cbLinks.isVisible());
-
         cbSort.setSelected(cbSort.isEnabled() && resetTableSorter);
         cbSearch.setSelected(cbSearch.isEnabled() && clearSearchFilter);
         cbCrawler.setSelected(cbCrawler.isEnabled() && cancelLinkcrawlerJobs);
-        cbFiltered.setEnabled(cbFiltered.isEnabled() && clearFilteredLinks);
-
+        cbFiltered.setSelected(cbFiltered.isEnabled() && clearFilteredLinks);
         return m;
     }
 
@@ -155,5 +142,4 @@ public class GenericResetLinkgrabberRlyDialog extends ConfirmDialog {
         lbl.setHorizontalAlignment(JLabel.RIGHT);
         return lbl;
     }
-
 }
