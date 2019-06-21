@@ -192,7 +192,8 @@ public class CompiledFiletypeFilter {
         MPA,
         OMG,
         OMF,
-        SND;
+        SND,
+        NSF;// NES Sound Format, https://wiki.nesdev.com/w/index.php/NSF
         private final Pattern  pattern;
         private static Pattern allPattern;
 

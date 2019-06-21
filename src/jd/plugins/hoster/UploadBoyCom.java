@@ -19,9 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -30,6 +27,9 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class UploadBoyCom extends XFileSharingProBasic {
@@ -45,7 +45,8 @@ public class UploadBoyCom extends XFileSharingProBasic {
      * captchatype-info: 2019-05-29: reCaptchaV2<br />
      * other:<br />
      */
-    private static String[] domains = new String[] { "uploadboy.com" };
+    private static String[] domains    = new String[] { "uploadboy.com", "uploadboy.me" };
+    private static String[] mainDomain = new String[] { "uploadboy.com" };
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
@@ -149,7 +150,7 @@ public class UploadBoyCom extends XFileSharingProBasic {
     }
 
     public static String[] getAnnotationNames() {
-        return domains;
+        return mainDomain;
     }
 
     @Override
@@ -164,7 +165,7 @@ public class UploadBoyCom extends XFileSharingProBasic {
                 /* Match all URLs on first (=current) domain */
                 ret.add("https?://(?:www\\.)?" + getHostsPatternPart() + "/(?:embed\\-)?[a-z0-9]{12}(?:/[^/]+\\.html)?");
             } else {
-                ret.add("");
+                break;
             }
         }
         return ret.toArray(new String[0]);

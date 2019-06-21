@@ -97,6 +97,14 @@ public class DownloadLinkSandBox {
         }
     }
 
+    public String getPluginURL() {
+        if (downloadLink != null) {
+            return downloadLink.getPluginPatternMatcher();
+        } else {
+            return null;
+        }
+    }
+
     public String getContainerURL() {
         if (downloadLink != null) {
             return LinkTreeUtils.getUrlByType(UrlDisplayType.CONTAINER, downloadLink);
