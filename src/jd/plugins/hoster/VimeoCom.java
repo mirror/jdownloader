@@ -366,16 +366,16 @@ public class VimeoCom extends PluginForHost {
         }
         if (br.getHttpConnection().getResponseCode() == 403) {
             // referer or account might be required
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "403");
         } else if (br.getHttpConnection().getResponseCode() == 404 || "This video does not exist\\.".equals(PluginJSonUtils.getJsonValue(br, "message"))) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Video does not exist");
         } else if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 451) {
             // HTTP/1.1 451 Unavailable For Legal Reasons
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "451");
         } else if (br.containsHTML(">There was a problem loading this video")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Problem loading this video");
         } else if (br.containsHTML(">\\s*Private Video on Vimeo\\s*<")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Private video");
         }
         final String vuid = br.getRegex("document\\.cookie\\s*=\\s*'vuid='\\s*\\+\\s*encodeURIComponent\\('(\\d+\\.\\d+)'\\)").getMatch(0);
         if (vuid != null) {
