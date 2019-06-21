@@ -49,6 +49,66 @@ public class BrowserSandBox {
         return request != null ? request.getResponseHeader(field) : null;
     }
 
+    public int getResponseCode() {
+        return br.getHttpConnection().getResponseCode();
+    }
+
+    public String getRequestMethod() {
+        return br.getHttpConnection().getRequestMethod().toString();
+    }
+
+    public long getContentLength() {
+        return br.getHttpConnection().getContentLength();
+    }
+
+    public long getRequestTime() {
+        return br.getHttpConnection().getRequestTime();
+    }
+
+    public String getContentType() {
+        return br.getHttpConnection().getContentType();
+    }
+
+    public boolean isSSLTrustALL() {
+        return br.getHttpConnection().isSSLTrustALL();
+    }
+
+    public int getConnectTimeout() {
+        return br.getConnectTimeout();
+    }
+
+    public void setConnectTimeout(final int connectTimeout) {
+        br.setConnectTimeout(connectTimeout);
+    }
+
+    public int getReadTimeout() {
+        return br.getReadTimeout();
+    }
+
+    public void setReadTimeout(final int readTimeout) {
+        br.setReadTimeout(readTimeout);
+    }
+
+    public void setFollowRedirects(final boolean b) {
+        br.setFollowRedirects(b);
+    }
+
+    public boolean isFollowingRedirects() {
+        return br.isFollowingRedirects();
+    }
+
+    public String getRedirectLocation() {
+        return br.getRedirectLocation();
+    }
+
+    public void setDefaultSSLTrustALL(Boolean defaultSSLTrustALL) {
+        br.setDefaultSSLTrustALL(defaultSSLTrustALL);
+    }
+
+    public boolean getDefaultSSLTrustALL() {
+        return br.getDefaultSSLTrustALL();
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof BrowserSandBox) {
