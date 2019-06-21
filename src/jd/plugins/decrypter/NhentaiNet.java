@@ -49,7 +49,7 @@ public class NhentaiNet extends antiDDoSForDecrypt {
         getPage(parameter);
         final String fpName = new Regex(parameter, this.getSupportedLinks()).getMatch(0) + " - nhentai gallery";
         // images
-        final String[] imgs = br.getRegex("<img is=\"[^\"]*lazyload-image[^\"]*\" class=\"[^\"]*lazyload[^\"]*\"[^>]+data-src\\s*=\\s*\"(.*?)\"").getColumn(0);
+        final String[] imgs = br.getRegex("class\\s*=\\s*\"gallerythumb\"\\s*href\\s*=\\s*\"/g/\\d+/\\d+/?\"[^<]*?<img is=\"[^\"]*lazyload-image[^\"]*\" class=\"[^\"]*lazyload[^\"]*\"[^>]+data-src\\s*=\\s*\"(.*?)\"").getColumn(0);
         if (imgs == null || imgs.length == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
