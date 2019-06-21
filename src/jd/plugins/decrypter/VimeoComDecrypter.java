@@ -111,8 +111,8 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         }
     }
 
-    private boolean retryWithCustomReferer(final CryptedLink param, final PluginException e, final Browser br, final AtomicReference<String> referer) throws Exception {
-        if (isEmbeddedForbidden(e, br) && SubConfiguration.getConfig("vimeo.com").getBooleanProperty("ASK_REF", Boolean.TRUE)) {
+    private boolean retryWithCustomReferer(VIMEO_URL_TYPE urlType, final CryptedLink param, final PluginException e, final Browser br, final AtomicReference<String> referer) throws Exception {
+        if (isEmbeddedForbidden(urlType, e, br) && SubConfiguration.getConfig("vimeo.com").getBooleanProperty("ASK_REF", Boolean.TRUE)) {
             final String vimeo_asked_referer = getUserInput("Referer?", "Please enter referer for this link", param);
             if (StringUtils.isNotEmpty(vimeo_asked_referer) && !StringUtils.equalsIgnoreCase(Browser.getHost(vimeo_asked_referer), "vimeo.com")) {
                 referer.set(vimeo_asked_referer);
@@ -122,8 +122,8 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         return false;
     }
 
-    private boolean isEmbeddedForbidden(PluginException e, Browser br) {
-        return e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND && ((br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 403) || (br.containsHTML(">\\s*Private Video on Vimeo\\s*<")));
+    private boolean isEmbeddedForbidden(VIMEO_URL_TYPE urlType, PluginException e, Browser br) {
+        return VIMEO_URL_TYPE.PLAYER.equals(urlType) && e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND && ((br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 403) || (br.containsHTML(">\\s*Private Video on Vimeo\\s*<")));
     }
 
     @Override
@@ -302,30 +302,28 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 try {
                     try {
                         jd.plugins.hoster.VimeoCom.accessVimeoURL(this, this.br, parameter, referer, urlType);
-                    } catch (final PluginException e2) {
-                        if (retryWithCustomReferer(param, e2, br, referer)) {
+                    } catch (final PluginException e) {
+                        if (retryWithCustomReferer(urlType, param, e, br, referer)) {
                             jd.plugins.hoster.VimeoCom.accessVimeoURL(this, this.br, parameter, referer, urlType);
                         } else {
-                            throw e2;
+                            throw e;
                         }
                     }
                 } catch (final PluginException e2) {
                     logger.log(e2);
                     if (e2.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
-                        decryptedLinks.add(createOfflinelink(parameter, videoID, null));
-                        return decryptedLinks;
+                        if (isPasswordProtected(this.br)) {
+                            password = handlePW(param, this.br);
+                        } else {
+                            decryptedLinks.add(createOfflinelink(parameter, videoID, null));
+                            return decryptedLinks;
+                        }
                     } else {
                         throw e2;
                     }
                 }
                 if (isPasswordProtected(this.br)) {
-                    try {
-                        password = handlePW(param, videoID, this.br);
-                    } catch (final DecrypterException edc) {
-                        logger.info("User entered too many wrong passwords --> Cannot decrypt link: " + parameter);
-                        decryptedLinks.add(createOfflinelink(parameter, videoID, null));
-                        return decryptedLinks;
-                    }
+                    password = handlePW(param, this.br);
                 }
                 final String cleanVimeoURL = br.getURL();
                 /*
@@ -801,7 +799,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         }
     }
 
-    private String handlePW(final CryptedLink param, final String videoID, final Browser br) throws Exception {
+    private String handlePW(final CryptedLink param, final Browser br) throws Exception {
         final List<String> passwords = getPreSetPasswords();
         // check for a password. Store latest password in DB
         /* Try stored password first */

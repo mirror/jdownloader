@@ -348,7 +348,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
     public static enum RetryReason {
         CAPTCHA(_JDT.T.decrypter_wrongcaptcha()),
-        NO_ACCOUNT(_JDT.T.decrypter_wrongpassword()),
+        NO_ACCOUNT(_JDT.T.decrypter_invalidaccount()),
         PLUGIN_DEFECT(_JDT.T.decrypter_plugindefect()),
         PASSWORD(_JDT.T.decrypter_wrongpassword()),
         HOST(_JDT.T.plugins_errors_hosterproblem());
