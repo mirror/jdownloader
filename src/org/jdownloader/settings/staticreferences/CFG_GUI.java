@@ -34,6 +34,11 @@ public class CFG_GUI {
      * Enable/disable Clipboard monitoring
      **/
     public static final BooleanKeyHandler                              CLIPBOARD_MONITORED                                     = SH.getKeyHandler("ClipboardMonitored", BooleanKeyHandler.class);
+    public static final EnumKeyHandler                                 CLIPBOARD_SKIP_MODE                                     = SH.getKeyHandler("ClipboardSkipMode", EnumKeyHandler.class);
+    /**
+     * Enable/disable HTML-Flavor(Browser selection) Clipboard monitoring
+     **/
+    public static final BooleanKeyHandler                              CLIPBOARD_MONITOR_PROCESS_HTMLFLAVOR                    = SH.getKeyHandler("ClipboardMonitorProcessHTMLFlavor", BooleanKeyHandler.class);
     /**
      * Enable/Disable the Linkgrabber properties panel
      **/
@@ -221,10 +226,6 @@ public class CFG_GUI {
      **/
     public static final ListHandler<int[]>                             WINDOWS_WINDOW_MANAGER_ALT_KEY_COMBI                    = SH.getKeyHandler("WindowsWindowManagerAltKeyCombi", ListHandler.class);
     public static final StringKeyHandler                               DONATION_NOTIFY_ID                                      = SH.getKeyHandler("DonationNotifyID", StringKeyHandler.class);
-    /**
-     * Enable/disable HTML-Flavor(Browser selection) Clipboard monitoring
-     **/
-    public static final BooleanKeyHandler                              CLIPBOARD_MONITOR_PROCESS_HTMLFLAVOR                    = SH.getKeyHandler("ClipboardMonitorProcessHTMLFlavor", BooleanKeyHandler.class);
     public static final BooleanKeyHandler                              LINKGRABBER_SIDEBAR_VISIBLE                             = SH.getKeyHandler("LinkgrabberSidebarVisible", BooleanKeyHandler.class);
     public static final BooleanKeyHandler                              OVERVIEW_PANEL_SELECTED_INFO_VISIBLE                    = SH.getKeyHandler("OverviewPanelSelectedInfoVisible", BooleanKeyHandler.class);
     /**

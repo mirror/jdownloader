@@ -25,7 +25,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.TimeZone;
 import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
@@ -175,7 +174,6 @@ public class YoutubeHelper {
     // public Map<String, YoutubeBasicVariant> getVariantsMap() {
     // return variantsMap;
     // }
-    public static final LogSource             LOGGER                           = LogController.getInstance().getLogger(YoutubeHelper.class.getName());
     public static final List<YoutubeReplacer> REPLACER                         = new ArrayList<YoutubeReplacer>();
     static {
         REPLACER.add(new YoutubeReplacer("GROUP") {
@@ -185,8 +183,7 @@ public class YoutubeHelper {
                 try {
                     return variant.getGroup().getLabel();
                 } catch (Throwable e) {
-                    // old variant
-                    LOGGER.log(e);
+                    helper.logger.log(e);
                     return "[INVALID LINK!]";
                 }
             }
@@ -292,8 +289,7 @@ public class YoutubeHelper {
                 try {
                     return variant.getFileNameQualityTag();
                 } catch (Throwable e) {
-                    // old variant
-                    LOGGER.log(e);
+                    helper.logger.log(e);
                     return "[INVALID LINK!]";
                 }
             }
@@ -528,19 +524,25 @@ public class YoutubeHelper {
             @Override
             protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
                 // date
-                DateFormat formatter = DateFormat.getDateInstance(DateFormat.LONG, TranslationFactory.getDesiredLocale());
+                DateFormat formatter = null;
                 if (StringUtils.isNotEmpty(mod)) {
                     try {
                         formatter = new SimpleDateFormat(mod, TranslationFactory.getDesiredLocale());
                     } catch (Throwable e) {
-                        LOGGER.log(e);
+                        helper.logger.log(e);
                     }
                 }
-                long timestamp = link.getLongProperty(YoutubeHelper.YT_DATE, -1);
-                if (timestamp > 0) {
-                    Log.info(" Youtube Replace Date " + mod + " - " + timestamp + " > " + formatter.format(timestamp));
+                if (formatter == null) {
+                    formatter = DateFormat.getDateInstance(DateFormat.LONG, TranslationFactory.getDesiredLocale());
                 }
-                return timestamp > 0 ? formatter.format(timestamp) : "";
+                final long timestamp = link.getLongProperty(YoutubeHelper.YT_DATE, -1);
+                if (timestamp > 0) {
+                    final String ret = formatter.format(timestamp);
+                    helper.logger.info(" Youtube Replace Date " + mod + " - " + timestamp + " > " + ret);
+                    return ret;
+                } else {
+                    return "";
+                }
             }
         });
         REPLACER.add(new YoutubeReplacer("DATE_UDPATE") {
@@ -556,16 +558,25 @@ public class YoutubeHelper {
             @Override
             protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
                 // date
-                DateFormat formatter = DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.LONG, TranslationFactory.getDesiredLocale());
+                DateFormat formatter = null;
                 if (StringUtils.isNotEmpty(mod)) {
                     try {
-                        formatter = new SimpleDateFormat(mod);
+                        formatter = new SimpleDateFormat(mod, TranslationFactory.getDesiredLocale());
                     } catch (Throwable e) {
-                        LOGGER.log(e);
+                        helper.logger.log(e);
                     }
                 }
-                long timestamp = link.getLongProperty(YoutubeHelper.YT_DATE_UPDATE, -1);
-                return timestamp > 0 ? formatter.format(timestamp) : "";
+                if (formatter == null) {
+                    formatter = DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.LONG, TranslationFactory.getDesiredLocale());
+                }
+                final long timestamp = link.getLongProperty(YoutubeHelper.YT_DATE_UPDATE, -1);
+                if (timestamp > 0) {
+                    final String ret = formatter.format(timestamp);
+                    helper.logger.info(" Youtube Replace Update-Date " + mod + " - " + timestamp + " > " + ret);
+                    return ret;
+                } else {
+                    return "";
+                }
             }
         });
         REPLACER.add(new YoutubeReplacer("VIDEO_CODEC") {
@@ -632,8 +643,7 @@ public class YoutubeHelper {
                 try {
                     return YoutubeITAG.valueOf(var).getVideoResolution().getLabel();
                 } catch (Throwable e) {
-                    // old variant
-                    LOGGER.log(e);
+                    helper.logger.log(e);
                     return "[INVALID LINK!]";
                 }
             }
@@ -735,7 +745,7 @@ public class YoutubeHelper {
                 try {
                     df = new DecimalFormat(mod);
                 } catch (Throwable e) {
-                    LOGGER.log(e);
+                    helper.logger.log(e);
                     df = new DecimalFormat("0000");
                 }
                 int playlistNumber = link.getIntegerProperty(YoutubeHelper.YT_PLAYLIST_INT, -1);
@@ -1158,7 +1168,6 @@ public class YoutubeHelper {
                 if (date != null) {
                     // seen in MMM dd, yyyy
                     final SimpleDateFormat formatter = new SimpleDateFormat("MMM dd, yyyy", Locale.ENGLISH);
-                    formatter.setTimeZone(TimeZone.getDefault());
                     try {
                         vid.date = formatter.parse(date).getTime();
                         logger.info("Date result " + vid.date + " " + new Date(vid.date));

@@ -814,7 +814,7 @@ public class SecondLevelLaunch {
                                                 /* init clipboardMonitoring stuff */
                                                 CLIPBOARD_SKIP_MODE skipMode = guiConfig.getClipboardSkipMode();
                                                 if (skipMode == null) {
-                                                    skipMode = CLIPBOARD_SKIP_MODE.NEVER;
+                                                    skipMode = CLIPBOARD_SKIP_MODE.ON_STARTUP;
                                                 }
                                                 ClipboardMonitoring.setHtmlFlavorAllowed(guiConfig.isClipboardMonitorProcessHTMLFlavor());
                                                 if (org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED.isEnabled()) {
@@ -826,8 +826,31 @@ public class SecondLevelLaunch {
                                                     case ON_ENABLE:
                                                         ClipboardMonitoring.setClipboardSkipMode(skipMode);
                                                         break;
+                                                    case ON_STARTUP:
+                                                    default:
+                                                        break;
                                                     }
                                                 }
+                                                org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITOR_PROCESS_HTMLFLAVOR.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+                                                    @Override
+                                                    public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+                                                    }
+
+                                                    @Override
+                                                    public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                                                        ClipboardMonitoring.setHtmlFlavorAllowed(Boolean.TRUE.equals(newValue));
+                                                    }
+                                                });
+                                                org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_SKIP_MODE.getEventSender().addListener(new GenericConfigEventListener<Enum>() {
+                                                    @Override
+                                                    public void onConfigValidatorError(KeyHandler<Enum> keyHandler, Enum invalidValue, ValidationException validateException) {
+                                                    }
+
+                                                    @Override
+                                                    public void onConfigValueModified(KeyHandler<Enum> keyHandler, Enum newValue) {
+                                                        ClipboardMonitoring.getINSTANCE().setClipboardSkipMode((CLIPBOARD_SKIP_MODE) newValue);
+                                                    }
+                                                });
                                                 org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
                                                     public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
                                                         if (Boolean.TRUE.equals(newValue) && ClipboardMonitoring.getINSTANCE().isMonitoring() == false) {

@@ -63,8 +63,9 @@ public class CrawledLinkSandbox {
     public long getAddedDate() {
         if (link != null) {
             return link.getCreated();
+        } else {
+            return -1;
         }
-        return -1;
     }
 
     public CrawledLinkSandbox() {
@@ -114,29 +115,46 @@ public class CrawledLinkSandbox {
     public String getContentURL() {
         if (link != null) {
             return LinkTreeUtils.getUrlByType(UrlDisplayType.CONTENT, link);
+        } else {
+            return null;
         }
-        return null;
     }
 
     public String getContainerURL() {
         if (link != null) {
             return LinkTreeUtils.getUrlByType(UrlDisplayType.CONTAINER, link);
+        } else {
+            return null;
         }
-        return null;
+    }
+
+    public DownloadLinkSandBox getDownloadLink() {
+        if (link != null) {
+            final DownloadLink downloadLink = link.getDownloadLink();
+            if (downloadLink != null) {
+                return new DownloadLinkSandBox(downloadLink);
+            } else {
+                return null;
+            }
+        } else {
+            return null;
+        }
     }
 
     public String getOriginURL() {
         if (link != null) {
             return LinkTreeUtils.getUrlByType(UrlDisplayType.ORIGIN, link);
+        } else {
+            return null;
         }
-        return null;
     }
 
     public String getReferrerURL() {
         if (link != null) {
             return LinkTreeUtils.getUrlByType(UrlDisplayType.REFERRER, link);
+        } else {
+            return null;
         }
-        return null;
     }
 
     public boolean remove() {
@@ -176,8 +194,9 @@ public class CrawledLinkSandbox {
     public String getUUID() {
         if (link != null) {
             return link.getUniqueID().toString();
+        } else {
+            return null;
         }
-        return null;
     }
 
     public void setProperty(String key, Object value) {
@@ -220,8 +239,9 @@ public class CrawledLinkSandbox {
     public String getComment() {
         if (link != null) {
             return link.getComment();
+        } else {
+            return null;
         }
-        return null;
     }
 
     public void setComment(String comment) {
@@ -258,22 +278,25 @@ public class CrawledLinkSandbox {
     public String getUrl() {
         if (link != null) {
             return link.getURL();
+        } else {
+            return null;
         }
-        return null;
     }
 
     public long getBytesTotal() {
         if (link != null) {
             return link.getSize();
+        } else {
+            return -1;
         }
-        return -1;
     }
 
     public String getName() {
         if (link == null) {
             return "Test.txt";
+        } else {
+            return link.getName();
         }
-        return link.getName();
     }
 
     public CrawledPackageSandbox getPackage() {
