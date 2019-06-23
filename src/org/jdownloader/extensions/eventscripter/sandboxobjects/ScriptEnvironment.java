@@ -1,5 +1,6 @@
 package org.jdownloader.extensions.eventscripter.sandboxobjects;
 
+import java.awt.Font;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
@@ -27,7 +28,12 @@ import javax.sound.sampled.FloatControl;
 import javax.sound.sampled.LineEvent;
 import javax.sound.sampled.LineEvent.Type;
 import javax.sound.sampled.LineListener;
+import javax.swing.JLabel;
+import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.HyperlinkListener;
+import javax.swing.text.JTextComponent;
 
 import jd.controlling.AccountController;
 import jd.controlling.TaskQueue;
@@ -39,6 +45,7 @@ import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.proxy.AbstractProxySelectorImpl;
 import jd.controlling.reconnect.Reconnecter;
 import jd.http.Browser;
 import jd.plugins.Account;
@@ -50,10 +57,12 @@ import net.sourceforge.htmlunit.corejs.javascript.ScriptableObject;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.jackson.JacksonMapper;
+import org.appwork.swing.MigPanel;
 import org.appwork.uio.CloseReason;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
+import org.appwork.utils.BinaryLogic;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.Files;
 import org.appwork.utils.Hash;
@@ -97,7 +106,6 @@ public class ScriptEnvironment {
         if (objects != null && objects.length == 1) {
             if (Clazz.isPrimitiveWrapper(objects[0].getClass()) || Clazz.isString(objects[0].getClass())) {
                 showMessageDialog(objects[0] + "");
-                return;
             } else {
                 try {
                     try {
@@ -108,8 +116,8 @@ public class ScriptEnvironment {
                 } catch (Throwable e) {
                     showMessageDialog(objects[0] + "");
                 }
-                return;
             }
+            return;
         }
         try {
             try {
@@ -128,6 +136,14 @@ public class ScriptEnvironment {
         final ScriptThread env = getScriptThread();
         if (env != null) {
             env.setCheckPermissions(false);
+        }
+    }
+
+    @ScriptAPI(description = "enable/disable alert with textbox and copy&paste")
+    public static void setAdvancedAlert(final boolean b) {
+        final ScriptThread env = getScriptThread();
+        if (env != null) {
+            env.setAdvancedAlert(b);
         }
     }
 
@@ -921,6 +937,45 @@ public class ScriptEnvironment {
         }
     }
 
+    @ScriptAPI(description = "Get proxy list", parameters = { "" }, example = "proxylist();")
+    public static String proxylist() throws EnvironmentException {
+        java.util.List<AbstractProxySelectorImpl> selectedObjects = jd.controlling.proxy.ProxyController.getInstance().getList();
+        StringBuilder sb = new StringBuilder();
+        for (AbstractProxySelectorImpl pi : selectedObjects) {
+            String str = pi.toExportString();
+            if (str == null) {
+                continue;
+            }
+            if (sb.length() > 0) {
+                sb.append("\r\n");
+            }
+            sb.append(str);
+        }
+        return sb.toString();
+    }
+
+    @ScriptAPI(description = "Get proxy banlist", parameters = { "" }, example = "proxybanlist();")
+    public static String proxybanlist() throws EnvironmentException {
+        java.util.List<AbstractProxySelectorImpl> selectedObjects = jd.controlling.proxy.ProxyController.getInstance().getList();
+        StringBuilder sb = new StringBuilder();
+        for (AbstractProxySelectorImpl pi : selectedObjects) {
+            String str = pi.getBanList().toString();
+            if (str == null || str == "" || str == "[]") {
+                continue;
+            }
+            String str_temp = pi.toExportString();
+            if (str_temp == null) {
+                continue;
+            }
+            str = str_temp + ": " + str;
+            if (sb.length() > 0) {
+                sb.append("\r\n");
+            }
+            sb.append(str);
+        }
+        return sb.toString();
+    }
+
     @ScriptAPI(description = "Loads a Javascript file or url. ATTENTION. The loaded script can access the API as well.", parameters = { "myFilePathOrUrl" }, example = "require(\"https://raw.githubusercontent.com/douglascrockford/JSON-js/master/json.js\");")
     public static void require(String fileOrUrl) throws EnvironmentException {
         askForPermission("load external JavaScript");
@@ -966,6 +1021,48 @@ public class ScriptEnvironment {
 
             @Override
             protected void modifyTextPane(JTextPane textField) {
+            }
+
+            @Override
+            protected JTextComponent addMessageComponent(final MigPanel p) {
+                JTextPane textField = new JTextPane();
+                modifyTextPane(textField);
+                final Font font = textField.getFont();
+                if (BinaryLogic.containsAll(flagMask, Dialog.STYLE_HTML)) {
+                    textField.setContentType("text/html");
+                    textField.addHyperlinkListener(new HyperlinkListener() {
+                        public void hyperlinkUpdate(final HyperlinkEvent e) {
+                            if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+                                CrossSystem.openURL(e.getURL());
+                            }
+                        }
+                    });
+                } else {
+                    textField.setContentType("text/plain");
+                }
+                textField.setFont(font);
+                textField.setText(getMessage());
+                if (env.isAdvancedAlert()) {
+                    textField.setEditable(true);
+                } else {
+                    textField.setEditable(false);
+                }
+                textField.setBackground(null);
+                textField.setOpaque(false);
+                if (env.isAdvancedAlert()) {
+                    textField.setFocusable(true);
+                } else {
+                    textField.setFocusable(false);
+                }
+                textField.setForeground(new JLabel().getForeground());
+                textField.putClientProperty("Synthetica.opaque", Boolean.FALSE);
+                textField.setCaretPosition(0);
+                if (BinaryLogic.containsAll(flagMask, Dialog.STYLE_LARGE)) {
+                    p.add(new JScrollPane(textField), "pushx,growx");
+                } else {
+                    p.add(textField);
+                }
+                return textField;
             }
 
             @Override

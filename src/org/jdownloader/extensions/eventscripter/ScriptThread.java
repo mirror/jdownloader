@@ -52,6 +52,7 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
     private boolean                      checkPermissions   = true;
     private boolean                      disableOnException = true;
     private boolean                      notifyOnException  = true;
+    private boolean                      advancedAlert      = false;
 
     public boolean isNotifyOnException() {
         return notifyOnException;
@@ -89,6 +90,14 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
 
     public void setCheckPermissions(boolean checkPermissions) {
         this.checkPermissions = checkPermissions;
+    }
+
+    public boolean isAdvancedAlert() {
+        return advancedAlert;
+    }
+
+    public void setAdvancedAlert(boolean advancedAlert) {
+        this.advancedAlert = advancedAlert;
     }
 
     public LogSource getLogger() {
