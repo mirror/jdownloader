@@ -45,11 +45,11 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "arte.tv", "concert.arte.tv", "creative.arte.tv", "future.arte.tv", "cinema.arte.tv", "theoperaplatform.eu", "info.arte.tv" }, urls = { "https?://(?:www\\.)?arte\\.tv/.+", "https?://concert\\.arte\\.tv/.+", "https?://creative\\.arte\\.tv/(?:de|fr)/(?!scald_dmcloud_json).+", "https?://future\\.arte\\.tv/.+", "https?://cinema\\.arte\\.tv/.+", "https?://(?:www\\.)?theoperaplatform\\.eu/.+", "https?://info\\.arte\\.tv/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "arte.tv", "concert.arte.tv", "creative.arte.tv", "future.arte.tv", "cinema.arte.tv", "theoperaplatform.eu", "info.arte.tv" }, urls = { "https?://(?:www\\.)?arte\\.tv/.+", "https?://concert\\.arte\\.tv/.+", "https?://creative\\.arte\\.tv/(?:de|fr|en|it|pl|es)/(?!scald_dmcloud_json).+", "https?://future\\.arte\\.tv/.+", "https?://cinema\\.arte\\.tv/.+", "https?://(?:www\\.)?theoperaplatform\\.eu/.+", "https?://info\\.arte\\.tv/.+" })
 public class ArteMediathekDecrypter extends PluginForDecrypt {
     private static final String     EXCEPTION_LINKOFFLINE                       = "EXCEPTION_LINKOFFLINE";
-    private static final String     TYPE_CONCERT                                = "https?://concert\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+";
-    private static final String     TYPE_CREATIVE                               = "https?://creative\\.arte\\.tv/(?:de|fr)/.+";
+    private static final String     TYPE_CONCERT                                = "https?://concert\\.arte\\.tv/(?:de|fr|en|it|pl|es)/[a-z0-9\\-]+";
+    private static final String     TYPE_CREATIVE                               = "https?://creative\\.arte\\.tv/(?:de|fr|en|it|pl|es)/.+";
     private static final String     TYPE_FUTURE                                 = "https?://future\\.arte\\.tv/.+";
     private static final String     TYPE_ARTETV_GUIDE                           = "https?://(?:www\\.)?arte\\.tv/guide/[a-z]{2}/\\d+\\-\\d+(?:\\-[ADF])?/[a-z0-9\\-_]+.*?";
     private static final String     TYPE_ARTETV_EMBED                           = "https?://(?:www\\.)?arte\\.tv/guide/[A-Za-z]{2}/embed/.+";
@@ -76,9 +76,13 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     private static final short      format_intern_audio_description             = 5;
     private static final short      format_intern_unknown                       = 6;
     final String[]                  formats                                     = { http_300, http_800, http_1500, http_2200 };
-    private static final String     LANG_DE                                     = "de";
     private static final String     LOAD_BEST                                   = "LOAD_BEST";
+    private static final String     LANG_DE                                     = "de";
     private static final String     LANG_FR                                     = "fr";
+    private static final String     LANG_EN                                     = "en";
+    private static final String     LANG_ES                                     = "es";
+    private static final String     LANG_PL                                     = "pl";
+    private static final String     LANG_IT                                     = "it";
     private String                  parameter;
     private ArrayList<DownloadLink> decryptedLinks                              = new ArrayList<DownloadLink>();
     private String                  example_arte_vp_url                         = null;
@@ -118,6 +122,10 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         final String desiredLanguage = TranslationFactory.getDesiredLanguage();
         final boolean isGerman = "de".equalsIgnoreCase(desiredLanguage);
         final boolean isFrancais = "fr".equalsIgnoreCase(desiredLanguage);
+        final boolean isEnglish = "en".equalsIgnoreCase(desiredLanguage);
+        final boolean isPolish = "pl".equalsIgnoreCase(desiredLanguage);
+        final boolean isItalian = "it".equalsIgnoreCase(desiredLanguage);
+        final boolean isSpanish = "es".equalsIgnoreCase(desiredLanguage);
         String videoid_base = null;
         String video_section = null;
         try {
@@ -164,7 +172,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     /* Fallback - maybe they simply embed a normal ARTE TYPE_GUIDE video ... */
                     playerinfo = this.br.getRegex("api\\.arte\\.tv/api/player/v1/config/[a-z]{2}/([A-Za-z0-9\\-]+)(\\?[^<>\"\\']+)");
                     final String link_ending = playerinfo.getMatch(1);
-                    fid = br.getRegex("api\\.arte\\.tv/api/player/v1/config/(?:de|fr)/([A-Za-z0-9\\-]+)").getMatch(0);
+                    fid = br.getRegex("api\\.arte\\.tv/api/player/v1/config/(?:de|fr|en|it|pl|es)/([A-Za-z0-9\\-]+)").getMatch(0);
                     if (fid != null && link_ending != null) {
                         hybridAPIUrl = API_HYBRID_URL_1 + link_ending;
                     } else {
@@ -220,6 +228,10 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
              */
             final boolean germanSelected = cfg.getBooleanProperty(jd.plugins.hoster.ArteTv.LOAD_LANGUAGE_GERMAN, jd.plugins.hoster.ArteTv.default_LOAD_LANGUAGE_GERMAN);
             final boolean francaisSelected = cfg.getBooleanProperty(jd.plugins.hoster.ArteTv.LOAD_LANGUAGE_FRENCH, jd.plugins.hoster.ArteTv.default_LOAD_LANGUAGE_FRENCH);
+            final boolean polishSelected = cfg.getBooleanProperty(jd.plugins.hoster.ArteTv.LOAD_LANGUAGE_POLISH, jd.plugins.hoster.ArteTv.default_LOAD_LANGUAGE_POLISH);
+            final boolean italianSelected = cfg.getBooleanProperty(jd.plugins.hoster.ArteTv.LOAD_LANGUAGE_ITALIAN, jd.plugins.hoster.ArteTv.default_LOAD_LANGUAGE_ITALIAN);
+            final boolean englishSelected = cfg.getBooleanProperty(jd.plugins.hoster.ArteTv.LOAD_LANGUAGE_ENGLISH, jd.plugins.hoster.ArteTv.default_LOAD_LANGUAGE_ENGLISH);
+            final boolean spanishSelected = cfg.getBooleanProperty(jd.plugins.hoster.ArteTv.LOAD_LANGUAGE_SPANISH, jd.plugins.hoster.ArteTv.default_LOAD_LANGUAGE_SPANISH);
             final boolean loadURLLanguage = cfg.getBooleanProperty(jd.plugins.hoster.ArteTv.LOAD_LANGUAGE_URL, jd.plugins.hoster.ArteTv.default_LOAD_LANGUAGE_URL);
             final boolean loadBest = cfg.getBooleanProperty(LOAD_BEST, false);
             if (loadURLLanguage) {
@@ -229,6 +241,14 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     selectedLanguages.add(LANG_DE);
                 } else if (isFrancais && francaisSelected) {
                     selectedLanguages.add(LANG_FR);
+                } else if (isEnglish && englishSelected) {
+                    selectedLanguages.add(LANG_EN);
+                } else if (isItalian && italianSelected) {
+                    selectedLanguages.add(LANG_IT);
+                } else if (isPolish && polishSelected) {
+                    selectedLanguages.add(LANG_PL);
+                } else if (isSpanish && spanishSelected) {
+                    selectedLanguages.add(LANG_ES);
                 } else {
                     if (germanSelected) {
                         selectedLanguages.add(LANG_DE);
@@ -236,11 +256,27 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     if (francaisSelected) {
                         selectedLanguages.add(LANG_FR);
                     }
-                    if (!germanSelected && !francaisSelected) {
+                    if (englishSelected) {
+                        selectedLanguages.add(LANG_EN);
+                    }
+                    if (italianSelected) {
+                        selectedLanguages.add(LANG_IT);
+                    }
+                    if (polishSelected) {
+                        selectedLanguages.add(LANG_PL);
+                    }
+                    if (spanishSelected) {
+                        selectedLanguages.add(LANG_ES);
+                    }
+                    if (selectedLanguages.size() == 0) {
                         /* Fallback - nothing selected --> Download everything */
                         logger.info("User selected no language at all --> Downloading all languages");
                         selectedLanguages.add(LANG_DE);
                         selectedLanguages.add(LANG_FR);
+                        selectedLanguages.add(LANG_EN);
+                        selectedLanguages.add(LANG_IT);
+                        selectedLanguages.add(LANG_PL);
+                        selectedLanguages.add(LANG_ES);
                     }
                 }
             }
@@ -348,19 +384,23 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     if (!cfg.getBooleanProperty(jd.plugins.hoster.ArteTv.V_NORMAL, jd.plugins.hoster.ArteTv.default_V_NORMAL) && !(SubtitleType.FULL.equals(versionInfo.getSubtitleType()) || SubtitleType.HEARING_IMPAIRED.equals(versionInfo.getSubtitleType()))) {
                         /* User does not want the non-subtitled version */
                         continue;
-                    }
-                    if (!cfg.getBooleanProperty(jd.plugins.hoster.ArteTv.V_SUBTITLE_DISABLED_PEOPLE, jd.plugins.hoster.ArteTv.default_V_SUBTITLE_DISABLED_PEOPLE) && SubtitleType.HEARING_IMPAIRED.equals(versionInfo.getSubtitleType())) {
+                    } else if (!cfg.getBooleanProperty(jd.plugins.hoster.ArteTv.V_SUBTITLE_DISABLED_PEOPLE, jd.plugins.hoster.ArteTv.default_V_SUBTITLE_DISABLED_PEOPLE) && SubtitleType.HEARING_IMPAIRED.equals(versionInfo.getSubtitleType())) {
                         /* User does not want the subtitled-for-.disabled-people version */
                         continue;
-                    }
-                    if (!cfg.getBooleanProperty(jd.plugins.hoster.ArteTv.V_SUBTITLED, jd.plugins.hoster.ArteTv.default_V_SUBTITLED) && SubtitleType.FULL.equals(versionInfo.getSubtitleType())) {
+                    } else if (!cfg.getBooleanProperty(jd.plugins.hoster.ArteTv.V_SUBTITLED, jd.plugins.hoster.ArteTv.default_V_SUBTITLED) && SubtitleType.FULL.equals(versionInfo.getSubtitleType())) {
                         /* User does not want the subtitled version */
                         continue;
-                    }
-                    if (!francaisSelected && !loadURLLanguage && SubtitleLanguage.FRANCAIS.equals(versionInfo.getSubtitleLanguage())) {
+                    } else if (!francaisSelected && !loadURLLanguage && SubtitleLanguage.FRANCAIS.equals(versionInfo.getSubtitleLanguage())) {
                         continue;
-                    }
-                    if (!germanSelected && !loadURLLanguage && SubtitleLanguage.GERMAN.equals(versionInfo.getSubtitleLanguage())) {
+                    } else if (!germanSelected && !loadURLLanguage && SubtitleLanguage.GERMAN.equals(versionInfo.getSubtitleLanguage())) {
+                        continue;
+                    } else if (!englishSelected && !loadURLLanguage && SubtitleLanguage.ENGLISH.equals(versionInfo.getSubtitleLanguage())) {
+                        continue;
+                    } else if (!polishSelected && !loadURLLanguage && SubtitleLanguage.POLISH.equals(versionInfo.getSubtitleLanguage())) {
+                        continue;
+                    } else if (!italianSelected && !loadURLLanguage && SubtitleLanguage.ITALIAN.equals(versionInfo.getSubtitleLanguage())) {
+                        continue;
+                    } else if (!spanishSelected && !loadURLLanguage && SubtitleLanguage.SPANISH.equals(versionInfo.getSubtitleLanguage())) {
                         continue;
                     }
                     if (url.contains(".m3u8")) {
@@ -530,7 +570,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     private void scanForExternalUrls() {
         /* Return external links if existant */
         final String currentHost = new Regex(this.br.getURL(), "https?://([^/]*?)/.+").getMatch(0);
-        final String[] externURLsRegexes = { "data\\-url=\"(http://creative\\.arte\\.tv/(de|fr)/scald_dmcloud_json/\\d+)", "(youtube\\.com/embed/[^<>\"]*?)\"", "(https?://(?:www\\.)?arte\\.tv/guide/[A-Za-z]{2}/embed/[^/\"]+/[^/\"]+)" };
+        final String[] externURLsRegexes = { "data\\-url=\"(http://creative\\.arte\\.tv/(de|fr|en|it|pl|es)/scald_dmcloud_json/\\d+)", "(youtube\\.com/embed/[^<>\"]*?)\"", "(https?://(?:www\\.)?arte\\.tv/guide/[A-Za-z]{2}/embed/[^/\"]+/[^/\"]+)" };
         for (final String externURLRegex : externURLsRegexes) {
             final String[] externURLs = br.getRegex(externURLRegex).getColumn(0);
             if (externURLs != null && externURLs.length > 0) {
@@ -602,6 +642,10 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     private static enum SubtitleLanguage {
         FRANCAIS,
         GERMAN,
+        SPANISH,
+        POLISH,
+        ITALIAN,
+        ENGLISH,
         OTHER;
         private static SubtitleLanguage parse(final String apiosCode) {
             final String subtitleLanguage = new Regex(apiosCode, "-STM?(A|F)").getMatch(0);
@@ -613,6 +657,15 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 } else {
                     return OTHER;
                 }
+            }
+            if (apiosCode.endsWith("[ESP]")) {
+                return SPANISH;
+            } else if (apiosCode.endsWith("[ITA]")) {
+                return ITALIAN;
+            } else if (apiosCode.endsWith("[POL]")) {
+                return POLISH;
+            } else if (apiosCode.endsWith("[ANG]")) {
+                return ENGLISH;
             }
             return OTHER;
         }
@@ -801,7 +854,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     @SuppressWarnings("unused")
     private String getURLFilename(final String parameter) {
         if (parameter.matches(TYPE_CONCERT)) {
-            return new Regex(parameter, "concert\\.arte\\.tv/(de|fr)/(.+)").getMatch(1);
+            return new Regex(parameter, "concert\\.arte\\.tv/(de|fr|en|it|pl|es)/(.+)").getMatch(1);
         } else {
             return new Regex(parameter, "arte\\.tv/guide/[a-z]{2}/(.+)").getMatch(0);
         }
@@ -809,11 +862,11 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
 
     private String getUrlLang() {
         final String lang = new Regex(parameter, "^https?://[^/]+(?:/guide)?/(\\w+)/.+").getMatch(0);
-        if (lang != null && !lang.matches("(de|fr)")) {
-            /* TODO: Maybe add support for "en" and/or others */
+        if (lang != null && !lang.matches("(de|fr|en|pl|it|es)")) {
             return "de";
+        } else {
+            return lang;
         }
-        return lang;
     }
 
     private String formatDate(final String input) {

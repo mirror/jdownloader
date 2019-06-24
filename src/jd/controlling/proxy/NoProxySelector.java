@@ -6,7 +6,6 @@ import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.jdownloader.updatev2.ProxyData;
 
 public class NoProxySelector extends SingleBasicProxySelectorImpl {
-
     public NoProxySelector() {
         super(HTTPProxy.NONE);
     }
@@ -41,7 +40,7 @@ public class NoProxySelector extends SingleBasicProxySelectorImpl {
 
     @Override
     public String toExportString() {
-        return null;
+        return "none://";
     }
 
     @Override
@@ -63,5 +62,4 @@ public class NoProxySelector extends SingleBasicProxySelectorImpl {
     public boolean updateProxy(Request request, int retryCounter) {
         return false;
     }
-
 }

@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
@@ -46,9 +45,8 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "saikocloud.ml" }, urls = { "https?://(?:www\\.)?saikocloud\\.ml/[A-Za-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "saikoanimes.net" }, urls = { "https?://cloud\\.saikoanimes\\.net/[A-Za-z0-9]+" })
 public class SaikocloudMl extends PluginForHost {
-
     public SaikocloudMl(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(mainpage + "/upgrade." + type);
@@ -63,21 +61,29 @@ public class SaikocloudMl extends PluginForHost {
      * captchatype: null<br />
      * other: alternative linkcheck#2: statistics URL: host.tld/<fid>~s<br />
      */
-
     @Override
     public String getAGBLink() {
         return mainpage + "/terms." + type;
     }
 
+    @Override
+    public String rewriteHost(String host) {
+        if (host == null || "saikoanimes.net".equals(host) || "saikocloud.ml".equals(host)) {
+            return getHost();
+        } else {
+            return super.rewriteHost(host);
+        }
+    }
+
     /* Basic constants */
-    private final String                   mainpage                                     = "http://saikocloud.ml";
-    private final String                   domains                                      = "(saikocloud\\.ml)";
+    private final String                   mainpage                                     = "https://cloud.saikoanimes.net";
+    private final String                   domains                                      = "(saikoanimes\\.net|cloud\\.saikoanimes\\.net)";
     private final String                   type                                         = "html";
     private static final int               wait_BETWEEN_DOWNLOADS_LIMIT_MINUTES_DEFAULT = 10;
     private static final int               additional_WAIT_SECONDS                      = 3;
     private static final int               directlinkfound_WAIT_SECONDS                 = 10;
-    private static final boolean           supportshttps                                = false;
-    private static final boolean           supportshttps_FORCED                         = false;
+    private static final boolean           supportshttps                                = true;
+    private static final boolean           supportshttps_FORCED                         = true;
     /* In case there is no information when accessing the main link */
     private static final boolean           available_CHECK_OVER_INFO_PAGE               = true;
     private static final boolean           useOldLoginMethod                            = false;
@@ -94,7 +100,6 @@ public class SaikocloudMl extends PluginForHost {
     private static final String            errortext_ERROR_SERVER                       = "Server error";
     private static final String            errortext_ERROR_PREMIUMONLY                  = "This file can only be downloaded by premium (or registered) users";
     private static final String            errortext_ERROR_SIMULTANDLSLIMIT             = "Max. simultan downloads limit reached, wait to start more downloads from this host";
-
     /* Connection stuff */
     private static final boolean           free_RESUME                                  = true;
     private static final int               free_MAXCHUNKS                               = 1;
@@ -105,7 +110,6 @@ public class SaikocloudMl extends PluginForHost {
     private static final boolean           account_PREMIUM_RESUME                       = true;
     private static final int               account_PREMIUM_MAXCHUNKS                    = 1;
     private static final int               account_PREMIUM_MAXDOWNLOADS                 = 20;
-
     private static AtomicReference<String> agent                                        = new AtomicReference<String>(null);
 
     @SuppressWarnings("deprecation")
@@ -645,5 +649,4 @@ public class SaikocloudMl extends PluginForHost {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.MFScripts_YetiShare;
     }
-
 }

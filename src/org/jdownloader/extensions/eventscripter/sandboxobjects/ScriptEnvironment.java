@@ -937,8 +937,15 @@ public class ScriptEnvironment {
         }
     }
 
-    @ScriptAPI(description = "Get proxy list", parameters = { "" }, example = "proxylist();")
-    public static String proxylist() throws EnvironmentException {
+    @ScriptAPI(description = "(experimental) Get proxy list", parameters = { "" }, example = "experimental_proxylist();")
+    /**
+     * TODO: this implementation does only use toExportString method in ugle string result, no list, just plain string
+     *
+     * please rewrite to return proper json/sandbox ojects(preferred) in a list
+     * @return
+     * @throws EnvironmentException
+     */
+    public static String experimental_proxylist() throws EnvironmentException {
         java.util.List<AbstractProxySelectorImpl> selectedObjects = jd.controlling.proxy.ProxyController.getInstance().getList();
         StringBuilder sb = new StringBuilder();
         for (AbstractProxySelectorImpl pi : selectedObjects) {
@@ -954,8 +961,16 @@ public class ScriptEnvironment {
         return sb.toString();
     }
 
-    @ScriptAPI(description = "Get proxy banlist", parameters = { "" }, example = "proxybanlist();")
-    public static String proxybanlist() throws EnvironmentException {
+    @ScriptAPI(description = "(experimental) Get proxy banlist", parameters = { "" }, example = "experimental_proxybanlist();")
+    /**
+     * TODO: this implementation does use getBanList().toString() which is neither stable nor anything usefull as
+     * the result contains localized strings.
+     *
+     * please rewrite to return proper json/sandbox ojects(preferred) in a list
+     * @return
+     * @throws EnvironmentException
+     */
+    public static String experimental_proxybanlist() throws EnvironmentException {
         java.util.List<AbstractProxySelectorImpl> selectedObjects = jd.controlling.proxy.ProxyController.getInstance().getList();
         StringBuilder sb = new StringBuilder();
         for (AbstractProxySelectorImpl pi : selectedObjects) {

@@ -74,7 +74,7 @@ public class MultiupOrg extends antiDDoSForDecrypt {
         if (!StringUtils.isEmpty(webSiteFilename)) {
             filename = webSiteFilename;
         }
-        String webSiteFileSize = br.getRegex("<meta name=\"description\" content=\"Download\\s*.*?\\s*\\(([0-9\\.]+\\s*[KGMiB]+)").getMatch(0);
+        final String webSiteFileSize = getWebsiteFileSize(br);
         if (filesize == null) {
             filesize = webSiteFileSize;
         }
@@ -97,13 +97,39 @@ public class MultiupOrg extends antiDDoSForDecrypt {
             return null;
         }
         for (String singleLink : links) {
+            if (isAbort()) {
+                break;
+            }
             String finalURL = null;
             if (StringUtils.containsIgnoreCase(singleLink, "/redirect-to-host/")) {
                 singleLink = br.getURL(singleLink).toString();
                 final Browser brc = br.cloneBrowser();
                 brc.setFollowRedirects(false);
                 brc.getPage(singleLink);
-                finalURL = brc.getRedirectLocation();
+                while (!isAbort()) {
+                    finalURL = brc.getRedirectLocation();
+                    if (finalURL == null) {
+                        finalURL = brc.getRegex("http-equiv\\s*=\\s*\"refresh\"\\s*content\\s*=\\s*\"[^\"]*url\\s*=\\s*(.*?)\"").getMatch(0);
+                        if (finalURL != null) {
+                            if (!StringUtils.containsIgnoreCase(finalURL, "/redirect-to-host/") || finalURL.startsWith("http")) {
+                                break;
+                            }
+                        }
+                        if (finalURL != null) {
+                            finalURL = brc.getURL(finalURL).toString();
+                            brc.setRequest(null);
+                            brc.setCurrentURL(null);
+                            brc.getPage(finalURL);
+                        } else {
+                            finalURL = brc.getRedirectLocation();
+                            if (finalURL == null) {
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
+                        }
+                    } else {
+                        break;
+                    }
+                }
             } else if (singleLink.startsWith("http")) {
                 finalURL = singleLink.trim().replaceFirst(":/+", "://");
             }
@@ -129,7 +155,7 @@ public class MultiupOrg extends antiDDoSForDecrypt {
     }
 
     private String getFilename(String parameter) throws Exception {
-        String filename = new Regex(parameter, "/[0-9a-f]{32}(?:/|_)(.+)").getMatch(0);
+        String filename = new Regex(parameter, "/[0-9a-f]{32}(?:/|_)([^/]+)").getMatch(0);
         if (filename == null) {
             // here it can be present within html source
             getPage(parameter);

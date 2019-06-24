@@ -35,6 +35,8 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.RuTubeVariant;
@@ -61,10 +63,10 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
         br = new Browser();
         parameter = param.toString();
         uid = new Regex(parameter, "/([a-f0-9]{32})").getMatch(0);
-        vid = new Regex(parameter, "rutube\\.ru/(?:play/|video/)?embed/(\\d+)").getMatch(0);
+        vid = new Regex(parameter, "rutube\\.ru/(?:play/|video/)?embed/(\\d{3,})").getMatch(0);
         privatevalue = new Regex(parameter, "p=([A-Za-z0-9\\-_]+)").getMatch(0);
         if (vid == null) {
-            vid = new Regex(parameter, "video\\.rutube\\.ru/(\\d+)").getMatch(0);
+            vid = new Regex(parameter, "video\\.rutube\\.ru/(\\d{3,})").getMatch(0);
         }
         if (uid == null) {
             /* Find long 'effective_video'-id */
@@ -111,8 +113,9 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
             final DownloadLink link = createDownloadlink(uid);
             if (link == null) {
                 return null;
+            } else {
+                decryptedLinks.add(link);
             }
-            decryptedLinks.add(link);
         }
         return decryptedLinks;
     }
@@ -160,11 +163,14 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
             if (vid == null) {
                 final Browser br = this.br.cloneBrowser();
                 // since we know the embed url for player/embed link types no need todo this step
-                br.getPage("http://rutube.ru/api/video/" + id);
+                getPage(br, "http://rutube.ru/api/video/" + id);
                 if (br.containsHTML("<root><detail>Not found</detail></root>")) {
                     return createOfflinelink(parameter);
                 }
-                vid = br.getRegex("/embed/(\\d+)").getMatch(0);
+                vid = br.getRegex("/embed/(\\d{3,})").getMatch(0);
+                if (vid == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
             getPage("http://rutube.ru/play/embed/" + vid + "?wmode=opaque&autoStart=true");
             {
@@ -221,8 +227,10 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
                 ret.setAvailable(false);
                 return ret;
             }
+        } catch (PluginException e) {
+            throw e;
         } catch (Exception e) {
-            e.printStackTrace();
+            getLogger().log(e);
         }
         return null;
     }

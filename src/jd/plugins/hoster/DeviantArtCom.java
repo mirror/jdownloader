@@ -55,7 +55,7 @@ public class DeviantArtCom extends PluginForHost {
     public static String        FASTLINKCHECK_2                  = "FASTLINKCHECK_2";
     public static String        FORCEHTMLDOWNLOAD                = "FORCEHTMLDOWNLOAD";
     public static String        CRAWL_GIVEN_OFFSETS_INDIVIDUALLY = "CRAWL_GIVEN_OFFSETS_INDIVIDUALLY";
-    private static final String GENERALFILENAMEREGEX             = "<title>([^<>\"]*?) on deviantART</title>";
+    private static final String GENERALFILENAMEREGEX             = "<title[^<>]*>([^<>\"]*?) on deviantART</title>";
     // private static final String DLLINK_REFRESH_NEEDED = "https?://(www\\.)?deviantart\\.com/download/.+";
     private static final String TYPE_DOWNLOADALLOWED_GENERAL     = "\"label\">\\s*Download";
     private static final String TYPE_DOWNLOADALLOWED_HTML        = "class=\"text\">HTML download</span>";
