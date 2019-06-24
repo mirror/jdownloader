@@ -2497,7 +2497,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
          */
         final boolean login_xfss_CookieOkay = StringUtils.isAllNotEmpty(br.getCookie(getMainPage(), "login", Cookies.NOTDELETEDPATTERN), br.getCookie(getMainPage(), "xfss", Cookies.NOTDELETEDPATTERN));
         final boolean email_xfss_CookieOkay = StringUtils.isAllNotEmpty(br.getCookie(getMainPage(), "email", Cookies.NOTDELETEDPATTERN), br.getCookie(getMainPage(), "xfss", Cookies.NOTDELETEDPATTERN));
-        final boolean logoutOkay = br.containsHTML("op=logout") || br.containsHTML("href\\s*=\\s*\"/logout\"");
+        final boolean logoutOkay = br.containsHTML("op=logout") || br.containsHTML("href\\s*=\\s*\"[^\"]*/(user_)?logout\"");
         final boolean loginFormOkay = false && findLoginform(this.br) == null; // unsafe as the find method may fail
         final boolean loginURLOkay = br.getURL().contains("op=") && !br.getURL().contains("op=login");
         return login_xfss_CookieOkay || email_xfss_CookieOkay || logoutOkay || loginFormOkay || loginURLOkay;

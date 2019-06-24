@@ -85,7 +85,8 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
 
     @Override
     public Type getType() {
-        switch (getProxy().getType()) {
+        final TYPE type = getProxy().getType();
+        switch (type) {
         case HTTP:
             return Type.HTTP;
         case HTTPS:
@@ -95,7 +96,7 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
         case SOCKS5:
             return Type.SOCKS5;
         default:
-            throw new IllegalStateException();
+            throw new IllegalStateException(type.name());
         }
     }
 
@@ -114,7 +115,7 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
             proxy.setType(TYPE.SOCKS5);
             break;
         default:
-            throw new IllegalStateException("Illegal Operation");
+            throw new IllegalStateException(value.name());
         }
     }
 
@@ -141,35 +142,39 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
     }
 
     public String getPassword() {
-        String ret = tempPass;
+        final String ret = tempPass;
         if (ret != null) {
             return "(Temp)" + ret;
+        } else {
+            return password;
         }
-        return password;
     }
 
     private String _getPassword() {
-        String ret = tempPass;
+        final String ret = tempPass;
         if (ret != null) {
             return ret;
+        } else {
+            return password;
         }
-        return password;
     }
 
     private String _getUsername() {
-        String ret = tempUser;
+        final String ret = tempUser;
         if (ret != null) {
             return ret;
+        } else {
+            return username;
         }
-        return username;
     }
 
     public String getUser() {
-        String ret = tempUser;
+        final String ret = tempUser;
         if (ret != null) {
             return "(Temp)" + ret;
+        } else {
+            return username;
         }
-        return username;
     }
 
     @Override
@@ -281,8 +286,9 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
         // can orgRef be null? I doubt that. TODO:ensure
         if (!getProxy().equals(orgReference)) {
             return false;
+        } else {
+            return super.isProxyBannedFor(orgReference, url, pluginFromThread, ignoreConnectBans);
         }
-        return super.isProxyBannedFor(orgReference, url, pluginFromThread, ignoreConnectBans);
     }
 
     public void setTempAuth(String user, String pass) {

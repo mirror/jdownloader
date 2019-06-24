@@ -302,7 +302,12 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
 
     @Override
     public String toExportString() {
-        return null;
+        final String pacURL = getPACUrl();
+        if (StringUtils.isNotEmpty(getUser())) {
+            return "pac://" + getUser() + "@" + pacURL;
+        } else {
+            return "pac://" + pacURL;
+        }
     }
 
     @Override
