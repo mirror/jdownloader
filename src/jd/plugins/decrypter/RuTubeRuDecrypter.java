@@ -227,8 +227,6 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
                 ret.setAvailable(false);
                 return ret;
             }
-        } catch (PluginException e) {
-            throw e;
         } catch (Exception e) {
             getLogger().log(e);
         }

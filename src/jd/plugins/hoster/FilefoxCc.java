@@ -206,7 +206,7 @@ public class FilefoxCc extends XFileSharingProBasic {
     }
 
     @Override
-    public void loginWebsite(final Account account, final boolean force) throws Exception {
+    public boolean loginWebsite(final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
                 /* Load cookies */
@@ -218,7 +218,7 @@ public class FilefoxCc extends XFileSharingProBasic {
                     if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l && !force) {
                         /* We trust these cookies as they're not that old --> Do not check them */
                         logger.info("Trust cookies without checking as they're still fresh");
-                        return;
+                        return false;
                     }
                     logger.info("Verifying login-cookies");
                     getPage(getMainPage() + "/");
@@ -274,6 +274,7 @@ public class FilefoxCc extends XFileSharingProBasic {
                     // }
                 }
                 account.saveCookies(br.getCookies(getMainPage()), "");
+                return true;
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");

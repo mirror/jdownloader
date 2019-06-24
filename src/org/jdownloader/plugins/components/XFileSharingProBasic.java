@@ -2491,7 +2491,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      *         TODO: Improve this
      */
     public boolean isLoggedin() {
-        /* Missing login cookies or we still have the loginform --> Login failed */
         /**
          * please use valid combinations only! login or email alone without xfss is NOT valid!
          */
@@ -2500,14 +2499,14 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         final boolean logoutOkay = br.containsHTML("op=logout") || br.containsHTML("href\\s*=\\s*\"[^\"]*/(user_)?logout\"");
         final boolean loginFormOkay = false && findLoginform(this.br) == null; // unsafe as the find method may fail
         final boolean loginURLOkay = br.getURL().contains("op=") && !br.getURL().contains("op=login");
-        return login_xfss_CookieOkay || email_xfss_CookieOkay || logoutOkay || loginFormOkay || loginURLOkay;
+        return login_xfss_CookieOkay || email_xfss_CookieOkay && (logoutOkay || loginFormOkay || loginURLOkay);
     }
 
     public String getLoginURL() {
         return getMainPage() + "/login.html";
     }
 
-    public void loginWebsite(final Account account, final boolean force) throws Exception {
+    public boolean loginWebsite(final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
                 /* Load cookies */
@@ -2519,7 +2518,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l && !force) {
                         /* We trust these cookies as they're not that old --> Do not check them */
                         logger.info("Trust cookies without checking as they're still fresh");
-                        return;
+                        return false;
                     }
                     logger.info("Verifying login-cookies");
                     getPage(getMainPage() + "/");
@@ -2571,6 +2570,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     }
                 }
                 account.saveCookies(br.getCookies(getMainPage()), "");
+                return true;
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
@@ -2588,8 +2588,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * method will NOT work!! <br/>
      * It seems like all or most of all XFS websites support this way of logging-in - even websites which were never officially supported
      * via XFS app (e.g. fileup.cc).
+     * 
+     * @return TODO
      */
-    protected final void loginAPP(final Account account, final boolean force) throws Exception {
+    protected final boolean loginAPP(final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
                 br.setHeader("User-Agent", "XFS-Mobile");
@@ -2603,7 +2605,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l && !force) {
                         /* We trust these cookies as they're not that old --> Do not check them */
                         logger.info("Trust cookies without checking as they're still fresh");
-                        return;
+                        return false;
                     }
                     logger.info("Verifying login-cookies");
                     getPage(getMainPage() + "/");
@@ -2653,6 +2655,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 // account.getAccountInfo().setAccountBalance(balance);
                 // }
                 account.saveCookies(br.getCookies(getMainPage()), "");
+                return true;
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
@@ -2698,15 +2701,23 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return account.getUser().trim();
     }
 
+    protected boolean isAccountLoginVerificationEnabled(final Account account, final boolean verifiedLogin) {
+        return !verifiedLogin;
+    }
+
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         /* Perform linkcheck without logging in */
         requestFileInformation(link, true);
         final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
         if (AccountType.FREE.equals(account.getType())) {
-            loginWebsite(account, false);
+            final boolean verifiedLogin = loginWebsite(account, false);
             /* Access main Content-URL */
             this.getPage(link.getPluginPatternMatcher());
+            if (isAccountLoginVerificationEnabled(account, verifiedLogin) && !isLoggedin()) {
+                loginWebsite(account, true);
+                getPage(link.getPluginPatternMatcher());
+            }
             doFree(link, account);
         } else {
             /*
@@ -2739,8 +2750,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         }
                     }
                 } else {
-                    loginWebsite(account, false);
+                    final boolean verifiedLogin = loginWebsite(account, false);
                     getPage(link.getPluginPatternMatcher());
+                    if (isAccountLoginVerificationEnabled(account, verifiedLogin) && !isLoggedin()) {
+                        loginWebsite(account, true);
+                        getPage(link.getPluginPatternMatcher());
+                    }
                     dllink = getDllink(link, account);
                     if (StringUtils.isEmpty(dllink)) {
                         /* 2019-05-30: Official video download for premium users of videohosts e.g. xvideosharing.com */
