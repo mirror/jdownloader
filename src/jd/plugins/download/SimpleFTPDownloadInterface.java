@@ -6,7 +6,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.InetSocketAddress;
-import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.rmi.ConnectException;
@@ -31,6 +30,7 @@ import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.httpconnection.SocketStreamInterface;
 import org.appwork.utils.net.socketconnection.SocketConnection;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
@@ -58,7 +58,7 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
 
     public SimpleFTPDownloadInterface(SimpleFTP simpleFTP, final DownloadLink link, String filePath) {
         connectionHandler = new ManagedThrottledConnectionHandler();
-        final String host = SocketConnection.getHostName(simpleFTP.getSocket().getRemoteSocketAddress());
+        final String host = SocketConnection.getHostName(simpleFTP.getControlSocket().getSocket().getRemoteSocketAddress());
         downloadable = new DownloadLinkDownloadable(link) {
             @Override
             public boolean isResumable() {
@@ -156,11 +156,11 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
         } catch (final IOException e) {
             throw new SkipReasonException(SkipReason.INVALID_DESTINATION, e);
         }
-        Socket dataSocket = null;
+        SocketStreamInterface dataSocket = null;
         MeteredThrottledInputStream input = null;
         try {
             dataSocket = simpleFTP.createSocket(new InetSocketAddress(pasv.getHostName(), pasv.getPort()));
-            dataSocket.setSoTimeout(simpleFTP.getReadTimeout(STATE.DOWNLOADING));
+            dataSocket.getSocket().setSoTimeout(simpleFTP.getReadTimeout(STATE.DOWNLOADING));
             simpleFTP.sendLine("RETR " + filename);
             simpleFTP.readLines(new int[] { 150, 125 }, null);
             input = new MeteredThrottledInputStream(dataSocket.getInputStream(), new AverageSpeedMeter(10));
@@ -185,7 +185,7 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
                 }
             }
             /* max 10 seks wait for buggy servers */
-            simpleFTP.getSocket().setSoTimeout(simpleFTP.getReadTimeout(STATE.CLOSING));
+            simpleFTP.getControlSocket().getSocket().setSoTimeout(simpleFTP.getReadTimeout(STATE.CLOSING));
             simpleFTP.shutDownSocket(dataSocket);
             input.close();
             try {

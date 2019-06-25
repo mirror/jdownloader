@@ -47,7 +47,13 @@ public class NhentaiNet extends antiDDoSForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         getPage(parameter);
-        final String fpName = new Regex(parameter, this.getSupportedLinks()).getMatch(0) + " - nhentai gallery";
+        final String title = br.getRegex("id\\s*=\\s*\"info\"\\s*>\\s*<h1>\\s*(.*?)\\s*</h1>").getMatch(0);
+        final String fpName;
+        if (title == null) {
+            fpName = new Regex(parameter, this.getSupportedLinks()).getMatch(0) + " - nhentai gallery";
+        } else {
+            fpName = title;
+        }
         // images
         final String[] imgs = br.getRegex("class\\s*=\\s*\"gallerythumb\"\\s*href\\s*=\\s*\"/g/\\d+/\\d+/?\"[^<]*?<img is=\"[^\"]*lazyload-image[^\"]*\" class=\"[^\"]*lazyload[^\"]*\"[^>]+data-src\\s*=\\s*\"(.*?)\"").getColumn(0);
         if (imgs == null || imgs.length == 0) {
