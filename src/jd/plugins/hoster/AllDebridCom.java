@@ -137,7 +137,7 @@ public class AllDebridCom extends antiDDoSForHost {
                         dialog.interrupt();
                     }
                     if (StringUtils.isEmpty(token)) {
-                        throw new AccountInvalidException("User failed to authorize PIN");
+                        throw new AccountInvalidException("User failed to authorize PIN. Do not close the pairing dialog until you have confirmed the numbers via browser!");
                     }
                     final String expires_in_secondsStr = PluginJSonUtils.getJson(br, "expires_in");
                     if (expires_in_secondsStr != null && expires_in_secondsStr.matches("\\d+")) {
@@ -148,6 +148,7 @@ public class AllDebridCom extends antiDDoSForHost {
                 } else {
                     logger.info("Token login successful");
                 }
+                anonymizeLoginData(account);
                 return token;
             } catch (PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
@@ -156,6 +157,18 @@ public class AllDebridCom extends antiDDoSForHost {
                 throw e;
             }
         }
+    }
+
+    /** This is just a 'demo' - see ticket: */
+    private void anonymizeLoginData(final Account account) {
+        final String username = account.getUser();
+        if (!StringUtils.isEmpty(username) && username.length() >= 3) {
+            final String username_new = "***" + username.substring(3, username.length());
+            account.setUser(username_new);
+        } else {
+            account.setUser("***");
+        }
+        account.setPass("***");
     }
 
     private void loginAccount(final Account account, final AccountInfo accountInfo, final String token) throws Exception {

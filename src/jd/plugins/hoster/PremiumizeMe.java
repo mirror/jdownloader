@@ -128,6 +128,22 @@ public class PremiumizeMe extends ZeveraCore {
     }
 
     @Override
+    public boolean supportsUsenet() {
+        return true;
+    }
+
+    @Override
+    public boolean supportsFreeMode() {
+        return true;
+    }
+
+    @Override
+    public boolean supportsPairingLogin() {
+        /* 2019-06-25: TODO: Enable this once it is fully supported serverside! */
+        return false;
+    }
+
+    @Override
     public List<UsenetServer> getAvailableUsenetServer() {
         final List<UsenetServer> ret = new ArrayList<UsenetServer>();
         ret.addAll(UsenetServer.createServerList("usenet.premiumize.me", false, 119));

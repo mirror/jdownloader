@@ -31,8 +31,8 @@ import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DdlTo extends XFileSharingProBasic {
-    private final String   MaxSimultaneousDownloads_LIMIT = "MaxSimultaneousDownloads_LIMIT";
-    private final String[] MaxSimultaneousDownloads       = new String[] { "2", "1" };
+    private final String   maxSimultaneousDownloads_LIMIT = "MaxSimultaneousDownloads_LIMIT_2019_06";
+    private final String[] maxSimultaneousDownloads       = new String[] { "DEFAULT", "2", "1" };
 
     public DdlTo(final PluginWrapper wrapper) {
         super(wrapper);
@@ -78,12 +78,13 @@ public class DdlTo extends XFileSharingProBasic {
     }
 
     public int getMaxDownloadSelect() {
-        final int chosenDownloadLimit = getPluginConfig().getIntegerProperty(MaxSimultaneousDownloads_LIMIT, 0);
+        final int chosenDownloadLimit = getPluginConfig().getIntegerProperty(maxSimultaneousDownloads_LIMIT, 0);
         try {
-            return Integer.parseInt(MaxSimultaneousDownloads[chosenDownloadLimit]);
+            return Integer.parseInt(maxSimultaneousDownloads[chosenDownloadLimit]);
         } catch (final Throwable e) {
+            /* Return default limit */
             logger.log(e);
-            return Integer.parseInt(MaxSimultaneousDownloads[0]);
+            return 1;
         }
     }
 
@@ -179,6 +180,6 @@ public class DdlTo extends XFileSharingProBasic {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), MaxSimultaneousDownloads_LIMIT, MaxSimultaneousDownloads, "Max. simultaneous downloads (Free+Free account)").setDefaultValue(0));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), maxSimultaneousDownloads_LIMIT, maxSimultaneousDownloads, "Max. simultaneous downloads (Free+Free account)").setDefaultValue(0));
     }
 }

@@ -20,6 +20,15 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -39,15 +48,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 //IMPORTANT: this class must stay in jd.plugins.hoster because it extends another plugin (UseNet) which is only available through PluginClassLoader
 abstract public class ZeveraCore extends UseNet {
@@ -399,12 +399,12 @@ abstract public class ZeveraCore extends UseNet {
         final ArrayList<String> directdl = (ArrayList<String>) entries.get("directdl");
         // final ArrayList<String> cache = (ArrayList<String>) entries.get("cache");
         final HashSet<String> list = new HashSet<String>();
-        if ("premiumize.me".equalsIgnoreCase(account.getHoster())) {
-            /* Some premiumize-only features */
+        if (supportsUsenet()) {
             list.add("usenet");
-            if (account.getType() == AccountType.FREE && allow_free_account_downloads) {
-                handleFreeModeLoginDialog("https://www.premiumize.me/free");
-            }
+        }
+        if (account.getType() == AccountType.FREE && supportsFreeMode() && allow_free_account_downloads) {
+            /* 2019-06-25: TODO: Wait for them to finish this feature serverside! */
+            handleFreeModeLoginDialog("https://www." + account.getHoster() + "/free");
         }
         if (directdl != null) {
             list.addAll(directdl);
@@ -545,7 +545,6 @@ abstract public class ZeveraCore extends UseNet {
 
     public void login(Browser br, final Account account, final boolean force, final String clientID) throws Exception {
         synchronized (account) {
-            /* Load cookies */
             br.setCookiesExclusive(true);
             br = prepBR(br);
             loginAPI(br, clientID, account, force);
@@ -553,15 +552,162 @@ abstract public class ZeveraCore extends UseNet {
     }
 
     public void loginAPI(final Browser br, final String clientID, final Account account, final boolean force) throws Exception {
-        getPage(br, "https://www." + account.getHoster() + "/api/account/info?client_id=" + clientID + "&pin=" + Encoding.urlEncode(getAPIKey(account)));
+        if (supportsPairingLogin()) {
+            /* 2019-06-25: New: TODO: We need a way to get the usenet logindata without exposing the original account logindata/apikey! */
+            final long token_valid_until = account.getLongProperty("token_valid_until", 0);
+            if (System.currentTimeMillis() > token_valid_until) {
+                logger.info("Token has expired");
+            } else if (setAuthHeader(br, account)) {
+                getPage(br, "https://www." + account.getHoster() + "/api/account/info?client_id=" + clientID + "&pin=TODO_TEST");
+                if (!isLoggedIn(br)) {
+                    return;
+                }
+                logger.info("Token expired or user has revoked access --> Full login required");
+            }
+            this.postPage("https://www." + account.getHoster() + "/token", "response_type=device_code&client_id=" + clientID);
+            final int interval_seconds = Integer.parseInt(PluginJSonUtils.getJson(br, "interval"));
+            final int expires_in_seconds = Integer.parseInt(PluginJSonUtils.getJson(br, "expires_in")) - interval_seconds;
+            final long expires_in_timestamp = System.currentTimeMillis() + expires_in_seconds * 1000l;
+            final String verification_uri = PluginJSonUtils.getJson(br, "verification_uri");
+            final String device_code = PluginJSonUtils.getJson(br, "device_code");
+            final String user_code = PluginJSonUtils.getJson(br, "user_code");
+            if (StringUtils.isEmpty(device_code) || StringUtils.isEmpty(user_code) || StringUtils.isEmpty(verification_uri)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            boolean success = false;
+            int loop = 0;
+            int internal_max_loops_limit = 120;
+            final Thread dialog = showPairingLoginInformation(verification_uri, user_code);
+            String access_token = null;
+            try {
+                do {
+                    logger.info("Waiting for user to authorize application: " + loop);
+                    Thread.sleep(interval_seconds * 1001l);
+                    this.postPage("https://www." + account.getHoster() + "/token", "grant_type=device_code&client_id=" + clientID + "&code=" + device_code);
+                    access_token = PluginJSonUtils.getJson(br, "access_token");
+                    if (!StringUtils.isEmpty(access_token)) {
+                        success = true;
+                        break;
+                    } else if (!dialog.isAlive()) {
+                        logger.info("Dialog closed!");
+                        break;
+                    }
+                    loop++;
+                } while (!success && System.currentTimeMillis() < expires_in_timestamp && loop < internal_max_loops_limit);
+            } finally {
+                dialog.interrupt();
+            }
+            final String token_expires_in = PluginJSonUtils.getJson(br, "expires_in");
+            final String token_type = PluginJSonUtils.getJson(br, "token_type");
+            if (!success) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "User did not confirm pairing code\r\nDo not close the pairing dialog until you've confirmed the code via browser!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else if (!"bearer".equals(token_type)) {
+                /* This should never happen! */
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Unsupported token_type", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            account.setProperty("access_token", access_token);
+            if (!StringUtils.isEmpty(token_expires_in) && token_expires_in.matches("\\d+")) {
+                account.setProperty("token_valid_until", System.currentTimeMillis() + Long.parseLong(token_expires_in));
+            }
+            setAuthHeader(br, account);
+            /**
+             * 2019-06-25: TODO: We need to obtain the usenet logindata via API otherwise we will not have any Usenet logindata via this
+             * login-method which is very bad!
+             */
+            getPage(br, "https://www." + account.getHoster() + "/api/account/info?client_id=" + clientID + "&pin=TODO_TEST");
+            if (!isLoggedIn(br)) {
+                /* Double-check */
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            /** 2019-06-25: TODO: Hide original logindata/apikey see ticket: https://svn.jdownloader.org/issues/87169 */
+        } else {
+            getPage(br, "https://www." + account.getHoster() + "/api/account/info?client_id=" + clientID + "&pin=" + Encoding.urlEncode(getAPIKey(account)));
+            if (!isLoggedIn(br)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "API key invalid! Make sure you entered your current API key which can be found here: " + account.getHoster() + "/account", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            if (supportsUsenet()) {
+                /* 2019-02-10: Workaround for their Usenet support. Their Usenet login-servers only accept APIKEY:APIKEY. */
+                account.setUser(account.getPass());
+            }
+        }
+    }
+
+    private boolean isLoggedIn(final Browser br) {
         final String status = PluginJSonUtils.getJson(br, "status");
-        if (!"success".equalsIgnoreCase(status)) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "API key invalid! Make sure you entered your current API key which can be found here: " + account.getHoster() + "/account", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if ("success".equalsIgnoreCase(status)) {
+            return true;
+        } else {
+            return false;
         }
-        if (account.getHoster().equalsIgnoreCase("premiumize.me")) {
-            /* 2019-02-10: Workaround for their Usenet support. Their Usenet login-servers only accept APIKEY:APIKEY. */
-            account.setUser(account.getPass());
+    }
+
+    /** true = Account has 'access_token' property, false = Account does not have 'access_token' property. */
+    private boolean setAuthHeader(final Browser br, final Account account) {
+        final String access_token = account.getStringProperty("access_token", null);
+        if (access_token != null) {
+            br.getHeaders().put("Authorization", "Bearer " + access_token);
+            return true;
+        } else {
+            return false;
         }
+    }
+
+    private Thread showPairingLoginInformation(final String verification_url, final String user_code) {
+        final Thread thread = new Thread() {
+            public void run() {
+                try {
+                    final String host = Browser.getHost(verification_url);
+                    final String host_without_tld = host.split("\\.")[0];
+                    String message = "";
+                    final String title;
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        title = host + " - neue Login-Methode";
+                        message += "Hallo liebe(r) " + host + " NutzerIn\r\n";
+                        message += "Seit diesem Update hat sich die Login-Methode dieses Anbieters geändert um die sicherheit zu erhöhen!\r\n";
+                        message += "Um deinen Account weiterhin in JDownloader verwenden zu können musst du folgende Schritte beachten:\r\n";
+                        message += "1. Gehe sicher, dass du im Browser in deinem " + host_without_tld + " Account eingeloggt bist.\r\n";
+                        message += "2. Öffne diesen Link im Browser:\r\n\t'" + verification_url + "'\t\r\n";
+                        message += "3. Gib im Browser folgenden Code ein: " + user_code + "\r\n";
+                        message += "Dein Account sollte nach einigen Sekunden von JDownloader akzeptiert werden.\r\n";
+                    } else {
+                        title = host + " - New login method";
+                        message += "Hello dear " + host + " user\r\n";
+                        message += "This update has changed the login method of " + host_without_tld + " in favor of security.\r\n";
+                        message += "In order to keep using this service in JDownloader you need to follow these steps:\r\n";
+                        message += "1. Make sure that you're logged in your " + host_without_tld + " account with your default browser.\r\n";
+                        message += "2. Open this URL in your browser:\r\n\t'" + verification_url + "'\t\r\n";
+                        message += "3. Enter the following code in the browser window: " + user_code + "\r\n";
+                        message += "Your account should be accepted in JDownloader within a few seconds.\r\n";
+                    }
+                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
+                    dialog.setTimeout(2 * 60 * 1000);
+                    if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
+                        CrossSystem.openURL(verification_url);
+                    }
+                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
+                    ret.throwCloseExceptions();
+                } catch (final Throwable e) {
+                    getLogger().log(e);
+                }
+            };
+        };
+        thread.setDaemon(true);
+        thread.start();
+        return thread;
+    }
+
+    public boolean supportsUsenet() {
+        return false;
+    }
+
+    /** Indicates whether downloads via free accounts are possible or not. */
+    public boolean supportsFreeMode() {
+        return false;
+    }
+
+    /** Indicates whether or not the new 'pairing' login is supported: https://alexbilbie.com/2016/04/oauth-2-device-flow-grant/ */
+    public boolean supportsPairingLogin() {
+        return false;
     }
 
     private String getAPIKey(final Account account) {
