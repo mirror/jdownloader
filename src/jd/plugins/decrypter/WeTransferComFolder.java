@@ -26,29 +26,35 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wetransfer.com" }, urls = { "https?://(?:www\\.)?((?:wtrns\\.fr|we\\.tl)/[\\w\\-]+|wetransfer\\.com/downloads/(?:[a-f0-9]{46}/[a-f0-9]{46}/[a-f0-9]{4,12}|[a-f0-9]{46}/[a-f0-9]{4,12}))" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wetransfer.com" }, urls = { "https?://(?:www\\.)?((?:wtrns\\.fr|we\\.tl|shorturls\\.wetransfer\\.com)/[\\w\\-]+|wetransfer\\.com/downloads/(?:[a-f0-9]{46}/[a-f0-9]{46}/[a-f0-9]{4,12}|[a-f0-9]{46}/[a-f0-9]{4,12}))" })
 public class WeTransferComFolder extends PluginForDecrypt {
     public WeTransferComFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    private final String shortPattern = "https?://(wtrns\\.fr|we\\.tl|shorturls\\.wetransfer\\.com)/[\\w\\-]+";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         jd.plugins.hoster.WeTransferCom.prepBR(this.br);
-        if (parameter.matches("https?://(wtrns\\.fr|we\\.tl)/[\\w\\-]+")) {
+        if (parameter.matches(shortPattern)) {
             br.setFollowRedirects(false);
             br.getPage(parameter);
             parameter = br.getRedirectLocation();
             if (parameter == null) {
-                return null;
-            }
-            if (parameter.contains("/error")) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else if (parameter.matches(shortPattern)) {
+                decryptedLinks.add(createDownloadlink(parameter));
+                return decryptedLinks;
+            } else if (parameter.contains("/error")) {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }

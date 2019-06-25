@@ -36,6 +36,8 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 import org.appwork.txtresource.TranslationFactory;
@@ -234,51 +236,71 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             final boolean spanishSelected = cfg.getBooleanProperty(jd.plugins.hoster.ArteTv.LOAD_LANGUAGE_SPANISH, jd.plugins.hoster.ArteTv.default_LOAD_LANGUAGE_SPANISH);
             final boolean loadURLLanguage = cfg.getBooleanProperty(jd.plugins.hoster.ArteTv.LOAD_LANGUAGE_URL, jd.plugins.hoster.ArteTv.default_LOAD_LANGUAGE_URL);
             final boolean loadBest = cfg.getBooleanProperty(LOAD_BEST, false);
+            final String urlLanguage = this.getUrlLang();
             if (loadURLLanguage) {
-                selectedLanguages.add(this.getUrlLang());
-            } else {
-                if (isGerman && germanSelected) {
-                    selectedLanguages.add(LANG_DE);
-                } else if (isFrancais && francaisSelected) {
-                    selectedLanguages.add(LANG_FR);
-                } else if (isEnglish && englishSelected) {
-                    selectedLanguages.add(LANG_EN);
-                } else if (isItalian && italianSelected) {
-                    selectedLanguages.add(LANG_IT);
-                } else if (isPolish && polishSelected) {
-                    selectedLanguages.add(LANG_PL);
-                } else if (isSpanish && spanishSelected) {
-                    selectedLanguages.add(LANG_ES);
+                if (urlLanguage != null) {
+                    selectedLanguages.add(urlLanguage);
                 } else {
-                    if (germanSelected) {
+                    selectedLanguages.add(LANG_DE);
+                }
+            } else {
+                if (germanSelected) {
+                    if (isGerman) {
+                        selectedLanguages.add(0, LANG_DE);
+                    } else {
                         selectedLanguages.add(LANG_DE);
                     }
-                    if (francaisSelected) {
+                }
+                if (francaisSelected) {
+                    if (isFrancais) {
+                        selectedLanguages.add(0, LANG_FR);
+                    } else {
                         selectedLanguages.add(LANG_FR);
                     }
-                    if (englishSelected) {
+                }
+                if (englishSelected) {
+                    if (isEnglish) {
+                        selectedLanguages.add(0, LANG_EN);
+                    } else {
                         selectedLanguages.add(LANG_EN);
                     }
-                    if (italianSelected) {
+                }
+                if (italianSelected) {
+                    if (isItalian) {
+                        selectedLanguages.add(0, LANG_IT);
+                    } else {
                         selectedLanguages.add(LANG_IT);
                     }
-                    if (polishSelected) {
+                }
+                if (polishSelected) {
+                    if (isPolish) {
+                        selectedLanguages.add(0, LANG_PL);
+                    } else {
                         selectedLanguages.add(LANG_PL);
                     }
-                    if (spanishSelected) {
-                        selectedLanguages.add(LANG_ES);
-                    }
-                    if (selectedLanguages.size() == 0) {
-                        /* Fallback - nothing selected --> Download everything */
-                        logger.info("User selected no language at all --> Downloading all languages");
-                        selectedLanguages.add(LANG_DE);
-                        selectedLanguages.add(LANG_FR);
-                        selectedLanguages.add(LANG_EN);
-                        selectedLanguages.add(LANG_IT);
-                        selectedLanguages.add(LANG_PL);
+                }
+                if (spanishSelected) {
+                    if (isSpanish) {
+                        selectedLanguages.add(0, LANG_ES);
+                    } else {
                         selectedLanguages.add(LANG_ES);
                     }
                 }
+                if (selectedLanguages.size() == 0) {
+                    /* Fallback - nothing selected --> Download everything */
+                    logger.info("User selected no language at all --> Downloading all languages");
+                    selectedLanguages.add(LANG_DE);
+                    selectedLanguages.add(LANG_FR);
+                    selectedLanguages.add(LANG_EN);
+                    selectedLanguages.add(LANG_IT);
+                    selectedLanguages.add(LANG_PL);
+                    selectedLanguages.add(LANG_ES);
+                }
+            }
+            if (urlLanguage != null) {
+                // put urlLanguage at first position
+                selectedLanguages.remove(urlLanguage);
+                selectedLanguages.add(0, urlLanguage);
             }
             final HashMap<String, DownloadLink> results = new HashMap<String, DownloadLink>();
             /* Finally, grab all we can get (in the selected language(s)) */
@@ -301,9 +323,15 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                         title = errmsg + "_" + title;
                     } else {
                         title = "Unknown_error_" + title;
-                        logger.warning("Unknown error");
                     }
-                    throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+                    logger.warning("Unknown error:msg='" + errmsg + "',type=" + type);
+                    continue;
+                }
+                final Object vsro = videoJsonPlayer.get("VSR");
+                if (!(vsro instanceof LinkedHashMap)) {
+                    /* No source available --> Video cannot be played --> Browser would says "Error code 2" then */
+                    logger.info("This language is not available: " + selectedLanguage);
+                    continue;
                 }
                 // final String sourceURL = (String) videoJsonPlayer.get("VTR");
                 /* Title is sometimes null e.g. for expired videos */
@@ -360,11 +388,6 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                         decryptedLinks.add(link);
                         return decryptedLinks;
                     }
-                }
-                final Object vsro = videoJsonPlayer.get("VSR");
-                if (!(vsro instanceof LinkedHashMap)) {
-                    /* No source available --> Video cannot be played --> Browser would says "Error code 2" then */
-                    throw new DecrypterException(EXCEPTION_LINKOFFLINE);
                 }
                 final Collection<Object> vsr_quals = ((LinkedHashMap<String, Object>) vsro).values();
                 /* One packagename for every language */
@@ -552,6 +575,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 fp.addLinks(decryptedLinks);
             }
         } catch (final Exception e) {
+            logger.log(e);
             if (e instanceof DecrypterException && e.getMessage().equals(EXCEPTION_LINKOFFLINE)) {
                 final DownloadLink offline = createofflineDownloadLink(parameter);
                 offline.setFinalFileName(title);
@@ -562,7 +586,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         }
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
             logger.warning("Decrypter out of date for link: " + parameter);
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         return decryptedLinks;
     }
@@ -863,7 +887,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     private String getUrlLang() {
         final String lang = new Regex(parameter, "^https?://[^/]+(?:/guide)?/(\\w+)/.+").getMatch(0);
         if (lang != null && !lang.matches("(de|fr|en|pl|it|es)")) {
-            return "de";
+            return null;
         } else {
             return lang;
         }

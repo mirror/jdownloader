@@ -38,6 +38,9 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyException;
+import org.jdownloader.auth.AuthenticationController;
+import org.jdownloader.auth.AuthenticationInfo;
+import org.jdownloader.auth.AuthenticationInfo.Type;
 import org.jdownloader.auth.Login;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 
@@ -168,6 +171,15 @@ public class Ftp extends PluginForDecrypt {
                         }
                         try {
                             ftp.connect(host, port, login.getUsername(), login.getPassword());
+                            if (false && login.isRememberSelected()) {
+                                // TODO: finish me
+                                final AuthenticationInfo auth = new AuthenticationInfo();
+                                auth.setUsername(login.getUsername());
+                                auth.setPassword(login.getPassword());
+                                auth.setHostmask(login.getHost());
+                                auth.setType(Type.FTP);
+                                AuthenticationController.getInstance().add(auth);
+                            }
                         } catch (IOException e2) {
                             if (StringUtils.contains(message, "was unable to log in with the supplied") || StringUtils.contains(message, "530 Login or Password incorrect")) {
                                 throw new DecrypterException(DecrypterException.PASSWORD, e2);
@@ -216,6 +228,7 @@ public class Ftp extends PluginForDecrypt {
                 auth = "";
             }
             // ftp.listFeatures();
+            // final List<FEATURE> features = ftp.listFeatures();
             // ftp.sendClientID("JDownloader");
             // ftp.setUTF8(true);
             final DownloadLink direct = checkLinkFile(ftp, nameString, auth, url, finalFilePath);

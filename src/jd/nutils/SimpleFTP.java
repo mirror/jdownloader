@@ -40,7 +40,6 @@ import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.URL;
@@ -63,6 +62,9 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.net.httpconnection.JavaSSLSocketStreamFactory;
+import org.appwork.utils.net.httpconnection.SSLSocketStreamFactory;
+import org.appwork.utils.net.httpconnection.SocketStreamInterface;
 import org.jdownloader.auth.AuthenticationController;
 import org.jdownloader.auth.Login;
 import org.jdownloader.logging.LogController;
@@ -143,11 +145,37 @@ public abstract class SimpleFTP {
         PASV,
         SIZE,
         CLNT,
+        PBSZ,
+        PROT,
+        PROT_C("PROT C"),
+        PROT_P("PROT P"),
+        AUTH_TLS("AUTH TLS"),
+        AUTH_TLS_C("AUTH TLS-C"),
+        AUTH_TLS_P("AUTH TLS-P"),
+        AUTH_SSL("AUTH SSL"),
         UTF8;
+        private final String cmd;
+
+        private FEATURE() {
+            this(null);
+        }
+
+        private FEATURE(String cmd) {
+            this.cmd = cmd;
+        }
+
+        public String getID() {
+            if (cmd == null) {
+                return name();
+            } else {
+                return cmd;
+            }
+        }
+
         public static FEATURE get(final String input) {
             if (input != null && input.startsWith(" ")) {
                 for (FEATURE feature : values()) {
-                    if (input.startsWith(" " + feature.name())) {
+                    if (input.equalsIgnoreCase(" " + feature.getID())) {
                         return feature;
                     }
                 }
@@ -214,14 +242,14 @@ public abstract class SimpleFTP {
         }
     }
 
-    private boolean            binarymode         = false;
-    private Socket             socket             = null;
-    private String             dir                = "/";
-    private String             host;
-    private final LogInterface logger;
-    private String             latestResponseLine = null;
-    private String             user               = null;
-    private final byte[]       CRLF               = "\r\n".getBytes();
+    private boolean               binarymode         = false;
+    private SocketStreamInterface socket             = null;
+    private String                dir                = "/";
+    private String                host;
+    private final LogInterface    logger;
+    private String                latestResponseLine = null;
+    private String                user               = null;
+    private final byte[]          CRLF               = "\r\n".getBytes();
 
     public String getUser() {
         return user;
@@ -344,7 +372,7 @@ public abstract class SimpleFTP {
         }
     }
 
-    public Socket createSocket(SocketAddress address) throws IOException {
+    public SocketStreamInterface createSocket(InetSocketAddress address) throws IOException {
         final Socket socket = createSocket();
         try {
             socket.connect(address, getConnectTimeout());
@@ -352,7 +380,39 @@ public abstract class SimpleFTP {
             socket.close();
             throw e;
         }
-        return socket;
+        final SocketStreamInterface ret = new SocketStreamInterface() {
+            @Override
+            public Socket getSocket() {
+                return socket;
+            }
+
+            @Override
+            public OutputStream getOutputStream() throws IOException {
+                return socket.getOutputStream();
+            }
+
+            @Override
+            public InputStream getInputStream() throws IOException {
+                return socket.getInputStream();
+            }
+
+            @Override
+            public void close() throws IOException {
+                socket.close();
+            }
+        };
+        switch (getTLSMode()) {
+        case EXPLICIT_OPTIONAL_CC_DC:
+        case EXPLICIT_REQUIRED_CC_DC:
+            try {
+                return getSSLSocketStreamFactory().create(ret, address.getAddress().getHostAddress(), address.getPort(), true, isSSLTrustALL(), null);
+            } catch (IOException e) {
+                socket.close();
+                throw e;
+            }
+        default:
+            return ret;
+        }
     }
 
     public int getConnectTimeout() {
@@ -366,22 +426,69 @@ public abstract class SimpleFTP {
         CLOSING
     }
 
+    public static enum TLS_MODE {
+        NONE,
+        EXPLICIT_OPTIONAL_CC,
+        EXPLICIT_OPTIONAL_CC_DC,
+        EXPLICIT_REQUIRED_CC,
+        EXPLICIT_REQUIRED_CC_DC,
+    }
+
+    private TLS_MODE tlsMode = TLS_MODE.NONE;
+
+    protected void setTLSMode(final TLS_MODE mode) {
+        tlsMode = mode;
+    }
+
+    public TLS_MODE getTLSMode() {
+        return tlsMode;
+    }
+
+    public void connect(String host, int port, String user, String pass) throws IOException {
+        connect(host, port, user, pass, getPreferedTLSMode());
+    }
+
     /**
      * Connects to an FTP server and logs in with the supplied username and password.
      */
-    public void connect(String host, int port, String user, String pass) throws IOException {
-        if (socket != null) {
+    public void connect(String host, int port, String user, String pass, TLS_MODE mode) throws IOException {
+        if (getControlSocket() != null) {
             throw new IOException("SimpleFTP is already connected. Disconnect first.");
         }
+        setTLSMode(TLS_MODE.NONE);
         this.isUTF8Enabled = false;
         this.user = user;
         this.pass = pass;
         socket = createSocket(new InetSocketAddress(host, port));
         this.host = host;
         this.port = port;
-        socket.setSoTimeout(getReadTimeout(STATE.CONNECTING));
+        socket.getSocket().setSoTimeout(getReadTimeout(STATE.CONNECTING));
         String response = readLines(new int[] { 220 }, "SimpleFTP received an unknown response when connecting to the FTP server: ");
-        socket.setSoTimeout(getReadTimeout(STATE.CONNECTED));
+        socket.getSocket().setSoTimeout(getReadTimeout(STATE.CONNECTED));
+        switch (mode) {
+        case EXPLICIT_REQUIRED_CC:
+        case EXPLICIT_OPTIONAL_CC:
+            if (AUTH_TLS_CC()) {
+                setTLSMode(mode);
+            } else if (TLS_MODE.EXPLICIT_REQUIRED_CC.equals(mode)) {
+                throw new IOException("TLS_MODE:" + mode + " failed!");
+            }
+            break;
+        case EXPLICIT_REQUIRED_CC_DC:
+        case EXPLICIT_OPTIONAL_CC_DC:
+            final boolean ccTLS = AUTH_TLS_CC();
+            if (ccTLS && AUTH_TLS_DC()) {
+                setTLSMode(mode);
+            } else if (TLS_MODE.EXPLICIT_REQUIRED_CC_DC.equals(mode)) {
+                throw new IOException("TLS_MODE:" + mode + " failed!");
+            } else if (ccTLS) {
+                setTLSMode(TLS_MODE.EXPLICIT_OPTIONAL_CC);
+            }
+            break;
+        default:
+            setTLSMode(TLS_MODE.NONE);
+            break;
+        }
         sendLine("USER " + user);
         response = readLines(new int[] { 230, 331 }, "SimpleFTP received an unknown response after sending the user: ");
         String[] lines = getLines(response);
@@ -444,7 +551,7 @@ public abstract class SimpleFTP {
      * Disconnects from the FTP server.
      */
     public void disconnect() throws IOException {
-        final Socket lsocket = socket;
+        final SocketStreamInterface lsocket = getControlSocket();
         try {
             /* avoid stackoverflow for io-exception during sendLine */
             socket = null;
@@ -480,7 +587,7 @@ public abstract class SimpleFTP {
 
     public String readLine(ENCODING encoding) throws IOException {
         final ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        final int length = readLine(socket.getInputStream(), bos);
+        final int length = readLine(getControlSocket().getInputStream(), bos);
         if (length == -1) {
             throw new EOFException();
         } else if (length == 0) {
@@ -549,13 +656,75 @@ public abstract class SimpleFTP {
         if (StringUtils.startsWithCaseInsensitive(response, "211")) {
             final String[] featureLines = response.split("\r\n");
             for (final String featureLine : featureLines) {
-                final FEATURE feature = FEATURE.get(featureLine);
-                if (feature != null) {
-                    ret.add(feature);
+                final String featureParams[] = new Regex(featureLine, "^ (\\w+)\\s+(.+);$").getRow(0);
+                final List<String> features = new ArrayList<String>();
+                if (featureParams != null) {
+                    final String[] params = featureParams[1].split(";");
+                    for (final String param : params) {
+                        features.add(" " + featureParams[0] + " " + param);
+                    }
+                } else {
+                    features.add(featureLine);
+                }
+                for (final String feature : features) {
+                    final FEATURE knownFeature = FEATURE.get(feature);
+                    if (knownFeature != null && !ret.contains(knownFeature)) {
+                        ret.add(knownFeature);
+                    }
                 }
             }
         }
         return ret;
+    }
+
+    private static SSLSocketStreamFactory defaultSSLSocketStreamFactory = null;
+
+    public static void setDefaultSSLSocketStreamFactory(SSLSocketStreamFactory defaultSSLSocketStreamFactory) {
+        SimpleFTP.defaultSSLSocketStreamFactory = defaultSSLSocketStreamFactory;
+    }
+
+    public static SSLSocketStreamFactory getDefaultSSLSocketStreamFactory() {
+        final SSLSocketStreamFactory ret = defaultSSLSocketStreamFactory;
+        if (ret != null) {
+            return ret;
+        } else {
+            return JavaSSLSocketStreamFactory.getInstance();
+        }
+    }
+
+    protected boolean sslTrustALL = false;
+
+    public void setSSLTrustALL(boolean trustALL) {
+        this.sslTrustALL = trustALL;
+    }
+
+    public boolean isSSLTrustALL() {
+        return this.sslTrustALL;
+    }
+
+    protected SSLSocketStreamFactory getSSLSocketStreamFactory() {
+        return getDefaultSSLSocketStreamFactory();
+    }
+
+    // RFC 4217
+    protected boolean AUTH_TLS_CC() throws IOException {
+        sendLine("AUTH TLS");
+        final String response = readLines(new int[] { 234, 500, 502 }, "AUTH_TLS FAILED");
+        if (StringUtils.startsWithCaseInsensitive(response, "234")) {
+            socket = getSSLSocketStreamFactory().create(getControlSocket(), response, getPort(), true, isSSLTrustALL(), null);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    // RFC 4217
+    protected boolean AUTH_TLS_DC() throws IOException {
+        sendLine("PBSZ 0");
+        String response = readLines(new int[] { 200 }, "PBSZ 0 failed");
+        sendLine("PROT P");
+        response = readLines(new int[] { 200 }, "PROTO P");
+        return true;
     }
 
     public boolean sendClientID(final String id) throws IOException {
@@ -652,14 +821,14 @@ public abstract class SimpleFTP {
      * Sends a raw command to the FTP server.
      */
     public void sendLine(ENCODING encoding, String line) throws IOException {
-        sendLine(encoding, this.socket, line);
+        sendLine(encoding, this.getControlSocket(), line);
     }
 
     public void sendLine(String line) throws IOException {
-        sendLine(ENCODING.ASCII7BIT, this.socket, line);
+        sendLine(ENCODING.ASCII7BIT, this.getControlSocket(), line);
     }
 
-    private void sendLine(ENCODING encoding, Socket socket, String line) throws IOException {
+    private void sendLine(ENCODING encoding, SocketStreamInterface socket, String line) throws IOException {
         if (socket != null) {
             try {
                 logger.info(host + " > " + line);
@@ -730,11 +899,11 @@ public abstract class SimpleFTP {
         }
         InputStream input = null;
         RandomAccessFile fos = null;
-        Socket dataSocket = null;
+        SocketStreamInterface dataSocket = null;
         try {
             final long resumeAmount = resumePosition;
             dataSocket = createSocket(new InetSocketAddress(pasv.getHostName(), pasv.getPort()));
-            dataSocket.setSoTimeout(getReadTimeout(STATE.DOWNLOADING));
+            dataSocket.getSocket().setSoTimeout(getReadTimeout(STATE.DOWNLOADING));
             sendLine("RETR " + filename);
             input = dataSocket.getInputStream();
             fos = new RandomAccessFile(file, "rw");
@@ -749,7 +918,7 @@ public abstract class SimpleFTP {
             while ((bytesRead = input.read(buffer)) != -1) {
                 if (Thread.currentThread().isInterrupted()) {
                     /* max 10 seks wait for buggy servers */
-                    socket.setSoTimeout(getReadTimeout(STATE.CLOSING));
+                    getControlSocket().getSocket().setSoTimeout(getReadTimeout(STATE.CLOSING));
                     shutDownSocket(dataSocket);
                     input.close();
                     try {
@@ -768,7 +937,7 @@ public abstract class SimpleFTP {
                 }
             }
             /* max 10 seks wait for buggy servers */
-            socket.setSoTimeout(getReadTimeout(STATE.CLOSING));
+            getControlSocket().getSocket().setSoTimeout(getReadTimeout(STATE.CLOSING));
             shutDownSocket(dataSocket);
             input.close();
             try {
@@ -811,7 +980,7 @@ public abstract class SimpleFTP {
         }
     }
 
-    public Socket getSocket() {
+    public SocketStreamInterface getControlSocket() {
         return socket;
     }
 
@@ -835,18 +1004,24 @@ public abstract class SimpleFTP {
         }
     }
 
-    public void shutDownSocket(Socket dataSocket) {
-        try {
-            dataSocket.shutdownOutput();
-        } catch (Throwable e) {
-        }
-        try {
-            dataSocket.shutdownInput();
-        } catch (Throwable e) {
-        }
-        try {
-            dataSocket.close();
-        } catch (Throwable e) {
+    public void shutDownSocket(SocketStreamInterface dataSocket) {
+        if (dataSocket != null) {
+            try {
+                final Socket socket = dataSocket.getSocket();
+                try {
+                    socket.shutdownOutput();
+                } catch (Throwable e) {
+                }
+                try {
+                    socket.shutdownInput();
+                } catch (Throwable e) {
+                }
+            } finally {
+                try {
+                    dataSocket.close();
+                } catch (Throwable e) {
+                }
+            }
         }
     }
 
@@ -1008,10 +1183,10 @@ public abstract class SimpleFTP {
     private String[][] list() throws IOException {
         InetSocketAddress pasv = pasv();
         sendLine("LIST");
-        Socket dataSocket = null;
+        SocketStreamInterface dataSocket = null;
         final StringBuilder sb = new StringBuilder();
         try {
-            dataSocket = new Socket(pasv.getHostName(), pasv.getPort());
+            dataSocket = createSocket(new InetSocketAddress(pasv.getHostName(), pasv.getPort()));
             readLines(new int[] { 125, 150 }, null);
             final ENCODING encoding = getPathEncoding();
             sb.append(encoding.fromBytes(IO.readBytes(dataSocket.getInputStream())));
@@ -1049,6 +1224,10 @@ public abstract class SimpleFTP {
             }
         }
         return null;
+    }
+
+    public TLS_MODE getPreferedTLSMode() {
+        return TLS_MODE.EXPLICIT_OPTIONAL_CC_DC;
     }
 
     /**

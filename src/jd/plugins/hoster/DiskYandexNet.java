@@ -690,7 +690,9 @@ public class DiskYandexNet extends PluginForHost {
                 }
                 account.saveCookies(br.getCookies(br.getHost()), "");
             } catch (final PluginException e) {
-                account.clearCookies("");
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
@@ -700,16 +702,11 @@ public class DiskYandexNet extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account, true);
         if (!br.getURL().contains("client/disk")) {
             getPage("https://" + getCurrentDomain() + "/client/disk/");
         }
-        ACCOUNT_SK = br.getRegex("\"sk\":\"([a-z0-9]+)\"").getMatch(0);
+        ACCOUNT_SK = br.getRegex("\"sk\":\"([a-z0-9:]+)\"").getMatch(0);
         final String userID = PluginJSonUtils.getJson(br, "uid");
         if (ACCOUNT_SK == null || StringUtils.isEmpty(userID)) {
             final String lang = System.getProperty("user.language");
