@@ -17,6 +17,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -41,37 +43,55 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "box.com" }, urls = { "https?://(?:\\w+\\.)*box\\.(?:net|com)/s(?:hared)?/(?:[a-z0-9]{32}|[a-z0-9]{20})(?:/folder/\\d+)?" })
 public class BoxCom extends antiDDoSForDecrypt {
-    private static final String TYPE_APP    = "https?://(?:\\w+\\.)*box\\.(?:net|com)/s(?:hared)?/(?:[a-z0-9]{32}|[a-z0-9]{20})(?:/folder/\\d+)?";
-    private String              cryptedlink = null;
+    private static final String            TYPE_APP    = "https?://(?:\\w+\\.)*box\\.(?:net|com)/s(?:hared)?/(?:[a-z0-9]{32}|[a-z0-9]{20})(?:/folder/\\d+)?";
+    private String                         cryptedlink = null;
+    private static AtomicReference<String> lastValidPW = new AtomicReference<String>(null);
 
     public BoxCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    protected String handlePassword(Browser br, final String passCode, CryptedLink parameter) throws Exception {
-        int retry = 5;
-        String password = passCode;
-        while (retry-- > 0 && isPasswordProtected(br)) {
-            if (isAbort()) {
-                throw new InterruptedException();
+    protected String handlePassword(Browser br, final List<String> passCodes, CryptedLink parameter) throws Exception {
+        synchronized (BoxCom.lastValidPW) {
+            final List<String> tryPassCodes = new ArrayList<String>();
+            if (passCodes != null) {
+                tryPassCodes.addAll(passCodes);
             }
-            if (StringUtils.isEmpty(password)) {
-                password = Plugin.getUserInput(null, parameter);
+            final String lastValidPW = BoxCom.lastValidPW.get();
+            if (lastValidPW != null && tryPassCodes.contains(lastValidPW)) {
+                tryPassCodes.add(lastValidPW);
             }
-            if (!StringUtils.isEmpty(password)) {
-                final PostRequest request = br.createPostRequest(br.getURL(), "password=" + Encoding.urlEncode(password));
-                br.getPage(request);
-                if (isPasswordProtected(br)) {
-                    password = null;
+            int retry = 5 + tryPassCodes.size();
+            String password = null;
+            while (retry-- > 0 && isPasswordProtected(br)) {
+                if (isAbort()) {
+                    throw new InterruptedException();
                 }
+                if (tryPassCodes.size() > 0) {
+                    password = tryPassCodes.remove(0);
+                }
+                if (StringUtils.isEmpty(password)) {
+                    password = Plugin.getUserInput(null, parameter);
+                }
+                if (!StringUtils.isEmpty(password)) {
+                    final PostRequest request = br.createPostRequest(br.getURL(), "password=" + Encoding.urlEncode(password));
+                    br.getPage(request);
+                    if (isPasswordProtected(br)) {
+                        password = null;
+                    }
+                } else {
+                    break;
+                }
+            }
+            if (isPasswordProtected(br)) {
+                throw new DecrypterException(DecrypterException.PASSWORD);
             } else {
-                break;
+                if (password != null) {
+                    BoxCom.lastValidPW.set(password);
+                }
+                return password;
             }
         }
-        if (isPasswordProtected(br)) {
-            throw new DecrypterException(DecrypterException.PASSWORD);
-        }
-        return password;
     }
 
     @Override
@@ -82,26 +102,30 @@ public class BoxCom extends antiDDoSForDecrypt {
         logger.finer("Decrypting: " + cryptedlink);
         br.setFollowRedirects(true);
         // our default is german, this returns german!!
-        String passCode = null;
+        final List<String> passCodes = new ArrayList<String>();
         CrawledLink current = getCurrentLink();
         while (current != null) {
             if (current.getDownloadLink() != null && getSupportedLinks().matcher(current.getURL()).matches()) {
                 final String pass = current.getDownloadLink().getStringProperty("passCode", null);
                 if (pass != null) {
-                    passCode = pass;
+                    passCodes.add(pass);
                     break;
                 }
             }
             current = current.getSourceLink();
         }
+        String passCode = null;
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         if (cryptedlink.matches(".+/folder/\\d+")) {
             final String rootFolder = new Regex(cryptedlink, "(.+)/folder/\\d+").getMatch(0);
             br.getPage(rootFolder);
-            passCode = handlePassword(br, passCode, parameter);
+            passCode = handlePassword(br, passCodes, parameter);
+            if (passCode != null && passCodes.contains(passCode)) {
+                passCodes.add(0, passCode);
+            }
         }
         br.getPage(cryptedlink);
-        passCode = handlePassword(br, passCode, parameter);
+        passCode = handlePassword(br, passCodes, parameter);
         if (br._getURL().getPath().equals("/freeshare")) {
             decryptedLinks.add(createOfflinelink(cryptedlink));
             return decryptedLinks;
@@ -240,6 +264,11 @@ public class BoxCom extends antiDDoSForDecrypt {
             }
         }
         return false;
+    }
+
+    @Override
+    public int getMaxConcurrentProcessingInstances() {
+        return 1;
     }
 
     /* NO OVERRIDE!! */
