@@ -115,6 +115,21 @@ public class ZeveraCom extends ZeveraCore {
         return new FEATURE[] { FEATURE.MULTIHOST };
     }
 
+    @Override
+    public boolean supportsUsenet() {
+        return false;
+    }
+
+    @Override
+    public boolean supportsFreeMode() {
+        return false;
+    }
+
+    @Override
+    public boolean supportsPairingLogin() {
+        return false;
+    }
+
     public static class ZeveraAccountFactory extends MigPanel implements AccountBuilderInterface {
         /**
          *

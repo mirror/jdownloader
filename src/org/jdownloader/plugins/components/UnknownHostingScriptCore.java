@@ -298,7 +298,7 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
     public boolean isOfflineWebsite() {
         final boolean isOffline = br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">The file you are looking for does not exist|>The file you were looking for could not be found");
         /* Some normal website URLs look exactly like downloadurls and will definitely get picked up by our hostpattern. */
-        final boolean isNoDownloadableContent = !br.containsHTML("/file/filetype");
+        final boolean isNoDownloadableContent = !br.containsHTML("id=\"download\\-wrapper\"");
         return isOffline || isNoDownloadableContent;
     }
 
@@ -329,7 +329,9 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
                 output = input.substring(1);
             }
             /* Now fix filename ending / fileextension */
+            /* filename_part1: Filename without extension */
             final String filename_part1 = output.substring(0, output.lastIndexOf("_"));
+            /* filename_part2_suggested_extension: The part which might be the extension of our filename */
             final String filename_part2_suggested_extension = output.substring(output.lastIndexOf("_") + 1);
             boolean ending_is_Extension = false;
             final ArrayList<Pattern> patterns = new ArrayList<Pattern>();
@@ -357,6 +359,15 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
                 }
             }
             if (ending_is_Extension) {
+                logger.info("Correcting SAFE extension");
+                output = filename_part1 + "." + filename_part2_suggested_extension;
+            } else {
+                /*
+                 * 2019-06-25: Filenames without extension are unlikely so for the ones for which we cannot clearly tell whether the ending
+                 * shall be a filename or not, we'll simply assume it and 'fix' it. The correct name will be presented on downloadstart
+                 * anyways!
+                 */
+                logger.info("Correcting UN_SAFE extension");
                 output = filename_part1 + "." + filename_part2_suggested_extension;
             }
         }
