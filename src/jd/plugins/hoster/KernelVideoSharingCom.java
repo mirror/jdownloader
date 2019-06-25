@@ -58,6 +58,8 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
  *
  *
  *
+         *
+ *
          * 
  * Please add new entries to the END of this array!
  */
@@ -669,9 +671,9 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
         final String current_host = dl.getHost();
         /* Find 'real' filename and the one inside our URL. */
         if (url_source.matches(type_only_numbers)) {
-            filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+            filename = br.getRegex("<title>\\s*([^<>\"]*?)\\s*</title>").getMatch(0);
         } else if (url_source.matches(type_embedded)) {
-            filename = br.getRegex("<title>([^<>\"]*?) / Embed Player</title>").getMatch(0);
+            filename = br.getRegex("<title>\\s*([^<>\"]*?)\\s*(/|-)\\s*Embed\\s*(Player|Video)</title>").getMatch(0);
             if (StringUtils.isEmpty(filename)) {
                 /* Filename from decrypter */
                 filename = dl.getStringProperty("filename", null);
