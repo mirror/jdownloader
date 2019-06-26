@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
 import jd.plugins.Account;
@@ -11,10 +12,9 @@ import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.hosterrule.AccountGroup;
 import org.jdownloader.controlling.hosterrule.AccountGroup.Rules;
+import org.jdownloader.controlling.hosterrule.CachedAccountGroup;
 
 public class AccountCache implements Iterable<CachedAccount> {
     public static enum ACCOUNTTYPE {
@@ -101,8 +101,9 @@ public class AccountCache implements Iterable<CachedAccount> {
                 final Account xx = x.getAccount();
                 final Account yy = y.getAccount();
                 return xx != null && yy != null && xx.equals(yy);
+            } else {
+                return false;
             }
-            return false;
         }
 
         public static boolean samePlugin(CachedAccount x, CachedAccount y) {
@@ -110,24 +111,23 @@ public class AccountCache implements Iterable<CachedAccount> {
                 final PluginForHost xx = x.getPlugin();
                 final PluginForHost yy = y.getPlugin();
                 return xx != null && yy != null && xx.equals(yy);
+            } else {
+                return false;
             }
-            return false;
         }
 
         public boolean equals(CachedAccount cachedAccount) {
             if (cachedAccount == null) {
                 return false;
-            }
-            if (cachedAccount == this) {
+            } else if (cachedAccount == this) {
+                return true;
+            } else if (getType() != cachedAccount.getType()) {
+                return false;
+            } else if (!sameAccount(this, cachedAccount) || !samePlugin(this, cachedAccount)) {
+                return false;
+            } else {
                 return true;
             }
-            if (getType() != cachedAccount.getType()) {
-                return false;
-            }
-            if (!sameAccount(this, cachedAccount) || !samePlugin(this, cachedAccount)) {
-                return false;
-            }
-            return true;
         }
     }
 
@@ -151,100 +151,52 @@ public class AccountCache implements Iterable<CachedAccount> {
             };
         };
     };
-    protected final ArrayList<CachedAccount> cache;
-    protected final ArrayList<Rules>         rules;
-    protected final boolean                  customized;
-
-    public AccountCache(ArrayList<CachedAccount> cache) {
-        this(cache, null);
-    }
+    protected final List<CachedAccountGroup> cache;
 
     public boolean isCustomizedCache() {
-        return customized;
+        return false;
     }
 
-    public AccountCache(ArrayList<CachedAccount> cache, ArrayList<AccountGroup.Rules> rules) {
+    public AccountCache(List<CachedAccountGroup> cache) {
         this.cache = cache;
-        if (rules != null) {
-            if (rules != null && rules.size() < cache.size()) {
-                throw new IllegalArgumentException("rules must have at least <= length of cache!");
-            }
-            customized = true;
-            boolean nonOrder = false;
-            AccountGroup.Rules lastRule = null;
-            for (AccountGroup.Rules rule : rules) {
-                /* validate rules */
-                if (rule == null) {
-                    lastRule = null;
-                    continue;
-                } else {
-                    if (lastRule == null) {
-                        lastRule = rule;
-                    } else {
-                        if (!lastRule.equals(rule)) {
-                            throw new IllegalArgumentException("different rules within same rulegroup?!");
-                        }
-                        nonOrder = true;
-                        break;
-                    }
-                }
-            }
-            if (nonOrder == false) {
-                rules = null;
-            }
-        } else {
-            customized = false;
-        }
-        this.rules = rules;
     }
 
     protected Iterator<CachedAccount> getRuleAwareIterator() {
-        if (rules == null) {
-            return cache.iterator();
-        }
-        ArrayList<CachedAccount> orderedCache = new ArrayList<AccountCache.CachedAccount>(cache);
-        int startRandom = -1;
-        int cacheIndex = -1;
-        for (int ruleIndex = 0; ruleIndex < rules.size(); ruleIndex++) {
-            final Rules rule = rules.get(ruleIndex);
-            if (rule == null) {
-                if (startRandom >= 0) {
-                    Collections.shuffle(orderedCache.subList(startRandom, cacheIndex + 1));
-                    startRandom = -1;
+        if (cache == null || cache.size() == 0) {
+            return new ArrayList<CachedAccount>(0).iterator();
+        } else if (cache.size() == 1 && Rules.ORDER.equals(cache.get(0).getRule())) {
+            return cache.get(0).iterator();
+        } else {
+            final List<CachedAccount> ret = new ArrayList<AccountCache.CachedAccount>();
+            for (final CachedAccountGroup cachedAccountGroup : cache) {
+                switch (cachedAccountGroup.getRule()) {
+                case DISABLED:
+                    continue;
+                case BALANCED:
+                    // TODO
+                    ret.addAll(cachedAccountGroup);
+                    break;
+                case RANDOM:
+                    synchronized (cachedAccountGroup) {
+                        Collections.shuffle(cachedAccountGroup);
+                        ret.addAll(cachedAccountGroup);
+                    }
+                    break;
+                default:
+                case ORDER:
+                    ret.addAll(cachedAccountGroup);
+                    break;
                 }
-                continue;
-            } else {
-                cacheIndex++;
             }
-            switch (rule) {
-            case ORDER:
-                startRandom = -1;
-                break;
-            case BALANCED:
-                // unsupported
-                startRandom = -1;
-                break;
-            case RANDOM:
-                if (startRandom < 0) {
-                    startRandom = cacheIndex;
-                }
-                break;
-            default:
-                startRandom = -1;
-                break;
-            }
+            return ret.iterator();
         }
-        if (startRandom >= 0) {
-            Collections.shuffle(orderedCache.subList(startRandom, orderedCache.size()));
-        }
-        return orderedCache.iterator();
     }
 
     @Override
     public Iterator<CachedAccount> iterator() {
         return new Iterator<AccountCache.CachedAccount>() {
-            Iterator<CachedAccount>                it   = getRuleAwareIterator();
-            NullsafeAtomicReference<CachedAccount> next = new NullsafeAtomicReference<AccountCache.CachedAccount>(null);
+            final Iterator<CachedAccount>        it   = getRuleAwareIterator();
+            final AtomicReference<CachedAccount> next = new AtomicReference<AccountCache.CachedAccount>(null);
 
             @Override
             public void remove() {
@@ -253,11 +205,10 @@ public class AccountCache implements Iterable<CachedAccount> {
 
             @Override
             public CachedAccount next() {
-                CachedAccount ret = next.getAndSet(null);
+                final CachedAccount ret = next.getAndSet(null);
                 if (ret != null) {
                     return ret;
-                }
-                if (hasNext()) {
+                } else if (hasNext()) {
                     return next.getAndSet(null);
                 } else {
                     return null;
@@ -268,24 +219,23 @@ public class AccountCache implements Iterable<CachedAccount> {
             public boolean hasNext() {
                 if (next.get() != null) {
                     return true;
-                }
-                while (it.hasNext()) {
-                    CachedAccount iNext = it.next();
-                    if (iNext.getAccount() != null) {
-                        if (iNext.getAccount().getAccountController() == null) {
-                            continue;
+                } else {
+                    while (it.hasNext()) {
+                        final CachedAccount iNext = it.next();
+                        if (iNext.getAccount() != null) {
+                            if (iNext.getAccount().getAccountController() == null) {
+                                continue;
+                            } else if (!iNext.getAccount().isEnabled()) {
+                                continue;
+                            } else if (!iNext.getAccount().isValid()) {
+                                continue;
+                            }
                         }
-                        if (!iNext.getAccount().isEnabled()) {
-                            continue;
-                        }
-                        if (!iNext.getAccount().isValid()) {
-                            continue;
-                        }
+                        next.set(iNext);
+                        break;
                     }
-                    next.set(iNext);
-                    break;
+                    return next.get() != null;
                 }
-                return next.get() != null;
             }
         };
     }

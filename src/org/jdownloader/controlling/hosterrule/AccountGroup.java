@@ -58,6 +58,10 @@ public class AccountGroup {
         return "AC: " + getName() + " - " + getChildren();
     }
 
+    public AccountGroup(String name) {
+        this(null, name);
+    }
+
     public AccountGroup(ArrayList<AccountReference> refList, String name) {
         this(refList);
         setName(name);
