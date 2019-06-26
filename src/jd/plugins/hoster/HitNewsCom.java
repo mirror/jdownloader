@@ -127,8 +127,8 @@ import org.jdownloader.plugins.components.usenet.UsenetServer;
     }
 
     @Override
-    protected UsenetServer getUsenetServer(final Account account) throws Exception {
-        final UsenetServer ret = super.getUsenetServer(account);
+    protected UsenetServer getUseNetServer(final Account account) throws Exception {
+        final UsenetServer ret = super.getUseNetServer(account);
         if (AccountType.FREE.equals(account.getType())) {
             if (ret.isSSL()) {
                 return new UsenetServer("free.hitnews.com", 563, true);

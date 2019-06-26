@@ -20,15 +20,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -48,6 +39,15 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 //IMPORTANT: this class must stay in jd.plugins.hoster because it extends another plugin (UseNet) which is only available through PluginClassLoader
 abstract public class ZeveraCore extends UseNet {
@@ -625,11 +625,19 @@ abstract public class ZeveraCore extends UseNet {
             if (!isLoggedIn(br)) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "API key invalid! Make sure you entered your current API key which can be found here: " + account.getHoster() + "/account", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-            if (supportsUsenet()) {
-                /* 2019-02-10: Workaround for their Usenet support. Their Usenet login-servers only accept APIKEY:APIKEY. */
-                account.setUser(account.getPass());
-            }
         }
+        final String customer_id = PluginJSonUtils.getJson(br, "customer_id");
+        if (customer_id != null && customer_id.length() > 2) {
+            // don't store the complete customer id
+            final String shortcustomer_id = customer_id.substring(0, customer_id.length() / 2) + "****";
+            account.setUser(shortcustomer_id);
+        }
+    }
+
+    @Override
+    protected String getUseNetUsername(Account account) {
+        /* Their Usenet login-servers only accept APIKEY:APIKEY */
+        return account.getPass();
     }
 
     private boolean isLoggedIn(final Browser br) {

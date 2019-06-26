@@ -49,18 +49,18 @@ public class XSUseNetCom extends UseNet {
     private final String USENET_PASSWORD = "USENET_PASSWORD";
 
     @Override
-    protected String getUsername(Account account) {
+    protected String getUseNetUsername(Account account) {
         return account.getStringProperty(USENET_USERNAME, account.getUser());
     }
 
     @Override
-    protected String getPassword(Account account) {
+    protected String getUseNetPassword(Account account) {
         return account.getStringProperty(USENET_PASSWORD, account.getUser());
     }
 
     @Override
-    protected UsenetServer getUsenetServer(Account account) throws Exception {
-        final UsenetServer ret = super.getUsenetServer(account);
+    protected UsenetServer getUseNetServer(Account account) throws Exception {
+        final UsenetServer ret = super.getUseNetServer(account);
         if (AccountType.FREE.equals(account.getType())) {
             if (ret.getHost().startsWith("free")) {
                 return ret;
@@ -181,7 +181,7 @@ public class XSUseNetCom extends UseNet {
                 return ai;
             } catch (InvalidAuthException e) {
                 logger.log(e);
-                final DownloadLink dummyLink = new DownloadLink(this, "Account:" + getUsername(account), getHost(), "https://www.xsusenet.com/", true);
+                final DownloadLink dummyLink = new DownloadLink(this, "Account:" + getUseNetUsername(account), getHost(), "https://www.xsusenet.com/", true);
                 final AskDownloadPasswordDialogInterface handle = UIOManager.I().show(AskDownloadPasswordDialogInterface.class, new AskForDownloadLinkDialog(_GUI.T.AskForPasswordDialog_AskForPasswordDialog_title_(), "Please enter your XSUsenet Usenet Password", dummyLink));
                 if (handle.getCloseReason() == CloseReason.OK) {
                     password = handle.getText();

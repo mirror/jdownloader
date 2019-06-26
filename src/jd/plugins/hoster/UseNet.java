@@ -79,7 +79,7 @@ public class UseNet extends antiDDoSForHost {
     }
 
     protected void verifyUseNetLogins(Account account) throws Exception, InvalidAuthException {
-        final UsenetServer server = getUsenetServer(account);
+        final UsenetServer server = getUseNetServer(account);
         final URL url = new URL(null, "socket://" + server.getHost() + ":" + server.getPort(), ProxyController.SOCKETURLSTREAMHANDLER);
         final List<HTTPProxy> proxies = selectProxies(url);
         final HTTPProxy proxy = proxies.get(0);
@@ -100,7 +100,7 @@ public class UseNet extends antiDDoSForHost {
             }
         };
         try {
-            client.connect(server.getHost(), server.getPort(), server.isSSL(), getUsername(account), getPassword(account));
+            client.connect(server.getHost(), server.getPort(), server.isSSL(), getUseNetUsername(account), getUseNetPassword(account));
         } catch (HTTPProxyException e) {
             ProxyController.getInstance().reportHTTPProxyException(proxy, url, e);
             throw e;
@@ -129,11 +129,11 @@ public class UseNet extends antiDDoSForHost {
         }
     }
 
-    protected String getUsername(final Account account) {
+    protected String getUseNetUsername(final Account account) {
         return account.getUser();
     }
 
-    protected String getPassword(final Account account) {
+    protected String getUseNetPassword(final Account account) {
         return account.getPass();
     }
 
@@ -207,7 +207,7 @@ public class UseNet extends antiDDoSForHost {
         return lastUsedUsenetServer;
     }
 
-    protected UsenetServer getUsenetServer(Account account) throws Exception {
+    protected UsenetServer getUseNetServer(Account account) throws Exception {
         synchronized (account) {
             final UsenetAccountConfigInterface config = getAccountJsonConfig(account);
             UsenetServer server = new UsenetServer(config.getHost(), config.getPort(), config.isSSLEnabled());
@@ -242,9 +242,9 @@ public class UseNet extends antiDDoSForHost {
             setIncomplete(downloadLink, true);
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String username = getUsername(account);
-        final String password = getPassword(account);
-        final UsenetServer server = getUsenetServer(account);
+        final String username = getUseNetUsername(account);
+        final String password = getUseNetPassword(account);
+        final UsenetServer server = getUseNetServer(account);
         final URL url = new URL(null, "socket://" + server.getHost() + ":" + server.getPort(), ProxyController.SOCKETURLSTREAMHANDLER);
         final List<HTTPProxy> proxies = selectProxies(url);
         final HTTPProxy proxy = proxies.get(0);

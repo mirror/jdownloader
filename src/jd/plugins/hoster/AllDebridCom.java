@@ -22,17 +22,6 @@ import java.util.LinkedHashMap;
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
 
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.gui.views.SelectionInfo.PluginView;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -53,6 +42,17 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.HashInfo;
+
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.views.SelectionInfo.PluginView;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alldebrid.com" }, urls = { "https?://(?:[a-z]\\d+\\.alldebrid\\.com|[a-z0-9]+\\.alld\\.io)/dl/[a-z0-9]+/.+" })
 public class AllDebridCom extends antiDDoSForHost {
@@ -148,7 +148,6 @@ public class AllDebridCom extends antiDDoSForHost {
                 } else {
                     logger.info("Token login successful");
                 }
-                anonymizeLoginData(account);
                 return token;
             } catch (PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
@@ -159,22 +158,16 @@ public class AllDebridCom extends antiDDoSForHost {
         }
     }
 
-    /** This is just a 'demo' - see ticket: */
-    private void anonymizeLoginData(final Account account) {
-        final String username = account.getUser();
-        if (!StringUtils.isEmpty(username) && username.length() >= 3) {
-            final String username_new = "***" + username.substring(3, username.length());
-            account.setUser(username_new);
-        } else {
-            account.setUser("***");
-        }
-        account.setPass("***");
-    }
-
     private void loginAccount(final Account account, final AccountInfo accountInfo, final String token) throws Exception {
         synchronized (account) {
             getPage(api_base + "/user/login?" + agent + "&token=" + token);
             handleErrors(account, null);
+            final String userName = PluginJSonUtils.getJson(br, "username");
+            if (userName != null && userName.length() > 2) {
+                // don't store the complete username
+                final String shortuserName = userName.substring(0, userName.length() / 2) + "****";
+                account.setUser(shortuserName);
+            }
             final boolean isPremium = PluginJSonUtils.parseBoolean(PluginJSonUtils.getJson(br, "isPremium"));
             if (!isPremium) {
                 throw new AccountInvalidException("Free accounts are not supported!");
@@ -293,7 +286,7 @@ public class AllDebridCom extends antiDDoSForHost {
         // everything is aok
         case -1:
             return;
-        // login related
+            // login related
         case 2:
             throw new AccountInvalidException("Invalid User/Password!");
         case 3:

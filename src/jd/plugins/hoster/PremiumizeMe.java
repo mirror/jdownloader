@@ -21,6 +21,14 @@ import java.util.List;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
+import jd.PluginWrapper;
+import jd.gui.swing.components.linkbutton.JLink;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
+
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.utils.StringUtils;
@@ -29,14 +37,6 @@ import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
-import jd.PluginWrapper;
-import jd.gui.swing.components.linkbutton.JLink;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
-import jd.plugins.DownloadLink;
-import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumize.me" }, urls = { "premiumizedecrypted://.+" })
 public class PremiumizeMe extends ZeveraCore {

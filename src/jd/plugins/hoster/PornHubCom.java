@@ -34,9 +34,6 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -64,6 +61,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com", "pornhubpremium.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub(?:premium)?\\.com/(?:photo|(embed)?gif)/\\d+|https://pornhubdecrypted/.+", "" })
 public class PornHubCom extends PluginForHost {
@@ -460,9 +460,12 @@ public class PornHubCom extends PluginForHost {
     }
 
     public static String getSiteTitle(final Plugin plugin, final Browser br) {
-        String site_title = br.getRegex("<title>([^<>]*?) \\- Pornhub\\.com</title>").getMatch(0);
+        String site_title = br.getRegex("<title>\\s*([^<>]*?)\\s*\\-\\s*Pornhub(\\.com)?\\s*</title>").getMatch(0);
         if (site_title == null) {
             site_title = br.getRegex("\"section_title overflow\\-title overflow\\-title\\-width\">([^<>]*?)</h1>").getMatch(0);
+            if (site_title == null) {
+                site_title = br.getRegex("<meta property\\s*=\\s*\"og:title\"\\s*content\\s*=\\s*\"(.*?)\"").getMatch(0);
+            }
         }
         if (site_title != null) {
             site_title = Encoding.htmlDecode(site_title);

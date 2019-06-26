@@ -23,12 +23,6 @@ import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -42,6 +36,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -51,11 +46,16 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fshare.vn" }, urls = { "https?://(?:www\\.)?(?:mega\\.1280\\.com|fshare\\.vn)/file/([0-9A-Z]+)" })
 public class FShareVn extends PluginForHost {
     private final String         SERVERERROR                           = "Tài nguyên bạn yêu cầu không tìm thấy";
     private final String         IPBLOCKED                             = "<li>Tài khoản của bạn thuộc GUEST nên chỉ tải xuống";
-    private static Object        LOCK                                  = new Object();
     private String               dllink                                = null;
     /* Connection stuff */
     private static final boolean FREE_RESUME                           = false;
@@ -531,7 +531,7 @@ public class FShareVn extends PluginForHost {
     }
 
     private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
                 if (use_api_for_premium_account_downloads) {
@@ -553,43 +553,60 @@ public class FShareVn extends PluginForHost {
     }
 
     private void loginWebsite(Account account, boolean force) throws Exception {
-        prepBrowserWebsite(this.br);
-        final Cookies cookies = account.loadCookies("");
-        if (cookies != null && !force) {
-            br.setCookies(this.getHost(), cookies);
-            br.getPage("https://www." + this.getHost() + "/file/manager");
-            if (isLoggedinWebsite()) {
+        synchronized (account) {
+            try {
+                prepBrowserWebsite(this.br);
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null && !force) {
+                    br.setCookies(this.getHost(), cookies);
+                    br.getPage("https://www." + this.getHost() + "/file/manager");
+                    if (isLoggedinWebsite()) {
+                        account.saveCookies(br.getCookies(this.getHost()), "");
+                        return;
+                    }
+                    br.clearCookies(br.getHost());
+                }
+                final boolean isFollowingRedirects = br.isFollowingRedirects();
+                br.setFollowRedirects(true);
+                br.getHeaders().put("Referer", "https://www.fshare.vn/site/login");
+                br.getPage("https://www.fshare.vn"); // 503 with /site/location?lang=en
+                final String csrf = br.getRegex("name=\"_csrf-app\" value=\"([^<>\"]+)\"").getMatch(0);
+                final String cookie_fshare_app_old = br.getCookie(br.getHost(), "fshare-app", Cookies.NOTDELETEDPATTERN);
+                if (csrf == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else if (cookie_fshare_app_old == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                br.setFollowRedirects(false);
+                /*
+                 * 2018-02-06: Do NOT use the long session cookies as that could cause "Too many sessions"(or similar) error when trying to
+                 * start downloads!
+                 */
+                br.postPage("/site/login", "_csrf-app=" + csrf + "&LoginForm%5Bemail%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()) + "&LoginForm%5BrememberMe%5D=0");
+                br.followRedirect();
+                if (br.containsHTML("Tài khoản của quý khách hiện đang đăng nhập trên nhiều thiết")) {
+                    // Tài khoản của quý khách hiện đang đăng nhập trên nhiều thiết bị và trình duyệt.Quý khách vui lòng đăng xuất trên các
+                    // thiết bị hoặc trình duyệt trước đó và tiến hành đăng nhập lại.
+                    throw new AccountUnavailableException("Your account is currently logged on multiple devices and browsers. Please log out on the device or browser beforehand and proceed to log in again.", 30 * 60 * 1000l);
+                }
+                final String cookie_fshare_app_new = br.getCookie(br.getHost(), "fshare-app", Cookies.NOTDELETEDPATTERN);
+                if (cookie_fshare_app_new == null || StringUtils.equalsIgnoreCase(cookie_fshare_app_new, cookie_fshare_app_old)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                if (br.getURL().contains("/resend")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYour account is not activated yet. Confirm the activation mail to use it.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 account.saveCookies(br.getCookies(this.getHost()), "");
-                return;
+                br.setFollowRedirects(isFollowingRedirects);
+            } catch (final PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                    account.clearCookies("apicookies");
+                    account.removeProperty("token");
+                }
+                throw e;
             }
-            br.clearCookies(br.getHost());
         }
-        final boolean isFollowingRedirects = br.isFollowingRedirects();
-        br.setFollowRedirects(true);
-        br.getHeaders().put("Referer", "https://www.fshare.vn/site/login");
-        br.getPage("https://www.fshare.vn"); // 503 with /site/location?lang=en
-        final String csrf = br.getRegex("name=\"_csrf-app\" value=\"([^<>\"]+)\"").getMatch(0);
-        final String cookie_fshare_app_old = br.getCookie(br.getHost(), "fshare-app", Cookies.NOTDELETEDPATTERN);
-        if (csrf == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else if (cookie_fshare_app_old == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        br.setFollowRedirects(false);
-        /*
-         * 2018-02-06: Do NOT use the long session cookies as that could cause "Too many sessions"(or similar) error when trying to start
-         * downloads!
-         */
-        br.postPage("/site/login", "_csrf-app=" + csrf + "&LoginForm%5Bemail%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()) + "&LoginForm%5BrememberMe%5D=0");
-        final String cookie_fshare_app_new = br.getCookie(br.getHost(), "fshare-app", Cookies.NOTDELETEDPATTERN);
-        if (cookie_fshare_app_new == null || StringUtils.equalsIgnoreCase(cookie_fshare_app_new, cookie_fshare_app_old)) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
-        if (br.getURL().contains("/resend")) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYour account is not activated yet. Confirm the activation mail to use it.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
-        account.saveCookies(br.getCookies(this.getHost()), "");
-        br.setFollowRedirects(isFollowingRedirects);
     }
 
     /**
@@ -600,48 +617,57 @@ public class FShareVn extends PluginForHost {
      * @return
      */
     private String loginAPI(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
-            prepBrowserAPI(this.br);
-            String token = this.getAPITokenAndSetCookies(account);
-            final Cookies cookies = account.loadCookies("apicookies");
-            if (token != null && cookies != null && !force) {
-                br.setCookies(getAPIHost(), cookies);
-                // br.setAllowedResponseCodes(new int[] { 409 });
-                // final PostRequest loginCheckReq2 = br.createJSonPostRequest("https://api.fshare.vn/api/session/upload",
-                // String.format("{\"token\":\"%s\",\"name\":\"20mo.dat\",\"path\":\"/Music\",\"secure\":true,\"size\":10000}", token));
-                // br.openRequestConnection(loginCheckReq2);
-                // br.loadConnection(null);
-                /*
-                 * We do not have any official way to check whether that token is valid so we will use their filecheck-function with a dummy
-                 * URL. 404 = token is VALID[returns correct offline-state for our dummy-URL], 400 = token is INVALID and full login is
-                 * required!, 201 = token is valid but session_id (cookie) is wrong/expired --> Full login required
-                 */
-                final PostRequest loginCheckReq = br.createJSonPostRequest("https://" + getAPIHost() + "/api/fileops/get", String.format("{\"token\":\"%s\",\"url\":\"%s\"}", token, "https://www.fshare.vn/file/JDTESTJDJDJD"));
-                br.openRequestConnection(loginCheckReq);
-                if (br.getHttpConnection().getResponseCode() == 404) {
-                    logger.info("Old login-token is VALID");
-                    account.saveCookies(br.getCookies(this.getHost()), "apicookies");
-                    return token;
-                } else {
-                    /* E.g. response 400 */
+        synchronized (account) {
+            try {
+                prepBrowserAPI(this.br);
+                String token = this.getAPITokenAndSetCookies(account);
+                final Cookies cookies = account.loadCookies("apicookies");
+                if (token != null && cookies != null && !force) {
+                    br.setCookies(getAPIHost(), cookies);
+                    // br.setAllowedResponseCodes(new int[] { 409 });
+                    // final PostRequest loginCheckReq2 = br.createJSonPostRequest("https://api.fshare.vn/api/session/upload",
+                    // String.format("{\"token\":\"%s\",\"name\":\"20mo.dat\",\"path\":\"/Music\",\"secure\":true,\"size\":10000}", token));
+                    // br.openRequestConnection(loginCheckReq2);
                     // br.loadConnection(null);
-                    logger.info("Old login-token is INVALID");
+                    /*
+                     * We do not have any official way to check whether that token is valid so we will use their filecheck-function with a
+                     * dummy URL. 404 = token is VALID[returns correct offline-state for our dummy-URL], 400 = token is INVALID and full
+                     * login is required!, 201 = token is valid but session_id (cookie) is wrong/expired --> Full login required
+                     */
+                    final PostRequest loginCheckReq = br.createJSonPostRequest("https://" + getAPIHost() + "/api/fileops/get", String.format("{\"token\":\"%s\",\"url\":\"%s\"}", token, "https://www.fshare.vn/file/JDTESTJDJDJD"));
+                    br.openRequestConnection(loginCheckReq);
+                    if (br.getHttpConnection().getResponseCode() == 404) {
+                        logger.info("Old login-token is VALID");
+                        account.saveCookies(br.getCookies(this.getHost()), "apicookies");
+                        return token;
+                    } else {
+                        /* E.g. response 400 */
+                        // br.loadConnection(null);
+                        logger.info("Old login-token is INVALID");
+                    }
                 }
+                final PostRequest loginReq = br.createJSonPostRequest("https://" + getAPIHost() + "/api/user/login", String.format("{\"user_email\":\"%s\",\"password\":\"%s\",\"app_key\":\"L2S7R6ZMagggC5wWkQhX2+aDi467PPuftWUMRFSn\"}", account.getUser(), account.getPass()));
+                br.openRequestConnection(loginReq);
+                br.loadConnection(null);
+                // final String code = PluginJSonUtils.getJson(br, "code");
+                token = PluginJSonUtils.getJson(br, "token");
+                final String session_id = PluginJSonUtils.getJson(br, "session_id");
+                if (StringUtils.isEmpty(token) || StringUtils.isEmpty(session_id) || br.getHttpConnection().getResponseCode() == 400) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                /* Same key as in browser but not usable for browser-requests */
+                br.setCookie(this.getHost(), "session_id", session_id);
+                account.saveCookies(br.getCookies(getAPIHost()), "apicookies");
+                account.setProperty("token", token);
+                return token;
+            } catch (final PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                    account.clearCookies("apicookies");
+                    account.removeProperty("token");
+                }
+                throw e;
             }
-            final PostRequest loginReq = br.createJSonPostRequest("https://" + getAPIHost() + "/api/user/login", String.format("{\"user_email\":\"%s\",\"password\":\"%s\",\"app_key\":\"L2S7R6ZMagggC5wWkQhX2+aDi467PPuftWUMRFSn\"}", account.getUser(), account.getPass()));
-            br.openRequestConnection(loginReq);
-            br.loadConnection(null);
-            // final String code = PluginJSonUtils.getJson(br, "code");
-            token = PluginJSonUtils.getJson(br, "token");
-            final String session_id = PluginJSonUtils.getJson(br, "session_id");
-            if (StringUtils.isEmpty(token) || StringUtils.isEmpty(session_id) || br.getHttpConnection().getResponseCode() == 400) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-            /* Same key as in browser but not usable for browser-requests */
-            br.setCookie(this.getHost(), "session_id", session_id);
-            account.saveCookies(br.getCookies(getAPIHost()), "apicookies");
-            account.setProperty("token", token);
-            return token;
         }
     }
 
