@@ -17,14 +17,10 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -35,6 +31,7 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -42,6 +39,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub(?:premium)?\\.com/(?:.*\\?viewkey=[a-z0-9]+|embed/[a-z0-9]+|embed_player\\.php\\?id=\\d+|pornstar/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos(/upload)?)?|channels/[A-Za-z0-9\\-_]+/videos|users/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos(/public)?)?|model/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos)?|playlist/\\d+)" })
 public class PornHubCom extends PluginForDecrypt {
@@ -440,73 +441,93 @@ public class PornHubCom extends PluginForDecrypt {
             dl.setFinalFileName("viewkey=" + viewkey);
             decryptedLinks.add(dl);
             return true;
-        }
-        if (br.containsHTML(jd.plugins.hoster.PornHubCom.html_privatevideo)) {
-            final DownloadLink dl = createOfflinelink(parameter);
-            dl.setFinalFileName("This_video_is_private_" + fpName + ".mp4");
-            decryptedLinks.add(dl);
+        } else if (br.containsHTML(jd.plugins.hoster.PornHubCom.html_privatevideo)) {
             logger.info("Debug info: html_privatevideo: " + parameter);
-            return true;
-        }
-        if (br.containsHTML(jd.plugins.hoster.PornHubCom.html_premium_only)) {
-            decryptedLinks.add(createOfflinelink(parameter, fpName + ".mp4", "Private_video_Premium_required"));
+            throw new AccountRequiredException();
+        } else if (br.containsHTML(jd.plugins.hoster.PornHubCom.html_premium_only)) {
             logger.info("Debug info: html_premium_only: " + parameter);
-            return true;
+            throw new AccountRequiredException();
         }
-        final Map<String, String> foundLinks_all = jd.plugins.hoster.PornHubCom.getVideoLinksFree(this, br);
-        logger.info("Debug info: foundLinks_all: " + foundLinks_all);
+        final Map<String, Map<String, String>> qualities = jd.plugins.hoster.PornHubCom.getVideoLinksFree(this, br);
+        logger.info("Debug info: foundLinks_all: " + qualities);
         boolean ret = false;
-        if (foundLinks_all != null) {
-            if (foundLinks_all.isEmpty()) {
+        if (qualities != null) {
+            if (qualities.isEmpty()) {
                 final DownloadLink dl = createOfflinelink(parameter);
                 dl.setFinalFileName("viewkey=" + viewkey);
                 decryptedLinks.add(dl);
                 return true;
             }
-            final Iterator<Entry<String, String>> it = foundLinks_all.entrySet().iterator();
-            while (it.hasNext()) {
-                final Entry<String, String> next = it.next();
-                final String qualityInfo = next.getKey();
-                final String finallink = next.getValue();
-                if (StringUtils.isEmpty(finallink)) {
-                    continue;
-                }
-                final boolean grab;
-                if (bestonly) {
-                    grab = !bestselectiononly || cfg.getBooleanProperty(qualityInfo, true);
-                } else {
-                    grab = cfg.getBooleanProperty(qualityInfo, true);
-                }
-                if (grab) {
-                    ret = true;
-                    logger.info("Grab:" + qualityInfo);
-                    String final_filename = fpName + "_";
-                    final DownloadLink dl = getDecryptDownloadlink(viewkey, qualityInfo);
-                    dl.setProperty("directlink", finallink);
-                    dl.setProperty("quality", qualityInfo);
-                    dl.setProperty("mainlink", parameter);
-                    dl.setProperty("viewkey", viewkey);
-                    dl.setLinkID(viewkey + qualityInfo);
-                    if (!StringUtils.isEmpty(username)) {
-                        final_filename += username + "_";
-                        /* This property is only for the user (packagizer) and not required anywhere in our host plugin! */
-                        dl.setProperty("username", username);
+            for (final Entry<String, Map<String, String>> qualityEntry : qualities.entrySet()) {
+                final String quality = qualityEntry.getKey();
+                final Map<String, String> formatMap = qualityEntry.getValue();
+                for (final Entry<String, String> formatEntry : formatMap.entrySet()) {
+                    final String format = formatEntry.getKey().toLowerCase(Locale.ENGLISH);
+                    final String url = formatEntry.getValue();
+                    if (StringUtils.isEmpty(url)) {
+                        continue;
                     }
-                    final_filename += qualityInfo + "p.mp4";
-                    dl.setFinalFileName(final_filename);
-                    dl.setProperty("decryptedfilename", final_filename);
-                    dl.setContentUrl(parameter);
-                    if (fastlinkcheck) {
-                        dl.setAvailable(true);
-                    }
-                    decryptedLinks.add(dl);
+                    final boolean grab;
                     if (bestonly) {
-                        /* Our LinkedHashMap is already in the right order so best = first entry --> Step out of the loop */
-                        logger.info("User wants best-only");
-                        break;
+                        grab = !bestselectiononly || cfg.getBooleanProperty(quality, true);
+                    } else {
+                        grab = cfg.getBooleanProperty(quality, true);
                     }
-                } else {
-                    logger.info("Don't grab:" + qualityInfo);
+                    if (grab) {
+                        ret = true;
+                        logger.info("Grab:" + format + "/" + quality);
+                        String final_filename = fpName + "_";
+                        final DownloadLink dl = getDecryptDownloadlink(viewkey, format, quality);
+                        dl.setProperty("directlink", url);
+                        dl.setProperty("quality", quality);
+                        dl.setProperty("mainlink", parameter);
+                        dl.setProperty("viewkey", viewkey);
+                        dl.setProperty("format", format);
+                        dl.setLinkID(viewkey + "_" + format + "_" + quality);
+                        if (!StringUtils.isEmpty(username)) {
+                            final_filename += username + "_";
+                            /* This property is only for the user (packagizer) and not required anywhere in our host plugin! */
+                            dl.setProperty("username", username);
+                        }
+                        if (StringUtils.equalsIgnoreCase(format, "hls")) {
+                            final_filename += "hls_" + quality + "p.mp4";
+                        } else {
+                            final_filename += quality + "p.mp4";
+                        }
+                        dl.setFinalFileName(final_filename);
+                        dl.setProperty("decryptedfilename", final_filename);
+                        dl.setContentUrl(parameter);
+                        if (fastlinkcheck) {
+                            dl.setAvailable(true);
+                        }
+                        decryptedLinks.add(dl);
+                    } else {
+                        logger.info("Don't grab:" + format + "/" + quality);
+                    }
+                }
+            }
+            if (bestonly) {
+                DownloadLink best = null;
+                for (DownloadLink found : decryptedLinks) {
+                    if (best == null) {
+                        best = found;
+                    } else {
+                        final String bestQuality = best.getStringProperty("quality");
+                        final String foundQuality = found.getStringProperty("quality");
+                        if (Integer.parseInt(foundQuality) > Integer.parseInt(bestQuality)) {
+                            best = found;
+                        } else {
+                            final String bestFormat = best.getStringProperty("format");
+                            final String foundFormat = found.getStringProperty("format");
+                            if (Integer.parseInt(foundQuality) == Integer.parseInt(bestQuality) && StringUtils.equalsIgnoreCase(foundFormat, "mp4")) {
+                                best = found;
+                            }
+                        }
+                    }
+                }
+                if (best != null) {
+                    decryptedLinks.clear();
+                    decryptedLinks.add(best);
                 }
             }
             final FilePackage fp = FilePackage.getInstance();
@@ -520,8 +541,8 @@ public class PornHubCom extends PluginForDecrypt {
         return br.getURL().equals("http://www.pornhub.com/") || !br.containsHTML("\\'embedSWF\\'") || br.getHttpConnection().getResponseCode() == 404;
     }
 
-    private DownloadLink getDecryptDownloadlink(final String viewKey, final String quality) {
-        return createDownloadlink("https://pornhubdecrypted/" + viewKey + "/" + quality);
+    private DownloadLink getDecryptDownloadlink(final String viewKey, final String format, final String quality) {
+        return createDownloadlink("https://pornhubdecrypted/" + viewKey + "/" + format + "/" + quality);
     }
 
     public int getMaxConcurrentProcessingInstances() {
