@@ -23,8 +23,7 @@ public class DeleteGroupAction extends AppAction {
     @Override
     public void actionPerformed(ActionEvent e) {
         ArrayList<AccountInterface> l = new ArrayList<AccountInterface>();
-        l.add(new GroupWrapper(new AccountGroup(null)));
+        l.add(new GroupWrapper(new AccountGroup((String) null)));
         model.move(null, -1, l);
     }
-
 }

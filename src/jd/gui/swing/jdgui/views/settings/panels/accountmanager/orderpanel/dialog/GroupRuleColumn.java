@@ -1,5 +1,9 @@
 package jd.gui.swing.jdgui.views.settings.panels.accountmanager.orderpanel.dialog;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JComponent;
 
@@ -21,39 +25,39 @@ public class GroupRuleColumn extends ExtComboColumn<AccountInterface, Rules> {
     }
 
     private static Rules[] getRules() {
+        final List<Rules> ret = new ArrayList<Rules>(Arrays.asList(Rules.values()));
         if (Application.isJared(null)) {
-            return new Rules[] { Rules.RANDOM, Rules.ORDER };
-        } else {
-            return new Rules[] { Rules.RANDOM, Rules.BALANCED, Rules.ORDER };
+            ret.remove(Rules.BALANCED);
         }
+        return ret.toArray(new Rules[0]);
     }
 
     protected String modelItemToString(final Rules selectedItem) {
         if (selectedItem == null) {
             return "";
+        } else {
+            return selectedItem.translate();
         }
-
-        return selectedItem.translate();
-
     }
 
     @Override
     protected Rules getSelectedItem(AccountInterface object) {
         if (object instanceof GroupWrapper) {
-            GroupWrapper group = ((GroupWrapper) object);
+            final GroupWrapper group = ((GroupWrapper) object);
             return group.getRule();
+        } else {
+            return null;
         }
-        return null;
     }
 
     @Override
     public JComponent getRendererComponent(AccountInterface value, boolean isSelected, boolean hasFocus, int row, int column) {
         if (value instanceof AccountWrapper) {
             return empty;
+        } else {
+            final JComponent ret = super.getRendererComponent(value, isSelected, hasFocus, row, column);
+            return ret;
         }
-        JComponent ret = super.getRendererComponent(value, isSelected, hasFocus, row, column);
-
-        return ret;
     }
 
     @Override
@@ -63,5 +67,4 @@ public class GroupRuleColumn extends ExtComboColumn<AccountInterface, Rules> {
             group.setRule(value);
         }
     }
-
 }
