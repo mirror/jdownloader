@@ -13,6 +13,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision: 40753 $", interfaceVersion = 3, names = { "onlyspanking.org" }, urls = { "https?://onlyspanking.org/\\d+-[a-zA-Z0-9\\-]+\\.html" })
@@ -34,7 +35,7 @@ public class OnlySpankingOrg extends antiDDoSForDecrypt {
         }
         Browser brc = br.cloneBrowser();
         getPage(brc, "/engine/ajax/getcap.php");
-        final Form form = brc.getForm(0);
+        Form form = brc.getForm(0);
         if (form == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
@@ -45,6 +46,19 @@ public class OnlySpankingOrg extends antiDDoSForDecrypt {
         form.put("skin", Encoding.urlEncode(dle_skin));
         brc = br.cloneBrowser();
         submitForm(brc, form);
+        form = brc.getForm(0);
+        if (form != null && form.containsHTML("id\\s*=\\s*\"getlink\"")) {
+            if (form.containsHTML("data-sitekey")) {
+                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, "6Le7b3AUAAAAADGhizVG-ZB_jxfOha9WgXP-ahZd").getToken();
+                form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                form.put("skin", Encoding.urlEncode(dle_skin));
+                form.put("sec_code", Encoding.urlEncode(recaptchaV2Response));
+                brc = br.cloneBrowser();
+                submitForm(brc, form);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
+        }
         final String video = brc.getRegex("(https?://onlyspanking.org/video/[a-zA-Z0-9]+)").getMatch(0);
         if (video == null) {
             if (brc.containsHTML("To access the exclusive category you need to purchase")) {
