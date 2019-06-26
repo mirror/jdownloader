@@ -75,7 +75,6 @@ public class HosterRuleController implements AccountControllerListener {
         };
         loadedRules = new CopyOnWriteArrayList<AccountUsageRule>();
         delayedSaver = new DelayedRunnable(5000, 30000) {
-
             @Override
             public String getID() {
                 return "HosterRuleController";
@@ -98,11 +97,9 @@ public class HosterRuleController implements AccountControllerListener {
             }
         });
         SecondLevelLaunch.ACCOUNTLIST_LOADED.executeWhenReached(new Runnable() {
-
             @Override
             public void run() {
                 queue.add(new QueueAction<Void, RuntimeException>() {
-
                     @Override
                     protected Void run() throws RuntimeException {
                         try {
@@ -116,7 +113,6 @@ public class HosterRuleController implements AccountControllerListener {
                 });
             }
         });
-
     }
 
     private void load() {
@@ -171,7 +167,6 @@ public class HosterRuleController implements AccountControllerListener {
 
     private void validateRules() {
         queue.add(new QueueAction<Void, RuntimeException>() {
-
             @Override
             protected Void run() throws RuntimeException {
                 for (AccountUsageRule hr : loadedRules) {
@@ -185,7 +180,6 @@ public class HosterRuleController implements AccountControllerListener {
     public void checkPluginUpdates() {
         if (SecondLevelLaunch.ACCOUNTLIST_LOADED.isReached() && initDone.get()) {
             queue.add(new QueueAction<Void, RuntimeException>() {
-
                 @Override
                 protected Void run() throws RuntimeException {
                     final PluginFinder pluginFinder = new PluginFinder(logger);
@@ -208,20 +202,13 @@ public class HosterRuleController implements AccountControllerListener {
         }
         final String finalHost = host.toLowerCase(Locale.ENGLISH);
         return queue.addWait(new QueueAction<AccountCache, RuntimeException>() {
-
             @Override
             protected AccountCache run() throws RuntimeException {
                 for (AccountUsageRule hr : loadedRules) {
                     if (hr.isEnabled() && finalHost.equalsIgnoreCase(hr.getHoster())) {
-                        int lastCacheSize = 0;
-                        final ArrayList<CachedAccount> newCache = new ArrayList<CachedAccount>();
-                        final ArrayList<AccountGroup.Rules> rules = new ArrayList<AccountGroup.Rules>();
+                        final List<CachedAccountGroup> ret = new ArrayList<CachedAccountGroup>();
                         for (AccountGroup ag : hr.getAccounts()) {
-                            if (lastCacheSize != newCache.size()) {
-                                lastCacheSize = newCache.size();
-                                /* add null as separator for different AccountGroups */
-                                rules.add(null);
-                            }
+                            final CachedAccountGroup group = new CachedAccountGroup(ag.getRule());
                             for (AccountReference acr : ag.getChildren()) {
                                 if (acr.isAvailable()) {
                                     if (acr.isEnabled()) {
@@ -237,16 +224,23 @@ public class HosterRuleController implements AccountControllerListener {
                                             }
                                         }
                                         if (cachedAccount != null) {
-                                            newCache.add(cachedAccount);
-                                            rules.add(ag.getRule());
+                                            group.add(cachedAccount);
                                         }
                                     } else if (FreeAccountReference.isFreeAccount(acr)) {
                                         logger.info("Free Download disabled by Account Rule: " + host);
                                     }
                                 }
                             }
+                            if (group.size() > 0) {
+                                ret.add(group);
+                            }
                         }
-                        return new AccountCache(newCache, rules);
+                        return new AccountCache(ret) {
+                            @Override
+                            public boolean isCustomizedCache() {
+                                return true;
+                            }
+                        };
                     }
                 }
                 return null;
@@ -269,7 +263,6 @@ public class HosterRuleController implements AccountControllerListener {
             ArrayList<AccountReference> toRemoveFromChildren = new ArrayList<AccountReference>();
             for (Iterator<AccountReference> it = ag.getChildren().iterator(); it.hasNext();) {
                 AccountReference ar = it.next();
-
                 if (FreeAccountReference.isFreeAccount(ar)) {
                     free = ar;
                     onlyMulti = false;
@@ -293,7 +286,6 @@ public class HosterRuleController implements AccountControllerListener {
             // remove empty groups
             if (ag.getChildren().size() == 0) {
                 toRemove.add(ag);
-
             }
             if (onlyReal) {
                 onlyRealAccounts = ag;
@@ -318,7 +310,6 @@ public class HosterRuleController implements AccountControllerListener {
                 }
             }
         }
-
         if (missingRealAccounts.size() > 0) {
             ArrayList<AccountReference> refList = new ArrayList<AccountReference>();
             for (Account acc : missingRealAccounts) {
@@ -329,7 +320,6 @@ public class HosterRuleController implements AccountControllerListener {
             } else {
                 hr.getAccounts().add(0, new AccountGroup(refList, _GUI.T.HosterRuleController_validateRule_single_hoster_account()));
             }
-
         }
         if (missingMultiAccounts.size() > 0) {
             ArrayList<AccountReference> refList = new ArrayList<AccountReference>();
@@ -385,7 +375,6 @@ public class HosterRuleController implements AccountControllerListener {
             return;
         }
         queue.add(new QueueAction<Void, RuntimeException>() {
-
             @Override
             protected Void run() throws RuntimeException {
                 validateRule(rule);
@@ -396,13 +385,11 @@ public class HosterRuleController implements AccountControllerListener {
                 return null;
             }
         });
-
     }
 
     public void fireUpdate(final AccountUsageRule rule) {
         if (rule != null) {
             queue.addAsynch(new QueueAction<Void, RuntimeException>() {
-
                 @Override
                 protected boolean allowAsync() {
                     return true;
@@ -431,7 +418,6 @@ public class HosterRuleController implements AccountControllerListener {
             Dialog.getInstance().showDialog(d);
             final AccountUsageRule newRule = d.getRule();
             queue.add(new QueueAction<Void, RuntimeException>() {
-
                 @Override
                 protected Void run() throws RuntimeException {
                     validateRule(newRule);
@@ -439,7 +425,6 @@ public class HosterRuleController implements AccountControllerListener {
                     return null;
                 }
             });
-
         } catch (DialogClosedException e) {
             e.printStackTrace();
         } catch (DialogCanceledException e) {
@@ -452,7 +437,6 @@ public class HosterRuleController implements AccountControllerListener {
             return;
         }
         queue.add(new QueueAction<Void, RuntimeException>() {
-
             @Override
             protected Void run() throws RuntimeException {
                 if (loadedRules.remove(rule)) {
@@ -463,23 +447,17 @@ public class HosterRuleController implements AccountControllerListener {
                 return null;
             }
         });
-
     }
 
     public void setList(final List<AccountUsageRule> list) {
         queue.add(new QueueAction<Void, RuntimeException>() {
-
             @Override
             protected Void run() throws RuntimeException {
                 loadedRules = new CopyOnWriteArrayList<AccountUsageRule>(list);
                 save();
-
                 eventSender.fireEvent(new HosterRuleControllerEvent(this, HosterRuleControllerEvent.Type.STRUCTURE_UPDATE));
-
                 return null;
             }
         });
-
     }
-
 }
