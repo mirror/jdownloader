@@ -55,6 +55,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.StringTokenizer;
 
+import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogInterface;
@@ -68,7 +69,6 @@ import org.appwork.utils.net.httpconnection.SocketStreamInterface;
 import org.jdownloader.auth.AuthenticationController;
 import org.jdownloader.auth.Login;
 import org.jdownloader.logging.LogController;
-import org.seamless.util.io.IO;
 
 /**
  * SimpleFTP is a simple package that implements a Java FTP client. With SimpleFTP, you can connect to an FTP server and upload multiple
@@ -150,9 +150,9 @@ public abstract class SimpleFTP {
         PROT_C("PROT C"),
         PROT_P("PROT P"),
         AUTH_TLS("AUTH TLS"),
-        AUTH_TLS_C("AUTH TLS-C"),
-        AUTH_TLS_P("AUTH TLS-P"),
-        AUTH_SSL("AUTH SSL"),
+        // AUTH_TLS_C("AUTH TLS-C"),
+        // AUTH_TLS_P("AUTH TLS-P"),
+        // AUTH_SSL("AUTH SSL"),
         UTF8;
         private final String cmd;
 
@@ -692,7 +692,7 @@ public abstract class SimpleFTP {
         }
     }
 
-    protected boolean sslTrustALL = false;
+    protected boolean sslTrustALL = true;
 
     public void setSSLTrustALL(boolean trustALL) {
         this.sslTrustALL = trustALL;
@@ -720,11 +720,19 @@ public abstract class SimpleFTP {
 
     // RFC 4217
     protected boolean AUTH_TLS_DC() throws IOException {
-        sendLine("PBSZ 0");
-        String response = readLines(new int[] { 200 }, "PBSZ 0 failed");
-        sendLine("PROT P");
-        response = readLines(new int[] { 200 }, "PROTO P");
-        return true;
+        return PBSZ(0) && PROT(true);
+    }
+
+    protected boolean PBSZ(final int size) throws IOException {
+        sendLine("PBSZ " + size);
+        final String response = readLines(new int[] { 200 }, "PBSZ " + size + " failed");
+        return StringUtils.startsWithCaseInsensitive(response, "200");
+    }
+
+    protected boolean PROT(final boolean privateFlag) throws IOException {
+        sendLine(privateFlag ? "PROT P" : "PROT C");
+        final String response = readLines(new int[] { 200, 500, 502 }, privateFlag ? "PROT P" : "PROT C");
+        return StringUtils.startsWithCaseInsensitive(response, "200");
     }
 
     public boolean sendClientID(final String id) throws IOException {
@@ -1189,7 +1197,7 @@ public abstract class SimpleFTP {
             dataSocket = createSocket(new InetSocketAddress(pasv.getHostName(), pasv.getPort()));
             readLines(new int[] { 125, 150 }, null);
             final ENCODING encoding = getPathEncoding();
-            sb.append(encoding.fromBytes(IO.readBytes(dataSocket.getInputStream())));
+            sb.append(encoding.fromBytes(IO.readStream(-1, dataSocket.getInputStream(), new ByteArrayOutputStream(), false)));
         } catch (IOException e) {
             if (e.getMessage().contains("550")) {
                 return null;

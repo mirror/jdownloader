@@ -46,12 +46,12 @@ public class MaximumUsenetCom extends UseNet {
     private final String USENET_PASSWORD = "USENET_PASSWORD";
 
     @Override
-    protected String getUsername(Account account) {
+    protected String getUseNetUsername(Account account) {
         return account.getStringProperty(USENET_USERNAME, account.getUser());
     }
 
     @Override
-    protected String getPassword(Account account) {
+    protected String getUseNetPassword(Account account) {
         return account.getStringProperty(USENET_PASSWORD, account.getPass());
     }
 
@@ -136,7 +136,7 @@ public class MaximumUsenetCom extends UseNet {
                 return ai;
             } catch (final InvalidAuthException e) {
                 logger.log(e);
-                final DownloadLink dummyLink = new DownloadLink(this, "Account:" + getUsername(account), getHost(), "https://www.maximumusenet.com", true);
+                final DownloadLink dummyLink = new DownloadLink(this, "Account:" + getUseNetUsername(account), getHost(), "https://www.maximumusenet.com", true);
                 final AskDownloadPasswordDialogInterface handle = UIOManager.I().show(AskDownloadPasswordDialogInterface.class, new AskForDownloadLinkDialog(_GUI.T.AskForPasswordDialog_AskForPasswordDialog_title_(), "Please enter your MaximumUsenet Usenet Password", dummyLink));
                 if (handle.getCloseReason() == CloseReason.OK) {
                     final String password = handle.getText();

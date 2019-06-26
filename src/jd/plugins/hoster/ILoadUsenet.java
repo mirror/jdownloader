@@ -37,7 +37,7 @@ public class ILoadUsenet extends UseNet {
     }
 
     @Override
-    protected String getUsername(Account account) {
+    protected String getUseNetUsername(Account account) {
         return account.getUser() + "@iload-usenet.com";
     }
 

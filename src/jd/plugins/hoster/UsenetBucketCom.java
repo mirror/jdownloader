@@ -35,12 +35,12 @@ public class UsenetBucketCom extends UseNet {
     private final String USENET_PASSWORD = "USENET_PASSWORD";
 
     @Override
-    protected String getUsername(Account account) {
+    protected String getUseNetUsername(Account account) {
         return account.getStringProperty(USENET_USERNAME, account.getUser());
     }
 
     @Override
-    protected String getPassword(Account account) {
+    protected String getUseNetPassword(Account account) {
         return account.getStringProperty(USENET_PASSWORD, account.getUser());
     }
 

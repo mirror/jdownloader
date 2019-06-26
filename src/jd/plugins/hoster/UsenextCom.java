@@ -40,7 +40,7 @@ public class UsenextCom extends UseNet {
     private final String USENET_USERNAME = "USENET_USERNAME";
 
     @Override
-    protected String getUsername(Account account) {
+    protected String getUseNetUsername(Account account) {
         return account.getStringProperty(USENET_USERNAME, account.getUser());
     }
 

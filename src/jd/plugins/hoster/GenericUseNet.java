@@ -185,7 +185,7 @@ public class GenericUseNet extends UseNet {
     }
 
     @Override
-    protected UsenetServer getUsenetServer(Account account) throws Exception {
+    protected UsenetServer getUseNetServer(Account account) throws Exception {
         GenericUsenetAccountConfig cfg = getAccountJsonConfig(account);
         final boolean ssl = cfg.isSSLEnabled();
         int port = cfg.getPort();

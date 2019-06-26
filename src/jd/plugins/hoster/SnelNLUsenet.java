@@ -33,7 +33,7 @@ import org.jdownloader.plugins.components.usenet.UsenetServer;
     }
 
     @Override
-    protected String getUsername(Account account) {
+    protected String getUseNetUsername(Account account) {
         return account.getStringProperty(USENET_USERNAME, account.getUser());
     }
 

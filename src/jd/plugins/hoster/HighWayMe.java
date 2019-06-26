@@ -536,7 +536,7 @@ public class HighWayMe extends UseNet {
     }
 
     @Override
-    protected String getUsername(Account account) {
+    protected String getUseNetUsername(Account account) {
         final AccountInfo ai = account.getAccountInfo();
         if (ai != null) {
             return ai.getStringProperty("usenetU", null);
@@ -545,7 +545,7 @@ public class HighWayMe extends UseNet {
     }
 
     @Override
-    protected String getPassword(Account account) {
+    protected String getUseNetPassword(Account account) {
         final AccountInfo ai = account.getAccountInfo();
         if (ai != null) {
             return ai.getStringProperty("usenetP", null);
