@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -250,96 +251,81 @@ public class HosterRuleController implements AccountControllerListener {
 
     protected void validateRule(AccountUsageRule hr) {
         final String host = hr.getHoster();
-        HashSet<Account> accountsInRule = new HashSet<Account>();
-        AccountGroup onlyRealAccounts = null;
-        AccountGroup freeAccountGroup = null;
-        AccountGroup onlyMultiAccounts = null;
-        AccountReference free = null;
-        ArrayList<AccountGroup> toRemove = new ArrayList<AccountGroup>();
-        for (Iterator<AccountGroup> it1 = hr.getAccounts().iterator(); it1.hasNext();) {
-            AccountGroup ag = it1.next();
-            boolean onlyReal = ag.getChildren().size() > 0;
-            boolean onlyMulti = ag.getChildren().size() > 0;
-            ArrayList<AccountReference> toRemoveFromChildren = new ArrayList<AccountReference>();
-            for (Iterator<AccountReference> it = ag.getChildren().iterator(); it.hasNext();) {
-                AccountReference ar = it.next();
+        final Set<Account> accounts = new HashSet<Account>();
+        AccountGroup defaultAccountGroup = null;
+        AccountGroup defaultNoAccountGroup = null;
+        AccountGroup defaultMultiHosterAccountGroup = null;
+        ArrayList<AccountGroup> removeAccountGroups = new ArrayList<AccountGroup>();
+        for (final Iterator<AccountGroup> it1 = hr.getAccounts().iterator(); it1.hasNext();) {
+            final AccountGroup ag = it1.next();
+            boolean onlyAccounts = ag.getChildren().size() > 0;
+            boolean onlyMultiHoster = ag.getChildren().size() > 0;
+            final ArrayList<AccountReference> removeAccounts = new ArrayList<AccountReference>();
+            for (final Iterator<AccountReference> it = ag.getChildren().iterator(); it.hasNext();) {
+                final AccountReference ar = it.next();
                 if (FreeAccountReference.isFreeAccount(ar)) {
-                    free = ar;
-                    onlyMulti = false;
-                    onlyReal = false;
-                    freeAccountGroup = ag;
+                    onlyMultiHoster = false;
+                    onlyAccounts = false;
+                    defaultNoAccountGroup = ag;
                     continue;
                 }
                 if (ar.getAccount() == null || !ar.isAvailable()) {
                     logger.info("Removed " + ar + " from " + ag);
-                    toRemoveFromChildren.add(ar);
+                    removeAccounts.add(ar);
                 } else {
                     if (StringUtils.equalsIgnoreCase(ar.getAccount().getHoster(), host)) {
-                        onlyMulti = false;
+                        onlyMultiHoster = false;
                     } else {
-                        onlyReal = false;
+                        onlyAccounts = false;
                     }
-                    accountsInRule.add(ar.getAccount());
+                    accounts.add(ar.getAccount());
                 }
             }
-            ag.getChildren().removeAll(toRemoveFromChildren);
-            // remove empty groups
+            ag.getChildren().removeAll(removeAccounts);
             if (ag.getChildren().size() == 0) {
-                toRemove.add(ag);
-            }
-            if (onlyReal) {
-                onlyRealAccounts = ag;
-            }
-            if (onlyMulti) {
-                onlyMultiAccounts = ag;
+                // remove empty groups
+                removeAccountGroups.add(ag);
+            } else {
+                if (onlyAccounts) {
+                    defaultAccountGroup = ag;
+                }
+                if (onlyMultiHoster) {
+                    defaultMultiHosterAccountGroup = ag;
+                }
             }
         }
-        hr.getAccounts().removeAll(toRemove);
-        HashSet<Account> missingRealAccounts = new HashSet<Account>();
-        HashSet<Account> missingMultiAccounts = new HashSet<Account>();
-        for (Account acc : AccountController.getInstance().list(host)) {
-            if (accountsInRule.add(acc)) {
-                missingRealAccounts.add(acc);
+        hr.getAccounts().removeAll(removeAccountGroups);
+        for (final Account acc : AccountController.getInstance().list(host)) {
+            if (accounts.add(acc)) {
+                final AccountReference ar = new AccountReference(acc);
+                if (defaultAccountGroup == null) {
+                    defaultAccountGroup = new AccountGroup(_GUI.T.HosterRuleController_validateRule_single_hoster_account());
+                    hr.getAccounts().add(0, defaultAccountGroup);
+                }
+                defaultAccountGroup.getChildren().add(ar);
             }
         }
         final List<Account> multiAccs = AccountController.getInstance().getMultiHostAccounts(host);
         if (multiAccs != null) {
-            for (Account acc : multiAccs) {
-                if (accountsInRule.add(acc)) {
-                    missingMultiAccounts.add(acc);
+            for (final Account acc : multiAccs) {
+                if (accounts.add(acc)) {
+                    final AccountReference ar = new AccountReference(acc);
+                    if (defaultMultiHosterAccountGroup == null) {
+                        int index = defaultNoAccountGroup == null ? hr.getAccounts().size() : hr.getAccounts().indexOf(defaultNoAccountGroup);
+                        if (index < 0) {
+                            index = hr.getAccounts().size();
+                        }
+                        defaultMultiHosterAccountGroup = new AccountGroup(_GUI.T.HosterRuleController_validateRule_multi_hoster_account());
+                        hr.getAccounts().add(index, defaultMultiHosterAccountGroup);
+                    }
+                    defaultMultiHosterAccountGroup.getChildren().add(ar);
                 }
             }
         }
-        if (missingRealAccounts.size() > 0) {
-            ArrayList<AccountReference> refList = new ArrayList<AccountReference>();
-            for (Account acc : missingRealAccounts) {
-                refList.add(new AccountReference(acc));
-            }
-            if (onlyRealAccounts != null) {
-                onlyRealAccounts.getChildren().addAll(refList);
-            } else {
-                hr.getAccounts().add(0, new AccountGroup(refList, _GUI.T.HosterRuleController_validateRule_single_hoster_account()));
-            }
-        }
-        if (missingMultiAccounts.size() > 0) {
-            ArrayList<AccountReference> refList = new ArrayList<AccountReference>();
-            for (Account acc : missingMultiAccounts) {
-                refList.add(new AccountReference(acc));
-            }
-            if (onlyMultiAccounts != null) {
-                onlyMultiAccounts.getChildren().addAll(refList);
-            } else {
-                int index = freeAccountGroup == null ? hr.getAccounts().size() : hr.getAccounts().indexOf(freeAccountGroup);
-                if (index < 0) {
-                    index = hr.getAccounts().size();
-                }
-                hr.getAccounts().add(index, new AccountGroup(refList, _GUI.T.HosterRuleController_validateRule_multi_hoster_account()));
-            }
-        }
-        if (free == null) {
-            ArrayList<AccountReference> refList = new ArrayList<AccountReference>();
-            refList.add(new FreeAccountReference(host));
-            hr.getAccounts().add(new AccountGroup(refList, _GUI.T.HosterRuleController_validateRule_free()));
+        if (defaultNoAccountGroup == null) {
+            defaultNoAccountGroup = new AccountGroup(_GUI.T.HosterRuleController_validateRule_free());
+            defaultNoAccountGroup.getChildren().add(new FreeAccountReference(host));
+            hr.getAccounts().add(defaultNoAccountGroup);
         }
     }
 
