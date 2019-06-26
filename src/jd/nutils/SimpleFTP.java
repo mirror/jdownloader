@@ -725,7 +725,7 @@ public abstract class SimpleFTP {
 
     protected boolean PBSZ(final int size) throws IOException {
         sendLine("PBSZ " + size);
-        final String response = readLines(new int[] { 200 }, "PBSZ " + size + " failed");
+        final String response = readLines(new int[] { 200, 500, 502 }, "PBSZ " + size + " failed");
         return StringUtils.startsWithCaseInsensitive(response, "200");
     }
 

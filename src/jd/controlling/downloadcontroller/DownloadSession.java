@@ -38,6 +38,8 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.controlling.UniqueAlltimeID;
+import org.jdownloader.controlling.hosterrule.AccountGroup.Rules;
+import org.jdownloader.controlling.hosterrule.CachedAccountGroup;
 import org.jdownloader.controlling.hosterrule.HosterRuleController;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.PluginClassLoader;
@@ -381,10 +383,12 @@ public class DownloadSession extends Property {
 
     protected void removeAccountCache(String host) {
         refreshCandidates.set(true);
-        if (StringUtils.isEmpty(host)) {
-            accountCache.clear();
-        } else {
-            accountCache.remove(host.toLowerCase(Locale.ENGLISH));
+        synchronized (accountCache) {
+            if (StringUtils.isEmpty(host)) {
+                accountCache.clear();
+            } else {
+                accountCache.remove(host.toLowerCase(Locale.ENGLISH));
+            }
         }
     }
 
@@ -400,30 +404,34 @@ public class DownloadSession extends Property {
                 ret = accountCache.get(host);
                 if (ret == null) {
                     return AccountCache.NA;
+                } else {
+                    return ret;
                 }
-                return ret;
             }
         }
         final PluginForHost defaulPlugin = getPlugin(host);
         if (isUseAccountsEnabled() == false) {
             /* accounts disabled -> free only */
-            final ArrayList<CachedAccount> newCache = new ArrayList<CachedAccount>();
-            newCache.add(new CachedAccount(host, null, defaulPlugin));
-            ret = new AccountCache(newCache);
+            final List<CachedAccountGroup> cachedGroups = new ArrayList<CachedAccountGroup>();
+            final CachedAccountGroup cachedGroup = new CachedAccountGroup(Rules.ORDER);
+            cachedGroup.add(new CachedAccount(host, null, defaulPlugin));
+            cachedGroups.add(cachedGroup);
+            ret = new AccountCache(cachedGroups);
         } else {
             ret = HosterRuleController.getInstance().getAccountCache(host, this);
             if (ret == null) {
-                final ArrayList<CachedAccount> newCache = new ArrayList<CachedAccount>();
-                for (Account acc : AccountController.getInstance().list(host)) {
-                    newCache.add(new CachedAccount(host, acc, defaulPlugin));
+                final List<CachedAccountGroup> cachedGroups = new ArrayList<CachedAccountGroup>();
+                final CachedAccountGroup cachedGroup = new CachedAccountGroup(Rules.ORDER);
+                for (final Account acc : AccountController.getInstance().list(host)) {
+                    cachedGroup.add(new CachedAccount(host, acc, defaulPlugin));
                 }
                 final List<Account> multiHosts = AccountController.getInstance().getMultiHostAccounts(host);
                 if (multiHosts != null) {
-                    for (Account acc : multiHosts) {
-                        newCache.add(new CachedAccount(host, acc, getPlugin(acc.getHoster())));
+                    for (final Account acc : multiHosts) {
+                        cachedGroup.add(new CachedAccount(host, acc, getPlugin(acc.getHoster())));
                     }
                 }
-                newCache.add(new CachedAccount(host, null, defaulPlugin));
+                cachedGroup.add(new CachedAccount(host, null, defaulPlugin));
                 try {
                     if (true) {
                         // FIXME: TODO:
@@ -431,7 +439,7 @@ public class DownloadSession extends Property {
                         // account
                         // this can lead to *not downloading* situations when the original account has no/not enough traffic left
                         boolean removeNoneWithCaptcha = false;
-                        checkLoop: for (CachedAccount cachedAccount : newCache) {
+                        checkLoop: for (CachedAccount cachedAccount : cachedGroup) {
                             final Account account = cachedAccount.getAccount();
                             switch (cachedAccount.getType()) {
                             case ORIGINAL:
@@ -448,7 +456,7 @@ public class DownloadSession extends Property {
                             }
                         }
                         if (removeNoneWithCaptcha) {
-                            final Iterator<CachedAccount> it = newCache.iterator();
+                            final Iterator<CachedAccount> it = cachedGroup.iterator();
                             while (it.hasNext()) {
                                 final CachedAccount next = it.next();
                                 if (AccountCache.ACCOUNTTYPE.NONE.equals(next.getType()) && next.hasCaptcha(link)) {
@@ -457,7 +465,7 @@ public class DownloadSession extends Property {
                             }
                         }
                     }
-                    Collections.sort(newCache, new Comparator<CachedAccount>() {
+                    Collections.sort(cachedGroup, new Comparator<CachedAccount>() {
                         private int compare(boolean x, boolean y) {
                             return (x == y) ? 0 : (x ? 1 : -1);
                         }
@@ -476,7 +484,10 @@ public class DownloadSession extends Property {
                 } catch (final Throwable e) {
                     LogController.CL(true).log(e);
                 }
-                ret = new AccountCache(newCache);
+                if (cachedGroup.size() > 0) {
+                    cachedGroups.add(cachedGroup);
+                }
+                ret = new AccountCache(cachedGroups);
             }
         }
         synchronized (accountCache) {
@@ -487,8 +498,9 @@ public class DownloadSession extends Property {
                 ret = accountCache.get(host);
                 if (ret == null) {
                     return AccountCache.NA;
+                } else {
+                    return ret;
                 }
-                return ret;
             }
         }
     }
