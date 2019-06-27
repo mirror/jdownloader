@@ -94,6 +94,9 @@ public class FxpanCom extends PluginForHost {
             }
             // this will result in redirect
             br.submitForm(f);
+            if (br.containsHTML("history\\.go\\(\\-1\\);")) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Failure due to unsupported captcha");
+            }
             // url should be /downhtml/key/id/hash.html
             {
                 // ok should be ajax, not sure if its required

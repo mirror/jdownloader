@@ -25,6 +25,13 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -47,13 +54,6 @@ import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 /**
  * Note: prem.link redirects to grab8
  *
@@ -62,9 +62,6 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "grab8.com", "prem.link" }, urls = { "https?://(?:\\w+\\.)?grab8.com/dl\\.php\\?id=(\\d+)", "https?://(?:\\w+\\.)?prem.link/dl\\.php\\?id=(\\d+)" })
 public class Grab8Com extends antiDDoSForHost {
-    private final String                 NICE_HOSTproperty              = getHost().replaceAll("[-\\.]", "");
-    private final String                 NOCHUNKS                       = NICE_HOSTproperty + "_NOCHUNKS";
-    private final String                 NORESUME                       = NICE_HOSTproperty + "_NORESUME";
     private static final String          CLEAR_DOWNLOAD_HISTORY         = "CLEAR_DOWNLOAD_HISTORY";
     private final boolean                default_clear_download_history = false;
     /* Connection limits */
@@ -197,7 +194,7 @@ public class Grab8Com extends antiDDoSForHost {
         setConstants(account, link);
         login(account, true, false);
         final String url = link.getDefaultPlugin().buildExternalDownloadURL(link, this);
-        String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
+        String dllink = checkDirectLink(link, account.getHoster() + "directlink");
         if (dllink == null) {
             getPage("https://" + getHost() + "/");
             postAPISafe("/ajax/action.php", "action=getlink&link=" + Encoding.urlEncode(url));
@@ -212,7 +209,7 @@ public class Grab8Com extends antiDDoSForHost {
                     // the multihoster is trying to pass the captcha back to this user.... we don't want a bar of that
                     mhm.handleErrorGeneric(this.currAcc, this.currDownloadLink, "captcha", 10, 5 * 60 * 1000l);
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    mhm.handleErrorGeneric(this.currAcc, this.currDownloadLink, "dllinknull", 50, 2 * 60 * 1000l);
                 }
             }
         }
@@ -254,7 +251,7 @@ public class Grab8Com extends antiDDoSForHost {
             // seems to be same host as what's used for download and tstatus requests.
             final String server = PluginJSonUtils.getJson(ajax, "server");
             if (transloadUrl == null || key == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                mhm.handleErrorGeneric(this.currAcc, this.currDownloadLink, "transload1_unknown_failure", 50, 2 * 60 * 1000l);
             }
             // some counter
             int counter = 1;
@@ -287,7 +284,7 @@ public class Grab8Com extends antiDDoSForHost {
             // some uid/hash
             final String key = PluginJSonUtils.getJson(ajax, "key");
             if (key == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                mhm.handleErrorGeneric(this.currAcc, this.currDownloadLink, "transload2_unknown_failure", 50, 2 * 60 * 1000l);
             }
             // some counter
             int counter = 1;
@@ -338,7 +335,7 @@ public class Grab8Com extends antiDDoSForHost {
             // delete the file??
             mhm.putError(currAcc, currDownloadLink, 1 * 60 * 60 * 1000l, "No daily traffic left for this host");
         } else if (new Regex(filter, "<span class=\"text-danger\">").matches()) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unhandled error handling");
+            mhm.handleErrorGeneric(this.currAcc, this.currDownloadLink, "getdllinkfromaccount_unknown_failure", 50, 2 * 60 * 1000l);
         }
         return null;
     }
@@ -346,33 +343,19 @@ public class Grab8Com extends antiDDoSForHost {
     @SuppressWarnings("deprecation")
     private void handleDL(final Account account, final DownloadLink link, final String dllink) throws Exception {
         final boolean deleteAfterDownload = this.getPluginConfig().getBooleanProperty(CLEAR_DOWNLOAD_HISTORY, false);
-        /* First set hardcoded limit */
-        int maxChunks = ACCOUNT_PREMIUM_MAXCHUNKS;
-        /* Then check if chunks failed before. */
-        if (link.getBooleanProperty(NICE_HOSTproperty + NOCHUNKS, false)) {
-            maxChunks = 1;
-        }
-        boolean resume = ACCOUNT_PREMIUM_RESUME;
-        if (link.getBooleanProperty(NORESUME, false)) {
-            resume = false;
-            link.setProperty(NORESUME, Boolean.valueOf(false));
-        }
-        link.setProperty(NICE_HOSTproperty + "directlink", dllink);
+        /* Set hardcoded limit */
+        final int maxChunks = ACCOUNT_PREMIUM_MAXCHUNKS;
+        final boolean resume = ACCOUNT_PREMIUM_RESUME;
+        link.setProperty(this.getHost() + "directlink", dllink);
         try {
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume, maxChunks);
-            if (dl.getConnection().getResponseCode() == 416) {
-                logger.info("Resume impossible, disabling it for the next try");
-                link.setChunksProgress(null);
-                link.setProperty(NORESUME, Boolean.valueOf(true));
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
             final String contenttype = dl.getConnection().getContentType();
             if (contenttype.contains("html")) {
                 if (new Regex(link.getDownloadURL(), this.getSupportedLinks()).matches()) {
                     if (br.getURL().endsWith("/404")) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    mhm.handleErrorGeneric(this.currAcc, this.currDownloadLink, "unknowndlerror", 50, 2 * 60 * 1000l);
                 }
                 br.followConnection();
                 handleErrors(br);
@@ -390,11 +373,6 @@ public class Grab8Com extends antiDDoSForHost {
                         }
                     } catch (final Throwable e) {
                     }
-                    /* unknown error, we disable multiple chunks */
-                    if (link.getBooleanProperty(NICE_HOSTproperty + NOCHUNKS, false) == false) {
-                        link.setProperty(NICE_HOSTproperty + NOCHUNKS, Boolean.valueOf(true));
-                        throw new PluginException(LinkStatus.ERROR_RETRY);
-                    }
                 }
             } catch (final PluginException e) {
                 /*
@@ -406,16 +384,10 @@ public class Grab8Com extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken file serverside");
                 }
                 e.printStackTrace();
-                // New V2 chunk errorhandling
-                /* unknown error, we disable multiple chunks */
-                if (link.getBooleanProperty(NICE_HOSTproperty + NOCHUNKS, false) == false) {
-                    link.setProperty(NICE_HOSTproperty + NOCHUNKS, Boolean.valueOf(true));
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
                 throw e;
             }
         } catch (final Exception e) {
-            link.setProperty(NICE_HOSTproperty + "directlink", Property.NULL);
+            link.setProperty(this.getHost() + "directlink", Property.NULL);
             throw e;
         }
     }
@@ -571,13 +543,7 @@ public class Grab8Com extends antiDDoSForHost {
                 // available traffic
                 final String[] traffic = br.getRegex("<p><b>Traffic</b>:&nbsp;([0-9\\.]+ (?:[KMG]{0,1}B)?)\\s*/\\s*([0-9\\.]+ GB)</p>").getRow(0);
                 if (traffic == null || traffic.length != 2) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 // they show traffic used not left.
                 ai.setTrafficLeft(SizeFormatter.getSize(traffic[1]) - SizeFormatter.getSize(traffic[0]));
@@ -592,7 +558,6 @@ public class Grab8Com extends antiDDoSForHost {
                     account.setType(AccountType.FREE);
                     ai.setStatus("Free Account");
                 }
-                account.setValid(true);
                 // get hostmap from /hosts, this shows if host is available to free mode and if its up and down...
                 getPage(br, "/hosts");
                 final ArrayList<String> supportedHosts = new ArrayList<String>();
@@ -613,6 +578,7 @@ public class Grab8Com extends antiDDoSForHost {
                         continue;
                     }
                     if (freeAccount && !free) {
+                        /* Skip hosts which are not available for free accounts! */
                         continue;
                     }
                     supportedHosts.add(host);
