@@ -16,8 +16,6 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.regex.Pattern;
 
 import org.appwork.utils.DebugMode;
@@ -41,46 +39,65 @@ import jd.plugins.components.SiteType.SiteTemplate;
 @SuppressWarnings("deprecation")
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
-    private static String[]   domains        = new String[] { "up-4.net", "up-4ever.com", "up-4ever.net", "usersfiles.com", "userscloud.com", "subyshare.com", "brupload.net", "exclusivefaile.com", "exclusiveloader.com", "ex-load.com", "hulkload.com", "koofile.com", "powvideo.net", "lunaticfiles.com", "youwatch.org", "streamratio.com", "vshare.eu", "up.media1fire.com", "salefiles.com", "ortofiles.com", "restfile.ca", "restfilee.com", "storagely.com", "free-uploading.com", "rapidfileshare.net", "fireget.com", "ishareupload.com", "gorillavid.in", "mixshared.com", "longfiles.com", "novafile.com", "orangefiles.me", "qtyfiles.com", "free-uploading.com", "free-uploading.com", "uppit.com", "downloadani.me", "faststore.org", "hotlink.cc", "clicknupload.org", "isra.cloud", "imgbaron.com", "world-files.com", "katfile.com", "filefox.cc" };
+    private static String[]       domains        = new String[] { "up-4.net", "up-4ever.com", "up-4ever.net", "subyshare.com", "brupload.net", "exclusivefaile.com", "exclusiveloader.com", "hulkload.com", "koofile.com", "powvideo.net", "lunaticfiles.com", "youwatch.org", "streamratio.com", "vshare.eu", "up.media1fire.com", "salefiles.com", "ortofiles.com", "restfile.ca", "restfilee.com", "storagely.com", "free-uploading.com", "rapidfileshare.net", "fireget.com", "ishareupload.com", "gorillavid.in", "mixshared.com", "longfiles.com", "novafile.com", "orangefiles.me", "qtyfiles.com", "free-uploading.com", "free-uploading.com", "uppit.com", "downloadani.me", "faststore.org", "clicknupload.org", "isra.cloud", "world-files.com", "katfile.com", "filefox.cc" };
     /* This list contains all hosts which need special Patterns (see below) - most XFS hosts will have the same folder patterns! */
-    final static List<String> specialDomains = Arrays.asList(new String[] { "usersfiles.com", "userscloud.com", "hotlink.cc", "ex-load.com", "imgbaron.com", "filespace.com", "spaceforfiles.com" });
+    private static final String[] specialDomains = { "usersfiles.com", "userscloud.com", "hotlink.cc", "ex-load.com", "imgbaron.com", "filespace.com", "spaceforfiles.com" };
 
     public static String[] getAnnotationNames() {
-        return new String[] { "XFileShareProFolder" };
+        return getAllDomains();
     }
 
     @Override
     public String[] siteSupportedNames() {
-        return domains;
+        return getAllDomains();
+    }
+
+    /* Returns Array containing all elements of domains + specialDomains. */
+    public static String[] getAllDomains() {
+        final String[] allDomains = new String[domains.length + specialDomains.length];
+        int position = 0;
+        for (int i = 0; i < domains.length; i++) {
+            allDomains[position] = domains[i];
+            position++;
+        }
+        for (int i = 0; i < specialDomains.length; i++) {
+            allDomains[position] = specialDomains[i];
+            position++;
+        }
+        return allDomains;
     }
 
     public static String[] getAnnotationUrls() {
-        final List<String> ret = new ArrayList<String>();
+        final String[] patterns = new String[domains.length + specialDomains.length];
+        int position = 0;
+        /* First add domains with normal patterns! */
         for (int i = 0; i < domains.length; i++) {
-            if (i == 0) {
-                /* Match all URLs on first (=current) domain - first add pattern for normal hosts, then special cases */
-                ret.add("https?://(?:www\\.)?" + getHostsPatternPart() + "/(users/[a-z0-9_]+(?:/[^\\?\r\n]+)?|folder/\\d+/[^\\?\r\n]+)" + "|https?://(?:www\\.)?users(?:files|cloud)\\.com/go/[a-zA-Z0-9]{12}/?|https?://(www\\.)?(hotlink\\.cc|ex-load\\.com)/folder/[a-f0-9\\-]+|https?://(?:www\\.)?imgbaron\\.com/g/[A-Za-z0-9]+|https?://(?:filespace|spaceforfiles)\\.com/dir/[a-z0-9]+");
-            } else {
-                /* see getAnnotationNames */
-                break;
-            }
+            patterns[position] = "https?://(?:www\\.)?" + Pattern.quote(domains[i]) + "/(users/[a-z0-9_]+(?:/[^\\?\r\n]+)?|folder/\\d+/[^\\?\r\n]+)";
+            position++;
         }
-        return ret.toArray(new String[0]);
-    }
-
-    /** Returns '(?:domain1|domain2)' */
-    public static String getHostsPatternPart() {
-        final StringBuilder pattern = new StringBuilder();
-        pattern.append("(?:");
-        for (final String name : domains) {
-            if (specialDomains.contains(name)) {
-                /* Skips specialHosts as they have their own special patterns! */
-                continue;
-            }
-            pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
-        }
-        pattern.append(")");
-        return pattern.toString();
+        /*
+         * Now add special patterns - this might be ugly but usually we do not get new specialDomains! Keep in mind that their patterns have
+         * to be in order and it has to be the number of patterns has to be the same as the total number of domains!
+         */
+        /* userscloud.com & usersfiles.com */
+        patterns[position] = "https?://(?:www\\.)?usersfiles\\.com/go/[a-zA-Z0-9]{12}/?";
+        position++;
+        patterns[position] = "https?://(?:www\\.)?userscloud\\.com/go/[a-zA-Z0-9]{12}/?";
+        position++;
+        /* hotlink.cc & ex-load.com */
+        patterns[position] = "https?://(?:www\\.)?hotlink\\.cc/folder/[a-f0-9\\-]+";
+        position++;
+        patterns[position] = "https?://(?:www\\.)?ex\\-load\\.com/folder/[a-f0-9\\-]+";
+        position++;
+        /* imgbaron.com */
+        patterns[position] = "https?://(?:www\\.)?imgbaron\\.com/g/[A-Za-z0-9]+";
+        position++;
+        /* filespace.com & spaceforfiles.com */
+        patterns[position] = "https?://filespace\\.com/dir/[a-z0-9]+";
+        position++;
+        patterns[position] = "https?://spaceforfiles\\.com/dir/[a-z0-9]+";
+        position++;
+        return patterns;
     }
 
     @Override
