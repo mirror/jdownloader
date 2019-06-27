@@ -58,7 +58,7 @@ public class BoxCom extends antiDDoSForDecrypt {
                 tryPassCodes.addAll(passCodes);
             }
             final String lastValidPW = BoxCom.lastValidPW.get();
-            if (lastValidPW != null && tryPassCodes.contains(lastValidPW)) {
+            if (lastValidPW != null && !tryPassCodes.contains(lastValidPW)) {
                 tryPassCodes.add(lastValidPW);
             }
             int retry = 5 + tryPassCodes.size();
@@ -74,6 +74,7 @@ public class BoxCom extends antiDDoSForDecrypt {
                     password = Plugin.getUserInput(null, parameter);
                 }
                 if (!StringUtils.isEmpty(password)) {
+                    sleep(1000, parameter);
                     final PostRequest request = br.createPostRequest(br.getURL(), "password=" + Encoding.urlEncode(password));
                     br.getPage(request);
                     if (isPasswordProtected(br)) {
@@ -91,6 +92,14 @@ public class BoxCom extends antiDDoSForDecrypt {
                 }
                 return password;
             }
+        }
+    }
+
+    public void getPage(final CryptedLink parameter, String url) throws Exception {
+        getPage(url);
+        if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
+            sleep(1000, parameter);
+            getPage(url);
         }
     }
 
@@ -118,13 +127,13 @@ public class BoxCom extends antiDDoSForDecrypt {
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         if (cryptedlink.matches(".+/folder/\\d+")) {
             final String rootFolder = new Regex(cryptedlink, "(.+)/folder/\\d+").getMatch(0);
-            br.getPage(rootFolder);
+            getPage(parameter, rootFolder);
             passCode = handlePassword(br, passCodes, parameter);
-            if (passCode != null && passCodes.contains(passCode)) {
+            if (passCode != null && !passCodes.contains(passCode)) {
                 passCodes.add(0, passCode);
             }
         }
-        br.getPage(cryptedlink);
+        getPage(parameter, cryptedlink);
         passCode = handlePassword(br, passCodes, parameter);
         if (br._getURL().getPath().equals("/freeshare")) {
             decryptedLinks.add(createOfflinelink(cryptedlink));
@@ -237,11 +246,11 @@ public class BoxCom extends antiDDoSForDecrypt {
                     }
                 }
             }
-        } while (hasNextPage());
+        } while (hasNextPage(cryptedLink));
         return decryptedLinks;
     }
 
-    private boolean hasNextPage() throws Exception {
+    private boolean hasNextPage(CryptedLink cryptedLink) throws Exception {
         final String pageCountString = br.getRegex("\"pageCount\":(\\d+),").getMatch(0);
         final String pageNumerString = br.getRegex("\"pageNumber\":(\\d+),").getMatch(0);
         if (pageCountString != null && pageNumerString != null) {
@@ -249,7 +258,7 @@ public class BoxCom extends antiDDoSForDecrypt {
             final int pageNumber = Integer.parseInt(pageNumerString);
             if (pageCount > pageNumber) {
                 final int nextPage = pageNumber + 1;
-                br.getPage(cryptedlink + "?page=" + nextPage);
+                getPage(cryptedLink, cryptedlink + "?page=" + nextPage);
                 return true;
             }
             final String r = "<a href=\"([^\"]+pageNumber=\\d+)\"[^>]+aria-label=\"Next Page\"[^>]+";
@@ -258,7 +267,7 @@ public class BoxCom extends antiDDoSForDecrypt {
             if (nextPage) {
                 final String url = new Regex(result, r).getMatch(0);
                 if (url != null) {
-                    br.getPage(Encoding.htmlOnlyDecode(url));
+                    getPage(cryptedLink, Encoding.htmlOnlyDecode(url));
                     return true;
                 }
             }
