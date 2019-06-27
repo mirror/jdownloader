@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Locale;
-import java.util.Random;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -134,7 +133,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 4.1.2.0<br />
+     * DEV NOTES XfileSharingProBasic Version 4.1.2.1<br />
      ****************************
      * NOTES from raztoki <br/>
      * - no need to set setfollowredirect true. <br />
@@ -483,37 +482,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      */
     protected boolean forcePreDownloadWaittime() {
         return false;
-    }
-
-    /**
-     * <b>This only gets used if isWaitforced is true!</b>
-     *
-     * @return Minimum seconds of pre-download-waittime. <br />
-     *         default: 3
-     */
-    protected final int getWaitsecondsmin() {
-        return 3;
-    }
-
-    /**
-     * <b>This only gets used if isWaitforced is true!</b>
-     *
-     * @return Maximum seconds of pre-download-waittime. <br />
-     *         default: 100
-     */
-    protected final int getWaitsecondsmax() {
-        return 100;
-    }
-
-    /**
-     * 2019-05-21: TODO: Made this method FINAL as it never got used so far -consider removing this! <b>Fallback-waittime-value! This only
-     * gets used if waitforced is true!</b>
-     *
-     * @return Hardcoded value of seconds to wait if no waittime is found or it is not within waitsecondsmin and waitsecondsmax. <br />
-     *         default: 5
-     */
-    protected final int getWaitsecondsforced() {
-        return 5;
     }
 
     @Override
@@ -1376,8 +1344,29 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             }
             br.getHeaders().remove("X-Requested-With");
         } else if (correctedBR.contains("class=\"g-recaptcha\"")) {
-            /* 2019-06-06: Most widespread case */
+            /*
+             * 2019-06-06: Most widespread case though I would call it 'old' because it has an important design flaw: Admins may sometimes
+             * setup waittimes that are higher than the reCaptchaV2 timeout so lets say they set up 180 seconds of pre-download-waittime -->
+             * User solves captcha immediately --> Captcha times out after 120 seconds --> User has to re-enter it! See workaround below!
+             */
             logger.info("Detected captcha method \"RecaptchaV2\" type 'normal' for this host");
+            if (!this.preDownloadWaittimeSkippable()) {
+                final String waitStr = regexWaittime();
+                if (waitStr != null && waitStr.matches("\\d+")) {
+                    /*
+                     * This is basically a workaround which in some cases can even improve user-experience over user-experience via browser!
+                     * Example-services with high waittimes: xubster.com
+                     */
+                    final int waitSeconds = Integer.parseInt(waitStr);
+                    /* TODO: Remove hardcoded value, get reCaptchaV2 timeout from upper class */
+                    if (waitSeconds > 120) {
+                        final int prePreWait = waitSeconds % 120;
+                        logger.info("Waittime is higher than reCaptchaV2 timeout --> Waiting a part of it before solving captcha to avoid timeouts");
+                        logger.info("Pre-pre download waittime seconds: " + prePreWait);
+                        this.sleep(prePreWait * 1000l, link);
+                    }
+                }
+            }
             final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
             captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
         } else {
@@ -1824,21 +1813,21 @@ public class XFileSharingProBasic extends antiDDoSForHost {
          * would probably make this more reliable.
          */
         /* Ticket Time */
-        String ttt = new Regex(correctedBR, "id=\"countdown_str\"[^>]*?>[^<>\"]*?<span id=\"[^<>\"]+\"(?:[^<>]+)?>(?:\\s+)?(\\d+)(?:\\s+)?</span>").getMatch(0);
-        if (ttt == null) {
-            ttt = new Regex(correctedBR, "id=\"countdown_str\" style=\"[^<>\"]+\">Wait <span id=\"[A-Za-z0-9]+\">(\\d+)</span>").getMatch(0);
+        String waitStr = new Regex(correctedBR, "id=\"countdown_str\"[^>]*?>[^<>\"]*?<span id=\"[^<>\"]+\"(?:[^<>]+)?>(?:\\s+)?(\\d+)(?:\\s+)?</span>").getMatch(0);
+        if (waitStr == null) {
+            waitStr = new Regex(correctedBR, "id=\"countdown_str\" style=\"[^<>\"]+\">Wait <span id=\"[A-Za-z0-9]+\">(\\d+)</span>").getMatch(0);
         }
-        if (ttt == null) {
-            ttt = new Regex(correctedBR, "id=\"countdown_str\">Wait <span id=\"[A-Za-z0-9]+\">(\\d+)</span>").getMatch(0);
+        if (waitStr == null) {
+            waitStr = new Regex(correctedBR, "id=\"countdown_str\">Wait <span id=\"[A-Za-z0-9]+\">(\\d+)</span>").getMatch(0);
         }
-        if (ttt == null) {
-            ttt = new Regex(correctedBR, "class=\"seconds\"[^>]*?>\\s*?(\\d+)\\s*?</span>").getMatch(0);
+        if (waitStr == null) {
+            waitStr = new Regex(correctedBR, "class=\"seconds\"[^>]*?>\\s*?(\\d+)\\s*?</span>").getMatch(0);
         }
-        if (ttt == null) {
+        if (waitStr == null) {
             /* More open RegEx */
-            ttt = new Regex(correctedBR, "class=\"seconds\">\\s*?(\\d+)\\s*?<").getMatch(0);
+            waitStr = new Regex(correctedBR, "class=\"seconds\">\\s*?(\\d+)\\s*?<").getMatch(0);
         }
-        return ttt;
+        return waitStr;
     }
 
     public String getGenericDownloadlinkRegExFile() {
@@ -1915,6 +1904,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         /* Ticket Time */
         final String waitStr = regexWaittime();
         if (this.preDownloadWaittimeSkippable()) {
+            /* Very rare case! */
             logger.info("Skipping pre-download waittime: " + waitStr);
         } else {
             final int extraWaitSeconds = 1;
@@ -1923,21 +1913,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             if (waitStr != null && waitStr.matches("\\d+")) {
                 logger.info("Found waittime, parsing waittime: " + waitStr);
                 wait = Integer.parseInt(waitStr);
-                /*
-                 * Waittime found in html but plugin developer set min- and max times? Check and fallback to getWaitsecondsforced if needed.
-                 */
-                if (this.forcePreDownloadWaittime() && (wait > this.getWaitsecondsmax() || wait < this.getWaitsecondsmin())) {
-                    logger.warning("Wait exceeds max/min, using forced wait!");
-                    wait = this.getWaitsecondsforced();
-                }
-            } else if (this.forcePreDownloadWaittime()) {
-                logger.info("Failed to find waittime - using forced pre-download waittime");
-                /* Get random waittime > Waitsecondsmin */
-                int i = 0;
-                while (i < this.getWaitsecondsmin()) {
-                    i += new Random().nextInt(this.getWaitsecondsmin());
-                }
-                wait = i;
             }
             /*
              * Check how much time has passed during eventual captcha event before this function has been called and see how much time is
@@ -1953,7 +1928,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 sleep(wait * 1000l, downloadLink);
             } else if (wait < -extraWaitSeconds) {
                 /* User needed more time to solve the captcha so there is no waittime left :) */
-                logger.info("Congratulations: Time to solve captcha was higher than waittime");
+                logger.info("Congratulations: Time to solve captcha was higher than waittime --> No waittime left");
             } else {
                 /* No waittime at all */
                 logger.info("Found no waittime");
