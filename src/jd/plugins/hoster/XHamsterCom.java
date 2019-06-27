@@ -24,13 +24,6 @@ import java.util.Map;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -55,6 +48,13 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xhamster.com" }, urls = { "https?://(?:www\\.)?(?:[a-z]{2}\\.)?(?:m\\.xhamster\\.com/(?:preview|movies|videos)/(?:\\d+[a-z0-9\\-]+|[a-z0-9\\-]+\\-\\d+$)|xhamster\\.(?:com|xxx)/(x?embed\\.php\\?video=\\d+|movies/[0-9]+/[^/]+\\.html|videos/[\\w\\-]+-\\d+))" })
 public class XHamsterCom extends PluginForHost {
@@ -250,11 +250,15 @@ public class XHamsterCom extends PluginForHost {
                 }
             }
             if (downloadLink.getDownloadSize() <= 0) {
+                final Browser brc = br.cloneBrowser();
+                brc.setFollowRedirects(true);
                 URLConnectionAdapter con = null;
                 try {
-                    con = br.openHeadConnection(dllink);
-                    if (!con.getContentType().contains("html")) {
+                    con = brc.openHeadConnection(dllink);
+                    if (con.isOK() && !StringUtils.containsIgnoreCase(con.getContentType(), "html") && !StringUtils.containsIgnoreCase(con.getContentType(), "text")) {
                         downloadLink.setDownloadSize(con.getLongContentLength());
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 } finally {
                     try {
@@ -389,12 +393,11 @@ public class XHamsterCom extends PluginForHost {
                 for (String url : urls) {
                     url = JSonStorage.restoreFromString(url, TypeRef.STRING);
                     if (StringUtils.containsIgnoreCase(url, ".mp4")) {
-                        dllink = url;
-                        checkDllink();
-                        logger.info("dllink: " + dllink);
-                        if (dllink != null) {
+                        final boolean verified = verifyURL(url);
+                        logger.info("url: " + url + "|verified:" + verified);
+                        if (verified) {
                             vq = quality;
-                            return dllink;
+                            return url;
                         }
                     }
                 }
@@ -418,7 +421,7 @@ public class XHamsterCom extends PluginForHost {
             }
         }
         // is the rest still in use/required?
-        String dllink = null;
+        String ret = null;
         logger.info("Video quality selection failed.");
         int urlmodeint = 0;
         final String urlmode = br.getRegex("url_mode=(\\d+)").getMatch(0);
@@ -441,72 +444,73 @@ public class XHamsterCom extends PluginForHost {
             }
             if (file.startsWith("http")) {
                 // Examplelink (ID): 968106
-                dllink = file;
+                ret = file;
             } else {
                 // Examplelink (ID): 986043
-                dllink = server + "/key=" + file;
+                ret = server + "/key=" + file;
             }
         } else {
             /* E.g. url_mode == 3 */
             /* Example-ID: 685813 */
             String flashvars = br.getRegex("flashvars: \"([^<>\"]*?)\"").getMatch(0);
-            dllink = br.getRegex("\"(https?://\\d+\\.xhcdn\\.com/key=[^<>\"]*?)\" class=\"mp4Thumb\"").getMatch(0);
-            if (dllink == null) {
-                dllink = br.getRegex("\"(https?://\\d+\\.xhcdn\\.com/key=[^<>\"]*?)\"").getMatch(0);
+            ret = br.getRegex("\"(https?://\\d+\\.xhcdn\\.com/key=[^<>\"]*?)\" class=\"mp4Thumb\"").getMatch(0);
+            if (ret == null) {
+                ret = br.getRegex("\"(https?://\\d+\\.xhcdn\\.com/key=[^<>\"]*?)\"").getMatch(0);
             }
-            if (dllink == null) {
-                dllink = br.getRegex("\"(https?://\\d+\\.xhcdn\\.com/key=[^<>\"]*?)\"").getMatch(0);
+            if (ret == null) {
+                ret = br.getRegex("\"(https?://\\d+\\.xhcdn\\.com/key=[^<>\"]*?)\"").getMatch(0);
             }
-            if (dllink == null) {
-                dllink = br.getRegex("flashvars.*?file=(https?%3.*?)&").getMatch(0);
+            if (ret == null) {
+                ret = br.getRegex("flashvars.*?file=(https?%3.*?)&").getMatch(0);
             }
-            if (dllink == null && flashvars != null) {
+            if (ret == null && flashvars != null) {
                 /* E.g. 4753816 */
                 flashvars = Encoding.htmlDecode(flashvars);
                 flashvars = flashvars.replace("\\", "");
                 final String[] qualities2 = { "1080p", "720p", "480p", "360p", "240p" };
                 for (final String quality : qualities2) {
-                    dllink = new Regex(flashvars, "\"" + quality + "\":\\[\"(https?[^<>\"]*?)\"\\]").getMatch(0);
-                    if (dllink != null) {
+                    ret = new Regex(flashvars, "\"" + quality + "\":\\[\"(https?[^<>\"]*?)\"\\]").getMatch(0);
+                    if (ret != null) {
                         break;
                     }
                 }
             }
         }
-        if (dllink == null) {
+        if (ret == null) {
             // urlmode fails, eg: 1099006
-            dllink = br.getRegex("video\\s*:\\s*\\{[^\\}]+file\\s*:\\s*('|\")(.*?)\\1").getMatch(1);
-            if (dllink == null) {
-                dllink = PluginJSonUtils.getJson(br, "fallback");
-                dllink = dllink.replace("\\", "");
+            ret = br.getRegex("video\\s*:\\s*\\{[^\\}]+file\\s*:\\s*('|\")(.*?)\\1").getMatch(1);
+            if (ret == null) {
+                ret = PluginJSonUtils.getJson(br, "fallback");
+                ret = ret.replace("\\", "");
             }
         }
-        if (dllink == null) {
+        if (ret == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (dllink.contains("&amp;")) {
-            dllink = Encoding.htmlDecode(dllink);
+        if (ret.contains("&amp;")) {
+            ret = Encoding.htmlDecode(ret);
         }
-        return dllink;
+        return ret;
     }
 
-    public String checkDllink() throws IOException, PluginException {
+    public boolean verifyURL(String url) throws IOException, PluginException {
         URLConnectionAdapter con = null;
         final Browser br2 = br.cloneBrowser();
         br2.setFollowRedirects(true);
         try {
-            con = br2.openHeadConnection(dllink);
-            if (con.getContentType().contains("html")) {
-                dllink = null;
+            con = br2.openHeadConnection(url);
+            if (con.isOK() && !StringUtils.containsIgnoreCase(con.getContentType(), "html") && !StringUtils.containsIgnoreCase(con.getContentType(), "text")) {
+                return true;
             }
-        } catch (final Exception e) {
+        } catch (final IOException e) {
+            logger.log(e);
         } finally {
             try {
                 con.disconnect();
             } catch (final Exception e) {
             }
         }
-        return dllink;
+        return false;
     }
 
     @Override
