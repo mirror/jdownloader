@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
@@ -39,18 +40,19 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "feemoo.com" }, urls = { "https?://(?:www\\.)?feemoo\\.com/file\\-([a-z0-9]+)\\.html" })
 public class FeemooCom extends PluginForHost {
     public FeemooCom(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium("http://www.feemoo.com/upgrade.html");
+        this.enablePremium("https://www.feemoo.com/upgrade.html");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.feemoo.com/terms.html";
+        return "https://www.feemoo.com/terms.html";
     }
 
     /* Connection stuff */
@@ -223,7 +225,7 @@ public class FeemooCom extends PluginForHost {
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     this.br.setCookies(this.getHost(), cookies);
-                    br.getPage("http://" + account.getHoster() + "/member/");
+                    br.getPage("https://www." + account.getHoster() + "/home.php");
                     if (isLoggedIn(this.br)) {
                         /* Save cookie timestamp. */
                         account.saveCookies(this.br.getCookies(this.getHost()), "");
@@ -232,20 +234,17 @@ public class FeemooCom extends PluginForHost {
                     this.br = new Browser();
                 }
                 br.setFollowRedirects(false);
-                br.getPage("http://www." + account.getHoster() + "/login.html");
-                String postData = "type=login&nick=" + Encoding.urlEncode(account.getUser()) + "&pwd=" + Encoding.urlEncode(account.getPass());
-                if (this.br.containsHTML("yzm\\.php")) {
-                    final DownloadLink dummyLink = new DownloadLink(this, "Account", account.getHoster(), "http://" + account.getHoster(), true);
-                    final String code = getCaptchaCode("/yzm.php", dummyLink);
-                    postData += "&yzm=" + Encoding.urlEncode(code);
-                }
-                br.postPage("/post.php", postData);
-                if (!br.toString().equals("1")) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort oder login Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                br.getPage("https://www." + account.getHoster() + "/home.php");
+                br.postPage("/home.php", "action=login&task=login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=1");
+                // if (this.br.containsHTML("yzm\\.php")) {
+                // final DownloadLink dummyLink = new DownloadLink(this, "Account", account.getHoster(), "http://" + account.getHoster(),
+                // true);
+                // final String code = getCaptchaCode("/yzm.php", dummyLink);
+                // postData += "&yzm=" + Encoding.urlEncode(code);
+                // }
+                final String status = PluginJSonUtils.getJson(br, "status");
+                if (!"true".equalsIgnoreCase(status) && !"1".equalsIgnoreCase(status)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
@@ -256,7 +255,7 @@ public class FeemooCom extends PluginForHost {
     }
 
     private boolean isLoggedIn(final Browser br) {
-        return br.containsHTML("/logout.php");
+        return br.containsHTML("logoutbtn\\(\\)");
     }
 
     @SuppressWarnings("deprecation")
@@ -269,11 +268,23 @@ public class FeemooCom extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        br.getPage("/member/userinfo.php");
-        final String expire = br.getRegex(">到期时间：</span><span class=\\\\mr15 w300 dib\">([^<>\"]*?)</span>").getMatch(0);
+        br.getPage("/home.php?action=up_svip&m=");
+        /* 2019-06-27: TODO: Check/fix this */
+        long expire = 0;
+        String expireStr = br.getRegex(">到期时间：</span><span class=\\\\mr15 w300 dib\">([^<>\"]*?)</span>").getMatch(0);
+        if (expireStr == null) {
+            expireStr = br.getRegex("<span>VIP到期时间：(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2})</span>").getMatch(0);
+        }
+        if (expireStr != null) {
+            if (expireStr.matches("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}")) {
+                /* 2019-06-27: New */
+                expire = TimeFormatter.getMilliSeconds(expireStr, "yyyy-MM-dd HH:mm:ss", Locale.CHINA);
+            } else {
+                expire = TimeFormatter.getMilliSeconds(expireStr, "yyyy-MM-dd", Locale.CHINA);
+            }
+        }
         ai.setUnlimitedTraffic();
-        if (br.containsHTML("href=\"upvip\\.php\" title=\"升级为VIP会员\"") || expire == null) {
-            account.setProperty("free", true);
+        if (br.containsHTML("href=\"upvip\\.php\" title=\"升级为VIP会员\"") || expire < System.currentTimeMillis()) {
             maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
             account.setType(AccountType.FREE);
             /* free accounts can still have captcha */
@@ -281,15 +292,13 @@ public class FeemooCom extends PluginForHost {
             account.setConcurrentUsePossible(false);
             ai.setStatus("Registered (free) user");
         } else {
-            account.setProperty("free", false);
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd", Locale.CHINA));
+            ai.setValidUntil(expire);
             maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(maxPrem.get());
             account.setConcurrentUsePossible(true);
             ai.setStatus("Premium Account");
         }
-        account.setValid(true);
         return ai;
     }
 
@@ -299,15 +308,27 @@ public class FeemooCom extends PluginForHost {
         requestFileInformation(link);
         login(account);
         br.setFollowRedirects(false);
-        if (account.getBooleanProperty("free", false)) {
+        if (account.getType() == AccountType.FREE) {
             br.getPage(link.getDownloadURL());
             doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
         } else {
             String dllink = this.checkDirectLink(link, "premium_directlink");
             if (dllink == null) {
+                /* 2019-06-27: TODO: Add premium support */
                 br.setFollowRedirects(true);
+                br.postPage("/yythems_ajax.php", "action=load_down_addr_svip&file_id=" + this.getLinkID(link));
+                final String status = PluginJSonUtils.getJson(br, "status");
+                final String errormessage = PluginJSonUtils.getJson(br, "str");
+                if (!"true".equalsIgnoreCase(status)) {
+                    if (!StringUtils.isEmpty(errormessage)) {
+                        if (errormessage.equalsIgnoreCase("请升级SVIP会员后再使用SVIP极速下载通道！")) {
+                            /* Account is a free account, file is only downloadable for premium users! */
+                            throw new AccountRequiredException();
+                        }
+                    }
+                }
                 br.getPage(link.getDownloadURL());
-                dllink = br.getRegex("").getMatch(0);
+                dllink = br.getRegex("TODO_FIXME").getMatch(0);
                 if (dllink == null) {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

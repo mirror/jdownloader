@@ -18,10 +18,10 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
@@ -40,22 +40,16 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tout-debrid.eu" }, urls = { "" })
-public class ToutDebridEu extends PluginForHost {
-    private static final String                            PROTOCOL                  = "https://";
-    private static final String                            NICE_HOST                 = "tout-debrid.eu";
-    private static final String                            NICE_HOSTproperty         = NICE_HOST.replaceAll("(\\.|\\-)", "");
+public class ToutDebridEu extends antiDDoSForHost {
+    private static final String          PROTOCOL                  = "https://";
     /* Connection limits */
-    private static final boolean                           ACCOUNT_PREMIUM_RESUME    = true;
-    private static final int                               ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    private static final boolean                           USE_API                   = false;
-    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap        = new HashMap<Account, HashMap<String, Long>>();
-    private Account                                        currentAcc                = null;
-    private DownloadLink                                   currentLink               = null;
-    private static MultiHosterManagement                   mhm                       = new MultiHosterManagement("tout-debrid.eu");
+    private static final boolean         ACCOUNT_PREMIUM_RESUME    = true;
+    private static final int             ACCOUNT_PREMIUM_MAXCHUNKS = 0;
+    private static final boolean         USE_API                   = false;
+    private static MultiHosterManagement mhm                       = new MultiHosterManagement("tout-debrid.eu");
 
     public ToutDebridEu(PluginWrapper wrapper) {
         super(wrapper);
@@ -78,11 +72,6 @@ public class ToutDebridEu extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws PluginException {
         return AvailableStatus.UNCHECKABLE;
-    }
-
-    private void setConstants(final Account acc, final DownloadLink dl) {
-        this.currentAcc = acc;
-        this.currentLink = dl;
     }
 
     @Override
@@ -113,18 +102,17 @@ public class ToutDebridEu extends PluginForHost {
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         this.br = prepBR(this.br);
-        setConstants(account, link);
-        mhm.runCheck(currentAcc, currentLink);
+        mhm.runCheck(account, link);
         login(account, false);
         final String dllink = getDllink(link);
         if (StringUtils.isEmpty(dllink)) {
-            mhm.handleErrorGeneric(currentAcc, currentLink, "dllinknull", 2, 5 * 60 * 1000l);
+            mhm.handleErrorGeneric(account, link, "dllinknull", 2, 5 * 60 * 1000l);
         }
         handleDL(account, link, dllink);
     }
 
-    private String getDllink(final DownloadLink link) throws IOException, PluginException {
-        String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
+    private String getDllink(final DownloadLink link) throws Exception {
+        String dllink = checkDirectLink(link, this.getHost() + "directlink");
         if (dllink == null) {
             if (USE_API) {
                 dllink = getDllinkAPI(link);
@@ -139,10 +127,10 @@ public class ToutDebridEu extends PluginForHost {
         return null;
     }
 
-    private String getDllinkWebsite(final DownloadLink link) throws IOException, PluginException {
+    private String getDllinkWebsite(final DownloadLink link) throws Exception {
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-        br.postPage("/generateur-all.php?rand=0." + System.currentTimeMillis(), "captcha=none&urllist=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
+        postPage(br, "/generateur-all.php?rand=0." + System.currentTimeMillis(), "captcha=none&urllist=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
         String dllink = br.getRegex("title=\\'click here to download\\' href=\\'(https?://[^<>\"\\']+)").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("href=\\'(https?://[^/\"\\']+/relais/[^<>\"\\']+)").getMatch(0);
@@ -151,19 +139,18 @@ public class ToutDebridEu extends PluginForHost {
     }
 
     private void handleDL(final Account account, final DownloadLink link, final String dllink) throws Exception {
-        link.setProperty(NICE_HOSTproperty + "directlink", dllink);
+        link.setProperty(this.getHost() + "directlink", dllink);
         try {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
             final String contenttype = dl.getConnection().getContentType();
             if (contenttype.contains("html")) {
                 br.followConnection();
-                updatestatuscode();
                 handleAPIErrors(this.br);
-                mhm.handleErrorGeneric(currentAcc, currentLink, "unknowndlerror", 2, 5 * 60 * 1000l);
+                mhm.handleErrorGeneric(account, link, "unknowndlerror", 2, 5 * 60 * 1000l);
             }
             this.dl.startDownload();
         } catch (final Exception e) {
-            link.setProperty(NICE_HOSTproperty + "directlink", Property.NULL);
+            link.setProperty(this.getHost() + "directlink", Property.NULL);
             throw e;
         }
     }
@@ -195,7 +182,6 @@ public class ToutDebridEu extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        setConstants(account, null);
         this.br = prepBR(this.br);
         final AccountInfo ai;
         if (USE_API) {
@@ -214,7 +200,7 @@ public class ToutDebridEu extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
         if (!br.containsHTML("/gerador")) {
-            br.getPage("/gerador");
+            getPage("/gerador");
         }
         final boolean isPremium = br.containsHTML("Compte:\\s*?<b>Premium</b>");
         ArrayList<String> supportedHosts = new ArrayList<String>();
@@ -263,7 +249,7 @@ public class ToutDebridEu extends PluginForHost {
                 /*
                  * Even though login is forced first check if our cookies are still valid --> If not, force login!
                  */
-                br.getPage(PROTOCOL + this.getHost() + "/debrideur");
+                getPage(PROTOCOL + this.getHost() + "/debrideur");
                 if (isLoggedinHTML()) {
                     logger.info("Login via cached cookies successful:" + account.getType() + " | CookieAge:" + cookieAge);
                     cookies = this.br.getCookies(this.getHost());
@@ -279,7 +265,7 @@ public class ToutDebridEu extends PluginForHost {
                 /* Clear cookies to prevent unknown errors as we'll perform a full login below now. */
                 this.br = prepBR(new Browser());
             }
-            br.getPage(PROTOCOL + this.getHost() + "/login");
+            getPage(PROTOCOL + this.getHost() + "/login");
             final Form login = br.getFormbyActionRegex(".*login\\.php.*");
             if (login == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -298,7 +284,7 @@ public class ToutDebridEu extends PluginForHost {
                 }
                 login.put("txtImgCode", Encoding.urlEncode(captcha));
             }
-            br.submitForm(login);
+            submitForm(login);
             if (!isLoggedinHTML()) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
@@ -321,10 +307,6 @@ public class ToutDebridEu extends PluginForHost {
     }
 
     private void loginAPI(final Account account, final boolean force) throws Exception {
-    }
-
-    /** Keep this for possible future API implementation */
-    private void updatestatuscode() {
     }
 
     /** Keep this for possible future API implementation */
