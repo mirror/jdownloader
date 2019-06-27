@@ -20,6 +20,15 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -39,15 +48,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 //IMPORTANT: this class must stay in jd.plugins.hoster because it extends another plugin (UseNet) which is only available through PluginClassLoader
 abstract public class ZeveraCore extends UseNet {
@@ -307,7 +307,7 @@ abstract public class ZeveraCore extends UseNet {
             final String hash_md5 = link.getMD5Hash();
             final String hash_sha1 = link.getSha1Hash();
             final String hash_sha256 = link.getSha256Hash();
-            String getdata = "?client_id=" + client_id + "&pin=" + Encoding.urlEncode(getAPIKey(account)) + "&src=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, hostPlugin));
+            String getdata = "?src=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, hostPlugin));
             if (hash_md5 != null) {
                 getdata += "&hash_md5=" + hash_md5;
             }
@@ -317,7 +317,7 @@ abstract public class ZeveraCore extends UseNet {
             if (hash_sha256 != null) {
                 getdata += "&hash_sha256=" + hash_sha256;
             }
-            getPage(br, "https://www." + account.getHoster() + "/api/transfer/directdl" + getdata);
+            callAPI(br, account, "/api/transfer/directdl" + getdata);
             dllink = PluginJSonUtils.getJsonValue(br, "location");
         }
         return dllink;
@@ -364,6 +364,9 @@ abstract public class ZeveraCore extends UseNet {
         final String premium_until_str = PluginJSonUtils.getJson(br, "premium_until");
         if (space_used != null && space_used.matches("\\d+")) {
             ai.setUsedSpace(Long.parseLong(space_used));
+        } else if (space_used != null && space_used.matches("\\d+\\.\\d+")) {
+            /* 2019-06-26: New */
+            ai.setUsedSpace((long) Double.parseDouble(space_used));
         }
         /* E.g. free account: "premium_until":false */
         final long premium_until = (premium_until_str != null && premium_until_str.matches("\\d+")) ? Long.parseLong(premium_until_str) * 1000 : 0;
@@ -393,7 +396,7 @@ abstract public class ZeveraCore extends UseNet {
             account.setMaxSimultanDownloads(getMaxSimultaneousFreeAccountDownloads());
             setFreeAccountTraffic(ai);
         }
-        getPage(br, "/api/services/list?client_id=" + client_id + "&pin=" + Encoding.urlEncode(getAPIKey(account)));
+        callAPI(br, account, "/api/services/list");
         final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         // final ArrayList<String> supportedHosts = new ArrayList<String>();
         final ArrayList<String> directdl = (ArrayList<String>) entries.get("directdl");
@@ -553,13 +556,13 @@ abstract public class ZeveraCore extends UseNet {
 
     public void loginAPI(final Browser br, final String clientID, final Account account, final boolean force) throws Exception {
         if (supportsPairingLogin()) {
-            /* 2019-06-25: New: TODO: We need a way to get the usenet logindata without exposing the original account logindata/apikey! */
+            /* 2019-06-26: New: TODO: We need a way to get the usenet logindata without exposing the original account logindata/apikey! */
             final long token_valid_until = account.getLongProperty("token_valid_until", 0);
             if (System.currentTimeMillis() > token_valid_until) {
                 logger.info("Token has expired");
             } else if (setAuthHeader(br, account)) {
-                getPage(br, "https://www." + account.getHoster() + "/api/account/info?client_id=" + clientID + "&pin=TODO_TEST");
-                if (!isLoggedIn(br)) {
+                callAPI(br, account, "/api/account/info");
+                if (isLoggedIn(br)) {
                     return;
                 }
                 logger.info("Token expired or user has revoked access --> Full login required");
@@ -610,28 +613,46 @@ abstract public class ZeveraCore extends UseNet {
                 account.setProperty("token_valid_until", System.currentTimeMillis() + Long.parseLong(token_expires_in));
             }
             setAuthHeader(br, account);
-            /**
-             * 2019-06-25: TODO: We need to obtain the usenet logindata via API otherwise we will not have any Usenet logindata via this
-             * login-method which is very bad!
-             */
-            getPage(br, "https://www." + account.getHoster() + "/api/account/info?client_id=" + clientID + "&pin=TODO_TEST");
+            callAPI(br, account, "/api/account/info");
             if (!isLoggedIn(br)) {
                 /* Double-check */
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-            /** 2019-06-25: TODO: Hide original logindata/apikey see ticket: https://svn.jdownloader.org/issues/87169 */
         } else {
-            getPage(br, "https://www." + account.getHoster() + "/api/account/info?client_id=" + clientID + "&pin=" + Encoding.urlEncode(getAPIKey(account)));
+            callAPI(br, account, "/api/account/info");
             if (!isLoggedIn(br)) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "API key invalid! Make sure you entered your current API key which can be found here: " + account.getHoster() + "/account", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
         final String customer_id = PluginJSonUtils.getJson(br, "customer_id");
         if (customer_id != null && customer_id.length() > 2) {
-            // don't store the complete customer id
+            /* don't store the complete customer id as a security purpose */
             final String shortcustomer_id = customer_id.substring(0, customer_id.length() / 2) + "****";
             account.setUser(shortcustomer_id);
         }
+    }
+
+    /**
+     * For API calls AFTER logging-in, NOT for initial 'pairing' API calls (oauth login)!
+     *
+     * @throws Exception
+     */
+    private void callAPI(final Browser br, final Account account, String url) throws Exception {
+        url = "https://www." + account.getHoster() + url;
+        if (!url.contains("?")) {
+            url += "?";
+        } else {
+            url += "&";
+        }
+        url += "client_id=" + this.getClientID();
+        if (!this.supportsPairingLogin()) {
+            /*
+             * Without pairing login we need an additional parameter. It will also work with pairing mode when that parameter is given with
+             * a wrong value but that may change in the future so this is to avoid issues!
+             */
+            url += "&pin=" + Encoding.urlEncode(getAPIKey(account));
+        }
+        getPage(br, url);
     }
 
     @Override

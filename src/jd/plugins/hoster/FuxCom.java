@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -86,7 +88,8 @@ public class FuxCom extends PluginForHost {
         }
     }
 
-    private String dllink = null;
+    private String  dllink        = null;
+    private boolean server_issues = false;
 
     // private boolean isEmbed(final String url) {
     // return url.matches(".+(embed\\..+|/embed/).+");
@@ -147,19 +150,19 @@ public class FuxCom extends PluginForHost {
         }
         // seems to be listed in order highest quality to lowest. 20130513
         dllink = getDllink();
-        if (dllink == null) {
-            logger.warning("Couldn't find 'dllink'");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename.trim());
-        if (dllink.contains(".m4v")) {
-            link.setFinalFileName(filename + ".m4v");
-        } else if (dllink.contains(".mp4")) {
-            link.setFinalFileName(filename + ".mp4");
-        } else {
-            link.setFinalFileName(filename + ".flv");
+        String ext = ".mp4";
+        if (!StringUtils.isEmpty(dllink)) {
+            dllink = Encoding.htmlDecode(dllink);
+            if (dllink.contains(".m4v")) {
+                ext = ".m4v";
+            } else if (dllink.contains(".mp4")) {
+                ext = ".mp4";
+            } else {
+                ext = ".flv";
+            }
         }
+        link.setFinalFileName(filename + ext);
         // In case the link redirects to the finallink
         br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
@@ -168,7 +171,7 @@ public class FuxCom extends PluginForHost {
             if (!con.getContentType().contains("html")) {
                 link.setDownloadSize(con.getLongContentLength());
             } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                server_issues = true;
             }
         } finally {
             try {
@@ -220,7 +223,12 @@ public class FuxCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, downloadLink.getStringProperty("DDLink"), true, 0);
+        if (server_issues) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+        } else if (StringUtils.isEmpty(dllink)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

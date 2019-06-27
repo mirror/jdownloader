@@ -15,8 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -24,44 +22,38 @@ import java.util.regex.Pattern;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class TinyfilesCom extends XFileSharingProBasic {
-    public TinyfilesCom(final PluginWrapper wrapper) {
+public class UptomegaCom extends XFileSharingProBasic {
+    public UptomegaCom(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
-    }
-
-    @Override
-    public void correctDownloadLink(final DownloadLink link) {
-        /* 2019-06-27: Special: Do not correct URLs at all! */
     }
 
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
-     * limit-info:<br />
-     * captchatype-info: null 4dignum solvemedia reCaptchaV2<br />
+     * limit-info: 2019-06-27: account untested, set FREE limits <br />
+     * captchatype-info: 2019-06-27: null<br />
      * other:<br />
      */
-    private static String[] domains = new String[] { "tiny-files.com" };
+    private static String[] domains = new String[] { "uptomega.com" };
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return false;
+            return true;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return false;
+            return true;
         } else {
             /* Free(anonymous) and unknown account type */
-            return false;
+            return true;
         }
     }
 
@@ -69,13 +61,13 @@ public class TinyfilesCom extends XFileSharingProBasic {
     public int getMaxChunks(final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return 1;
+            return -5;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return 1;
+            return -5;
         } else {
             /* Free(anonymous) and unknown account type */
-            return 1;
+            return -5;
         }
     }
 
@@ -95,34 +87,6 @@ public class TinyfilesCom extends XFileSharingProBasic {
     }
 
     @Override
-    public String getFUIDFromURL(final DownloadLink dl) {
-        String fuid = super.getFUIDFromURL(dl);
-        if (fuid == null) {
-            try {
-                fuid = new Regex(new URL(dl.getPluginPatternMatcher()).getPath(), "/([a-f0-9]+)").getMatch(0);
-                return fuid;
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-            }
-        }
-        return null;
-    }
-
-    @Override
-    public String getFilenameFromURL(final DownloadLink dl) {
-        String urlname = super.getFilenameFromURL(dl);
-        if (urlname == null) {
-            try {
-                urlname = new Regex(new URL(dl.getPluginPatternMatcher()).getPath(), "/[a-f0-9]+/\\d+/(.+)/?$").getMatch(0);
-                return urlname;
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-            }
-        }
-        return null;
-    }
-
-    @Override
     public boolean supports_https() {
         return super.supports_https();
     }
@@ -139,14 +103,12 @@ public class TinyfilesCom extends XFileSharingProBasic {
 
     @Override
     public boolean supports_availablecheck_alt() {
-        /* 2019-06-27: Special */
-        return false;
+        return super.supports_availablecheck_alt();
     }
 
     @Override
     public boolean supports_availablecheck_filename_abuse() {
-        /* 2019-06-27: Special */
-        return false;
+        return super.supports_availablecheck_filename_abuse();
     }
 
     @Override
@@ -173,7 +135,7 @@ public class TinyfilesCom extends XFileSharingProBasic {
         for (int i = 0; i < domains.length; i++) {
             if (i == 0) {
                 /* Match all URLs on first (=current) domain */
-                ret.add("https?://(?:www\\.)?" + getHostsPatternPart() + "/([a-f0-9]{24}/\\d+/[^/]+/?|(?:embed\\-)?[a-z0-9]{12}(?:/[^/]+\\.html)?)");
+                ret.add("https?://(?:www\\.)?" + getHostsPatternPart() + "/(?:embed\\-)?[a-z0-9]{12}(?:/[^/]+\\.html)?");
             } else {
                 ret.add("");
             }

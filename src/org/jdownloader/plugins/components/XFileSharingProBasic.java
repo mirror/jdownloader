@@ -43,6 +43,7 @@ import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookies;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -1274,7 +1275,19 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     }
                 }
                 waitTime(link, timeBefore);
-                submitForm(dlForm);
+                final URLConnectionAdapter formCon = br.openFormConnection(dlForm);
+                if (!formCon.getContentType().contains("html")) {
+                    /* Very rare case - e.g. tiny-files.com */
+                    handleDownload(link, account, dllink, formCon.getRequest());
+                    return;
+                } else {
+                    br.followConnection();
+                    this.correctBR();
+                    try {
+                        formCon.disconnect();
+                    } catch (final Throwable e) {
+                    }
+                }
                 logger.info("Submitted DLForm");
                 checkErrors(link, account, true);
                 dllink = getDllink(link, account);
@@ -1292,7 +1305,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             }
         }
         logger.info("Final downloadlink = " + dllink + " starting the download...");
-        handleDownload(link, account, dllink);
+        handleDownload(link, account, dllink, null);
     }
 
     /** Checks if official video download is possible and returns downloadlink if possible. */
@@ -2767,73 +2780,43 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         dllink = checkOfficialVideoDownload(link, account);
                     }
                     if (StringUtils.isEmpty(dllink)) {
-                        final Form dlform = findFormF1Premium();
-                        if (dlform != null && isPasswordProtectedHTM()) {
-                            handlePassword(dlform, link);
+                        final Form dlForm = findFormF1Premium();
+                        if (dlForm != null && isPasswordProtectedHTM()) {
+                            handlePassword(dlForm, link);
+                        }
+                        final URLConnectionAdapter formCon = br.openFormConnection(dlForm);
+                        if (!formCon.getContentType().contains("html")) {
+                            /* Very rare case - e.g. tiny-files.com */
+                            handleDownload(link, account, dllink, formCon.getRequest());
+                            return;
+                        } else {
+                            br.followConnection();
+                            this.correctBR();
+                            try {
+                                formCon.disconnect();
+                            } catch (final Throwable e) {
+                            }
                         }
                         checkErrors(link, account, true);
-                        if (dlform == null) {
+                        if (dlForm == null) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
-                        submitForm(dlform);
+                        submitForm(dlForm);
                         checkErrors(link, account, true);
                         dllink = getDllink(link, account);
                     }
                 }
             }
-            handleDownload(link, account, dllink);
+            handleDownload(link, account, dllink, null);
         }
     }
 
-    protected void handleDownload(final DownloadLink link, final Account account, final String dllink) throws Exception {
-        if (StringUtils.isEmpty(dllink) || (!dllink.startsWith("http") && !dllink.startsWith("rtmp") && !dllink.startsWith("/"))) {
-            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+    protected void handleDownload(final DownloadLink link, final Account account, final String dllink, final Request req) throws Exception {
         final boolean resume = this.isResumeable(link, account);
         final int maxChunks = getMaxChunks(account);
-        final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
-        logger.info("Final downloadlink = " + dllink + " starting the download...");
-        if (dllink.startsWith("rtmp")) {
-            /* 2019-05-21: rtmp download - VERY rare case! */
-            try {
-                dl = new RTMPDownload(this, link, dllink);
-            } catch (final NoClassDefFoundError e) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "RTMPDownload class missing");
-            }
-            final String playpath = new Regex(dllink, "(mp4:.+)").getMatch(0);
-            /* Setup rtmp connection */
-            jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-            rtmp.setPageUrl(link.getPluginPatternMatcher());
-            rtmp.setUrl(dllink);
-            if (playpath != null) {
-                rtmp.setPlayPath(playpath);
-            }
-            rtmp.setFlashVer("WIN 25,0,0,148");
-            rtmp.setSwfVfy("CHECK_ME");
-            rtmp.setApp("vod/");
-            rtmp.setResume(false);
-            fixFilename(link);
-            try {
-                /* add a download slot */
-                if (account == null) {
-                    controlFree(+1);
-                }
-                /* start the dl */
-                ((RTMPDownload) dl).startDownload();
-            } finally {
-                /* remove download slot */
-                if (account == null) {
-                    controlFree(-1);
-                }
-            }
-        } else {
-            /*
-             * Save directurl before download-attempt as it should be valid even if it e.g. fails because of server issue 503 (= too many
-             * connections) --> Should work fine after the next try.
-             */
-            link.setProperty(directlinkproperty, dllink);
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume, maxChunks);
+        if (req != null) {
+            logger.info("Final downloadlink = Form download");
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, req, resume, maxChunks);
             if (dl.getConnection().getContentType().contains("html")) {
                 checkResponseCodeErrors(dl.getConnection());
                 logger.warning("The final dllink seems not to be a file!");
@@ -2854,6 +2837,76 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 /* remove download slot */
                 if (account == null) {
                     controlFree(-1);
+                }
+            }
+        } else {
+            if (StringUtils.isEmpty(dllink) || (!dllink.startsWith("http") && !dllink.startsWith("rtmp") && !dllink.startsWith("/"))) {
+                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
+            logger.info("Final downloadlink = " + dllink + " starting the download...");
+            if (dllink.startsWith("rtmp")) {
+                /* 2019-05-21: rtmp download - VERY rare case! */
+                try {
+                    dl = new RTMPDownload(this, link, dllink);
+                } catch (final NoClassDefFoundError e) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "RTMPDownload class missing");
+                }
+                final String playpath = new Regex(dllink, "(mp4:.+)").getMatch(0);
+                /* Setup rtmp connection */
+                jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+                rtmp.setPageUrl(link.getPluginPatternMatcher());
+                rtmp.setUrl(dllink);
+                if (playpath != null) {
+                    rtmp.setPlayPath(playpath);
+                }
+                rtmp.setFlashVer("WIN 25,0,0,148");
+                rtmp.setSwfVfy("CHECK_ME");
+                rtmp.setApp("vod/");
+                rtmp.setResume(false);
+                fixFilename(link);
+                try {
+                    /* add a download slot */
+                    if (account == null) {
+                        controlFree(+1);
+                    }
+                    /* start the dl */
+                    ((RTMPDownload) dl).startDownload();
+                } finally {
+                    /* remove download slot */
+                    if (account == null) {
+                        controlFree(-1);
+                    }
+                }
+            } else {
+                /*
+                 * Save directurl before download-attempt as it should be valid even if it e.g. fails because of server issue 503 (= too
+                 * many connections) --> Should work fine after the next try.
+                 */
+                link.setProperty(directlinkproperty, dllink);
+                dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume, maxChunks);
+                if (dl.getConnection().getContentType().contains("html")) {
+                    checkResponseCodeErrors(dl.getConnection());
+                    logger.warning("The final dllink seems not to be a file!");
+                    br.followConnection();
+                    correctBR();
+                    checkServerErrors();
+                    handlePluginBroken(link, "dllinknofile", 3);
+                }
+                fixFilename(link);
+                try {
+                    /* add a download slot */
+                    if (account == null) {
+                        controlFree(+1);
+                    }
+                    /* start the dl */
+                    dl.startDownload();
+                } finally {
+                    /* remove download slot */
+                    if (account == null) {
+                        controlFree(-1);
+                    }
                 }
             }
         }
