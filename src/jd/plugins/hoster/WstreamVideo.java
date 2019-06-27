@@ -23,6 +23,7 @@ import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -34,7 +35,7 @@ import jd.plugins.HostPlugin;
 public class WstreamVideo extends XFileSharingProBasic {
     public WstreamVideo(final PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium(super.getPurchasePremiumURL());
+        this.enablePremium(super.getPurchasePremiumURL());
     }
 
     /**
@@ -101,14 +102,20 @@ public class WstreamVideo extends XFileSharingProBasic {
 
     /** Checks if official video download is possible and returns downloadlink if possible. */
     public String checkOfficialVideoDownload(final DownloadLink link, final Account account) throws Exception {
-        /* 2019-06-13: Special */
+        /* 2019-06-27: Special - used for ALL download modes (including premium!) */
         String dllink = null;
         if (br.containsHTML("https://download\\.wstream\\.video/" + this.fuid)) {
             logger.info("Attempting official video download");
             final Browser brc = br.cloneBrowser();
-            final String b64 = Encoding.Base64Encode(this.fuid + "|600");
+            this.getPage(brc, "https://download.wstream.video/" + this.fuid);
+            String dlFunctionURL = brc.getRegex("\\$\\(document\\)\\.ready\\(function\\(\\)\\{\\s*?\\$\\.get\\(\"([^\"]+)\"").getMatch(0);
+            if (dlFunctionURL == null) {
+                /* Fallback! Last updated: 2019-06-27: They might frequently change this!! */
+                final String b64 = Encoding.Base64Encode(this.fuid + "|600");
+                dlFunctionURL = "https://video.wstream.video/dwn.php?f=" + b64;
+            }
             /* 2019-06-13: Skip waittime (6-10 seconds) */
-            this.getPage(brc, "https://video.wstream.video/downloadlink.php?f=" + b64);
+            this.getPage(brc, dlFunctionURL);
             final String[] dlinfo = brc.getRegex("class='buttonDownload' href='[^\\']+'>Download [^<>]+</a>").getColumn(-1);
             String dllink_last = null;
             String filesize_last = null;
@@ -140,6 +147,15 @@ public class WstreamVideo extends XFileSharingProBasic {
             logger.info("Failed to find official video downloadlink");
         }
         return dllink;
+    }
+
+    public boolean isLoggedin() {
+        /* 2019-06-27: Special */
+        boolean loggedIN = super.isLoggedin();
+        if (!loggedIN) {
+            loggedIN = StringUtils.isAllNotEmpty(br.getCookie(getMainPage(), "login", Cookies.NOTDELETEDPATTERN), br.getCookie(getMainPage(), "xfsts", Cookies.NOTDELETEDPATTERN));
+        }
+        return loggedIN;
     }
 
     @Override

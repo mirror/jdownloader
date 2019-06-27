@@ -16,6 +16,8 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.regex.Pattern;
 
 import org.appwork.utils.DebugMode;
@@ -37,12 +39,48 @@ import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 
 @SuppressWarnings("deprecation")
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "XFileShareProFolder" }, urls = {
-        "https?://(?:www\\.)?(?:subyshare\\.com|brupload\\.net|(?:exclusivefaile\\.com|exclusiveloader\\.com)|ex-load\\.com|hulkload\\.com|koofile\\.com|bestreams\\.net|powvideo\\.net|lunaticfiles\\.com|youwatch\\.org|streamratio\\.com|vshare\\.eu|up\\.media1fire\\.com|salefiles\\.com|ortofiles\\.com|restfile\\.ca|restfilee\\.com|storagely\\.com|free\\-uploading\\.com|rapidfileshare\\.net|fireget\\.com|ishareupload\\.com|gorillavid\\.in|mixshared\\.com|longfiles\\.com|novafile\\.com|orangefiles\\.me|qtyfiles\\.com|free\\-uploading\\.com|free\\-uploading\\.com|uppit\\.com|downloadani\\.me|faststore\\.org|clicknupload\\.org|isra\\.cloud|(?:up\\-4\\.net|up\\-4ever\\.com|up\\-4ever\\.net)|world\\-files\\.com|katfile\\.com|filefox\\.cc)/(users/[a-z0-9_]+(?:/[^\\?\r\n]+)?|folder/\\d+/[^\\?\r\n]+)|https?://(?:www\\.)?users(?:files|cloud)\\.com/go/[a-zA-Z0-9]{12}/?|https?://(www\\.)?(hotlink\\.cc|ex-load\\.com)/folder/[a-f0-9\\-]+|https?://(?:www\\.)?imgbaron\\.com/g/[A-Za-z0-9]+|https?://(?:filespace|spaceforfiles)\\.com/dir/[a-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
-    // DONT FORGET TO MAINTAIN HERE ALSO!
+    private static String[]   domains        = new String[] { "up-4.net", "up-4ever.com", "up-4ever.net", "usersfiles.com", "userscloud.com", "subyshare.com", "brupload.net", "exclusivefaile.com", "exclusiveloader.com", "ex-load.com", "hulkload.com", "koofile.com", "powvideo.net", "lunaticfiles.com", "youwatch.org", "streamratio.com", "vshare.eu", "up.media1fire.com", "salefiles.com", "ortofiles.com", "restfile.ca", "restfilee.com", "storagely.com", "free-uploading.com", "rapidfileshare.net", "fireget.com", "ishareupload.com", "gorillavid.in", "mixshared.com", "longfiles.com", "novafile.com", "orangefiles.me", "qtyfiles.com", "free-uploading.com", "free-uploading.com", "uppit.com", "downloadani.me", "faststore.org", "hotlink.cc", "clicknupload.org", "isra.cloud", "imgbaron.com", "world-files.com", "katfile.com", "filefox.cc" };
+    /* This list contains all hosts which need special Patterns (see below) - most XFS hosts will have the same folder patterns! */
+    final static List<String> specialDomains = Arrays.asList(new String[] { "usersfiles.com", "userscloud.com", "hotlink.cc", "ex-load.com", "imgbaron.com", "filespace.com", "spaceforfiles.com" });
+
+    public static String[] getAnnotationNames() {
+        return new String[] { "XFileShareProFolder" };
+    }
+
+    @Override
     public String[] siteSupportedNames() {
-        return new String[] { "up-4.net", "up-4ever.com", "up-4ever.net", "usersfiles.com", "subyshare.com", "brupload.net", "exclusivefaile.com", "exclusiveloader.com", "ex-load.com", "hulkload.com", "koofile.com", "powvideo.net", "lunaticfiles.com", "youwatch.org", "streamratio.com", "vshare.eu", "up.media1fire.com", "salefiles.com", "ortofiles.com", "restfile.ca", "restfilee.com", "storagely.com", "free-uploading.com", "rapidfileshare.net", "fireget.com", "ishareupload.com", "gorillavid.in", "mixshared.com", "longfiles.com", "novafile.com", "orangefiles.me", "qtyfiles.com", "free-uploading.com", "free-uploading.com", "uppit.com", "downloadani.me", "faststore.org", "hotlink.cc", "clicknupload.org", "isra.cloud", "imgbaron.com", "world-files.com", "katfile.com", "filefox.cc" };
+        return domains;
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (int i = 0; i < domains.length; i++) {
+            if (i == 0) {
+                /* Match all URLs on first (=current) domain - first add pattern for normal hosts, then special cases */
+                ret.add("https?://(?:www\\.)?" + getHostsPatternPart() + "/(users/[a-z0-9_]+(?:/[^\\?\r\n]+)?|folder/\\d+/[^\\?\r\n]+)" + "|https?://(?:www\\.)?users(?:files|cloud)\\.com/go/[a-zA-Z0-9]{12}/?|https?://(www\\.)?(hotlink\\.cc|ex-load\\.com)/folder/[a-f0-9\\-]+|https?://(?:www\\.)?imgbaron\\.com/g/[A-Za-z0-9]+|https?://(?:filespace|spaceforfiles)\\.com/dir/[a-z0-9]+");
+            } else {
+                /* see getAnnotationNames */
+                break;
+            }
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    /** Returns '(?:domain1|domain2)' */
+    public static String getHostsPatternPart() {
+        final StringBuilder pattern = new StringBuilder();
+        pattern.append("(?:");
+        for (final String name : domains) {
+            if (specialDomains.contains(name)) {
+                /* Skips specialHosts as they have their own special patterns! */
+                continue;
+            }
+            pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
+        }
+        pattern.append(")");
+        return pattern.toString();
     }
 
     @Override
@@ -82,8 +120,8 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
         br.setCookie("https://" + host, "lang", "english");
         br.setFollowRedirects(true);
         getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("No such user exist")) {
-            logger.warning("Incorrect URL or Invalid user : " + parameter);
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("No such user exist|No such folder")) {
+            logger.info("Incorrect URL, Invalid user or empty folder");
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
@@ -170,7 +208,7 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
                     } else {
                         filename = url_filename;
                     }
-                    if (!StringUtils.isEmpty(html_filename)) {
+                    if (!StringUtils.isEmpty(filename)) {
                         if (filename.endsWith("&#133;")) {
                             /*
                              * Indicates that this is not the complete filename but there is nothing we can do at this stage - full
