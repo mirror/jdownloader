@@ -319,7 +319,7 @@ public class Grab8Com extends antiDDoSForHost {
             filter = br.getRegex("<a [^>]*\\W+data-key=(?:'|\")" + key + "\\1[^>]+>").getMatch(-1);
         }
         if (filter == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            mhm.handleErrorGeneric(this.currAcc, this.currDownloadLink, "filter_null", 50, 2 * 60 * 1000l);
         }
         final String dllink = new Regex(filter, "href=('|\")((?!#).*?)\\1").getMatch(1);
         if (!inValidate(dllink)) {
@@ -328,7 +328,7 @@ public class Grab8Com extends antiDDoSForHost {
         // error handling can be within table (lame)
         filter = br.getRegex("<tr>\\s*<td align=\"center\">.*?" + Pattern.quote(filter) + ".*?</tr>").getMatch(-1);
         if (filter == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            mhm.handleErrorGeneric(this.currAcc, this.currDownloadLink, "filter_null_2", 50, 2 * 60 * 1000l);
         }
         // user account or multihoster account? we will assume account.
         if (new Regex(filter, "filesize bigger than left traffic").matches()) {
