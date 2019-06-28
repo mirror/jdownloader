@@ -63,6 +63,7 @@ public class BrazzersCom extends PluginForDecrypt {
         final boolean grabBEST = cfg.isGrabBESTEnabled();
         final boolean grab1080p = cfg.isGrabHTTPMp4_1080pEnabled();
         final boolean grab720p = cfg.isGrabHTTPMp4_720pHDEnabled();
+        final boolean grab320p = cfg.isGrabHTTPMp4_320pMPEG4Enabled();
         final boolean grab480pSD = cfg.isGrabHTTPMp4_480pSDEnabled();
         final boolean grab480pMPEG4 = cfg.isGrabHTTPMp4_480pMPEG4Enabled();
         final boolean grab270piPHONE = cfg.isGrabHTTPMp4_270piPHONEMOBILEEnabled();
@@ -74,11 +75,8 @@ public class BrazzersCom extends PluginForDecrypt {
         if (grab720p) {
             all_selected_qualities.add("mp4_720_");
         }
-        if (grab480pSD) {
-            all_selected_qualities.add("mp4_480_2000");
-        }
-        if (grab480pMPEG4) {
-            all_selected_qualities.add("mp4_480_1000");
+        if (grab320p) {
+            all_selected_qualities.add("mp4_320_");
         }
         if (grab480pMPEG4 || grab480pSD) {
             all_selected_qualities.add("mp4_480_");

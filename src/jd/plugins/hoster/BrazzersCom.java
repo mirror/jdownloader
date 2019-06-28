@@ -626,6 +626,12 @@ public class BrazzersCom extends antiDDoSForHost {
         void setGrabHTTPMp4_480pMPEG4Enabled(boolean b);
 
         @DefaultBooleanValue(true)
+        @Order(125)
+        boolean isGrabHTTPMp4_320pMPEG4Enabled();
+
+        void setGrabHTTPMp4_320pMPEG4Enabled(boolean b);
+
+        @DefaultBooleanValue(true)
         @Order(130)
         boolean isGrabHTTPMp4_270piPHONEMOBILEEnabled();
 
