@@ -152,13 +152,14 @@ public class XvideosComProfile extends PluginForDecrypt {
             logger.info("Failed to find any photos");
             return;
         }
+        int counter = 1;
         for (String singleLink : links) {
             if (this.isAbort()) {
                 return;
             }
             String url_filename = getFileNameFromURL(new URL(singleLink));
             if (url_filename == null) {
-                url_filename = "";
+                url_filename = "_" + counter;
             }
             url_filename = username + "_" + galleryID + "_" + galleryName + url_filename;
             final DownloadLink dl = createDownloadlink(singleLink);
@@ -171,6 +172,7 @@ public class XvideosComProfile extends PluginForDecrypt {
             dl.setProperty("username", username);
             decryptedLinks.add(dl);
             distribute(dl);
+            counter++;
         }
         if (decryptedLinks.size() == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
