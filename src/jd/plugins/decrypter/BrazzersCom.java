@@ -19,10 +19,6 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -39,6 +35,10 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.hoster.BrazzersCom.BrazzersConfigInterface;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "brazzers.com" }, urls = { "https?://ma\\.brazzers\\.com/(?:scene/view/\\d+/[a-z0-9\\-]+/?|series/\\d+/[a-z0-9\\-]+/episode/\\d+/?|scene/hqpics/\\d+/?)|https?://(?:www\\.)?brazzers\\.com/(?:scenes/view/id/\\d+(?:/[a-z0-9\\-]+)?/?|embed/\\d+)" })
 public class BrazzersCom extends PluginForDecrypt {
@@ -69,10 +69,10 @@ public class BrazzersCom extends PluginForDecrypt {
         final boolean fastLinkcheck = cfg.isFastLinkcheckEnabled();
         boolean grabAll = false;
         if (grab1080p) {
-            all_selected_qualities.add("mp4_1080_12000");
+            all_selected_qualities.add("mp4_1080_");
         }
         if (grab720p) {
-            all_selected_qualities.add("mp4_720_8000");
+            all_selected_qualities.add("mp4_720_");
         }
         if (grab480pSD) {
             all_selected_qualities.add("mp4_480_2000");
@@ -80,8 +80,11 @@ public class BrazzersCom extends PluginForDecrypt {
         if (grab480pMPEG4) {
             all_selected_qualities.add("mp4_480_1000");
         }
+        if (grab480pMPEG4 || grab480pSD) {
+            all_selected_qualities.add("mp4_480_");
+        }
         if (grab270piPHONE) {
-            all_selected_qualities.add("mp4_272_650");
+            all_selected_qualities.add("mp4_272_");
         }
         if (all_selected_qualities.isEmpty()) {
             grabAll = true;
@@ -177,7 +180,8 @@ public class BrazzersCom extends PluginForDecrypt {
                     filesizeMax = filesizeTemp;
                     bestQualityDownloadlink = dl;
                 }
-                if (!all_selected_qualities.contains(quality_url) && !grabAll) {
+                final String qualityGroup = new Regex(quality_url, "(mp4_\\d+_)").getMatch(0);
+                if (!all_selected_qualities.contains(qualityGroup) && !grabAll) {
                     /* Skip unwanted qualities - only add what the user wants to have. */
                     continue;
                 }
