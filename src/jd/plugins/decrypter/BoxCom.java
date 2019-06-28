@@ -134,7 +134,11 @@ public class BoxCom extends antiDDoSForDecrypt {
             }
         }
         getPage(parameter, cryptedlink);
+        final String passCodeBefore = passCode;
         passCode = handlePassword(br, passCodes, parameter);
+        if (passCode == null) {
+            passCode = passCodeBefore;
+        }
         if (br._getURL().getPath().equals("/freeshare")) {
             decryptedLinks.add(createOfflinelink(cryptedlink));
             return decryptedLinks;
