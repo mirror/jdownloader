@@ -22,6 +22,8 @@ import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nowoscimuzyczne.eu" }, urls = { "https?://(?:www\\.)?nowoscimuzyczne\\.eu/engine/download\\.php\\?newsid=\\d+" })
@@ -38,10 +40,10 @@ public class NowoscimuzyczneEu extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final String finallink = this.br.getRegex("var link=\\'(https[^\"\\']+)\\';").getMatch(0);
+        final String finallink = this.br.getRegex("var\\s*link\\s*=\\s*\\'(https?[^\"\\']+)\\';").getMatch(0);
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         decryptedLinks.add(createDownloadlink(finallink));
         return decryptedLinks;
