@@ -2,9 +2,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -19,6 +16,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision: 40753 $", interfaceVersion = 3, names = { "onlyspanking.org" }, urls = { "https?://onlyspanking.org/\\d+-[a-zA-Z0-9\\-]+\\.html" })
 public class OnlySpankingOrg extends antiDDoSForDecrypt {
@@ -58,6 +58,7 @@ public class OnlySpankingOrg extends antiDDoSForDecrypt {
             form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
             form.put("skin", Encoding.urlEncode(dle_skin));
             form.put("sec_code", Encoding.urlEncode(recaptchaV2Response));
+            form.setAction(ajax_action);
             brc = br.cloneBrowser();
             submitForm(brc, form);
         }
