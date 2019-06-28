@@ -147,6 +147,8 @@ public abstract class SimpleFTP {
         CLNT,
         PBSZ,
         PROT,
+        MLST, // rfc3659, MLST provides data about exactly the object named on its command line, and no others.
+        MLSD, // rfc3659, MLSD,on the other, lists the contents of a directory if a directory is named, otherwise a 501 reply is returned.
         PROT_C("PROT C"),
         PROT_P("PROT P"),
         AUTH_TLS("AUTH TLS"),
@@ -1146,7 +1148,11 @@ public abstract class SimpleFTP {
     }
 
     public SimpleFTPListEntry[] listEntries() throws IOException {
-        final String[][] entries = list();
+        return listEntries_LIST();
+    }
+
+    protected SimpleFTPListEntry[] listEntries_LIST() throws IOException {
+        final String[][] entries = LIST();
         if (entries != null) {
             // convert spaces to %20 like browser does
             final String cwd = getDir().replaceAll(" ", "%20");
@@ -1188,7 +1194,7 @@ public abstract class SimpleFTP {
      * @return
      * @throws IOException
      */
-    private String[][] list() throws IOException {
+    protected String[][] LIST() throws IOException {
         InetSocketAddress pasv = pasv();
         sendLine("LIST");
         SocketStreamInterface dataSocket = null;
@@ -1199,6 +1205,7 @@ public abstract class SimpleFTP {
             final ENCODING encoding = getPathEncoding();
             sb.append(encoding.fromBytes(IO.readStream(-1, dataSocket.getInputStream(), new ByteArrayOutputStream(), false)));
         } catch (IOException e) {
+            logger.log(e);
             if (e.getMessage().contains("550")) {
                 return null;
             }
@@ -1217,7 +1224,7 @@ public abstract class SimpleFTP {
         return matches;
     }
 
-    public SimpleFTPListEntry getFileInfo(final String path) throws IOException {
+    protected SimpleFTPListEntry getFileInfo_LIST(final String path) throws IOException {
         final String name = path.substring(path.lastIndexOf("/") + 1);
         final String workingDir = path.substring(0, path.lastIndexOf("/"));
         if (!this.cwd(workingDir)) {
@@ -1225,13 +1232,17 @@ public abstract class SimpleFTP {
         }
         final ENCODING encoding = getPathEncoding();
         final byte[] nameBytes = encoding.toBytes(name);
-        for (final SimpleFTPListEntry entry : listEntries()) {
+        for (final SimpleFTPListEntry entry : listEntries_LIST()) {
             // we compare bytes because of hex encoding
             if (Arrays.equals(encoding.toBytes(entry.getName()), nameBytes)) {
                 return entry;
             }
         }
         return null;
+    }
+
+    public SimpleFTPListEntry getFileInfo(final String path) throws IOException {
+        return getFileInfo_LIST(path);
     }
 
     public TLS_MODE getPreferedTLSMode() {

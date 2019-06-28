@@ -24,7 +24,7 @@ public abstract class LinkCrawlerDeepInspector {
                 return true;
             } else if (hasContentType && StringUtils.contains(urlConnection.getContentType(), "image")) {
                 return true;
-            } else if (urlConnection.getLongContentLength() > sizeDownloadableContent && (!hasContentType || !StringUtils.contains(urlConnection.getContentType(), "text"))) {
+            } else if (urlConnection.getLongContentLength() > sizeDownloadableContent && (!hasContentType || (!StringUtils.contains(urlConnection.getContentType(), "text") && !StringUtils.containsIgnoreCase(urlConnection.getContentType(), "application/json")))) {
                 return true;
             } else if (urlConnection.getLongContentLength() > sizeDownloadableContent && StringUtils.contains(urlConnection.getHeaderField(HTTPConstants.HEADER_RESPONSE_ACCEPT_RANGES), "bytes")) {
                 return true;

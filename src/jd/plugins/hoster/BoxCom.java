@@ -104,9 +104,12 @@ public class BoxCom extends antiDDoSForHost {
                 // direct link that is password protected?
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final String requestToken = br.getRegex("Box\\.config\\.requestToken\\s*=\\s*'(.*?)'").getMatch(0);
+            String requestToken = br.getRegex("Box\\.config\\.requestToken\\s*=\\s*'(.*?)'").getMatch(0);
             if (StringUtils.isEmpty(requestToken)) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                requestToken = br.getRegex("requestToken\"\\s*:\\s*\"(.*?)\"").getMatch(0);
+                if (StringUtils.isEmpty(requestToken)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
             br.getPage(parameter.getPluginPatternMatcher());
             if (isOffline(br)) {
