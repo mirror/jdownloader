@@ -30,6 +30,10 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
         return getSecureToken(br != null ? br.toString() : null);
     }
 
+    public int getSolutionTimeout() {
+        return 2 * 60 * 1000;
+    }
+
     protected String getSecureToken(final String source) {
         if (secureToken == null) {
             // from fallback url

@@ -18,9 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -34,6 +31,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "jetload.net" }, urls = { "https?://(?:www\\.)?jetload\\.net/(?:#\\!/d|e|#\\!/v)/([A-Za-z0-9]+)" })
 public class JetloadNet extends PluginForHost {
@@ -164,11 +164,22 @@ public class JetloadNet extends PluginForHost {
              * Attention! This is NOT the filename we use - it is only required to get a working downloadlink (wrong value = downloadlink
              * leads to 404)
              */
+            final String encoding_status = (String) JavaScriptEngineFactory.walkJson(entries, "file/encoding_status");
             final String filename = (String) JavaScriptEngineFactory.walkJson(entries, "file/file_name");
             final String ext = (String) JavaScriptEngineFactory.walkJson(entries, "file/file_ext");
-            final String server = (String) JavaScriptEngineFactory.walkJson(entries, "server/id");
-            if (StringUtils.isEmpty(filename) || StringUtils.isEmpty(ext) || StringUtils.isEmpty(server)) {
+            if (StringUtils.isEmpty(filename)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else if (StringUtils.isEmpty(ext)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            String server = (String) JavaScriptEngineFactory.walkJson(entries, "server/id");
+            if (StringUtils.isEmpty(server)) {
+                // server/id available for encoding_status: "completed"
+                server = (String) JavaScriptEngineFactory.walkJson(entries, "file/srv_id");
+                // file/srv_id always available for encoding_status: "pending"
+                if (StringUtils.isEmpty(server)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
             final PostRequest downloadReq = br.createJSonPostRequest("/api/download", String.format("{\"file_name\":\"%s.%s\",\"srv\":\"%s\"}", filename, ext, server));
             br.openRequestConnection(downloadReq);
@@ -199,11 +210,12 @@ public class JetloadNet extends PluginForHost {
             try {
                 final Browser br2 = br.cloneBrowser();
                 con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                if (!con.isOK() || con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
                 }
             } catch (final Exception e) {
+                logger.log(e);
                 downloadLink.setProperty(property, Property.NULL);
                 dllink = null;
             } finally {

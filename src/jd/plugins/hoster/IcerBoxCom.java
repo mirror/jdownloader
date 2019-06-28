@@ -310,16 +310,21 @@ public class IcerBoxCom extends antiDDoSForHost {
                 final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
                 final Boolean is_premium = (Boolean) JavaScriptEngineFactory.walkJson(entries, "data/has_premium");
                 final String expire = (String) JavaScriptEngineFactory.walkJson(entries, "data/premium/date");
-                final Number dailyTrafficMax = (Number) JavaScriptEngineFactory.walkJson(entries, "data/package/volume");
-                final Number dailyTrafficUsed = ((Number) JavaScriptEngineFactory.walkJson(entries, "data/downloaded_today"));
+                final Number bandwidth_Max = (Number) JavaScriptEngineFactory.walkJson(entries, "data/package/bandwidth");
+                final Number bandwitdh_Used = ((Number) JavaScriptEngineFactory.walkJson(entries, "data/downloaded"));
+                final Number bandwidth_Daily_Max = (Number) JavaScriptEngineFactory.walkJson(entries, "data/package/volume");
+                final Number bandwidth_Daily_Used = ((Number) JavaScriptEngineFactory.walkJson(entries, "data/downloaded_today"));
                 // free account
                 if (Boolean.FALSE.equals(is_premium)) {
                     // jdlog://8835079150841
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Free Accounts on this provider are not supported", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else {
                     // available traffic
-                    ai.setTrafficLeft(dailyTrafficMax.longValue() - dailyTrafficUsed.longValue());
-                    ai.setTrafficMax(dailyTrafficMax.longValue());
+                    final long bandwidth_Available = bandwidth_Max.longValue() - bandwitdh_Used.longValue();
+                    final long max = Math.min(bandwidth_Available, bandwidth_Daily_Max.longValue());
+                    final long left = max - bandwidth_Daily_Used.longValue();
+                    ai.setTrafficLeft(left);
+                    ai.setTrafficMax(max);
                     // date
                     ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.replaceFirst("\\.0{6}", ""), "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH), ajax);
                     if (Boolean.TRUE.equals(is_premium) && !ai.isExpired()) {
@@ -424,12 +429,17 @@ public class IcerBoxCom extends antiDDoSForHost {
             // admin states that download routine can throw this as well.
             // we will invalidate the session token, throw temp hoster unvail, and relogin.
             else if (account != null && downloadLink != null) {
-                final long was = account.getAccountInfo().getTrafficLeft();
-                // relogin due to limit been reached and token equals null.
-                account.setAccountInfo(fetchAccountInfoApi(account));
-                final long now = account.getAccountInfo().getTrafficLeft();
-                // throw retry so that core can re-analyse if account has traffic left.
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "You are possibly out of available traffic; 'was = " + was + "; now = " + now + ";", 30 * 1000l);
+                if (br.containsHTML("Download this file will exceed your bandwidth")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not enough traffic left!", 1 * 60 * 60 * 1000l);
+                }
+                synchronized (account) {
+                    final long was = account.getAccountInfo().getTrafficLeft();
+                    // relogin due to limit been reached and token equals null.
+                    account.setAccountInfo(fetchAccountInfoApi(account));
+                    final long now = account.getAccountInfo().getTrafficLeft();
+                    // throw retry so that core can re-analyse if account has traffic left.
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "You are possibly out of available traffic; 'was = " + was + "; now = " + now + ";", 30 * 1000l);
+                }
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
