@@ -16,12 +16,9 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.regex.Pattern;
-
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -36,10 +33,15 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 @SuppressWarnings("deprecation")
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
-    private static String[]       domains        = new String[] { "up-4.net", "up-4ever.com", "up-4ever.net", "subyshare.com", "brupload.net", "exclusivefaile.com", "exclusiveloader.com", "hulkload.com", "koofile.com", "powvideo.net", "lunaticfiles.com", "youwatch.org", "streamratio.com", "vshare.eu", "up.media1fire.com", "salefiles.com", "ortofiles.com", "restfile.ca", "restfilee.com", "storagely.com", "free-uploading.com", "rapidfileshare.net", "fireget.com", "ishareupload.com", "gorillavid.in", "mixshared.com", "longfiles.com", "novafile.com", "orangefiles.me", "qtyfiles.com", "free-uploading.com", "free-uploading.com", "uppit.com", "downloadani.me", "faststore.org", "clicknupload.org", "isra.cloud", "world-files.com", "katfile.com", "filefox.cc" };
+    private static final String[] domains        = new String[] { "up-4.net", "up-4ever.com", "up-4ever.net", "subyshare.com", "brupload.net", "exclusivefaile.com", "exclusiveloader.com", "hulkload.com", "koofile.com", "powvideo.net", "lunaticfiles.com", "youwatch.org", "streamratio.com", "vshare.eu", "up.media1fire.com", "salefiles.com", "ortofiles.com", "restfile.ca", "restfilee.com", "storagely.com", "free-uploading.com", "rapidfileshare.net", "fireget.com", "ishareupload.com", "gorillavid.in", "mixshared.com", "longfiles.com", "novafile.com", "orangefiles.me", "qtyfiles.com", "free-uploading.com", "free-uploading.com", "uppit.com", "downloadani.me", "faststore.org", "clicknupload.org", "isra.cloud", "world-files.com", "katfile.com", "filefox.cc" };
     /* This list contains all hosts which need special Patterns (see below) - most XFS hosts will have the same folder patterns! */
     private static final String[] specialDomains = { "usersfiles.com", "userscloud.com", "hotlink.cc", "ex-load.com", "imgbaron.com", "filespace.com", "spaceforfiles.com" };
 
@@ -54,50 +56,34 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
 
     /* Returns Array containing all elements of domains + specialDomains. */
     public static String[] getAllDomains() {
-        final String[] allDomains = new String[domains.length + specialDomains.length];
-        int position = 0;
-        for (int i = 0; i < domains.length; i++) {
-            allDomains[position] = domains[i];
-            position++;
-        }
-        for (int i = 0; i < specialDomains.length; i++) {
-            allDomains[position] = specialDomains[i];
-            position++;
-        }
-        return allDomains;
+        final List<String> ret = new ArrayList<String>();
+        ret.addAll(Arrays.asList(domains));
+        ret.addAll(Arrays.asList(specialDomains));
+        return ret.toArray(new String[0]);
     }
 
     public static String[] getAnnotationUrls() {
-        final String[] patterns = new String[domains.length + specialDomains.length];
-        int position = 0;
+        final List<String> ret = new ArrayList<String>();
         /* First add domains with normal patterns! */
         for (int i = 0; i < domains.length; i++) {
-            patterns[position] = "https?://(?:www\\.)?" + Pattern.quote(domains[i]) + "/(users/[a-z0-9_]+(?:/[^\\?\r\n]+)?|folder/\\d+/[^\\?\r\n]+)";
-            position++;
+            ret.add("https?://(?:www\\.)?" + Pattern.quote(domains[i]) + "/(users/[a-z0-9_]+(?:/[^\\?\r\n]+)?|folder/\\d+/[^\\?\r\n]+)");
         }
         /*
          * Now add special patterns - this might be ugly but usually we do not get new specialDomains! Keep in mind that their patterns have
          * to be in order and it has to be the number of patterns has to be the same as the total number of domains!
          */
         /* userscloud.com & usersfiles.com */
-        patterns[position] = "https?://(?:www\\.)?usersfiles\\.com/go/[a-zA-Z0-9]{12}/?";
-        position++;
-        patterns[position] = "https?://(?:www\\.)?userscloud\\.com/go/[a-zA-Z0-9]{12}/?";
-        position++;
+        ret.add("https?://(?:www\\.)?usersfiles\\.com/go/[a-zA-Z0-9]{12}/?");
+        ret.add("https?://(?:www\\.)?userscloud\\.com/go/[a-zA-Z0-9]{12}/?");
         /* hotlink.cc & ex-load.com */
-        patterns[position] = "https?://(?:www\\.)?hotlink\\.cc/folder/[a-f0-9\\-]+";
-        position++;
-        patterns[position] = "https?://(?:www\\.)?ex\\-load\\.com/folder/[a-f0-9\\-]+";
-        position++;
+        ret.add("https?://(?:www\\.)?hotlink\\.cc/folder/[a-f0-9\\-]+");
+        ret.add("https?://(?:www\\.)?ex\\-load\\.com/folder/[a-f0-9\\-]+");
         /* imgbaron.com */
-        patterns[position] = "https?://(?:www\\.)?imgbaron\\.com/g/[A-Za-z0-9]+";
-        position++;
+        ret.add("https?://(?:www\\.)?imgbaron\\.com/g/[A-Za-z0-9]+");
         /* filespace.com & spaceforfiles.com */
-        patterns[position] = "https?://filespace\\.com/dir/[a-z0-9]+";
-        position++;
-        patterns[position] = "https?://spaceforfiles\\.com/dir/[a-z0-9]+";
-        position++;
-        return patterns;
+        ret.add("https?://filespace\\.com/dir/[a-z0-9]+");
+        ret.add("https?://spaceforfiles\\.com/dir/[a-z0-9]+");
+        return ret.toArray(new String[0]);
     }
 
     @Override

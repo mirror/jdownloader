@@ -17,10 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -36,6 +32,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "krakenfiles.com" }, urls = { "https?://(?:www\\.)?krakenfiles\\.com/view/([a-z0-9]+)/file\\.html" })
 public class KrakenfilesCom extends PluginForHost {
@@ -139,11 +139,12 @@ public class KrakenfilesCom extends PluginForHost {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                if (!con.isOK() || con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
                 }
-            } catch (final Exception e) {
+            } catch (final IOException e) {
+                logger.log(e);
                 downloadLink.setProperty(property, Property.NULL);
                 dllink = null;
             } finally {
