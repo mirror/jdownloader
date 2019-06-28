@@ -63,9 +63,4 @@ public class ThrowbinIo extends PluginForDecrypt {
         logger.info("Added " + decryptedLinks.size() + " URLs in total");
         return decryptedLinks;
     }
-
-    /* NO OVERRIDE!! */
-    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
-        return false;
-    }
 }
