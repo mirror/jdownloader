@@ -1184,6 +1184,7 @@ ResultTableModel_initColumns_ruledesc_=Condição da Regra de Correspondência
 ResultTableModel_initColumns_size_=Tamanho do Arquivo
 ResultTableModel_initColumns_source=Fonte
 Rules_balanced=Balanceado - usar igualmente cada conta
+Rules_disabled=Desativado, não usar nenhuma conta deste grupo
 Rules_order=Os primeiros vem primeiro - Usar a ordem fornecida
 Rules_random=Aletoriamente usar uma conta deste grupo
 SaveAsProxyProfileAction_SaveAsProxyProfileAction_=Exportar Configuração Proxy
