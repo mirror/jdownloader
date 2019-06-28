@@ -129,7 +129,7 @@ public class BrazzersCom extends antiDDoSForHost {
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
-                if (!con.getContentType().contains("html")) {
+                if (con.isOK() && !con.getContentType().contains("html")) {
                     if (use_server_filenames || StringUtils.isEmpty(decrypter_filename)) {
                         link.setFinalFileName(getFileNameFromHeader(con));
                     } else {
@@ -155,7 +155,7 @@ public class BrazzersCom extends antiDDoSForHost {
                         dllink = String.format(pic_format_string, number_formatted);
                         /* ... new URL should work! */
                         con = br.openHeadConnection(dllink);
-                        if (!con.getContentType().contains("html")) {
+                        if (con.isOK() && !con.getContentType().contains("html")) {
                             /* Set new url */
                             link.setUrlDownload(dllink);
                             /* If user copies url he should always get a valid one too :) */
@@ -275,7 +275,7 @@ public class BrazzersCom extends antiDDoSForHost {
                     URLConnectionAdapter con = null;
                     try {
                         con = br.openHeadConnection(dllink);
-                        if (!con.getContentType().contains("html")) {
+                        if (con.isOK() && !con.getContentType().contains("html")) {
                             link.setDownloadSize(con.getLongContentLength());
                         } else {
                             server_issues = true;
