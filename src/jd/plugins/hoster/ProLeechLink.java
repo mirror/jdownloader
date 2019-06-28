@@ -5,6 +5,12 @@ import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.Locale;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.http.Cookies;
 import jd.http.requests.PostRequest;
@@ -17,12 +23,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import jd.plugins.components.MultiHosterManagement;
 
 @HostPlugin(revision = "$Revision: 39245 $", interfaceVersion = 3, names = { "proleech.link" }, urls = { "https?://proleech\\.link/download/[a-zA-Z0-9]+(/.*)?" })
 public class ProLeechLink extends antiDDoSForHost {
@@ -30,6 +31,8 @@ public class ProLeechLink extends antiDDoSForHost {
         super(wrapper);
         this.enablePremium("https://proleech.link/signup");
     }
+
+    private static MultiHosterManagement mhm = new MultiHosterManagement("proleech.link");
 
     @Override
     public String getAGBLink() {
@@ -53,6 +56,7 @@ public class ProLeechLink extends antiDDoSForHost {
             getPage("/page/hostlist");
             final String hosts[] = br.getRegex("<td>\\s*\\d+\\s*</td>\\s*<td>\\s*<img[^<]+/?>\\s*([^<]*?)\\s*</td>\\s*<td>\\s*<span\\s*class\\s*=\\s*\"label\\s*label-success\"\\s*>\\s*Online").getColumn(0);
             if (hosts == null || hosts.length == 0) {
+                logger.warning("Failed to find list of supported hosts");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             ai.setMultiHostSupport(this, Arrays.asList(hosts));
@@ -137,13 +141,15 @@ public class ProLeechLink extends antiDDoSForHost {
     }
 
     @Override
-    public void handleMultiHost(DownloadLink downloadLink, Account account) throws Exception {
+    public void handleMultiHost(DownloadLink link, Account account) throws Exception {
+        mhm.runCheck(account, link);
         login(account, null);
-        String downloadURL = downloadLink.getStringProperty(getHost(), null);
+        String downloadURL = link.getStringProperty(getHost(), null);
         if (downloadURL != null) {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadURL, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadURL, true, 0);
             if (!dl.getConnection().isContentDisposition()) {
-                downloadLink.removeProperty(getHost());
+                logger.info("Saved downloadurl did not work");
+                link.removeProperty(getHost());
                 try {
                     br.followConnection();
                 } catch (final IOException e) {
@@ -156,9 +162,9 @@ public class ProLeechLink extends antiDDoSForHost {
             final PostRequest post = new PostRequest("https://proleech.link/dl/debrid/deb_process.php");
             post.setContentType("application/x-www-form-urlencoded; charset=UTF-8");
             post.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            final String url = downloadLink.getDefaultPlugin().buildExternalDownloadURL(downloadLink, this);
+            final String url = link.getDefaultPlugin().buildExternalDownloadURL(link, this);
             post.put("urllist", URLEncoder.encode(url, "UTF-8"));
-            final String pass = downloadLink.getDownloadPassword();
+            final String pass = link.getDownloadPassword();
             if (StringUtils.isEmpty(pass)) {
                 post.put("pass", "");
             } else {
@@ -173,27 +179,15 @@ public class ProLeechLink extends antiDDoSForHost {
                     logger.info(danger);
                 }
                 if (br.containsHTML(">\\s*No link entered\\.?\\s*<")) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    mhm.handleErrorGeneric(account, link, "no_link_entered", 50, 2 * 60 * 1000l);
                 } else if (br.containsHTML(">\\s*Error getting the link from this account\\.?\\s*<")) {
-                    synchronized (account) {
-                        final AccountInfo ai = account.getAccountInfo();
-                        if (ai != null) {
-                            ai.removeMultiHostSupport(downloadLink.getHost());
-                            throw new PluginException(LinkStatus.ERROR_RETRY);
-                        }
-                    }
+                    mhm.putError(account, link, 2 * 60 * 1000l, "Error getting the link from this account");
                 } else if (br.containsHTML(">\\s*Our account has reached traffic limit\\.?\\s*<")) {
-                    synchronized (account) {
-                        final AccountInfo ai = account.getAccountInfo();
-                        if (ai != null) {
-                            ai.removeMultiHostSupport(downloadLink.getHost());
-                            throw new PluginException(LinkStatus.ERROR_RETRY);
-                        }
-                    }
+                    mhm.putError(account, link, 2 * 60 * 1000l, "Error getting the link from this account");
                 }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                mhm.handleErrorGeneric(account, link, "dllinknull", 50, 2 * 60 * 1000l);
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadURL, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadURL, true, 0);
             final boolean isOkay = dl.getConnection().isOK() && (dl.getConnection().isContentDisposition() || StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "application/force-download"));
             if (!isOkay) {
                 try {
@@ -201,14 +195,10 @@ public class ProLeechLink extends antiDDoSForHost {
                 } catch (final IOException e) {
                     logger.log(e);
                 }
-                if (StringUtils.endsWithCaseInsensitive(br.getURL(), "/downloader")) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
+                mhm.handleErrorGeneric(account, link, "unknowndlerror", 50, 2 * 60 * 1000l);
             }
         }
-        downloadLink.setProperty(getHost(), downloadURL);
+        link.setProperty(getHost(), downloadURL);
         dl.startDownload();
     }
 
@@ -231,7 +221,7 @@ public class ProLeechLink extends antiDDoSForHost {
             if (StringUtils.endsWithCaseInsensitive(br.getURL(), "/downloader")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
             }
         }
         dl.startDownload();

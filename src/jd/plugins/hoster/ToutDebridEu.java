@@ -106,7 +106,7 @@ public class ToutDebridEu extends antiDDoSForHost {
         login(account, false);
         final String dllink = getDllink(link);
         if (StringUtils.isEmpty(dllink)) {
-            mhm.handleErrorGeneric(account, link, "dllinknull", 2, 5 * 60 * 1000l);
+            mhm.handleErrorGeneric(account, link, "dllinknull", 50, 2 * 60 * 1000l);
         }
         handleDL(account, link, dllink);
     }
