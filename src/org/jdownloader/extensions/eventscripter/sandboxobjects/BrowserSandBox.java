@@ -1,5 +1,6 @@
 package org.jdownloader.extensions.eventscripter.sandboxobjects;
 
+import java.io.File;
 import java.io.IOException;
 
 import jd.http.Browser;
@@ -38,6 +39,22 @@ public class BrowserSandBox {
 
     public String getCookie(String host, String key) {
         return br.getCookie(host, key);
+    }
+
+    public void setLoadLimit(int limit) {
+        br.setLoadLimit(limit);
+    }
+
+    public int getLoadLimit() {
+        return br.getLoadLimit();
+    }
+
+    public void getDownload(String LocalFile, String urlString) throws EnvironmentException {
+        try {
+            br.getDownload(new File(LocalFile), urlString);
+        } catch (IOException e) {
+            throw new EnvironmentException(e);
+        }
     }
 
     public void setHeader(String field, String value) {
