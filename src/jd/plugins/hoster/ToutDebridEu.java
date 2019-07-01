@@ -19,11 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -42,13 +37,17 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tout-debrid.eu" }, urls = { "" })
 public class ToutDebridEu extends antiDDoSForHost {
     private static final String          PROTOCOL                  = "https://";
     /* Connection limits */
     private static final boolean         ACCOUNT_PREMIUM_RESUME    = true;
     private static final int             ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    private static final boolean         USE_API                   = false;
     private static MultiHosterManagement mhm                       = new MultiHosterManagement("tout-debrid.eu");
 
     public ToutDebridEu(PluginWrapper wrapper) {
@@ -114,11 +113,7 @@ public class ToutDebridEu extends antiDDoSForHost {
     private String getDllink(final DownloadLink link) throws Exception {
         String dllink = checkDirectLink(link, this.getHost() + "directlink");
         if (dllink == null) {
-            if (USE_API) {
-                dllink = getDllinkAPI(link);
-            } else {
-                dllink = getDllinkWebsite(link);
-            }
+            dllink = getDllinkWebsite(link);
         }
         return dllink;
     }
@@ -145,7 +140,6 @@ public class ToutDebridEu extends antiDDoSForHost {
             final String contenttype = dl.getConnection().getContentType();
             if (contenttype.contains("html")) {
                 br.followConnection();
-                handleAPIErrors(this.br);
                 mhm.handleErrorGeneric(account, link, "unknowndlerror", 2, 5 * 60 * 1000l);
             }
             this.dl.startDownload();
@@ -183,12 +177,7 @@ public class ToutDebridEu extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         this.br = prepBR(this.br);
-        final AccountInfo ai;
-        if (USE_API) {
-            ai = fetchAccountInfoAPI(account);
-        } else {
-            ai = fetchAccountInfoWebsite(account);
-        }
+        final AccountInfo ai = fetchAccountInfoWebsite(account);
         return ai;
     }
 
@@ -232,11 +221,7 @@ public class ToutDebridEu extends antiDDoSForHost {
             /* Load cookies */
             br.setCookiesExclusive(true);
             this.br = prepBR(this.br);
-            if (USE_API) {
-                loginAPI(account, force);
-            } else {
-                loginWebsite(account, force);
-            }
+            loginWebsite(account, force);
         }
     }
 
@@ -304,13 +289,6 @@ public class ToutDebridEu extends antiDDoSForHost {
 
     private boolean isLoggedinHTML() {
         return br.containsHTML("/logout\"");
-    }
-
-    private void loginAPI(final Account account, final boolean force) throws Exception {
-    }
-
-    /** Keep this for possible future API implementation */
-    private void handleAPIErrors(final Browser br) throws PluginException {
     }
 
     @Override

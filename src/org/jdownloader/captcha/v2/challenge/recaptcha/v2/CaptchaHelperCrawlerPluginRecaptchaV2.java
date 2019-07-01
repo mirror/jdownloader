@@ -1,6 +1,7 @@
 package org.jdownloader.captcha.v2.challenge.recaptcha.v2;
 
 import java.util.ArrayList;
+import java.util.Map;
 
 import jd.controlling.captcha.SkipException;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -38,6 +39,7 @@ public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelper
     }
 
     public String getToken() throws PluginException, InterruptedException, DecrypterException {
+        logger.info("SiteDomain:" + getSiteDomain() + "|SiteKey:" + getSiteKey() + "|Type:" + getType() + "|V3Action:" + (getV3Action() != null));
         runDdosPrevention();
         if (Thread.currentThread() instanceof SingleDownloadController) {
             logger.severe("PluginForDecrypt.getCaptchaCode inside SingleDownloadController!?");
@@ -129,6 +131,11 @@ public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelper
             @Override
             public String getSiteUrl() {
                 return CaptchaHelperCrawlerPluginRecaptchaV2.this.getSiteUrl();
+            }
+
+            @Override
+            protected Map<String, Object> getV3Action() {
+                return CaptchaHelperCrawlerPluginRecaptchaV2.this.getV3Action();
             }
 
             @Override
