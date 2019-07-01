@@ -72,7 +72,7 @@ public class PixivNet extends PluginForDecrypt {
         boolean loggedIn = false;
         if (aa != null) {
             try {
-                jd.plugins.hoster.PixivNet.login(br, aa, false, false);
+                jd.plugins.hoster.PixivNet.login(this, br, aa, false, false);
                 loggedIn = true;
             } catch (PluginException e) {
                 handleAccountException(aa, e);

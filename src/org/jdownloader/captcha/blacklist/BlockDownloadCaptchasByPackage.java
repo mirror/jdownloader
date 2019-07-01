@@ -8,7 +8,6 @@ import jd.plugins.FilePackage;
 import org.jdownloader.captcha.v2.Challenge;
 
 public class BlockDownloadCaptchasByPackage implements SessionBlackListEntry<Object> {
-
     private final WeakReference<FilePackage> blockedPackage;
 
     public BlockDownloadCaptchasByPackage(FilePackage parentNode) {
@@ -22,7 +21,8 @@ public class BlockDownloadCaptchasByPackage implements SessionBlackListEntry<Obj
 
     @Override
     public boolean canCleanUp() {
-        return getFilePackage() == null;
+        final FilePackage filePackage = getFilePackage();
+        return filePackage == null || filePackage.getControlledBy() == null;
     }
 
     public FilePackage getFilePackage() {
@@ -52,5 +52,4 @@ public class BlockDownloadCaptchasByPackage implements SessionBlackListEntry<Obj
         }
         return false;
     }
-
 }

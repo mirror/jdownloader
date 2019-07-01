@@ -7,6 +7,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Locale;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import jd.http.Browser;
@@ -17,6 +18,7 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.remoteapi.exceptions.RemoteAPIException;
+import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
 import org.appwork.utils.Application;
 import org.appwork.utils.Hash;
@@ -60,6 +62,15 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
 
         private String stoken;
         private String type;
+        private String v3Action;
+
+        public String getV3Action() {
+            return v3Action;
+        }
+
+        public void setV3Action(String v3Action) {
+            this.v3Action = v3Action;
+        }
 
         public String getType() {
             if (type == null) {
@@ -149,6 +160,10 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
             ret.setStoken(getSecureToken());
             ret.setBoundToDomain(isBoundToDomain());
             ret.setSameOrigin(isSameOrigin());
+            final Map<String, Object> v3Action = getV3Action();
+            if (v3Action != null) {
+                ret.setV3Action(JSonStorage.toString(v3Action));
+            }
             ret.setType(getType());
             return ret;
         } else {
@@ -615,6 +630,12 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
             html = html.replace("%%%siteDomain%%%", getSiteDomain());
             html = html.replace("%%%sitekey%%%", getSiteKey());
             html = html.replace("%%%sitekeyType%%%", getType());
+            final Map<String, Object> v3Action = getV3Action();
+            if (v3Action == null) {
+                html = html.replace("%%%v3action%%%", "");
+            } else {
+                html = html.replace("%%%v3action%%%", JSonStorage.toString(v3Action));
+            }
             html = html.replace("%%%unsupportedBrowser%%%", (isSafari || isEdge) ? "block" : "none");
             if (isBoundToDomain()) {
                 html = html.replace("%%%display%%%", "none");
@@ -702,5 +723,9 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
 
     public synchronized BasicCaptchaChallenge createBasicCaptchaChallenge(final boolean showInstallDialog) {
         return basicChallenge;
+    }
+
+    protected Map<String, Object> getV3Action() {
+        return null;
     }
 }

@@ -1,5 +1,7 @@
 package org.jdownloader.captcha.v2.challenge.recaptcha.v2;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import jd.controlling.linkcrawler.CrawledLink;
@@ -34,6 +36,23 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
         return 2 * 60 * 1000;
     }
 
+    protected Map<String, Object> getV3Action() {
+        return getV3Action(br != null ? br.toString() : null);
+    }
+
+    protected Map<String, Object> getV3Action(final String source) {
+        if (source != null) {
+            final String actionJson = new Regex(source, "grecaptcha\\.execute\\([^{]*,\\s*(\\{.*?\\}\\s*)").getMatch(0);
+            final String action = new Regex(actionJson, "action(?:\"|')?\\s*:\\s*(?:\"|')(.*?)(\"|')").getMatch(0);
+            if (action != null) {
+                final Map<String, Object> ret = new HashMap<String, Object>();
+                ret.put("action", action);
+                return ret;
+            }
+        }
+        return null;
+    }
+
     protected String getSecureToken(final String source) {
         if (secureToken == null) {
             // from fallback url
@@ -51,6 +70,9 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
 
     protected TYPE getType(String source) {
         if (source != null) {
+            if (getV3Action(source) != null) {
+                return TYPE.INVISIBLE;
+            }
             final String[] divs = getDIVs(source);
             if (divs != null) {
                 for (final String div : divs) {
@@ -192,55 +214,63 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
     protected String getSiteKey(final String source) {
         if (siteKey != null) {
             return siteKey;
-        }
-        if (source == null) {
+        } else if (source == null) {
             return null;
-        }
-        {
-            // lets look for defaults
-            final String[] divs = getDIVs(source);
-            if (divs != null) {
-                for (final String div : divs) {
-                    if (new Regex(div, "class\\s*=\\s*('|\")(?:.*?\\s+)?g-recaptcha(\\1|\\s+)").matches()) {
-                        siteKey = new Regex(div, "data-sitekey\\s*=\\s*('|\")\\s*(" + apiKeyRegex + ")\\s*\\1").getMatch(1);
+        } else {
+            {
+                // lets look for defaults
+                final String[] divs = getDIVs(source);
+                if (divs != null) {
+                    for (final String div : divs) {
+                        if (new Regex(div, "class\\s*=\\s*('|\")(?:.*?\\s+)?g-recaptcha(\\1|\\s+)").matches()) {
+                            siteKey = new Regex(div, "data-sitekey\\s*=\\s*('|\")\\s*(" + apiKeyRegex + ")\\s*\\1").getMatch(1);
+                            if (siteKey != null) {
+                                return siteKey;
+                            }
+                        }
+                    }
+                }
+            }
+            {
+                // can also be within <script> (for example cloudflare)
+                final String[] scripts = new Regex(source, "<\\s*script\\s+(?:.*?<\\s*/\\s*script\\s*>|[^>]+\\s*/\\s*>)").getColumn(-1);
+                if (scripts != null) {
+                    for (final String script : scripts) {
+                        siteKey = new Regex(script, "data-sitekey=('|\")\\s*(" + apiKeyRegex + ")\\s*\\1").getMatch(1);
                         if (siteKey != null) {
                             return siteKey;
                         }
                     }
                 }
             }
-        }
-        {
-            // can also be within <script> (for example cloudflare)
-            final String[] scripts = new Regex(source, "<\\s*script\\s+(?:.*?<\\s*/\\s*script\\s*>|[^>]+\\s*/\\s*>)").getColumn(-1);
-            if (scripts != null) {
-                for (final String script : scripts) {
-                    siteKey = new Regex(script, "data-sitekey=('|\")\\s*(" + apiKeyRegex + ")\\s*\\1").getMatch(1);
-                    if (siteKey != null) {
-                        return siteKey;
+            {
+                // within iframe
+                final String[] iframes = new Regex(source, "<\\s*iframe\\s+(?:.*?<\\s*/\\s*iframe\\s*>|[^>]+\\s*/\\s*>)").getColumn(-1);
+                if (iframes != null) {
+                    for (final String iframe : iframes) {
+                        siteKey = new Regex(iframe, "google\\.com/recaptcha/api/fallback\\?k=(" + apiKeyRegex + ")").getMatch(0);
+                        if (siteKey != null) {
+                            return siteKey;
+                        }
                     }
                 }
             }
-        }
-        {
-            // within iframe
-            final String[] iframes = new Regex(source, "<\\s*iframe\\s+(?:.*?<\\s*/\\s*iframe\\s*>|[^>]+\\s*/\\s*>)").getColumn(-1);
-            if (iframes != null) {
-                for (final String iframe : iframes) {
-                    siteKey = new Regex(iframe, "google\\.com/recaptcha/api/fallback\\?k=(" + apiKeyRegex + ")").getMatch(0);
-                    if (siteKey != null) {
-                        return siteKey;
-                    }
+            {
+                // json values in script or json
+                // with container, grecaptcha.render(container,parameters), eg RecaptchaV2
+                String jsSource = new Regex(source, "recaptcha\\.render\\s*\\(.*?,\\s*\\{(.*?)\\s*\\}\\s*\\)\\s*;").getMatch(0);
+                siteKey = new Regex(jsSource, "('|\"|)sitekey\\1\\s*:\\s*('|\"|)\\s*(" + apiKeyRegex + ")\\s*\\2").getMatch(2);
+                if (siteKey != null) {
+                    return siteKey;
+                }
+                // without, grecaptcha.render(parameters), eg RecaptchaV3
+                jsSource = new Regex(source, "recaptcha\\.render\\s*\\(\\s*\\{(.*?)\\s*\\}\\s*\\)\\s*;").getMatch(0);
+                siteKey = new Regex(jsSource, "('|\"|)sitekey\\1\\s*:\\s*('|\"|)\\s*(" + apiKeyRegex + ")\\s*\\2").getMatch(2);
+                if (siteKey != null) {
+                    return siteKey;
                 }
             }
+            return siteKey;
         }
-        {
-            // json values in script or json
-            final String jssource = new Regex(source, "recaptcha\\.render\\s*\\(.*?,\\s*\\{(.*?)\\}\\);").getMatch(0);
-            if (jssource != null) {
-                siteKey = new Regex(jssource, "('|\"|)sitekey\\1\\s*:\\s*('|\"|)\\s*(" + apiKeyRegex + ")\\s*\\2").getMatch(2);
-            }
-        }
-        return siteKey;
     }
 }

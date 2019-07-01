@@ -61,7 +61,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final String[][] links = br.getRegex("\"(/track/[a-z0-9\\-]+)\" itemprop=\"url\"><span itemprop=\"name\">([^<>\"]*?)</span>.*?<meta itemprop=\"duration\"\\s*content=\"(.*?)\"").getMatches();
+        final String[][] links = br.getRegex("\"(/track/[a-z0-9\\-]+)\" itemprop=\"url\"\\s*>\\s*<span[^<]*itemprop\\s*=\\s*\"name\"\\s*>\\s*([^<>\"]*?)\\s*</span>.*?<meta\\s*itemprop\\s*=\\s*\"duration\"\\s*content=\"(.*?)\"").getMatches();
         String artist = br.getRegex("artist: \"([^<>\"]*?)\"").getMatch(0);
         String album = br.getRegex("<title>\\s*(.*?)\\s*\\|.*?</title>").getMatch(0);
         if (album == null) {

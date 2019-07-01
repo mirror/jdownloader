@@ -94,7 +94,7 @@ public class MultiupOrg extends antiDDoSForDecrypt {
         final String[] links = br.getRegex("\\s+href=\"([^\"]+)\"\\s+").getColumn(0);
         if (links == null || links.length == 0) {
             logger.info("Could not find links, please report this to JDownloader Development Team. " + parameter);
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         for (String singleLink : links) {
             if (isAbort()) {
@@ -106,16 +106,28 @@ public class MultiupOrg extends antiDDoSForDecrypt {
                 final Browser brc = br.cloneBrowser();
                 brc.setFollowRedirects(false);
                 brc.getPage(singleLink);
+                boolean retry = true;
                 while (!isAbort()) {
                     finalURL = brc.getRedirectLocation();
                     if (finalURL == null) {
                         finalURL = brc.getRegex("http-equiv\\s*=\\s*\"refresh\"\\s*content\\s*=\\s*\"[^\"]*url\\s*=\\s*(.*?)\"").getMatch(0);
                         if (finalURL != null) {
+                            if (retry && StringUtils.contains(finalURL, "multinews.me")) {
+                                // first/randomly opens sort of *show some ads* website, on retry the real destination is given
+                                retry = false;
+                                brc.getPage(singleLink);
+                                continue;
+                            }
                             if (!StringUtils.containsIgnoreCase(finalURL, "/redirect-to-host/") || finalURL.startsWith("http")) {
                                 break;
                             }
                         }
                         if (finalURL != null) {
+                            if (finalURL.matches("^.+/\\d+$")) {
+                                // seems we can skip the redirects
+                                finalURL = finalURL.substring(0, finalURL.length() - 2);
+                            }
+                            sleep(1000, param);
                             finalURL = brc.getURL(finalURL).toString();
                             brc.setRequest(null);
                             brc.setCurrentURL(null);
@@ -141,6 +153,7 @@ public class MultiupOrg extends antiDDoSForDecrypt {
                 if (filesize != null) {
                     downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
                 }
+                distribute(downloadLink);
                 decryptedLinks.add(downloadLink);
             }
         }

@@ -1,6 +1,7 @@
 package org.jdownloader.captcha.v2.challenge.recaptcha.v2;
 
 import java.util.ArrayList;
+import java.util.Map;
 
 import jd.controlling.captcha.SkipException;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
@@ -52,6 +53,11 @@ public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRec
             }
 
             @Override
+            protected Map<String, Object> getV3Action() {
+                return CaptchaHelperHostPluginRecaptchaV2.this.getV3Action();
+            }
+
+            @Override
             public String getType() {
                 final TYPE type = CaptchaHelperHostPluginRecaptchaV2.this.getType();
                 if (type != null) {
@@ -64,6 +70,7 @@ public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRec
     }
 
     public String getToken() throws PluginException, InterruptedException {
+        logger.info("SiteDomain:" + getSiteDomain() + "|SiteKey:" + getSiteKey() + "|Type:" + getType() + "|V3Action:" + (getV3Action() != null));
         runDdosPrevention();
         if (Thread.currentThread() instanceof LinkCrawlerThread) {
             logger.severe("PluginForHost.getCaptchaCode inside LinkCrawlerThread!?");
@@ -97,7 +104,7 @@ public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRec
                      */
                     challenge.setAccountLogin(true);
                 } else {
-                    final SingleDownloadController controller = link.getDownloadLinkController();
+                    final SingleDownloadController controller = link != null ? link.getDownloadLinkController() : null;
                     if (controller != null) {
                         plugin.setHasCaptcha(link, controller.getAccount(), true);
                     }
@@ -172,7 +179,9 @@ public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRec
             }
             throw new CaptchaException(e.getSkipRequest());
         } finally {
-            link.removePluginProgress(progress);
+            if (link != null) {
+                link.removePluginProgress(progress);
+            }
         }
     }
 }
