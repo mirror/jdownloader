@@ -453,21 +453,13 @@ public class ShareOnlineBiz extends antiDDoSForHost {
         setBrowserExclusive();
         final HashMap<String, String> infos = loginAPI(account, true);
         if (isFree(account)) {
-            try {
-                account.setType(AccountType.FREE);
-                account.setMaxSimultanDownloads(free_maxdownloads);
-                account.setConcurrentUsePossible(false);
-            } catch (final Throwable e) {
-                /* not available in old Stable 0.9.581 */
-            }
+            account.setType(AccountType.FREE);
+            account.setMaxSimultanDownloads(free_maxdownloads);
+            account.setConcurrentUsePossible(false);
         } else {
-            try {
-                account.setType(AccountType.PREMIUM);
-                account.setMaxSimultanDownloads(account_premium_maxdownloads);
-                account.setConcurrentUsePossible(true);
-            } catch (final Throwable e) {
-                /* not available in old Stable 0.9.581 */
-            }
+            account.setType(AccountType.PREMIUM);
+            account.setMaxSimultanDownloads(account_premium_maxdownloads);
+            account.setConcurrentUsePossible(true);
             /* evaluate expire date */
             final Long validUntil = Long.parseLong(infos.get("expire_date"));
             if (validUntil > 0) {
@@ -581,7 +573,9 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", cookies);
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.setProperty("cookies", Property.NULL);
+                }
                 throw e;
             }
         }
@@ -1074,6 +1068,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                         /* Login via site is needed for free account download. */
                         this.loginSite(account, forceLogin);
                     } catch (final PluginException e) {
+                        logger.log(e);
                         if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM && e.getValue() == PluginException.VALUE_ID_PREMIUM_DISABLE) {
                             if (br.containsHTML("This account is disabled, please contact support")) {
                                 throw e;
@@ -1107,8 +1102,10 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                 }
                 return infos;
             } catch (PluginException e) {
-                account.removeProperty("group");
-                ACCOUNTINFOS.remove(account);
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.removeProperty("group");
+                    ACCOUNTINFOS.remove(account);
+                }
                 throw e;
             }
         }
