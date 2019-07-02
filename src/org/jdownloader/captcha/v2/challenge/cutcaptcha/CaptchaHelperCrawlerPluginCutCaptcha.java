@@ -20,8 +20,6 @@ import org.jdownloader.captcha.blacklist.BlockCrawlerCaptchasByHost;
 import org.jdownloader.captcha.blacklist.BlockCrawlerCaptchasByPackage;
 import org.jdownloader.captcha.blacklist.CaptchaBlackList;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
-import org.jdownloader.captcha.v2.solver.browser.BrowserViewport;
-import org.jdownloader.captcha.v2.solver.browser.BrowserWindow;
 
 public class CaptchaHelperCrawlerPluginCutCaptcha extends AbstractCaptchaHelperCutCaptcha<PluginForDecrypt> {
     public CaptchaHelperCrawlerPluginCutCaptcha(PluginForDecrypt plugin, Browser br, String siteKey) {
@@ -29,34 +27,27 @@ public class CaptchaHelperCrawlerPluginCutCaptcha extends AbstractCaptchaHelperC
     }
 
     public String getToken() throws PluginException, InterruptedException, DecrypterException {
+        logger.info("SiteKey:" + getSiteKey());
         if (Thread.currentThread() instanceof SingleDownloadController) {
             logger.severe("PluginForDecrypt.getCaptchaCode inside SingleDownloadController!?");
         }
-        String apiKey = siteKey;
-        if (apiKey == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "CutCaptcha API Key can not be found");
-        }
-        CutCaptchaChallenge c = new CutCaptchaChallenge(apiKey, getPlugin()) {
-            @Override
-            public BrowserViewport getBrowserViewport(BrowserWindow screenResource, java.awt.Rectangle elementBounds) {
-                return null;
-            }
-        };
-        c.setTimeout(getPlugin().getChallengeTimeout(c));
+        final CutCaptchaChallenge challenge = createChallenge();
+        final PluginForDecrypt plugin = getPlugin();
+        challenge.setTimeout(plugin.getChallengeTimeout(challenge));
         getPlugin().invalidateLastChallengeResponse();
-        final BlacklistEntry<?> blackListEntry = CaptchaBlackList.getInstance().matches(c);
+        final BlacklistEntry<?> blackListEntry = CaptchaBlackList.getInstance().matches(challenge);
         if (blackListEntry != null) {
             logger.warning("Cancel. Blacklist Matching");
             throw new CaptchaException(blackListEntry);
         }
         try {
-            ChallengeResponseController.getInstance().handle(c);
-            if (!c.isSolved()) {
+            ChallengeResponseController.getInstance().handle(challenge);
+            if (!challenge.isSolved()) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            } else if (!c.isCaptchaResponseValid()) {
+            } else if (!challenge.isCaptchaResponseValid()) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             } else {
-                return c.getResult().getValue();
+                return challenge.getResult().getValue();
             }
         } catch (InterruptedException e) {
             LogSource.exception(logger, e);
@@ -65,18 +56,18 @@ public class CaptchaHelperCrawlerPluginCutCaptcha extends AbstractCaptchaHelperC
             LogSource.exception(logger, e);
             switch (e.getSkipRequest()) {
             case BLOCK_ALL_CAPTCHAS:
-                CaptchaBlackList.getInstance().add(new BlockAllCrawlerCaptchasEntry(getPlugin().getCrawler()));
+                CaptchaBlackList.getInstance().add(new BlockAllCrawlerCaptchasEntry(plugin.getCrawler()));
                 break;
             case BLOCK_HOSTER:
-                CaptchaBlackList.getInstance().add(new BlockCrawlerCaptchasByHost(getPlugin().getCrawler(), getPlugin().getHost()));
+                CaptchaBlackList.getInstance().add(new BlockCrawlerCaptchasByHost(plugin.getCrawler(), plugin.getHost()));
                 break;
             case BLOCK_PACKAGE:
-                CaptchaBlackList.getInstance().add(new BlockCrawlerCaptchasByPackage(getPlugin().getCrawler(), getPlugin().getCurrentLink()));
+                CaptchaBlackList.getInstance().add(new BlockCrawlerCaptchasByPackage(plugin.getCrawler(), plugin.getCurrentLink()));
                 break;
             case REFRESH:
                 break;
             case TIMEOUT:
-                plugin.onCaptchaTimeout(plugin.getCurrentLink(), c);
+                plugin.onCaptchaTimeout(plugin.getCurrentLink(), challenge);
                 // TIMEOUT may fallthrough to SINGLE
             case SINGLE:
                 break;
@@ -91,7 +82,7 @@ public class CaptchaHelperCrawlerPluginCutCaptcha extends AbstractCaptchaHelperC
                         logger.info("Abort global LinkCollector");
                         LinkCollector.getInstance().abort();
                     }
-                    CaptchaBlackList.getInstance().add(new BlockAllCrawlerCaptchasEntry(getPlugin().getCrawler()));
+                    CaptchaBlackList.getInstance().add(new BlockAllCrawlerCaptchasEntry(plugin.getCrawler()));
                 }
                 break;
             default:

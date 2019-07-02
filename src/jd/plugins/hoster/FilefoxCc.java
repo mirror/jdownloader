@@ -122,7 +122,7 @@ public class FilefoxCc extends XFileSharingProBasic {
         String dllink = super.getDllink(downloadLink, account, br, src);
         if (StringUtils.isEmpty(dllink)) {
             /* E.g. "https://sXX.filefox.cc/<hash>/<filename>" */
-            dllink = new Regex(correctedBR, "class=\"btn btn\\-default\" href=\"(http[^\"]+)\"").getMatch(0);
+            dllink = new Regex(correctedBR, "class\\s*=\\s*\"btn btn-default\"\\s*href\\s*=\\s*\"(https?[^\"]+)\"").getMatch(0);
         }
         return dllink;
     }
@@ -310,6 +310,12 @@ public class FilefoxCc extends XFileSharingProBasic {
         /* 2019-06-13: Special */
         checkForSpecialCaptcha();
         return super.findFormDownload1();
+    }
+
+    @Override
+    protected void getPage(String page) throws Exception {
+        super.getPage(page);
+        checkForSpecialCaptcha();
     }
 
     private void checkForSpecialCaptcha() throws Exception {

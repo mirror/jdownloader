@@ -1,7 +1,6 @@
 package org.jdownloader.captcha.v2.challenge.recaptcha.v2;
 
 import java.util.ArrayList;
-import java.util.Map;
 
 import jd.controlling.captcha.SkipException;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -124,29 +123,5 @@ public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelper
         } finally {
             c.cleanup();
         }
-    }
-
-    protected RecaptchaV2Challenge createChallenge() {
-        return new RecaptchaV2Challenge(getSiteKey(), getSecureToken(), getPlugin(), br, getSiteDomain()) {
-            @Override
-            public String getSiteUrl() {
-                return CaptchaHelperCrawlerPluginRecaptchaV2.this.getSiteUrl();
-            }
-
-            @Override
-            protected Map<String, Object> getV3Action() {
-                return CaptchaHelperCrawlerPluginRecaptchaV2.this.getV3Action();
-            }
-
-            @Override
-            public String getType() {
-                final TYPE type = CaptchaHelperCrawlerPluginRecaptchaV2.this.getType();
-                if (type != null) {
-                    return type.name();
-                } else {
-                    return TYPE.NORMAL.name();
-                }
-            }
-        };
     }
 }

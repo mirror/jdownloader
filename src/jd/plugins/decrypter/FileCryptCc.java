@@ -51,10 +51,12 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.storage.JSonStorage;
+import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
+import org.jdownloader.captcha.v2.challenge.cutcaptcha.CaptchaHelperCrawlerPluginCutCaptcha;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
@@ -232,17 +234,27 @@ public class FileCryptCc extends PluginForDecrypt {
                 }
                 submitForm(captchaForm);
             } else if (StringUtils.containsIgnoreCase(captcha, "cutcaptcha")) {
-                // final String cutcaptcha = new CaptchaHelperCrawlerPluginCutCaptcha(this, br, "SAs61IAI").getToken();
-                // captchaForm.put("cap_token", cutcaptcha);
-                // submitForm(captchaForm);
-                logger.info("cutcaptcha captcha is not yet supported:retry left:" + cutCaptcha);
-                if (cutCaptcha-- == 0 || true && getPluginConfig().getBooleanProperty(NEXT_RETRY, false) == false) {
-                    // fallback to rc2 no longer working
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                if (!Application.isHeadless()) {
+                    final String cutcaptcha = new CaptchaHelperCrawlerPluginCutCaptcha(this, br, "SAs61IAI").getToken();
+                    if (StringUtils.isEmpty(cutcaptcha)) {
+                        if (counter + 1 < retry) {
+                            continue;
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        }
+                    }
+                    captchaForm.put("cap_token", cutcaptcha);
+                    submitForm(captchaForm);
                 } else {
-                    counter--;
-                    br.getPage(br.getURL());
-                    sleep(1000, param);
+                    logger.info("cutcaptcha captcha is not yet supported:retry left:" + cutCaptcha);
+                    if (cutCaptcha-- == 0 || true && getPluginConfig().getBooleanProperty(NEXT_RETRY, false) == false) {
+                        // fallback to rc2 no longer working
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    } else {
+                        counter--;
+                        br.getPage(br.getURL());
+                        sleep(1000, param);
+                    }
                 }
             } else if (captcha != null) {
                 final String code = getCaptchaCode(captcha, param);
@@ -320,7 +332,7 @@ public class FileCryptCc extends PluginForDecrypt {
                 return decryptedLinks;
             }
             logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.setFollowRedirects(false);
         br.setCookie(this.getHost(), "BetterJsPopCount", "1");
