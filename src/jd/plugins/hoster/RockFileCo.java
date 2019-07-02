@@ -26,6 +26,12 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -49,12 +55,6 @@ import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rockfile.co" }, urls = { "https?://(www\\.)?rockfile\\.(?:co|eu)/(?:embed\\-)?[a-z0-9]{12}\\.html" })
 public class RockFileCo extends antiDDoSForHost {
@@ -406,7 +406,7 @@ public class RockFileCo extends antiDDoSForHost {
                         }
                     }
                     /* Captcha START */
-                    if (correctedBR.contains("capCode") && !correctedBR.contains("/recaptcha/api/") && !correctedBR.contains("/captchas/")) {
+                    if (correctedBR.contains("captcha_code") && !correctedBR.contains("/recaptcha/api/") && !correctedBR.contains("/captchas/")) {
                         logger.info("Detected captcha method \"plaintext captchas\" for this host");
                         /* Captcha method by ManiacMansion */
                         final String[][] letters = new Regex(br, "position:absolute;padding\\-left:(\\d+)px;padding\\-top:\\d+px;\\'>(&#\\d+;)</span>").getMatches();
