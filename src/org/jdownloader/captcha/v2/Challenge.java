@@ -2,7 +2,6 @@ package org.jdownloader.captcha.v2;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.HashMap;
 
 import jd.controlling.accountchecker.AccountCheckerThread;
 import jd.controlling.captcha.SkipRequest;
@@ -23,7 +22,6 @@ import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.controlling.UniqueAlltimeID;
 
 public abstract class Challenge<T> {
-    private static final int      REDUCER      = 100;
     private final UniqueAlltimeID id           = new UniqueAlltimeID();
     private final Class<T>        resultType;
     private final long            created      = System.currentTimeMillis();
@@ -282,8 +280,9 @@ public abstract class Challenge<T> {
     public T getRefreshTrigger() {
         if (getResultType() == String.class) {
             return (T) "";
+        } else {
+            return null;
         }
-        return null;
     }
 
     public AbstractResponse<T> parseAPIAnswer(String result, String resultFormat, ChallengeSolver<?> solver) {
@@ -318,39 +317,24 @@ public abstract class Challenge<T> {
     public void onHandled() {
     }
 
-    public void sendStatsError(ChallengeSolver solver, Throwable e) {
+    public void sendStatsError(ChallengeSolver<?> solver, Throwable e) {
         if (e == null || e instanceof InterruptedException) {
             return;
+        } else if (solver == null || !(solver instanceof CESChallengeSolver)) {
+            return;
         }
+    }
+
+    public void sendStatsSolving(ChallengeSolver<?> solver) {
         if (solver == null || !(solver instanceof CESChallengeSolver)) {
             return;
         }
     }
 
-    public void sendStatsSolving(ChallengeSolver solver) {
+    public void sendStatsValidation(ChallengeSolver<?> solver, String status) {
         if (solver == null || !(solver instanceof CESChallengeSolver)) {
             return;
         }
-    }
-
-    public void sendStatsValidation(ChallengeSolver solver, String status) {
-        if (solver == null || !(solver instanceof CESChallengeSolver)) {
-            return;
-        }
-    }
-
-    private HashMap<String, String> createStatsInfoMap(ChallengeSolver solver) {
-        HashMap<String, String> info;
-        info = new HashMap<String, String>();
-        info.put("service", solver.getService().getID());
-        info.put("solver", solver.getClass().getSimpleName());
-        info.put("type", getTypeID());
-        try {
-            info.put("host", getHost());
-        } catch (Throwable e) {
-            info.put("host", "unknown");
-        }
-        return info;
     }
 
     // is called in a 1000ms interval while solvers are active. can be used to check for external success (like oauth

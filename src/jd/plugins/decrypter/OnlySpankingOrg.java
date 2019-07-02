@@ -16,12 +16,14 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 40753 $", interfaceVersion = 3, names = { "onlyspanking.org" }, urls = { "https?://onlyspanking.org/\\d+-[a-zA-Z0-9\\-]+\\.html" })
+@DecrypterPlugin(revision = "$Revision: 40753 $", interfaceVersion = 3, names = { "onlyspanking.org" }, urls = { "https?://(\\w+\\.)?onlyspanking.org/\\d+-[a-zA-Z0-9\\-_]+\\.html" })
 public class OnlySpankingOrg extends antiDDoSForDecrypt {
+    // finallink will usually be an ubiqfile.com URL
     public OnlySpankingOrg(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -63,8 +65,8 @@ public class OnlySpankingOrg extends antiDDoSForDecrypt {
             submitForm(brc, form);
         }
         String finallink = null;
-        final String video = brc.getRegex("(https?://onlyspanking\\.org/video/[a-zA-Z0-9]+)").getMatch(0);
-        if (video == null) {
+        final String redirect = brc.getRegex("(https?://(\\w+\\.)?onlyspanking\\.org/(video|file)/[a-zA-Z0-9]+)").getMatch(0);
+        if (redirect == null) {
             if (brc.containsHTML("To access the exclusive category you need to purchase")) {
                 /*
                  * Special case: Users who own a premium account of a specified OCH can auth themselves as premium here to get the
@@ -92,25 +94,30 @@ public class OnlySpankingOrg extends antiDDoSForDecrypt {
                 /* Important!! */
                 brc = br.cloneBrowser();
                 this.submitForm(brc, premiumForm);
-                /* 2019-06-27: Finallink will usually be an ubiqfile.com URL */
-                finallink = brc.getRegex("href=\"(http[^\"]+)\"[^<>\"]*?target=\"_blank\" rel=\"external noopener\"").getMatch(0);
+                finallink = brc.getRegex("href=\"(https?[^\"]+)\"[^<>\"]*?target=\"_blank\" rel=\"external noopener\"").getMatch(0);
                 if (finallink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                ret.add(createDownloadlink(finallink));
-                return ret;
             } else {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
         }
-        brc = br.cloneBrowser();
-        brc.setFollowRedirects(false);
-        getPage(brc, video);
-        finallink = brc.getRedirectLocation();
+        if (finallink == null) {
+            brc = br.cloneBrowser();
+            brc.setFollowRedirects(false);
+            getPage(brc, redirect);
+            finallink = brc.getRedirectLocation();
+        }
         if (finallink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            ret.add(createDownloadlink(finallink));
+            return ret;
         }
-        ret.add(createDownloadlink(finallink));
-        return ret;
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.AntiBotCMS;
     }
 }

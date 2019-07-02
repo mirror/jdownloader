@@ -1,7 +1,6 @@
 package org.jdownloader.captcha.v2.challenge.recaptcha.v2;
 
 import java.util.ArrayList;
-import java.util.Map;
 
 import jd.controlling.captcha.SkipException;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
@@ -43,30 +42,6 @@ public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRec
 
     public CaptchaHelperHostPluginRecaptchaV2(final PluginForHost plugin, final Browser br) {
         this(plugin, br, null);
-    }
-
-    protected RecaptchaV2Challenge createChallenge() {
-        return new RecaptchaV2Challenge(getSiteKey(), getSecureToken(), getPlugin(), br, getSiteDomain()) {
-            @Override
-            public String getSiteUrl() {
-                return CaptchaHelperHostPluginRecaptchaV2.this.getSiteUrl();
-            }
-
-            @Override
-            protected Map<String, Object> getV3Action() {
-                return CaptchaHelperHostPluginRecaptchaV2.this.getV3Action();
-            }
-
-            @Override
-            public String getType() {
-                final TYPE type = CaptchaHelperHostPluginRecaptchaV2.this.getType();
-                if (type != null) {
-                    return type.name();
-                } else {
-                    return TYPE.NORMAL.name();
-                }
-            }
-        };
     }
 
     public String getToken() throws PluginException, InterruptedException {

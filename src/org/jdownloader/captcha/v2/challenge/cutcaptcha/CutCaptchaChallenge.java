@@ -21,7 +21,7 @@ import org.jdownloader.captcha.v2.solver.browser.AbstractBrowserChallenge;
 import org.jdownloader.captcha.v2.solver.browser.BrowserReference;
 
 public abstract class CutCaptchaChallenge extends AbstractBrowserChallenge {
-    private String siteKey;
+    private final String siteKey;
 
     public String getSiteKey() {
         return siteKey;
@@ -29,9 +29,11 @@ public abstract class CutCaptchaChallenge extends AbstractBrowserChallenge {
 
     public CutCaptchaChallenge(String siteKey, Plugin pluginForHost) {
         super("cutcaptcha", pluginForHost);
-        this.siteKey = siteKey;
-        if (siteKey == null || !siteKey.matches("^[\\w-]{5,}$")) {// default: SAs61IAI
-            throw new WTFException("Bad SiteKey");
+        if (siteKey == null || !siteKey.matches("^[\\w-]{5,}$")) {
+            // default: SAs61IAI
+            throw new WTFException("Bad SiteKey:" + siteKey);
+        } else {
+            this.siteKey = siteKey;
         }
     }
 
@@ -66,24 +68,21 @@ public abstract class CutCaptchaChallenge extends AbstractBrowserChallenge {
         }
     }
 
-    @Override
-    public boolean validateResponse(AbstractResponse<String> response) {
-        return super.validateResponse(response) && isCaptchaResponseValid();
-    }
-
-    /**
-     * Used to validate result against expected pattern. <br />
-     * This is different to AbstractBrowserChallenge.isSolved, as we don't want to throw the same error exception.
-     *
-     * @param result
-     * @return
-     * @author raztoki
-     */
     protected final boolean isCaptchaResponseValid() {
-        if (isSolved() && getResult().getValue().matches("[\\w-]{10,}")) {
+        final String v = getResult().getValue();
+        if (isSolved() && isValidToken(v)) {
             return true;
         } else {
             return false;
         }
+    }
+
+    public static boolean isValidToken(String v) {
+        return v != null && v.matches("[\\w-]{10,}");
+    }
+
+    @Override
+    public boolean validateResponse(AbstractResponse<String> response) {
+        return super.validateResponse(response) && isValidToken(response.getValue());
     }
 }

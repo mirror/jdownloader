@@ -2760,29 +2760,25 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     }
                     if (StringUtils.isEmpty(dllink)) {
                         final Form dlForm = findFormF1Premium();
-                        if (dlForm != null && isPasswordProtectedHTM()) {
-                            handlePassword(dlForm, link);
-                        }
-                        final URLConnectionAdapter formCon = br.openFormConnection(dlForm);
-                        if (!formCon.getContentType().contains("html")) {
-                            /* Very rare case - e.g. tiny-files.com */
-                            handleDownload(link, account, dllink, formCon.getRequest());
-                            return;
-                        } else {
-                            br.followConnection();
-                            this.correctBR();
-                            try {
-                                formCon.disconnect();
-                            } catch (final Throwable e) {
+                        if (dlForm != null) {
+                            if (isPasswordProtectedHTM()) {
+                                handlePassword(dlForm, link);
                             }
-                        }
-                        checkErrors(link, account, true);
-                        if (dlForm == null) {
+                            final URLConnectionAdapter formCon = br.openFormConnection(dlForm);
+                            if (formCon.isOK() && !formCon.getContentType().contains("html")) {
+                                /* Very rare case - e.g. tiny-files.com */
+                                handleDownload(link, account, dllink, formCon.getRequest());
+                                return;
+                            } else {
+                                br.followConnection();
+                                this.correctBR();
+                            }
+                            checkErrors(link, account, true);
+                            dllink = getDllink(link, account);
+                        } else {
+                            checkErrors(link, account, true);
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
-                        submitForm(dlForm);
-                        checkErrors(link, account, true);
-                        dllink = getDllink(link, account);
                     }
                 }
             }

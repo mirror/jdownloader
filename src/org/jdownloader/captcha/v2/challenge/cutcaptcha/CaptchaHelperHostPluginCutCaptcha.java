@@ -1,7 +1,5 @@
 package org.jdownloader.captcha.v2.challenge.cutcaptcha;
 
-import java.awt.Rectangle;
-
 import jd.controlling.captcha.SkipException;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -22,8 +20,6 @@ import org.jdownloader.captcha.blacklist.BlockDownloadCaptchasByLink;
 import org.jdownloader.captcha.blacklist.BlockDownloadCaptchasByPackage;
 import org.jdownloader.captcha.blacklist.CaptchaBlackList;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
-import org.jdownloader.captcha.v2.solver.browser.BrowserViewport;
-import org.jdownloader.captcha.v2.solver.browser.BrowserWindow;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.translate._GUI;
@@ -41,39 +37,33 @@ public class CaptchaHelperHostPluginCutCaptcha extends AbstractCaptchaHelperCutC
     }
 
     public String getToken() throws PluginException, InterruptedException {
+        logger.info("SiteKey:" + getSiteKey());
         if (Thread.currentThread() instanceof LinkCrawlerThread) {
             logger.severe("PluginForHost.getCaptchaCode inside LinkCrawlerThread!?");
         }
-        String apiKey = siteKey;
-        if (apiKey == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "CutCaptcha API Key can not be found");
-        }
+        final CutCaptchaChallenge challenge = createChallenge();
         final PluginForHost plugin = getPlugin();
-        final DownloadLink link = getPlugin().getDownloadLink();
+        final DownloadLink link = plugin.getDownloadLink();
         final CaptchaStepProgress progress = new CaptchaStepProgress(0, 1, null);
         progress.setProgressSource(this);
         progress.setDisplayInProgressColumnEnabled(false);
         try {
-            link.addPluginProgress(progress);
-            final CutCaptchaChallenge challenge = new CutCaptchaChallenge(apiKey, getPlugin()) {
-                @Override
-                public BrowserViewport getBrowserViewport(BrowserWindow screenResource, Rectangle elementBounds) {
-                    return null;
-                }
-            };
-            challenge.setTimeout(getPlugin().getChallengeTimeout(challenge));
+            if (link != null) {
+                link.addPluginProgress(progress);
+            }
+            challenge.setTimeout(plugin.getChallengeTimeout(challenge));
             if (plugin.isAccountLoginCaptchaChallenge(link, challenge)) {
                 /**
                  * account login -> do not use antiCaptcha services
                  */
                 challenge.setAccountLogin(true);
             } else {
-                final SingleDownloadController controller = link.getDownloadLinkController();
+                final SingleDownloadController controller = link != null ? link.getDownloadLinkController() : null;
                 if (controller != null) {
-                    getPlugin().setHasCaptcha(link, controller.getAccount(), true);
+                    plugin.setHasCaptcha(link, controller.getAccount(), true);
                 }
             }
-            getPlugin().invalidateLastChallengeResponse();
+            plugin.invalidateLastChallengeResponse();
             final BlacklistEntry<?> blackListEntry = CaptchaBlackList.getInstance().matches(challenge);
             if (blackListEntry != null) {
                 logger.warning("Cancel. Blacklist Matching");
@@ -114,7 +104,7 @@ public class CaptchaHelperHostPluginCutCaptcha extends AbstractCaptchaHelperCutC
                     }
                     break;
                 case TIMEOUT:
-                    getPlugin().onCaptchaTimeout(link, e.getChallenge());
+                    plugin.onCaptchaTimeout(link, e.getChallenge());
                     // TIMEOUT may fallthrough to SINGLE
                 case SINGLE:
                     CaptchaBlackList.getInstance().add(new BlockDownloadCaptchasByLink(link));
@@ -133,7 +123,9 @@ public class CaptchaHelperHostPluginCutCaptcha extends AbstractCaptchaHelperCutC
             }
             throw new CaptchaException(e.getSkipRequest());
         } finally {
-            link.removePluginProgress(progress);
+            if (link != null) {
+                link.removePluginProgress(progress);
+            }
         }
     }
 }

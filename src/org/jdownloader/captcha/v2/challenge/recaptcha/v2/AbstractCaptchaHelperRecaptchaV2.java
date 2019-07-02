@@ -273,4 +273,28 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
             return siteKey;
         }
     }
+
+    protected RecaptchaV2Challenge createChallenge() {
+        return new RecaptchaV2Challenge(getSiteKey(), getSecureToken(), getPlugin(), br, getSiteDomain()) {
+            @Override
+            public String getSiteUrl() {
+                return AbstractCaptchaHelperRecaptchaV2.this.getSiteUrl();
+            }
+
+            @Override
+            protected Map<String, Object> getV3Action() {
+                return AbstractCaptchaHelperRecaptchaV2.this.getV3Action();
+            }
+
+            @Override
+            public String getType() {
+                final TYPE type = AbstractCaptchaHelperRecaptchaV2.this.getType();
+                if (type != null) {
+                    return type.name();
+                } else {
+                    return TYPE.NORMAL.name();
+                }
+            }
+        };
+    }
 }
