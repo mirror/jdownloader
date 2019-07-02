@@ -51,13 +51,13 @@ public class CaptchaHelperCrawlerPluginCutCaptcha extends AbstractCaptchaHelperC
         }
         try {
             ChallengeResponseController.getInstance().handle(c);
-            // if (!c.isSolved()) {
-            // throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            // } else if (!c.isCaptchaResponseValid()) {
-            // throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            // } else {
-            return c.getResult().getValue();
-            // }
+            if (!c.isSolved()) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            } else if (!c.isCaptchaResponseValid()) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            } else {
+                return c.getResult().getValue();
+            }
         } catch (InterruptedException e) {
             LogSource.exception(logger, e);
             throw e;
