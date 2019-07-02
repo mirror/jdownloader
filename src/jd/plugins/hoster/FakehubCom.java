@@ -15,10 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.File;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -38,6 +34,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fakehub.com" }, urls = { "https?://ma\\.fakehub\\.com/download/\\d+/[A-Za-z0-9\\-_]+/|http://fakehubdecrypted.+" })
 public class FakehubCom extends PluginForHost {
@@ -154,10 +152,8 @@ public class FakehubCom extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    private static Object LOCK = new Object();
-
     public void login(Browser br, final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
                 prepBR(br);
@@ -178,14 +174,19 @@ public class FakehubCom extends PluginForHost {
                 }
                 br.getPage(jd.plugins.decrypter.FakehubCom.getProtocol() + jd.plugins.decrypter.FakehubCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/access/login/");
                 String postdata = "rememberme=on&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
-                if (br.containsHTML("api\\.recaptcha\\.net|google\\.com/recaptcha/api/")) {
-                    final Recaptcha rc = new Recaptcha(br, this);
-                    rc.findID();
-                    rc.load();
-                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final DownloadLink dummyLink = new DownloadLink(this, "Account", account.getHoster(), jd.plugins.decrypter.FakehubCom.getProtocol() + jd.plugins.decrypter.FakehubCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/", true);
-                    final String code = getCaptchaCode("recaptcha", cf, dummyLink);
-                    postdata += "&recaptcha_challenge_field=" + Encoding.urlEncode(rc.getChallenge()) + "&recaptcha_response_field=" + Encoding.urlEncode(code);
+                if (br.containsHTML("api\\.recaptcha\\.net|google\\.com/recaptcha/api")) {
+                    final DownloadLink dlinkbefore = getDownloadLink();
+                    try {
+                        if (dlinkbefore == null) {
+                            setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "http://" + account.getHoster(), true));
+                        }
+                        final CaptchaHelperHostPluginRecaptchaV2 captcha = new CaptchaHelperHostPluginRecaptchaV2(this, br);
+                        postdata += "&g_recaptcha_response=" + Encoding.urlEncode(captcha.getToken());
+                    } finally {
+                        if (dlinkbefore != null) {
+                            setDownloadLink(dlinkbefore);
+                        }
+                    }
                 }
                 br.postPage(jd.plugins.decrypter.FakehubCom.getProtocol() + jd.plugins.decrypter.FakehubCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/access/submit/", postdata);
                 final Form continueform = br.getFormbyKey("response");
@@ -202,7 +203,9 @@ public class FakehubCom extends PluginForHost {
                 }
                 account.saveCookies(br.getCookies(account.getHoster()), "");
             } catch (final PluginException e) {
-                account.clearCookies("");
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
@@ -211,12 +214,7 @@ public class FakehubCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(this.br, account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(this.br, account, true);
         try {
             /* 2018-03-09: Expiredate might not always be available */
             br.getPage("/member/profile/");
