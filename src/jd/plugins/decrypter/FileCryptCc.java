@@ -232,6 +232,9 @@ public class FileCryptCc extends PluginForDecrypt {
                 }
                 submitForm(captchaForm);
             } else if (StringUtils.containsIgnoreCase(captcha, "cutcaptcha")) {
+                // final String cutcaptcha = new CaptchaHelperCrawlerPluginCutCaptcha(this, br, "SAs61IAI").getToken();
+                // captchaForm.put("cap_token", cutcaptcha);
+                // submitForm(captchaForm);
                 logger.info("cutcaptcha captcha is not yet supported:retry left:" + cutCaptcha);
                 if (cutCaptcha-- == 0 || true && getPluginConfig().getBooleanProperty(NEXT_RETRY, false) == false) {
                     // fallback to rc2 no longer working
