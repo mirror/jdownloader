@@ -13,11 +13,12 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.Set;
+
+import org.jdownloader.controlling.PasswordUtils;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -29,21 +30,19 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-import org.jdownloader.controlling.PasswordUtils;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ld.rtify.com" }, urls = { "http://(www\\.)?ld\\.rtify\\.com/\\d+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ld.rtify.com" }, urls = { "http://(www\\.)?ld\\.rtify\\.com/\\d+" })
 public class LdRtifyCom extends PluginForDecrypt {
-
     public LdRtifyCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    /* DEV NOTES */
+    // Tags: pastebin
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(false);
         br.getPage(parameter);
-
         String plaintxt = null;
         if (br.containsHTML("Enter the password")) {
             for (int i = 0; i <= 3; i++) {
@@ -62,12 +61,10 @@ public class LdRtifyCom extends PluginForDecrypt {
                 throw new DecrypterException(DecrypterException.PASSWORD);
             }
         }
-
         plaintxt = br.getRegex("<pre.*?>(.*?)</pre>").getMatch(0);
         if (plaintxt == null) {
             return decryptedLinks;
         }
-
         // Find all those links
         String[] links = HTMLParser.getHttpLinks(plaintxt, "");
         if (links == null || links.length == 0) {
@@ -75,7 +72,6 @@ public class LdRtifyCom extends PluginForDecrypt {
         }
         final Set<String> pws = PasswordUtils.getPasswords(plaintxt);
         logger.info("Found " + links.length + " links in total.");
-
         DownloadLink dl;
         for (String elem : links) {
             if (elem.contains("ld.rtify.com")) {
@@ -86,13 +82,6 @@ public class LdRtifyCom extends PluginForDecrypt {
                 dl.setSourcePluginPasswordList(new ArrayList<String>(pws));
             }
         }
-
         return decryptedLinks;
     }
-
-    /* NO OVERRIDE!! */
-    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
-        return false;
-    }
-
 }

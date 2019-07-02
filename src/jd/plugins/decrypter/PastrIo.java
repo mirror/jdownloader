@@ -33,6 +33,8 @@ public class PastrIo extends PluginForDecrypt {
         super(wrapper);
     }
 
+    /* DEV NOTES */
+    // Tags: pastebin
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
@@ -60,10 +62,5 @@ public class PastrIo extends PluginForDecrypt {
         }
         logger.info("Added " + decryptedLinks.size() + " URLs in total");
         return decryptedLinks;
-    }
-
-    /* NO OVERRIDE!! */
-    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
-        return false;
     }
 }
