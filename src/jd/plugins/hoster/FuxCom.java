@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -72,7 +73,7 @@ public class FuxCom extends PluginForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        String linkid = new Regex(link.getPluginPatternMatcher(), "/(?:videos|embed)/(\\d+)").getMatch(0);
+        String linkid = new Regex(link.getPluginPatternMatcher(), "/(?:videos?|embed)/(\\d+)").getMatch(0);
         if (linkid == null) {
             /* E.g. porntube.com & pornerbros.com OLD embed linkformat */
             linkid = new Regex(link.getPluginPatternMatcher(), "https?://embed\\.[^/]+/(\\d+)").getMatch(0);
@@ -97,11 +98,12 @@ public class FuxCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         dllink = null;
+        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getHeaders().put("Accept-Language", "en-AU,en;q=0.8");
         br.getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().matches(".+/videos?\\?error=\\d+")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().matches(".+/videos?\\?error=\\d+") || !br.getURL().contains(this.getLinkID(link))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /*

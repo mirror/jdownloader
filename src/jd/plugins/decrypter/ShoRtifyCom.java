@@ -13,11 +13,12 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.Set;
+
+import org.jdownloader.controlling.PasswordUtils;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -30,21 +31,19 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-import org.jdownloader.controlling.PasswordUtils;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sho.rtify.com" }, urls = { "http://(www\\.)?sho\\.rtify\\.com/\\d+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sho.rtify.com" }, urls = { "http://(www\\.)?sho\\.rtify\\.com/\\d+" })
 public class ShoRtifyCom extends PluginForDecrypt {
-
     public ShoRtifyCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    /* DEV NOTES */
+    // Tags: pastebin
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(false);
         br.getPage(parameter);
-
         String plaintxt = null;
         if (br.containsHTML("<label class=\"passProtected\" for=\"thePass\">")) {
             Browser br2 = null;
@@ -68,12 +67,10 @@ public class ShoRtifyCom extends PluginForDecrypt {
         } else {
             plaintxt = br.getRegex("<textarea.*?>(.*?)</textarea>").getMatch(0);
         }
-
         if (plaintxt == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-
         // Find all those links
         final String[] links = HTMLParser.getHttpLinks(plaintxt, "");
         if (links == null || links.length == 0) {
@@ -82,7 +79,6 @@ public class ShoRtifyCom extends PluginForDecrypt {
         }
         final Set<String> pws = PasswordUtils.getPasswords(plaintxt);
         logger.info("Found " + links.length + " links in total.");
-
         DownloadLink dl;
         for (String elem : links) {
             if (elem.contains("sho.rtify.com")) {
@@ -93,13 +89,6 @@ public class ShoRtifyCom extends PluginForDecrypt {
                 dl.setSourcePluginPasswordList(new ArrayList<String>(pws));
             }
         }
-
         return decryptedLinks;
     }
-
-    /* NO OVERRIDE!! */
-    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
-        return false;
-    }
-
 }

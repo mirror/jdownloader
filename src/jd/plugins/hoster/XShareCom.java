@@ -17,9 +17,10 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
@@ -35,7 +36,8 @@ public class XShareCom extends PluginForHost {
         super(wrapper);
     }
 
-    private String dllink = null;
+    private String  dllink        = null;
+    private boolean server_issues = false;
 
     @Override
     public String getAGBLink() {
@@ -44,16 +46,14 @@ public class XShareCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        dllink = null;
+        server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         this.br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:37.0) Gecko/20100101 Firefox/37.0");
-        try {
-            br.getPage(downloadLink.getDownloadURL());
-        } catch (final BrowserException e) {
-            return AvailableStatus.UNCHECKABLE;
-        }
-        if (br.containsHTML(">404 - Page not found<") || this.br.getHttpConnection().getResponseCode() == 404) {
+        br.getPage(link.getDownloadURL());
+        if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">404 - Page not found<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>([^<>\"]*?)\\- xshare\\.com</title>").getMatch(0);
@@ -84,38 +84,44 @@ public class XShareCom extends PluginForHost {
             br.getPage("https://xshare.com/playlist_flow_player_flv.php?vid=" + videoid);
             dllink = br.getRegex("url=\"([^<>\"]*?)\" type=\"video/").getMatch(0);
         }
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dllink = Encoding.htmlDecode(dllink);
         filename = filename.trim();
-        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
-        final Browser br2 = new Browser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            br2.getHeaders().put("Accept-Encoding", "identity");
-            br2.getHeaders().put("Referer", "http://xshare.com/swf/flowplayer.commercial.flash9-3.2.15.swf");
-            con = br2.openHeadConnection(dllink);
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            return AvailableStatus.TRUE;
-        } finally {
+        if (dllink != null) {
+            dllink = Encoding.htmlDecode(dllink);
+            final String ext = getFileNameExtensionFromString(dllink, ".mp4");
+            link.setFinalFileName(Encoding.htmlDecode(filename) + ext);
+            final Browser br2 = new Browser();
+            // In case the link redirects to the finallink
+            br2.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (Throwable e) {
+                br2.getHeaders().put("Accept-Encoding", "identity");
+                br2.getHeaders().put("Referer", "http://xshare.com/swf/flowplayer.commercial.flash9-3.2.15.swf");
+                con = br2.openHeadConnection(dllink);
+                if (!con.getContentType().contains("html")) {
+                    link.setDownloadSize(con.getLongContentLength());
+                } else {
+                    server_issues = true;
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
             }
+        } else {
+            link.setName(filename + ".mp4");
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (server_issues) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+        } else if (StringUtils.isEmpty(dllink)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

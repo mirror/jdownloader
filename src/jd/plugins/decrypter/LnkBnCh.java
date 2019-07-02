@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -33,13 +32,14 @@ import jd.plugins.DownloadLink;
  *
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linkbun.ch" }, urls = { "https?://(?:www\\.)?linkbun\\.ch/(?-i)[a-z0-9]{4,5}" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linkbun.ch" }, urls = { "https?://(?:www\\.)?linkbun\\.ch/(?-i)[a-z0-9]{4,5}" })
 public class LnkBnCh extends antiDDoSForDecrypt {
-
     public LnkBnCh(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    /* DEV NOTES */
+    // Tags: pastebin
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
@@ -69,10 +69,4 @@ public class LnkBnCh extends antiDDoSForDecrypt {
         }
         return decryptedLinks;
     }
-
-    /* NO OVERRIDE!! */
-    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
-        return false;
-    }
-
 }

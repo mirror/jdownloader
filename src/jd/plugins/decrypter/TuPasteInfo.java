@@ -13,11 +13,12 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.Set;
+
+import org.jdownloader.controlling.PasswordUtils;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -35,20 +36,19 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-import org.jdownloader.controlling.PasswordUtils;
-
 /**
  *
  * @version raz_Template-pastebin-201508200000
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tupaste.info" }, urls = { "https?://(?:www\\.)?tupaste\\.info/(\\d+)/" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tupaste.info" }, urls = { "https?://(?:www\\.)?tupaste\\.info/(\\d+)/" })
 public class TuPasteInfo extends PluginForDecrypt {
-
     public TuPasteInfo(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    /* DEV NOTES */
+    // Tags: pastebin
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         br = new Browser();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -110,10 +110,4 @@ public class TuPasteInfo extends PluginForDecrypt {
         }
         return decryptedLinks;
     }
-
-    /* NO OVERRIDE!! */
-    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
-        return false;
-    }
-
 }

@@ -13,11 +13,12 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.Set;
+
+import org.jdownloader.controlling.PasswordUtils;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -27,20 +28,19 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-import org.jdownloader.controlling.PasswordUtils;
-
 /**
  *
  * @version raz_Template-pastebin-201503051556
  * @author raztoki
- * */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pastebyte.com" }, urls = { "https?://(?:www\\.)?pastebyte\\.com/pastes/(?-i)[A-Z0-9]{8}" }) 
+ */
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pastebyte.com" }, urls = { "https?://(?:www\\.)?pastebyte\\.com/pastes/(?-i)[A-Z0-9]{8}" })
 public class PasteByteCom extends PluginForDecrypt {
-
     public PasteByteCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    /* DEV NOTES */
+    // Tags: pastebin
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -74,10 +74,4 @@ public class PasteByteCom extends PluginForDecrypt {
         }
         return decryptedLinks;
     }
-
-    /* NO OVERRIDE!! */
-    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
-        return false;
-    }
-
 }
