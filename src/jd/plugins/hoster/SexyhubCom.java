@@ -159,10 +159,8 @@ public class SexyhubCom extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    private static Object LOCK = new Object();
-
     public void login(Browser br, final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
                 prepBR(br);
@@ -192,13 +190,18 @@ public class SexyhubCom extends PluginForHost {
                 submit.put("password", Encoding.urlEncode(account.getPass()));
                 submit.put("rememberme", "on");
                 if (br.containsHTML("google\\.com/recaptcha/api")) {
-                    final DownloadLink dummyLink = new DownloadLink(this, "Account", account.getHoster(), "https://ma." + account.getHoster() + "/", true);
-                    final DownloadLink old = this.getDownloadLink();
-                    if (old == null) {
-                        this.setDownloadLink(dummyLink);
+                    final DownloadLink dlinkbefore = getDownloadLink();
+                    try {
+                        if (dlinkbefore == null) {
+                            setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "http://" + account.getHoster(), true));
+                        }
+                        final CaptchaHelperHostPluginRecaptchaV2 captcha = new CaptchaHelperHostPluginRecaptchaV2(this, br);
+                        submit.put("g-recaptcha-response", Encoding.urlEncode(captcha.getToken()));
+                    } finally {
+                        if (dlinkbefore != null) {
+                            setDownloadLink(dlinkbefore);
+                        }
                     }
-                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                    submit.put("recaptcha_response_field", Encoding.urlEncode(recaptchaV2Response));
                 }
                 br.submitForm(submit);
                 final Form continueform = br.getFormbyKey("response");
