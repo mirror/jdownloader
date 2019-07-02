@@ -15,8 +15,6 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -29,12 +27,15 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "libgen.pw" }, urls = { "https?://(?:www\\.)?libgen\\.(?:net|me|pw)/view\\.php\\?id=\\d+|https?://(?:www\\.)?libgen\\.(?:in|io)/(?:[^/]+/)?(?:get|ads)\\.php\\?md5=[A-Za-z0-9]{32}(?:\\&key=[A-Z0-9]+)?|https?://(?:www\\.)?libgen\\.(?:net|io|me|pw)/covers/\\d+/[^<>\"']*?\\.(?:jpg|jpeg|png|gif)|https?://[a-z0-9\\-]+\\.libgen\\.pw/download/book/[a-f0-9]+" })
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "libgen.pw" }, urls = { "https?://(?:www\\.)?libgen\\.(?:net|me|pw)/view\\.php\\?id=\\d+|https?://(?:www\\.)?(booksdescr\\.org|libgen\\.in|libgen\\.in)/(?:[^/]+/)?(?:get|ads)\\.php\\?md5=[A-Za-z0-9]{32}(?:\\&key=[A-Z0-9]+)?|https?://(?:www\\.)?libgen\\.(?:net|io|me|pw)/covers/\\d+/[^<>\"']*?\\.(?:jpg|jpeg|png|gif)|https?://[a-z0-9\\-]+\\.libgen\\.pw/download/book/[a-f0-9]+" })
 public class LibGenInfo extends PluginForHost {
     @Override
     public String[] siteSupportedNames() {
         // libgen.info no dns
-        return new String[] { "libgen.pw", "libgen.me", "libgen.net", "libgen.io" };
+        return new String[] { "libgen.pw", "libgen.me", "libgen.net", "libgen.io", "booksdescr.org" };
     }
 
     public LibGenInfo(PluginWrapper wrapper) {
@@ -99,7 +100,7 @@ public class LibGenInfo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = null, filesize = null;
-        if (link.getDownloadURL().contains("/ads.php?md5=")) {
+        if (StringUtils.containsIgnoreCase(br.getURL(), "/ads.php?md5=")) {
             final String author = getBracketResult("author");
             final String title = getBracketResult("title");
             final String extension = new Regex(br, "Download via torrent\\s*</a>\\s*<input\\s*.*?value=\".*?(\\.[a-z0-9]{3,4})\"").getMatch(0);
@@ -149,14 +150,14 @@ public class LibGenInfo extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         if (dllink == null) {
-            if (downloadLink.getDownloadURL().contains("/ads.php?md5=")) {
-                dllink = br.getRegex("<a href=(\"|')((?:https?:)?(?://[\\w\\-\\./]+)?/get\\.php\\?md5=[a-f0-9]{32}.*?)\\1").getMatch(1);
+            if (StringUtils.containsIgnoreCase(br.getURL(), "/ads.php?md5=")) {
+                dllink = br.getRegex("<a\\s*href\\s*=\\s*(\"|')((?:https?:)?(?://[\\w\\-\\./]+)?/get\\.php\\?md5=[a-f0-9]{32}.*?)\\1").getMatch(1);
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, FREE_RESUME, FREE_MAXCHUNKS);
             } else {
-                final String dlUrl = br.getRegex("href=(\"|')((?:https?:)?(?://[\\w\\-\\.]+)?/download\\.php.*?)\\1").getMatch(1);
+                final String dlUrl = br.getRegex("href\\s*=\\s*(\"|')((?:https?:)?(?://[\\w\\-\\.]+)?/download\\.php.*?)\\1").getMatch(1);
                 if (dlUrl != null) {
                     br.getPage(dlUrl);
                 }
