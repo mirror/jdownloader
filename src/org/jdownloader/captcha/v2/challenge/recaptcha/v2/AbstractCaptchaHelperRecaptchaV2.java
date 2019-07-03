@@ -4,17 +4,17 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogInterface;
+import org.jdownloader.logging.LogController;
+
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Browser;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogInterface;
-import org.jdownloader.logging.LogController;
 
 public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
     public static enum TYPE {
@@ -32,6 +32,15 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
         return getSecureToken(br != null ? br.toString() : null);
     }
 
+    /**
+     * 2019-07-03: This is the time for which the g-recaptcha-token can be used AFTER a user has solved a challenge. You can easily check
+     * the current value by opening up a website which requires a reCaptchaV2 captcha which does not auto-confirm after solving (e.g. you
+     * have to click a "send" button afterwards). To this date, the challenge will invalidate itself after 120 seconds - it will display and
+     * errormessage and the user will have to solve it again! This value is especially important for rare EDGE cases such as long
+     * waiting-times + captcha. Example: User has to wait 180 seconds before he can confirm such a captcha. If he solves it directly, the
+     * captcha will be invalid once the 180 seconds are over. Also see documentation in XFileSharingProBasic.java class in method
+     * 'handleCaptcha'.
+     */
     public int getSolutionTimeout() {
         return 2 * 60 * 1000;
     }

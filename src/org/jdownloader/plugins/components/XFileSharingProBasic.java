@@ -747,6 +747,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             if (br.getURL() != null && !br.getURL().contains("/embed")) {
                 final String embed_access = getMainPage() + "/embed-" + fuid + ".html";
                 getPage(embed_access);
+                /**
+                 * 2019-07-03: Example response when embedding is not possible (deactivated or it is not a video-file): "Can't create video
+                 * code" OR "Video embed restricted for this user"
+                 */
             }
             /*
              * Important: Do NOT use 404 as offline-indicator here as the website-owner could have simply disabled embedding while it was
@@ -987,15 +991,18 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = regexFilenameAbuse(br);
-        if (filename == null && fnameViaAbuseUnsupported) {
-            /**
-             * TODO: 2019-07-03: Add auto-handling - set timestamp here if this method does not work so that it will not be tried for the
-             * next X days.
-             */
-            logger.info("Seems like report_file availablecheck is not supported by this host");
-        }
         if (filename == null) {
+            logger.info("Failed to find filename via report_file - using fallbackFilename");
             filename = fallbackFilename;
+            if (fnameViaAbuseUnsupported) {
+                /**
+                 * TODO: 2019-07-03: Add auto-handling - set timestamp here if this method does not work so that it will not be tried for
+                 * the next X days.
+                 */
+                logger.info("Seems like report_file availablecheck is not supported by this host");
+            }
+        } else {
+            logger.info("Successfully found filename via report_file");
         }
         return filename;
     }
@@ -1195,10 +1202,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 logger.info("Trying to get link via vidembed");
                 final Browser brv = br.cloneBrowser();
                 getPage(brv, "/vidembed-" + fuid, false);
-                /**
-                 * 2019-07-03: Example response when embedding is not possible (deactivated or it is not a video-file): "Can't create video
-                 * code"
-                 */
                 dllink = brv.getRedirectLocation();
                 if (StringUtils.isEmpty(dllink)) {
                     logger.info("Failed to get link via vidembed because: " + br.toString());
@@ -1968,23 +1971,26 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             logger.info("Skipping pre-download waittime: " + waitStr);
         } else {
             final int extraWaitSeconds = 1;
-            int wait = 0;
-            int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - extraWaitSeconds;
+            int wait;
             if (waitStr != null && waitStr.matches("\\d+")) {
+                int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - extraWaitSeconds;
                 logger.info("Found waittime, parsing waittime: " + waitStr);
                 wait = Integer.parseInt(waitStr);
-            }
-            /*
-             * Check how much time has passed during eventual captcha event before this function has been called and see how much time is
-             * left to wait.
-             */
-            wait -= passedTime;
-            if (passedTime > 0) {
-                /* This usually means that the user had to solve a captcha which cuts down the remaining time we have to wait. */
-                logger.info("Total passed time during captcha: " + passedTime);
+                /*
+                 * Check how much time has passed during eventual captcha event before this function has been called and see how much time
+                 * is left to wait.
+                 */
+                wait -= passedTime;
+                if (passedTime > 0) {
+                    /* This usually means that the user had to solve a captcha which cuts down the remaining time we have to wait. */
+                    logger.info("Total passed time during captcha: " + passedTime);
+                }
+            } else {
+                /* No waittime at all */
+                wait = 0;
             }
             if (wait > 0) {
-                logger.info("Waiting waittime: " + wait);
+                logger.info("Waiting final waittime: " + wait);
                 sleep(wait * 1000l, downloadLink);
             } else if (wait < -extraWaitSeconds) {
                 /* User needed more time to solve the captcha so there is no waittime left :) */
@@ -2177,13 +2183,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             }
             String tmpsec = new Regex(wait, "\\s+(\\d+)\\s+seconds?").getMatch(0);
             String tmpdays = new Regex(wait, "\\s+(\\d+)\\s+days?").getMatch(0);
+            int waittime;
             if (tmphrs == null && tmpmin == null && tmpsec == null && tmpdays == null) {
-                logger.info("Waittime regexes seem to be broken");
-                if (account != null) {
-                    throw new AccountUnavailableException("Download limit reached", 60 * 60 * 1000l);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
-                }
+                logger.info("Waittime RegExes seem to be broken - using default waittime");
+                waittime = 60 * 60 * 1000;
             } else {
                 int minutes = 0, seconds = 0, hours = 0, days = 0;
                 if (tmphrs != null) {
@@ -2198,17 +2201,16 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 if (tmpdays != null) {
                     days = Integer.parseInt(tmpdays);
                 }
-                int waittime = ((days * 24 * 3600) + (3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
-                logger.info("Detected waittime #2, waiting " + waittime + "milliseconds");
-                /* Not enough wait time to reconnect -> Wait short and retry */
-                if (waittime < 180000) {
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait until new downloads can be started", waittime);
-                }
-                if (account != null) {
-                    throw new AccountUnavailableException("Download limit reached", waittime);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
-                }
+                waittime = ((days * 24 * 3600) + (3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
+            }
+            logger.info("Detected reconnect waittime (milliseconds): " + waittime);
+            /* Not enough wait time to reconnect -> Wait short and retry */
+            if (waittime < 180000) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait until new downloads can be started", waittime);
+            } else if (account != null) {
+                throw new AccountUnavailableException("Download limit reached", waittime);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
             }
         } else if (limitBasedOnNumberofFilesAndTime != null) {
             /*
@@ -2850,8 +2852,18 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     protected void handleDownload(final DownloadLink link, final Account account, final String dllink, final Request req) throws Exception {
         final boolean resume = this.isResumeable(link, account);
         final int maxChunks = getMaxChunks(account);
+        final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
         if (req != null) {
             logger.info("Final downloadlink = Form download");
+            /*
+             * Save directurl before download-attempt as it should be valid even if it e.g. fails because of server issue 503 (= too many
+             * connections) --> Should work fine after the next try.
+             */
+            final String location = req.getLocation();
+            if (location != null) {
+                /* E.g. redirect to downloadurl --> We can save that URL */
+                link.setProperty(directlinkproperty, location);
+            }
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, req, resume, maxChunks);
             handleDownloadErrors(link);
             fixFilename(link);
@@ -2873,7 +2885,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
             logger.info("Final downloadlink = " + dllink + " starting the download...");
             if (dllink.startsWith("rtmp")) {
                 /* 2019-05-21: rtmp download - VERY rare case! */
