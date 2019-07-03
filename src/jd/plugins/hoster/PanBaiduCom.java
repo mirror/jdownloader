@@ -302,7 +302,7 @@ public class PanBaiduCom extends PluginForHost {
         }
         String md5 = getMD5FromDispositionHeader(dl.getConnection());
         if (md5 != null) {
-            // There is also a case where MD5 is not. Setting only if there is MD5.
+            /* There is also a case where MD5 is not present. Setting only if there is MD5. */
             downloadLink.setMD5Hash(md5);
         }
         downloadLink.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
