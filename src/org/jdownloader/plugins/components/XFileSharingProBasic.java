@@ -27,6 +27,17 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -52,17 +63,6 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.hoster.RTMPDownload;
-
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 public class XFileSharingProBasic extends antiDDoSForHost {
     public XFileSharingProBasic(PluginWrapper wrapper) {
@@ -103,10 +103,9 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     // for (int i = 0; i < domains.length; i++) {
     // if (i == 0) {
     // /* Match all URLs on first (=current) domain */
-    // ret.add("https?://(?:www\\.)?" + getHostsPatternPart() + "/(?:embed\\-)?[a-z0-9]{12}(?:/[^/]+\\.html)?");
+    // ret.add("https?://(?:www\\.)?" + getHostsPatternPart() + XFileSharingProBasic.getDefaultAnnotationPatternPart());
     // } else {
-    // /* see getAnnotationNames */
-    // break;
+    // ret.add("");
     // }
     // }
     // return ret.toArray(new String[0]);
@@ -122,6 +121,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     // pattern.append(")");
     // return pattern.toString();
     // }
+    public static final String getDefaultAnnotationPatternPart() {
+        return "/(?:embed\\-)?[a-z0-9]{12}(?:/[^/]+(?:\\.html)?)?";
+    }
+
     /* Used variables */
     public String                correctedBR                  = "";
     protected String             fuid                         = null;
@@ -317,8 +320,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     /**
      * 2019-05-30: TODO: Maybe remove this - a videohoster will usually also support embedding videos - maybe we can also auto-recognize
-     * this case e.g. filename has no ending but contains " MP4" or any other extension. Enable this for websites using <a
-     * href="https://sibsoft.net/xvideosharing.html">XVideosharing</a>. <br />
+     * this case e.g. filename has no ending but contains " MP4" or any other extension. Enable this for websites using
+     * <a href="https://sibsoft.net/xvideosharing.html">XVideosharing</a>. <br />
      * Demo-Website: <a href="http://xvideosharing.com">xvideosharing.com</a>
      *
      * @return true: Implies that the hoster only allows video-content to be uploaded. Enforces .mp4 extension for all URLs. Also set
@@ -347,7 +350,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * See also function getFilesizeViaAvailablecheckAlt! <br />
      * <b> Enabling this will eventually lead to at least one additional website-request! </b>
      *
-     * @return true: Implies that website supports getFilesizeViaAvailablecheckAlt call as an alternative source for filesize-parsing. <br />
+     * @return true: Implies that website supports getFilesizeViaAvailablecheckAlt call as an alternative source for filesize-parsing.
+     *         <br />
      *         false: Implies that website does NOT support getFilesizeViaAvailablecheckAlt. <br />
      *         default: true
      */
@@ -404,10 +408,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /**
-     * This is designed to find the filesize during availablecheck for videohosts - videohosts usually don't display the filesize anywhere! <br />
+     * This is designed to find the filesize during availablecheck for videohosts - videohosts usually don't display the filesize anywhere!
+     * <br />
      * CAUTION: Only set this to true if a filehost: <br />
      * 1. Allows users to embed videos via '/embed-<fuid>.html'. <br />
-     * 2. Does not display a filesize anywhere inside html code or other calls where we do not have to do an http request on a directurl. <br />
+     * 2. Does not display a filesize anywhere inside html code or other calls where we do not have to do an http request on a directurl.
+     * <br />
      * 3. Allows a lot of simultaneous connections. <br />
      * 4. Is FAST - if it is not fast, this will noticably slow down the linkchecking procedure! <br />
      * 5. Allows using a generated direct-URL at least two times.
@@ -446,7 +452,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /**
-     * Implies that a host supports one of these APIs: https://xvideosharing.docs.apiary.io/ OR https://xfilesharingpro.docs.apiary.io/ <br />
+     * Implies that a host supports one of these APIs: https://xvideosharing.docs.apiary.io/ OR https://xfilesharingpro.docs.apiary.io/
+     * <br />
      * This(=API enabled) is a rare case! <br />
      * Sadly, it seems like their linkcheck function only works on the files in the users' own account:
      * https://xvideosharing.docs.apiary.io/#reference/file/file-info/get-info/check-file(s) <br />
@@ -779,6 +786,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         final String sharebox1 = "copy\\(this\\);.+\\](.+) - ([\\d\\.]+ (?:B|KB|MB|GB))\\[/URL\\]";
         /* 2019-05-08: 'Forum Code': Sharebox with filename & filesize (bytes), example: snowfiles.com, brupload.net, qtyfiles.com */
         final String sharebox2 = "\\[URL=https?://(?:www\\.)?[^/\"]+/" + this.fuid + "[^\\]]*?\\]([^\"/]*?)\\s*?\\-\\s*?(\\d+)\\[/URL\\]";
+        /* First found for pixroute.com URLs */
+        final String sharebox2_without_filesize = "\\[URL=https?://(?:www\\.)?[^/\"]+/" + this.fuid + "/([^<>\"/\\]]*?)(?:\\.html)?\\]";
         /*
          * 2019-05-21: E.g. uqload.com, vidoba.net - this method will return a 'cleaner' filename than in other places - their titles will
          * often end with " mp4" which we have to correct later!
@@ -800,9 +809,16 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 }
             }
         }
-        /* Next - details from sharing box (new to old) */
+        /* Next - RegExes for specified types of websites e.g. imagehosts */
+        if (StringUtils.isEmpty(fileInfo[0]) && this.isImagehoster()) {
+            fileInfo[0] = regexImagehosterFilename(correctedBR);
+        }
+        /* Next - details from sharing boxes (new RegExes to old) */
         if (StringUtils.isEmpty(fileInfo[0])) {
             fileInfo[0] = new Regex(correctedBR, sharebox2).getMatch(0);
+            if (StringUtils.isEmpty(fileInfo[0])) {
+                fileInfo[0] = new Regex(correctedBR, sharebox2_without_filesize).getMatch(0);
+            }
             if (StringUtils.isEmpty(fileInfo[0])) {
                 fileInfo[0] = new Regex(correctedBR, sharebox1).getMatch(0);
                 if (StringUtils.isEmpty(fileInfo[0])) {
@@ -966,10 +982,18 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      */
     public String getFnameViaAbuseLink(final Browser br, final DownloadLink dl, final String fallbackFilename) throws Exception {
         getPage(br, getMainPage() + "/?op=report_file&id=" + fuid, false);
+        final boolean fnameViaAbuseUnsupported = br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains("report_file");
         if (br.containsHTML(">No such file<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = regexFilenameAbuse(br);
+        if (filename == null && fnameViaAbuseUnsupported) {
+            /**
+             * TODO: 2019-07-03: Add auto-handling - set timestamp here if this method does not work so that it will not be tried for the
+             * next X days.
+             */
+            logger.info("Seems like report_file availablecheck is not supported by this host");
+        }
         if (filename == null) {
             filename = fallbackFilename;
         }
@@ -979,6 +1003,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     /** Part of getFnameViaAbuseLink(). */
     public String regexFilenameAbuse(final Browser br) {
         return br.getRegex("<b>Filename\\s*:?\\s*</b></td><td>([^<>\"]*?)</td>").getMatch(0);
+    }
+
+    /** Only use this if it is made sure that the host we're working with is an imagehoster (ximagesharing)!! */
+    public String regexImagehosterFilename(final String source) {
+        return new Regex(source, "class=\"pic\" alt=\"([^<>\"]*?)\"").getMatch(0);
     }
 
     /**
@@ -1014,46 +1043,66 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         } else {
             checkTypes = new String[] { checkTypeNew, checkTypeOld };
         }
+        int numberofFailedChecktypes = 0;
         for (final String checkType : checkTypes) {
             final String checkURL = altAvailablecheckUrl + "/?op=" + checkType;
+            Form checkForm = null;
             try {
                 if (this.supports_availablecheck_filesize_alt_fast()) {
                     /* Quick way - we do not access the page before and do not need to parse the Form. */
-                    postPage(br, checkURL, String.format("op=%s&process=Check+URLs&list=%s", checkType, URLEncode.encodeURIComponent(link.getPluginPatternMatcher())));
+                    checkForm = new Form();
+                    checkForm.setMethod(MethodType.POST);
+                    checkForm.setAction(checkURL);
+                    checkForm.put("op", checkType);
+                    checkForm.put("process", "Check+URLs");
+                    checkForm.put("list", URLEncode.encodeURIComponent(link.getPluginPatternMatcher()));
                 } else {
-                    /* Try to get the Form IF NEEDED as it can contain tokens which are missing otherwise. */
+                    /* Try to get the Form IF NEEDED as it can contain tokens which would otherwise be missing. */
                     getPage(br, altAvailablecheckUrl);
-                    Form checkfiles_form = null;
                     for (final String checkTypeTmp : checkTypes) {
-                        checkfiles_form = br.getFormByInputFieldKeyValue("op", checkTypeTmp);
-                        if (checkfiles_form != null) {
+                        checkForm = br.getFormByInputFieldKeyValue("op", checkTypeTmp);
+                        if (checkForm != null) {
                             break;
                         }
                     }
-                    if (checkfiles_form == null) {
-                        logger.info("AltAvailablecheck: Failed to find check_files Form via checkType: " + checkType);
+                    if (checkForm == null) {
+                        logger.info("Failed to find check_files Form via checkType: " + checkType);
                         continue;
                     }
-                    checkfiles_form.put("list", Encoding.urlEncode(link.getPluginPatternMatcher()));
-                    submitForm(br, checkfiles_form);
+                    checkForm.put("list", Encoding.urlEncode(link.getPluginPatternMatcher()));
+                }
+                submitForm(br, checkForm);
+                if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(checkType)) {
+                    /*
+                     * This mathod of linkcheck is not supported - increase the counter by one to find out if ANY method worked in the end.
+                     */
+                    numberofFailedChecktypes++;
                 }
                 filesize = br.getRegex(this.fuid + "</td>\\s*?<td style=\"color:green;\">Found</td>\\s*?<td>([^<>\"]*?)</td>").getMatch(0);
             } catch (final Throwable e) {
             }
             if (filesize != null) {
-                logger.info("AltAvailablecheck: Successfully found filesize via checkType: " + checkType);
+                logger.info("Successfully found filesize via checkType: " + checkType);
                 /* Store info about working check-type to prefer this in the next linkcheck --> Speeds up linkcheck */
                 this.getPluginConfig().setProperty("ALT_AVAILABLECHECK_LAST_WORKING", checkType);
                 break;
             } else {
-                logger.info("AltAvailablecheck: Failed to find filesize via checkType: " + checkType);
+                logger.info("Failed to find filesize via checkType: " + checkType);
                 /* Offline check */
                 if (br.containsHTML("(>" + Pattern.quote(link.getPluginPatternMatcher()) + "</td><td style=\"color:red;\">Not found\\!</td>|" + this.fuid + " not found\\!</font>)")) {
                     /* SUPPORTS_AVAILABLECHECK_ABUSE == false and-or could not find any filename. */
-                    logger.info("AltAvailablecheck: URL seems to be offline");
+                    logger.info("URL seems to be offline");
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             }
+        }
+        /* Check if the filehost actually supports one of these types of linkchecking. If not we will rarely try this in the future. */
+        if (StringUtils.isEmpty(filesize) && numberofFailedChecktypes == checkTypes.length) {
+            /*
+             * TODO: 2019-07-03 Add logic which saves a timestamp and automatically deactivates this check for some days if it is believed
+             * that a host does not support this type of linkcheck.
+             */
+            logger.info("Seems like checkfiles availablecheck is not supported by this host");
         }
         return filesize;
     }
@@ -1146,6 +1195,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 logger.info("Trying to get link via vidembed");
                 final Browser brv = br.cloneBrowser();
                 getPage(brv, "/vidembed-" + fuid, false);
+                /**
+                 * 2019-07-03: Example response when embedding is not possible (deactivated or it is not a video-file): "Can't create video
+                 * code"
+                 */
                 dllink = brv.getRedirectLocation();
                 if (StringUtils.isEmpty(dllink)) {
                     logger.info("Failed to get link via vidembed because: " + br.toString());
@@ -1188,7 +1241,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     checkErrors(link, account, false);
                     dllink = getDllink(link, account);
                     /* For imagehosts, filenames are often not given until we can actually see/download the image! */
-                    final String image_filename = new Regex(correctedBR, "class=\"pic\" alt=\"([^<>\"]*?)\"").getMatch(0);
+                    final String image_filename = regexImagehosterFilename(correctedBR);
                     if (image_filename != null) {
                         link.setName(Encoding.htmlOnlyDecode(image_filename));
                     }
@@ -1480,6 +1533,9 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         /* Nothing found? Fallback to standard download handling! */
         if (dlForm == null) {
             dlForm = br.getFormbyProperty("name", "F1");
+        }
+        if (dlForm == null) {
+            dlForm = br.getFormByInputFieldKeyValue("op", "download2");
         }
         return dlForm;
     }
@@ -2034,15 +2090,19 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return null;
     }
 
-    /** In some cases, URL may contain filename which can be used as fallback e.g. 'https://host.tld/<fuid>/<filename>.html'. */
+    /**
+     * In some cases, URL may contain filename which can be used as fallback e.g. 'https://host.tld/<fuid>/<filename>(\\.html)?'. </br>
+     * Examples without '.html' ending: vipfile.cc, prefiles.com
+     */
     public String getFilenameFromURL(final DownloadLink dl) {
         try {
             String result = null;
+            final String url_name_RegEx = "[a-z0-9]{12}/(.+)(?:\\.html)?$";
             if (dl.getContentUrl() != null) {
-                result = new Regex(new URL(dl.getContentUrl()).getPath(), "[a-z0-9]{12}/(.+)\\.html$").getMatch(0);
+                result = new Regex(new URL(dl.getContentUrl()).getPath(), url_name_RegEx).getMatch(0);
             }
             if (result == null) {
-                result = new Regex(new URL(dl.getPluginPatternMatcher()).getPath(), "[a-z0-9]{12}/(.+)\\.html$").getMatch(0);
+                result = new Regex(new URL(dl.getPluginPatternMatcher()).getPath(), url_name_RegEx).getMatch(0);
             }
             return result;
         } catch (MalformedURLException e) {
@@ -2793,14 +2853,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         if (req != null) {
             logger.info("Final downloadlink = Form download");
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, req, resume, maxChunks);
-            if (dl.getConnection().getContentType().contains("html")) {
-                checkResponseCodeErrors(dl.getConnection());
-                logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
-                correctBR();
-                checkServerErrors();
-                handlePluginBroken(link, "dllinknofile", 3);
-            }
+            handleDownloadErrors(link);
             fixFilename(link);
             try {
                 /* add a download slot */
@@ -2862,14 +2915,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                  */
                 link.setProperty(directlinkproperty, dllink);
                 dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume, maxChunks);
-                if (dl.getConnection().getContentType().contains("html")) {
-                    checkResponseCodeErrors(dl.getConnection());
-                    logger.warning("The final dllink seems not to be a file!");
-                    br.followConnection();
-                    correctBR();
-                    checkServerErrors();
-                    handlePluginBroken(link, "dllinknofile", 3);
-                }
+                handleDownloadErrors(link);
                 fixFilename(link);
                 try {
                     /* add a download slot */
@@ -2885,6 +2931,18 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     }
                 }
             }
+        }
+    }
+
+    /** Handles errors right before starting the download. */
+    protected void handleDownloadErrors(final DownloadLink link) throws Exception {
+        if (dl.getConnection().getContentType().contains("html")) {
+            checkResponseCodeErrors(dl.getConnection());
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            correctBR();
+            checkServerErrors();
+            handlePluginBroken(link, "dllinknofile", 3);
         }
     }
 
@@ -2919,17 +2977,22 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         final boolean setWeakFilename = link.getName() == null || (weak_fallback_filename != null && weak_fallback_filename.length() > link.getName().length());
         if (setWeakFilename) {
             link.setName(weak_fallback_filename);
-            /* TODO: Find better way to determine whether a String contains a file-extension or not. */
-            final boolean fallback_filename_contains_file_extension = weak_fallback_filename != null && weak_fallback_filename.contains(".");
-            if (!fallback_filename_contains_file_extension) {
-                /* Only setMimeHint if weak filename does not contain filetype. */
-                if (this.isAudiohoster()) {
-                    link.setMimeHint(CompiledFiletypeFilter.AudioExtensions.MP3);
-                } else if (this.isImagehoster()) {
-                    link.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
-                } else if (this.isVideohoster_enforce_video_filename()) {
-                    link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
-                }
+        }
+        /*
+         * Only set MineHint if: 1. No filename at all is set OR the given name does not contain any fileextension, AND 2. We know that the
+         * filehost is only hosting specific data (audio, video, pictures)!
+         */
+        /* TODO: Find better way to determine whether a String contains a file-extension or not. */
+        final boolean fallback_filename_contains_file_extension = weak_fallback_filename != null && weak_fallback_filename.contains(".");
+        final boolean setMineHint = !setWeakFilename || !fallback_filename_contains_file_extension;
+        if (setMineHint) {
+            /* Only setMimeHint if weak filename does not contain filetype. */
+            if (this.isAudiohoster()) {
+                link.setMimeHint(CompiledFiletypeFilter.AudioExtensions.MP3);
+            } else if (this.isImagehoster()) {
+                link.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
+            } else if (this.isVideohoster_enforce_video_filename()) {
+                link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
             }
         }
     }

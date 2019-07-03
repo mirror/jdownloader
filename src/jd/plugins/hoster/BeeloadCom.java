@@ -28,8 +28,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class VipfileCc extends XFileSharingProBasic {
-    public VipfileCc(final PluginWrapper wrapper) {
+public class BeeloadCom extends XFileSharingProBasic {
+    public BeeloadCom(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
     }
@@ -37,23 +37,23 @@ public class VipfileCc extends XFileSharingProBasic {
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
-     * limit-info:2019-04-24: premium max 3 connections total (left maxdls setting @ unlimited)<br />
-     * captchatype-info: 2019-04-24: null<br />
+     * limit-info: 2019-07-03: No limits at all <br />
+     * captchatype-info: 2019-07-03: reCaptchaV2 (and no captcha at all for videostreams)<br />
      * other:<br />
      */
-    private static String[] domains = new String[] { "vipfile.cc" };
+    private static String[] domains = new String[] { "beeload.com" };
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return false;
+            return true;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
             return true;
         } else {
             /* Free(anonymous) and unknown account type */
-            return false;
+            return true;
         }
     }
 
@@ -61,13 +61,13 @@ public class VipfileCc extends XFileSharingProBasic {
     public int getMaxChunks(final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return 1;
+            return 0;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return 1;
+            return 0;
         } else {
             /* Free(anonymous) and unknown account type */
-            return 1;
+            return 0;
         }
     }
 
@@ -92,11 +92,6 @@ public class VipfileCc extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean supports_precise_expire_date() {
-        return super.supports_precise_expire_date();
-    }
-
-    @Override
     public boolean isVideohosterEmbed() {
         return super.isVideohosterEmbed();
     }
@@ -107,8 +102,8 @@ public class VipfileCc extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean isImagehoster() {
-        return super.isImagehoster();
+    public boolean supports_availablecheck_alt() {
+        return super.supports_availablecheck_alt();
     }
 
     @Override
@@ -122,12 +117,12 @@ public class VipfileCc extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean requires_WWW() {
-        return super.requires_WWW();
+    public boolean supports_availablecheck_filesize_via_embedded_video() {
+        return super.supports_availablecheck_filesize_via_embedded_video();
     }
 
     public static String[] getAnnotationNames() {
-        return new String[] { domains[0] };
+        return domains;
     }
 
     @Override
@@ -148,18 +143,14 @@ public class VipfileCc extends XFileSharingProBasic {
         return ret.toArray(new String[0]);
     }
 
-    /** returns 'https?://(?:www\\.)?(?:domain1|domain2)' */
-    private static String getHostsPattern() {
-        final String hosts = "https?://(?:www\\.)?" + "(?:" + getHostsPatternPart() + ")";
-        return hosts;
-    }
-
     /** Returns '(?:domain1|domain2)' */
     public static String getHostsPatternPart() {
         final StringBuilder pattern = new StringBuilder();
+        pattern.append("(?:");
         for (final String name : domains) {
             pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
         }
+        pattern.append(")");
         return pattern.toString();
     }
 }
