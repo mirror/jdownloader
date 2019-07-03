@@ -39,7 +39,8 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
      * errormessage and the user will have to solve it again! This value is especially important for rare EDGE cases such as long
      * waiting-times + captcha. Example: User has to wait 180 seconds before he can confirm such a captcha. If he solves it directly, the
      * captcha will be invalid once the 180 seconds are over. Also see documentation in XFileSharingProBasic.java class in method
-     * 'handleCaptcha'.
+     * 'handleCaptcha'. </br>
+     * TRY TO KEEP THIS VALUE UP-TO-DATE!!
      */
     public int getSolutionTimeout() {
         return 2 * 60 * 1000;
