@@ -20,6 +20,9 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Random;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -35,8 +38,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pan.baidu.com" }, urls = { "https?://(?:www\\.)?(?:pan|yun)\\.baidu\\.com/(?:share|wap)/.+|https?://(?:www\\.)?pan\\.baidu\\.com/s/[A-Za-z0-9-_]+(\\?linkpassword=[^#&]+)?(?:#(dir|list)/path=%2F.+)?" })
 public class PanBaiduCom extends PluginForDecrypt {
@@ -319,7 +320,7 @@ public class PanBaiduCom extends PluginForDecrypt {
             } else {
                 contenturl = getPlainLink(parameter);
             }
-            // final String md5 = (String) entries.get("md5");
+            final String md5 = (String) entries.get("md5");
             dl = createDownloadlink("http://pan.baidudecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(10000));
             dl.setProperty("server_filename", server_filename);
             dl.setFinalFileName(server_filename);
@@ -361,11 +362,12 @@ public class PanBaiduCom extends PluginForDecrypt {
                     fp.add(dl);
                 }
             }
-            /* 2016-05-19: Upon requests that their MD5 hashes are invalid we no longer set them */
-            // if (md5 != null) {
-            // they provide wrong md5 values
-            // dl.setMD5Hash(md5);
-            // }
+            /* 2016-05-19: Upon requests that their MD5 hashes are invalid we no longer set them. */
+            if (!StringUtils.isEmpty(md5)) {
+                // dl.setMD5Hash(md5);
+                /* 2019-07-03: We store the md5 hash as property as we might need them for the download process. */
+                dl.setProperty("internal_md5hash", md5);
+            }
         }
         decryptedLinks.add(dl);
     }
