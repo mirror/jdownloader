@@ -26,6 +26,8 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PixRouteCom extends XFileSharingProBasic {
@@ -84,6 +86,27 @@ public class PixRouteCom extends XFileSharingProBasic {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
+    }
+
+    @Override
+    protected void handleDownloadErrors(final DownloadLink link) throws Exception {
+        /* 2019-07-03: Special */
+        super.handleDownloadErrors(link);
+        boolean specialOffline = false;
+        try {
+            final long final_filesize = dl.getConnection().getLongContentLength();
+            final String response_last_modified = dl.getConnection().getRequest().getResponseHeader("Last-Modified").toString();
+            specialOffline = final_filesize == 40275 && response_last_modified.equalsIgnoreCase("Sun, 10 Mar 2019 14:07:34 GMT");
+        } catch (final Throwable e) {
+        }
+        if (specialOffline) {
+            /*
+             * Very very rare case: Dummy image which shows "Image Removed" - website itself displays content as online! Example:
+             * https://pixroute.com/94dpenhmi6st/ARS32HT02_s.jpg.html
+             */
+            logger.info("Special offline file");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
     }
 
     @Override
