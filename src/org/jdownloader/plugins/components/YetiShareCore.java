@@ -22,6 +22,11 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -35,6 +40,7 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountRequiredException;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -44,18 +50,12 @@ import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class YetiShareCore extends antiDDoSForHost {
     public YetiShareCore(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(getPurchasePremiumURL());
     }
-
     // /* 1st domain = current domain! */
     // public static String[] domains = new String[] { "dummyhost.tld" };
     //
@@ -64,18 +64,14 @@ public class YetiShareCore extends antiDDoSForHost {
     // }
     //
     // /**
-    // * returns the annotation pattern array: 'https?://(?:www\\.)?(?:domain1|domain2)/[A-Za-z0-9]+'
-    // *
-    // */
-    // /**
-    // * returns the annotation pattern array: 'https?://(?:www\\.)?(?:domain1|domain2)/[A-Za-z0-9]+(?:/[^/]+)?'
+    // * returns the annotation pattern array: 'https?://(?:www\\.)?(?:domain1|domain2)/[A-Za-z0-9]+(?:/[^/<>]+)?'
     // *
     // */
     // public static String[] getAnnotationUrls() {
-    // // construct pattern
     // final String host = getHostsPattern();
-    // return new String[] { host + "/[A-Za-z0-9]+(?:/[^/<>]+)?" };
+    // return new String[] { host + YetiShareCore.getDefaultAnnotationPatternPart() };
     // }
+
     //
     // /** Returns '(?:domain1|domain2)' */
     // private static String getHostsPatternPart() {
@@ -96,6 +92,10 @@ public class YetiShareCore extends antiDDoSForHost {
     // public String[] siteSupportedNames() {
     // return domains;
     // }
+    public static final String getDefaultAnnotationPatternPart() {
+        return "/(?!folder)[A-Za-z0-9]+(?:/[^/<>]+)?";
+    }
+
     /**
      * For sites which use this script: http://www.yetishare.com/<br />
      * YetiShareCore Version 2.0.0.6-psp<br />
@@ -378,7 +378,6 @@ public class YetiShareCore extends antiDDoSForHost {
         final boolean resume = this.isResumeable(link, account);
         final int maxchunks = this.getMaxChunks(account);
         final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
-        boolean skipWaittime = false;
         String continue_link = null;
         boolean captcha = false;
         boolean success = false;
@@ -436,7 +435,7 @@ public class YetiShareCore extends antiDDoSForHost {
                      * If we already found a downloadlink let's try to download it because html can still contain captcha html --> We don't
                      * need a captcha in this case/loop/pass for sure! E.g. host '3rbup.com'.
                      */
-                    waitTime(link, timeBeforeCaptchaInput, skipWaittime);
+                    waitTime(link, timeBeforeCaptchaInput);
                     dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, resume, maxchunks);
                 } else {
                     Form continue_form = null;
@@ -462,7 +461,7 @@ public class YetiShareCore extends antiDDoSForHost {
                         captcha = true;
                         final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                         success = true;
-                        waitTime(link, timeBeforeCaptchaInput, skipWaittime);
+                        waitTime(link, timeBeforeCaptchaInput);
                         continue_form.put("capcode", "false");
                         continue_form.put("g-recaptcha-response", recaptchaV2Response);
                         continue_form.setMethod(MethodType.POST);
@@ -491,14 +490,14 @@ public class YetiShareCore extends antiDDoSForHost {
                         }
                         final String code = getCaptchaCode("solvemedia", cf, link);
                         final String chid = sm.getChallenge(code);
-                        waitTime(link, timeBeforeCaptchaInput, skipWaittime);
+                        waitTime(link, timeBeforeCaptchaInput);
                         continue_form.put("adcopy_challenge", Encoding.urlEncode(chid));
                         continue_form.put("adcopy_response", Encoding.urlEncode(code));
                         continue_form.setMethod(MethodType.POST);
                         dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_form, resume, maxchunks);
                     } else {
                         success = true;
-                        waitTime(link, timeBeforeCaptchaInput, skipWaittime);
+                        waitTime(link, timeBeforeCaptchaInput);
                         /* Use URL instead of Form - it is all we need! */
                         dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, resume, maxchunks);
                     }
@@ -659,35 +658,45 @@ public class YetiShareCore extends antiDDoSForHost {
         }
     }
 
-    /** Handles pre download (pre-captcha) waittime. */
-    private void waitTime(final DownloadLink downloadLink, final long timeBefore, final boolean skipWaittime) throws PluginException {
-        if (skipWaittime) {
-            logger.info("Skipping waittime");
+    protected boolean preDownloadWaittimeSkippable() {
+        return false;
+    }
+
+    /**
+     * Handles pre download (pre-captcha) waittime. If WAITFORCED it ensures to always wait long enough even if the waittime RegEx fails.
+     */
+    protected void waitTime(final DownloadLink downloadLink, final long timeBefore) throws PluginException {
+        /* Ticket Time */
+        final String waitStr = regexWaittime();
+        if (this.preDownloadWaittimeSkippable()) {
+            /* Very rare case! */
+            logger.info("Skipping pre-download waittime: " + waitStr);
         } else {
-            final int extraWaitSeconds = 2;
-            int wait = 0;
-            int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - extraWaitSeconds;
-            /* Ticket Time */
-            final String ttt = regexWaittime();
-            if (ttt != null && ttt.matches("\\d+")) {
-                logger.info("Found waittime, parsing waittime: " + ttt);
-                wait = Integer.parseInt(ttt);
-            }
-            /*
-             * Check how much time has passed during eventual captcha event before this function has been called and see how much time is
-             * left to wait.
-             */
-            wait -= passedTime;
-            if (passedTime > 0) {
-                /* This usually means that the user had to solve a captcha which cuts down the remaining time we have to wait. */
-                logger.info("Total passed time during captcha: " + passedTime);
+            final int extraWaitSeconds = 1;
+            int wait;
+            if (waitStr != null && waitStr.matches("\\d+")) {
+                int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - extraWaitSeconds;
+                logger.info("Found waittime, parsing waittime: " + waitStr);
+                wait = Integer.parseInt(waitStr);
+                /*
+                 * Check how much time has passed during eventual captcha event before this function has been called and see how much time
+                 * is left to wait.
+                 */
+                wait -= passedTime;
+                if (passedTime > 0) {
+                    /* This usually means that the user had to solve a captcha which cuts down the remaining time we have to wait. */
+                    logger.info("Total passed time during captcha: " + passedTime);
+                }
+            } else {
+                /* No waittime at all */
+                wait = 0;
             }
             if (wait > 0) {
-                logger.info("Waiting waittime: " + wait);
+                logger.info("Waiting final waittime: " + wait);
                 sleep(wait * 1000l, downloadLink);
             } else if (wait < -extraWaitSeconds) {
                 /* User needed more time to solve the captcha so there is no waittime left :) */
-                logger.info("Congratulations: Time to solve captcha was higher than waittime");
+                logger.info("Congratulations: Time to solve captcha was higher than waittime --> No waittime left");
             } else {
                 /* No waittime at all */
                 logger.info("Found no waittime");
@@ -703,12 +712,42 @@ public class YetiShareCore extends antiDDoSForHost {
         } else if (br.getURL().contains("error.php?e=Error%3A+Could+not+open+file+for+reading")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
         } else if (isWaitBetweenDownloadsURL()) {
-            final String wait_minutes = new Regex(br.getURL(), "wait\\+(\\d+)\\+minutes?").getMatch(0);
-            final String errormessage = "You must wait between downloads!";
-            if (wait_minutes != null) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errormessage, Integer.parseInt(wait_minutes) * 60 * 1001l);
+            /*
+             * Important: URL Might contain htmlencoded parts! Be sure that these RegExes are tolerant enough to get the information we
+             * need!
+             */
+            final String wait_hours = new Regex(br.getURL(), "(\\d+).hour?").getMatch(0);
+            final String wait_minutes = new Regex(br.getURL(), "(\\d+).minutes?").getMatch(0);
+            String wait_seconds = new Regex(br.getURL(), "(\\d+).seconds").getMatch(0);
+            if (wait_seconds == null) {
+                /* Spanish - e.g. required for asdfiles.com */
+                wait_seconds = new Regex(br.getURL(), "(\\d+).segundos").getMatch(0);
             }
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errormessage, 10 * 60 * 1001l);
+            int minutes = 0, seconds = 0, hours = 0;
+            if (wait_hours != null) {
+                hours = Integer.parseInt(wait_hours);
+            }
+            if (wait_minutes != null) {
+                minutes = Integer.parseInt(wait_minutes);
+            }
+            if (wait_seconds != null) {
+                seconds = Integer.parseInt(wait_seconds);
+            }
+            final int extraWaittimeSeconds = 1;
+            int waittime = ((3600 * hours) + (60 * minutes) + seconds + extraWaittimeSeconds) * 1000;
+            if (waittime <= 0) {
+                /* Fallback */
+                logger.info("Waittime RegExes seem to be broken - using default waittime");
+            }
+            logger.info("Detected reconnect waittime (milliseconds): " + waittime);
+            /* Not enough wait time to reconnect -> Wait short and retry */
+            if (waittime < 180000) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait until new downloads can be started", waittime);
+            } else if (account != null) {
+                throw new AccountUnavailableException("Download limit reached", waittime);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
+            }
         } else if (isPremiumOnlyURL()) {
             throw new AccountRequiredException();
         } else if (br.getURL().contains("You+have+reached+the+maximum+permitted+downloads+in")) {
@@ -752,7 +791,11 @@ public class YetiShareCore extends antiDDoSForHost {
      *         false: User can start new downloads right away.
      */
     public boolean isWaitBetweenDownloadsURL() {
-        return br.getURL() != null && new Regex(br.getURL(), Pattern.compile(".*?e=You\\+must\\+wait\\+.*?", Pattern.CASE_INSENSITIVE)).matches();
+        String url = br.getURL();
+        if (url != null && url.contains("%")) {
+            url = Encoding.htmlDecode(url);
+        }
+        return url != null && new Regex(url, Pattern.compile(".*?e=(You\\+must\\+wait\\+|Você.deve.esperar).*?", Pattern.CASE_INSENSITIVE)).matches();
     }
 
     /** Returns pre-download-waittime (seconds) from inside HTML. */
