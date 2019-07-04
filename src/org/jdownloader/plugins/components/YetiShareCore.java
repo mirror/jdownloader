@@ -24,6 +24,11 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -46,11 +51,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class YetiShareCore extends antiDDoSForHost {
@@ -212,6 +212,7 @@ public class YetiShareCore extends antiDDoSForHost {
 
     /**
      * @return true: Implies that website will show filename & filesize via website.tld/<fuid>~i <br />
+     *         Most YetiShare websites support this kind of linkcheck! </br>
      *         false: Implies that website does NOT show filename & filesize via website.tld/<fuid>~i. <br />
      *         default: true
      */
@@ -343,7 +344,10 @@ public class YetiShareCore extends antiDDoSForHost {
                 }
             }
             {
-                /* "Information about"-filename-trait without the animation(delay). */
+                /*
+                 * "Information about"-filename-trait without the animation(delay). E.g. easylinkz.net - sometimes it may also happen that
+                 * the 'Filename:' is empty and the filename is only present at this place!
+                 */
                 final String name = this.br.getRegex("class=\"description\\-1[^\"]*\">\\s*(?:Information about|informacje o)\\s*([^<>\"]+)\\s*<").getMatch(0);
                 if (name != null && !fileNameCandidates.contains(name)) {
                     fileNameCandidates.add(name);
@@ -378,6 +382,7 @@ public class YetiShareCore extends antiDDoSForHost {
                 } else if (bestName.contains("....") && !fileNameCandidate.contains("....")) {
                     bestName = fileNameCandidate;
                 } else if (bestName.split(" ").length > fileNameCandidate.split(" ").length) {
+                    /** TODO: 2019-07-05: This may lead to failures e.g. when 2nd item equals '&nbsp;&nbsp;' */
                     bestName = fileNameCandidate;
                 }
             }

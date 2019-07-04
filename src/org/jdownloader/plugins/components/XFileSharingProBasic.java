@@ -2373,12 +2373,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         if (this.supports_api()) {
             ai = this.fetchAccountInfoAPI(account);
         } else {
-            ai = this.fetchAccountWebsite(account);
+            ai = this.fetchAccountInfoWebsite(account);
         }
         return ai;
     }
 
-    protected AccountInfo fetchAccountWebsite(final Account account) throws Exception {
+    protected AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         loginWebsite(account, true);
         /* Only access URL if we haven't accessed it before already. */
@@ -2403,6 +2403,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             if (!availabletraffic.startsWith("-")) {
                 trafficLeft = (SizeFormatter.getSize(availabletraffic));
             } else {
+                /* Negative traffic value = User downloaded more than he is allowed to (rare case) --> No traffic left */
                 trafficLeft = 0;
             }
             /* 2019-02-19: Users can buy additional traffic packages: Example(s): subyshare.com */
@@ -2590,7 +2591,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return imghost_next_form;
     }
 
-    /** Tries to find available traffic inside html code. */
+    /** Tries to find available traffic-left value inside html code. */
     protected String regExTrafficLeft() {
         /* Traffic can also be negative! */
         String availabletraffic = new Regex(this.correctedBR, "Traffic available[^<>]*?:?</TD><TD><b>([^<>\"']+)</b>").getMatch(0);

@@ -26,7 +26,6 @@ import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -103,14 +102,10 @@ public class LunaticFilesCom extends XFileSharingProBasic {
         }
     }
 
-    protected AccountInfo fetchAccountWebsite(final Account account) throws Exception {
-        /* 2019-07-04: Special */
-        loginWebsite(account, true);
-        /* Only access URL if we haven't accessed it before already. */
-        if (br.getURL() == null || !br.getURL().contains("/?op=my_account")) {
-            getPage(this.getMainPage() + "/?op=my_account");
-        }
-        /* Do NOT change this - they put this in the html code especially for download managers! */
+    @Override
+    protected String regExTrafficLeft() {
+        /* 2019-07-05: Special */
+        /* Do NOT change this - they put this in the html code especially for download managers! to let them parse it */
         String availabletraffic = this.br.getRegex("TRAFFIC_LEFT (\\d+(?:\\.\\d{1,2})? (?:KB|MB|GB)) TRAFFIC_LEFT").getMatch(0);
         /* This traffic only gets used if the other traffic reaches 0 but let's sum them together to display the real traffic left. */
         String availabletraffic_extra = this.br.getRegex("TRAFFIC_LEFT_ADDITIONAL (\\d+(?:\\.\\d{1,2})? (?:KB|MB|GB)) TRAFFIC_LEFT_ADDITIONAL").getMatch(0);
@@ -125,10 +120,11 @@ public class LunaticFilesCom extends XFileSharingProBasic {
         if (availabletraffic_extra != null) {
             trafficleft += SizeFormatter.getSize(availabletraffic_extra);
         }
-        final AccountInfo ai = super.fetchAccountWebsite(account);
-        /* Overwrite whatever has been set before! */
-        ai.setTrafficLeft(trafficleft);
-        return ai;
+        /*
+         * We're formatting it back to a String which is not the best solution but we only need to do this because they have two trafficleft
+         * values - XFS template might gets upgraded in the future for better handling of this case!
+         */
+        return SizeFormatter.formatBytes(trafficleft);
     }
 
     @Override
