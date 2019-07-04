@@ -41,11 +41,19 @@ public class IndianPornVideosCom extends PluginForHost {
         return "http://www.indianpornvideos.com/terms/";
     }
 
+    public static String findStream(Browser br) {
+        String dllink = br.getRegex("\"(https?://stream\\.indianpornvideos\\.com/[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(https?://[^<>\"]+\\.mp4)\"").getMatch(0);
+        }
+        return dllink;
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         if (downloadLink.getDownloadURL().matches("https?://(www.)?indianpornvideos.com/(account|categories|contact-us|dmca|faq|feed|login|privacy|report-abuse|terms|wp-content|wp-includes|wp-json)")) {
-            return AvailableStatus.FALSE;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -57,10 +65,7 @@ public class IndianPornVideosCom extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("<title>([^<>\"]+) \\- Indian Porn Videos</title>").getMatch(0);
         }
-        dllink = br.getRegex("\"(https?://stream\\.indianpornvideos\\.com/[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) {
-            dllink = br.getRegex("\"(https?://[^<>\"]+\\.mp4)\"").getMatch(0);
-        }
+        dllink = findStream(br);
         if (filename == null || dllink == null) {
             if (!br.containsHTML("id=\"video_views_count\"")) {
                 /* Probably not a video-page e.g. '/about-us ' */
