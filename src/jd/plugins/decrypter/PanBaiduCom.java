@@ -368,6 +368,9 @@ public class PanBaiduCom extends PluginForDecrypt {
                 /* 2019-07-03: We store the md5 hash as property as we might need them for the download process. */
                 dl.setProperty("internal_md5hash", md5);
             }
+            if (shorturl_id != null) {
+                dl.setProperty("shorturl_id", shorturl_id);
+            }
         }
         decryptedLinks.add(dl);
     }
