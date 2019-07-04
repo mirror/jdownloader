@@ -579,7 +579,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return br.getHttpConnection().getResponseCode() == 500 || new Regex(correctedBR, "\">\\s*This server is in maintenance mode").matches();
     }
 
-    public boolean isOffline(final DownloadLink link) {
+    protected boolean isOffline(final DownloadLink link) {
         return br.getHttpConnection().getResponseCode() == 404 || new Regex(correctedBR, "(No such file|>\\s*File Not Found\\s*<|>\\s*The file was removed by|Reason for deletion:\n|File Not Found|>\\s*The file expired|>\\s*File could not be found due to expiration or removal by the file owner)").matches();
     }
 
@@ -888,7 +888,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * Similar to getFilesizeViaAvailablecheckAlt <br />
      * <b>Use this only if:</b> <br />
      * - You have verified that the filehost has a mass-linkchecker and it is working fine with this code. <br />
-     * - The contentURLs contain a filename as a fallback e.g. https://host.tld/<fuid>/someFilename.png.html
+     * - The contentURLs contain a filename as a fallback e.g. https://host.tld/<fuid>/someFilename.png.html <br/ TODO: 2019-07-04: Merge
+     * this with getFilesizeViaAvailablecheckAlt
      */
     public boolean massLinkchecker(final DownloadLink[] urls) {
         if (urls == null || urls.length == 0) {
@@ -1024,6 +1025,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * Often needed for <b><u>IMAGEHOSTER</u> ' s</b>.<br />
      * Important: Only call this if <b><u>isSupports_availablecheck_alt</u></b> is <b>true</b> (meaning omly try this if website supports
      * it)!<br />
+     * Some older XFS versions AND videohosts have versions of this linkchecker which only return online/offline and NO FILESIZE!</br>
+     * In case there is no filesize given, offline status will still be recognized!
      */
     public String getFilesizeViaAvailablecheckAlt(final Browser br, final DownloadLink link) throws PluginException {
         String filesize = null;
@@ -1095,9 +1098,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 break;
             } else {
                 logger.info("Failed to find filesize via checkType: " + checkType);
-                /* Offline check */
+                /* Offline check - this will work for both versions of the linkchecker (see documentation above!) */
                 if (br.containsHTML("(>" + Pattern.quote(link.getPluginPatternMatcher()) + "</td><td style=\"color:red;\">Not found\\!</td>|" + this.fuid + " not found\\!</font>)")) {
-                    /* SUPPORTS_AVAILABLECHECK_ABUSE == false and-or could not find any filename. */
                     logger.info("URL seems to be offline");
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -2242,6 +2244,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
         if (isWebsiteUnderMaintenance()) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is under maintenance", 2 * 60 * 60 * 1000l);
+        }
+        /* Host-type specific errors */
+        /* Videohoster */
+        if (correctedBR.contains(">\\s*?Video is processing now")) {
+            /* E.g. '<div id="over_player_msg">Video is processing now. <br>Conversion stage: <span id='enc_pp'>...</span></div>' */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not (yet) downloadable: Video is still being encoded or broken", 10 * 60 * 1000l);
         }
         checkResponseCodeErrors(br.getHttpConnection());
     }
