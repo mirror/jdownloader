@@ -216,6 +216,11 @@ public class CrhyRllCom extends PluginForDecrypt {
                     decryptedLinks.add(createOfflinelink(cryptedLink.getCryptedUrl(), "Plugin Error: Title could not be found."));
                     return decryptedLinks;
                 }
+                if (true) {
+                    // DRM is no in place
+                    decryptedLinks.add(createOfflinelink(cryptedLink.getCryptedUrl(), "Download of DRM protected streams is not supported!"));
+                    return decryptedLinks;
+                }
                 // Get the link to the XML file
                 String configUrlSearch = this.br.getRegex("\"config_url\":\"(.+?)\"").getMatch(0);
                 if (configUrlSearch == null) {

@@ -18,14 +18,11 @@ package org.jdownloader.plugins.components;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -50,12 +47,18 @@ import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class YetiShareCore extends antiDDoSForHost {
     public YetiShareCore(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(getPurchasePremiumURL());
     }
+
     // /* 1st domain = current domain! */
     // public static String[] domains = new String[] { "dummyhost.tld" };
     //
@@ -71,7 +74,6 @@ public class YetiShareCore extends antiDDoSForHost {
     // final String host = getHostsPattern();
     // return new String[] { host + YetiShareCore.getDefaultAnnotationPatternPart() };
     // }
-
     //
     // /** Returns '(?:domain1|domain2)' */
     // private static String getHostsPatternPart() {
@@ -328,31 +330,58 @@ public class YetiShareCore extends antiDDoSForHost {
      */
     public String[] scanInfo(final String[] fileInfo) {
         if (supports_availablecheck_over_info_page()) {
+            final List<String> fileNameCandidates = new ArrayList<String>();
+            if (!StringUtils.isEmpty(fileInfo[0])) {
+                fileNameCandidates.add(fileInfo[0]);
+            }
             final String[] tableData = this.br.getRegex("class=\"responsiveInfoTable\">([^<>\"/]*?)<").getColumn(0);
             /* Sometimes we get crippled results with the 2nd RegEx so use this one first */
-            if (StringUtils.isEmpty(fileInfo[0])) {
-                fileInfo[0] = this.br.getRegex("data\\-animation\\-delay=\"\\d+\">(?:Information about|Informacion) ([^<>\"]*?)</div>").getMatch(0);
+            {
+                final String name = this.br.getRegex("data\\-animation\\-delay=\"\\d+\">(?:Information about|Informacion) ([^<>\"]*?)</div>").getMatch(0);
+                if (name != null && !fileNameCandidates.contains(name)) {
+                    fileNameCandidates.add(name);
+                }
             }
-            if (StringUtils.isEmpty(fileInfo[0])) {
+            {
                 /* "Information about"-filename-trait without the animation(delay). */
-                fileInfo[0] = this.br.getRegex("class=\"description\\-1\">Information about ([^<>\"]+)<").getMatch(0);
+                final String name = this.br.getRegex("class=\"description\\-1[^\"]*\">\\s*(?:Information about|informacje o)\\s*([^<>\"]+)\\s*<").getMatch(0);
+                if (name != null && !fileNameCandidates.contains(name)) {
+                    fileNameCandidates.add(name);
+                }
             }
-            if (StringUtils.isEmpty(fileInfo[0])) {
-                fileInfo[0] = this.br.getRegex("(?:Filename|Dateiname|اسم الملف|Nome|Dosya Adı):[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
+            {
+                final String name = fileInfo[0] = this.br.getRegex("(?:Filename|Dateiname|اسم الملف|Nome|Dosya Adı|Nazwa Pliku)\\s*:[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>\\s*([^<>\"]*?)\\s*<").getMatch(0);
+                if (name != null && !fileNameCandidates.contains(name)) {
+                    fileNameCandidates.add(name);
+                }
             }
             if (StringUtils.isEmpty(fileInfo[1])) {
-                fileInfo[1] = br.getRegex("(?:Filesize|Dateigröße|حجم الملف|Tamanho|Boyut):[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
+                fileInfo[1] = br.getRegex("(?:Filesize|Dateigröße|حجم الملف|Tamanho|Boyut|Rozmiar Pliku)\\s*:\\s*[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>\\s*([^<>\"]*?)\\s*<").getMatch(0);
             }
             try {
                 /* Language-independant attempt ... */
                 if (StringUtils.isEmpty(fileInfo[0])) {
-                    fileInfo[0] = tableData[0];
+                    final String name = tableData[0];
+                    if (name != null && !fileNameCandidates.contains(name)) {
+                        fileNameCandidates.add(name);
+                    }
                 }
                 if (StringUtils.isEmpty(fileInfo[1])) {
                     fileInfo[1] = tableData[1];
                 }
             } catch (final Throwable e) {
             }
+            String bestName = null;
+            for (final String fileNameCandidate : fileNameCandidates) {
+                if (bestName == null) {
+                    bestName = fileNameCandidate;
+                } else if (bestName.contains("....") && !fileNameCandidate.contains("....")) {
+                    bestName = fileNameCandidate;
+                } else if (bestName.split(" ").length > fileNameCandidate.split(" ").length) {
+                    bestName = fileNameCandidate;
+                }
+            }
+            fileInfo[0] = bestName;
         } else {
             final Regex fInfo = br.getRegex("<strong>([^<>\"]*?) \\((\\d+(?:,\\d+)?(?:\\.\\d+)? (?:KB|MB|GB))\\)<");
             if (StringUtils.isEmpty(fileInfo[0])) {

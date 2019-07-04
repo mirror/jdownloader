@@ -1395,7 +1395,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             br.getHeaders().remove("X-Requested-With");
-        } else if (correctedBR.contains("class=\"g-recaptcha\"")) {
+        } else if (correctedBR.contains("class=\"g-recaptcha\"") || correctedBR.contains("google.com/recaptcha")) {
             /*
              * 2019-06-06: Most widespread case with an important design-flaw (see below)!
              */

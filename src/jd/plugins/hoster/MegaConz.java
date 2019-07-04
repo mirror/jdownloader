@@ -645,7 +645,7 @@ public class MegaConz extends PluginForHost {
             }
         } catch (IOException e) {
             logger.log(e);
-            checkServerBusy();
+            checkServerBusy(br.getHttpConnection(), e);
             throw e;
         }
         if (response == null) {
@@ -662,7 +662,7 @@ public class MegaConz extends PluginForHost {
             if ("-16".equals(error)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            checkServerBusy();
+            checkServerBusy(br.getHttpConnection(), null);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unhandled error code: " + error);
         }
         final String fileSize = valueOf(response.get("s"));
@@ -788,27 +788,21 @@ public class MegaConz extends PluginForHost {
                      */
                     if ("-3".equals(error)) {
                         throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "A temporary issue. Retry again later", 5 * 60 * 1000l);
-                    }
-                    if ("-4".equals(error)) {
+                    } else if ("-4".equals(error)) {
                         throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "You have exceeded your command weight per time quota. Retry again later", 5 * 60 * 1000l);
-                    }
-                    if ("-6".equals(error)) {
+                    } else if ("-6".equals(error)) {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry again later", 5 * 60 * 1000l);
-                    }
-                    if ("-11".equals(error)) {
+                    } else if ("-11".equals(error)) {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Access violation", 5 * 60 * 1000l);
-                    }
-                    if ("-16".equals(error)) {
+                    } else if ("-16".equals(error)) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "User blocked");
-                    }
-                    if ("-17".equals(error)) {
+                    } else if ("-17".equals(error)) {
                         throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Request over quota", 60 * 60 * 1000l);
-                    }
-                    if ("-18".equals(error)) {
+                    } else if ("-18".equals(error)) {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Resource temporarily not available, please try again later", 5 * 60 * 1000l);
                     }
-                    checkServerBusy();
                     logger.info("Unhandled error code: " + error);
+                    checkServerBusy(br.getHttpConnection(), null);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unhandled error code: " + error);
                 }
                 if (isHideApplication()) {
@@ -858,10 +852,7 @@ public class MegaConz extends PluginForHost {
                     }
                 }
             } catch (IOException e) {
-                checkServerBusy();
-                if (dl != null && dl.getConnection() != null && dl.getConnection().getResponseCode() == 500) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is Busy", 1 * 60 * 1000l);
-                }
+                checkServerBusy(dl.getConnection(), e);
                 throw e;
             } finally {
                 if (link.getDownloadCurrent() > 0) {
@@ -915,9 +906,9 @@ public class MegaConz extends PluginForHost {
     /**
      * @throws PluginException
      */
-    public void checkServerBusy() throws PluginException {
-        if (br.getRequest() != null && br.getRequest().getHttpConnection() != null && br.getRequest().getHttpConnection() != null && br.getRequest().getHttpConnection().getResponseCode() == 500) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is Busy", 10 * 60 * 1000l);
+    public void checkServerBusy(URLConnectionAdapter con, IOException e) throws PluginException {
+        if (con != null && con.getResponseCode() == 500) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is Busy", 10 * 60 * 1000l, e);
         }
     }
 

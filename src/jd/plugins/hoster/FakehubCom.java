@@ -22,6 +22,7 @@ import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
+import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -172,23 +173,29 @@ public class FakehubCom extends PluginForHost {
                     logger.info("Cookie login failed --> Performing full login");
                     br = prepBR(new Browser());
                 }
+                br.setCookie(getHost(), "bonusPageViews", "1");
+                br.getPage(jd.plugins.decrypter.FakehubCom.getProtocol() + "www." + account.getHoster());
+                br.followRedirect();
                 br.getPage(jd.plugins.decrypter.FakehubCom.getProtocol() + jd.plugins.decrypter.FakehubCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/access/login/");
-                String postdata = "rememberme=on&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
+                br.followRedirect();
+                String postdata = "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
                 if (br.containsHTML("api\\.recaptcha\\.net|google\\.com/recaptcha/api")) {
                     final DownloadLink dlinkbefore = getDownloadLink();
                     try {
                         if (dlinkbefore == null) {
-                            setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "http://" + account.getHoster(), true));
+                            setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true));
                         }
                         final CaptchaHelperHostPluginRecaptchaV2 captcha = new CaptchaHelperHostPluginRecaptchaV2(this, br);
-                        postdata += "&g_recaptcha_response=" + Encoding.urlEncode(captcha.getToken());
+                        postdata += "&g_recaptcha_response=" + captcha.getToken();
                     } finally {
                         if (dlinkbefore != null) {
                             setDownloadLink(dlinkbefore);
                         }
                     }
                 }
-                br.postPage(jd.plugins.decrypter.FakehubCom.getProtocol() + jd.plugins.decrypter.FakehubCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/access/submit/", postdata);
+                postdata += "&rememberme=on";
+                final PostRequest postRequest = br.createPostRequest(jd.plugins.decrypter.FakehubCom.getProtocol() + jd.plugins.decrypter.FakehubCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/access/submit/", postdata);
+                br.getPage(postRequest);
                 final Form continueform = br.getFormbyKey("response");
                 if (continueform != null) {
                     /* Redirect from probiller.com to main website --> Login complete */

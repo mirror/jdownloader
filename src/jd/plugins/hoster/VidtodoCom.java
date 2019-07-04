@@ -59,7 +59,7 @@ import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vidtodo.com" }, urls = { "https?://(?:www\\.)?(?:vids?o?todo?|vidtodoo|vidtoro)\\.(?:com|me|pro)/(?:embed\\-)?[a-z0-9]{12}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vidtodo.com" }, urls = { "https?://(?:www\\.)?(?:vids?o?todo?|vidtodoo|vidtodu|vidtoro)\\.(?:com|me|pro)/(?:embed\\-)?[a-z0-9]{12}" })
 public class VidtodoCom extends antiDDoSForHost {
     /* Some HTML code to identify different (error) states */
     private static final String  HTML_PASSWORDPROTECTED             = "<br><b>Passwor(d|t):</b> <input";
@@ -70,7 +70,7 @@ public class VidtodoCom extends antiDDoSForHost {
     private static final String  NICE_HOST                          = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String  NICE_HOSTproperty                  = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String  DOMAINS                            = "((?:vids?o?todo?|vidtodoo|vidtoro)\\.(me|com|pro))";
+    private static final String  DOMAINS                            = "((?:vids?o?todo?|vidtodoo|vidtodu|vidtoro)\\.(me|com|pro))";
     /* Errormessages inside URLs */
     private static final String  URL_ERROR_PREMIUMONLY              = "/?op=login&redirect=";
     /* All kinds of XFS-plugin-configuration settings - be sure to configure this correctly when developing new XFS plugins! */
