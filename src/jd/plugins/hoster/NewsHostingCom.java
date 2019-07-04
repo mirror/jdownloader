@@ -59,11 +59,32 @@ public class NewsHostingCom extends UseNet {
         return login;
     }
 
+    private AccountInfo quickCheckAccountInfo(Account account) throws Exception {
+        final AccountInfo ai = account.getAccountInfo();
+        if (ai != null && !ai.isExpired() && ai.isUnlimitedTraffic() && account.getStringProperty(USENET_USERNAME, null) != null) {
+            try {
+                verifyUseNetLogins(account);
+                account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 5 * 60 * 60 * 1000l);
+                ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
+                return ai;
+            } catch (InvalidAuthException e2) {
+                account.removeProperty(USENET_USERNAME);
+                logger.log(e2);
+            }
+        }
+        return null;
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         setBrowserExclusive();
         synchronized (account) {
-            final AccountInfo ai = new AccountInfo();
+            AccountInfo ai = quickCheckAccountInfo(account);
+            if (ai != null) {
+                return ai;
+            } else {
+                ai = new AccountInfo();
+            }
             br.setFollowRedirects(true);
             final Cookies cookies = account.loadCookies("");
             try {
