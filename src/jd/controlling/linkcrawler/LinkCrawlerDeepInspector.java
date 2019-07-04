@@ -24,13 +24,18 @@ public abstract class LinkCrawlerDeepInspector {
                 return true;
             } else if (hasContentType && StringUtils.contains(urlConnection.getContentType(), "image")) {
                 return true;
-            } else if (urlConnection.getLongContentLength() > sizeDownloadableContent && (!hasContentType || (!StringUtils.contains(urlConnection.getContentType(), "text") && !StringUtils.containsIgnoreCase(urlConnection.getContentType(), "application/json")))) {
+            } else if (urlConnection.getLongContentLength() > sizeDownloadableContent && (!hasContentType || !isTextContent(urlConnection))) {
                 return true;
             } else if (urlConnection.getLongContentLength() > sizeDownloadableContent && StringUtils.contains(urlConnection.getHeaderField(HTTPConstants.HEADER_RESPONSE_ACCEPT_RANGES), "bytes")) {
                 return true;
             }
         }
         return false;
+    }
+
+    public boolean isTextContent(final URLConnectionAdapter urlConnection) {
+        final String contentType = urlConnection.getContentType();
+        return StringUtils.containsIgnoreCase(contentType, "text") || StringUtils.containsIgnoreCase(contentType, "application/json") || StringUtils.containsIgnoreCase(contentType, "application/xml");
     }
 
     public abstract List<CrawledLink> deepInspect(LinkCrawler lc, final LinkCrawlerGeneration generation, Browser br, URLConnectionAdapter urlConnection, final CrawledLink link) throws Exception;

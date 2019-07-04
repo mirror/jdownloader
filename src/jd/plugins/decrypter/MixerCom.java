@@ -18,7 +18,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mixer.com" }, urls = { "https?://(?:www\\.)?mixer\\.com/[^/]*\\?vod=\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mixer.com" }, urls = { "https?://(?:www\\.)?mixer\\.com/[^/]*\\?vod=[a-zA-Z0-9_\\-]+" })
 public class MixerCom extends PluginForDecrypt {
     public MixerCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -27,7 +27,7 @@ public class MixerCom extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String vodID = new Regex(parameter.getCryptedUrl(), "vod=(\\d+)").getMatch(0);
+        final String vodID = new Regex(parameter.getCryptedUrl(), "vod=([a-zA-Z0-9_\\-]+)").getMatch(0);
         br.getPage("https://mixer.com/api/v1/recordings/" + vodID + "?noCount=1");
         final Map<String, Object> response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final String state = (String) response.get("state");

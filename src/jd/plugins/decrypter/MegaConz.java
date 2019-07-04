@@ -64,6 +64,8 @@ public class MegaConz extends PluginForDecrypt {
         return null;
     }
 
+    private static Object GLOBAL_LOCK = new Object();
+
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -88,26 +90,24 @@ public class MegaConz extends PluginForDecrypt {
         br.setReadTimeout(3 * 60 * 1000);
         // br.getHeaders().put("Origin", "https://mega.nz");
         br.getHeaders().put("APPID", "JDownloader");
+        br.addAllowedResponseCodes(500);
         int retryCounter = 0;
         final Map<String, FilePackage> fpMap = new HashMap<String, FilePackage>();
         final List<Map<String, Object>> nodes;
+        Object lock = new Object();
         while (true) {
-            final URLConnectionAdapter con = br.openRequestConnection(br.createJSonPostRequest("https://g.api.mega.co.nz/cs?id=" + CS.incrementAndGet() + "&n=" + folderID/*
-             * +
-             * "&domain=meganz
-             */, "[{\"a\":\"f\",\"c\":\"1\",\"r\":\"1\",\"ca\":1}]"));// ca=1
-            // ->
-            // !nocache,
-            // commands.cpp
-            final Object response;
-            try {
-                response = JSonStorage.getMapper().inputStreamToObject(con.getInputStream(), TypeRef.OBJECT);
-            } finally {
-                con.disconnect();
-            }
-            if (response instanceof Number) {
-                if (((Number) response).intValue() == -3) {
+            synchronized (lock) {
+                final URLConnectionAdapter con = br.openRequestConnection(br.createJSonPostRequest("https://g.api.mega.co.nz/cs?id=" + CS.incrementAndGet() + "&n=" + folderID
+                        /*
+                         * + "&domain=meganz
+                         */, "[{\"a\":\"f\",\"c\":\"1\",\"r\":\"1\",\"ca\":1}]"));// ca=1
+                // ->
+                // !nocache,
+                // commands.cpp
+                if (con.getResponseCode() == 500) {
+                    br.followConnection(true);
                     if (retryCounter < 10) {
+                        lock = GLOBAL_LOCK;
                         sleep(5000, parameter);
                         retryCounter++;
                         continue;
@@ -115,15 +115,33 @@ public class MegaConz extends PluginForDecrypt {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
-                // https://help.servmask.com/knowledgebase/mega-error-codes/
-                // -3 for EAGAIN
-                return decryptedLinks;
-            } else if (!(response instanceof List)) {
-                logger.info(JSonStorage.toString(response));
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } else {
-                nodes = (List<Map<String, Object>>) ((List<Map<String, Object>>) response).get(0).get("f");
-                break;
+                final Object response;
+                try {
+                    response = JSonStorage.getMapper().inputStreamToObject(con.getInputStream(), TypeRef.OBJECT);
+                } finally {
+                    con.disconnect();
+                }
+                if (response instanceof Number) {
+                    logger.info("Response:" + JSonStorage.toString(response));
+                    if (((Number) response).intValue() == -3) {
+                        if (retryCounter < 10) {
+                            sleep(5000, parameter);
+                            retryCounter++;
+                            continue;
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                    }
+                    // https://help.servmask.com/knowledgebase/mega-error-codes/
+                    // -3 for EAGAIN
+                    return decryptedLinks;
+                } else if (!(response instanceof List)) {
+                    logger.info("Response:" + JSonStorage.toString(response));
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
+                    nodes = (List<Map<String, Object>>) ((List<Map<String, Object>>) response).get(0).get("f");
+                    break;
+                }
             }
         }
         /*

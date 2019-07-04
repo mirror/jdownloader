@@ -3874,7 +3874,7 @@ public class LinkCrawler {
                 final LinkCrawlerRule rule = link.getMatchingRule();
                 if (rule == null) {
                     final boolean hasContentType = urlConnection.getHeaderField(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE) != null;
-                    if (urlConnection.getRequest().getLocation() == null && urlConnection.getResponseCode() == 200 && (urlConnection.isContentDisposition() || (!StringUtils.containsIgnoreCase(urlConnection.getContentType(), "text") && !StringUtils.containsIgnoreCase(urlConnection.getContentType(), "application/json")) || urlConnection.getCompleteContentLength() > limit)) {
+                    if (urlConnection.getRequest().getLocation() == null && urlConnection.getResponseCode() == 200 && (urlConnection.isContentDisposition() || !isTextContent(urlConnection) || urlConnection.getCompleteContentLength() > limit)) {
                         if (!hasContentType && !urlConnection.isContentDisposition()) {
                             try {
                                 br.followConnection();
