@@ -32,6 +32,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
+import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.captcha.v2.solver.browser.BrowserCaptchaSolverConfig;
 import org.jdownloader.captcha.v2.solver.browser.CFG_BROWSER_CAPTCHA_SOLVER;
@@ -130,6 +131,15 @@ public class BrowserSolverService extends AbstractSolverService {
             config = JsonConfig.create(BrowserCaptchaSolverConfig.class);
         }
         return INSTANCE;
+    }
+
+    public boolean isOpenBrowserSupported() {
+        final String[] browserCommandLine = BrowserSolverService.getInstance().getConfig().getBrowserCommandline();
+        if (!CrossSystem.isOpenBrowserSupported() && (browserCommandLine == null || browserCommandLine.length == 0)) {
+            return false;
+        } else {
+            return true;
+        }
     }
 
     @Override

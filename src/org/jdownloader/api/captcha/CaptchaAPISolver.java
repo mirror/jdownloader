@@ -32,6 +32,7 @@ import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaPuzzleChallenge
 import org.jdownloader.captcha.v2.challenge.oauth.AccountLoginOAuthChallenge;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
+import org.jdownloader.captcha.v2.solver.browser.AbstractBrowserChallenge;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solver.service.BrowserSolverService;
 import org.jdownloader.captcha.v2.solver.service.DialogSolverService;
@@ -77,16 +78,18 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
         });
         MyJDownloaderController.getInstance().pushCaptchaFlag(true);
         eventPublisher.fireNewJobEvent(job, challenge);
-        if (Application.isHeadless() || (challenge instanceof RecaptchaV2Challenge && !BrowserSolverService.getInstance().isEnabled()) || !DialogSolverService.getInstance().isEnabled()) {
+        if (Application.isHeadless() || (challenge instanceof AbstractBrowserChallenge && (!BrowserSolverService.getInstance().isEnabled() || !BrowserSolverService.getInstance().isOpenBrowserSupported())) || !DialogSolverService.getInstance().isEnabled()) {
             // in headless mode, we should wait, because we have no gui dialog
-            job.getLogger().info("Wait for Answer");
+            job.getLogger().info("Wait for answer");
             try {
                 while (!isJobDone(job)) {
                     Thread.sleep(250);
                 }
             } finally {
-                job.getLogger().info("Wait Done");
+                job.getLogger().info("Wait done");
             }
+        } else {
+            job.getLogger().info("Don't wait for answer");
         }
     }
 
