@@ -27,17 +27,6 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -63,6 +52,17 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.hoster.RTMPDownload;
+
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 public class XFileSharingProBasic extends antiDDoSForHost {
     public XFileSharingProBasic(PluginWrapper wrapper) {
@@ -320,8 +320,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     /**
      * 2019-05-30: TODO: Maybe remove this - a videohoster will usually also support embedding videos - maybe we can also auto-recognize
-     * this case e.g. filename has no ending but contains " MP4" or any other extension. Enable this for websites using
-     * <a href="https://sibsoft.net/xvideosharing.html">XVideosharing</a>. <br />
+     * this case e.g. filename has no ending but contains " MP4" or any other extension. Enable this for websites using <a
+     * href="https://sibsoft.net/xvideosharing.html">XVideosharing</a>. <br />
      * Demo-Website: <a href="http://xvideosharing.com">xvideosharing.com</a>
      *
      * @return true: Implies that the hoster only allows video-content to be uploaded. Enforces .mp4 extension for all URLs. Also set
@@ -350,8 +350,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * See also function getFilesizeViaAvailablecheckAlt! <br />
      * <b> Enabling this will eventually lead to at least one additional website-request! </b>
      *
-     * @return true: Implies that website supports getFilesizeViaAvailablecheckAlt call as an alternative source for filesize-parsing.
-     *         <br />
+     * @return true: Implies that website supports getFilesizeViaAvailablecheckAlt call as an alternative source for filesize-parsing. <br />
      *         false: Implies that website does NOT support getFilesizeViaAvailablecheckAlt. <br />
      *         default: true
      */
@@ -408,12 +407,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /**
-     * This is designed to find the filesize during availablecheck for videohosts - videohosts usually don't display the filesize anywhere!
-     * <br />
+     * This is designed to find the filesize during availablecheck for videohosts - videohosts usually don't display the filesize anywhere! <br />
      * CAUTION: Only set this to true if a filehost: <br />
      * 1. Allows users to embed videos via '/embed-<fuid>.html'. <br />
-     * 2. Does not display a filesize anywhere inside html code or other calls where we do not have to do an http request on a directurl.
-     * <br />
+     * 2. Does not display a filesize anywhere inside html code or other calls where we do not have to do an http request on a directurl. <br />
      * 3. Allows a lot of simultaneous connections. <br />
      * 4. Is FAST - if it is not fast, this will noticably slow down the linkchecking procedure! <br />
      * 5. Allows using a generated direct-URL at least two times.
@@ -452,8 +449,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /**
-     * Implies that a host supports one of these APIs: https://xvideosharing.docs.apiary.io/ OR https://xfilesharingpro.docs.apiary.io/
-     * <br />
+     * Implies that a host supports one of these APIs: https://xvideosharing.docs.apiary.io/ OR https://xfilesharingpro.docs.apiary.io/ <br />
      * This(=API enabled) is a rare case! <br />
      * Sadly, it seems like their linkcheck function only works on the files in the users' own account:
      * https://xvideosharing.docs.apiary.io/#reference/file/file-info/get-info/check-file(s) <br />
@@ -1356,6 +1352,41 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return dllink;
     }
 
+    protected void handleRecaptchaV2(final DownloadLink link, final Form captchaForm) throws Exception {
+        /*
+         * 2019-06-06: Most widespread case with an important design-flaw (see below)!
+         */
+        logger.info("Detected captcha method \"RecaptchaV2\" type 'normal' for this host");
+        final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br);
+        if (!this.preDownloadWaittimeSkippable()) {
+            final String waitStr = regexWaittime();
+            if (waitStr != null && waitStr.matches("\\d+")) {
+                final int waitSeconds = Integer.parseInt(waitStr);
+                final int reCaptchaV2TimeoutSeconds = rc2.getSolutionTimeout();
+                /* TODO: Remove hardcoded value, get reCaptchaV2 timeout from upper class as it can change in the future! */
+                if (waitSeconds > reCaptchaV2TimeoutSeconds) {
+                    /*
+                     * Admins may sometimes setup waittimes that are higher than the reCaptchaV2 timeout so lets say they set up 180 seconds
+                     * of pre-download-waittime --> User solves captcha immediately --> Captcha-solution times out after 120 seconds -->
+                     * User has to re-enter it (and it would fail in JD)! If admins set it up in a way that users can solve the captcha via
+                     * the waittime counts down, this failure may even happen via browser (example: xubster.com)! See workaround below!
+                     */
+                    /*
+                     * This is basically a workaround which avoids running into reCaptchaV2 timeout: Make sure that we wait less than 120
+                     * seconds after the user has solved the captcha. If the waittime is higher than 120 seconds, we'll wait two times:
+                     * Before AND after the captcha!
+                     */
+                    final int prePreWait = waitSeconds % reCaptchaV2TimeoutSeconds;
+                    logger.info("Waittime is higher than reCaptchaV2 timeout --> Waiting a part of it before solving captcha to avoid timeouts");
+                    logger.info("Pre-pre download waittime seconds: " + prePreWait);
+                    this.sleep(prePreWait * 1000l, link);
+                }
+            }
+        }
+        final String recaptchaV2Response = rc2.getToken();
+        captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+    }
+
     /** Handles all kinds of captchas, also login-captcha - fills the given captchaForm. */
     public void handleCaptcha(final DownloadLink link, final Form captchaForm) throws Exception {
         /* Captcha START */
@@ -1397,42 +1428,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             br.getHeaders().remove("X-Requested-With");
-        } else if (correctedBR.contains("class=\"g-recaptcha\"") || correctedBR.contains("google.com/recaptcha")) {
-            /*
-             * 2019-06-06: Most widespread case with an important design-flaw (see below)!
-             */
-            logger.info("Detected captcha method \"RecaptchaV2\" type 'normal' for this host");
-            final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br);
-            if (!this.preDownloadWaittimeSkippable()) {
-                final String waitStr = regexWaittime();
-                if (waitStr != null && waitStr.matches("\\d+")) {
-                    final int waitSeconds = Integer.parseInt(waitStr);
-                    final int reCaptchaV2TimeoutSeconds = rc2.getSolutionTimeout();
-                    /* TODO: Remove hardcoded value, get reCaptchaV2 timeout from upper class as it can change in the future! */
-                    if (waitSeconds > reCaptchaV2TimeoutSeconds) {
-                        /*
-                         * Admins may sometimes setup waittimes that are higher than the reCaptchaV2 timeout so lets say they set up 180
-                         * seconds of pre-download-waittime --> User solves captcha immediately --> Captcha-solution times out after 120
-                         * seconds --> User has to re-enter it (and it would fail in JD)! If admins set it up in a way that users can solve
-                         * the captcha via the waittime counts down, this failure may even happen via browser (example: xubster.com)! See
-                         * workaround below!
-                         */
-                        /*
-                         * This is basically a workaround which avoids running into reCaptchaV2 timeout: Make sure that we wait less than
-                         * 120 seconds after the user has solved the captcha. If the waittime is higher than 120 seconds, we'll wait two
-                         * times: Before AND after the captcha!
-                         */
-                        final int prePreWait = waitSeconds % reCaptchaV2TimeoutSeconds;
-                        logger.info("Waittime is higher than reCaptchaV2 timeout --> Waiting a part of it before solving captcha to avoid timeouts");
-                        logger.info("Pre-pre download waittime seconds: " + prePreWait);
-                        this.sleep(prePreWait * 1000l, link);
-                    }
-                }
-            }
-            final String recaptchaV2Response = rc2.getToken();
-            captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+        } else if (StringUtils.containsIgnoreCase(correctedBR, "class=\"g-recaptcha\"") || StringUtils.containsIgnoreCase(correctedBR, "google.com/recaptcha")) {
+            handleRecaptchaV2(link, captchaForm);
         } else {
-            if (correctedBR.contains(";background:#ccc;text-align")) {
+            if (StringUtils.containsIgnoreCase(correctedBR, ";background:#ccc;text-align")) {
                 logger.info("Detected captcha method \"plaintext captchas\" for this host");
                 /* Captcha method by ManiacMansion */
                 final String[][] letters = new Regex(br, "<span style='position:absolute;padding\\-left:(\\d+)px;padding\\-top:\\d+px;'>(&#\\d+;)</span>").getMatches();
@@ -1450,7 +1449,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 }
                 captchaForm.put("code", code.toString());
                 logger.info("Put captchacode " + code.toString() + " obtained by captcha metod \"plaintext captchas\" in the form.");
-            } else if (correctedBR.contains("/captchas/")) {
+            } else if (StringUtils.containsIgnoreCase(correctedBR, "/captchas/")) {
                 logger.info("Detected captcha method \"Standard captcha\" for this host");
                 final String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
                 String captchaurl = null;
