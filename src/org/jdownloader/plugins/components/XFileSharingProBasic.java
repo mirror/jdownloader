@@ -511,7 +511,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /** Returns https?://host.tld */
-    protected final String getMainPage() {
+    protected String getMainPage() {
         final String[] hosts = this.siteSupportedNames();
         String mainpage;
         final String protocol;
@@ -898,8 +898,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * Similar to getFilesizeViaAvailablecheckAlt <br />
      * <b>Use this only if:</b> <br />
      * - You have verified that the filehost has a mass-linkchecker and it is working fine with this code. <br />
-     * - The contentURLs contain a filename as a fallback e.g. https://host.tld/<fuid>/someFilename.png.html <br
-     * / TODO: 2019-07-04: Merge this with getFilesizeViaAvailablecheckAlt
+     * - The contentURLs contain a filename as a fallback e.g. https://host.tld/<fuid>/someFilename.png.html <br / TODO: 2019-07-04: Merge
+     * this with getFilesizeViaAvailablecheckAlt
      */
     public boolean massLinkchecker(final DownloadLink[] urls) {
         if (urls == null || urls.length == 0) {
@@ -1035,8 +1035,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * Often needed for <b><u>IMAGEHOSTER</u> ' s</b>.<br />
      * Important: Only call this if <b><u>isSupports_availablecheck_alt</u></b> is <b>true</b> (meaning omly try this if website supports
      * it)!<br />
-     * Some older XFS versions AND videohosts have versions of this linkchecker which only return online/offline and NO FILESIZE!</br> In
-     * case there is no filesize given, offline status will still be recognized!
+     * Some older XFS versions AND videohosts have versions of this linkchecker which only return online/offline and NO FILESIZE!</br>
+     * In case there is no filesize given, offline status will still be recognized!
      */
     public String getFilesizeViaAvailablecheckAlt(final Browser br, final DownloadLink link) throws PluginException {
         String filesize = null;
@@ -1250,7 +1250,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             do {
                 imghost_next_form = findImageForm(this.br);
                 if (imghost_next_form != null) {
-                    imghost_next_form.remove("method_premium");
                     /* end of backward compatibility */
                     submitForm(imghost_next_form);
                     checkErrors(link, account, false);
@@ -2580,7 +2579,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     /** Returns Form required to click on 'continue to image' for image-hosts. */
     public Form findImageForm(final Browser br) {
-        return br.getFormbyKey("next");
+        final Form imghost_next_form = br.getFormbyKey("next");
+        if (imghost_next_form != null && imghost_next_form.hasInputFieldByName("method_premium")) {
+            imghost_next_form.remove("method_premium");
+        }
+        return imghost_next_form;
     }
 
     /** Tries to find available traffic inside html code. */
@@ -2606,8 +2609,9 @@ public class XFileSharingProBasic extends antiDDoSForHost {
          * please use valid combinations only! login or email alone without xfss is NOT valid!
          */
         final boolean login_xfss_CookieOkay = StringUtils.isAllNotEmpty(br.getCookie(getMainPage(), "login", Cookies.NOTDELETEDPATTERN), br.getCookie(getMainPage(), "xfss", Cookies.NOTDELETEDPATTERN));
+        /* xfsts cookie is mostly used in xvideosharing sites (videohosters) example: vidoza.net */
         final boolean login_xfsts_CookieOkay = StringUtils.isAllNotEmpty(br.getCookie(getMainPage(), "login", Cookies.NOTDELETEDPATTERN), br.getCookie(getMainPage(), "xfsts", Cookies.NOTDELETEDPATTERN));
-        /* 2019-06-21: Example website which uses email cookie: filefox.cc (so far the only known!) */
+        /* 2019-06-21: Example website which uses rare email cookie: filefox.cc (so far the only known!) */
         final boolean email_xfss_CookieOkay = StringUtils.isAllNotEmpty(br.getCookie(getMainPage(), "email", Cookies.NOTDELETEDPATTERN), br.getCookie(getMainPage(), "xfss", Cookies.NOTDELETEDPATTERN));
         final boolean email_xfsts_CookieOkay = StringUtils.isAllNotEmpty(br.getCookie(getMainPage(), "email", Cookies.NOTDELETEDPATTERN), br.getCookie(getMainPage(), "xfsts", Cookies.NOTDELETEDPATTERN));
         /* buttons or sites that are only available for logged in users */
