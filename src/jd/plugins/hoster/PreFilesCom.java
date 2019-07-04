@@ -19,6 +19,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -28,9 +31,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PreFilesCom extends XFileSharingProBasic {
@@ -106,7 +106,7 @@ public class PreFilesCom extends XFileSharingProBasic {
         /* 2019-07-03: Special */
         String trafficleft = super.regExTrafficLeft();
         if (StringUtils.isEmpty(trafficleft)) {
-            /* 2019-07-03: Free Accounts: According to this place, 5 GB (per day?) but another hint states 2 GB/day */
+            /* 2019-07-03: Free Accounts: According to this place, 5 GB (per day?) but another place states 2 GB/day */
             trafficleft = new Regex(correctedBR, "Traffic Remaining</td>\\s*?<td>([^<>\"]+)</td>").getMatch(0);
         }
         return trafficleft;
