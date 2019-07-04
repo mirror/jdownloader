@@ -210,7 +210,7 @@ public class LunaticFilesCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 1, "freelink");
+        doFree(downloadLink, false, 1, "freelink");
     }
 
     @SuppressWarnings("unused")
@@ -879,7 +879,7 @@ public class LunaticFilesCom extends PluginForHost {
         login(account, false);
         if (account.getType() == AccountType.FREE) {
             requestFileInformation(downloadLink);
-            doFree(downloadLink, true, 1, "freelink2");
+            doFree(downloadLink, false, 1, "freelink2");
         } else {
             String dllink = checkDirectLink(downloadLink, "premlink");
             if (dllink == null) {
