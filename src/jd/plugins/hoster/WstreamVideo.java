@@ -17,19 +17,18 @@ package jd.plugins.hoster;
 
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class WstreamVideo extends XFileSharingProBasic {
@@ -147,15 +146,6 @@ public class WstreamVideo extends XFileSharingProBasic {
             logger.info("Failed to find official video downloadlink");
         }
         return dllink;
-    }
-
-    public boolean isLoggedin() {
-        /* 2019-06-27: Special */
-        boolean loggedIN = super.isLoggedin();
-        if (!loggedIN) {
-            loggedIN = StringUtils.isAllNotEmpty(br.getCookie(getMainPage(), "login", Cookies.NOTDELETEDPATTERN), br.getCookie(getMainPage(), "xfsts", Cookies.NOTDELETEDPATTERN));
-        }
-        return loggedIN;
     }
 
     @Override

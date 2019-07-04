@@ -19,11 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
-import jd.http.Cookies;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -32,6 +28,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PreFilesCom extends XFileSharingProBasic {
@@ -100,20 +99,6 @@ public class PreFilesCom extends XFileSharingProBasic {
             premiumonly = new Regex(correctedBR, "<p>Sorry, This file only can be downloaded by PRO Membership").matches();
         }
         return premiumonly;
-    }
-
-    @Override
-    public boolean isLoggedin() {
-        /* 2019-07-03: Special */
-        boolean loggedin = super.isLoggedin();
-        if (!loggedin) {
-            final boolean login_xfss_CookieOkay = br.getCookie(getMainPage(), "xfss", Cookies.NOTDELETEDPATTERN) != null;
-            /* 2019-06-21: Example website which uses email cookie: filefox.cc (so far the only known!) */
-            final boolean logoutOkay = br.containsHTML("/logout");
-            final boolean myAccount = br.containsHTML("/my-account");
-            loggedin = (login_xfss_CookieOkay) && (logoutOkay || myAccount);
-        }
-        return loggedin;
     }
 
     @Override
