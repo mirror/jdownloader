@@ -2457,6 +2457,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         expireSecond = new Regex(correctedBR, Pattern.compile(">\\s*(\\d+ years?, )?(\\d+ days?, )?(\\d+ hours?, )?(\\d+ minutes?, )?\\d+ seconds\\s*<", Pattern.CASE_INSENSITIVE)).getMatch(-1);
                     }
                     if (!StringUtils.isEmpty(expireSecond)) {
+                        /**
+                         * TODO: 2019-07-04: If a 'normal' AND precise date are given, precise one should at least be current date + end of
+                         * the day (e.g. 23:59)
+                         */
                         String tmpYears = new Regex(expireSecond, "(\\d+)\\s+years?").getMatch(0);
                         String tmpdays = new Regex(expireSecond, "(\\d+)\\s+days?").getMatch(0);
                         String tmphrs = new Regex(expireSecond, "(\\d+)\\s+hours?").getMatch(0);

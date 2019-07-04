@@ -68,8 +68,6 @@ public class DailyleechCom extends antiDDoSForHost {
 
     private Browser prepBR(final Browser br) {
         br.setCookiesExclusive(true);
-        /* 2019-06-13: They've blocked this User-Agent for unknown reasons. Accessing their login-page will return 403 when it is used! */
-        // br.getHeaders().put("User-Agent", "JDownloader");
         br.setFollowRedirects(true);
         return br;
     }
