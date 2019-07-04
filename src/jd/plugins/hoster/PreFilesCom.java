@@ -20,14 +20,11 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
 import jd.http.Cookies;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountUnavailableException;
@@ -117,45 +114,6 @@ public class PreFilesCom extends XFileSharingProBasic {
             loggedin = (login_xfss_CookieOkay) && (logoutOkay || myAccount);
         }
         return loggedin;
-    }
-
-    @Override
-    public void handleCaptcha(final DownloadLink link, final Form captchaForm) throws Exception {
-        /* 2019-07-03: Special */
-        if (br.containsHTML("google.com/recaptcha")) {
-            logger.info("Detected captcha method \"RecaptchaV2\" type 'normal' for this host");
-            final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br);
-            if (!this.preDownloadWaittimeSkippable()) {
-                final String waitStr = regexWaittime();
-                if (waitStr != null && waitStr.matches("\\d+")) {
-                    final int waitSeconds = Integer.parseInt(waitStr);
-                    final int reCaptchaV2TimeoutSeconds = rc2.getSolutionTimeout();
-                    /* TODO: Remove hardcoded value, get reCaptchaV2 timeout from upper class as it can change in the future! */
-                    if (waitSeconds > reCaptchaV2TimeoutSeconds) {
-                        /*
-                         * Admins may sometimes setup waittimes that are higher than the reCaptchaV2 timeout so lets say they set up 180
-                         * seconds of pre-download-waittime --> User solves captcha immediately --> Captcha-solution times out after 120
-                         * seconds --> User has to re-enter it (and it would fail in JD)! If admins set it up in a way that users can solve
-                         * the captcha via the waittime counts down, this failure may even happen via browser (example: xubster.com)! See
-                         * workaround below!
-                         */
-                        /*
-                         * This is basically a workaround which avoids running into reCaptchaV2 timeout: Make sure that we wait less than
-                         * 120 seconds after the user has solved the captcha. If the waittime is higher than 120 seconds, we'll wait two
-                         * times: Before AND after the captcha!
-                         */
-                        final int prePreWait = waitSeconds % reCaptchaV2TimeoutSeconds;
-                        logger.info("Waittime is higher than reCaptchaV2 timeout --> Waiting a part of it before solving captcha to avoid timeouts");
-                        logger.info("Pre-pre download waittime seconds: " + prePreWait);
-                        this.sleep(prePreWait * 1000l, link);
-                    }
-                }
-            }
-            final String recaptchaV2Response = rc2.getToken();
-            captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-        } else {
-            super.handleCaptcha(link, captchaForm);
-        }
     }
 
     @Override
