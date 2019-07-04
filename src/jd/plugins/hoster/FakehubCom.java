@@ -186,7 +186,7 @@ public class FakehubCom extends PluginForHost {
                             setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true));
                         }
                         final CaptchaHelperHostPluginRecaptchaV2 captcha = new CaptchaHelperHostPluginRecaptchaV2(this, br);
-                        postdata += "&g_recaptcha_response=" + captcha.getToken();
+                        postdata += "&g-recaptcha-response=" + captcha.getToken();
                     } finally {
                         if (dlinkbefore != null) {
                             setDownloadLink(dlinkbefore);
