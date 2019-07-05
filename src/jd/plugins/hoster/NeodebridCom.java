@@ -19,11 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -40,6 +35,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "neodebrid.com" }, urls = { "" })
 public class NeodebridCom extends PluginForHost {
@@ -79,8 +79,9 @@ public class NeodebridCom extends PluginForHost {
         if (account == null) {
             /* without account its not possible to download the link */
             return false;
+        } else {
+            return true;
         }
-        return true;
     }
 
     @Override
@@ -107,13 +108,13 @@ public class NeodebridCom extends PluginForHost {
         link.setProperty(this.getHost() + "directlink", dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, defaultRESUME, defaultMAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection(true);
             /* 402 - Payment required */
             if (dl.getConnection().getResponseCode() == 402) {
                 /* 2019-05-03: E.g. free account[or expired premium], only 1 download per day (?) possible */
                 account.getAccountInfo().setTrafficLeft(0);
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "No traffic left", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
-            br.followConnection();
             handleKnownErrors(this.br, account, link);
             mhm.handleErrorGeneric(account, link, "unknown_dl_error", 10, 5 * 60 * 1000l);
         }
@@ -135,17 +136,23 @@ public class NeodebridCom extends PluginForHost {
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
         String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
+            URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                URLConnectionAdapter con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getResponseCode() == 404 || con.getLongContentLength() == -1) {
+                br2.setFollowRedirects(true);
+                con = br2.openHeadConnection(dllink);
+                if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
                 }
-                con.disconnect();
             } catch (final Exception e) {
+                logger.log(e);
                 downloadLink.setProperty(property, Property.NULL);
                 dllink = null;
+            } finally {
+                if (con != null) {
+                    con.disconnect();
+                }
             }
         }
         return dllink;
@@ -199,37 +206,41 @@ public class NeodebridCom extends PluginForHost {
         return ai;
     }
 
-    private static Object acclock = new Object();
-
     private void loginAPI(final Account account) throws IOException, PluginException {
-        synchronized (acclock) {
-            br.setFollowRedirects(true);
-            String api_token = getApiToken(account);
-            String status = null;
-            if (api_token != null) {
-                br.getPage(API_BASE + "/info?token=" + this.getApiToken(account));
+        synchronized (account) {
+            try {
+                br.setFollowRedirects(true);
+                String api_token = getApiToken(account);
+                String status = null;
+                if (api_token != null) {
+                    br.getPage(API_BASE + "/info?token=" + this.getApiToken(account));
+                    status = PluginJSonUtils.getJson(br, "status");
+                    if ("success".equalsIgnoreCase(status)) {
+                        logger.info("Stored token was valid");
+                        return;
+                    } else {
+                        logger.info("Stored token was INVALID, performing full login");
+                    }
+                }
+                br.getPage(API_BASE + "/login?email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                /** 2019-07-05: No idea how long this token is valid! */
+                api_token = PluginJSonUtils.getJson(br, "api_token");
                 status = PluginJSonUtils.getJson(br, "status");
-                if ("success".equalsIgnoreCase(status)) {
-                    logger.info("Stored token was valid");
-                    return;
-                } else {
-                    logger.info("Stored token was INVALID, performing full login");
+                if (!"success".equalsIgnoreCase(status) || StringUtils.isEmpty(api_token)) {
+                    /* E.g. {"error":"bad username OR bad password"} */
+                    final String fail_reason = PluginJSonUtils.getJson(br, "reason");
+                    if (!StringUtils.isEmpty(fail_reason)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, fail_reason, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
-            }
-            br.getPage(API_BASE + "/login?email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-            /** 2019-07-05: No idea how long this token is valid! */
-            api_token = PluginJSonUtils.getJson(br, "api_token");
-            status = PluginJSonUtils.getJson(br, "status");
-            if (!"success".equalsIgnoreCase(status) || StringUtils.isEmpty(api_token)) {
-                /* E.g. {"error":"bad username OR bad password"} */
-                final String fail_reason = PluginJSonUtils.getJson(br, "reason");
-                if (!StringUtils.isEmpty(fail_reason)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, fail_reason, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } catch (PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.removeProperty("api_token");
                 }
+                throw e;
             }
-            account.setProperty("api_token", api_token);
         }
     }
 
