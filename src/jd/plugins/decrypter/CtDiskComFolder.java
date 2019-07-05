@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Random;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -31,7 +30,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.hoster.CtDiskCom;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.StringUtils;
@@ -43,44 +44,35 @@ public class CtDiskComFolder extends PluginForDecrypt {
     // DEV NOTES
     // protocol: no https.
     // user unique id
-    private String         uuid    = null;
+    private String        uuid  = null;
     // folder unique id
-    private String         fuid    = null;
-    private static String  agent   = null;
-    private static Object  LOCK    = new Object();
-    public static String[] domains = new String[] { "ctfile.com", "ctdisk.com", "400gb.com", "pipipan.com", "t00y.com", "bego.cc" };
+    private String        fuid  = null;
+    private static String agent = null;
+    private static Object LOCK  = new Object();
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "ctfile.com", "ctdisk.com", "400gb.com", "pipipan.com", "t00y.com", "bego.cc" });
+        return ret;
+    }
 
     public static String[] getAnnotationNames() {
-        return new String[] { domains[0] };
+        return PluginForHost.buildAnnotationNames(CtDiskCom.getPluginDomains());
     }
 
     @Override
     public String[] siteSupportedNames() {
-        return domains;
+        return PluginForHost.buildSupportedNames(CtDiskCom.getPluginDomains());
     }
 
     public static String[] getAnnotationUrls() {
+        final List<String[]> pluginDomains = CtDiskCom.getPluginDomains();
         final List<String> ret = new ArrayList<String>();
-        for (int i = 0; i < domains.length; i++) {
-            if (i == 0) {
-                /* Match all URLs on first (=current) domain */
-                ret.add("https?://[A-Za-z0-9]+\\." + getHostsPatternPart() + "/dir/.+");
-            } else {
-                break;
-            }
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://[A-Za-z0-9]+\\." + PluginForHost.buildHostsPatternPart(domains) + "/dir/.+");
         }
         return ret.toArray(new String[0]);
-    }
-
-    /** Returns '(?:domain1|domain2)' */
-    public static String getHostsPatternPart() {
-        final StringBuilder pattern = new StringBuilder();
-        pattern.append("(?:");
-        for (final String name : domains) {
-            pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
-        }
-        pattern.append(")");
-        return pattern.toString();
     }
 
     public CtDiskComFolder(PluginWrapper wrapper) {
@@ -101,10 +93,35 @@ public class CtDiskComFolder extends PluginForDecrypt {
         return prepBr;
     }
 
+    protected String correctHost(String host) {
+        final List<String[]> pluginDomains = CtDiskCom.getPluginDomains();
+        for (final String[] domains : pluginDomains) {
+            for (String domain : domains) {
+                if (StringUtils.equalsIgnoreCase(host, domain)) {
+                    return domains[0];
+                }
+            }
+        }
+        return host;
+    }
+
+    public String getUserID(final String url) {
+        String userid = new Regex(url, "https?://u(\\d+)").getMatch(0);
+        if (userid == null) {
+            userid = new Regex(url, "/fs/(\\d+)").getMatch(0);
+        }
+        return userid;
+    }
+
+    public String getFileID(final String url) {
+        String fileid = new Regex(url, "/fs/(?:\\d+\\-|file/)(\\d+)$").getMatch(0);
+        return fileid;
+    }
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String host_current = Browser.getHost(param.getCryptedUrl());
-        final String host_new = jd.plugins.hoster.CtDiskCom.correctHost(host_current);
+        final String host_new = correctHost(host_current);
         String parameter = param.toString().replace(host_current + "/", host_new + "/");
         prepBrowser(br);
         // lock to one thread!
@@ -115,7 +132,7 @@ public class CtDiskComFolder extends PluginForDecrypt {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
-            uuid = jd.plugins.hoster.CtDiskCom.getUserID(parameter);
+            uuid = getUserID(parameter);
             if (uuid == null) {
                 logger.warning("Failed to find userid");
                 return null;

@@ -24,12 +24,6 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -53,6 +47,12 @@ import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.plugins.download.DownloadInterface;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class YetiShareCore extends antiDDoSForHost {
@@ -214,8 +214,8 @@ public class YetiShareCore extends antiDDoSForHost {
 
     /**
      * @return true: Implies that website will show filename & filesize via website.tld/<fuid>~i <br />
-     *         Most YetiShare websites support this kind of linkcheck! </br>
-     *         false: Implies that website does NOT show filename & filesize via website.tld/<fuid>~i. <br />
+     *         Most YetiShare websites support this kind of linkcheck! </br> false: Implies that website does NOT show filename & filesize
+     *         via website.tld/<fuid>~i. <br />
      *         default: true
      */
     public boolean supports_availablecheck_over_info_page() {
@@ -340,7 +340,7 @@ public class YetiShareCore extends antiDDoSForHost {
             /* Sometimes we get crippled results with the 2nd RegEx so use this one first */
             {
                 String name = this.br.getRegex("data\\-animation\\-delay=\"\\d+\"\\s*>\\s*(?:Information about|Informacion)\\s*([^<>\"]*?)\\s*</div>").getMatch(0);
-                name = name != null ? Encoding.htmlDecode(name).trim() : null;
+                name = name != null ? Encoding.htmlOnlyDecode(name).trim() : null;
                 if (name != null && !fileNameCandidates.contains(name)) {
                     fileNameCandidates.add(name);
                 }
@@ -351,7 +351,7 @@ public class YetiShareCore extends antiDDoSForHost {
                  * the 'Filename:' is empty and the filename is only present at this place!
                  */
                 String name = this.br.getRegex("<meta\\s*name\\s*=\\s*\"description[^\"]*\"\\s*content\\s*=\\s*\"\\s*(?:Information about|informacje o)\\s*([^<>\"]+)\\s*\"").getMatch(0);
-                name = name != null ? Encoding.htmlDecode(name).trim() : null;
+                name = name != null ? Encoding.htmlOnlyDecode(name).trim() : null;
                 if (name != null && !fileNameCandidates.contains(name)) {
                     fileNameCandidates.add(name);
                 }
@@ -362,14 +362,14 @@ public class YetiShareCore extends antiDDoSForHost {
                  * the 'Filename:' is empty and the filename is only present at this place!
                  */
                 String name = this.br.getRegex("class\\s*=\\s*\"description\\-1[^\"]*\"\\s*>\\s*(?:Information about|informacje o)\\s*([^<>\"]+)\\s*<").getMatch(0);
-                name = name != null ? Encoding.htmlDecode(name).trim() : null;
+                name = name != null ? Encoding.htmlOnlyDecode(name).trim() : null;
                 if (name != null && !fileNameCandidates.contains(name)) {
                     fileNameCandidates.add(name);
                 }
             }
             {
                 String name = fileInfo[0] = this.br.getRegex("(?:Filename|Dateiname|اسم الملف|Nome|Dosya Adı|Nazwa Pliku)\\s*:[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>\\s*([^<>\"]*?)\\s*<").getMatch(0);
-                name = name != null ? Encoding.htmlDecode(name).trim() : null;
+                name = name != null ? Encoding.htmlOnlyDecode(name).trim() : null;
                 if (name != null && !fileNameCandidates.contains(name)) {
                     fileNameCandidates.add(name);
                 }
@@ -381,7 +381,7 @@ public class YetiShareCore extends antiDDoSForHost {
                 /* Language-independant attempt ... */
                 if (StringUtils.isEmpty(fileInfo[0])) {
                     String name = tableData[0];
-                    name = name != null ? Encoding.htmlDecode(name).trim() : null;
+                    name = name != null ? Encoding.htmlOnlyDecode(name).trim() : null;
                     if (name != null && !fileNameCandidates.contains(name)) {
                         fileNameCandidates.add(name);
                     }
@@ -390,6 +390,7 @@ public class YetiShareCore extends antiDDoSForHost {
                     fileInfo[1] = tableData[1];
                 }
             } catch (final Throwable e) {
+                logger.log(e);
             }
             String bestName = null;
             for (final String fileNameCandidate : fileNameCandidates) {
