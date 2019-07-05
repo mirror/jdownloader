@@ -17,10 +17,9 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.URLConnectionAdapter;
 import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.HTMLParser;
@@ -28,6 +27,9 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision: 40413 $", interfaceVersion = 3, names = { "hentaidude.com" }, urls = { "https?://(?:www\\.)?hentaidude\\.com/.*" })
 public class HentaiDude extends antiDDoSForDecrypt {
@@ -55,11 +57,16 @@ public class HentaiDude extends antiDDoSForDecrypt {
         for (String result : results) {
             decryptedLinks.add(createDownloadlink(Encoding.htmlOnlyDecode(result)));
             if (result.matches("https?://cdn[0-9]+.hentaidude\\.com/index.*")) {
+                URLConnectionAdapter con = null;
                 try {
-                    getPage(result);
-                    String[][] detailResults = br.getRegex("(?:suburl|name=\"og:url\" content) ?= ?\"([^\"]+)\"").getMatches();
-                    for (String[] detailResult : detailResults) {
-                        decryptedLinks.add(createDownloadlink(Encoding.htmlOnlyDecode(detailResult[0])));
+                    con = br.openHeadConnection(result);
+                    final String contentType = con.getContentType();
+                    if (!StringUtils.containsIgnoreCase(contentType, "video/mp4")) {
+                        getPage(result);
+                        String[][] detailResults = br.getRegex("(?:suburl|name=\"og:url\" content) ?= ?\"([^\"]+)\"").getMatches();
+                        for (String[] detailResult : detailResults) {
+                            decryptedLinks.add(createDownloadlink(Encoding.htmlOnlyDecode(detailResult[0])));
+                        }
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -72,5 +79,9 @@ public class HentaiDude extends antiDDoSForDecrypt {
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
+    }
+
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
     }
 }
