@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -21,6 +22,14 @@ import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogInterface;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -46,14 +55,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogInterface;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  * Abstract class supporting keep2share/fileboom/publish2<br/>
@@ -541,6 +542,163 @@ public abstract class K2SApi extends PluginForHost {
             // remove download slot
             controlSlot(-1, account);
         }
+    }
+
+    public AvailableStatus requestFileInformationWebsite(final DownloadLink link) throws Exception {
+        final String fuid = getFUID(link);
+        getPage("https://api." + this.getHost() + "/v1/files/" + fuid);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final String filename = (String) entries.get("name");
+        // final String access = (String)entries.get("access");
+        final boolean isDeleted = ((Boolean) entries.get("isDeleted")).booleanValue();
+        final boolean isAvailableForFree = ((Boolean) entries.get("isAvailableForFree")).booleanValue();
+        // final boolean hasAbuse = ((Boolean) entries.get("hasAbuse")).booleanValue();
+        final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
+        // final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("");
+        if (!StringUtils.isEmpty(filename)) {
+            link.setFinalFileName(filename);
+        }
+        if (filesize > 0) {
+            link.setDownloadSize(filesize);
+        }
+        if (isDeleted) {
+            /* Files can get deleted and filename & filesize information may still be available! */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        return AvailableStatus.TRUE;
+    }
+
+    @SuppressWarnings("deprecation")
+    public void handleDownloadWebsite(final DownloadLink downloadLink, final Account account) throws Exception {
+        if (true) {
+            /** 2019-07-05: Website download is still broken */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        /* Use API for linkcheck as it is more reliable */
+        reqFileInformation(downloadLink);
+        final String fuid = getFUID(downloadLink);
+        String dllink = getDirectLinkAndReset(downloadLink, true);
+        // required to get overrides to work
+        br = prepAPI(br);
+        // because opening the link to test it, uses up the availability, then reopening it again = too many requests too quickly issue.
+        if (!inValidate(dllink)) {
+            final Browser obr = br.cloneBrowser();
+            logger.info("Reusing cached finallink!");
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumes, chunks);
+            if (!isValidDownloadConnection(dl.getConnection())) {
+                dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
+                br.followConnection();
+                handleGeneralServerErrors(account, downloadLink);
+                // we now want to restore!
+                br = obr;
+                dllink = null;
+            }
+        }
+        // if above has failed, dllink will be null
+        if (inValidate(dllink)) {
+            if ("premium".equalsIgnoreCase(downloadLink.getStringProperty("access", null)) && isFree) {
+                // download not possible
+                premiumDownloadRestriction(getErrorMessage(3));
+            } else if ("private".equalsIgnoreCase(downloadLink.getStringProperty("access", null)) && isFree) {
+                privateDownloadRestriction(getErrorMessage(8));
+            }
+            if (isFree) {
+                // free non account, and free account download method.
+                currentIP.set(this.getIP());
+                if (account == null) {
+                    synchronized (CTRLLOCK) {
+                        /* Load list of saved IPs + timestamp of last download */
+                        final Object lastdownloadmap = this.getPluginConfig().getProperty(PROPERTY_LASTDOWNLOAD);
+                        if (lastdownloadmap != null && lastdownloadmap instanceof HashMap && blockedIPsMap.isEmpty()) {
+                            blockedIPsMap = (HashMap<String, Long>) lastdownloadmap;
+                        }
+                    }
+                }
+                /**
+                 * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached!
+                 */
+                if (this.getPluginConfig().getBooleanProperty(EXPERIMENTALHANDLING, default_eh)) {
+                    long lastdownload = 0;
+                    long passedTimeSinceLastDl = 0;
+                    logger.info("New Download: currentIP = " + currentIP.get());
+                    /*
+                     * If the user starts a download in free (unregistered) mode the waittime is on his IP. This also affects free accounts
+                     * if he tries to start more downloads via free accounts afterwards BUT nontheless the limit is only on his IP so he CAN
+                     * download using the same free accounts after performing a reconnect!
+                     */
+                    lastdownload = getPluginSavedLastDownloadTimestamp();
+                    passedTimeSinceLastDl = System.currentTimeMillis() - lastdownload;
+                    if (passedTimeSinceLastDl < FREE_RECONNECTWAIT) {
+                        logger.info("Experimental handling active --> There still seems to be a waittime on the current IP --> ERROR_IP_BLOCKED");
+                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, FREE_RECONNECTWAIT - passedTimeSinceLastDl);
+                    }
+                }
+                final String custom_referer = this.getPluginConfig().getStringProperty(CUSTOM_REFERER, "");
+                /** 2019-07-05: TODO: Fix auth stuff */
+                getPage("https://api." + this.getHost() + "/v1/auth/token");
+                getPage("https://api." + this.getHost() + "/v1/files/" + fuid + "/download?referer=" + Encoding.urlEncode(custom_referer));
+                final String msg = PluginJSonUtils.getJson(br, "message");
+                if ("Captcha validation error".equalsIgnoreCase(msg)) {
+                    /* Captcha + waittime required */
+                    final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br, this.getReCaptchaV2WebsiteKey());
+                    final String recaptchaV2Response = rc2.getToken();
+                    getPage("/v1/files/" + fuid + "/download?captchaType=recaptcha&captchaValue=" + Encoding.urlEncode(recaptchaV2Response) + "&referer=" + Encoding.urlEncode(custom_referer));
+                    final String waitStr = PluginJSonUtils.getJson(br, "timeRemain");
+                    if (waitStr == null) {
+                        logger.warning("Failed to find waittime");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    this.sleep(Long.parseLong(waitStr) * 1001l, downloadLink);
+                    getPage("https://api." + this.getHost() + "/v1/files/" + fuid + "/download?referer=" + Encoding.urlEncode(custom_referer));
+                }
+            } else {
+                // premium download
+                postPageRaw(br, "/geturl", "{\"auth_token\":\"" + getAuthToken(account) + "\",\"file_id\":\"" + fuid + "\"}", account);
+                // private error files happen here, because we can't identify the owner until download sequence starts!
+            }
+            dllink = PluginJSonUtils.getJsonValue(br, "downloadUrl");
+            if (inValidate(dllink)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            logger.info("dllink = " + dllink);
+            /*
+             * The download attempt already triggers reconnect waittime! Save timestamp here to calculate correct remaining waittime later!
+             */
+            synchronized (CTRLLOCK) {
+                if (account != null) {
+                    account.setProperty(PROPERTY_LASTDOWNLOAD, System.currentTimeMillis());
+                } else {
+                    blockedIPsMap.put(currentIP.get(), System.currentTimeMillis());
+                    getPluginConfig().setProperty(PROPERTY_LASTDOWNLOAD, blockedIPsMap);
+                }
+                setIP(downloadLink, account);
+            }
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumes, chunks);
+            if (!isValidDownloadConnection(dl.getConnection())) {
+                dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                handleGeneralServerErrors(account, downloadLink);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
+        // add download slot
+        controlSlot(+1, account);
+        try {
+            downloadLink.setProperty(directlinkproperty, dllink);
+            dl.startDownload();
+        } finally {
+            // remove download slot
+            controlSlot(-1, account);
+        }
+    }
+
+    /** Override this for each host! */
+    protected String getReCaptchaV2WebsiteKey() {
+        return null;
     }
 
     protected Browser prepBrowserForWebsite(final Browser br) {

@@ -19,6 +19,13 @@ import java.io.File;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -36,13 +43,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 /**
  *
@@ -349,7 +349,7 @@ public class Keep2ShareCc extends K2SApi {
                 // temp solution for forceAPI
                 super.handleDownload(downloadLink, null);
             } else {
-                doFree(downloadLink, null);
+                super.handleDownloadWebsite(downloadLink, null);
             }
         }
     }
@@ -915,6 +915,11 @@ public class Keep2ShareCc extends K2SApi {
      */
     public void setBrowser(final Browser ibr) {
         this.br = ibr;
+    }
+
+    @Override
+    protected String getReCaptchaV2WebsiteKey() {
+        return "6LezloQUAAAAAJrSZsWi6lDfGZEwgacI3tTIndGU";
     }
 
     private void setConfigElements() {
