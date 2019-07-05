@@ -120,14 +120,6 @@ public class FreefileMe extends YetiShareCore {
         return 1;
     }
 
-    public boolean supports_https() {
-        return super.supports_https();
-    }
-
-    public boolean supports_availablecheck_over_info_page() {
-        return super.supports_availablecheck_over_info_page();
-    }
-
     @Override
     public void checkErrors(final DownloadLink link, final Account account) throws PluginException {
         super.checkErrors(link, account);
@@ -137,11 +129,4 @@ public class FreefileMe extends YetiShareCore {
         }
     }
 
-    public boolean requires_WWW() {
-        return super.requires_WWW();
     }
-
-    public boolean enable_random_user_agent() {
-        return super.enable_random_user_agent();
-    }
-}
