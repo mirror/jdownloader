@@ -86,41 +86,6 @@ public class XubsterCom extends XFileSharingProBasic {
         return -1;
     }
 
-    @Override
-    public boolean supports_https() {
-        return super.supports_https();
-    }
-
-    @Override
-    public boolean isVideohosterEmbed() {
-        return super.isVideohosterEmbed();
-    }
-
-    @Override
-    public boolean isVideohoster_enforce_video_filename() {
-        return super.isVideohoster_enforce_video_filename();
-    }
-
-    @Override
-    public boolean supports_availablecheck_alt() {
-        return super.supports_availablecheck_alt();
-    }
-
-    @Override
-    public boolean supports_availablecheck_filename_abuse() {
-        return super.supports_availablecheck_filename_abuse();
-    }
-
-    @Override
-    public boolean supports_availablecheck_filesize_html() {
-        return super.supports_availablecheck_filesize_html();
-    }
-
-    @Override
-    public boolean supports_availablecheck_filesize_via_embedded_video() {
-        return super.supports_availablecheck_filesize_via_embedded_video();
-    }
-
     public static String[] getAnnotationNames() {
         return domains;
     }
@@ -135,7 +100,7 @@ public class XubsterCom extends XFileSharingProBasic {
         for (int i = 0; i < domains.length; i++) {
             if (i == 0) {
                 /* Match all URLs on first (=current) domain */
-                ret.add("https?://(?:www\\.)?" + getHostsPatternPart() + "/(?:embed\\-)?[a-z0-9]{12}(?:/[^/]+\\.html)?");
+                ret.add("https?://(?:www\\.)?" + getHostsPatternPart() + XFileSharingProBasic.getDefaultAnnotationPatternPart());
             } else {
                 ret.add("");
             }

@@ -95,16 +95,6 @@ public class MinfilCom extends UnknownHostingScriptCore {
     }
 
     @Override
-    public boolean supports_https() {
-        return super.supports_https();
-    }
-
-    @Override
-    public boolean requires_WWW() {
-        return super.requires_WWW();
-    }
-
-    @Override
     public boolean supports_availablecheck_via_api() {
         return super.supports_availablecheck_via_api();
     }

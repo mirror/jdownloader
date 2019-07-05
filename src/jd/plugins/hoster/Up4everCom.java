@@ -97,39 +97,9 @@ public class Up4everCom extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean supports_https() {
-        return super.supports_https();
-    }
-
-    @Override
-    public boolean isVideohosterEmbed() {
-        return super.isVideohosterEmbed();
-    }
-
-    @Override
-    public boolean isVideohoster_enforce_video_filename() {
-        return super.isVideohoster_enforce_video_filename();
-    }
-
-    @Override
-    public boolean supports_availablecheck_alt() {
-        return super.supports_availablecheck_alt();
-    }
-
-    @Override
-    public boolean supports_availablecheck_filename_abuse() {
-        return super.supports_availablecheck_filename_abuse();
-    }
-
-    @Override
     public boolean supports_availablecheck_filesize_html() {
         /* 2019-06-12: Special - but we're obtaining the filesize from html code anyways in overridden function 'scanInfo()' here! */
         return false;
-    }
-
-    @Override
-    public boolean supports_availablecheck_filesize_via_embedded_video() {
-        return super.supports_availablecheck_filesize_via_embedded_video();
     }
 
     public static String[] getAnnotationNames() {

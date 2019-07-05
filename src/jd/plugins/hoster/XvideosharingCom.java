@@ -153,7 +153,7 @@ public class XvideosharingCom extends XFileSharingProBasic {
         for (int i = 0; i < domains.length; i++) {
             if (i == 0) {
                 /* Match all URLs on first (=current) domain */
-                ret.add("https?://(?:www\\.)?" + getHostsPatternPart() + "/(?:embed\\-)?[a-z0-9]{12}(?:/[^/]+\\.html)?");
+                ret.add("https?://(?:www\\.)?" + getHostsPatternPart() + XFileSharingProBasic.getDefaultAnnotationPatternPart());
             } else {
                 ret.add("");
             }
