@@ -22,10 +22,6 @@ import java.util.List;
 import java.util.Random;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -38,34 +34,39 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class CtDiskComFolder extends PluginForDecrypt {
     // DEV NOTES
     // protocol: no https.
     // user unique id
-    private String        uuid  = null;
+    private String         uuid    = null;
     // folder unique id
-    private String        fuid  = null;
-    private static String agent = null;
-    private static Object LOCK  = new Object();
+    private String         fuid    = null;
+    private static String  agent   = null;
+    private static Object  LOCK    = new Object();
+    public static String[] domains = new String[] { "ctfile.com", "ctdisk.com", "400gb.com", "pipipan.com", "t00y.com", "bego.cc" };
 
     public static String[] getAnnotationNames() {
-        return jd.plugins.hoster.CtDiskCom.domains;
+        return new String[] { domains[0] };
     }
 
     @Override
     public String[] siteSupportedNames() {
-        return jd.plugins.hoster.CtDiskCom.domains;
+        return domains;
     }
 
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
-        for (int i = 0; i < jd.plugins.hoster.CtDiskCom.domains.length; i++) {
+        for (int i = 0; i < domains.length; i++) {
             if (i == 0) {
                 /* Match all URLs on first (=current) domain */
                 ret.add("https?://[A-Za-z0-9]+\\." + getHostsPatternPart() + "/dir/.+");
             } else {
-                ret.add("");
+                break;
             }
         }
         return ret.toArray(new String[0]);
@@ -75,7 +76,7 @@ public class CtDiskComFolder extends PluginForDecrypt {
     public static String getHostsPatternPart() {
         final StringBuilder pattern = new StringBuilder();
         pattern.append("(?:");
-        for (final String name : jd.plugins.hoster.CtDiskCom.domains) {
+        for (final String name : domains) {
             pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
         }
         pattern.append(")");
