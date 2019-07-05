@@ -86,6 +86,7 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> {
             PostFormDataRequest r = new PostFormDataRequest("http://api.dbcapi.me/api/captcha");
             r.addFormData(new FormData("username", config.getUserName()));
             r.addFormData(new FormData("password", config.getPassword()));
+            final String type;
             if (challenge instanceof RecaptchaV2Challenge) {
                 final RecaptchaV2Challenge rc = (RecaptchaV2Challenge) challenge;
                 final HashMap<String, Object> token_param = new HashMap<String, Object>();
@@ -93,6 +94,7 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> {
                 final Map<String, Object> v3action = rc.getV3Action();
                 if (v3action != null) {
                     // recaptchav3
+                    type = "RecaptchaV3";
                     r.addFormData(new FormData("type", "5"));
                     // required parameters,https://deathbycaptcha.com/user/api/newtokenrecaptcha#reCAPTCHAv3
                     token_param.put("action", v3action.get("action"));
@@ -100,6 +102,7 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> {
                     token_param.put("min_score", "0.3");// minimal score
                 } else {
                     // recaptchav2
+                    type = "RecaptchaV2";
                     r.addFormData(new FormData("type", "4"));
                     // required parameters
                     // token_param.put("google_stoken", rv2c.getSecureToken());
@@ -107,11 +110,14 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> {
                 }
                 r.addFormData(new FormData("token_params", JSonStorage.toString(token_param)));
             } else if (challenge instanceof BasicCaptchaChallenge) {
+                type = "Image";
                 final BasicCaptchaChallenge bcc = (BasicCaptchaChallenge) challenge;
                 final byte[] bytes = IO.readFile(bcc.getImageFile());
                 r.addFormData(new FormData("swid", "0"));
                 r.addFormData(new FormData("challenge", ""));
                 r.addFormData(new FormData("captchafile", "captcha", "application/octet-stream", bytes));
+            } else {
+                type = "None";
             }
             br.setAllowedResponseCodes(200, 400);
             URLConnectionAdapter conn = br.openRequestConnection(r);
@@ -120,7 +126,7 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> {
             DBCUploadResponse status = uploadStatus;
             if (status != null && status.getCaptcha() > 0) {
                 job.setStatus(new SolverStatus(_GUI.T.DeathByCaptchaSolver_solveBasicCaptchaChallenge_solving(), NewTheme.I().getIcon(IconKey.ICON_WAIT, 20)));
-                job.getLogger().info("CAPTCHA uploaded: " + status.getCaptcha());
+                job.getLogger().info("CAPTCHA(" + type + ")uploaded: " + status.getCaptcha());
                 long startTime = System.currentTimeMillis();
                 while (status != null && !status.isSolved() && status.isIs_correct()) {
                     if (System.currentTimeMillis() - startTime > 5 * 60 * 60 * 1000l) {
@@ -132,7 +138,7 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> {
                     status = JSonStorage.restoreFromString(br.toString(), DBCUploadResponse.TYPE);
                 }
                 if (status != null && status.isSolved()) {
-                    job.getLogger().info("CAPTCHA uploaded: " + status.getCaptcha() + "|solved: " + status.getText());
+                    job.getLogger().info("CAPTCHA(" + type + ")uploaded: " + status.getCaptcha() + "|solved: " + status.getText());
                     final DeathByCaptchaResponse response;
                     if (challenge instanceof RecaptchaV2Challenge) {
                         final RecaptchaV2Challenge rv2c = (RecaptchaV2Challenge) challenge;
@@ -144,7 +150,7 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> {
                     }
                     job.setAnswer(response);
                 } else {
-                    job.getLogger().info("Failed solving CAPTCHA");
+                    job.getLogger().info("Failed solving CAPTCHA(" + type + ")");
                     throw new SolverException("Failed:" + JSonStorage.serializeToJson(status));
                 }
             }
