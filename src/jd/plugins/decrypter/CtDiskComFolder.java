@@ -30,7 +30,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.CtDiskCom;
 import jd.utils.JDUtilities;
@@ -58,19 +57,19 @@ public class CtDiskComFolder extends PluginForDecrypt {
     }
 
     public static String[] getAnnotationNames() {
-        return PluginForHost.buildAnnotationNames(CtDiskCom.getPluginDomains());
+        return buildAnnotationNames(CtDiskCom.getPluginDomains());
     }
 
     @Override
     public String[] siteSupportedNames() {
-        return PluginForHost.buildSupportedNames(CtDiskCom.getPluginDomains());
+        return buildSupportedNames(CtDiskCom.getPluginDomains());
     }
 
     public static String[] getAnnotationUrls() {
         final List<String[]> pluginDomains = CtDiskCom.getPluginDomains();
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://[A-Za-z0-9]+\\." + PluginForHost.buildHostsPatternPart(domains) + "/dir/.+");
+            ret.add("https?://[A-Za-z0-9]+\\." + buildHostsPatternPart(domains) + "/dir/.+");
         }
         return ret.toArray(new String[0]);
     }
