@@ -19,6 +19,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -35,11 +40,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "neodebrid.com" }, urls = { "" })
 public class NeodebridCom extends PluginForHost {
@@ -235,6 +235,7 @@ public class NeodebridCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
+                account.setProperty("api_token", api_token);
             } catch (PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.removeProperty("api_token");
@@ -263,7 +264,7 @@ public class NeodebridCom extends PluginForHost {
                     mhm.putError(account, link, 5 * 60 * 1000l, errorStr);
                 } else if (errorStr.equalsIgnoreCase("Token not found.")) {
                     logger.info("api_token has expired");
-                    account.setProperty("api_token", Property.NULL);
+                    account.removeProperty("api_token");
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             }
