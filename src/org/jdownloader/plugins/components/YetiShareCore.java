@@ -405,7 +405,7 @@ public class YetiShareCore extends antiDDoSForHost {
             }
             fileInfo[0] = bestName;
         } else {
-            final Regex fInfo = br.getRegex("<strong>([^<>\"]*?) \\((\\d+(?:,\\d+)?(?:\\.\\d+)? (?:KB|MB|GB))\\)<");
+            final Regex fInfo = br.getRegex("<strong>([^<>\"]*?) \\((\\d+(?:,\\d+)?(?:\\.\\d+)? (?:KB|MB|GB|B))\\)<");
             if (StringUtils.isEmpty(fileInfo[0])) {
                 fileInfo[0] = Encoding.htmlDecode(fInfo.getMatch(0)).trim();
             }
