@@ -17,14 +17,13 @@ package jd.plugins.hoster;
 
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.YetiShareCore;
-
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.jdownloader.plugins.components.YetiShareCore;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class LetsuploadCo extends YetiShareCore {
@@ -128,10 +127,7 @@ public class LetsuploadCo extends YetiShareCore {
             fileInfo[0] = br.getRegex("class=\"fa fa-file\\-text\"></i>([^<>\"]+)</div>").getMatch(0);
             fileInfo[1] = br.getRegex("size[^<]*?<p>([^<>\"]+)</p>").getMatch(0);
         }
-        if (StringUtils.isEmpty(fileInfo[0]) || StringUtils.isEmpty(fileInfo[1])) {
-            super.scanInfo(fileInfo);
-        }
-        return fileInfo;
+        return super.scanInfo(fileInfo);
     }
 
     }

@@ -725,7 +725,7 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
         return basicChallenge;
     }
 
-    protected Map<String, Object> getV3Action() {
+    public Map<String, Object> getV3Action() {
         return null;
     }
 }

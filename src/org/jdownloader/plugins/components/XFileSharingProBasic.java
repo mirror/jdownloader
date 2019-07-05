@@ -27,17 +27,6 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -63,6 +52,17 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.hoster.RTMPDownload;
+
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 public class XFileSharingProBasic extends antiDDoSForHost {
     public XFileSharingProBasic(PluginWrapper wrapper) {
@@ -349,8 +349,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * See also function getFilesizeViaAvailablecheckAlt! <br />
      * <b> Enabling this will eventually lead to at least one additional website-request! </b>
      *
-     * @return true: Implies that website supports getFilesizeViaAvailablecheckAlt call as an alternative source for filesize-parsing.
-     *         <br />
+     * @return true: Implies that website supports getFilesizeViaAvailablecheckAlt call as an alternative source for filesize-parsing. <br />
      *         false: Implies that website does NOT support getFilesizeViaAvailablecheckAlt. <br />
      *         default: true
      */
@@ -407,12 +406,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /**
-     * This is designed to find the filesize during availablecheck for videohosts - videohosts usually don't display the filesize anywhere!
-     * <br />
+     * This is designed to find the filesize during availablecheck for videohosts - videohosts usually don't display the filesize anywhere! <br />
      * CAUTION: Only set this to true if a filehost: <br />
      * 1. Allows users to embed videos via '/embed-<fuid>.html'. <br />
-     * 2. Does not display a filesize anywhere inside html code or other calls where we do not have to do an http request on a directurl.
-     * <br />
+     * 2. Does not display a filesize anywhere inside html code or other calls where we do not have to do an http request on a directurl. <br />
      * 3. Allows a lot of simultaneous connections. <br />
      * 4. Is FAST - if it is not fast, this will noticably slow down the linkchecking procedure! <br />
      * 5. Allows using a generated direct-URL at least two times.
@@ -451,8 +448,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /**
-     * Implies that a host supports one of these APIs: https://xvideosharing.docs.apiary.io/ OR https://xfilesharingpro.docs.apiary.io/
-     * <br />
+     * Implies that a host supports one of these APIs: https://xvideosharing.docs.apiary.io/ OR https://xfilesharingpro.docs.apiary.io/ <br />
      * This(=API enabled) is a rare case! <br />
      * Sadly, it seems like their linkcheck function only works on the files in the users' own account:
      * https://xvideosharing.docs.apiary.io/#reference/file/file-info/get-info/check-file(s) <br />
@@ -589,17 +585,15 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     /**
      * This can 'automatically' detect whether a host supports embedding videos. <br />
-     * Example: uqload.com</br>
-     * Do not override - at least try to avoid having to!!
+     * Example: uqload.com</br> Do not override - at least try to avoid having to!!
      */
     protected final boolean internal_isVideohosterEmbed() {
         return isVideohosterEmbed() || new Regex(correctedBR, "/embed-" + this.fuid + "\\.html").matches();
     }
 
     /**
-     * Decides whether to enforce a filename with a '.mp4' ending or not. </br>
-     * Names are either enforced if the configuration of the script implies this or if it detects that embedding videos is possible. </br>
-     * Do not override - at least try to avoid having to!!
+     * Decides whether to enforce a filename with a '.mp4' ending or not. </br> Names are either enforced if the configuration of the script
+     * implies this or if it detects that embedding videos is possible. </br> Do not override - at least try to avoid having to!!
      */
     protected final boolean internal_isVideohoster_enforce_video_filename() {
         return internal_isVideohosterEmbed() || isVideohoster_enforce_video_filename();
@@ -607,8 +601,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     /**
      * This can 'automatically' detect whether a host supports availablecheck via 'abuse' URL. <br />
-     * Example: uploadboy.com</br>
-     * Do not override - at least try to avoid having to!!
+     * Example: uploadboy.com</br> Do not override - at least try to avoid having to!!
      */
     protected final boolean internal_supports_availablecheck_filename_abuse() {
         return this.supports_availablecheck_filename_abuse() || new Regex(correctedBR, "op=report_file\\&(?:amp;)?id=" + this.fuid).matches();
@@ -898,8 +891,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * Similar to getFilesizeViaAvailablecheckAlt <br />
      * <b>Use this only if:</b> <br />
      * - You have verified that the filehost has a mass-linkchecker and it is working fine with this code. <br />
-     * - The contentURLs contain a filename as a fallback e.g. https://host.tld/<fuid>/someFilename.png.html <br / TODO: 2019-07-04: Merge
-     * this with getFilesizeViaAvailablecheckAlt
+     * - The contentURLs contain a filename as a fallback e.g. https://host.tld/<fuid>/someFilename.png.html <br
+     * / TODO: 2019-07-04: Merge this with getFilesizeViaAvailablecheckAlt
      */
     public boolean massLinkchecker(final DownloadLink[] urls) {
         if (urls == null || urls.length == 0) {
@@ -1035,8 +1028,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * Often needed for <b><u>IMAGEHOSTER</u> ' s</b>.<br />
      * Important: Only call this if <b><u>isSupports_availablecheck_alt</u></b> is <b>true</b> (meaning omly try this if website supports
      * it)!<br />
-     * Some older XFS versions AND videohosts have versions of this linkchecker which only return online/offline and NO FILESIZE!</br>
-     * In case there is no filesize given, offline status will still be recognized!
+     * Some older XFS versions AND videohosts have versions of this linkchecker which only return online/offline and NO FILESIZE!</br> In
+     * case there is no filesize given, offline status will still be recognized!
      */
     public String getFilesizeViaAvailablecheckAlt(final Browser br, final DownloadLink link) throws PluginException {
         String filesize = null;
@@ -2620,11 +2613,22 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         final boolean email_xfss_CookieOkay = StringUtils.isAllNotEmpty(br.getCookie(getMainPage(), "email", Cookies.NOTDELETEDPATTERN), br.getCookie(getMainPage(), "xfss", Cookies.NOTDELETEDPATTERN));
         final boolean email_xfsts_CookieOkay = StringUtils.isAllNotEmpty(br.getCookie(getMainPage(), "email", Cookies.NOTDELETEDPATTERN), br.getCookie(getMainPage(), "xfsts", Cookies.NOTDELETEDPATTERN));
         /* buttons or sites that are only available for logged in users */
-        final boolean logoutOkay = br.containsHTML("op=logout") || br.containsHTML("href\\s*=\\s*\"[^\"]*/(user_)?logout\"");
+        final String htmlWithoutScriptTags = br.toString().replaceAll("(?s)(<script.*?</script>)", "");
+        final String ahref = "<a[^<]*href\\s*=\\s*\"[^\"]*";
+        final boolean logoutOkay = new Regex(htmlWithoutScriptTags, ahref + "(&|\\?)op=logout").matches() || new Regex(htmlWithoutScriptTags, ahref + "/(user_)?logout\"").matches();
         final boolean loginFormOkay = false && findLoginform(this.br) == null; // unsafe as the find method may fail
         final boolean loginURLOkay = br.getURL().contains("op=") && !br.getURL().contains("op=login");
-        final boolean myAccount = br.containsHTML("op=my_account") || br.containsHTML("href\\s*=\\s*\"[^\"]*/my(-|_)account\"");
-        return (login_xfss_CookieOkay || email_xfss_CookieOkay || login_xfsts_CookieOkay || email_xfsts_CookieOkay) && (logoutOkay || loginFormOkay || loginURLOkay || myAccount);
+        final boolean myAccountOkay = new Regex(htmlWithoutScriptTags, ahref + "(&|\\?)op=my_account").matches() || new Regex(htmlWithoutScriptTags, ahref + "/my(-|_)account\"").matches();
+        logger.info("login_xfss_CookieOkay:" + login_xfss_CookieOkay);
+        logger.info("login_xfsts_CookieOkay:" + login_xfsts_CookieOkay);
+        logger.info("email_xfss_CookieOkay:" + email_xfss_CookieOkay);
+        logger.info("email_xfsts_CookieOkay:" + email_xfsts_CookieOkay);
+        logger.info("logoutOkay:" + logoutOkay);
+        logger.info("loginURLOkay:" + loginURLOkay);
+        logger.info("myAccountOkay:" + myAccountOkay);
+        final boolean ret = (login_xfss_CookieOkay || email_xfss_CookieOkay || login_xfsts_CookieOkay || email_xfsts_CookieOkay) && (logoutOkay || loginFormOkay || loginURLOkay || myAccountOkay);
+        logger.info("loggedin:" + ret);
+        return ret;
     }
 
     public String getLoginURL() {
