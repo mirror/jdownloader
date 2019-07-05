@@ -60,6 +60,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.captcha.event.ChallengeResponseListener;
 import org.jdownloader.captcha.v2.AbstractResponse;
+import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.solverjob.ResponseList;
@@ -797,6 +798,8 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
                         solver.add(s.getService().getID() + "." + s.getClass().getSimpleName());
                     }
                     props.put("hasPendingJobs", ChallengeResponseController.getInstance().hasPendingJobs());
+                    Challenge<String> captchaChallenge = (Challenge<String>) job.getChallenge();
+                    props.put("getCaptchaName", captchaChallenge.getTypeID() + "");
                     props.put("solved", job.isSolved());
                     props.put("solver", solver.toArray(new String[] {}));
                     ResponseList<?> resp = job.getResponse();
@@ -816,6 +819,8 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
                 try {
                     final HashMap<String, Object> props = new HashMap<String, Object>();
                     props.put("hasPendingJobs", ChallengeResponseController.getInstance().hasPendingJobs());
+                    Challenge<String> captchaChallenge = (Challenge<String>) job.getChallenge();
+                    props.put("getCaptchaName", captchaChallenge.getTypeID() + "");
                     runScript(script, props);
                 } catch (Throwable e) {
                     getLogger().log(e);
