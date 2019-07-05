@@ -24,7 +24,6 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
@@ -123,10 +122,9 @@ public class FreefileMe extends YetiShareCore {
     @Override
     public void checkErrors(final DownloadLink link, final Account account) throws PluginException {
         super.checkErrors(link, account);
-        /* 2019-03-01: They use crypto-loot.com for FREE and FREE ACCOUNT download-modes which we do not (yet) support */
-        if (account == null || account.getType() != AccountType.PREMIUM) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "crypto-loot.com 'captcha' is not supported");
-        }
+        // /* 2019-03-01: They use crypto-loot.com for FREE and FREE ACCOUNT download-modes which we do not (yet) support */
+        // if (account == null || account.getType() != AccountType.PREMIUM) {
+        // throw new PluginException(LinkStatus.ERROR_FATAL, "crypto-loot.com 'captcha' is not supported");
+        // }
     }
-
-    }
+}

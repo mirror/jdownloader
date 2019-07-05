@@ -24,6 +24,12 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -47,12 +53,6 @@ import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.plugins.download.DownloadInterface;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class YetiShareCore extends antiDDoSForHost {
@@ -214,8 +214,8 @@ public class YetiShareCore extends antiDDoSForHost {
 
     /**
      * @return true: Implies that website will show filename & filesize via website.tld/<fuid>~i <br />
-     *         Most YetiShare websites support this kind of linkcheck! </br> false: Implies that website does NOT show filename & filesize
-     *         via website.tld/<fuid>~i. <br />
+     *         Most YetiShare websites support this kind of linkcheck! </br>
+     *         false: Implies that website does NOT show filename & filesize via website.tld/<fuid>~i. <br />
      *         default: true
      */
     public boolean supports_availablecheck_over_info_page() {
@@ -490,8 +490,9 @@ public class YetiShareCore extends antiDDoSForHost {
                     waitTime(link, timeBeforeCaptchaInput);
                     dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, resume, maxchunks);
                 } else {
-                    Form continue_form = null;
-                    if (!StringUtils.isEmpty(continue_link)) {
+                    /* 2019-07-05: continue_form without captcha is a rare case. Example-site: freefile.me */
+                    Form continue_form = br.getFormbyActionRegex(".+pt=.+");
+                    if (!StringUtils.isEmpty(continue_link) && continue_form == null) {
                         continue_form = new Form();
                         continue_form.setMethod(MethodType.GET);
                         continue_form.setAction(continue_link);
@@ -547,6 +548,12 @@ public class YetiShareCore extends antiDDoSForHost {
                         continue_form.put("adcopy_challenge", Encoding.urlEncode(chid));
                         continue_form.put("adcopy_response", Encoding.urlEncode(code));
                         continue_form.setMethod(MethodType.POST);
+                        dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_form, resume, maxchunks);
+                        dl.setFilenameFix(isContentDispositionFixRequired(dl, dl.getConnection(), link));
+                    } else if (continue_form != null && continue_form.getMethod() == MethodType.POST) {
+                        success = true;
+                        waitTime(link, timeBeforeCaptchaInput);
+                        /* Use URL instead of Form - it is all we need! */
                         dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_form, resume, maxchunks);
                         dl.setFilenameFix(isContentDispositionFixRequired(dl, dl.getConnection(), link));
                     } else {
@@ -820,6 +827,11 @@ public class YetiShareCore extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily limit reached", 3 * 60 * 60 * 1001l);
         } else if (br.toString().equals("unknown user")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Unknown user'", 30 * 60 * 1000l);
+        } else if (br.toString().equals("ERROR: Wrong IP")) {
+            /*
+             * 2019-07-05: New: rare case but this can either happen randomly or when you try to resume a stored downloadurl with a new IP.
+             */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Wrong IP'", 5 * 60 * 1000l);
         }
     }
 
