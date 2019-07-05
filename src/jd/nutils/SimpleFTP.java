@@ -485,6 +485,8 @@ public abstract class SimpleFTP {
                 throw new IOException("TLS_MODE:" + mode + " failed!");
             } else if (ccTLS) {
                 setTLSMode(TLS_MODE.EXPLICIT_OPTIONAL_CC);
+            } else {
+                setTLSMode(TLS_MODE.NONE);
             }
             break;
         default:
@@ -509,6 +511,25 @@ public abstract class SimpleFTP {
         dir = new Regex(response, "\"(.*)\"").getMatch(0);
         // dir = dir;
         // Now logged in.
+        if (TLS_MODE.NONE.equals(getTLSMode())) {
+            switch (mode) {
+            case EXPLICIT_OPTIONAL_CC:
+                if (AUTH_TLS_CC()) {
+                    setTLSMode(mode);
+                }
+                break;
+            case EXPLICIT_OPTIONAL_CC_DC:
+                final boolean ccTLS = AUTH_TLS_CC();
+                if (ccTLS && AUTH_TLS_DC()) {
+                    setTLSMode(mode);
+                } else if (ccTLS) {
+                    setTLSMode(TLS_MODE.EXPLICIT_OPTIONAL_CC);
+                }
+                break;
+            default:
+                break;
+            }
+        }
     }
 
     private ENCODING getPathEncoding() {
@@ -711,7 +732,7 @@ public abstract class SimpleFTP {
     // RFC 4217
     protected boolean AUTH_TLS_CC() throws IOException {
         sendLine("AUTH TLS");
-        final String response = readLines(new int[] { 234, 500, 502 }, "AUTH_TLS FAILED");
+        final String response = readLines(new int[] { 234, 500, 502, 530 }, "AUTH_TLS FAILED");
         if (StringUtils.startsWithCaseInsensitive(response, "234")) {
             socket = getSSLSocketStreamFactory().create(getControlSocket(), response, getPort(), true, isSSLTrustALL(), null);
             return true;
