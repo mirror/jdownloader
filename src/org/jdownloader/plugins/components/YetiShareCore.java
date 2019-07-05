@@ -46,10 +46,12 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
+import jd.plugins.download.DownloadInterface;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
@@ -395,9 +397,9 @@ public class YetiShareCore extends antiDDoSForHost {
                     continue;
                 } else if (bestName == null) {
                     bestName = fileNameCandidate;
-                } else if (bestName.contains("....") && !fileNameCandidate.contains("....")) {
+                } else if (bestName.contains("...") && !fileNameCandidate.contains("...")) {
                     bestName = fileNameCandidate;
-                } else if (bestName.split(" ").length > fileNameCandidate.split(" ").length) {
+                } else if (bestName.length() < fileNameCandidate.length()) {
                     bestName = fileNameCandidate;
                 }
             }
@@ -444,6 +446,7 @@ public class YetiShareCore extends antiDDoSForHost {
                 sleep(getWaitTimeSecondsAfterDirecturlCheck() * 1000l, link);
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, resume, maxchunks);
+            dl.setFilenameFix(isContentDispositionFixRequired(dl, dl.getConnection(), link));
         } else {
             // if (supports_embed_stream_download()) {
             // try {
@@ -515,6 +518,7 @@ public class YetiShareCore extends antiDDoSForHost {
                         continue_form.put("g-recaptcha-response", recaptchaV2Response);
                         continue_form.setMethod(MethodType.POST);
                         dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_form, resume, maxchunks);
+                        dl.setFilenameFix(isContentDispositionFixRequired(dl, dl.getConnection(), link));
                     } else if (rcID != null) {
                         /* Dead end! */
                         captcha = true;
@@ -544,11 +548,13 @@ public class YetiShareCore extends antiDDoSForHost {
                         continue_form.put("adcopy_response", Encoding.urlEncode(code));
                         continue_form.setMethod(MethodType.POST);
                         dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_form, resume, maxchunks);
+                        dl.setFilenameFix(isContentDispositionFixRequired(dl, dl.getConnection(), link));
                     } else {
                         success = true;
                         waitTime(link, timeBeforeCaptchaInput);
                         /* Use URL instead of Form - it is all we need! */
                         dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, resume, maxchunks);
+                        dl.setFilenameFix(isContentDispositionFixRequired(dl, dl.getConnection(), link));
                     }
                 }
                 checkResponseCodeErrors(dl.getConnection());
@@ -579,6 +585,17 @@ public class YetiShareCore extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    protected boolean isContentDispositionFixRequired(DownloadInterface dl, URLConnectionAdapter con, DownloadLink link) {
+        final DispositionHeader dispositionHeader = parseDispositionHeader(con);
+        final boolean ret;
+        if (dispositionHeader != null) {
+            ret = dispositionHeader.getEncoding() != null || dispositionHeader.getRaw().contains("%");
+        } else {
+            ret = false;
+        }
+        return ret;
     }
 
     protected String getContinueLink() {
