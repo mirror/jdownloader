@@ -13,10 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -31,12 +32,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "up.4share.vn" }, urls = { "https?://(?:www\\.)?(?:up\\.)?4share\\.vn/(?:d|dlist)/[a-f0-9]{16}" })
-public class Up4ShareVnFolderdecrypter extends PluginForDecrypt {
-
-    public Up4ShareVnFolderdecrypter(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "4share.vn" }, urls = { "https?://(?:www\\.)?(?:up\\.)?4share\\.vn/(?:d|dlist)/[a-f0-9]{16}" })
+public class FourShareVnFolder extends PluginForDecrypt {
+    public FourShareVnFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -53,7 +51,6 @@ public class Up4ShareVnFolderdecrypter extends PluginForDecrypt {
         }
         final String fpName = br.getRegex("<b>Thư mục:\\s*(.*?)\\s*</b>").getMatch(0);
         final String[] filter = br.getRegex("<tr>\\s*<td>.*?</td></tr>").getColumn(-1);
-
         final CrawledLink source = getCurrentLink().getSourceLink();
         final String subfolder;
         if (source != null && source.getDownloadLink() != null && canHandle(source.getURL())) {
@@ -87,7 +84,6 @@ public class Up4ShareVnFolderdecrypter extends PluginForDecrypt {
                         dl.setDownloadSize(SizeFormatter.getSize(size));
                     }
                     dl.setAvailableStatus(AvailableStatus.TRUE);
-
                     if (subfolder != null) {
                         folder_path = subfolder;
                     }
@@ -140,5 +136,4 @@ public class Up4ShareVnFolderdecrypter extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

@@ -367,7 +367,6 @@ public class CocoleechCom extends PluginForHost {
                 supportedhostslist.add(host);
             }
         }
-        account.setValid(true);
         hostMaxchunksMap.clear();
         hostMaxdlsMap.clear();
         ai.setMultiHostSupport(this, supportedhostslist);

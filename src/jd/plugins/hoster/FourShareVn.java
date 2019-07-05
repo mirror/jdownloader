@@ -34,13 +34,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "up.4share.vn" }, urls = { "https?://(?:www\\.)?(?:up\\.)?4share\\.vn/f/[a-f0-9]{16}" })
-public class Up4ShareVn extends PluginForHost {
-    private static final String MAINPAGE = "https://4share.vn/";
-    private static Object       LOCK     = new Object();
-    private static final String NOCHUNKS = "NOCHUNKS";
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4share.vn" }, urls = { "https?://(?:www\\.)?(?:up\\.)?4share\\.vn/f/[a-f0-9]{16}" })
+public class FourShareVn extends PluginForHost {
+    private static Object LOCK = new Object();
 
-    public Up4ShareVn(PluginWrapper wrapper) {
+    public FourShareVn(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://up.4share.vn/?act=gold");
     }
@@ -48,6 +46,14 @@ public class Up4ShareVn extends PluginForHost {
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("up.4share.vn/", "4share.vn/"));
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if ("up.4share.vn".equals(host)) {
+            return "4share.vn";
+        }
+        return super.rewriteHost(host);
     }
 
     @SuppressWarnings("deprecation")
@@ -83,10 +89,8 @@ public class Up4ShareVn extends PluginForHost {
         try {
             login(account, true);
         } catch (final PluginException e) {
-            account.setValid(false);
             throw e;
         }
-        account.setValid(true);
         getPage("/member");
         final String[] traffic = br.getRegex("<strong>\\s*([0-9\\.,]+ [GMKB]+)\\s*</strong>\\s*/Tổng số\\s*:\\s*<strong>\\s*([0-9\\.,]+ [GMKB]+)\\s*</strong>").getRow(0);
         if (traffic != null) {
@@ -157,39 +161,13 @@ public class Up4ShareVn extends PluginForHost {
             handleErrorsGeneral();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        int maxChunks = 1;
-        if (downloadLink.getBooleanProperty(NOCHUNKS, false)) {
-            maxChunks = 1;
-        }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, maxChunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             handleErrorsGeneral();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        try {
-            if (!this.dl.startDownload()) {
-                try {
-                    if (dl.externalDownloadStop()) {
-                        return;
-                    }
-                } catch (final Throwable e) {
-                }
-                /* unknown error, we disable multiple chunks */
-                if (downloadLink.getBooleanProperty(Up4ShareVn.NOCHUNKS, false) == false) {
-                    downloadLink.setProperty(Up4ShareVn.NOCHUNKS, Boolean.valueOf(true));
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-            }
-        } catch (final PluginException e) {
-            // New V2 chunk errorhandling
-            /* unknown error, we disable multiple chunks */
-            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && downloadLink.getBooleanProperty(Up4ShareVn.NOCHUNKS, false) == false) {
-                downloadLink.setProperty(Up4ShareVn.NOCHUNKS, Boolean.valueOf(true));
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
-            throw e;
-        }
+        this.dl.startDownload();
     }
 
     @SuppressWarnings("deprecation")
@@ -210,40 +188,14 @@ public class Up4ShareVn extends PluginForHost {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        int maxChunks = 0;
-        if (link.getBooleanProperty(NOCHUNKS, false)) {
-            maxChunks = 1;
-        }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, maxChunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             handleErrorsGeneral();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        try {
-            if (!this.dl.startDownload()) {
-                try {
-                    if (dl.externalDownloadStop()) {
-                        return;
-                    }
-                } catch (final Throwable e) {
-                }
-                /* unknown error, we disable multiple chunks */
-                if (link.getBooleanProperty(Up4ShareVn.NOCHUNKS, false) == false) {
-                    link.setProperty(Up4ShareVn.NOCHUNKS, Boolean.valueOf(true));
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-            }
-        } catch (final PluginException e) {
-            // New V2 chunk errorhandling
-            /* unknown error, we disable multiple chunks */
-            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(Up4ShareVn.NOCHUNKS, false) == false) {
-                link.setProperty(Up4ShareVn.NOCHUNKS, Boolean.valueOf(true));
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
-            throw e;
-        }
+        dl.startDownload();
     }
 
     private void login(final Account account, final boolean force) throws Exception {
