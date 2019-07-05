@@ -20,11 +20,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Random;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -43,6 +38,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pan.baiduwp.com" }, urls = { "" })
 public class PanBaiduwpCom extends antiDDoSForHost {
@@ -186,7 +186,7 @@ public class PanBaiduwpCom extends antiDDoSForHost {
         if (br.containsHTML(">下载次数已达今日上限，请明天再试")) {
             throw new AccountUnavailableException("Daily downloadlimit reached", 1 * 60 * 60 * 1000l);
         }
-        final String continue_url = br.getRegex("url\\s*?:\\s*?\\'(http[^<>\"\\']+)\\'").getMatch(0);
+        final String continue_url = br.getRegex("url\\s*?:\\s*?\\'(https?[^<>\"\\']+)\\'").getMatch(0);
         if (continue_url == null) {
             logger.warning("Failed to find continue_url");
             mhm.handleErrorGeneric(account, link, "continue_url_null", 50, 2 * 60 * 1000l);
@@ -209,15 +209,17 @@ public class PanBaiduwpCom extends antiDDoSForHost {
         br = new Browser();
         try {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-            String server_filename = getFileNameFromDispositionHeader(dl.getConnection());
-            if (server_filename != null && server_filename.contains("%")) {
-                server_filename = Encoding.htmlDecode(server_filename);
-                link.setFinalFileName(server_filename);
-            }
             final String contenttype = dl.getConnection().getContentType();
-            if (contenttype.contains("html")) {
+            if (!dl.getConnection().isOK() || contenttype.contains("html")) {
                 br.followConnection();
                 mhm.handleErrorGeneric(account, link, "unknowndlerror", 20, 5 * 60 * 1000l);
+            }
+            String server_filename = getFileNameFromDispositionHeader(dl.getConnection());
+            if (link.getFinalFileName() == null && server_filename != null) {
+                if (server_filename.contains("%")) {
+                    server_filename = Encoding.htmlDecode(server_filename);
+                }
+                link.setFinalFileName(server_filename);
             }
             this.dl.startDownload();
         } catch (final Exception e) {
@@ -234,11 +236,12 @@ public class PanBaiduwpCom extends antiDDoSForHost {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                if (!con.isOK() || con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
                 }
             } catch (final Exception e) {
+                logger.log(e);
                 downloadLink.setProperty(property, Property.NULL);
                 dllink = null;
             } finally {

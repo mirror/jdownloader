@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -86,12 +87,24 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> {
             r.addFormData(new FormData("username", config.getUserName()));
             r.addFormData(new FormData("password", config.getPassword()));
             if (challenge instanceof RecaptchaV2Challenge) {
-                final RecaptchaV2Challenge rv2c = (RecaptchaV2Challenge) challenge;
-                r.addFormData(new FormData("type", "4"));
+                final RecaptchaV2Challenge rc = (RecaptchaV2Challenge) challenge;
                 final HashMap<String, Object> token_param = new HashMap<String, Object>();
-                token_param.put("googlekey", rv2c.getSiteKey());
-                // token_param.put("google_stoken", rv2c.getSecureToken());
-                token_param.put("pageurl", "http://" + rv2c.getSiteDomain());
+                token_param.put("googlekey", rc.getSiteKey());
+                final Map<String, Object> v3action = rc.getV3Action();
+                if (v3action != null) {
+                    // recaptchav3
+                    r.addFormData(new FormData("type", "5"));
+                    // required parameters,https://deathbycaptcha.com/user/api/newtokenrecaptcha#reCAPTCHAv3
+                    token_param.put("action", v3action.get("action"));
+                    token_param.put("pageurl", rc.getSiteUrl());
+                    token_param.put("min_score", "0.3");// minimal score
+                } else {
+                    // recaptchav2
+                    r.addFormData(new FormData("type", "4"));
+                    // required parameters
+                    // token_param.put("google_stoken", rv2c.getSecureToken());
+                    token_param.put("pageurl", "http://" + rc.getSiteDomain());
+                }
                 r.addFormData(new FormData("token_params", JSonStorage.toString(token_param)));
             } else if (challenge instanceof BasicCaptchaChallenge) {
                 final BasicCaptchaChallenge bcc = (BasicCaptchaChallenge) challenge;
@@ -160,14 +173,13 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> {
     protected boolean validateLogins() {
         if (!CFG_DBC.ENABLED.isEnabled()) {
             return false;
-        }
-        if (StringUtils.isEmpty(CFG_DBC.USER_NAME.getValue())) {
+        } else if (StringUtils.isEmpty(CFG_DBC.USER_NAME.getValue())) {
             return false;
-        }
-        if (StringUtils.isEmpty(CFG_DBC.PASSWORD.getValue())) {
+        } else if (StringUtils.isEmpty(CFG_DBC.PASSWORD.getValue())) {
             return false;
+        } else {
+            return true;
         }
-        return true;
     }
 
     @Override
