@@ -23,6 +23,7 @@ import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
@@ -111,6 +112,44 @@ public abstract class Plugin implements ActionListener {
         }
         //
         this.logger = logger;
+    }
+
+    /** Returns '(?:domain1|domain2)' */
+    public static String buildHostsPatternPart(String[] domains) {
+        final StringBuilder pattern = new StringBuilder();
+        pattern.append("(?:");
+        for (final String name : domains) {
+            pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
+        }
+        pattern.append(")");
+        return pattern.toString();
+    }
+
+    protected String getMappedHost(List<String[]> pluginDomains, String host) {
+        for (final String[] domains : pluginDomains) {
+            for (String domain : domains) {
+                if (StringUtils.equalsIgnoreCase(host, domain)) {
+                    return domains[0];
+                }
+            }
+        }
+        return host;
+    }
+
+    protected static String[] buildAnnotationNames(List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add(domains[0]);
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    protected static String[] buildSupportedNames(List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.addAll(Arrays.asList(domains));
+        }
+        return ret.toArray(new String[0]);
     }
 
     public abstract String getCrawlerLoggerID(CrawledLink link);
