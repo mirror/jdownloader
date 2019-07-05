@@ -118,19 +118,4 @@ public class UberuploadNet extends YetiShareCore {
         return 1;
     }
 
-    public boolean supports_https() {
-        return super.supports_https();
     }
-
-    public boolean supports_availablecheck_over_info_page() {
-        return super.supports_availablecheck_over_info_page();
-    }
-
-    public boolean requires_WWW() {
-        return super.requires_WWW();
-    }
-
-    public boolean enable_random_user_agent() {
-        return super.enable_random_user_agent();
-    }
-}

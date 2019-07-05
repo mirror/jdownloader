@@ -122,15 +122,8 @@ public class Zippy4shareCom extends YetiShareCore {
         return false;
     }
 
-    public boolean supports_availablecheck_over_info_page() {
-        return super.supports_availablecheck_over_info_page();
-    }
-
     public boolean requires_WWW() {
         return false;
     }
 
-    public boolean enable_random_user_agent() {
-        return super.enable_random_user_agent();
     }
-}

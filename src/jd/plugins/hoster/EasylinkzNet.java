@@ -122,16 +122,9 @@ public class EasylinkzNet extends YetiShareCore {
         return false;
     }
 
-    public boolean supports_availablecheck_over_info_page() {
-        return super.supports_availablecheck_over_info_page();
-    }
-
     public boolean requires_WWW() {
         /* 2019-07-05: Special */
         return false;
     }
 
-    public boolean enable_random_user_agent() {
-        return super.enable_random_user_agent();
     }
-}
