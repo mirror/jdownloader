@@ -86,46 +86,6 @@ public class VipfileCc extends XFileSharingProBasic {
         return -1;
     }
 
-    @Override
-    public boolean supports_https() {
-        return super.supports_https();
-    }
-
-    @Override
-    public boolean supports_precise_expire_date() {
-        return super.supports_precise_expire_date();
-    }
-
-    @Override
-    public boolean isVideohosterEmbed() {
-        return super.isVideohosterEmbed();
-    }
-
-    @Override
-    public boolean isVideohoster_enforce_video_filename() {
-        return super.isVideohoster_enforce_video_filename();
-    }
-
-    @Override
-    public boolean isImagehoster() {
-        return super.isImagehoster();
-    }
-
-    @Override
-    public boolean supports_availablecheck_filename_abuse() {
-        return super.supports_availablecheck_filename_abuse();
-    }
-
-    @Override
-    public boolean supports_availablecheck_filesize_html() {
-        return super.supports_availablecheck_filesize_html();
-    }
-
-    @Override
-    public boolean requires_WWW() {
-        return super.requires_WWW();
-    }
-
     public static String[] getAnnotationNames() {
         return new String[] { domains[0] };
     }

@@ -97,29 +97,9 @@ public class VidozaNet extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean supports_https() {
-        return super.supports_https();
-    }
-
-    @Override
-    public boolean supports_availablecheck_alt() {
-        return super.supports_availablecheck_alt();
-    }
-
-    @Override
     public boolean supports_availablecheck_filename_abuse() {
         /* 2019-07-04: Special */
         return false;
-    }
-
-    @Override
-    public boolean supports_availablecheck_filesize_html() {
-        return super.supports_availablecheck_filesize_html();
-    }
-
-    @Override
-    public boolean supports_availablecheck_filesize_via_embedded_video() {
-        return super.supports_availablecheck_filesize_via_embedded_video();
     }
 
     public static String[] getAnnotationNames() {

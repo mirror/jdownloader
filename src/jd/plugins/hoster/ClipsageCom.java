@@ -99,11 +99,6 @@ public class ClipsageCom extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean supports_precise_expire_date() {
-        return super.supports_precise_expire_date();
-    }
-
-    @Override
     public boolean isVideohosterEmbed() {
         /* 2019-05-22: Special */
         return true;
@@ -113,11 +108,6 @@ public class ClipsageCom extends XFileSharingProBasic {
     public boolean isVideohoster_enforce_video_filename() {
         /* 2019-05-22: Special */
         return true;
-    }
-
-    @Override
-    public boolean supports_availablecheck_alt() {
-        return super.supports_availablecheck_alt();
     }
 
     @Override
@@ -152,7 +142,7 @@ public class ClipsageCom extends XFileSharingProBasic {
         for (int i = 0; i < domains.length; i++) {
             if (i == 0) {
                 /* Match all URLs on first (=current) domain */
-                ret.add("https?://(?:www\\.)?" + getHostsPatternPart() + "/(?:embed\\-)?[a-z0-9]{12}(?:/[^/]+\\.html)?");
+                ret.add("https?://(?:www\\.)?" + getHostsPatternPart() + XFileSharingProBasic.getDefaultAnnotationPatternPart());
             } else {
                 ret.add("");
             }

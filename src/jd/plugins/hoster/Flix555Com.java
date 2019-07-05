@@ -85,16 +85,6 @@ public class Flix555Com extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean supports_https() {
-        return super.supports_https();
-    }
-
-    @Override
-    public boolean supports_precise_expire_date() {
-        return super.supports_precise_expire_date();
-    }
-
-    @Override
     public boolean isVideohosterEmbed() {
         /* 2019-04-29: Special */
         return true;
@@ -128,11 +118,6 @@ public class Flix555Com extends XFileSharingProBasic {
     public boolean supports_availablecheck_filesize_via_embedded_video() {
         /* 2019-05-16: Special */
         return false;
-    }
-
-    @Override
-    public boolean requires_WWW() {
-        return super.requires_WWW();
     }
 
     public static String[] getAnnotationNames() {

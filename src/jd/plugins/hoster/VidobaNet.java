@@ -85,16 +85,6 @@ public class VidobaNet extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean supports_https() {
-        return super.supports_https();
-    }
-
-    @Override
-    public boolean supports_precise_expire_date() {
-        return super.supports_precise_expire_date();
-    }
-
-    @Override
     public boolean isVideohosterEmbed() {
         return true;
     }
@@ -117,11 +107,6 @@ public class VidobaNet extends XFileSharingProBasic {
     @Override
     public boolean supports_availablecheck_filesize_html() {
         return false;
-    }
-
-    @Override
-    public boolean requires_WWW() {
-        return super.requires_WWW();
     }
 
     @Override

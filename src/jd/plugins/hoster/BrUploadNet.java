@@ -15,6 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Pattern;
 
 import org.jdownloader.plugins.components.XFileSharingProBasic;
@@ -98,60 +100,13 @@ public class BrUploadNet extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean supports_https() {
-        return super.supports_https();
-    }
-
-    @Override
-    public boolean supports_precise_expire_date() {
-        return super.supports_precise_expire_date();
-    }
-
-    @Override
-    public boolean isVideohosterEmbed() {
-        return super.isVideohosterEmbed();
-    }
-
-    @Override
-    public boolean isVideohoster_enforce_video_filename() {
-        return super.isVideohoster_enforce_video_filename();
-    }
-
-    @Override
-    public boolean isImagehoster() {
-        return super.isImagehoster();
-    }
-
-    @Override
-    public boolean supports_availablecheck_alt() {
-        return super.supports_availablecheck_alt();
-    }
-
-    
-
-    @Override
-    public boolean prefer_availablecheck_filesize_alt_type_old() {
-        return super.prefer_availablecheck_filesize_alt_type_old();
-    }
-
-    @Override
-    public boolean supports_availablecheck_filename_abuse() {
-        return super.supports_availablecheck_filename_abuse();
-    }
-
-    @Override
     public boolean supports_availablecheck_filesize_html() {
         /* 2019-04-17: Special */
         return false;
     }
 
-    @Override
-    public boolean requires_WWW() {
-        return super.requires_WWW();
-    }
-
     public static String[] getAnnotationNames() {
-        return new String[] { domains[0] };
+        return domains;
     }
 
     @Override
@@ -159,28 +114,27 @@ public class BrUploadNet extends XFileSharingProBasic {
         return domains;
     }
 
-    /**
-     * returns the annotation pattern array: 'https?://(?:www\\.)?(?:domain1|domain2)/(?:embed\\-)?[a-z0-9]{12}'
-     *
-     */
     public static String[] getAnnotationUrls() {
-        // construct pattern
-        final String host = getHostsPattern();
-        return new String[] { host + "/(?:embed\\-)?[a-z0-9]{12}(?:/[^/]+\\.html)?" };
-    }
-
-    /** returns 'https?://(?:www\\.)?(?:domain1|domain2)' */
-    private static String getHostsPattern() {
-        final String hosts = "https?://(?:www\\.)?" + "(?:" + getHostsPatternPart() + ")";
-        return hosts;
+        final List<String> ret = new ArrayList<String>();
+        for (int i = 0; i < domains.length; i++) {
+            if (i == 0) {
+                /* Match all URLs on first (=current) domain */
+                ret.add("https?://(?:www\\.)?" + getHostsPatternPart() + XFileSharingProBasic.getDefaultAnnotationPatternPart());
+            } else {
+                ret.add("");
+            }
+        }
+        return ret.toArray(new String[0]);
     }
 
     /** Returns '(?:domain1|domain2)' */
     public static String getHostsPatternPart() {
         final StringBuilder pattern = new StringBuilder();
+        pattern.append("(?:");
         for (final String name : domains) {
             pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
         }
+        pattern.append(")");
         return pattern.toString();
     }
 }

@@ -86,35 +86,6 @@ public class AnzfileNet extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean supports_https() {
-        return super.supports_https();
-    }
-
-    @Override
-    public boolean supports_precise_expire_date() {
-        return super.supports_precise_expire_date();
-    }
-
-    
-
-    
-
-    @Override
-    public boolean isVideohosterEmbed() {
-        return super.isVideohosterEmbed();
-    }
-
-    @Override
-    public boolean isVideohoster_enforce_video_filename() {
-        return super.isVideohoster_enforce_video_filename();
-    }
-
-    @Override
-    public boolean isImagehoster() {
-        return super.isImagehoster();
-    }
-
-    @Override
     public boolean supports_availablecheck_alt() {
         return false;
     }
@@ -122,18 +93,8 @@ public class AnzfileNet extends XFileSharingProBasic {
     
 
     @Override
-    public boolean prefer_availablecheck_filesize_alt_type_old() {
-        return super.prefer_availablecheck_filesize_alt_type_old();
-    }
-
-    @Override
     public boolean supports_availablecheck_filename_abuse() {
         return false;
-    }
-
-    @Override
-    public boolean supports_availablecheck_filesize_html() {
-        return super.supports_availablecheck_filesize_html();
     }
 
     @Override

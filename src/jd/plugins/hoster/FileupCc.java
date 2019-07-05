@@ -85,44 +85,9 @@ public class FileupCc extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean supports_https() {
-        return super.supports_https();
-    }
-
-    @Override
     public boolean supports_precise_expire_date() {
         /* 2019-02-21: Special */
         return false;
-    }
-
-    @Override
-    public boolean isVideohosterEmbed() {
-        return super.isVideohosterEmbed();
-    }
-
-    @Override
-    public boolean isVideohoster_enforce_video_filename() {
-        return super.isVideohoster_enforce_video_filename();
-    }
-
-    @Override
-    public boolean isImagehoster() {
-        return super.isImagehoster();
-    }
-
-    @Override
-    public boolean supports_availablecheck_alt() {
-        return super.supports_availablecheck_alt();
-    }
-
-    @Override
-    public boolean supports_availablecheck_filename_abuse() {
-        return super.supports_availablecheck_filename_abuse();
-    }
-
-    @Override
-    public boolean supports_availablecheck_filesize_html() {
-        return super.supports_availablecheck_filesize_html();
     }
 
     public static String[] getAnnotationNames() {
