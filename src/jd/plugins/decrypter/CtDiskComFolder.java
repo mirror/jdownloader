@@ -31,7 +31,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
-import jd.plugins.hoster.CtDiskCom;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.StringUtils;
@@ -57,16 +56,16 @@ public class CtDiskComFolder extends PluginForDecrypt {
     }
 
     public static String[] getAnnotationNames() {
-        return buildAnnotationNames(CtDiskCom.getPluginDomains());
+        return buildAnnotationNames(getPluginDomains());
     }
 
     @Override
     public String[] siteSupportedNames() {
-        return buildSupportedNames(CtDiskCom.getPluginDomains());
+        return buildSupportedNames(getPluginDomains());
     }
 
     public static String[] getAnnotationUrls() {
-        final List<String[]> pluginDomains = CtDiskCom.getPluginDomains();
+        final List<String[]> pluginDomains = getPluginDomains();
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
             ret.add("https?://[A-Za-z0-9]+\\." + buildHostsPatternPart(domains) + "/dir/.+");
@@ -93,7 +92,7 @@ public class CtDiskComFolder extends PluginForDecrypt {
     }
 
     protected String correctHost(String host) {
-        final List<String[]> pluginDomains = CtDiskCom.getPluginDomains();
+        final List<String[]> pluginDomains = getPluginDomains();
         for (final String[] domains : pluginDomains) {
             for (String domain : domains) {
                 if (StringUtils.equalsIgnoreCase(host, domain)) {
