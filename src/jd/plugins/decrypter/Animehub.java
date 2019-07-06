@@ -19,20 +19,21 @@ import java.util.ArrayList;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision: 40182 $", interfaceVersion = 2, names = { "animehub.ac" }, urls = { "https?://(www\\.)?animehub\\.ac/(watch|detail)/.+" })
-public class Animehub extends PluginForDecrypt {
+public class Animehub extends antiDDoSForDecrypt {
     public Animehub(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -41,7 +42,8 @@ public class Animehub extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(true);
-        String page = br.getPage(parameter);
+        getPage(parameter);
+        String page = br.toString();
         String fpName = br.getRegex("property=\"og:title\" content=\"Watch ([^\"]+) Online Free").getMatch(0);
         String itemName = new Regex(parameter, "/(?:tvshows|movies|episodes)/([^/]+)").getMatch(0);
         // Handle TV show overview pages
@@ -53,27 +55,25 @@ public class Animehub extends PluginForDecrypt {
                 }
             }
         } else if (StringUtils.containsIgnoreCase(parameter, "/watch/")) {
-            String[][] sources = br.getRegex("<option value=\"/watch/[^\"]+ep=([0-9]+)&s=([^\"]+)\" selected>[^<]+</option>").getMatches();
+            String[][] sources = br.getRegex("<option value=\"/watch/[^\"]+ep=([0-9]+)&s=([^\"]+)\"").getMatches();
             if (sources != null && sources.length > 0) {
                 for (String[] source : sources) {
-                    final PostRequest post = new PostRequest(br.getURL("/ajax/anime/load_episodes_v2?s=" + source[1]));
+                    Browser br2 = br.cloneBrowser();
+                    String postURL = br2.getURL("/ajax/anime/load_episodes_v2?s=" + source[1]).toString();
+                    PostRequest post = new PostRequest(postURL);
                     post.addVariable("episode_id", source[0]);
                     post.getHeaders().put("Origin", "https://animehub.ac");
                     post.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     post.setContentType("application/x-www-form-urlencoded; charset=UTF-8");
-                    String postResult = br.getPage(post);
-                    String playURL = new Regex(postResult, "[\"']value[\"']:[\"']([^\"']+)[\"']").getMatch(0);
-                    if (playURL != null) {
-                        playURL = Encoding.htmlOnlyDecode(playURL).replaceAll("\\\\/", "/");
-                        Browser br2 = br.cloneBrowser();
-                        String playHTML = br2.getPage(playURL);
-                        String[][] videoURLs = br2.getRegex("[\"']file[\"']:[\"']([^\"']+)[\"']").getMatches();
-                        if (videoURLs != null && videoURLs.length > 0) {
-                            for (String[] videoURL : videoURLs) {
-                                videoURL[0] = Encoding.htmlOnlyDecode(videoURL[0]).replaceAll("\\\\/", "/");
-                                decryptedLinks.add(createDownloadlink(videoURL[0]));
-                            }
-                        }
+                    br.setRequest(post);
+                    postPage(br2, postURL, "episode_id=" + source[0]);
+                    String postResult = br2.toString();
+                    final String[] playURLs = HTMLParser.getHttpLinks(postResult, null);
+                    if (playURLs.length > 0) {
+                        String playURL = Encoding.htmlDecode(playURLs[0]);
+                        getPage(br2, playURL);
+                        String embedPage = br2.toString();
+                        decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(playURL)));
                     }
                 }
             }
