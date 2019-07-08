@@ -14,8 +14,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourporn.sexy" }, urls = { "https?://(?:www\\.)?(yourporn\\.sexy|sxyprn\\.com)/[^/]*?\\.html(\\?page=\\d+)?" })
-public class YourPornSexy extends antiDDoSForDecrypt {
-    public YourPornSexy(PluginWrapper wrapper) {
+public class SxyprnCom extends antiDDoSForDecrypt {
+    public SxyprnCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
