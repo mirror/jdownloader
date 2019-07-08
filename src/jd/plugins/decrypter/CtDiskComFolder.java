@@ -21,6 +21,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Random;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -32,10 +36,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class CtDiskComFolder extends PluginForDecrypt {
@@ -68,7 +68,7 @@ public class CtDiskComFolder extends PluginForDecrypt {
         final List<String[]> pluginDomains = getPluginDomains();
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://[A-Za-z0-9]+\\." + buildHostsPatternPart(domains) + "/dir/.+");
+            ret.add("https?://[A-Za-z0-9]+\\." + buildHostsPatternPart(domains) + "/(?:dir/.+|u/\\d+/\\d+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -108,6 +108,10 @@ public class CtDiskComFolder extends PluginForDecrypt {
         if (userid == null) {
             userid = new Regex(url, "/fs/(\\d+)").getMatch(0);
         }
+        if (userid == null) {
+            /* Older stype folder URLs */
+            userid = new Regex(url, "/u/(\\d+)").getMatch(0);
+        }
         return userid;
     }
 
@@ -139,14 +143,16 @@ public class CtDiskComFolder extends PluginForDecrypt {
                 fuid = "0";
             }
             String fpName = uuid;
-            // if (!"0".equals(fuid)) {
-            // // covers sub directories. /u/uuid/fuid/
-            // fpName = br.getRegex("href=\"/u/" + uuid + "/" + fuid + "\">(.*?)</a>").getMatch(0);
-            // // fail over
-            // if (fpName == null && uuid != null) {
-            // fpName = "User " + uuid + " - Sub Directory " + fuid;
-            // }
-            // }
+            if (!"0".equals(fuid)) {
+                // covers sub directories. /u/uuid/fuid/
+                fpName = br.getRegex("href=\"/u/" + uuid + "/" + fuid + "\">(.*?)</a>").getMatch(0);
+                if (fpName == null && uuid != null) {
+                    /* Fallback */
+                    fpName = "User " + uuid + " - Sub Directory " + fuid;
+                }
+            } else {
+                fpName = uuid;
+            }
             // covers base /u/\d+ directories,
             // no fpName for these as results of base directory returns subdirectories.
             parsePage(decryptedLinks, parameter);
@@ -178,54 +184,54 @@ public class CtDiskComFolder extends PluginForDecrypt {
         getPage(ajax, ajaxSource);
         // ajax.getHttpConnection().getRequest().setHtmlCode(ajax.toString().replaceAll("\\\\/", "/").replaceAll("\\\\\"", "\""));
         final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(ajax.toString());
-        final long totalCount = JavaScriptEngineFactory.toLong(entries.get("iTotalRecords"), 0);
-        if (totalCount == 0) {
+        /*
+         * 2019-07-08: 'iTotalRecords' only counts for images. If we only have folders, it will return 0 although 'aaData' is present and
+         * contains objects!
+         */
+        // final long totalCount = JavaScriptEngineFactory.toLong(entries.get("iTotalRecords"), 0);
+        // if (totalCount == 0) {
+        // ret.add(this.createOfflinelink(parameter));
+        // return;
+        // }
+        final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("aaData");
+        ArrayList<Object> fileinfo = (ArrayList<Object>) entries.get("aaData");
+        if (fileinfo.isEmpty()) {
             ret.add(this.createOfflinelink(parameter));
             return;
         }
-        final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("aaData");
-        ArrayList<Object> fileinfo = (ArrayList<Object>) entries.get("aaData");
         for (final Object fileO : ressourcelist) {
             fileinfo = (ArrayList<Object>) fileO;
-            final String fileIDhtml = (String) fileinfo.get(0);
+            final String objectIDhtml = (String) fileinfo.get(0);
             final String filehtml = (String) fileinfo.get(1);
             final String filesize = (String) fileinfo.get(2);
-            final String fileID = new Regex(fileIDhtml, "value=\"(\\d+)\"").getMatch(0);
+            final boolean isFolder = objectIDhtml.contains("folder_ids[]");
+            final String objectID = new Regex(objectIDhtml, "value=\"(\\d+)\"").getMatch(0);
             // String url = new Regex(filehtml, "href=\"(/[^<>\"]+)").getMatch(0);
-            if (StringUtils.isEmpty(fileID)) {
+            if (StringUtils.isEmpty(objectID)) {
                 /* Skip invalid items */
                 continue;
             }
             /* Build url */
-            String url = "https://" + br.getHost(true) + "/fs/" + this.uuid + "-" + fileID;
+            String url;
+            if (isFolder) {
+                url = "https://" + br.getHost(true) + "/u/" + this.uuid + "/" + objectID;
+            } else {
+                url = "https://" + br.getHost(true) + "/fs/" + this.uuid + "-" + objectID;
+            }
             final String filename = new Regex(filehtml, ">([^<>\"]+)</a>").getMatch(0);
             final DownloadLink dl = this.createDownloadlink(url);
-            if (filename != null) {
-                dl.setName(filename);
+            if (!isFolder) {
+                /* Set info only for fileURLs which then go into the hosterplugin! */
+                if (filename != null) {
+                    dl.setName(filename);
+                }
+                if (filesize != null) {
+                    dl.setDownloadSize(SizeFormatter.getSize(filesize));
+                }
+                dl.setAvailable(true);
             }
-            if (filesize != null) {
-                dl.setDownloadSize(SizeFormatter.getSize(filesize));
-            }
-            dl.setAvailable(true);
             ret.add(dl);
         }
-        // export folders back into decrypter again.
-        // final String[] folders = ajax.getRegex("<a href=\"(/u/" + uuid + "/\\d+)\">").getColumn(0);
-        // if ((folders == null || folders.length == 0)) {
-        // ret = null;
-        // return;
-        // }
-        // if (folders != null && folders.length != 0) {
-        /** TODO: 2019-07-05: Re-add subfolder support */
-        // final String host = new Regex(br.getURL(), "(https?://(www\\.)?" + domains + ")").getMatch(0);
-        // if (host == null) {
-        // logger.info("Could not determine Host :: " + parameter);
-        // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // }
-        // for (String folder : folders) {
-        // ret.add(createDownloadlink(host + folder));
-        // }
-        // }
     }
 
     /**

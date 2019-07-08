@@ -104,7 +104,26 @@ public class TheartistunionCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+        URLConnectionAdapter specialDL = null;
+        if (dllink.contains("/stream_files/")) {
+            logger.info("Trying to find better quality download");
+            final String dllink_better_quality = dllink.replace("/stream_files/", "/original_files/");
+            specialDL = br.openGetConnection(dllink_better_quality);
+        } else {
+            logger.info("No better quality download possible");
+        }
+        logger.info("Found better quality download");
+        if (specialDL != null && specialDL.getContentType().contains("text") || !specialDL.isOK() || specialDL.getLongContentLength() == -1) {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, specialDL.getRequest(), resumable, maxchunks);
+        } else {
+            try {
+                if (specialDL != null) {
+                    specialDL.disconnect();
+                }
+            } catch (final Throwable e) {
+            }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+        }
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);

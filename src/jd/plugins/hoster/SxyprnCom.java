@@ -15,8 +15,8 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourporn.sexy" }, urls = { "https?://(www\\.)?(yourporn\\.sexy|sxyprn\\.com)/post/[a-fA-F0-9]{13}\\.html" })
-public class YourPornSexy extends antiDDoSForHost {
-    public YourPornSexy(PluginWrapper wrapper) {
+public class SxyprnCom extends antiDDoSForHost {
+    public SxyprnCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -45,7 +45,8 @@ public class YourPornSexy extends antiDDoSForHost {
         br.setFollowRedirects(true);
         getPage(link.getPluginPatternMatcher());
         final String title = br.getRegex("name\" content=\"(.*?)\"").getMatch(0);
-        if (title == null) {
+        /** 2019-07-08: yourporn.sexy now redirects to youporn.com but sxyprn.com still exists. */
+        if (title == null || br.getHost().equals("youporn.com")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         link.setFinalFileName(title.trim() + ".mp4");
