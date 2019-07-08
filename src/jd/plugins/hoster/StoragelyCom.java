@@ -85,16 +85,6 @@ public class StoragelyCom extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean supports_precise_expire_date() {
-        /* 2019-04-17: Special */
-        return false;
-    }
-
-    
-
-    
-
-    @Override
     public boolean supports_availablecheck_filesize_html() {
         /* 2019-04-17: Special */
         return false;

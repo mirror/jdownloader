@@ -85,9 +85,9 @@ public class FileupCc extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean supports_precise_expire_date() {
+    protected boolean supports_precise_expire_date() {
         /* 2019-02-21: Special */
-        return false;
+        return true;
     }
 
     public static String[] getAnnotationNames() {

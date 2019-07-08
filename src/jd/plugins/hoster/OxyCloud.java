@@ -166,40 +166,41 @@ public class OxyCloud extends PluginForHost {
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
+                boolean isLoggedin = false;
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     this.br.setCookies(this.getHost(), cookies);
                     br.getPage("https://app.oxy.cloud/");
-                    if (isLoggedin()) {
-                        return;
-                    }
+                    isLoggedin = isLoggedin();
                 }
-                br.getPage("https://" + account.getHoster() + "/partners");
-                final Form loginform = br.getForm(0);
-                if (loginform == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                if (br.containsHTML("google\\.com/recaptcha")) {
-                    final DownloadLink dlinkbefore = this.getDownloadLink();
-                    final DownloadLink dl_dummy;
-                    if (dlinkbefore != null) {
-                        dl_dummy = dlinkbefore;
-                    } else {
-                        dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
-                        this.setDownloadLink(dl_dummy);
+                if (!isLoggedin) {
+                    br.getPage("https://" + account.getHoster() + "/partners");
+                    final Form loginform = br.getForm(0);
+                    if (loginform == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                    if (dlinkbefore != null) {
-                        this.setDownloadLink(dlinkbefore);
+                    if (br.containsHTML("google\\.com/recaptcha")) {
+                        final DownloadLink dlinkbefore = this.getDownloadLink();
+                        final DownloadLink dl_dummy;
+                        if (dlinkbefore != null) {
+                            dl_dummy = dlinkbefore;
+                        } else {
+                            dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
+                            this.setDownloadLink(dl_dummy);
+                        }
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                        if (dlinkbefore != null) {
+                            this.setDownloadLink(dlinkbefore);
+                        }
+                        // g-recaptcha-response
+                        loginform.put("g-recaptcha-response", recaptchaV2Response);
                     }
-                    // g-recaptcha-response
-                    loginform.put("g-recaptcha-response", recaptchaV2Response);
-                }
-                loginform.put("email", account.getUser());
-                loginform.put("password", account.getPass());
-                br.submitForm(loginform);
-                if (!isLoggedin()) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    loginform.put("email", account.getUser());
+                    loginform.put("password", account.getPass());
+                    br.submitForm(loginform);
+                    if (!isLoggedin()) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
