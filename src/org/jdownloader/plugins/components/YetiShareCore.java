@@ -24,6 +24,12 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -48,12 +54,6 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.plugins.download.DownloadInterface;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class YetiShareCore extends antiDDoSForHost {
     public YetiShareCore(PluginWrapper wrapper) {
@@ -61,40 +61,29 @@ public class YetiShareCore extends antiDDoSForHost {
         // this.enablePremium(getPurchasePremiumURL());
     }
 
-    // /* 1st domain = current domain! */
-    // public static String[] domains = new String[] { "dummyhost.tld" };
+    // public static List<String[]> getPluginDomains() {
+    // final List<String[]> ret = new ArrayList<String[]>();
+    // // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+    // ret.add(new String[] { "testhost.com" });
+    // return ret;
+    // }
     //
     // public static String[] getAnnotationNames() {
-    // return new String[] { domains[0] };
-    // }
-    //
-    // /**
-    // * returns the annotation pattern array: 'https?://(?:www\\.)?(?:domain1|domain2)/[A-Za-z0-9]+(?:/[^/<>]+)?'
-    // *
-    // */
-    // public static String[] getAnnotationUrls() {
-    // final String host = getHostsPattern();
-    // return new String[] { host + YetiShareCore.getDefaultAnnotationPatternPart() };
-    // }
-    //
-    // /** Returns '(?:domain1|domain2)' */
-    // private static String getHostsPatternPart() {
-    // final StringBuilder pattern = new StringBuilder();
-    // for (final String name : domains) {
-    // pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
-    // }
-    // return pattern.toString();
-    // }
-    //
-    // /** returns 'https?://(?:www\\.)?(?:domain1|domain2)' */
-    // private static String getHostsPattern() {
-    // final String hosts = "https?://(?:www\\.)?" + "(?:" + getHostsPatternPart() + ")";
-    // return hosts;
+    // return buildAnnotationNames(getPluginDomains());
     // }
     //
     // @Override
     // public String[] siteSupportedNames() {
-    // return domains;
+    // return buildSupportedNames(getPluginDomains());
+    // }
+    //
+    // public static String[] getAnnotationUrls() {
+    // final List<String[]> pluginDomains = getPluginDomains();
+    // final List<String> ret = new ArrayList<String>();
+    // for (final String[] domains : pluginDomains) {
+    // ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + YetiShareCore.getDefaultAnnotationPatternPart());
+    // }
+    // return ret.toArray(new String[0]);
     // }
     public static final String getDefaultAnnotationPatternPart() {
         return "/(?!folder)[A-Za-z0-9]+(?:/[^/<>]+)?";
@@ -214,8 +203,8 @@ public class YetiShareCore extends antiDDoSForHost {
 
     /**
      * @return true: Implies that website will show filename & filesize via website.tld/<fuid>~i <br />
-     *         Most YetiShare websites support this kind of linkcheck! </br> false: Implies that website does NOT show filename & filesize
-     *         via website.tld/<fuid>~i. <br />
+     *         Most YetiShare websites support this kind of linkcheck! </br>
+     *         false: Implies that website does NOT show filename & filesize via website.tld/<fuid>~i. <br />
      *         default: true
      */
     public boolean supports_availablecheck_over_info_page() {
@@ -964,9 +953,9 @@ public class YetiShareCore extends antiDDoSForHost {
                 } else {
                     logger.info("Performing full login");
                     getPage(this.getProtocol() + this.getHost() + "/login.html");
-                    final String loginstart = new Regex(br.getURL(), "(https?://(www\\.)?)").getMatch(0);
                     Form loginform;
                     if (br.containsHTML("flow\\-login\\.js")) {
+                        final String loginstart = new Regex(br.getURL(), "(https?://(www\\.)?)").getMatch(0);
                         /* New (ajax) login method - mostly used - example: iosddl.net */
                         logger.info("Using new login method");
                         /* These headers are important! */
@@ -1002,13 +991,23 @@ public class YetiShareCore extends antiDDoSForHost {
                         logger.info("Using old login method");
                         loginform = br.getFormbyProperty("id", "form_login");
                         if (loginform == null) {
+                            loginform = br.getFormbyKey("loginUsername");
+                        }
+                        if (loginform == null) {
                             logger.info("Fallback to custom built loginform");
                             loginform = new Form();
+                            loginform.setMethod(MethodType.POST);
                             loginform.put("submit", "Login");
                             loginform.put("submitme", "1");
                         }
-                        loginform.put("username", Encoding.urlEncode(account.getUser()));
-                        loginform.put("password", Encoding.urlEncode(account.getPass()));
+                        if (loginform.hasInputFieldByName("loginUsername") && loginform.hasInputFieldByName("loginPassword")) {
+                            /* 2019-07-08: Rare case: Example: freaktab.org */
+                            loginform.put("loginUsername", Encoding.urlEncode(account.getUser()));
+                            loginform.put("loginPassword", Encoding.urlEncode(account.getPass()));
+                        } else {
+                            loginform.put("username", Encoding.urlEncode(account.getUser()));
+                            loginform.put("password", Encoding.urlEncode(account.getPass()));
+                        }
                         submitForm(loginform);
                         // postPage(this.getProtocol() + this.getHost() + "/login.html", "submit=Login&submitme=1&loginUsername=" +
                         // Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()));

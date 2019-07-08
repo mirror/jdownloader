@@ -117,9 +117,15 @@ public class FreaktabOrg extends YetiShareCore {
         return 1;
     }
 
+    @Override
     public boolean supports_https() {
         /* 2019-06-27: Special */
         return false;
     }
 
+    @Override
+    public boolean requires_WWW() {
+        /* 2019-07-08: Special */
+        return false;
     }
+}

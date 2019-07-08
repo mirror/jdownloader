@@ -21,6 +21,7 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Cookies;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -85,6 +86,27 @@ public class AusfileCom extends XFileSharingProBasic {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
+    }
+
+    @Override
+    public boolean isLoggedin() {
+        boolean loggedin = super.isLoggedin();
+        if (!loggedin) {
+            logger.info("Special logincheck ...");
+            /**
+             * please use valid combinations only! login or email alone without xfss is NOT valid!
+             */
+            final boolean login_xfss_CookieOkay = StringUtils.isAllNotEmpty(br.getCookie(getMainPage(), "login", Cookies.NOTDELETEDPATTERN), br.getCookie(getMainPage(), "xfss", Cookies.NOTDELETEDPATTERN));
+            final String htmlWithoutScriptTags = br.toString().replaceAll("(?s)(<script.*?</script>)", "");
+            final String ahref = "<a[^<]*href\\s*=\\s*\"[^\"]*";
+            /* 2019-07-08: Special */
+            final boolean logoutOkay = new Regex(htmlWithoutScriptTags, ahref + "logout\\.php").matches();
+            logger.info("login_xfss_CookieOkay:" + login_xfss_CookieOkay);
+            logger.info("logoutOkay:" + logoutOkay);
+            loggedin = login_xfss_CookieOkay && logoutOkay;
+            logger.info("loggedin:" + loggedin);
+        }
+        return loggedin;
     }
 
     /**

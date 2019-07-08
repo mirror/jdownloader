@@ -27,6 +27,17 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -53,73 +64,35 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.hoster.RTMPDownload;
 
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 public class XFileSharingProBasic extends antiDDoSForHost {
     public XFileSharingProBasic(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(super.getPurchasePremiumURL());
     }
 
-    // private static String[] domains = new String[] { "xvideosharing.com" };
-    //
-    // @Override
-    // public String rewriteHost(String host) {
-    // if (host == null) {
-    // /* signal rewrite support! */
-    // return domains[0];
-    // }
-    // for (final String domain : domains) {
-    // if (domain.equalsIgnoreCase(host)) {
-    // return domains[0];
-    // }
-    // }
-    // return super.rewriteHost(host);
+    // public static List<String[]> getPluginDomains() {
+    // final List<String[]> ret = new ArrayList<String[]>();
+    // // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+    // ret.add(new String[] { "imgdew.com" });
+    // return ret;
     // }
     //
     // public static String[] getAnnotationNames() {
-    // /*
-    // * only return the first/valid domain, else rewrite won't happen when the other domain is still signaled as existing!
-    // */
-    // return new String[] { domains[0] };
+    // return buildAnnotationNames(getPluginDomains());
     // }
     //
     // @Override
     // public String[] siteSupportedNames() {
-    // return domains;
+    // return buildSupportedNames(getPluginDomains());
     // }
     //
     // public static String[] getAnnotationUrls() {
+    // final List<String[]> pluginDomains = getPluginDomains();
     // final List<String> ret = new ArrayList<String>();
-    // for (int i = 0; i < domains.length; i++) {
-    // if (i == 0) {
-    // /* Match all URLs on first (=current) domain */
-    // ret.add("https?://(?:www\\.)?" + getHostsPatternPart() + XFileSharingProBasic.getDefaultAnnotationPatternPart());
-    // } else {
-    // ret.add("");
-    // }
+    // for (final String[] domains : pluginDomains) {
+    // ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + XFileSharingProBasic.getDefaultAnnotationPatternPart());
     // }
     // return ret.toArray(new String[0]);
-    // }
-    //
-    // /** Returns '(?:domain1|domain2)' */
-    // public static String getHostsPatternPart() {
-    // final StringBuilder pattern = new StringBuilder();
-    // pattern.append("(?:");
-    // for (final String name : domains) {
-    // pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
-    // }
-    // pattern.append(")");
-    // return pattern.toString();
     // }
     public static final String getDefaultAnnotationPatternPart() {
         return "/(?:embed\\-)?[a-z0-9]{12}(?:/[^/]+(?:\\.html)?)?";
@@ -349,7 +322,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * See also function getFilesizeViaAvailablecheckAlt! <br />
      * <b> Enabling this will eventually lead to at least one additional website-request! </b>
      *
-     * @return true: Implies that website supports getFilesizeViaAvailablecheckAlt call as an alternative source for filesize-parsing. <br />
+     * @return true: Implies that website supports getFilesizeViaAvailablecheckAlt call as an alternative source for filesize-parsing.
+     *         <br />
      *         false: Implies that website does NOT support getFilesizeViaAvailablecheckAlt. <br />
      *         default: true
      */
@@ -406,10 +380,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /**
-     * This is designed to find the filesize during availablecheck for videohosts - videohosts usually don't display the filesize anywhere! <br />
+     * This is designed to find the filesize during availablecheck for videohosts - videohosts usually don't display the filesize anywhere!
+     * <br />
      * CAUTION: Only set this to true if a filehost: <br />
      * 1. Allows users to embed videos via '/embed-<fuid>.html'. <br />
-     * 2. Does not display a filesize anywhere inside html code or other calls where we do not have to do an http request on a directurl. <br />
+     * 2. Does not display a filesize anywhere inside html code or other calls where we do not have to do an http request on a directurl.
+     * <br />
      * 3. Allows a lot of simultaneous connections. <br />
      * 4. Is FAST - if it is not fast, this will noticably slow down the linkchecking procedure! <br />
      * 5. Allows using a generated direct-URL at least two times.
@@ -448,7 +424,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /**
-     * Implies that a host supports one of these APIs: https://xvideosharing.docs.apiary.io/ OR https://xfilesharingpro.docs.apiary.io/ <br />
+     * Implies that a host supports one of these APIs: https://xvideosharing.docs.apiary.io/ OR https://xfilesharingpro.docs.apiary.io/
+     * <br />
      * This(=API enabled) is a rare case! <br />
      * Sadly, it seems like their linkcheck function only works on the files in the users' own account:
      * https://xvideosharing.docs.apiary.io/#reference/file/file-info/get-info/check-file(s) <br />
@@ -585,15 +562,17 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     /**
      * This can 'automatically' detect whether a host supports embedding videos. <br />
-     * Example: uqload.com</br> Do not override - at least try to avoid having to!!
+     * Example: uqload.com</br>
+     * Do not override - at least try to avoid having to!!
      */
     protected final boolean internal_isVideohosterEmbed() {
         return isVideohosterEmbed() || new Regex(correctedBR, "/embed-" + this.fuid + "\\.html").matches();
     }
 
     /**
-     * Decides whether to enforce a filename with a '.mp4' ending or not. </br> Names are either enforced if the configuration of the script
-     * implies this or if it detects that embedding videos is possible. </br> Do not override - at least try to avoid having to!!
+     * Decides whether to enforce a filename with a '.mp4' ending or not. </br>
+     * Names are either enforced if the configuration of the script implies this or if it detects that embedding videos is possible. </br>
+     * Do not override - at least try to avoid having to!!
      */
     protected final boolean internal_isVideohoster_enforce_video_filename() {
         return internal_isVideohosterEmbed() || isVideohoster_enforce_video_filename();
@@ -601,7 +580,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     /**
      * This can 'automatically' detect whether a host supports availablecheck via 'abuse' URL. <br />
-     * Example: uploadboy.com</br> Do not override - at least try to avoid having to!!
+     * Example: uploadboy.com</br>
+     * Do not override - at least try to avoid having to!!
      */
     protected final boolean internal_supports_availablecheck_filename_abuse() {
         return this.supports_availablecheck_filename_abuse() || new Regex(correctedBR, "op=report_file\\&(?:amp;)?id=" + this.fuid).matches();
@@ -891,8 +871,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * Similar to getFilesizeViaAvailablecheckAlt <br />
      * <b>Use this only if:</b> <br />
      * - You have verified that the filehost has a mass-linkchecker and it is working fine with this code. <br />
-     * - The contentURLs contain a filename as a fallback e.g. https://host.tld/<fuid>/someFilename.png.html <br
-     * / TODO: 2019-07-04: Merge this with getFilesizeViaAvailablecheckAlt
+     * - The contentURLs contain a filename as a fallback e.g. https://host.tld/<fuid>/someFilename.png.html <br / TODO: 2019-07-04: Merge
+     * this with getFilesizeViaAvailablecheckAlt
      */
     public boolean massLinkchecker(final DownloadLink[] urls) {
         if (urls == null || urls.length == 0) {
@@ -1028,8 +1008,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * Often needed for <b><u>IMAGEHOSTER</u> ' s</b>.<br />
      * Important: Only call this if <b><u>isSupports_availablecheck_alt</u></b> is <b>true</b> (meaning omly try this if website supports
      * it)!<br />
-     * Some older XFS versions AND videohosts have versions of this linkchecker which only return online/offline and NO FILESIZE!</br> In
-     * case there is no filesize given, offline status will still be recognized!
+     * Some older XFS versions AND videohosts have versions of this linkchecker which only return online/offline and NO FILESIZE!</br>
+     * In case there is no filesize given, offline status will still be recognized!
      */
     public String getFilesizeViaAvailablecheckAlt(final Browser br, final DownloadLink link) throws PluginException {
         String filesize = null;
@@ -1091,7 +1071,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                      */
                     numberofFailedChecktypes++;
                 }
-                filesize = br.getRegex(this.fuid + "</td>\\s*?<td style=\"color:green;\">Found</td>\\s*?<td>([^<>\"]*?)</td>").getMatch(0);
+                filesize = br.getRegex(this.fuid + "[^\r\n\t]*</td>\\s*<td style=\"color:green;\">Found</td>\\s*<td>([^<>\"]*?)</td>").getMatch(0);
             } catch (final Throwable e) {
             }
             if (filesize != null) {
@@ -1102,10 +1082,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             } else {
                 logger.info("Failed to find filesize via checkType: " + checkType);
                 /* Offline check - this will work for both versions of the linkchecker (see documentation above!) */
-                if (br.containsHTML("(>" + Pattern.quote(link.getPluginPatternMatcher()) + "</td><td style=\"color:red;\">Not found\\!</td>|" + this.fuid + " not found\\!</font>)")) {
+                if (br.containsHTML("(>" + Pattern.quote(link.getPluginPatternMatcher()) + "[^\r\n\t]*</td><td style=\"color:red;\">Not found\\!</td>|" + this.fuid + " not found\\!</font>)")) {
                     logger.info("URL seems to be offline");
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
+                continue;
             }
         }
         /* Check if the filehost actually supports one of these types of linkchecking. If not we will rarely try this in the future. */
@@ -1457,7 +1438,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 logger.info("Put captchacode " + code.toString() + " obtained by captcha metod \"plaintext captchas\" in the form.");
             } else if (StringUtils.containsIgnoreCase(correctedBR, "/captchas/")) {
                 logger.info("Detected captcha method \"Standard captcha\" for this host");
-                final String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
+                final String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), "");
                 String captchaurl = null;
                 if (sitelinks == null || sitelinks.length == 0) {
                     logger.warning("Standard captcha captchahandling broken!");
@@ -1469,6 +1450,13 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         break;
                     }
                 }
+                /*
+                 * 2019-07-08: TODO: Strange - trhe following lines would be needed for subyshare.com as getHttpLinks does not pickup the
+                 * URL we're looking for!
+                 */
+                // if (StringUtils.isEmpty(captchaurl)) {
+                // captchaurl = new Regex(correctedBR, "(/captchas/[^<>\"\\']*)").getMatch(0);
+                // }
                 if (captchaurl == null) {
                     logger.warning("Standard captcha captchahandling broken!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -2433,6 +2421,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     try {
                         getPage(paymentURL);
                     } catch (final Throwable e) {
+                        /* Skip failures due to timeout or bad http error-responses */
                         continue;
                     }
                     String expireSecond = new Regex(correctedBR, Pattern.compile("<div class=\"accexpire\">.*?</div>", Pattern.CASE_INSENSITIVE)).getMatch(-1);
@@ -2444,17 +2433,9 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                          * Last attempt - wider RegEx but we expect the 'second(s)' value to always be present!! Example: file-up.org:
                          * "<p style="direction: ltr; display: inline-block;">1 year, 352 days, 22 hours, 36 minutes, 45 seconds</p>"
                          */
-                        /**
-                         * TODO: 2019-02-21: This may lead to false-positives thus it may happen that free accounts get recognized as
-                         * premium! Maybe change RegEx like this: 'blabla, minutes, seconds' (minutes AND seconds required) ...
-                         */
                         expireSecond = new Regex(correctedBR, Pattern.compile(">\\s*(\\d+ years?, )?(\\d+ days?, )?(\\d+ hours?, )?(\\d+ minutes?, )?\\d+ seconds\\s*<", Pattern.CASE_INSENSITIVE)).getMatch(-1);
                     }
                     if (!StringUtils.isEmpty(expireSecond)) {
-                        /**
-                         * TODO: 2019-07-04: If a 'normal' AND precise date are given, precise one should at least be current date + end of
-                         * the day (e.g. 23:59)
-                         */
                         String tmpYears = new Regex(expireSecond, "(\\d+)\\s+years?").getMatch(0);
                         String tmpdays = new Regex(expireSecond, "(\\d+)\\s+days?").getMatch(0);
                         String tmphrs = new Regex(expireSecond, "(\\d+)\\s+hours?").getMatch(0);
@@ -2479,6 +2460,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         expire_milliseconds_precise_to_the_second = ((years * 86400000 * 365) + (days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000)) + System.currentTimeMillis();
                     }
                     if (expire_milliseconds_precise_to_the_second > 0) {
+                        /* This does not necessarily mean that we will use this found value later! */
                         logger.info("Successfully found precise expire-date via paymentURL: \"" + paymentURL + "\"");
                         break;
                     } else {
@@ -2486,9 +2468,17 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     }
                 }
             }
-            // final boolean trust_expire_milliseconds_from_expiredate = expire_milliseconds_from_expiredate > 0;
-            final boolean trust_expire_milliseconds_precise_to_the_second = expire_milliseconds_from_expiredate - expire_milliseconds_precise_to_the_second <= 24 * 60 * 60 * 1000;
-            if (trust_expire_milliseconds_precise_to_the_second && expire_milliseconds_precise_to_the_second > 0) {
+            /* Only accept */
+            final boolean trust_expire_milliseconds_precise_to_the_second = expire_milliseconds_precise_to_the_second > 0 && expire_milliseconds_from_expiredate - expire_milliseconds_precise_to_the_second <= 24 * 60 * 60 * 1000;
+            final boolean found_precise_expiredate_ONLY = expire_milliseconds_precise_to_the_second > 0 && expire_milliseconds_from_expiredate <= 0;
+            if (found_precise_expiredate_ONLY) {
+                logger.info("NOT using found expire_milliseconds_precise_to_the_second because we failed to find expire_milliseconds_from_expiredate --> Probably a FREE account");
+            }
+            if (trust_expire_milliseconds_precise_to_the_second && expire_milliseconds_from_expiredate > 0 && !found_precise_expiredate_ONLY) {
+                /*
+                 * 2019-07-08: Only accept precise expiredate if 'normal expiredate' is given. This eliminates failures which may otherwise
+                 * happen (e.g. free accounts get recognized as premium) - examples: fileup.cc, subyshare.com, storagely.com
+                 */
                 /*
                  * Prefer more precise expire-date as long as it is max. 48 hours shorter than the other expire-date which is only exact up
                  * to 24 hours (up to the last day).
@@ -2496,10 +2486,14 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 logger.info("Using precise expire-date");
                 expire_milliseconds = expire_milliseconds_precise_to_the_second;
             } else if (expire_milliseconds_from_expiredate > 0) {
+                /*
+                 * TODO: 2019-07-08: Consider updating this so that such accounts will get displayed as valid until 23:59 o clock of the
+                 * last day.
+                 */
                 logger.info("Using expire-date which is up to 24 hours precise");
                 expire_milliseconds = expire_milliseconds_from_expiredate;
             } else {
-                logger.info("Failed to find any expire-date at all");
+                logger.info("Failed to find any useful expire-date at all");
             }
             if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
                 /* Expired premium or no expire date given --> It is usually a Free Account */
@@ -2587,10 +2581,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     /** Tries to find available traffic-left value inside html code. */
     protected String regExTrafficLeft() {
         /* Traffic can also be negative! */
-        String availabletraffic = new Regex(this.correctedBR, "Traffic available[^<>]*?:?</TD><TD><b>([^<>\"']+)</b>").getMatch(0);
+        String availabletraffic = new Regex(this.correctedBR, "Traffic available[^<>]*:?</TD><TD><b>([^<>\"']+)</b>").getMatch(0);
         if (availabletraffic == null) {
             /* 2019-02-11: For newer XFS versions */
-            availabletraffic = new Regex(this.correctedBR, ">Traffic available(?: today)?</div>\\s*?<div class=\"txt\\d+\">([^<>\"]+)<").getMatch(0);
+            availabletraffic = new Regex(this.correctedBR, ">Traffic available(?: today)?</div>\\s*<div class=\"txt\\d+\">([^<>\"]+)<").getMatch(0);
         }
         return availabletraffic;
     }
