@@ -84,12 +84,6 @@ public class FileupCc extends XFileSharingProBasic {
         return -1;
     }
 
-    @Override
-    protected boolean supports_precise_expire_date() {
-        /* 2019-02-21: Special */
-        return true;
-    }
-
     public static String[] getAnnotationNames() {
         return new String[] { domains[0] };
     }
