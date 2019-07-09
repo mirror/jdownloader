@@ -18,18 +18,19 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SubyShareCom extends XFileSharingProBasic {
@@ -62,12 +63,7 @@ public class SubyShareCom extends XFileSharingProBasic {
     }
 
     public static String[] getAnnotationUrls() {
-        final List<String[]> pluginDomains = getPluginDomains();
-        final List<String> ret = new ArrayList<String>();
-        for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + XFileSharingProBasic.getDefaultAnnotationPatternPart());
-        }
-        return ret.toArray(new String[0]);
+        return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
     }
 
     @Override
@@ -117,8 +113,12 @@ public class SubyShareCom extends XFileSharingProBasic {
     protected void checkErrors(final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
         super.checkErrors(link, account, checkAll);
         /* 2019-07-08: Special */
-        if (new Regex(correctedBR, "Sorry ,we do not support downloading from Dedicated servers|Please download from your PC without using any above services|If this is our mistake ,please contact").matches()) {
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "VPN download prohibited by this filehost");
+        if (new Regex(correctedBR, "Sorry\\s*,\\s*we do not support downloading from Dedicated servers|Please download from your PC without using any above services|If this is our mistake\\s*,\\s*please contact").matches()) {
+            if (account != null) {
+                throw new AccountUnavailableException("VPN download prohibited by this filehost", 15 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "VPN download prohibited by this filehost");
+            }
         }
     }
 
@@ -127,7 +127,7 @@ public class SubyShareCom extends XFileSharingProBasic {
         String waitStr = super.regexWaittime();
         if (StringUtils.isEmpty(waitStr)) {
             /* 2018-07-19: Special */
-            waitStr = new Regex(correctedBR, "class=\"seconds\"[^>]*?>\\s*?(\\d+)\\s*?<").getMatch(0);
+            waitStr = new Regex(correctedBR, "class\\s*=\\s*\"seconds\"[^>]*?>\\s*?(\\d+)\\s*?<").getMatch(0);
         }
         return waitStr;
     }
@@ -158,7 +158,7 @@ public class SubyShareCom extends XFileSharingProBasic {
         /* 2018-07-19: Special */
         String trafficleftStr = super.regExTrafficLeft();
         if (StringUtils.isEmpty(trafficleftStr)) {
-            trafficleftStr = new Regex(correctedBR, "Usable Bandwidth <span class=\"[^\"]+\">(\\d+(?:\\.\\d{1,2})? [A-Za-z]{2,5}) / [^<]+<").getMatch(0);
+            trafficleftStr = new Regex(correctedBR, "Usable Bandwidth\\s*<span class=\"[^\"]+\">(\\d+(?:\\.\\d{1,2})? [A-Za-z]{2,5}) / [^<]+<").getMatch(0);
         }
         return trafficleftStr;
     }

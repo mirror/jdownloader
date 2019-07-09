@@ -57,7 +57,8 @@ public class HentaiDude extends antiDDoSForDecrypt {
         String parameter = param.toString();
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        String page = br.getPage(parameter);
+        getPage(parameter);
+        String page = br.toString();
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
@@ -81,7 +82,8 @@ public class HentaiDude extends antiDDoSForDecrypt {
                 }
                 for (int i = minsize; i <= highest; i++) {
                     if (i > minsize) {
-                        page = br.getPage(nextpage);
+                        getPage(nextpage);
+                        page = br.toString();
                     }
                     final String[] results = HTMLParser.getHttpLinks(page, null);
                     for (String result : results) {

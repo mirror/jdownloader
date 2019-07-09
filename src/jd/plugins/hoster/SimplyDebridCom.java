@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -40,9 +39,8 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "simply-debrid.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "simply-debrid.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
 public class SimplyDebridCom extends PluginForHost {
-
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
 
     public SimplyDebridCom(PluginWrapper wrapper) {
@@ -69,16 +67,16 @@ public class SimplyDebridCom extends PluginForHost {
     }
 
     private boolean createSession(Account account) {
-        String user = Encoding.urlEncode(account.getUser());
-        String pw = Encoding.urlEncode(account.getPass());
-        String page = "";
+        final String user = Encoding.urlEncode(account.getUser());
+        final String pw = Encoding.urlEncode(account.getPass());
         try {
             prepareBrowser(br);
-            page = getPage("https://simply-debrid.com/api.php?login=1&u=" + user + "&p=" + pw);
+            final String page = getPage("https://simply-debrid.com/api.php?login=1&u=" + user + "&p=" + pw);
+            return page.equalsIgnoreCase("02: loggin success");
         } catch (Exception e) {
+            logger.log(e);
             return false;
         }
-        return page.equalsIgnoreCase("02: loggin success");
     }
 
     @Override
@@ -100,25 +98,18 @@ public class SimplyDebridCom extends PluginForHost {
         ac.setProperty("multiHostSupport", Property.NULL);
         if (!createSession(account)) {
             // account is invalid
-            ac.setStatus("account is invalid. Wrong password?");
-            account.setValid(false);
-            return ac;
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         // account is valid, let's fetch account details:
         page = getPage("https://simply-debrid.com/api.php?login=2&u=" + user + "&p=" + pw);
         String[] accInfo = page.split(";");
         if (!accInfo[0].equalsIgnoreCase("1")) {
             // account is not a premium account
-            ac.setStatus("Account is not a premium account.");
-            account.setType(AccountType.FREE);
-            account.setValid(false);
-            return ac;
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account is not a premium account", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         account.setType(AccountType.PREMIUM);
-
         // we have a valid premium account - let's check the expire date:
         ac.setValidUntil(TimeFormatter.getMilliSeconds(accInfo[2], "dd/MM/yyyy", null));
-
         // now it's time to get all supported hosts
         page = getPage("https://simply-debrid.com/api.php?list=1");
         hosts = new Regex(page, "([^;]+)").getColumn(0);
@@ -135,7 +126,6 @@ public class SimplyDebridCom extends PluginForHost {
     /** no override to keep plugin compatible to old stable */
     @SuppressWarnings("deprecation")
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap != null) {
@@ -151,7 +141,6 @@ public class SimplyDebridCom extends PluginForHost {
                 }
             }
         }
-
         prepareBrowser(br);
         String url = link.getDownloadURL();
         url = Encoding.urlEncode(url);
@@ -232,7 +221,6 @@ public class SimplyDebridCom extends PluginForHost {
             logger.info("Error parsing Simply-Debrid download response: " + page);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-
         // all ok, start downloading...
         br.setFollowRedirects(true);
         int maxChunks = 0;
@@ -356,5 +344,4 @@ public class SimplyDebridCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

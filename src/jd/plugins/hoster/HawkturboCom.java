@@ -191,11 +191,12 @@ public class HawkturboCom extends antiDDoSForHost {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
                 con = openAntiDDoSRequestConnection(br2, br2.createHeadRequest(dllink));
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
                 }
             } catch (final Exception e) {
+                logger.log(e);
                 downloadLink.setProperty(property, Property.NULL);
                 dllink = null;
             } finally {
