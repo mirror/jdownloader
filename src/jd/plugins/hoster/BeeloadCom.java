@@ -18,13 +18,13 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class BeeloadCom extends XFileSharingProBasic {
@@ -100,11 +100,6 @@ public class BeeloadCom extends XFileSharingProBasic {
     }
 
     public static String[] getAnnotationUrls() {
-        final List<String[]> pluginDomains = getPluginDomains();
-        final List<String> ret = new ArrayList<String>();
-        for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + XFileSharingProBasic.getDefaultAnnotationPatternPart());
-        }
-        return ret.toArray(new String[0]);
+        return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
     }
 }
