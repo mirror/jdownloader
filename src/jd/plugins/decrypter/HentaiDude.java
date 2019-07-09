@@ -87,7 +87,7 @@ public class HentaiDude extends antiDDoSForDecrypt {
                     }
                     final String[] results = HTMLParser.getHttpLinks(page, null);
                     for (String result : results) {
-                        if (result.matches("https?://hentaidude.com/.*[0-9]+/")) {
+                        if (result.matches("https?://hentaidude.com/.*([0-9]+|ova)/")) {
                             String fpName = br.getRegex("title=\"([^\"]+)\" href=\"" + result + "\"").getMatch(0);
                             if (fpName != null) {
                                 if (fpName.length() > 4) {
@@ -102,7 +102,7 @@ public class HentaiDude extends antiDDoSForDecrypt {
         } else {
             final String[] results = HTMLParser.getHttpLinks(page, null);
             for (String result : results) {
-                if (result.matches("https?://hentaidude.com/.*[0-9]+/")) {
+                if (result.matches("https?://hentaidude.com/.*([0-9]+|ova)/")) {
                     String fpName = br.getRegex("title=\"([^\"]+)\" href=\"" + result + "\"").getMatch(0);
                     if (fpName != null) {
                         if (fpName.length() > 4) {
