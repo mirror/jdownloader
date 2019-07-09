@@ -17,9 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -37,6 +34,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "oxy.cloud" }, urls = { "https?://(?:www\\.)?oxy\\.cloud/d/([A-Za-z0-9]+)" })
 public class OxyCloud extends PluginForHost {
@@ -103,7 +103,7 @@ public class OxyCloud extends PluginForHost {
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
-            dllink = br.getRegex("predirect=(https?[^\"\\&]+)\"").getMatch(0);
+            dllink = br.getRegex("predirect\\s*=\\s*(https?[^\"\\&]+)\"").getMatch(0);
             if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -125,11 +125,7 @@ public class OxyCloud extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String server_filename = getFileNameFromHeader(dl.getConnection());
-        if (server_filename.contains("%")) {
-            server_filename = Encoding.htmlDecode(server_filename);
-            downloadLink.setFinalFileName(server_filename);
-        }
+        dl.setFilenameFix(isContentDispositionFixRequired(dl, dl.getConnection(), downloadLink));
         downloadLink.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
     }
@@ -142,11 +138,12 @@ public class OxyCloud extends PluginForHost {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
                 }
             } catch (final Exception e) {
+                logger.log(e);
                 downloadLink.setProperty(property, Property.NULL);
                 dllink = null;
             } finally {
@@ -159,10 +156,8 @@ public class OxyCloud extends PluginForHost {
         return dllink;
     }
 
-    private static Object LOCK = new Object();
-
     private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
@@ -181,19 +176,17 @@ public class OxyCloud extends PluginForHost {
                     }
                     if (br.containsHTML("google\\.com/recaptcha")) {
                         final DownloadLink dlinkbefore = this.getDownloadLink();
-                        final DownloadLink dl_dummy;
-                        if (dlinkbefore != null) {
-                            dl_dummy = dlinkbefore;
-                        } else {
-                            dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
+                        try {
+                            final DownloadLink dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
                             this.setDownloadLink(dl_dummy);
+                            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                            // g-recaptcha-response
+                            loginform.put("g-recaptcha-response", recaptchaV2Response);
+                        } finally {
+                            if (dlinkbefore != null) {
+                                this.setDownloadLink(dlinkbefore);
+                            }
                         }
-                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                        if (dlinkbefore != null) {
-                            this.setDownloadLink(dlinkbefore);
-                        }
-                        // g-recaptcha-response
-                        loginform.put("g-recaptcha-response", recaptchaV2Response);
                     }
                     loginform.put("email", account.getUser());
                     loginform.put("password", account.getPass());
@@ -204,7 +197,9 @@ public class OxyCloud extends PluginForHost {
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
-                account.clearCookies("");
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
@@ -217,11 +212,7 @@ public class OxyCloud extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (final PluginException e) {
-            throw e;
-        }
+        login(account, true);
         ai.setUnlimitedTraffic();
         int balance = 0;
         String balanceStr = br.getRegex("class=\"user\\-status\\-balance\">(\\d+ [^<>\"]*?)<small>USD</small>").getMatch(0);

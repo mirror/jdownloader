@@ -17,9 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -33,6 +30,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "theartistunion.com" }, urls = { "https?://(?:www\\.)?theartistunion\\.com/tracks/([A-Za-z0-9]+)" })
 public class TheartistunionCom extends PluginForHost {
@@ -104,33 +104,31 @@ public class TheartistunionCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        URLConnectionAdapter specialDL = null;
-        if (dllink.contains("/stream_files/")) {
+        if (StringUtils.containsIgnoreCase(dllink, "/stream_files/")) {
             logger.info("Trying to find better quality download");
             final String dllink_better_quality = dllink.replace("/stream_files/", "/original_files/");
-            specialDL = br.openGetConnection(dllink_better_quality);
+            final URLConnectionAdapter con = br.openGetConnection(dllink_better_quality);
+            try {
+                if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
+                    logger.info("No better quality download found");
+                } else {
+                    logger.info("Found better quality download");
+                    dllink = dllink_better_quality;
+                }
+            } finally {
+                con.disconnect();
+            }
         } else {
             logger.info("No better quality download possible");
         }
-        logger.info("Found better quality download");
-        if (specialDL != null && specialDL.getContentType().contains("text") || !specialDL.isOK() || specialDL.getLongContentLength() == -1) {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, specialDL.getRequest(), resumable, maxchunks);
-        } else {
-            try {
-                if (specialDL != null) {
-                    specialDL.disconnect();
-                }
-            } catch (final Throwable e) {
-            }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
-        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
@@ -145,11 +143,12 @@ public class TheartistunionCom extends PluginForHost {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
                 }
             } catch (final Exception e) {
+                logger.log(e);
                 downloadLink.setProperty(property, Property.NULL);
                 dllink = null;
             } finally {
