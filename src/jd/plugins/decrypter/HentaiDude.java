@@ -16,72 +16,105 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.regex.Matcher;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.controlling.ProgressController;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
+import jd.utils.locale.JDL;
 
-import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 40413 $", interfaceVersion = 3, names = { "hentaidude.com" }, urls = { "https?://(?:www\\.)?hentaidude\\.com/.*" })
+@DecrypterPlugin(revision = "$Revision: 40413 $", interfaceVersion = 3, names = { "hentaidude.com" }, urls = { "https?://(?:www\\.)?hentaidude\\.com/page/.*|https?://(?:www\\.)?hentaidude.com/\\?tid=.*|^https?://(?:www\\.)?hentaidude\\.com/$" })
 public class HentaiDude extends antiDDoSForDecrypt {
+    private final String FASTER_NODLSIZE = "1";
+    private final String SLOW_ALLPAGES   = "1";
+
     public HentaiDude(PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
     }
 
-    /* Tags: MangaPictureCrawler */
+    protected DownloadLink createDownloadlink(String url, String title) {
+        final String ext = ".mp4";
+        final DownloadLink dl = super.createDownloadlink(url, true);
+        dl.setName(title + ext);
+        if (getPluginConfig().getBooleanProperty(FASTER_NODLSIZE, true) == true) {
+            dl.setAvailable(true);
+        }
+        dl.setProperty("mainlink", br.getURL());
+        return dl;
+    }
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        getPage(parameter);
-        String fpName = br.getRegex("<meta (?:name|property)=\"og:(?:title|description)\" content=[\"']([^<>\"]*?)(?: ?\\| Hentaidude.com)").getMatch(0);
-        String[][] source = br.getRegex("action:[\r\n\t ]+'msv-get-sources',[\r\n\t ]+id:[\r\n\t ]+'([0-9]+)',[\r\n\t ]+nonce:[\r\n\t ]+'([0-9a-fA-F]+)'").getMatches();
-        final PostRequest post = new PostRequest(br.getURL("/wp-admin/admin-ajax.php"));
-        post.addVariable("action", "msv-get-sources");
-        post.addVariable("id", source[0][0]);
-        post.addVariable("nonce", source[0][1]);
-        post.getHeaders().put("Origin", "https://hentaidude.com");
-        post.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        post.setContentType("application/x-www-form-urlencoded; charset=UTF-8");
-        String postResult = br.getPage(post);
-        final String[] results = HTMLParser.getHttpLinks(postResult, null);
-        for (String result : results) {
-            decryptedLinks.add(createDownloadlink(Encoding.htmlOnlyDecode(result)));
-            if (result.matches("https?://cdn[0-9]+.hentaidude\\.com/index.*")) {
-                URLConnectionAdapter con = null;
-                try {
-                    con = br.openHeadConnection(result);
-                    final String contentType = con.getContentType();
-                    if (!StringUtils.containsIgnoreCase(contentType, "video/mp4")) {
-                        getPage(result);
-                        String[][] detailResults = br.getRegex("(?:suburl|name=\"og:url\" content) ?= ?\"([^\"]+)\"").getMatches();
-                        for (String[] detailResult : detailResults) {
-                            decryptedLinks.add(createDownloadlink(Encoding.htmlOnlyDecode(detailResult[0])));
+        String page = br.getPage(parameter);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
+        if (getPluginConfig().getBooleanProperty(SLOW_ALLPAGES, true) == true) {
+            String nextpage = br.getRegex("<a href=\"([^\"]+)\" class=\"styled-button\">Next").getMatch(0);
+            if (nextpage != null) {
+                int highest = 0;
+                int minsize = 1;
+                String newnextpage = "";
+                Matcher nextpage2 = br.getRegex("<a href=\"([^\"]+)\">([0-9]+)").getMatcher();
+                while (nextpage2.find()) {
+                    if (Integer.parseInt(nextpage2.group(2)) > highest) {
+                        highest = Integer.parseInt(nextpage2.group(2));
+                        newnextpage = nextpage2.group(1);
+                    }
+                }
+                newnextpage.replace("/" + highest + "/", "/1/");
+                if (new Regex(parameter, "page/([0-9]+)/").getMatch(0) != null) {
+                    minsize = Integer.parseInt(new Regex(parameter, "page/([0-9]+)/").getMatch(0));
+                }
+                for (int i = minsize; i <= highest; i++) {
+                    if (i > minsize) {
+                        page = br.getPage(nextpage);
+                    }
+                    final String[] results = HTMLParser.getHttpLinks(page, null);
+                    for (String result : results) {
+                        if (result.matches("https?://hentaidude.com/.*[0-9]+/")) {
+                            String fpName = br.getRegex("title=\"([^\"]+)\" href=\"" + result + "\"").getMatch(0);
+                            if (fpName != null) {
+                                if (fpName.length() > 4) {
+                                    decryptedLinks.add(this.createDownloadlink(Encoding.htmlOnlyDecode(result), Encoding.htmlOnlyDecode(fpName)));
+                                }
+                            }
                         }
                     }
-                } catch (Exception e) {
-                    e.printStackTrace();
+                    nextpage = br.getRegex("<a href=\"([^\"]+)\" class=\"styled-button\">Next").getMatch(0);
                 }
             }
-        }
-        if (fpName != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
+        } else {
+            final String[] results = HTMLParser.getHttpLinks(page, null);
+            for (String result : results) {
+                if (result.matches("https?://hentaidude.com/.*[0-9]+/")) {
+                    String fpName = br.getRegex("title=\"([^\"]+)\" href=\"" + result + "\"").getMatch(0);
+                    if (fpName != null) {
+                        if (fpName.length() > 4) {
+                            decryptedLinks.add(this.createDownloadlink(Encoding.htmlOnlyDecode(result), Encoding.htmlOnlyDecode(fpName)));
+                        }
+                    }
+                }
+            }
         }
         return decryptedLinks;
     }
 
-    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
-        return false;
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTER_NODLSIZE, JDL.L("plugins.decrypter.hentaidude.faster", "Faster but no download sizes")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SLOW_ALLPAGES, JDL.L("plugins.decrypter.hentaidude.slow", "Grab all pages (very slow!)")).setDefaultValue(false));
     }
 }
