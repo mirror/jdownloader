@@ -167,6 +167,7 @@ public class FeemooCom extends PluginForHost {
             }
             this.sleep(wait * 1001l, downloadLink);
         }
+        downloadLink.setProperty(directlinkproperty, dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
@@ -177,7 +178,6 @@ public class FeemooCom extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty(directlinkproperty, dllink);
         dl.startDownload();
     }
 

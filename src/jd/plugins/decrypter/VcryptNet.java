@@ -17,6 +17,9 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -28,9 +31,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vcrypt.net" }, urls = { "https?://(?:www\\.)?vcrypt\\.(?:net|pw)/(?:[^/]+/([a-z0-9\\_]+)|[a-z0-9]{6})" })
 public class VcryptNet extends antiDDoSForDecrypt {
@@ -67,7 +67,20 @@ public class VcryptNet extends antiDDoSForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
         }
+        String redirect = null;
         if (parameter.matches("https?://[^/]+/[^/]+/[a-zA-Z0-9\\_]+")) {
+            redirect = br.getRegex("<meta http-equiv=(?:\\'|\")refresh(?:\\'|\") content=('|\")\\d+;\\s*URL=(.*)\\1").getMatch(1);
+            final String jsCookieText = br.getRegex("document\\.cookie\\s*=\\s*\\'([^<>\"\\']+)\\'").getMatch(0);
+            if (jsCookieText != null) {
+                final String[] cookieParams = jsCookieText.split("=");
+                if (cookieParams.length >= 2) {
+                    logger.info("Setting special cookie");
+                    br.setCookie(br.getHost(), cookieParams[0], cookieParams[1]);
+                }
+            }
+            if (redirect != null && redirect.contains("wss1")) {
+                br.getPage(redirect);
+            }
             Form continueForm = br.getFormByInputFieldKeyValue("submit", "Continue");
             if (continueForm == null) {
                 continueForm = br.getFormBySubmitvalue("Continue");
@@ -84,10 +97,10 @@ public class VcryptNet extends antiDDoSForDecrypt {
                 submitForm(continueForm);
             }
             /* Single redirect url */
-            String redirect = br.getRedirectLocation();
+            redirect = br.getRedirectLocation();
             if (redirect == null) {
                 // redirect can be meta redirect within html
-                redirect = br.getRegex("<meta http-equiv='refresh' content=(|'|\")\\d+;\\s*url=(.*)\\1").getMatch(1);
+                redirect = br.getRegex("<meta http-equiv=(?:\\'|\")refresh(?:\\'|\") content=('|\")\\d+;\\s*URL=(.*)\\1").getMatch(1);
             }
             if (redirect != null && redirect.contains("/opencryptz")) {
                 // leads to final redirect

@@ -583,6 +583,15 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /**
+     * Some videohosts either have multiple qualities or even allow the user to officially download the original videofile. The problem is
+     * that this may require to solve a captcha while the stream download does not. This is an unfinished method, designed to be used in the
+     * future when we may have XFS plugin settings e.g. for video quality! TODO: Add quality settings
+     */
+    protected final boolean internal_videohost_prefer_OfficialOriginalVideoDownload() {
+        return false;
+    }
+
+    /**
      * This can 'automatically' detect whether a host supports availablecheck via 'abuse' URL. <br />
      * Example: uploadboy.com</br>
      * Do not override - at least try to avoid having to!!
