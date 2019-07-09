@@ -18,9 +18,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -30,6 +27,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "telequebec.tv" }, urls = { "https?://(?:[A-Za-z0-9]+\\.)?telequebec\\.tv/media/(\\d+)/[a-z0-9\\-]+/[a-z0-9\\-]+" })
 public class TelequebecTv extends PluginForDecrypt {
@@ -61,25 +61,13 @@ public class TelequebecTv extends PluginForDecrypt {
             title = mediaID;
         }
         br.getPage("https://mnmedias.api.telequebec.tv/m3u8/" + mediaID + ".m3u8");
-        // final List<HlsContainer> allHlsContainers = HlsContainer.getHlsQualities(br);
-        // for (final HlsContainer hlscontainer : allHlsContainers) {
-        // if (!hlscontainer.isVideo()) {
-        // /* Skip audio containers here as we (sometimes) have separate mp3 URLs for this host. */
-        // continue;
-        // }
-        // final String filename = title + "_" + hlscontainer.getStandardFilename();
-        // final DownloadLink dl = this.createDownloadlink(hlscontainer.getDownloadurl());
-        // dl.setFinalFileName(filename);
-        // // dl.setAvailable(true);
-        // decryptedLinks.add(dl);
-        // }
         final ArrayList<DownloadLink> ret = GenericM3u8Decrypter.parseM3U8(this, param.getCryptedUrl(), br, param.getCryptedUrl(), null, null, title);
-        String fpName = title;
-        if (fpName != null) {
+        decryptedLinks.addAll(ret);
+        if (title != null) {
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
+            fp.setName(Encoding.htmlDecode(title.trim()));
             fp.addLinks(decryptedLinks);
         }
-        return ret;
+        return decryptedLinks;
     }
 }
