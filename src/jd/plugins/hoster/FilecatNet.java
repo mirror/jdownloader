@@ -16,17 +16,22 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.Locale;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.PostRequest;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -40,28 +45,29 @@ import jd.plugins.components.PluginJSonUtils;
 public class FilecatNet extends PluginForHost {
     public FilecatNet(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium("");
+        this.enablePremium("https://filecat.net/pricing");
     }
 
     @Override
     public String getAGBLink() {
-        return "https://www.file4.net/tos";
+        return "https://filecat.net/";
     }
 
     /* Connection stuff */
-    private final boolean FREE_RESUME       = true;
-    private final int     FREE_MAXCHUNKS    = 0;
-    private final int     FREE_MAXDOWNLOADS = 1;
-    // private final boolean ACCOUNT_FREE_RESUME = true;
-    // private final int ACCOUNT_FREE_MAXCHUNKS = 0;
-    // private final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
-    // private final boolean ACCOUNT_PREMIUM_RESUME = true;
-    // private final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    // private final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private final boolean       FREE_RESUME                  = true;
+    private final int           FREE_MAXCHUNKS               = 0;
+    private final int           FREE_MAXDOWNLOADS            = 1;
+    private final boolean       ACCOUNT_FREE_RESUME          = true;
+    private final int           ACCOUNT_FREE_MAXCHUNKS       = 0;
+    private final int           ACCOUNT_FREE_MAXDOWNLOADS    = 1;
+    private final boolean       ACCOUNT_PREMIUM_RESUME       = true;
+    private final int           ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
+    private final int           ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private static final String WEBSITE_API_BASE             = "https://api.filecat.net";
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        final String linkid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        final String linkid = getFID(link);
         if (linkid != null) {
             return linkid;
         } else {
@@ -69,17 +75,27 @@ public class FilecatNet extends PluginForHost {
         }
     }
 
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
+    private Browser prepBRWebsite(final Browser br) {
+        br.setAllowedResponseCodes(new int[] { 400 });
+        return br;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        prepBRWebsite(this.br);
         this.setBrowserExclusive();
         br.setAllowedResponseCodes(new int[] { 400 });
-        br.getPage("https://api." + this.getHost() + "/file/" + this.getLinkID(link));
+        br.getPage(WEBSITE_API_BASE + "/file/" + this.getFID(link));
         if (this.br.getHttpConnection().getResponseCode() == 400 || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = PluginJSonUtils.getJson(br, "name");
         if (StringUtils.isEmpty(filename)) {
-            filename = this.getLinkID(link);
+            filename = this.getFID(link);
         }
         String filesize = PluginJSonUtils.getJson(br, "size");
         if (StringUtils.isEmpty(filename)) {
@@ -95,13 +111,14 @@ public class FilecatNet extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        handleDownload(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    /** For free- and account modes! */
+    private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
-            final String fid = this.getLinkID(link);
+            final String fid = this.getFID(link);
             final String premiumonly = PluginJSonUtils.getJson(br, "premonly");
             if ("true".equalsIgnoreCase(premiumonly)) {
                 throw new AccountRequiredException();
@@ -110,7 +127,7 @@ public class FilecatNet extends PluginForHost {
             br.getHeaders().put("X-URL", link.getPluginPatternMatcher());
             br.getHeaders().put("Content-Type", "application/json;charset=UTF-8");
             /* Important! This sets the crucial "PHPSESSID" cookie!! */
-            br.getPage("/app");
+            initSessionWebsite(this.br);
             final PostRequest preWaitReq = br.createJSonPostRequest("/dwnldreq", "{\"id\":null,\"file_uid\":\"" + fid + "\",\"captcha_token\":null}");
             br.openRequestConnection(preWaitReq);
             br.loadConnection(null);
@@ -162,6 +179,10 @@ public class FilecatNet extends PluginForHost {
         }
         link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
+    }
+
+    private void initSessionWebsite(final Browser br) throws IOException {
+        br.getPage(WEBSITE_API_BASE + "/app");
     }
 
     private boolean preDownloadWaittimeSkippable() {
@@ -240,120 +261,96 @@ public class FilecatNet extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    // private static Object LOCK = new Object();
-    //
-    // private void login(final Account account, final boolean force) throws Exception {
-    // synchronized (LOCK) {
-    // try {
-    // br.setFollowRedirects(true);
-    // br.setCookiesExclusive(true);
-    // final Cookies cookies = account.loadCookies("");
-    // if (cookies != null && !force) {
-    // this.br.setCookies(this.getHost(), cookies);
-    // return;
-    // }
-    // br.getPage("");
-    // if (br.containsHTML("")) {
-    // final DownloadLink dlinkbefore = this.getDownloadLink();
-    // final DownloadLink dl_dummy;
-    // if (dlinkbefore != null) {
-    // dl_dummy = dlinkbefore;
-    // } else {
-    // dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
-    // this.setDownloadLink(dl_dummy);
-    // }
-    // final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-    // if (dlinkbefore != null) {
-    // this.setDownloadLink(dlinkbefore);
-    // }
-    // // g-recaptcha-response
-    // }
-    // br.postPage("", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-    // if (!isLoggedin()) {
-    // throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-    // }
-    // account.saveCookies(this.br.getCookies(this.getHost()), "");
-    // } catch (final PluginException e) {
-    // account.clearCookies("");
-    // throw e;
-    // }
-    // }
-    // }
-    //
-    // private boolean isLoggedin() {
-    // return br.getCookie(this.getHost(), "", Cookies.NOTDELETEDPATTERN) != null;
-    // }
-    //
-    // @Override
-    // public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-    // final AccountInfo ai = new AccountInfo();
-    // try {
-    // login(account, true);
-    // } catch (final PluginException e) {
-    // throw e;
-    // }
-    // String space = br.getRegex("").getMatch(0);
-    // if (space != null) {
-    // ai.setUsedSpace(space.trim());
-    // }
-    // ai.setUnlimitedTraffic();
-    // if (br.containsHTML("")) {
-    // account.setType(AccountType.FREE);
-    // /* free accounts can still have captcha */
-    // account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
-    // account.setConcurrentUsePossible(false);
-    // ai.setStatus("Registered (free) user");
-    // } else {
-    // final String expire = br.getRegex("").getMatch(0);
-    // if (expire == null) {
-    // throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-    // } else {
-    // ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
-    // }
-    // account.setType(AccountType.PREMIUM);
-    // account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-    // account.setConcurrentUsePossible(true);
-    // ai.setStatus("Premium account");
-    // }
-    // return ai;
-    // }
-    //
-    // @Override
-    // public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-    // requestFileInformation(link);
-    // login(account, false);
-    // br.getPage(link.getPluginPatternMatcher());
-    // if (account.getType() == AccountType.FREE) {
-    // doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
-    // } else {
-    // String dllink = this.checkDirectLink(link, "premium_directlink");
-    // if (dllink == null) {
-    // dllink = br.getRegex("").getMatch(0);
-    // if (StringUtils.isEmpty(dllink)) {
-    // logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-    // }
-    // }
-    // dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-    // if (dl.getConnection().getContentType().contains("html")) {
-    // if (dl.getConnection().getResponseCode() == 403) {
-    // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-    // } else if (dl.getConnection().getResponseCode() == 404) {
-    // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-    // }
-    // logger.warning("The final dllink seems not to be a file!");
-    // br.followConnection();
-    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-    // }
-    // link.setProperty("premium_directlink", dl.getConnection().getURL().toString());
-    // dl.startDownload();
-    // }
-    // }
-    //
-    // @Override
-    // public int getMaxSimultanPremiumDownloadNum() {
-    // return ACCOUNT_FREE_MAXDOWNLOADS;
-    // }
+    private static Object LOCK = new Object();
+
+    private void login(final Account account, final boolean force) throws Exception {
+        synchronized (LOCK) {
+            try {
+                prepBRWebsite(this.br);
+                br.setFollowRedirects(true);
+                br.setCookiesExclusive(true);
+                boolean loggedInViaCookies = false;
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null && !force) {
+                    this.br.setCookies(this.getHost(), cookies);
+                    br.getPage(WEBSITE_API_BASE + "/user/get");
+                    loggedInViaCookies = isLoggedin();
+                }
+                if (!loggedInViaCookies) {
+                    /* Full login */
+                    initSessionWebsite(this.br);
+                    final PostRequest preWaitReq = br.createJSonPostRequest("/user/signin", "{\"email\":\"" + account.getUser() + "\",\"password\":\"" + account.getPass() + "\"}");
+                    br.openRequestConnection(preWaitReq);
+                    br.loadConnection(null);
+                    final String message = PluginJSonUtils.getJson(br, "message");
+                    if (message != null) {
+                        /* E.g. { "message": "Your ip is blocked" } */
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, message, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    } else if (!isLoggedin()) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
+            } catch (final PluginException e) {
+                account.clearCookies("");
+                throw e;
+            }
+        }
+    }
+
+    private boolean isLoggedin() {
+        return br.getCookie(this.getHost(), "SESS", Cookies.NOTDELETEDPATTERN) != null;
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        try {
+            login(account, false);
+        } catch (final PluginException e) {
+            throw e;
+        }
+        br.getPage(WEBSITE_API_BASE + "/user/get");
+        final String isPremium = PluginJSonUtils.getJson(br, "premium");
+        // final String privileged = PluginJSonUtils.getJson(br, "privileged");
+        // final String directdownloads = PluginJSonUtils.getJson(br, "directdownloads");
+        if (!"true".equalsIgnoreCase(isPremium)) {
+            account.setType(AccountType.FREE);
+            /* free accounts can still have captcha */
+            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+            account.setConcurrentUsePossible(false);
+            ai.setStatus("Registered (free) user");
+        } else {
+            final String expire = PluginJSonUtils.getJson(br, "premiumby");
+            if (!StringUtils.isEmpty(expire)) {
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd", Locale.ENGLISH));
+            }
+            account.setType(AccountType.PREMIUM);
+            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            account.setConcurrentUsePossible(true);
+            ai.setStatus("Premium account");
+        }
+        /* 2019-07-10: No known traffic limits so far */
+        ai.setUnlimitedTraffic();
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link);
+        login(account, false);
+        if (account.getType() == AccountType.FREE) {
+            handleDownload(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
+        } else {
+            handleDownload(link, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS, "premium_directlink");
+        }
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return ACCOUNT_FREE_MAXDOWNLOADS;
+    }
+
     @Override
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
         if (acc == null) {

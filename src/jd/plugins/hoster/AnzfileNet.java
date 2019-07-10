@@ -87,10 +87,9 @@ public class AnzfileNet extends XFileSharingProBasic {
 
     @Override
     public boolean supports_availablecheck_alt() {
+        /* 2019-07-10: Not possible because a captcha is required! */
         return false;
     }
-
-    
 
     @Override
     public boolean supports_availablecheck_filename_abuse() {
