@@ -57,9 +57,9 @@ public class TiktokCom extends antiDDoSForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        String linkid = getFID(link);
-        if (linkid != null) {
-            return linkid;
+        String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
         } else {
             return super.getLinkID(link);
         }
