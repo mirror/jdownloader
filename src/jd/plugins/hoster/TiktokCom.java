@@ -31,7 +31,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tiktok.com" }, urls = { "https?://(?:www\\.)?tiktok\\.com/(@[^/]+)/video/(\\d+)|https?://m\\.tiktok\\.com/v/(\\d+)\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tiktok.com" }, urls = { "https?://(?:www\\.)?tiktok\\.com/((@[^/]+)/video/|embed/)(\\d+)|https?://m\\.tiktok\\.com/v/(\\d+)\\.html" })
 public class TiktokCom extends antiDDoSForHost {
     public TiktokCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -66,11 +66,7 @@ public class TiktokCom extends antiDDoSForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        String fid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
-        if (fid == null) {
-            fid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(2);
-        }
-        return fid;
+        return new Regex(link.getPluginPatternMatcher(), "/(?:video|v|embed)/(\\d+)").getMatch(0);
     }
 
     private String  dllink        = null;
@@ -87,6 +83,10 @@ public class TiktokCom extends antiDDoSForHost {
         if (link.getPluginPatternMatcher().matches("@[^/]+/video/\\d+")) {
             user = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
         } else {
+            /*
+             * 2019-07-11: TODO: Add proper support for "embed" URLs to find username - consider always using embed as this will give us
+             * more information!
+             */
             /* 2nd linktype which does not contain username --> Find username */
             br.setFollowRedirects(false);
             br.getPage(link.getPluginPatternMatcher());
