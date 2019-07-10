@@ -490,8 +490,9 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
             default:
                 return AvailableLinkState.UNKNOWN;
             }
+        } else {
+            return AvailableLinkState.UNKNOWN;
         }
-        return AvailableLinkState.UNKNOWN;
     }
 
     public Priority getPriority() {

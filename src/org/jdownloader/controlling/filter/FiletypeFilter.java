@@ -9,6 +9,7 @@ import org.jdownloader.controlling.filter.CompiledFiletypeFilter.AudioExtensions
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.DocumentExtensions;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.HashExtensions;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ImageExtensions;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.SubtitleExtensions;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
 import org.jdownloader.gui.translate._GUI;
 
@@ -37,6 +38,9 @@ public class FiletypeFilter extends Filter implements Storable {
         }
         if (docFilesEnabled) {
             cond.add(DocumentExtensions.TXT.getDesc());
+        }
+        if (subFilesEnabled) {
+            cond.add(SubtitleExtensions.SRT.getDesc());
         }
         if (customs != null) {
             cond.add(_GUI.T.FiletypeFilter_toString_custom(customs));
@@ -89,7 +93,7 @@ public class FiletypeFilter extends Filter implements Storable {
      * @param customs
      * @param regex
      */
-    public FiletypeFilter(TypeMatchType typeMatchType, boolean enabled, boolean hashEnabled, boolean audioFilesEnabled, boolean videoFilesEnabled, boolean archivesEnabled, boolean imagesEnabled, final boolean docFilesEnabled, String customs, boolean regex) {
+    public FiletypeFilter(TypeMatchType typeMatchType, boolean enabled, boolean hashEnabled, boolean audioFilesEnabled, boolean videoFilesEnabled, boolean archivesEnabled, boolean imagesEnabled, final boolean docFilesEnabled, final boolean subFilesEnabled, String customs, boolean regex) {
         super();
         this.enabled = enabled;
         this.audioFilesEnabled = audioFilesEnabled;
@@ -101,6 +105,7 @@ public class FiletypeFilter extends Filter implements Storable {
         this.hashEnabled = hashEnabled;
         this.matchType = typeMatchType;
         this.docFilesEnabled = docFilesEnabled;
+        this.subFilesEnabled = subFilesEnabled;
     }
 
     public boolean isUseRegex() {
@@ -172,6 +177,15 @@ public class FiletypeFilter extends Filter implements Storable {
 
     private boolean videoFilesEnabled;
     private boolean docFilesEnabled;
+    private boolean subFilesEnabled;
+
+    public boolean isSubFilesEnabled() {
+        return subFilesEnabled;
+    }
+
+    public void setSubFilesEnabled(boolean subFilesEnabled) {
+        this.subFilesEnabled = subFilesEnabled;
+    }
 
     public boolean isDocFilesEnabled() {
         return docFilesEnabled;

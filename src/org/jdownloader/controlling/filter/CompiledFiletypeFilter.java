@@ -41,7 +41,7 @@ public class CompiledFiletypeFilter {
 
     public static ExtensionsFilterInterface getExtensionsFilterInterface(final String fileExtension) {
         if (fileExtension != null) {
-            for (final ExtensionsFilterInterface[] extensions : new ExtensionsFilterInterface[][] { HashExtensions.values(), AudioExtensions.values(), ArchiveExtensions.values(), ImageExtensions.values(), VideoExtensions.values(), DocumentExtensions.values() }) {
+            for (final ExtensionsFilterInterface[] extensions : new ExtensionsFilterInterface[][] { HashExtensions.values(), AudioExtensions.values(), DocumentExtensions.values(), ArchiveExtensions.values(), ImageExtensions.values(), VideoExtensions.values(), SubtitleExtensions.values() }) {
                 for (final ExtensionsFilterInterface extension : extensions) {
                     final Pattern pattern = extension.getPattern();
                     if (pattern != null && pattern.matcher(fileExtension).matches()) {
@@ -106,6 +106,61 @@ public class CompiledFiletypeFilter {
         }
     }
 
+    public static enum SubtitleExtensions implements ExtensionsFilterInterface {
+        SRT, // SubRip
+        SSF, // Structured Subtitle Format
+        SSA, // SubStation Alpha
+        ASS, // SubStation Alpha
+        IDX, // VobSub
+        TTXT, // MPEG-4 Timed Text
+        SMI, // SAMI
+        VTT, // WebVTT
+        SUB;// VobSub
+        private final Pattern  pattern;
+        private static Pattern allPattern;
+
+        public Pattern getPattern() {
+            return pattern;
+        }
+
+        public ExtensionsFilterInterface getSource() {
+            return this;
+        }
+
+        private SubtitleExtensions() {
+            pattern = Pattern.compile(name(), Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
+        }
+
+        private SubtitleExtensions(String id) {
+            this.pattern = Pattern.compile(id, Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
+        }
+
+        public String getDesc() {
+            return _GUI.T.FilterRuleDialog_createTypeFilter_mime_subtitle();
+        }
+
+        public String getIconID() {
+            return IconKey.ICON_LANGUAGE;
+        }
+
+        public Pattern compiledAllPattern() {
+            if (allPattern == null) {
+                allPattern = compileAllPattern(SubtitleExtensions.values());
+            }
+            return allPattern;
+        }
+
+        @Override
+        public boolean isSameExtensionGroup(ExtensionsFilterInterface extension) {
+            return extension != null && extension instanceof SubtitleExtensions;
+        }
+
+        @Override
+        public ExtensionsFilterInterface[] listSameGroup() {
+            return values();
+        }
+    }
+
     public static enum DocumentExtensions implements ExtensionsFilterInterface {
         TXT,
         HTML("(html?)"),
@@ -124,7 +179,6 @@ public class CompiledFiletypeFilter {
         RTF,
         PDF,
         NFO,
-        SRT,
         USF;
         private final Pattern  pattern;
         private static Pattern allPattern;
@@ -399,7 +453,8 @@ public class CompiledFiletypeFilter {
 
     public static enum ImageExtensions implements ExtensionsFilterInterface {
         JPG,
-        JPEG,
+        JP2("(jp2|j2k|jpf|jpg2|jpx|jpm|mj2|mjp2)"),
+        JPEG("(jpe|jpeg|jfif)"),
         GIF,
         EPS,
         PNG,
@@ -475,6 +530,9 @@ public class CompiledFiletypeFilter {
         }
         if (filetypeFilter.isDocFilesEnabled()) {
             filterInterfaces.add(DocumentExtensions.TXT);
+        }
+        if (filetypeFilter.isSubFilesEnabled()) {
+            filterInterfaces.add(SubtitleExtensions.SRT);
         }
         try {
             if (filetypeFilter.getCustoms() != null) {

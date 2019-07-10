@@ -2,16 +2,21 @@ package org.jdownloader.downloader.hls;
 
 import java.awt.Color;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -54,9 +59,11 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.HTTPHeader;
+import org.appwork.utils.net.LimitedInputStream;
 import org.appwork.utils.net.NullInputStream;
 import org.appwork.utils.net.SkippingLimitedOutputStream;
 import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
 import org.appwork.utils.net.httpserver.HttpServer;
 import org.appwork.utils.net.httpserver.handler.HttpRequestHandler;
 import org.appwork.utils.net.httpserver.requests.GetRequest;
@@ -97,6 +104,11 @@ public class HLSDownloader extends DownloadInterface {
         }
     }
 
+    public static enum CONCATSOURCE {
+        HTTP,
+        FILE
+    }
+
     private final AtomicLong                     bytesWritten         = new AtomicLong(0);
     private DownloadLinkDownloadable             downloadable;
     private DownloadLink                         link;
@@ -113,9 +125,14 @@ public class HLSDownloader extends DownloadInterface {
     private long                                 processID;
     private List<M3U8Playlist>                   m3u8Playlists;
     private final List<PartFile>                 outputPartFiles      = new ArrayList<PartFile>();
+    private volatile Map<String, File>           fileMap              = new HashMap<String, File>();
     private final AtomicInteger                  currentPlayListIndex = new AtomicInteger(0);
     private final HashMap<String, SecretKeySpec> aes128Keys           = new HashMap<String, SecretKeySpec>();
     private final boolean                        isJared              = Application.isJared(HLSDownloader.class);
+
+    public CONCATSOURCE getConcatSource() {
+        return CONCATSOURCE.HTTP;
+    }
 
     public int getCurrentPlayListIndex() {
         return currentPlayListIndex.get();
@@ -163,7 +180,7 @@ public class HLSDownloader extends DownloadInterface {
                 super.setResumeable(value);
             }
         };
-        m3u8Playlists = getM3U8Playlists();
+        m3u8Playlists = getM3U8Playlists().subList(0, 10);
         if (m3u8Playlists.size() == 0) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -465,6 +482,13 @@ public class HLSDownloader extends DownloadInterface {
             } else {
                 concatFormat = null;
             }
+            if (CONCATSOURCE.HTTP.equals(getConcatSource())) {
+                final Map<String, File> fileMap = new HashMap<String, File>();
+                for (final PartFile partFile : outputPartFiles) {
+                    fileMap.put(UniqueAlltimeID.create(), partFile.file);
+                }
+                this.fileMap = fileMap;
+            }
             try {
                 downloadable.addPluginProgress(progress);
                 try {
@@ -622,13 +646,14 @@ public class HLSDownloader extends DownloadInterface {
                     lastBitrate.set(-1);
                     lastBytesWritten.set(bytesWritten.get());
                     currentPlayListIndex.set(index);
-                    partFile.flag.set(true);// TODO: validate download first before flag is set
                     ffmpeg.runCommand(null, buildDownloadCommandLine(downloadFormat, ffmpeg, destination.getAbsolutePath()));
+                    partFile.flag.set(true);
                 } catch (FFMpegException e) {
                     // some systems have problems with special chars to find the in or out file.
                     if (e.getStdErr() != null && e.getStdErr().contains("No such file or directory")) {
                         final File tmpOut = Application.getTempResource("ffmpeg_out" + UniqueAlltimeID.create());
                         ffmpeg.runCommand(null, buildDownloadCommandLine(downloadFormat, ffmpeg, tmpOut.getAbsolutePath()));
+                        partFile.flag.set(true);
                         destination.delete();
                         tmpOut.renameTo(destination);
                     } else {
@@ -677,9 +702,11 @@ public class HLSDownloader extends DownloadInterface {
     protected ArrayList<String> buildConcatCommandLine(final String format, FFmpeg ffmpeg, String out) {
         final ArrayList<String> l = new ArrayList<String>();
         l.add(ffmpeg.getFullPath());
-        if (CrossSystem.isWindows()) {
+        final CONCATSOURCE concatSource = getConcatSource();
+        if (CrossSystem.isWindows() && CONCATSOURCE.FILE.equals(concatSource)) {
             // workaround to support long path lengths
             // https://trac.ffmpeg.org/wiki/Concatenate
+            // TODO: test if this still works, for example check for unsafe filename
             l.add("-i");
             final StringBuilder sb = new StringBuilder();
             sb.append("concat:");
@@ -696,6 +723,23 @@ public class HLSDownloader extends DownloadInterface {
         } else {
             l.add("-f");
             l.add("concat");
+            if (true) {
+                // required, see https://trac.ffmpeg.org/wiki/Concatenate
+                l.add("-safe");
+                l.add("0");
+            }
+            if (true) {
+                // https://blog.yo1.dog/fix-for-ffmpeg-protocol-not-on-whitelist-error-for-urls/
+                l.add("-protocol_whitelist");
+                switch (concatSource) {
+                case FILE:
+                    l.add("file,http,tcp");
+                    break;
+                case HTTP:
+                    l.add("http,tcp");
+                    break;
+                }
+            }
             l.add("-i");
             l.add("http://127.0.0.1:" + server.getPort() + "/concat?id=" + processID);
         }
@@ -711,6 +755,7 @@ public class HLSDownloader extends DownloadInterface {
         l.add("-c");
         l.add("copy");
         applyBitStreamFilter(l, format, ffmpeg);
+        // TODO: try to add support for http output and request handler writing bytes to file
         if (CrossSystem.isWindows() && out.length() > 259) {
             // https://msdn.microsoft.com/en-us/library/aa365247.aspx
             l.add("\\\\?\\" + out);
@@ -744,6 +789,7 @@ public class HLSDownloader extends DownloadInterface {
         l.add("copy");
         l.add("-f");
         l.add(format);
+        // TODO: try to add support for http output and request handler writing bytes to file
         if (CrossSystem.isWindows() && out.length() > 259) {
             // https://msdn.microsoft.com/en-us/library/aa365247.aspx
             l.add("\\\\?\\" + out);
@@ -793,6 +839,54 @@ public class HLSDownloader extends DownloadInterface {
     }
 
     private final AtomicInteger requestsInProcess = new AtomicInteger(0);
+
+    protected void handleFileRequest(final File file, GetRequest request, HttpResponse response) throws FileNotFoundException, IOException {
+        final FileInputStream fis = new FileInputStream(file);
+        try {
+            final long fileSize = file.length();
+            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_DISPOSITION, "attachment;filename*=UTF-8''" + URLEncoder.encode(file.getName(), "UTF-8")));
+            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCEPT_RANGES, "bytes"));
+            final String requestRange = request.getRequestHeaders().getValue(HTTPConstants.HEADER_REQUEST_RANGE);
+            long from = 0;
+            long to = fileSize - 1;
+            boolean gotValidRange = false;
+            if (requestRange != null) {
+                final long[] range = HTTPConnectionUtils.parseRequestRange(requestRange);
+                if (range[0] != -1 && range[1] == -1) {
+                    final long rangeStart = range[0];
+                    if (rangeStart < fileSize - 1) {
+                        from = rangeStart;
+                        to = fileSize - 1;
+                        gotValidRange = true;
+                    }
+                } else if (range[0] != -1 && range[1] == -1) {
+                    final long rangeStart = range[0];
+                    final long rangeEnd = range[1];
+                    if (rangeStart < fileSize - 1 && rangeEnd > rangeStart && rangeEnd <= fileSize - 1) {
+                        from = rangeStart;
+                        to = rangeEnd;
+                        gotValidRange = true;
+                    }
+                }
+            }
+            final InputStream is;
+            if (gotValidRange) {
+                final long length = 1 + to - from;
+                response.setResponseCode(ResponseCode.SUCCESS_PARTIAL_CONTENT);
+                response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_LENGTH, Long.toString(length)));
+                response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_RANGE, "bytes " + from + "-" + to + "/" + fileSize));
+                fis.getChannel().position(from);
+                is = new LimitedInputStream(fis, length);
+            } else {
+                response.setResponseCode(ResponseCode.SUCCESS_OK);
+                response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_LENGTH, Long.toString(fileSize)));
+                is = fis;
+            }
+            IO.readStreamToOutputStream(-1, is, response.getOutputStream(true), false);
+        } finally {
+            fis.close();
+        }
+    }
 
     private void initPipe(final AbstractFFmpegBinary ffmpeg) throws IOException {
         final LinkedList<MeteredThrottledInputStream> cachedMeteredThrottledInputStream = new LinkedList<MeteredThrottledInputStream>();
@@ -854,19 +948,55 @@ public class HLSDownloader extends DownloadInterface {
                     if (!validateID(request)) {
                         requestLogger.info("invalid ID");
                         return false;
+                    } else if ("/file".equals(request.getRequestedPath())) {
+                        ffmpeg.updateLastUpdateTimestamp();
+                        final String fileID = request.getParameterbyKey("fileID");
+                        final File file = fileMap.get(fileID);
+                        requestLogger.info("handle file request:fileID:" + fileID + "|file:" + file);
+                        if (file == null || !file.isFile()) {
+                            response.setResponseCode(HTTPConstants.ResponseCode.get(404));
+                        } else {
+                            try {
+                                handleFileRequest(file, request, response);
+                            } catch (final FileNotFoundException e) {
+                                requestLogger.log(e);
+                                response.setResponseCode(HTTPConstants.ResponseCode.get(404));
+                            }
+                        }
+                        requestOkay = true;
+                        return true;
                     } else if ("/concat".equals(request.getRequestedPath())) {
+                        ffmpeg.updateLastUpdateTimestamp();
                         final StringBuilder sb = new StringBuilder();
                         for (final PartFile partFile : outputPartFiles) {
                             if (sb.length() > 0) {
                                 sb.append("\r\n");
                             }
                             sb.append("file '");
-                            if (CrossSystem.isWindows()) {
-                                // https://trac.ffmpeg.org/ticket/2702
-                                // NOTE: this does not work for long path lengths! see different way in buildConcatCommandLine
-                                sb.append("file:" + partFile.file.getAbsolutePath().replaceAll("\\\\", "/"));
-                            } else {
-                                sb.append("file://" + partFile.file.getAbsolutePath());
+                            switch (getConcatSource()) {
+                            case FILE:
+                                if (CrossSystem.isWindows()) {
+                                    // https://trac.ffmpeg.org/ticket/2702
+                                    // NOTE: this does not work for long path lengths! see different way in buildConcatCommandLine
+                                    sb.append("file:" + partFile.file.getAbsolutePath().replaceAll("\\\\", "/"));
+                                } else {
+                                    sb.append("file://" + partFile.file.getAbsolutePath());
+                                }
+                                break;
+                            case HTTP:
+                                String fileID = null;
+                                for (final Entry<String, File> fileMapEntry : fileMap.entrySet()) {
+                                    if (fileMapEntry.getValue().equals(partFile.file)) {
+                                        fileID = fileMapEntry.getKey();
+                                        break;
+                                    }
+                                }
+                                if (fileID == null) {
+                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                                } else {
+                                    sb.append("http://127.0.0.1:" + server.getPort() + "/file?fileID=" + fileID + "&id=" + processID);
+                                }
+                                break;
                             }
                             sb.append("'");
                         }

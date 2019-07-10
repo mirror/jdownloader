@@ -364,11 +364,7 @@ public class RuleWrapper<T extends FilterRule> {
         final CompiledOnlineStatusFiler onlineStatusFilter = getOnlineStatusFilter();
         if (onlineStatusFilter != null) {
             final AvailableLinkState linkState = link.getLinkState();
-            if (AvailableLinkState.UNKNOWN == linkState) {
-                return false;
-            } else {
-                return onlineStatusFilter.matches(linkState);
-            }
+            return onlineStatusFilter.matches(linkState);
         } else {
             return true;
         }

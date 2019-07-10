@@ -6,7 +6,6 @@ import jd.controlling.linkcollector.LinkOrigin;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OriginFilter;
 
 public class CompiledOriginFilter extends OriginFilter {
-
     private OriginFilter        originFilter;
     private HashSet<LinkOrigin> originsSet;
 
@@ -22,11 +21,10 @@ public class CompiledOriginFilter extends OriginFilter {
         switch (originFilter.getMatchType()) {
         case IS:
             return originsSet.contains(source);
-
         case ISNOT:
             return !originsSet.contains(source);
+        default:
+            return false;
         }
-        return false;
     }
-
 }

@@ -50,20 +50,30 @@ public class LinkCrawlerRetry extends PluginForHost {
     }
 
     @Override
+    public boolean assignPlugin(DownloadLink link) {
+        if (super.assignPlugin(link)) {
+            link.setAvailableStatus(AvailableStatus.UNCHECKED);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
     public FEATURE[] getFeatures() {
         return new FEATURE[] { FEATURE.INTERNAL };
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
-        return AvailableStatus.FALSE;
+        return AvailableStatus.UNCHECKED;
     }
 
     @Override
     public boolean checkLinks(DownloadLink[] urls) {
         if (urls != null) {
             for (final DownloadLink link : urls) {
-                link.setAvailableStatus(AvailableStatus.FALSE);
+                link.setAvailableStatus(AvailableStatus.UNCHECKED);
             }
         }
         return true;

@@ -497,11 +497,11 @@ public abstract class AbstractFFmpegBinary {
                 final String id = request.getParameterbyKey("id");
                 if (id == null) {
                     return false;
-                }
-                if (processID != Long.parseLong(request.getParameterbyKey("id"))) {
+                } else if (processID != Long.parseLong(request.getParameterbyKey("id"))) {
                     return false;
+                } else {
+                    return true;
                 }
-                return true;
             }
 
             @Override
@@ -966,10 +966,11 @@ public abstract class AbstractFFmpegBinary {
         final String[] found = new Regex(text, "(\\d+):(\\d+):(\\d+)").getRow(0);
         if (found == null) {
             return 0;
+        } else {
+            final int hours = Integer.parseInt(found[0]);
+            final int minutes = Integer.parseInt(found[1]);
+            final int seconds = Integer.parseInt(found[2]);
+            return hours * 60 * 60 * 1000 + minutes * 60 * 1000 + seconds * 1000;
         }
-        final int hours = Integer.parseInt(found[0]);
-        final int minutes = Integer.parseInt(found[1]);
-        final int seconds = Integer.parseInt(found[2]);
-        return hours * 60 * 60 * 1000 + minutes * 60 * 1000 + seconds * 1000;
     }
 }

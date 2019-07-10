@@ -3,8 +3,6 @@ package jd.controlling.downloadcontroller;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -41,7 +39,6 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.controlling.hosterrule.AccountGroup.Rules;
 import org.jdownloader.controlling.hosterrule.CachedAccountGroup;
 import org.jdownloader.controlling.hosterrule.HosterRuleController;
-import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.PluginClassLoader;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.settings.GeneralSettings;
@@ -413,79 +410,57 @@ public class DownloadSession extends Property {
         if (isUseAccountsEnabled() == false) {
             /* accounts disabled -> free only */
             final List<CachedAccountGroup> cachedGroups = new ArrayList<CachedAccountGroup>();
-            final CachedAccountGroup cachedGroup = new CachedAccountGroup(Rules.ORDER);
-            cachedGroup.add(new CachedAccount(host, null, defaulPlugin));
-            cachedGroups.add(cachedGroup);
+            final CachedAccountGroup freeGroup = new CachedAccountGroup(Rules.ORDER);
+            freeGroup.add(new CachedAccount(host, null, defaulPlugin));
+            cachedGroups.add(freeGroup);
             ret = new AccountCache(cachedGroups);
         } else {
             ret = HosterRuleController.getInstance().getAccountCache(host, this);
             if (ret == null) {
                 final List<CachedAccountGroup> cachedGroups = new ArrayList<CachedAccountGroup>();
-                final CachedAccountGroup cachedGroup = new CachedAccountGroup(Rules.ORDER);
+                boolean removeNoAccountWithCaptcha = false;
+                final CachedAccountGroup hosterPremiumGroup = new CachedAccountGroup(Rules.RANDOM);
+                final CachedAccountGroup hosterFreeGroup = new CachedAccountGroup(Rules.RANDOM);
                 for (final Account acc : AccountController.getInstance().list(host)) {
-                    cachedGroup.add(new CachedAccount(host, acc, defaulPlugin));
-                }
-                final List<Account> multiHosts = AccountController.getInstance().getMultiHostAccounts(host);
-                if (multiHosts != null) {
-                    for (final Account acc : multiHosts) {
-                        cachedGroup.add(new CachedAccount(host, acc, getPlugin(acc.getHoster())));
+                    if (acc.isEnabled() && acc.isValid()) {
+                        final AccountInfo ai = acc.getAccountInfo();
+                        if (ai == null || ai.isSpecialTraffic() || ai.isUnlimitedTraffic() || ai.isTrafficRefill()) {
+                            removeNoAccountWithCaptcha = true;
+                        }
+                        final CachedAccount cachedAccount = new CachedAccount(host, acc, defaulPlugin);
+                        switch (acc.getType()) {
+                        case LIFETIME:
+                        case PREMIUM:
+                            hosterPremiumGroup.add(cachedAccount);
+                            break;
+                        default:
+                            hosterFreeGroup.add(cachedAccount);
+                            break;
+                        }
                     }
                 }
-                cachedGroup.add(new CachedAccount(host, null, defaulPlugin));
-                try {
-                    if (true) {
-                        // FIXME: TODO:
-                        // here we remove the NONE(free) account to avoid captchas when there is a temp. issue with original(from hoster)
-                        // account
-                        // this can lead to *not downloading* situations when the original account has no/not enough traffic left
-                        boolean removeNoneWithCaptcha = false;
-                        checkLoop: for (CachedAccount cachedAccount : cachedGroup) {
-                            final Account account = cachedAccount.getAccount();
-                            switch (cachedAccount.getType()) {
-                            case ORIGINAL:
-                                if (account.isEnabled() && account.isValid()) {
-                                    final AccountInfo ai = account.getAccountInfo();
-                                    if (ai == null || ai.isSpecialTraffic() || ai.isUnlimitedTraffic() || ai.isTrafficRefill()) {
-                                        removeNoneWithCaptcha = true;
-                                        break checkLoop;
-                                    }
-                                }
-                                break;
-                            default:
-                                break;
-                            }
-                        }
-                        if (removeNoneWithCaptcha) {
-                            final Iterator<CachedAccount> it = cachedGroup.iterator();
-                            while (it.hasNext()) {
-                                final CachedAccount next = it.next();
-                                if (AccountCache.ACCOUNTTYPE.NONE.equals(next.getType()) && next.hasCaptcha(link)) {
-                                    it.remove();
-                                }
+                cachedGroups.add(hosterPremiumGroup);
+                {
+                    // multihoster
+                    final CachedAccountGroup multiHosterGroup = new CachedAccountGroup(Rules.RANDOM);
+                    final List<Account> multiHosts = AccountController.getInstance().getMultiHostAccounts(host);
+                    if (multiHosts != null) {
+                        for (final Account acc : multiHosts) {
+                            if (acc.isEnabled() && acc.isValid()) {
+                                multiHosterGroup.add(new CachedAccount(host, acc, getPlugin(acc.getHoster())));
                             }
                         }
                     }
-                    Collections.sort(cachedGroup, new Comparator<CachedAccount>() {
-                        private int compare(boolean x, boolean y) {
-                            return (x == y) ? 0 : (x ? 1 : -1);
-                        }
-
-                        @Override
-                        public int compare(CachedAccount o1, CachedAccount o2) {
-                            /* 1ST SORT: ORIGINAL;MULTI;NONE */
-                            int ret = o1.getType().compareTo(o2.getType());
-                            if (ret == 0) {
-                                /* 2ND SORT: NO CAPTCHA;CAPTCHA */
-                                ret = compare(o1.hasCaptcha(link), o2.hasCaptcha(link));
-                            }
-                            return ret;
-                        }
-                    });
-                } catch (final Throwable e) {
-                    LogController.CL(true).log(e);
+                    cachedGroups.add(multiHosterGroup);
                 }
-                if (cachedGroup.size() > 0) {
-                    cachedGroups.add(cachedGroup);
+                cachedGroups.add(hosterFreeGroup);
+                {
+                    // free(no account)
+                    final CachedAccount noAccount = new CachedAccount(host, null, defaulPlugin);
+                    if (!removeNoAccountWithCaptcha || !noAccount.hasCaptcha(link)) {
+                        final CachedAccountGroup freeGroup = new CachedAccountGroup(Rules.ORDER);
+                        freeGroup.add(noAccount);
+                    }
                 }
                 ret = new AccountCache(cachedGroups);
             }
