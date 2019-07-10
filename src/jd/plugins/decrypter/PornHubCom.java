@@ -483,7 +483,7 @@ public class PornHubCom extends PluginForDecrypt {
                         dl.setProperty("mainlink", parameter);
                         dl.setProperty("viewkey", viewkey);
                         dl.setProperty("format", format);
-                        dl.setLinkID(viewkey + "_" + format + "_" + quality);
+                        dl.setLinkID("pornhub://" + viewkey + "_" + format + "_" + quality);
                         if (!StringUtils.isEmpty(username)) {
                             final_filename += username + "_";
                             /* This property is only for the user (packagizer) and not required anywhere in our host plugin! */

@@ -16,13 +16,9 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -43,6 +39,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "stahomat.cz" }, urls = { "" })
 public class StahomatCz extends PluginForHost {
     /* IMPORTANT: superload.cz and stahomat.cz use the same api */
@@ -51,7 +50,6 @@ public class StahomatCz extends PluginForHost {
     private static final String          mProt = "http://";
     private static final String          mAPI  = "http://api.stahomat.cz/a-p-i";
     private static MultiHosterManagement mhm   = new MultiHosterManagement("stahomat.cz");
-    private static Object                LOCK  = new Object();
     private String                       TOKEN = null;
 
     public StahomatCz(PluginWrapper wrapper) {
@@ -139,20 +137,7 @@ public class StahomatCz extends PluginForHost {
         if (!link.isAvailable()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        return getAvailableStatus(link);
-    }
-
-    private AvailableStatus getAvailableStatus(DownloadLink link) {
-        try {
-            final Field field = link.getClass().getDeclaredField("availableStatus");
-            field.setAccessible(true);
-            Object ret = field.get(link);
-            if (ret != null && ret instanceof AvailableStatus) {
-                return (AvailableStatus) ret;
-            }
-        } catch (final Throwable e) {
-        }
-        return AvailableStatus.UNCHECKED;
+        return link.getAvailableStatus();
     }
 
     @Override
@@ -192,7 +177,7 @@ public class StahomatCz extends PluginForHost {
                 updateCredits(null, account);
             } catch (Throwable e) {
                 logger.info("Could not updateCredits handleDL!");
-                logger.info(e.toString());
+                logger.log(e);
             }
         }
     }
@@ -273,19 +258,14 @@ public class StahomatCz extends PluginForHost {
         br.setCookiesExclusive(true);
         br.setFollowRedirects(true);
         prepBrowser();
-        try {
-            login(account);
-        } catch (final PluginException e) {
-            account.setValid(false);
-            account.setProperty("token", Property.NULL);
-            ai.setProperty("multiHostSupport", Property.NULL);
-            return ai;
-        }
+        login(account);
         try {
             updateCredits(ai, account);
-        } catch (Throwable e) {
+        } catch (PluginException e) {
+            throw e;
+        } catch (IOException e) {
             logger.info("Could not updateCredits fetchAccountInfo!");
-            logger.info(e.toString());
+            logger.log(e);
         }
         account.setConcurrentUsePossible(true);
         account.setMaxSimultanDownloads(5);
@@ -297,23 +277,31 @@ public class StahomatCz extends PluginForHost {
             String[] hosts = new Regex(hostsSup, "\"([^\", ]+\\.[^\", ]+)").getColumn(0);
             ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
             ai.setMultiHostSupport(this, supportedHosts);
-        } catch (Throwable e) {
+        } catch (IOException e) {
             logger.info("Could not fetch ServerList from " + mName + ": " + e.toString());
+            logger.log(e);
         }
         return ai;
     }
 
     private void login(final Account acc) throws IOException, PluginException {
-        synchronized (LOCK) {
-            br.postPage(mAPI + "/login", "username=" + Encoding.urlEncode(acc.getUser()) + "&password=" + JDHash.getMD5(acc.getPass()));
-            if (!getSuccess()) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        synchronized (acc) {
+            try {
+                br.postPage(mAPI + "/login", "username=" + Encoding.urlEncode(acc.getUser()) + "&password=" + JDHash.getMD5(acc.getPass()));
+                if (!getSuccess()) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                TOKEN = getJson("token");
+                if (TOKEN == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                acc.setProperty("token", TOKEN);
+            } catch (PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    acc.removeProperty("token");
+                }
+                throw e;
             }
-            TOKEN = getJson("token");
-            if (TOKEN == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            acc.setProperty("token", TOKEN);
         }
     }
 
