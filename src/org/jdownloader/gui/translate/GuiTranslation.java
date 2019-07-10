@@ -118,6 +118,9 @@ public interface GuiTranslation extends TranslateInterface {
             "<html>Aktiviere traffic workaround?<br /><p style=\"color:#808080\">Share-Online hat ein premium fair-use-Limit von 100 GB pro Tag - danach kann man nur gedrosselt weiter herunterladen.<br />Normalerweise deaktiviert JDownloader Accounts 'ohne Traffic' - aktiviert man diese Einstellung, werden betroffene share-online Accounts in diesem Fall trotzdem weiter verwendet.<br />Sofern du nur einen premium Account zum Download von share-online besitzt ist es sinnvoll, diese Einstellung zu verwenden.</p></html>" })
     String gui_plugin_settings_share_online_traffic_workaround();
 
+    @Default(lngs = { "en", "de" }, values = { "<html>Enable max. traffic workaround?<br /><p style=\"color:#808080\">The calculation of the traffic is decreased before the download and added again later if necessary. This does not exceed the limit of 100 GB per day.<br />If you only own a single premium account to download from share-online, it makes sense to use this setting.</p></html>", "<html>Aktiviere max. traffic workaround?<br /><p style=\"color:#808080\">Die Berechnung vom Traffic wird vor dem Download abgezogen und später wieder hinzugefügt, wenn erforderlich. Dadurch wird das Limit von 100 GB pro Tag keinesfalls überschritten.<br />Sofern du nur einen premium Account zum Download von share-online besitzt ist es sinnvoll, diese Einstellung zu verwenden.</p></html>" })
+    String gui_plugin_settings_share_online_traffic_workaround_max();
+
     @Default(lngs = { "en", "de" }, values = { "Prefer HTTPS communication?\r\nOnly available for premium users.", "Bevorzuge sichere Kommunikation per HTTPS?\r\nNur für Premium Nutzer verfügbar!" })
     String gui_plugin_settings_share_online_traffic_premium_prefer_https();
 
