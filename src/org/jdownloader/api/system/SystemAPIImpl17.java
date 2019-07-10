@@ -26,7 +26,7 @@ public class SystemAPIImpl17 {
         final List<String> pathFilters;
         if (CrossSystem.isUnix()) {
             typeFilters = Arrays.asList("usbfs", "fusectl", "hugetlbfs", "binfmt_misc", "cgroup", "pstore", "sysfs", "tmpfs", "proc", "configfs", "debugfs", "mqueue", "devtmpfs", "devpts", "devfs", "securityfs", "nfsd", "fusectl", "fuse.gvfsd-fuse", "rpc_pipefs", "efivarfs");
-            pathFilters = Arrays.asList("/proc/sys/fs/binfmt_misc");
+            pathFilters = Arrays.asList("/proc/sys/fs/binfmt_misc", "/boot/efi");
         } else {
             typeFilters = Arrays.asList(new String[0]);
             pathFilters = Arrays.asList(new String[0]);

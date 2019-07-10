@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -36,7 +35,6 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ok.ru" }, urls = { "https?://(?:www\\.|m\\.)?ok\\.ru/(?:video|videoembed)/\\d+" })
 public class OkRu extends PluginForHost {
-
     public OkRu(PluginWrapper wrapper) {
         super(wrapper);
         this.setConfigElements();
@@ -47,14 +45,11 @@ public class OkRu extends PluginForHost {
     // Tags:
     // protocol: no https
     // other:
-
     /* Connection stuff */
     private static final boolean free_resume         = true;
     private static final int     free_maxchunks      = 0;
     private static final int     free_maxdownloads   = -1;
-
     private final String         PREFER_480P         = "PREFER_480P";
-
     private String               dllink              = null;
     private boolean              download_impossible = false;
 
@@ -91,14 +86,23 @@ public class OkRu extends PluginForHost {
             download_impossible = true;
             return AvailableStatus.TRUE;
         }
-        dllink = br.getRegex("embedVPlayer\\(this,&#39;(http[^<>\"]*?)&#39;,&#39;").getMatch(0);
-        if (dllink == null) {
-            dllink = br.getRegex("data-embedclass=\"yt_layer\" data-objid=\"\\d+\" href=\"(http[^<>\"]*?)\"").getMatch(0);
+        dllink = br.getRegex("embedVPlayer\\(this,&#39;(https?[^<>\"]*?)&#39;,&#39;").getMatch(0);
+        if (dllink != null) {
+            dllink = Encoding.htmlDecode(dllink);
+        } else {
+            dllink = br.getRegex("videoSrc&quot;:&quot;(https[^<>\"]*?)(&quot;)").getMatch(0);
+            if (dllink != null) {
+                dllink = Encoding.unicodeDecode(dllink);
+            } else {
+                dllink = br.getRegex("data-embedclass=\"yt_layer\" data-objid=\"\\d+\" href=\"(https?[^<>\"]*?)\"").getMatch(0);
+                if (dllink != null) {
+                    dllink = Encoding.htmlDecode(dllink);
+                }
+            }
         }
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = Encoding.htmlDecode(dllink);
         final String url_quality = new Regex(dllink, "(st.mq=\\d+)").getMatch(0);
         if (url_quality != null) {
             /* st.mq: 2 = 480p (mobile format), 3=?, 4=? 5 = highest */

@@ -1,14 +1,12 @@
 package org.jdownloader.controlling.filter;
 
-import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
-
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter;
 
-public class CompiledOnlineStatusFiler extends OnlineStatusFilter {
+import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
 
+public class CompiledOnlineStatusFiler extends OnlineStatusFilter {
     public CompiledOnlineStatusFiler(OnlineStatusFilter onlineStatusFilter) {
         super(onlineStatusFilter.getMatchType(), onlineStatusFilter.isEnabled(), onlineStatusFilter.getOnlineStatus());
-
     }
 
     public boolean matches(AvailableLinkState linkState) {
@@ -20,9 +18,9 @@ public class CompiledOnlineStatusFiler extends OnlineStatusFilter {
             case ONLINE:
                 return linkState == AvailableLinkState.ONLINE;
             case UNCHECKABLE:
-                return linkState == AvailableLinkState.TEMP_UNKNOWN;
+                return linkState == AvailableLinkState.TEMP_UNKNOWN || linkState == AvailableLinkState.UNKNOWN;
             }
-            return false;
+            break;
         case ISNOT:
             switch (getOnlineStatus()) {
             case OFFLINE:
@@ -30,12 +28,10 @@ public class CompiledOnlineStatusFiler extends OnlineStatusFilter {
             case ONLINE:
                 return linkState != AvailableLinkState.ONLINE;
             case UNCHECKABLE:
-                return linkState != AvailableLinkState.TEMP_UNKNOWN;
+                return linkState != AvailableLinkState.TEMP_UNKNOWN && linkState != AvailableLinkState.UNKNOWN;
             }
-
+            break;
         }
-
         return false;
     }
-
 }

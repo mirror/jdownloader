@@ -996,17 +996,22 @@ public class ShareOnlineBiz extends antiDDoSForHost {
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlURL, account_premium_resume, maxchunks);
             if (dl.getConnection().isContentDisposition() || (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("octet-stream"))) {
-                if (userTrafficWorkaroundMax()) {
-                    account.getAccountInfo().setTrafficLeft(account.getAccountInfo().getTrafficLeft() - Long.parseLong(size));
-                    try {
-                        dl.startDownload();
-                    } catch (final Throwable e) {
-                        account.getAccountInfo().setTrafficLeft(account.getAccountInfo().getTrafficLeft() + Long.parseLong(size));// link.getView().getBytesLoaded()));
-                    } finally {
-                        account.getAccountInfo().setTrafficLeft(account.getAccountInfo().getTrafficLeft() + Long.parseLong(size));// link.getView().getBytesLoaded()));
+                final boolean trafficMaxWorkaround = userTrafficWorkaroundMax();
+                if (trafficMaxWorkaround) {
+                    synchronized (LOCK) {
+                        final AccountInfo ai = account.getAccountInfo();
+                        ai.setTrafficLeft(ai.getTrafficLeft() - Long.parseLong(size));
                     }
-                } else {
+                }
+                try {
                     dl.startDownload();
+                } finally {
+                    if (trafficMaxWorkaround) {
+                        synchronized (LOCK) {
+                            final AccountInfo ai = account.getAccountInfo();
+                            ai.setTrafficLeft(ai.getTrafficLeft() + Long.parseLong(size));
+                        }
+                    }
                 }
             } else {
                 br.followConnection();

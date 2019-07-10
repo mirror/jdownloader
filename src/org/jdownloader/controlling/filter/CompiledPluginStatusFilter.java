@@ -9,10 +9,8 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 
 public class CompiledPluginStatusFilter extends PluginStatusFilter {
-
     public CompiledPluginStatusFilter(PluginStatusFilter pluginStatusFilter) {
         super(pluginStatusFilter.getMatchType(), pluginStatusFilter.isEnabled(), pluginStatusFilter.getPluginStatus());
-
     }
 
     public boolean matches(CrawledLink link) {
@@ -28,7 +26,7 @@ public class CompiledPluginStatusFilter extends PluginStatusFilter {
             case NO_DIRECT_HTTP:
                 return !link.isDirectHTTP() && !link.isFTP();
             }
-            return false;
+            break;
         case ISNOT:
             switch (getPluginStatus()) {
             case PREMIUM:
@@ -40,6 +38,7 @@ public class CompiledPluginStatusFilter extends PluginStatusFilter {
             case NO_DIRECT_HTTP:
                 return link.isDirectHTTP() || link.isFTP();
             }
+            break;
         }
         return false;
     }
@@ -65,7 +64,7 @@ public class CompiledPluginStatusFilter extends PluginStatusFilter {
 
     /**
      * Verify if there is at least one premium account valid
-     * 
+     *
      * @param link
      *            Link that we want to werify
      * @return true if a premium account is associated, false otherwise.

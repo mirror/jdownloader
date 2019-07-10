@@ -8,6 +8,7 @@ import org.jdownloader.controlling.filter.CompiledFiletypeFilter.DocumentExtensi
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.HashExtensions;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ImageExtensions;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.SubtitleExtensions;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
@@ -21,6 +22,7 @@ public enum FileType {
     ARCHIVE(ArchiveExtensions.ACE),
     IMAGE(ImageExtensions.BMP),
     TXT(DocumentExtensions.TXT),
+    SUB(SubtitleExtensions.SRT),
     CUSTOM(null) {
         @Override
         public Icon getIcon() {

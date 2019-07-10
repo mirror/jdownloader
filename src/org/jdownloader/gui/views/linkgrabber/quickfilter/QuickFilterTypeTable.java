@@ -18,6 +18,7 @@ import org.jdownloader.controlling.filter.CompiledFiletypeFilter.DocumentExtensi
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.HashExtensions;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ImageExtensions;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.SubtitleExtensions;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.Header;
@@ -207,6 +208,24 @@ public class QuickFilterTypeTable extends FilterTable {
 
                             protected String getID() {
                                 return "Type_Doc";
+                            }
+
+                            public String getDescription() {
+                                return description;
+                            }
+
+                            @Override
+                            public void setEnabled(boolean enabled) {
+                                super.setEnabled(enabled);
+                                QuickFilterTypeTable.this.setEnabled(enabled, this);
+                            }
+                        });
+                        knownExtensionFilters.add(filter);
+                        allFilters.add(filter = new ExtensionFilter(SubtitleExtensions.SRT) {
+                            final private String description = _JDT.T.sub_description();
+
+                            protected String getID() {
+                                return "Type_Sub";
                             }
 
                             public String getDescription() {
