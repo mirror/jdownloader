@@ -17,9 +17,6 @@ package jd.plugins.hoster;
 
 import java.util.LinkedHashMap;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -36,6 +33,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nopy.to" }, urls = { "https?://(?:www\\.)?nopy\\.to/([A-Za-z0-9]+)/([^<>/\"]+)" })
 public class NopyTo extends PluginForHost {
@@ -55,12 +55,16 @@ public class NopyTo extends PluginForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        final String linkid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        final String linkid = getID(link);
         if (linkid != null) {
-            return linkid;
+            return getHost() + "://" + linkid;
         } else {
             return super.getLinkID(link);
         }
+    }
+
+    private String getID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     /* Connection stuff */
@@ -84,7 +88,10 @@ public class NopyTo extends PluginForHost {
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", "JDownloader");
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-        final String linkid = this.getLinkID(link);
+        final String linkid = this.getID(link);
+        if (linkid == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         final String filename_url = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
         br.postPage("https://data." + this.getHost() + "/file", "code=" + linkid + "&file=" + Encoding.urlEncode(filename_url));
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -134,7 +141,7 @@ public class NopyTo extends PluginForHost {
             final String fid = (String) entries.get("fid");
             final String request = (String) entries.get("request");
             final String session = (String) entries.get("session");
-            final String linkid = this.getLinkID(downloadLink);
+            final String linkid = this.getID(downloadLink);
             if (!StringUtils.isAllNotEmpty(fid, request, session)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
