@@ -287,7 +287,6 @@ public class StahomatCz extends PluginForHost {
             logger.info("Could not updateCredits fetchAccountInfo!");
             logger.info(e.toString());
         }
-        account.setValid(true);
         account.setConcurrentUsePossible(true);
         account.setMaxSimultanDownloads(5);
         ai.setValidUntil(-1);
