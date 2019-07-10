@@ -252,7 +252,6 @@ public class JhebergNet extends antiDDoSForHost {
         mapping.put("Filerio", "filerio.com");
         mapping.put("2giga", "2giga.link");
         mapping.put("Filecloud", "filecloud.io");
-        mapping.put("Filescdn", "filescdn.com");
         mapping.put("Bdupload", "bdupload.info");
         mapping.put("Nofile", "nofile.io");
         mapping.put("Uppit", "uppit.com");
