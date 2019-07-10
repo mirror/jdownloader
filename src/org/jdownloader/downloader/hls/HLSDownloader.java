@@ -180,7 +180,7 @@ public class HLSDownloader extends DownloadInterface {
                 super.setResumeable(value);
             }
         };
-        m3u8Playlists = getM3U8Playlists().subList(0, 10);
+        m3u8Playlists = getM3U8Playlists();
         if (m3u8Playlists.size() == 0) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
