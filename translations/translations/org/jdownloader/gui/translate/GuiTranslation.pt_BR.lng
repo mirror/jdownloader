@@ -471,6 +471,7 @@ FilterRuleDialog_createTypeFilter_mime_checksums=Checksums
 FilterRuleDialog_createTypeFilter_mime_custom_help=Insira extensões separadas por vírgula, como 'pdfhtml,png,' ... (Use * como Curinga)
 FilterRuleDialog_createTypeFilter_mime_document=Documento
 FilterRuleDialog_createTypeFilter_mime_images=Imagem
+FilterRuleDialog_createTypeFilter_mime_subtitle=Arquivo de Legenda
 FilterRuleDialog_createTypeFilter_mime_video=Arquivo de Vídeo
 FilterRuleDialog_getIfText_=Filtrar todos os Links que correspondam estas condições
 FilterRuleDialog_layoutDialogContent_contains=contém
@@ -1801,6 +1802,7 @@ gui_menu_action_premium_buy_name2=Compre Premuim por %s1
 gui_plugin_settings_share_online_shared_ip_workaround=Ativar alternativa de IP compartilhado?
 gui_plugin_settings_share_online_traffic_premium_prefer_https=Preferir comunicação HTTPS? Disponível somente para usuário premium e a velocidade será limitada.
 gui_plugin_settings_share_online_traffic_workaround=Ativar alternativa de tráfego?
+gui_plugin_settings_share_online_traffic_workaround_max=<html>Ativar solução para tráfego máximo?<br /><p style="color:#808080">O cálculo do tráfego é diminuído antes do download e adicionado novamente mais tarde, se necessário. Isso não excede o limite de 100 GB por dia.<br/>Se você possui apenas uma conta premium para baixar do share-online, faz sentido usar essa configuração.</p></html>
 gui_reconnect_confirm=Você deseja reconectar com a Internet?
 gui_settings_advanced_title=Configurações Avançadas
 gui_table_contextmenu_browselink=Abrir no navegador
