@@ -64,6 +64,7 @@ public class LinkCollectingJob {
 
     private boolean deepAnalyse;
     private String  crawlerPassword = null;
+    private String  archivPassword  = null;
 
     public String getCrawlerPassword() {
         return crawlerPassword;
@@ -71,6 +72,14 @@ public class LinkCollectingJob {
 
     public void setCrawlerPassword(String crawlerPassword) {
         this.crawlerPassword = crawlerPassword;
+    }
+
+    public String getArchivPassword() {
+        return archivPassword;
+    }
+
+    public void setArchivPassword(String archivPassword) {
+        this.archivPassword = archivPassword;
     }
 
     public boolean isDeepAnalyse() {

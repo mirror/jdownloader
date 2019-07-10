@@ -63,6 +63,14 @@ public class CrawlerJobSandbox {
         job.setCrawlerPassword(text);
     }
 
+    public void setArchivPassword(String text) {
+        job.setArchivPassword(text);
+    }
+
+    public String getArchivPassword() {
+        return job.getArchivPassword();
+    }
+
     public void setText(String text) {
         job.setText(text);
     }

@@ -36,6 +36,7 @@ public interface Captcha9kwSettings extends ChallengeSolverConfig {
 
     @AboutConfig
     @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("Activate the 9kw.eu plugin in JDownloader")
     boolean isEnabledGlobally();
 
     void setEnabledGlobally(boolean b);

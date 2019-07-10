@@ -303,6 +303,13 @@ public interface LinkgrabberSettings extends ConfigInterface {
     OnDupesLinksAction getHandleDupesOnConfirmLatestSelection();
 
     @AboutConfig
+    @DescriptionForConfigEntry("Linkanalyse in the dialog Add Links Dialog before button \"continue\" works")
+    @DefaultBooleanValue(true)
+    boolean getAddLinksDialogCheck();
+
+    void setAddLinksDialogCheck(boolean i);
+
+    @AboutConfig
     @DescriptionForConfigEntry("if this value is >0, the subfolder option only will be used if the package contains more than subfolderThreshold value links")
     @RequiresRestart("A JDownloader Restart is Required")
     @DefaultIntValue(0)
