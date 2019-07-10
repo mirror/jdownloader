@@ -1123,6 +1123,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     final Object length = entries.get("length");
                     final boolean isVideohost = canplay != null || views_started != null || views != null || length != null;
                     if (!StringUtils.isEmpty(filename)) {
+                        /*
+                         * TODO: Add check for fileextension! At least for videohosts, filenames from json do not contain a fileextension by
+                         * default!
+                         */
                         if (isVideohost) {
                             filename += ".mp4";
                         }
@@ -1133,7 +1137,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         }
                         setWeakFilename(link);
                     }
-                    /* Filesize is not always given e.g. videohosts do not display a filesize here. */
+                    /* Filesize is not always given especially not for videohosts. */
                     if (filesize > 0) {
                         link.setDownloadSize(filesize);
                     }
