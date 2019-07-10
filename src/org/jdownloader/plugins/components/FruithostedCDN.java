@@ -108,12 +108,16 @@ public class FruithostedCDN extends antiDDoSForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        final String linkid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        final String linkid = getDownloadLinkID(link);
         if (linkid != null) {
-            return linkid;
+            return getHost() + "://" + linkid;
         } else {
             return super.getLinkID(link);
         }
+    }
+
+    protected String getDownloadLinkID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     public String getAPIBase() {
@@ -143,7 +147,7 @@ public class FruithostedCDN extends antiDDoSForHost {
                 }
                 sb.delete(0, sb.capacity());
                 for (final DownloadLink dl : links) {
-                    sb.append(dl.getLinkID());
+                    sb.append(getDownloadLinkID(dl));
                     sb.append(",");
                 }
                 getPage(br, getAPIBase() + "/file/info?file=" + URLEncode.encodeURIComponent(sb.toString()));
@@ -151,7 +155,7 @@ public class FruithostedCDN extends antiDDoSForHost {
                 entries = (LinkedHashMap<String, Object>) entries.get("result");
                 LinkedHashMap<String, Object> finfo;
                 for (final DownloadLink link : links) {
-                    final String linkid = link.getLinkID();
+                    final String linkid = getDownloadLinkID(link);
                     /* They only host video files */
                     link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
                     finfo = (LinkedHashMap<String, Object>) entries.get(linkid);
@@ -229,7 +233,7 @@ public class FruithostedCDN extends antiDDoSForHost {
         /* TODO: Add more errorhandling */
         ticketForm.setAction(getAPIBase() + "file/dlticket");
         ticketForm.setMethod(MethodType.GET);
-        ticketForm.put("file", this.getLinkID(downloadLink));
+        ticketForm.put("file", getDownloadLinkID(downloadLink));
         if (acc != null) {
             ticketForm.put("login", acc.getUser());
             ticketForm.put("key", acc.getPass());
@@ -242,7 +246,7 @@ public class FruithostedCDN extends antiDDoSForHost {
         final Form dlForm = new Form();
         dlForm.setAction(getAPIBase() + "file/dl");
         dlForm.setMethod(MethodType.GET);
-        dlForm.put("file", this.getLinkID(downloadLink));
+        dlForm.put("file", getDownloadLinkID(downloadLink));
         dlForm.put("ticket", ticket);
         if (captcha_url != null) {
             final String captcha_response = this.getCaptchaCode(captcha_url, downloadLink);
