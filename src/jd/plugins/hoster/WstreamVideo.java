@@ -17,6 +17,10 @@ package jd.plugins.hoster;
 
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -25,10 +29,6 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class WstreamVideo extends XFileSharingProBasic {
@@ -171,7 +171,7 @@ public class WstreamVideo extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean supports_availablecheck_filesize_html() {
+    protected boolean supports_availablecheck_filesize_html() {
         /* 2019-04-24: Special */
         return true;
     }

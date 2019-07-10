@@ -47,7 +47,7 @@ public class CornfileCom extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean supports_availablecheck_filesize_html() {
+    protected boolean supports_availablecheck_filesize_html() {
         return false;
     }
 

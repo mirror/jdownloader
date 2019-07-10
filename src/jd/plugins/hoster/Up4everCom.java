@@ -91,14 +91,20 @@ public class Up4everCom extends XFileSharingProBasic {
     public String[] scanInfo(final String[] fileInfo) {
         super.scanInfo(fileInfo);
         if (StringUtils.isEmpty(fileInfo[1])) {
-            fileInfo[1] = new Regex(correctedBR, "You have requested <span class=\"text\\-info\">[^<>\"]+</span>\\s*?\\((\\d+ [A-Za-z]+)\\)").getMatch(0);
+            fileInfo[1] = new Regex(correctedBR, "You have requested <span class=\"text\\-info\">[^<>\"]+</span>\\s*?\\((\\d+(?:\\.\\d{1,2})? [A-Za-z]+)\\)").getMatch(0);
         }
         return fileInfo;
     }
 
     @Override
-    public boolean supports_availablecheck_filesize_html() {
+    protected boolean supports_availablecheck_filesize_html() {
         /* 2019-06-12: Special - but we're obtaining the filesize from html code anyways in overridden function 'scanInfo()' here! */
+        return false;
+    }
+
+    @Override
+    protected boolean supports_availablecheck_filesize_alt_fast() {
+        /* 2019-07-10: Special */
         return false;
     }
 

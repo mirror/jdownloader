@@ -22,7 +22,6 @@ import java.util.regex.Pattern;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -88,19 +87,7 @@ public class BrUploadNet extends XFileSharingProBasic {
     }
 
     @Override
-    public String getFnameViaAbuseLink(final Browser br, final DownloadLink dl, final String fallbackFilename) throws Exception {
-        String filename = super.getFnameViaAbuseLink(br, dl, fallbackFilename);
-        if (filename == null || filename.equalsIgnoreCase(fallbackFilename)) {
-            filename = br.getRegex("<b>Filename</b><br />([^<>\"]+)</td>").getMatch(0);
-        }
-        if (filename == null) {
-            filename = fallbackFilename;
-        }
-        return filename;
-    }
-
-    @Override
-    public boolean supports_availablecheck_filesize_html() {
+    protected boolean supports_availablecheck_filesize_html() {
         /* 2019-04-17: Special */
         return false;
     }

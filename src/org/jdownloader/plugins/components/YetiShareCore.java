@@ -24,6 +24,11 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -46,11 +51,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class YetiShareCore extends antiDDoSForHost {
@@ -201,8 +201,8 @@ public class YetiShareCore extends antiDDoSForHost {
 
     /**
      * @return true: Implies that website will show filename & filesize via website.tld/<fuid>~i <br />
-     *         Most YetiShare websites support this kind of linkcheck! </br> false: Implies that website does NOT show filename & filesize
-     *         via website.tld/<fuid>~i. <br />
+     *         Most YetiShare websites support this kind of linkcheck! </br>
+     *         false: Implies that website does NOT show filename & filesize via website.tld/<fuid>~i. <br />
      *         default: true
      */
     public boolean supports_availablecheck_over_info_page() {
@@ -1147,19 +1147,8 @@ public class YetiShareCore extends antiDDoSForHost {
      */
     protected void setWeakFilename(final DownloadLink link) {
         final String weak_fallback_filename = this.getFallbackFilename(link);
-        /* Set fallback_filename if no better filename has ever been set before. */
-        final boolean setWeakFilename = link.getName() == null || (weak_fallback_filename != null && weak_fallback_filename.length() > link.getName().length());
-        if (setWeakFilename) {
+        if (weak_fallback_filename != null) {
             link.setName(weak_fallback_filename);
-            // / * TODO: Find better way to determine whether a String contains a file-extension or not. */
-            // final boolean fallback_filename_contains_file_extension = weak_fallback_filename != null &&
-            // / weak_fallback_filename.contains(".");
-            // if (!fallback_filename_contains_file_extension) {
-            // /* Only setMimeHint if weak filename does not contain filetype. */
-            // if (this.isAudiohoster()) {
-            // link.setMimeHint(CompiledFiletypeFilter.AudioExtensions.MP3);
-            // }
-            // }
         }
     }
 
