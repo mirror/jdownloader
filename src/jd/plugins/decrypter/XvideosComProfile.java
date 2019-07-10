@@ -19,8 +19,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -33,7 +31,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xvideos.com" }, urls = { "https?://(?:[A-Za-z0-9]+\\.)?xvideos\\.com/(?:profiles|pornstar\\-channels|channels)/[A-Za-z0-9\\-_]+(?:/photos/\\d+/[A-Za-z0-9\\-_]+)?" })
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xvideos.com" }, urls = { "https?://(?:[A-Za-z0-9]+\\.)?xvideos\\.com/(?:profiles|pornstar-channels|amateur-channels|channels)/[A-Za-z0-9\\-_]+(?:/photos/\\d+/[A-Za-z0-9\\-_]+)?" })
 public class XvideosComProfile extends PluginForDecrypt {
     public XvideosComProfile(PluginWrapper wrapper) {
         super(wrapper);
@@ -147,7 +147,7 @@ public class XvideosComProfile extends PluginForDecrypt {
         fp.setName(username + " - " + galleryName);
         fp.addLinks(decryptedLinks);
         /* These are direct-URLs */
-        final String[] links = br.getRegex("class=\"embed\\-responsive\\-item\" href=\"(http[^\"]+)").getColumn(0);
+        final String[] links = br.getRegex("class=\"embed\\-responsive\\-item\" href=\"(https?[^\"]+)").getColumn(0);
         if (links == null || links.length == 0) {
             logger.info("Failed to find any photos");
             return;
