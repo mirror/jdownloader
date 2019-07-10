@@ -579,6 +579,11 @@ public class TurbobitCore extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to generate final downloadlink");
                 }
             }
+            final String linkerror = br.getRegex("<div id=\"brin-link-error\">([^>]+)</div>").getMatch(0);
+            if (linkerror != null) {
+                /* 2019-07-10: E.g. <div id="brin-link-error">Failed to generate link. Internal server error. Please try again.</div> */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, linkerror);
+            }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown Error - failed to find redirect-url to final downloadurl");
         } else if (StringUtils.endsWithCaseInsensitive(dllink, "://" + host + "/")) {
             // expired/invalid?

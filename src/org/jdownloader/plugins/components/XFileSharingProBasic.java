@@ -494,6 +494,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return mainpage;
     }
 
+    protected final String getAPIBase() {
+        return getMainPage() + "/api";
+    }
+
     /**
      * @return true: Link is password protected <br />
      *         false: Link is not password protected
@@ -626,10 +630,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        return requestFileInformation(link, false);
+        return requestFileInformationWebsite(link, false);
     }
 
-    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean downloadsStarted) throws Exception {
+    public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final boolean downloadsStarted) throws Exception {
         final String[] fileInfo = getFileInfoArray();
         Browser altbr = null;
         fuid = null;
@@ -730,6 +734,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    protected final AvailableStatus requestFileInformationAPI(final DownloadLink link, final Account account) throws Exception {
+        massLinkcheckerAPI(new DownloadLink[] { link }, account);
+        return link.getAvailableStatus();
     }
 
     /**
@@ -892,7 +901,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * - If used for single URLs inside 'normal linkcheck' (e.g. inside requestFileInformation), call with setWeakFilename = false <br/>
      * <b>- If used to check multiple URLs (mass-linkchecking feature), call with setWeakFilename = true!! </b>
      */
-    public boolean massLinkchecker(final DownloadLink[] urls, final boolean setWeakFilename) {
+    public boolean massLinkcheckerWebsite(final DownloadLink[] urls, final boolean setWeakFilename) {
         if (urls == null || urls.length == 0) {
             return false;
         }
@@ -998,7 +1007,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         html_for_fuid = br.getRegex("<font color=\\'green\\'>[^>]*?" + fuid + "[^>]*?</font>").getMatch(-1);
                     }
                     if (html_for_fuid == null) {
-                        logger.warning("Failed to find table_row_for_fuid --> Possible linkchecker failure");
+                        logger.warning("Failed to find html_for_fuid --> Possible linkchecker failure");
                         return false;
                     }
                     /*
@@ -1038,16 +1047,108 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             }
         } catch (final Exception e) {
             return false;
+        } finally {
+            if (linkcheckerIsWorking) {
+                this.getPluginConfig().setProperty("ALT_AVAILABLECHECK_LAST_WORKING", checkTypeCurrent);
+            } else {
+                /*
+                 * TODO: 2019-07-03 Add logic --> FIX LOGIC which saves a timestamp and automatically deactivates this check for some days
+                 * if it is believed that a host does not support this type of linkcheck.
+                 */
+                logger.info("Seems like checkfiles availablecheck is not supported by this host");
+                this.getPluginConfig().setProperty("ALT_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP", System.currentTimeMillis());
+            }
         }
-        if (linkcheckerIsWorking) {
-            this.getPluginConfig().setProperty("ALT_AVAILABLECHECK_LAST_WORKING", checkTypeCurrent);
-        } else {
-            /*
-             * TODO: 2019-07-03 Add logic --> FIX LOGIC which saves a timestamp and automatically deactivates this check for some days if it
-             * is believed that a host does not support this type of linkcheck.
-             */
-            logger.info("Seems like checkfiles availablecheck is not supported by this host");
-            this.getPluginConfig().setProperty("ALT_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP", System.currentTimeMillis());
+        return true;
+    }
+
+    /**
+     * 2019-07-10: Proof of concept - tested via flix555.com - not yet sure what to do with it because all API requests require an apikey
+     * which is usually an account --> This will never be a 'public' linkcheck method.
+     */
+    public boolean massLinkcheckerAPI(final DownloadLink[] urls, final Account account) {
+        if (urls == null || urls.length == 0) {
+            return false;
+        }
+        boolean linkcheckerIsWorking = false;
+        try {
+            final Browser br = new Browser();
+            this.prepBrowser(br, getMainPage());
+            br.setCookiesExclusive(true);
+            final StringBuilder sb = new StringBuilder();
+            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            int index = 0;
+            while (true) {
+                links.clear();
+                while (true) {
+                    /* we test 50 links at once */
+                    if (index == urls.length || links.size() > 50) {
+                        break;
+                    }
+                    links.add(urls[index]);
+                    index++;
+                }
+                sb.delete(0, sb.capacity());
+                for (final DownloadLink dl : links) {
+                    final String fuid = this.getFUIDFromURL(dl);
+                    // sb.append("%0A");
+                    sb.append(fuid);
+                    sb.append("%2C");
+                }
+                getPage(br, getAPIBase() + "/file/info?key=" + this.getAPIKey(account) + "&file_code=" + this.fuid);
+                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("result");
+                for (final DownloadLink link : links) {
+                    final String fuid = this.getFUIDFromURL(link);
+                    for (final Object fileO : ressourcelist) {
+                        entries = (LinkedHashMap<String, Object>) fileO;
+                        final String fuid_temp = (String) entries.get("filecode");
+                        if (fuid_temp != null && fuid_temp.equalsIgnoreCase(fuid)) {
+                            linkcheckerIsWorking = true;
+                            break;
+                        }
+                    }
+                    if (!linkcheckerIsWorking) {
+                        return false;
+                    }
+                    final long status = JavaScriptEngineFactory.toLong(entries.get("status"), 404);
+                    if (status != 200) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    String filename = (String) entries.get("name");
+                    final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
+                    final Object canplay = entries.get("canplay");
+                    final Object views_started = entries.get("views_started");
+                    final Object views = entries.get("views");
+                    final Object length = entries.get("length");
+                    final boolean isVideohost = canplay != null || views_started != null || views != null || length != null;
+                    if (!StringUtils.isEmpty(filename)) {
+                        if (isVideohost) {
+                            filename += ".mp4";
+                        }
+                        link.setFinalFileName(filename);
+                    } else {
+                        if (isVideohost) {
+                            link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+                        }
+                        setWeakFilename(link);
+                    }
+                    /* Filesize is not always given e.g. videohosts do not display a filesize here. */
+                    if (filesize > 0) {
+                        link.setDownloadSize(filesize);
+                    }
+                }
+                if (index == urls.length) {
+                    break;
+                }
+            }
+        } catch (final Exception e) {
+            return false;
+        } finally {
+            if (!linkcheckerIsWorking) {
+                logger.info("Seems like massLinkcheckerAPI availablecheck is not supported by this host");
+                this.getPluginConfig().setProperty("MASS_LINKCHECKER_API_LAST_FAILURE_TIMESTAMP", System.currentTimeMillis());
+            }
         }
         return true;
     }
@@ -1114,7 +1215,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      */
     protected final boolean getFilesizeViaAvailablecheckAlt(final Browser br, final DownloadLink link) throws PluginException {
         logger.info("Trying getFilesizeViaAvailablecheckAlt");
-        massLinkchecker(new DownloadLink[] { link }, false);
+        massLinkcheckerWebsite(new DownloadLink[] { link }, false);
         final boolean isOnline = link.isAvailable();
         if (isOnline) {
             logger.info("Successfully checked URL via massLinkchecker | filesize: " + link.getView().getBytesTotal());
@@ -1165,7 +1266,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink, true);
+        requestFileInformationWebsite(downloadLink, true);
         doFree(downloadLink, null);
     }
 
@@ -2386,6 +2487,13 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         if (br.getURL() == null || !br.getURL().contains("/?op=my_account")) {
             getPage(this.getMainPage() + "/?op=my_account");
         }
+        final String apikey = new Regex(correctedBR, "/api/account/info\\?key=([a-z0-9]+)").getMatch(0);
+        if (apikey != null) {
+            logger.info("Found apikey");
+            account.setProperty("apikey", apikey);
+            /* TODO: 2019-07-10: Consider checking via API if apikey is available as this may work much more reliable! */
+            // return this.fetchAccountInfoAPI(account);
+        }
         final String space[] = new Regex(correctedBR, ">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
         if ((space != null && space.length != 0) && (space[0] != null && space[1] != null)) {
             /* free users it's provided by default */
@@ -2422,13 +2530,18 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             account.setMaxSimultanDownloads(getMaxSimultanPremiumDownloadNum());
             account.setConcurrentUsePossible(true);
         } else {
-            /* If the premium account is expired or we cannot find an expire-date we'll simply accept it as a free account. */
-            final String expireStr = new Regex(correctedBR, "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
+            /* 2019-07-11: It is not uncommon for XFS websites to display expire-dates even though the account is not premium anymore! */
+            String expireStr = new Regex(correctedBR, "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
             long expire_milliseconds = 0;
             long expire_milliseconds_from_expiredate = 0;
             long expire_milliseconds_precise_to_the_second = 0;
             if (expireStr != null) {
-                expire_milliseconds_from_expiredate = TimeFormatter.getMilliSeconds(expireStr, "dd MMMM yyyy", Locale.ENGLISH);
+                /*
+                 * 2019-07-10: Accounts should expire at the end of the last day (verified via API of XFS demo website xvideosharing.com
+                 * though for flix555.com is was different)
+                 */
+                expireStr += " 23:59:59";
+                expire_milliseconds_from_expiredate = TimeFormatter.getMilliSeconds(expireStr, "dd MMMM yyyy HH:mm:ss", Locale.ENGLISH);
             }
             final boolean supports_precise_expire_date = this.supports_precise_expire_date();
             if (supports_precise_expire_date) {
@@ -2444,11 +2557,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         /* Skip failures due to timeout or bad http error-responses */
                         continue;
                     }
-                    String preciseExpireHTML = new Regex(correctedBR, "<div class=\"accexpire\"[^>]+>.*?</div>").getMatch(-1);
-                    if (StringUtils.isEmpty(preciseExpireHTML)) {
-                        /* Unsafe source */
-                        preciseExpireHTML = correctedBR;
-                    }
+                    final String preciseExpireHTML = new Regex(correctedBR, "<div class=\"accexpire\"[^>]+>.*?</div>").getMatch(-1);
                     String expireSecond = new Regex(preciseExpireHTML, "Premium(-| )Account expires?\\s*:\\s*(?:</span>)?\\s*(?:<span>)?\\s*([a-zA-Z0-9, ]+)\\s*</").getMatch(-1);
                     if (StringUtils.isEmpty(expireSecond)) {
                         /*
@@ -2514,7 +2623,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 logger.info("Failed to find any useful expire-date at all");
             }
             if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
-                /* Expired premium or no expire date given --> It is usually a Free Account */
+                /* If the premium account is expired or we cannot find an expire-date we'll simply accept it as a free account. */
+                if (expire_milliseconds > 0) {
+                    logger.info("Premium expired --> Free account");
+                }
                 account.setType(AccountType.FREE);
                 account.setConcurrentUsePossible(false);
                 account.setMaxSimultanDownloads(getMaxSimultaneousFreeAccountDownloads());
@@ -2531,7 +2643,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     protected final AccountInfo fetchAccountInfoAPI(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        loginAPI(account, true);
+        loginAPI(account);
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         entries = (LinkedHashMap<String, Object>) entries.get("result");
         long expire_milliseconds_precise_to_the_second = 0;
@@ -2547,16 +2659,18 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         ai.setUsedSpace(storage_used);
         ai.setAccountBalance(balance);
         if (!StringUtils.isEmpty(expireStr) && expireStr.matches("\\d{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2}")) {
-            /*
-             * 2019-05-30: TODO: Find out how the json looks for free accounts ... but I guess it will either show an expired date or none
-             * at all.
-             */
             expire_milliseconds_precise_to_the_second = TimeFormatter.getMilliSeconds(expireStr, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
         }
-        /* 2019-05-30: TODO: Try to find out where to find traffic limitations in json. */
+        /*
+         * 2019-05-30: TODO: Try to find out where to find traffic limitations in json (videohosts will usually not have any traffic
+         * limitations!)
+         */
         ai.setUnlimitedTraffic();
         /* 2019-05-30: TODO: Add support for lifetime accounts */
         if ((expire_milliseconds_precise_to_the_second - System.currentTimeMillis()) <= 0) {
+            if (expire_milliseconds_precise_to_the_second > 0) {
+                logger.info("Premium expired --> Free account");
+            }
             /* Expired premium or no expire date given --> It is usually a Free Account */
             account.setType(AccountType.FREE);
             account.setConcurrentUsePossible(false);
@@ -2806,11 +2920,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     /**
      * More info see supports_api()
      */
-    protected final void loginAPI(final Account account, final boolean force) throws Exception {
+    protected final void loginAPI(final Account account) throws Exception {
         synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
-                if (!getAPIKey(account).matches("[a-z0-9]+")) {
+                if (this.getAPIKey(account) == null) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid APIKEY - only lowercase characters and numbers are allowed!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 getPage(this.getMainPage() + "/api/account/info?key=" + getAPIKey(account));
@@ -2836,7 +2950,20 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     protected final String getAPIKey(final Account account) {
-        return account.getUser().trim();
+        /* First check if the apikey was found via website handling and set as a property on our Account object */
+        String apikey = account.getStringProperty("apikey", null);
+        /* Second, maybe the user has logged in via API. */
+        if (StringUtils.isEmpty(apikey) && isAPIKey(account.getUser())) {
+            apikey = account.getUser();
+        }
+        return apikey;
+    }
+
+    protected final boolean isAPIKey(final String str) {
+        if (str != null && str.matches("[a-z0-9]+")) {
+            return true;
+        }
+        return false;
     }
 
     protected boolean isAccountLoginVerificationEnabled(final Account account, final boolean verifiedLogin) {
@@ -2846,7 +2973,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         /* Perform linkcheck without logging in */
-        requestFileInformation(link, true);
+        requestFileInformationWebsite(link, true);
         final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
         if (AccountType.FREE.equals(account.getType())) {
             final boolean verifiedLogin = loginWebsite(account, false);
@@ -2864,6 +2991,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
              */
             String dllink = checkDirectLink(link, directlinkproperty);
             if (StringUtils.isEmpty(dllink)) {
+                /* TODO: 2019-07-11: Consider using this over normal linkcheck whenever possible */
+                // requestFileInformationAPI(link, account);
                 if (this.supports_api()) {
                     /* 2019-05-30: So far this has only been tested with videohosts */
                     /* https://xvideosharing.docs.apiary.io/#reference/file/file-direct-link/get-links-to-all-available-qualities */

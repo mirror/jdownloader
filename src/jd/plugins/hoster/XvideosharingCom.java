@@ -122,9 +122,21 @@ public class XvideosharingCom extends XFileSharingProBasic {
     }
 
     @Override
+    public ArrayList<String> getCleanupHTMLRegexes() {
+        final ArrayList<String> regexStuff = new ArrayList<String>();
+        // remove custom rules first!!! As html can change because of generic cleanup rules.
+        /* generic cleanup */
+        regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
+        /* 2019-07-10: Do not add this one as we will not be able to find out apikey inside fetchAccountInfoWebsite then! */
+        // regexStuff.add("(display: ?none;\">.*?</div>)");
+        regexStuff.add("(visibility:hidden>.*?<)");
+        return regexStuff;
+    }
+
+    @Override
     protected boolean supports_api() {
-        /* 2019-05-30: Special */
-        return true;
+        /* 2019-07-10: Special: For testing purposes */
+        return false;
     }
 
     /** 2019-02-08: Special */
