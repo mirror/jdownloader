@@ -85,6 +85,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
     private final String                                            SHARED_IP_WORKAROUND                    = "SHARED_IP_WORKAROUND";
     private final String                                            UNLIMIT_CHUNKS                          = "UNLIMIT_CHUNKS";
     private final String                                            TRAFFIC_WORKAROUND                      = "TRAFFIC_WORKAROUND";
+    private final String                                            TRAFFIC_WORKAROUND_MAX                  = "TRAFFIC_WORKAROUND_MAX";
     private final String                                            PREFER_HTTPS                            = "PREFER_HTTPS";
     private final String                                            TRAFFIC_LIMIT                           = "TRAFFIC_LIMIT";
     private final String[]                                          trafficLimits                           = new String[] { "100", "99", "98", "97", "96", "95", "90", "80", "70", "60", "50", "40", "30", "20", "10" };
@@ -228,6 +229,10 @@ public class ShareOnlineBiz extends antiDDoSForHost {
         return getPluginConfig().getBooleanProperty(TRAFFIC_WORKAROUND, false);
     }
 
+    private boolean userTrafficWorkaroundMax() {
+        return getPluginConfig().getBooleanProperty(TRAFFIC_WORKAROUND_MAX, false);
+    }
+
     @Override
     public void correctDownloadLink(DownloadLink link) {
         // We do not have to change anything here, the regexp also works for egoshare links!
@@ -244,6 +249,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SHARED_IP_WORKAROUND, _GUI.T.gui_plugin_settings_share_online_shared_ip_workaround()).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), TRAFFIC_WORKAROUND, _GUI.T.gui_plugin_settings_share_online_traffic_workaround()).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), TRAFFIC_WORKAROUND_MAX, _GUI.T.gui_plugin_settings_share_online_traffic_workaround_max()).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), UNLIMIT_CHUNKS, "Disable connection limit(2) per download? (Warning: may cause (temporarily) IP bans!)").setDefaultValue(false));
         /**
          * https downloads are speed-limited serverside
@@ -990,7 +996,18 @@ public class ShareOnlineBiz extends antiDDoSForHost {
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlURL, account_premium_resume, maxchunks);
             if (dl.getConnection().isContentDisposition() || (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("octet-stream"))) {
-                dl.startDownload();
+                if (userTrafficWorkaroundMax()) {
+                    account.getAccountInfo().setTrafficLeft(account.getAccountInfo().getTrafficLeft() - Long.parseLong(size));
+                    try {
+                        dl.startDownload();
+                    } catch (final Throwable e) {
+                        account.getAccountInfo().setTrafficLeft(account.getAccountInfo().getTrafficLeft() + Long.parseLong(size));// link.getView().getBytesLoaded()));
+                    } finally {
+                        account.getAccountInfo().setTrafficLeft(account.getAccountInfo().getTrafficLeft() + Long.parseLong(size));// link.getView().getBytesLoaded()));
+                    }
+                } else {
+                    dl.startDownload();
+                }
             } else {
                 br.followConnection();
                 errorHandling(br, link, account, infos);
