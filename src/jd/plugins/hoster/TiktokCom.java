@@ -15,41 +15,38 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
-import jd.config.Property;
-import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filetransfer.io" }, urls = { "https?://(?:www\\.)?filetransfer\\.io/data\\-package/([A-Za-z0-9]+)" })
-public class FiletransferIo extends PluginForHost {
-    public FiletransferIo(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tiktok.com" }, urls = { "https?://(?:www\\.)?tiktok\\.com/(@[^/]+)/video/(\\d+)|https?://m\\.tiktok\\.com/v/(\\d+)\\.html" })
+public class TiktokCom extends antiDDoSForHost {
+    public TiktokCom(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium("");
     }
 
     @Override
     public String getAGBLink() {
-        return "https://filetransfer.io/tos";
+        return "https://www.tiktok.com/";
     }
 
     /* Connection stuff */
     private final boolean FREE_RESUME       = true;
-    private final int     FREE_MAXCHUNKS    = -2;
+    /* 2019-07-10: More chunks possible but that would not be such a good idea! */
+    private final int     FREE_MAXCHUNKS    = 1;
     private final int     FREE_MAXDOWNLOADS = 20;
     // private final boolean ACCOUNT_FREE_RESUME = true;
     // private final int ACCOUNT_FREE_MAXCHUNKS = 0;
@@ -60,7 +57,7 @@ public class FiletransferIo extends PluginForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        final String linkid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        String linkid = getFID(link);
         if (linkid != null) {
             return linkid;
         } else {
@@ -68,27 +65,99 @@ public class FiletransferIo extends PluginForHost {
         }
     }
 
+    private String getFID(final DownloadLink link) {
+        String fid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
+        if (fid == null) {
+            fid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(2);
+        }
+        return fid;
+    }
+
+    private String  dllink        = null;
+    private boolean server_issues = false;
+
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        link.setMimeHint(CompiledFiletypeFilter.ArchiveExtensions.ZIP);
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
+        String user = null;
+        final String fid = getFID(link);
+        if (link.getPluginPatternMatcher().matches("@[^/]+/video/\\d+")) {
+            user = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        } else {
+            /* 2nd linktype which does not contain username --> Find username */
+            br.setFollowRedirects(false);
+            br.getPage(link.getPluginPatternMatcher());
+            final String redirect = br.getRedirectLocation();
+            if (redirect != null) {
+                user = new Regex(redirect, this.getSupportedLinks()).getMatch(0);
+            }
+        }
+        String filename = "";
+        if (user != null) {
+            filename += user + "_";
+        }
+        filename += fid + ".mp4";
+        dllink = String.format("https://www.tiktok.com/node/video/playwm?id=%s", fid);
         br.getPage(link.getPluginPatternMatcher());
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>([^<>\"]+) \\- FileTransfer\\.io</title>").getMatch(0);
-        if (filename == null) {
-            filename = this.getLinkID(link) + ".zip";
-        }
-        String filesize = br.getRegex("data\\-bytes=\"(\\d+)\"").getMatch(0);
-        if (StringUtils.isEmpty(filename)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        link.setName(Encoding.htmlDecode(filename.trim()));
-        if (!StringUtils.isEmpty(filesize)) {
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        br.setFollowRedirects(true);
+        if (!StringUtils.isEmpty(dllink)) {
+            URLConnectionAdapter con = null;
+            try {
+                con = openAntiDDoSRequestConnection(br, br.createHeadRequest(dllink));
+                if (!con.getContentType().contains("video")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                if (!con.isOK() || con.getLongContentLength() == -1) {
+                    server_issues = true;
+                } else {
+                    /* Try to add date to filename */
+                    final String createDate = con.getHeaderField("Last-Modified");
+                    if (!StringUtils.isEmpty(createDate)) {
+                        final String dateFormatted = convertDateFormat(createDate);
+                        filename = dateFormatted + "_" + filename;
+                    }
+                    link.setFinalFileName(filename);
+                    link.setDownloadSize(con.getLongContentLength());
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+        } else {
+            /* Do not yet set final filename */
         }
         return AvailableStatus.TRUE;
+    }
+
+    private String convertDateFormat(String sourceDate) {
+        if (sourceDate == null) {
+            return null;
+        }
+        final String sourceDatePart = new Regex(sourceDate, "^[A-Za-z]+, (\\d{1,2} \\w+ \\d{4})").getMatch(0);
+        if (sourceDatePart == null) {
+            return sourceDate;
+        }
+        sourceDate = sourceDatePart;
+        String result = null;
+        SimpleDateFormat source_format = new SimpleDateFormat("dd MMM yyyy", Locale.getDefault());
+        SimpleDateFormat target_format = new SimpleDateFormat("yyyy-MM-dd");
+        try {
+            Date date = null;
+            try {
+                date = source_format.parse(sourceDate);
+                result = target_format.format(date);
+            } catch (Throwable e) {
+            }
+        } catch (Throwable e) {
+            result = sourceDate;
+            return sourceDate;
+        }
+        return result;
     }
 
     @Override
@@ -98,12 +167,10 @@ public class FiletransferIo extends PluginForHost {
     }
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        String dllink = checkDirectLink(downloadLink, directlinkproperty);
-        if (dllink == null) {
-            dllink = "https://" + br.getHost() + "/data-package/" + this.getLinkID(downloadLink) + "?do=download";
-            if (StringUtils.isEmpty(dllink)) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+        if (server_issues) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+        } else if (StringUtils.isEmpty(dllink)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -113,44 +180,41 @@ public class FiletransferIo extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
             br.followConnection();
-            if (br.getURL().contains("/premium")) {
-                throw new AccountRequiredException();
-            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser br2 = br.cloneBrowser();
-                con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
-                }
-            } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
-        }
-        return dllink;
-    }
-
+    // private String checkDirectLink(final DownloadLink downloadLink, final String property) {
+    // String dllink = downloadLink.getStringProperty(property);
+    // if (dllink != null) {
+    // URLConnectionAdapter con = null;
+    // try {
+    // final Browser br2 = br.cloneBrowser();
+    // br2.setFollowRedirects(true);
+    // con = br2.openHeadConnection(dllink);
+    // if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
+    // downloadLink.setProperty(property, Property.NULL);
+    // dllink = null;
+    // }
+    // } catch (final Exception e) {
+    // logger.log(e);
+    // downloadLink.setProperty(property, Property.NULL);
+    // dllink = null;
+    // } finally {
+    // if (con != null) {
+    // con.disconnect();
+    // }
+    // }
+    // }
+    // return dllink;
+    // }
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return FREE_MAXDOWNLOADS;
     }
-    //
+
     // private static Object LOCK = new Object();
     //
     // private void login(final Account account, final boolean force) throws Exception {
@@ -164,8 +228,23 @@ public class FiletransferIo extends PluginForHost {
     // return;
     // }
     // br.getPage("");
+    // if (br.containsHTML("")) {
+    // final DownloadLink dlinkbefore = this.getDownloadLink();
+    // final DownloadLink dl_dummy;
+    // if (dlinkbefore != null) {
+    // dl_dummy = dlinkbefore;
+    // } else {
+    // dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
+    // this.setDownloadLink(dl_dummy);
+    // }
+    // final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+    // if (dlinkbefore != null) {
+    // this.setDownloadLink(dlinkbefore);
+    // }
+    // // g-recaptcha-response
+    // }
     // br.postPage("", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-    // if (br.getCookie(this.getHost(), "") == null) {
+    // if (!isLoggedin()) {
     // throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     // }
     // account.saveCookies(this.br.getCookies(this.getHost()), "");
@@ -176,12 +255,16 @@ public class FiletransferIo extends PluginForHost {
     // }
     // }
     //
+    // private boolean isLoggedin() {
+    // return br.getCookie(this.getHost(), "", Cookies.NOTDELETEDPATTERN) != null;
+    // }
+    //
     // @Override
     // public AccountInfo fetchAccountInfo(final Account account) throws Exception {
     // final AccountInfo ai = new AccountInfo();
     // try {
     // login(account, true);
-    // } catch (PluginException e) {
+    // } catch (final PluginException e) {
     // throw e;
     // }
     // String space = br.getRegex("").getMatch(0);
@@ -198,15 +281,7 @@ public class FiletransferIo extends PluginForHost {
     // } else {
     // final String expire = br.getRegex("").getMatch(0);
     // if (expire == null) {
-    // if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-    // throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort oder nicht unterstützter Account
-    // Typ!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort
-    // Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-    // } else {
-    // throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or unsupported account type!\r\nQuick
-    // help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change
-    // it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-    // }
+    // throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     // } else {
     // ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
     // }
@@ -251,24 +326,14 @@ public class FiletransferIo extends PluginForHost {
     // }
     //
     // @Override
-    // public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-    // if (acc == null) {
-    // /* no account, yes we can expect captcha */
-    // return true;
-    // }
-    // if (acc.getType() == AccountType.FREE) {
-    // /* Free accounts can have captchas */
-    // return true;
-    // }
-    // /* Premium accounts do not have captchas */
-    // return false;
-    // }
-    //
-    // @Override
     // public int getMaxSimultanPremiumDownloadNum() {
     // return ACCOUNT_FREE_MAXDOWNLOADS;
     // }
-
+    //
+    // @Override
+    // public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+    // return false;
+    // }
     @Override
     public void reset() {
     }

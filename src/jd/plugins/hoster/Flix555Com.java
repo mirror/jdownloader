@@ -29,7 +29,7 @@ import jd.plugins.HostPlugin;
 public class Flix555Com extends XFileSharingProBasic {
     public Flix555Com(final PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium(super.getPurchasePremiumURL());
+        this.enablePremium(super.getPurchasePremiumURL());
     }
 
     /**
@@ -108,14 +108,9 @@ public class Flix555Com extends XFileSharingProBasic {
         return false;
     }
 
-    @Overrideprotected boolean supports_availablecheck_filesize_html() {
-        /* 2019-04-29: Special */
-        return false;
-    }
-
     @Override
-    public boolean supports_availablecheck_filesize_via_embedded_video() {
-        /* 2019-05-16: Special */
+    protected boolean supports_availablecheck_filesize_html() {
+        /* 2019-04-29: Special */
         return false;
     }
 
