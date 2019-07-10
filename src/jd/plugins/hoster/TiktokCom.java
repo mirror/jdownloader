@@ -19,6 +19,9 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
@@ -27,9 +30,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tiktok.com" }, urls = { "https?://(?:www\\.)?tiktok\\.com/(@[^/]+)/video/(\\d+)|https?://m\\.tiktok\\.com/v/(\\d+)\\.html" })
 public class TiktokCom extends antiDDoSForHost {
@@ -93,6 +93,10 @@ public class TiktokCom extends antiDDoSForHost {
             final String redirect = br.getRedirectLocation();
             if (redirect != null) {
                 user = new Regex(redirect, this.getSupportedLinks()).getMatch(0);
+                if (user != null) {
+                    /* Set new URL so we do not have to handle that redirect next time. */
+                    link.setPluginPatternMatcher(redirect);
+                }
             }
         }
         String filename = "";
