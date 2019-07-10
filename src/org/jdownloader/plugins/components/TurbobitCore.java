@@ -519,7 +519,14 @@ public class TurbobitCore extends antiDDoSForHost {
         final Browser br2 = br.cloneBrowser();
         br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         getPage(br2, continueLink);
-        downloadUrl = br2.getRegex("(\"|')(/?/download/redirect/.*?)\\1").getMatch(1);
+        {
+            /* 2019-07-11: New for turbobit.net */
+            continueLink = br2.getRegex("(\"|')(/?/download/started/[^\"\\']+)\\1").getMatch(1);
+            if (!StringUtils.isEmpty(continueLink)) {
+                br2.getPage(continueLink);
+            }
+        }
+        downloadUrl = br2.getRegex("(\"|')(/?/download/redirect/[^\"\\']+)\\1").getMatch(1);
         handleDownloadRedirectErrors(downloadUrl, link);
         /** 2019-05-11: Not required for e.g. hitfile.net but it does not destroy anything either so let's set it anyways. */
         br.setCookie(br.getHost(), "turbobit2", getCurrentTimeCookie(br2));
@@ -530,6 +537,7 @@ public class TurbobitCore extends antiDDoSForHost {
         downloadUrl = br.getRedirectLocation() != null ? br.getRedirectLocation() : br.getURL();
         final String md5sum = new Regex(downloadUrl, "md5=([a-f0-9]{32})").getMatch(0);
         if (md5sum != null) {
+            logger.info("Found md5hash on downloadstart");
             link.setMD5Hash(md5sum);
         }
         initDownload(DownloadType.GUEST_FREE, link, downloadUrl, true);
@@ -558,6 +566,7 @@ public class TurbobitCore extends antiDDoSForHost {
     private void handleDownloadRedirectErrors(final String dllink, final DownloadLink link) throws PluginException {
         final String host = link.getHost();
         if (StringUtils.isEmpty(dllink)) {
+            logger.info("'redirect' downloadurl is null");
             if (br.toString().matches("Error: \\d+")) {
                 // unknown error...
                 throw new PluginException(LinkStatus.ERROR_RETRY);
