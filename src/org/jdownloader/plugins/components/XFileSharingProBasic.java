@@ -1109,9 +1109,9 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         massLinkchecker(new DownloadLink[] { link }, false);
         final boolean isOnline = link.isAvailable();
         if (isOnline) {
-            logger.info("Successfully found filesize via massLinkchecker");
+            logger.info("Successfully checked URL via massLinkchecker | filesize: " + link.getView().getBytesTotal());
         } else {
-            logger.info("Failed to find filesize via massLinkchecker");
+            logger.info("massLinkchecker detected offline URL");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         return isOnline;
