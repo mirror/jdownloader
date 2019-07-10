@@ -85,6 +85,12 @@ public class Flix555Com extends XFileSharingProBasic {
     }
 
     @Override
+    protected boolean supports_api() {
+        /* 2019-07-10: Special: For testing purposes */
+        return false;
+    }
+
+    @Override
     public boolean isVideohosterEmbed() {
         /* 2019-04-29: Special */
         return true;

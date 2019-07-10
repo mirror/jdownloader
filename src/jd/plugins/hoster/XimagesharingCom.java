@@ -63,7 +63,7 @@ public class XimagesharingCom extends XFileSharingProBasic {
     /** 2019-07-10: Special: Enable mass-linkchecking feature as this filehost usually has filenames inside their URLs. */
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
-        return super.massLinkchecker(urls, true);
+        return super.massLinkcheckerWebsite(urls, true);
     }
 
     @Override
