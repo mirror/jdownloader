@@ -317,6 +317,8 @@ public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> 
                 setdebug(solverJob, "Upload Captcha(" + i + ") - GetTypeID: " + captchaChallenge.getTypeID() + " - Plugin: " + captchaChallenge.getPlugin());
                 if (ret.contains("0015 Captcha zu schnell eingereicht")) {
                     Thread.sleep(15000);
+                } else if (ret.contains("0009 Kein Bild gefunden") || ret.contains("0008 Kein Captcha gefunden") || ret.matches("0010 .*")) {
+                    break;
                 } else {
                     Thread.sleep(5000);
                 }
@@ -327,7 +329,7 @@ public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> 
             setdebug(solverJob, "Errormessage - " + ret);
             if (ret.contains("0011 Guthaben ist nicht ausreichend") && config.getlowcredits()) {
                 showMessageAndQuit(_GUI.T.NinekwService_createPanel_error9kwtitle(), _GUI.T.NinekwService_createPanel_errortext_nocredits() + "\n" + ret);
-            } else if (ret.contains("0008 Kein Captcha gefunden")) {
+            } else if (ret.contains("0008 Kein Captcha gefunden") || ret.contains("0009 Kein Bild gefunden") || ret.matches("0010 .*")) {
                 showMessageAndQuit(_GUI.T.NinekwService_createPanel_error9kwtitle(), _GUI.T.NinekwService_createPanel_errortext_nocaptcha() + "\n" + ret);
             } else if (ret.contains("0015 Captcha zu schnell eingereicht")) {
                 Thread.sleep(15000);

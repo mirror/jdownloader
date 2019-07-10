@@ -128,7 +128,9 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
             @Override
             public void delayedrun() {
-                validateForm();
+                if (config.getAddLinksDialogCheck() == true) {
+                    validateForm();
+                }
             }
         };
         setLocator(new RememberRelativeDialogLocator("AddLinksDialog", JDGui.getInstance().getMainFrame()));
@@ -274,6 +276,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         }
         final String passwordTxt = password.getText();
         if (StringUtils.isNotEmpty(passwordTxt)) {
+            job.setArchivPassword(passwordTxt);
             HashSet<String> passwords = JSonStorage.restoreFromString(passwordTxt, new TypeRef<HashSet<String>>() {
             }, new HashSet<String>());
             if (passwords == null || passwords.size() == 0) {
