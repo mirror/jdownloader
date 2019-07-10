@@ -99,8 +99,7 @@ public class RacatyCom extends XFileSharingProBasic {
         return this.getMainPage() + "/?op=login_ajax";
     }
 
-    @Override
-    public boolean supports_availablecheck_filesize_html() {
+    @Overrideprotected boolean supports_availablecheck_filesize_html() {
         return false;
     }
 

@@ -90,8 +90,7 @@ public class UploadrarCom extends XFileSharingProBasic {
         return -1;
     }
 
-    @Override
-    public boolean supports_availablecheck_filesize_html() {
+    @Overrideprotected boolean supports_availablecheck_filesize_html() {
         return false;
     }
 

@@ -58,6 +58,7 @@ public class XvideosharingCom extends XFileSharingProBasic {
 
     @Override
     public boolean supports_availablecheck_alt() {
+        /* 2019-07-10: Their mass-linkchecker seems to be broken as it returns OFFLINE no matter which URL is entered! */
         return false;
     }
 
@@ -67,12 +68,9 @@ public class XvideosharingCom extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean supports_availablecheck_filesize_html() {
-        /*
-         * 2019-05-30: Special - usually videohosts do not display filesizes! This videohosts displays filesizes but only in logged-in
-         * state!
-         */
-        return true;
+    protected boolean supports_availablecheck_filesize_html() {
+        /* 2019-07-10: Special */
+        return false;
     }
 
     @Override

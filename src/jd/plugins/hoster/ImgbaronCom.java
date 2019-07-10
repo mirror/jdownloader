@@ -44,7 +44,7 @@ public class ImgbaronCom extends XFileSharingProBasic {
     /** Enable mass-linkchecking feature as this filehost usually has filenames inside their URLs. */
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
-        return super.massLinkchecker(urls);
+        return super.massLinkchecker(urls, true);
     }
 
     @Override
@@ -52,8 +52,7 @@ public class ImgbaronCom extends XFileSharingProBasic {
         return true;
     }
 
-    @Override
-    public boolean supports_availablecheck_filesize_html() {
+    @Overrideprotected boolean supports_availablecheck_filesize_html() {
         return false;
     }
 

@@ -104,8 +104,7 @@ public class UqloadCom extends XFileSharingProBasic {
         return false;
     }
 
-    @Override
-    public boolean supports_availablecheck_filesize_html() {
+    @Overrideprotected boolean supports_availablecheck_filesize_html() {
         return false;
     }
 
