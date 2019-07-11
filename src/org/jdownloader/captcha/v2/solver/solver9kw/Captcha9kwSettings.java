@@ -129,6 +129,13 @@ public interface Captcha9kwSettings extends ChallengeSolverConfig {
     void sethttps(boolean b);
 
     @AboutConfig
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry("Only site domain in interactive captcha (e.g. RCv2) requests to 9kw.eu")
+    boolean isSiteDomain();
+
+    void setSiteDomain(boolean b);
+
+    @AboutConfig
     @DefaultStringValue("")
     @DescriptionForConfigEntry("Captcha whitelist for hoster")
     String getwhitelist();
