@@ -417,13 +417,13 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /**
-     * Implies that a host supports one of these APIs: https://xvideosharing.docs.apiary.io/ OR https://xfilesharingpro.docs.apiary.io/
-     * <br />
+     * Implies that a host supports login via one of these APIs: https://xvideosharing.docs.apiary.io/ OR
+     * https://xfilesharingpro.docs.apiary.io/ <br />
      * This(=API enabled) is a rare case! <br />
      * Sadly, it seems like their linkcheck function only works on the files in the users' own account:
      * https://xvideosharing.docs.apiary.io/#reference/file/file-info/get-info/check-file(s) <br />
      * 2019-05-30: TODO: Add nice AccountFactory for hosts which have API support!<br />
-     * Example: xvideosharing.com <br />
+     * Example: xvideosharing.com, flix555.com, uploadocean.com[2019-07-11: uploadocean API is broken] <br />
      * default: false
      */
     protected boolean supports_api() {
@@ -2421,9 +2421,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
         final String apikey = new Regex(correctedBR, "/api/account/info\\?key=([a-z0-9]+)").getMatch(0);
         if (apikey != null) {
+            /*
+             * 2019-07-11: Use API even if 'supports_api()' is disabled because if it works it is a much quicker and more reliable way to
+             * get account information.
+             */
             logger.info("Found apikey --> Trying to get accountinfo via API");
             account.setProperty("apikey", apikey);
-            /* TODO: 2019-07-10: Consider checking via API if apikey is available as this may work much more reliable! */
             boolean api_success = false;
             try {
                 ai = this.fetchAccountInfoAPI(this.br.cloneBrowser(), account);
