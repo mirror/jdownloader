@@ -18,6 +18,7 @@ import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.StringTokenizer;
@@ -925,6 +926,7 @@ public class ClipboardMonitoring {
                 job.setCustomSourceUrl(sourceURL);
                 final HashSet<String> pws = PasswordUtils.getPasswords(content);
                 if (pws != null && pws.size() > 0) {
+                    job.setArchivPasswords(new ArrayList<String>(pws));
                     job.addPrePackagizerModifier(new CrawledLinkModifier() {
                         @Override
                         public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {

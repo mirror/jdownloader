@@ -128,7 +128,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
             @Override
             public void delayedrun() {
-                if (config.getAddLinksDialogCheck() == true) {
+                if (config.getAddLinksDialogCheck()) {
                     validateForm();
                 }
             }
@@ -276,7 +276,6 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         }
         final String passwordTxt = password.getText();
         if (StringUtils.isNotEmpty(passwordTxt)) {
-            job.setArchivPassword(passwordTxt);
             HashSet<String> passwords = JSonStorage.restoreFromString(passwordTxt, new TypeRef<HashSet<String>>() {
             }, new HashSet<String>());
             if (passwords == null || passwords.size() == 0) {
@@ -284,6 +283,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                 passwords.add(passwordTxt.trim());
             }
             final HashSet<String> finalPasswords = passwords;
+            job.setArchivPasswords(new ArrayList<String>(passwords));
             modifiers.add(new CrawledLinkModifier() {
                 @Override
                 public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {

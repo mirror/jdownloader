@@ -27,9 +27,14 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.packagecontroller.AbstractNodeVisitor;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
@@ -124,6 +129,37 @@ public class TbCmV2 extends PluginForDecrypt {
         return vuid;
     }
 
+    private boolean linkCollectorContainsEntryByID(final String videoID) {
+        final AtomicBoolean containsFlag = new AtomicBoolean(false);
+        LinkCollector.getInstance().visitNodes(new AbstractNodeVisitor<CrawledLink, CrawledPackage>() {
+            @Override
+            public Boolean visitPackageNode(CrawledPackage pkg) {
+                if (containsFlag.get()) {
+                    return null;
+                } else {
+                    return Boolean.TRUE;
+                }
+            }
+
+            @Override
+            public Boolean visitChildrenNode(CrawledLink node) {
+                if (containsFlag.get()) {
+                    return null;
+                } else {
+                    if (StringUtils.equalsIgnoreCase(getHost(), node.getHost())) {
+                        final DownloadLink downloadLink = node.getDownloadLink();
+                        if (downloadLink != null && StringUtils.equals(videoID, downloadLink.getStringProperty(YoutubeHelper.YT_ID))) {
+                            containsFlag.set(true);
+                            return null;
+                        }
+                    }
+                    return Boolean.TRUE;
+                }
+            }
+        }, true);
+        return containsFlag.get();
+    }
+
     private HashSet<String>         dupeCheckSet;
     private YoutubeConfig           cfg;
     private static Object           DIALOGLOCK = new Object();
@@ -146,6 +182,7 @@ public class TbCmV2 extends PluginForDecrypt {
         dupeCheckSet = new HashSet<String>();
         globalPropertiesForDownloadLink = new HashMap<String, Object>();
         cfg = PluginJsonConfig.get(YoutubeConfig.class);
+        final boolean isCrawlDupeCheckEnabled = cfg.isCrawlDupeCheckEnabled();
         String cryptedLink = param.getCryptedUrl();
         if (StringUtils.containsIgnoreCase(cryptedLink, "yt.not.allowed")) {
             final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
@@ -161,9 +198,11 @@ public class TbCmV2 extends PluginForDecrypt {
             }
             return ret;
         }
+        final String finalContainerURL = cryptedLink;
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>() {
             @Override
             public boolean add(DownloadLink e) {
+                e.setContainerUrl(finalContainerURL);
                 distribute(e);
                 return super.add(e);
             }
@@ -369,6 +408,10 @@ public class TbCmV2 extends PluginForDecrypt {
         for (YoutubeClipData vid : videoIdsToAdd) {
             if (this.isAbort()) {
                 throw new InterruptedException();
+            }
+            if (isCrawlDupeCheckEnabled && linkCollectorContainsEntryByID(vid.videoID)) {
+                logger.info("CrawlDupeCheck skip:" + vid.videoID);
+                continue;
             }
             try {
                 // make sure that we reload the video
@@ -666,9 +709,6 @@ public class TbCmV2 extends PluginForDecrypt {
                     decryptedLinks.add(lnk);
                 }
             }
-        }
-        for (final DownloadLink dl : decryptedLinks) {
-            dl.setContainerUrl(cryptedLink);
         }
         return decryptedLinks;
     }

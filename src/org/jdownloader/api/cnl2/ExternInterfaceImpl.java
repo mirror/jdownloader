@@ -209,6 +209,9 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                     });
                 }
                 if (cnl.getPasswords() != null && cnl.getPasswords().size() > 0) {
+                    for (LinkCollectingJob job : jobs) {
+                        job.setArchivPasswords(cnl.getPasswords());
+                    }
                     modifiers.add(new CrawledLinkModifier() {
                         @Override
                         public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
@@ -329,8 +332,9 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
             modifiers.add(new CommentModifier(finalComment));
         }
         if (StringUtils.isNotEmpty(finalPasswords)) {
-            final HashSet<String> pws = new HashSet<String>();
+            final List<String> pws = new ArrayList<String>();
             pws.add(finalPasswords);
+            job.setArchivPasswords(pws);
             modifiers.add(new CrawledLinkModifier() {
                 @Override
                 public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
@@ -468,8 +472,9 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                 });
             }
             if (StringUtils.isNotEmpty(finalPasswords)) {
-                final HashSet<String> pws = new HashSet<String>();
+                final List<String> pws = new ArrayList<String>();
                 pws.add(finalPasswords);
+                job.setArchivPasswords(pws);
                 modifiers.add(new CrawledLinkModifier() {
                     @Override
                     public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
@@ -655,6 +660,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                         }
                     }
                     if (pws.size() > 0) {
+                        job.setArchivPasswords(new ArrayList<String>(pws));
                         modifiers.add(new CrawledLinkModifier() {
                             @Override
                             public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {

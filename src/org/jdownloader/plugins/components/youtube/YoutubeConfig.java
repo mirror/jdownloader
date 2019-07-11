@@ -522,4 +522,10 @@ public interface YoutubeConfig extends PluginConfigInterface {
     boolean isMetaDataEnabled();
 
     void setMetaDataEnabled(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    boolean isCrawlDupeCheckEnabled();
+
+    void setCrawlDupeCheckEnabled(boolean b);
 }

@@ -62,11 +62,12 @@ public class Captcha9kwSolverMultiClick extends AbstractCaptcha9kwSolver<MultiCl
         try {
             byte[] data = null;
             final String ext = Files.getExtension(captchaChallenge.getImageFile().getName());
-            if (solverJob.getChallenge().getTypeID() == "kissanime.to") {// too big for 9kw.eu
+            if (StringUtils.equalsIgnoreCase("kissanime.to", solverJob.getChallenge().getTypeID())) {
+                // why not add generic handling? check image size and resire if required?
+                // too big for 9kw.eu
                 // Width+Height=max.800px, width under 620px, height under 600px
                 if (ext.equalsIgnoreCase("png") || ext.equalsIgnoreCase("jpg") || ext.equalsIgnoreCase("gif")) {
-                    BufferedImage image = null;
-                    image = ImageProvider.read(captchaChallenge.getImageFile());
+                    BufferedImage image = ImageProvider.read(captchaChallenge.getImageFile());
                     double size = image.getWidth() + image.getHeight();
                     int basevalue = 800;
                     double toobig_size;
@@ -100,15 +101,13 @@ public class Captcha9kwSolverMultiClick extends AbstractCaptcha9kwSolver<MultiCl
             setdebug(solverJob, "Interrupted: " + e);
             counterInterrupted.incrementAndGet();
             solverJob.getLogger().log(e);
-        } finally {
         }
     }
 
     protected static byte[] toByteArrayCaptcha(BufferedImage image, String type) throws IOException {
-        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            ImageIO.write(image, type, out);
-            return out.toByteArray();
-        }
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ImageIO.write(image, type, out);
+        return out.toByteArray();
     }
 
     @Override
