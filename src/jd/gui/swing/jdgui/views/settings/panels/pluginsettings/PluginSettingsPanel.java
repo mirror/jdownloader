@@ -34,6 +34,7 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
+import org.appwork.swing.components.ExtMergedIcon;
 import org.appwork.swing.components.circlebar.CircledProgressBar;
 import org.appwork.swing.components.circlebar.ImagePainter;
 import org.appwork.swing.components.searchcombo.SearchComboBox;
@@ -86,25 +87,62 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
         decryterIcon = new AbstractIcon(IconKey.ICON_LINKGRABBER, 16);
         logger = LogController.getInstance().getLogger(PluginSettingsPanel.class.getName());
         searchCombobox = new SearchComboBox<LazyPlugin<?>>() {
+            final Icon linkgrabber = new AbstractIcon(IconKey.ICON_LINKGRABBER, 12);
+
             @Override
             protected Icon getIconForValue(LazyPlugin<?> value) {
                 if (value == null) {
                     return null;
+                } else {
+                    final Icon favIcon = DomainInfo.getInstance(value.getDisplayName()).getFavIcon();
+                    if (value instanceof LazyHostPlugin) {
+                        return favIcon;
+                    } else {
+                        final Icon ret = new ExtMergedIcon(favIcon).add(linkgrabber, 6, 6);
+                        return ret;
+                    }
                 }
-                return DomainInfo.getInstance(value.getDisplayName()).getFavIcon();
             }
 
             @Override
-            public void onChanged() {
-                super.onChanged();
+            protected boolean matches(String element, String matches) {
+                if (super.matches(element, matches)) {
+                    return true;
+                } else {
+                    return element != null && matches != null && matches.length() >= 3 && StringUtils.containsIgnoreCase(element, matches);
+                }
+            }
+
+            private int booleanCompare(boolean x, boolean y) {
+                return (x == y) ? 0 : (x ? 1 : -1);
+            }
+
+            @Override
+            protected void sortFound(final String search, final List<LazyPlugin<?>> found) {
+                Collections.sort(found, new Comparator<LazyPlugin<?>>() {
+                    @Override
+                    public int compare(LazyPlugin<?> o1, LazyPlugin<?> o2) {
+                        return booleanCompare(matches(getTextForValue(o1), search), matches(getTextForValue(o2), search));
+                    }
+                });
+            }
+
+            @Override
+            protected void setListSearchResults(List<LazyPlugin<?>> found, List<LazyPlugin<?>> all) {
+                final List<LazyPlugin<?>> newList = new ArrayList<LazyPlugin<?>>();
+                newList.addAll(all);
+                newList.removeAll(found);
+                newList.addAll(0, found);
+                setList(newList);
             }
 
             @Override
             protected String getTextForValue(LazyPlugin<?> value) {
                 if (value == null) {
                     return "";
+                } else {
+                    return value.getDisplayName();
                 }
-                return value.getDisplayName();
             }
         };
         searchCombobox.setActualMaximumRowCount(20);

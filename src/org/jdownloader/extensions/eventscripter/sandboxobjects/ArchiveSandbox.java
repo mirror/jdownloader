@@ -3,6 +3,7 @@ package org.jdownloader.extensions.eventscripter.sandboxobjects;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 import jd.plugins.DownloadLink;
 
@@ -72,6 +73,20 @@ public class ArchiveSandbox {
             return archive.getFinalPassword();
         } else {
             return null;
+        }
+    }
+
+    public List<String> getPasswords() {
+        if (archive != null) {
+            return archive.getSettings().getPasswords();
+        } else {
+            return null;
+        }
+    }
+
+    public void setPasswords(List<String> passwords) {
+        if (archive != null) {
+            archive.setPasswords(passwords);
         }
     }
 
