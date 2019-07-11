@@ -112,8 +112,14 @@ public class NineKwSolverService extends AbstractSolverService implements Servic
             ret.setQueue2(Integer.parseInt(new Regex(servercheck, "queue2=(\\d+)").getMatch(0)));
             ret.setInWork(Integer.parseInt(new Regex(servercheck, "inwork=(\\d+)").getMatch(0)));
             ret.setWorkerMouse(Integer.parseInt(new Regex(servercheck, "workermouse=(\\d+)").getMatch(0)));
+            ret.setWorkerMultiMouse(Integer.parseInt(new Regex(servercheck, "workermultimouse=(\\d+)").getMatch(0)));
             ret.setWorkerConfirm(Integer.parseInt(new Regex(servercheck, "workerconfirm=(\\d+)").getMatch(0)));
             ret.setWorkerText(Integer.parseInt(new Regex(servercheck, "workertext=(\\d+)").getMatch(0)));
+            ret.setWorkerTextOnly(Integer.parseInt(new Regex(servercheck, "workertextonly=(\\d+)").getMatch(0)));
+            ret.setWorkerPuzzle(Integer.parseInt(new Regex(servercheck, "workerpuzzle=(\\d+)").getMatch(0)));
+            ret.setWorkerRotate(Integer.parseInt(new Regex(servercheck, "workerrotate=(\\d+)").getMatch(0)));
+            ret.setWorkerAudio(Integer.parseInt(new Regex(servercheck, "workeraudio=(\\d+)").getMatch(0)));
+            ret.setWorkerSpecial(Integer.parseInt(new Regex(servercheck, "workerinteractive=(\\d+)").getMatch(0)));
         } catch (NumberFormatException e) {
             ret.setError("API Error!");
         }

@@ -91,8 +91,14 @@ public class NineKWAccount {
     private String error;
     private int    worker;
     private int    workerMouse;
+    private int    workerMultiMouse;
     private int    workerConfirm;
-    private int    workerText;
+    private int    workerText;                             // Captcha as image with "text"
+    private int    workerTextOnly;                         // Captcha without image
+    private int    workerPuzzle;                            // Keycaptcha
+    private int    workerRotate;                            // Funcaptcha
+    private int    workerAudio;
+    private int    workerSpecial;                          // e.g. RCv2
     private long   createTime = System.currentTimeMillis();
 
     public long getCreateTime() {
@@ -117,12 +123,60 @@ public class NineKWAccount {
         this.workerText = workerText;
     }
 
+    public int getWorkerTextOnly() {
+        return workerTextOnly;
+    }
+
+    public void setWorkerTextOnly(int workerTextOnly) {
+        this.workerTextOnly = workerTextOnly;
+    }
+
     public int getWorkerMouse() {
         return workerMouse;
     }
 
     public void setWorkerMouse(int workerMouse) {
         this.workerMouse = workerMouse;
+    }
+
+    public int getWorkerMultiMouse() {
+        return workerMouse;
+    }
+
+    public void setWorkerMultiMouse(int workerMultiMouse) {
+        this.workerMultiMouse = workerMultiMouse;
+    }
+
+    public int getWorkerPuzzle() {
+        return workerPuzzle;
+    }
+
+    public void setWorkerPuzzle(int workerPuzzle) {
+        this.workerPuzzle = workerPuzzle;
+    }
+
+    public int getWorkerRotate() {
+        return workerRotate;
+    }
+
+    public void setWorkerRotate(int workerRotate) {
+        this.workerRotate = workerRotate;
+    }
+
+    public int getWorkerAudio() {
+        return workerAudio;
+    }
+
+    public void setWorkerAudio(int workerAudio) {
+        this.workerAudio = workerAudio;
+    }
+
+    public int getWorkerSpecial() {
+        return workerSpecial;
+    }
+
+    public void setWorkerSpecial(int workerSpecial) {
+        this.workerSpecial = workerSpecial;
     }
 
     public int getWorkerConfirm() {

@@ -115,7 +115,7 @@ public interface GuiTranslation extends TranslateInterface {
     String gui_plugin_settings_share_online_shared_ip_workaround();
 
     @Default(lngs = { "en", "de" }, values = { "<html>Enable traffic workaround?<br /><p style=\"color:#808080\">Share-online has a premium fair-use-limit of 100 GB per day - if exceeded you can continue downloading but with limited speed.<br />Usually JDownloader disables accounts 'without traffic' - if you activate this setting, share-online accounts will still get used in this case.<br />If you only own a single premium account to download from share-online, it makes sense to use this setting.</p></html>",
-    "<html>Aktiviere traffic workaround?<br /><p style=\"color:#808080\">Share-Online hat ein premium fair-use-Limit von 100 GB pro Tag - danach kann man nur gedrosselt weiter herunterladen.<br />Normalerweise deaktiviert JDownloader Accounts 'ohne Traffic' - aktiviert man diese Einstellung, werden betroffene share-online Accounts in diesem Fall trotzdem weiter verwendet.<br />Sofern du nur einen premium Account zum Download von share-online besitzt ist es sinnvoll, diese Einstellung zu verwenden.</p></html>" })
+            "<html>Aktiviere traffic workaround?<br /><p style=\"color:#808080\">Share-Online hat ein premium fair-use-Limit von 100 GB pro Tag - danach kann man nur gedrosselt weiter herunterladen.<br />Normalerweise deaktiviert JDownloader Accounts 'ohne Traffic' - aktiviert man diese Einstellung, werden betroffene share-online Accounts in diesem Fall trotzdem weiter verwendet.<br />Sofern du nur einen premium Account zum Download von share-online besitzt ist es sinnvoll, diese Einstellung zu verwenden.</p></html>" })
     String gui_plugin_settings_share_online_traffic_workaround();
 
     @Default(lngs = { "en", "de" }, values = { "<html>Enable max. traffic workaround?<br /><p style=\"color:#808080\">The calculation of the traffic is decreased before the download and added again later if necessary. This does not exceed the limit of 100 GB per day.<br />If you only own a single premium account to download from share-online, it makes sense to use this setting.</p></html>", "<html>Aktiviere max. traffic workaround?<br /><p style=\"color:#808080\">Die Berechnung vom Traffic wird vor dem Download abgezogen und später wieder hinzugefügt, wenn erforderlich. Dadurch wird das Limit von 100 GB pro Tag keinesfalls überschritten.<br />Sofern du nur einen premium Account zum Download von share-online besitzt ist es sinnvoll, diese Einstellung zu verwenden.</p></html>" })
@@ -3866,14 +3866,32 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Worker:" })
     String ServicePanel9kwTooltip_runInEDT_worker();
 
-    @Default(lngs = { "en" }, values = { "Worker Mouse:" })
+    @Default(lngs = { "en" }, values = { "Mouse" })
     String ServicePanel9kwTooltip_runInEDT_worker_mouse();
 
-    @Default(lngs = { "en" }, values = { "Worker Confirm:" })
+    @Default(lngs = { "en" }, values = { "Multimouse" })
+    String ServicePanel9kwTooltip_runInEDT_worker_multimouse();
+
+    @Default(lngs = { "en" }, values = { "Confirm" })
     String ServicePanel9kwTooltip_runInEDT_worker_confirm();
 
-    @Default(lngs = { "en" }, values = { "Worker Text:" })
+    @Default(lngs = { "en" }, values = { "Text" })
     String ServicePanel9kwTooltip_runInEDT_worker_text();
+
+    @Default(lngs = { "en" }, values = { "Textonly" })
+    String ServicePanel9kwTooltip_runInEDT_worker_textonly();
+
+    @Default(lngs = { "en" }, values = { "Audio" })
+    String ServicePanel9kwTooltip_runInEDT_worker_audio();
+
+    @Default(lngs = { "en" }, values = { "Puzzle" })
+    String ServicePanel9kwTooltip_runInEDT_worker_puzzle();
+
+    @Default(lngs = { "en" }, values = { "Rotate" })
+    String ServicePanel9kwTooltip_runInEDT_worker_rotate();
+
+    @Default(lngs = { "en" }, values = { "Interactive" })
+    String ServicePanel9kwTooltip_runInEDT_worker_special();
 
     @Default(lngs = { "en" }, values = { "In Work:" })
     String ServicePanel9kwTooltip_runInEDT_inwork();
