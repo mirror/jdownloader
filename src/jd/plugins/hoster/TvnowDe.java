@@ -660,7 +660,7 @@ public class TvnowDe extends PluginForHost {
             dl.setProperty("id_format", formatID);
             dl.setProperty("id_episode", episodeID);
             /* Important: Make sure that crawler- and hosterplugin always set correct linkids! */
-            dl.setLinkID(formatID + "/" + episodeID);
+            dl.setLinkID("tvnow.de" + "://" + formatID + "/" + episodeID);
         }
     }
 

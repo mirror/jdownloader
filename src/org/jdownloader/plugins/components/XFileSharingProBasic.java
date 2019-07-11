@@ -2414,27 +2414,30 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         if (br.getURL() == null || !br.getURL().contains("/?op=my_account")) {
             getPage(this.getMainPage() + "/?op=my_account");
         }
-        final String apikey = new Regex(correctedBR, "/api/account/info\\?key=([a-z0-9]+)").getMatch(0);
-        if (apikey != null) {
-            /*
-             * 2019-07-11: Use API even if 'supports_api()' is disabled because if it works it is a much quicker and more reliable way to
-             * get account information.
-             */
-            logger.info("Found apikey --> Trying to get accountinfo via API");
-            account.setProperty("apikey", apikey);
-            boolean api_success = false;
-            try {
-                ai = this.fetchAccountInfoAPI(this.br.cloneBrowser(), account);
-                api_success = true;
-            } catch (final PluginException e) {
-                e.printStackTrace();
-            }
-            if (api_success) {
-                logger.info("Successfully found accountinfo via API");
-                return ai;
-            } else {
-                /* 2019-07-11: It can happen that the API does not work although an apikey is provided. Example: uploadocean.com */
-                logger.warning("Failed to find accountinfo via API --> Falling back to website handling");
+        {
+            /* 2019-07-11: apikey handling - prefer that over website */
+            final String apikey = new Regex(correctedBR, "/api/account/info\\?key=([a-z0-9]+)").getMatch(0);
+            if (apikey != null) {
+                /*
+                 * 2019-07-11: Use API even if 'supports_api()' is disabled because if it works it is a much quicker and more reliable way
+                 * to get account information.
+                 */
+                logger.info("Found apikey --> Trying to get accountinfo via API");
+                account.setProperty("apikey", apikey);
+                boolean api_success = false;
+                try {
+                    ai = this.fetchAccountInfoAPI(this.br.cloneBrowser(), account);
+                    api_success = true;
+                } catch (final PluginException e) {
+                    e.printStackTrace();
+                }
+                if (api_success) {
+                    logger.info("Successfully found accountinfo via API");
+                    return ai;
+                } else {
+                    /* 2019-07-11: It can happen that the API does not work although an apikey is provided. Example: uploadocean.com */
+                    logger.warning("Failed to find accountinfo via API --> Falling back to website handling");
+                }
             }
         }
         final String space[] = new Regex(correctedBR, ">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
