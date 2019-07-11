@@ -5,6 +5,7 @@ import org.appwork.utils.parser.UrlQuery;
 public class RequestOptions {
     private String   proxyhostport;
     private String   proxytype;
+    private boolean  sitedomain;
     private int      cph;
     private int      cpm;
     private int      priothing;
@@ -86,6 +87,15 @@ public class RequestOptions {
         proxytype = config.getproxytype();
         timeoutthing = (config.getDefaultMaxTimeout() / 1000);
         selfsolve = config.isSelfsolve();
+        sitedomain = config.isSiteDomain();
         confirm = config.isconfirm();
+    }
+
+    public boolean isSiteDomain() {
+        return sitedomain;
+    }
+
+    public void setSiteDomain(boolean sitedomain) {
+        this.sitedomain = sitedomain;
     }
 }

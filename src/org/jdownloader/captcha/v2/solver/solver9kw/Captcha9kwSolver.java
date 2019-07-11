@@ -1,6 +1,7 @@
 package org.jdownloader.captcha.v2.solver.solver9kw;
 
 import java.io.IOException;
+import java.util.Map;
 
 import jd.http.Browser;
 
@@ -109,13 +110,26 @@ public class Captcha9kwSolver extends AbstractCaptcha9kwSolver<String> {
             qi.appendEncoded("confirm", "false");
             qi.appendEncoded("maxtimeout", options.getTimeoutthing() + "");
             qi.addAll(options.getMoreoptions().list());
-            qi.appendEncoded("oldsource", rcChallenge.getTypeID() + "");
             qi.appendEncoded("apikey", config.getApiKey() + "");
             qi.appendEncoded("captchaSource", "jdPlugin");
             qi.appendEncoded("version", "1.2");
             qi.appendEncoded("data-sitekey", rcChallenge.getSiteKey());
+            qi.appendEncoded("oldsource", rcChallenge.getTypeID() + "");
+            final Map<String, Object> v3action = rcChallenge.getV3Action();
+            if (v3action != null) {
+                qi.appendEncoded("pageurl", rcChallenge.getSiteUrl());
+                qi.appendEncoded("captchachoice", "recaptchav3");
+                qi.appendEncoded("actionname", (String) v3action.get("action"));
+                qi.appendEncoded("min_score", "0.3");// minimal score
+            } else {
+                if (options.isSiteDomain()) {
+                    qi.appendEncoded("pageurl", rcChallenge.getSiteDomain());
+                } else {
+                    qi.appendEncoded("pageurl", rcChallenge.getSiteUrl());
+                }
+                qi.appendEncoded("captchachoice", "recaptchav2");
+            }
             qi.appendEncoded("securetoken", rcChallenge.getSecureToken());
-            qi.appendEncoded("pageurl", rcChallenge.getSiteDomain());
             qi.appendEncoded("interactive", 1 + "");
             UrlQuery queryPoll = createQueryForPolling();
             Browser br = new Browser();
