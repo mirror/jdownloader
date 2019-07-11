@@ -25,20 +25,15 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 
 public class AccountAPIImplV2 implements AccountAPIV2 {
-
     public AccountAPIImplV2() {
         RemoteAPIController.validateInterfaces(AccountAPIV2.class, AccountInterface.class);
     }
 
     public List<AccountAPIStorableV2> listAccounts(AccountQuery queryParams) {
-
         List<Account> accs = AccountController.getInstance().list();
-
         java.util.List<AccountAPIStorableV2> ret = new ArrayList<AccountAPIStorableV2>();
-
         int startWith = queryParams.getStartAt();
         int maxResults = queryParams.getMaxResults();
-
         if (startWith > accs.size() - 1) {
             return ret;
         }
@@ -48,7 +43,6 @@ public class AccountAPIImplV2 implements AccountAPIV2 {
         if (maxResults < 0) {
             maxResults = accs.size();
         }
-
         for (int i = startWith; i < Math.min(startWith + maxResults, accs.size()); i++) {
             Account acc = accs.get(i);
             if (queryParams.getUUIDList() != null && !queryParams.getUUIDList().contains(acc.getId().getID())) {
@@ -56,14 +50,12 @@ public class AccountAPIImplV2 implements AccountAPIV2 {
             }
             AccountAPIStorableV2 accas = new AccountAPIStorableV2(acc);
             accas.setErrorType(enumToString(acc.getError()));
-
             if (queryParams.isError()) {
                 accas.setErrorString(acc.getErrorString());
             }
             if (queryParams.isUserName()) {
                 accas.setUsername(acc.getUser());
             }
-
             if (queryParams.isValidUntil()) {
                 AccountInfo ai = acc.getAccountInfo();
                 if (ai != null) {
@@ -89,7 +81,6 @@ public class AccountAPIImplV2 implements AccountAPIV2 {
                         accas.setTrafficMax(ai.getTrafficMax());
                     }
                 }
-
             }
             if (queryParams.isEnabled()) {
                 accas.setEnabled(acc.isEnabled());
@@ -97,7 +88,6 @@ public class AccountAPIImplV2 implements AccountAPIV2 {
             if (queryParams.isValid()) {
                 accas.setValid(acc.isValid());
             }
-
             ret.add(accas);
         }
         return ret;
@@ -190,6 +180,13 @@ public class AccountAPIImplV2 implements AccountAPIV2 {
         }
     }
 
+    public void refreshAccounts(long[] ids, boolean force) {
+        final List<Account> accs = getAccountbyIDs(ids);
+        for (final Account acc : accs) {
+            AccountChecker.getInstance().check(acc, force);
+        }
+    }
+
     public void setEnabledState(boolean enabled, long[] ids) {
         final List<Account> accs = getAccountbyIDs(ids);
         for (final Account acc : accs) {
@@ -276,10 +273,8 @@ public class AccountAPIImplV2 implements AccountAPIV2 {
         if (ids == null || ids.length == 0) {
             throw new BadParameterException("ids empty or null");
         }
-
         final List<AuthenticationInfo> auths = getBasicAuthsByIds(ids);
         AuthenticationController.getInstance().remove(auths);
-
         return true;
     }
 
@@ -313,7 +308,6 @@ public class AccountAPIImplV2 implements AccountAPIV2 {
         if (infos.size() == 0) {
             throw new BadParameterException("entry not found");
         }
-
         AuthenticationInfo existingEntry = infos.get(0);
         boolean updated = false;
         if (updatedEntry.getHostmask() != null) {
@@ -332,7 +326,6 @@ public class AccountAPIImplV2 implements AccountAPIV2 {
             existingEntry.setEnabled(updatedEntry.isEnabled());
             updated = true;
         }
-
         if (updatedEntry.getType() != null) {
             try {
                 existingEntry.setType(AuthenticationInfo.Type.valueOf(updatedEntry.getType().name()));
@@ -341,7 +334,6 @@ public class AccountAPIImplV2 implements AccountAPIV2 {
                 throw new BadParameterException("unkown type");
             }
         }
-
         return updated;
     }
 }
