@@ -114,16 +114,9 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     /**
      * DEV NOTES XfileSharingProBasic Version 4.4.2.1<br />
-     ****************************
-     * NOTES from raztoki <br/>
-     * - no need to set setfollowredirect true. <br />
-     * - maintain the primary domain base url (protocol://subdomain.domain.tld.cctld), everything else will be based off that! do not fubar
-     * with standard browser behaviours.
-     ****************************
      * mods: See overridden functions<br />
-     * TODO: Check if we can find any XFS host which has API support e.g.
-     * https://xvideosharing.docs.apiary.io/#reference/file/file-info/get-info/check-file(s) Demo page with API:
-     * http://xvideosharing.com/?op=my_account https://xfilesharingpro.docs.apiary.io/# <br/>
+     * See official changelogs for upcoming XFS changes: https://sibsoft.net/xfilesharing/changelog.html |
+     * https://sibsoft.net/xvideosharing/changelog.html <br/>
      * limit-info:<br />
      * captchatype-info: null 4dignum solvemedia reCaptchaV2<br />
      * Last compatible XFileSharingProBasic template: Version 2.7.8.7 in revision 40351 other:<br />
@@ -417,8 +410,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /**
-     * Implies that a host supports login via one of these APIs: https://xvideosharing.docs.apiary.io/ OR
-     * https://xfilesharingpro.docs.apiary.io/ <br />
+     * Implies that a host supports login via 'API Mod'[https://sibsoft.net/xfilesharing/mods/api.html] via one of these APIs:
+     * https://xvideosharing.docs.apiary.io/ OR https://xfilesharingpro.docs.apiary.io/ <br />
      * This(=API enabled) is a rare case! <br />
      * Sadly, it seems like their linkcheck function only works on the files in the users' own account:
      * https://xvideosharing.docs.apiary.io/#reference/file/file-info/get-info/check-file(s) <br />
