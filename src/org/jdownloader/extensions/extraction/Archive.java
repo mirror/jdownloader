@@ -339,8 +339,9 @@ public class Archive {
         final WeakReference<ExtractionController> extractionController = this.extractionController;
         if (extractionController != null) {
             return extractionController.get();
+        } else {
+            return null;
         }
-        return null;
     }
 
     protected void onStartExtracting() {

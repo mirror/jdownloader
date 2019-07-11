@@ -229,7 +229,7 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
             /**
              * @param found
              */
-            protected void sortFound(final List<PackageHistoryEntry> found) {
+            protected void sortFound(String search, final List<PackageHistoryEntry> found) {
                 Collections.sort(found, new Comparator<PackageHistoryEntry>() {
 
                     @Override
