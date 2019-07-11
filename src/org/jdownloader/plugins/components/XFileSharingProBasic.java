@@ -661,7 +661,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     protected final AvailableStatus requestFileInformationAPI(final DownloadLink link, final Account account) throws Exception {
-        massLinkcheckerAPI(new DownloadLink[] { link }, account);
+        massLinkcheckerAPI(new DownloadLink[] { link }, account, false);
         return link.getAvailableStatus();
     }
 
@@ -985,7 +985,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * implemented, see internal_supports_availablecheck_alt, 2. An account with apikey is required to make use of this! <br/>
      * <b> ONLY CALL THIS VIA getFilesizeViaAvailablecheckAlt until more XFS websites have full API support! </b>
      */
-    public boolean massLinkcheckerAPI(final DownloadLink[] urls, final Account account) {
+    public boolean massLinkcheckerAPI(final DownloadLink[] urls, final Account account, final boolean setWeakFilename) {
         if (urls == null || urls.length == 0) {
             return false;
         }
@@ -1062,7 +1062,9 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                             if (isVideohost) {
                                 link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
                             }
-                            setWeakFilename(link);
+                            if (setWeakFilename) {
+                                setWeakFilename(link);
+                            }
                         }
                         /* Filesize is not always given especially not for videohosts. */
                         if (filesize > 0) {
