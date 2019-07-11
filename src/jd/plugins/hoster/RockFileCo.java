@@ -23,7 +23,6 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -114,22 +113,7 @@ public class RockFileCo extends XFileSharingProBasic {
     }
 
     @Override
-    public String regexFilenameAbuse(final Browser br) {
-        String fname = super.regexFilenameAbuse(br);
-        if (StringUtils.isEmpty(fname)) {
-            /* 2019-07-02: Special */
-            fname = br.getRegex("<b>Filename</b><br />([^<>\"]+)</td>").getMatch(0);
-        }
-        return fname;
-    }
-
-    @Override
-    public boolean supports_availablecheck_alt() {
-        /* 2019-07-02: Special */
-        return false;
-    }
-
-    @Overrideprotected boolean supports_availablecheck_filesize_html() {
+    protected boolean supports_availablecheck_filesize_html() {
         /* 2019-07-02: Special */
         return false;
     }

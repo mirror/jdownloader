@@ -42,16 +42,7 @@ public class ImagetwistCom extends XFileSharingProBasic {
     private static String[] domains = new String[] { "imagetwist.com", "croea.com" };
 
     @Override
-    public boolean supports_https() {
-        return true;
-    }
-
-    @Overrideprotected boolean supports_availablecheck_filesize_html() {
-        return false;
-    }
-
-    @Override
-    public boolean supports_availablecheck_alt() {
+    protected boolean supports_availablecheck_filesize_html() {
         return false;
     }
 

@@ -165,12 +165,6 @@ public class PreFilesCom extends XFileSharingProBasic {
         }
     }
 
-    @Override
-    public boolean supports_availablecheck_alt() {
-        /* 2019-07-03: Special */
-        return false;
-    }
-
     public static String[] getAnnotationNames() {
         return domains;
     }

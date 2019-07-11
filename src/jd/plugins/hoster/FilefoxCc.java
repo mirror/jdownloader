@@ -19,6 +19,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -33,10 +37,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FilefoxCc extends XFileSharingProBasic {
@@ -336,18 +336,6 @@ public class FilefoxCc extends XFileSharingProBasic {
                 br.setFollowRedirects(redirectSetting);
             }
         }
-    }
-
-    @Override
-    public boolean supports_availablecheck_alt() {
-        /* 2019-06-06: Special */
-        return false;
-    }
-
-    @Override
-    public boolean supports_availablecheck_filename_abuse() {
-        /* 2019-06-06: Special */
-        return false;
     }
 
     public static String[] getAnnotationNames() {

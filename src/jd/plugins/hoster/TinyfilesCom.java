@@ -122,18 +122,6 @@ public class TinyfilesCom extends XFileSharingProBasic {
         return null;
     }
 
-    @Override
-    public boolean supports_availablecheck_alt() {
-        /* 2019-06-27: Special */
-        return false;
-    }
-
-    @Override
-    public boolean supports_availablecheck_filename_abuse() {
-        /* 2019-06-27: Special */
-        return false;
-    }
-
     public static String[] getAnnotationNames() {
         return domains;
     }

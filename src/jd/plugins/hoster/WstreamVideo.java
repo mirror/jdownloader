@@ -15,7 +15,10 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.util.regex.Pattern;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -37,6 +40,41 @@ public class WstreamVideo extends XFileSharingProBasic {
         this.enablePremium(super.getPurchasePremiumURL());
     }
 
+    public static String[] buildAnnotationUrls(List<String[]> pluginDomains) {
+        /* 2019-07-11: Special */
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:w?embed\\-|video/)?[a-z0-9]{12}(?:/[^/]+\\.html)?");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        /* 2019-07-11: Special */
+        final String fuid = this.fuid != null ? this.fuid : getFUIDFromURL(link);
+        if (fuid != null) {
+            /* link cleanup, prefer https if possible */
+            if (link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher().matches("https?://[A-Za-z0-9\\-\\.]+/w?embed-[a-z0-9]{12}")) {
+                link.setContentUrl(getMainPage() + "/embed-" + fuid + ".html");
+            }
+            link.setPluginPatternMatcher(getMainPage() + "/" + fuid);
+            link.setLinkID(getHost() + "://" + fuid);
+        }
+    }
+
+    @Override
+    public String getFUIDFromURL(final DownloadLink dl) {
+        /* 2019-07-11: Special */
+        try {
+            final String result = new Regex(new URL(dl.getPluginPatternMatcher()).getPath(), "/(?:w?embed-)?([a-z0-9]{12})").getMatch(0);
+            return result;
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
@@ -44,8 +82,6 @@ public class WstreamVideo extends XFileSharingProBasic {
      * captchatype-info: null<br />
      * other:<br />
      */
-    private static String[] domains = new String[] { "wstream.video", "download.wstream.video" };
-
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
@@ -159,54 +195,28 @@ public class WstreamVideo extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean supports_availablecheck_alt() {
-        /* 2019-04-24: Special */
-        return false;
-    }
-
-    @Override
-    public boolean supports_availablecheck_filename_abuse() {
-        /* 2019-04-24: Special */
-        return false;
-    }
-
-    @Override
     protected boolean supports_availablecheck_filesize_html() {
         /* 2019-04-24: Special */
         return true;
     }
 
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "wstream.video", "download.wstream.video" });
+        return ret;
+    }
+
     public static String[] getAnnotationNames() {
-        return new String[] { domains[0] };
+        return buildAnnotationNames(getPluginDomains());
     }
 
     @Override
     public String[] siteSupportedNames() {
-        return domains;
+        return buildSupportedNames(getPluginDomains());
     }
 
-    /**
-     * returns the annotation pattern array: 'https?://(?:www\\.)?(?:domain1|domain2)/(?:embed\\-)?[a-z0-9]{12}'
-     *
-     */
     public static String[] getAnnotationUrls() {
-        // construct pattern
-        final String host = getHostsPattern();
-        return new String[] { host + "/(?:embed\\-|video/)?[a-z0-9]{12}(?:/[^/]+\\.html)?" };
-    }
-
-    /** returns 'https?://(?:www\\.)?(?:domain1|domain2)' */
-    private static String getHostsPattern() {
-        final String hosts = "https?://(?:www\\.)?" + "(?:" + getHostsPatternPart() + ")";
-        return hosts;
-    }
-
-    /** Returns '(?:domain1|domain2)' */
-    public static String getHostsPatternPart() {
-        final StringBuilder pattern = new StringBuilder();
-        for (final String name : domains) {
-            pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
-        }
-        return pattern.toString();
+        return buildAnnotationUrls(getPluginDomains());
     }
 }

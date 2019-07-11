@@ -324,10 +324,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     /**
      * See also function getFilesizeViaAvailablecheckAlt! <br />
-     * <b> Enabling this will eventually lead to at least one additional website-request! </b>
+     * <b> Enabling this will eventually lead to at least one additional website-request! </b> <br/>
+     * <b>DO NOT CALL THIS DIRECTLY, USE internal_supports_availablecheck_alt </b>
      *
-     * @return true: Implies that website supports getFilesizeViaAvailablecheckAlt call as an alternative source for filesize-parsing.
-     *         <br />
+     * @return true: Implies that website supports getFilesizeViaAvailablecheckAlt call as an alternative source for filesize-parsing.<br />
      *         false: Implies that website does NOT support getFilesizeViaAvailablecheckAlt. <br />
      *         default: true
      */
@@ -457,7 +457,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         final String fuid = this.fuid != null ? this.fuid : getFUIDFromURL(link);
         if (fuid != null) {
             /* link cleanup, prefer https if possible */
-            if (link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher().matches("https?://[A-Za-z0-9\\-\\.]+/embed\\-[a-z0-9]{12}")) {
+            if (link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher().matches("https?://[A-Za-z0-9\\-\\.]+/embed-[a-z0-9]{12}")) {
                 link.setContentUrl(getMainPage() + "/embed-" + fuid + ".html");
             }
             link.setPluginPatternMatcher(getMainPage() + "/" + fuid);
@@ -552,89 +552,13 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return br.getHttpConnection().getResponseCode() == 404 || new Regex(correctedBR, "(No such file|>\\s*File Not Found\\s*<|>\\s*The file was removed by|Reason for deletion:\n|File Not Found|>\\s*The file expired|>\\s*File could not be found due to expiration or removal by the file owner)").matches();
     }
 
-    /** Returns empty StringArray for filename, filesize, filehash, [more information in the future?] */
-    public final String[] getFileInfoArray() {
-        return new String[3];
-    }
-
-    /**
-     * This can 'automatically' detect whether a host supports embedding videos. <br />
-     * Example: uqload.com</br>
-     * Do not override - at least try to avoid having to!!
-     */
-    protected final boolean internal_isVideohosterEmbed() {
-        return isVideohosterEmbed() || new Regex(correctedBR, "/embed-" + this.fuid + "\\.html").matches();
-    }
-
-    /**
-     * Decides whether to enforce a filename with a '.mp4' ending or not. </br>
-     * Names are either enforced if the configuration of the script implies this or if it detects that embedding videos is possible. </br>
-     * Do not override - at least try to avoid having to!!
-     */
-    protected final boolean internal_isVideohoster_enforce_video_filename() {
-        return internal_isVideohosterEmbed() || isVideohoster_enforce_video_filename();
-    }
-
-    /**
-     * Some videohosts either have multiple qualities or even allow the user to officially download the original videofile. The problem is
-     * that this may require to solve a captcha while the stream download does not. This is an unfinished method, designed to be used in the
-     * future when we may have XFS plugin settings e.g. for video quality! TODO: Add quality settings
-     */
-    protected final boolean internal_videohost_prefer_OfficialOriginalVideoDownload() {
-        return false;
-    }
-
-    /**
-     * This can 'automatically' detect whether a host supports availablecheck via 'abuse' URL. <br />
-     * Example: uploadboy.com</br>
-     * Do not override - at least try to avoid having to!!
-     */
-    protected final boolean internal_supports_availablecheck_filename_abuse() {
-        final boolean supported_by_hardcoded_setting = this.supports_availablecheck_filename_abuse();
-        final boolean supported_by_indicating_html_code = new Regex(correctedBR, "op=report_file&(?:amp;)?id=" + this.fuid).matches();
-        boolean allowed_by_auto_handling = true;
-        final long last_failure = this.getPluginConfig().getLongProperty("REPORT_FILE_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP", 0);
-        if (last_failure > 0) {
-            final long timestamp_cooldown = last_failure + internal_waittime_on_alternative_availablecheck_failures();
-            if (timestamp_cooldown > System.currentTimeMillis()) {
-                logger.info("internal_supports_availablecheck_filename_abuse is still deactivated as it did not work on the last attempt");
-                logger.info("Time until retry: " + TimeFormatter.formatMilliSeconds(timestamp_cooldown - System.currentTimeMillis(), 0));
-                allowed_by_auto_handling = false;
-            }
-        }
-        return (supported_by_hardcoded_setting || supported_by_indicating_html_code) && allowed_by_auto_handling;
-    }
-
-    protected final boolean internal_supports_availablecheck_alt() {
-        /** 2019-07-10: TODO */
-        // boolean allowed_by_auto_handling = true;
-        // final long last_failure = this.getPluginConfig().getLongProperty("ALT_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP", 0);
-        // if (last_failure > 0) {
-        // final long timestamp_cooldown = last_failure + internal_waittime_on_alternative_availablecheck_failures();
-        // if (timestamp_cooldown > System.currentTimeMillis()) {
-        // logger.info("internal_supports_availablecheck_alt is still deactivated as it did not work on the last attempt");
-        // logger.info("Time until retry: " + TimeFormatter.formatMilliSeconds(timestamp_cooldown - System.currentTimeMillis(), 0));
-        // allowed_by_auto_handling = false;
-        // }
-        // }
-        return true;
-    }
-
-    /**
-     * Defines the time to wait until a failed linkcheck method will be tried again. This should be set to > 24 hours as its purpose is to
-     * minimize unnecessary http requests.
-     */
-    protected final long internal_waittime_on_alternative_availablecheck_failures() {
-        return 7 * 24 * 60 * 60 * 1000;
-    }
-
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         return requestFileInformationWebsite(link, false);
     }
 
     public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final boolean downloadsStarted) throws Exception {
-        final String[] fileInfo = getFileInfoArray();
+        final String[] fileInfo = internal_getFileInfoArray();
         Browser altbr = null;
         fuid = null;
         correctDownloadLink(link);
@@ -666,7 +590,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 fileInfo[0] = this.getFnameViaAbuseLink(altbr, link, fileInfo[0]);
             }
             /* Find filesize */
-            if (this.supports_availablecheck_alt()) {
+            if (this.internal_supports_availablecheck_alt()) {
                 getFilesizeViaAvailablecheckAlt(altbr, link);
             }
         } else {
@@ -688,7 +612,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 }
             }
             /* Filesize fallback */
-            if (StringUtils.isEmpty(fileInfo[1]) && this.supports_availablecheck_alt()) {
+            if (StringUtils.isEmpty(fileInfo[1]) && this.internal_supports_availablecheck_alt()) {
                 /* Failed to find filesize? Try alternative way! */
                 getFilesizeViaAvailablecheckAlt(altbr, link);
             }
@@ -905,7 +829,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         if (urls == null || urls.length == 0) {
             return false;
         }
-        boolean linkcheckerIsWorking = false;
+        boolean linkcheckerHasFailed = false;
         String checkTypeCurrent = null;
         final String checkTypeOld = "checkfiles";
         final String checkTypeNew = "check_files";
@@ -938,7 +862,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 }
                 {
                     /* Check if the mass-linkchecker works and which check we have to use */
-                    while (linkcheckTypeTryCount <= 1 && !linkcheckerIsWorking) {
+                    while (linkcheckTypeTryCount <= 1 && linkcheckerHasFailed) {
                         if (checkTypeCurrent != null) {
                             /* No matter which checkType we tried first - it failed and we need to try the other one! */
                             if (checkTypeCurrent.equals(checkTypeNew)) {
@@ -972,7 +896,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                             checkForm = br.getFormByInputFieldKeyValue("op", checkTypeCurrent);
                             if (checkForm == null) {
                                 /* TODO: Add auto-retry so that 2nd type of linkchecker is either used directly or on the next attempt! */
-                                logger.info("Failed to find check_files Form via checkType (failed to find checkForm): " + checkTypeCurrent);
+                                logger.info("Failed to find Form for checkType: " + checkTypeCurrent);
+                                linkcheckTypeTryCount++;
                                 continue;
                             }
                         }
@@ -988,7 +913,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                              * This method of linkcheck is not supported - increase the counter by one to find out if ANY method worked in
                              * the end.
                              */
-                            logger.info("Failed to find check_files Form via checkType (bad response): " + checkTypeCurrent);
+                            logger.info("Failed to find check_files Status via checkType: " + checkTypeCurrent);
                             linkcheckTypeTryCount++;
                             continue;
                         } else {
@@ -1008,13 +933,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     }
                     if (html_for_fuid == null) {
                         logger.warning("Failed to find html_for_fuid --> Possible linkchecker failure");
+                        linkcheckerHasFailed = true;
+                        dl.setAvailableStatus(AvailableStatus.UNCHECKED);
                         return false;
                     }
-                    /*
-                     * Technically this is correct but we may still expire failures below(fail to find filesize) ... but at least we should
-                     * be able to determine the status (online/offline)!
-                     */
-                    linkcheckerIsWorking = true;
                     if (new Regex(html_for_fuid, "Not found").matches()) {
                         dl.setAvailable(false);
                     } else {
@@ -1048,29 +970,26 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         } catch (final Exception e) {
             return false;
         } finally {
-            if (linkcheckerIsWorking) {
-                this.getPluginConfig().setProperty("ALT_AVAILABLECHECK_LAST_WORKING", checkTypeCurrent);
-            } else {
-                /*
-                 * TODO: 2019-07-03 Add logic --> FIX LOGIC which saves a timestamp and automatically deactivates this check for some days
-                 * if it is believed that a host does not support this type of linkcheck.
-                 */
+            if (linkcheckerHasFailed) {
                 logger.info("Seems like checkfiles availablecheck is not supported by this host");
                 this.getPluginConfig().setProperty("ALT_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP", System.currentTimeMillis());
+            } else {
+                this.getPluginConfig().setProperty("ALT_AVAILABLECHECK_LAST_WORKING", checkTypeCurrent);
             }
         }
         return true;
     }
 
     /**
-     * 2019-07-10: Proof of concept - tested via flix555.com - not yet sure what to do with it because all API requests require an apikey
-     * which is usually an account --> This will never be a 'public' linkcheck method.
+     * TODO: 2019-07-11: At the moment this cannot yet be called directly because of two reasons: 1. It does not have the auto-handling
+     * implemented, see internal_supports_availablecheck_alt, 2. An account with apikey is required to make use of this! <br/>
+     * <b> ONLY CALL THIS VIA getFilesizeViaAvailablecheckAlt until more XFS websites have full API support! </b>
      */
     public boolean massLinkcheckerAPI(final DownloadLink[] urls, final Account account) {
         if (urls == null || urls.length == 0) {
             return false;
         }
-        boolean linkcheckerIsWorking = false;
+        boolean linkcheckerHasFailed = false;
         try {
             final Browser br = new Browser();
             this.prepBrowser(br, getMainPage());
@@ -1099,47 +1018,56 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
                 final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("result");
                 for (final DownloadLink link : links) {
+                    boolean foundResult = false;
                     final String fuid = this.getFUIDFromURL(link);
                     for (final Object fileO : ressourcelist) {
                         entries = (LinkedHashMap<String, Object>) fileO;
                         final String fuid_temp = (String) entries.get("filecode");
                         if (fuid_temp != null && fuid_temp.equalsIgnoreCase(fuid)) {
-                            linkcheckerIsWorking = true;
+                            foundResult = true;
                             break;
                         }
                     }
-                    if (!linkcheckerIsWorking) {
+                    if (!foundResult) {
+                        /*
+                         * This should never happen. If it does, the apikey which was used by the user might not have access to this API
+                         * call or can only check his own uploaded files!
+                         */
+                        linkcheckerHasFailed = true;
                         return false;
                     }
                     final long status = JavaScriptEngineFactory.toLong(entries.get("status"), 404);
                     if (status != 200) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
-                    String filename = (String) entries.get("name");
-                    final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
-                    final Object canplay = entries.get("canplay");
-                    final Object views_started = entries.get("views_started");
-                    final Object views = entries.get("views");
-                    final Object length = entries.get("length");
-                    final boolean isVideohost = canplay != null || views_started != null || views != null || length != null;
-                    if (!StringUtils.isEmpty(filename)) {
-                        /*
-                         * TODO: Add check for fileextension! At least for videohosts, filenames from json do not contain a fileextension by
-                         * default!
-                         */
-                        if (isVideohost) {
-                            filename += ".mp4";
-                        }
-                        link.setFinalFileName(filename);
-                    } else {
-                        if (isVideohost) {
-                            link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
-                        }
+                        link.setAvailable(false);
                         setWeakFilename(link);
-                    }
-                    /* Filesize is not always given especially not for videohosts. */
-                    if (filesize > 0) {
-                        link.setDownloadSize(filesize);
+                    } else {
+                        link.setAvailable(true);
+                        String filename = (String) entries.get("name");
+                        final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
+                        final Object canplay = entries.get("canplay");
+                        final Object views_started = entries.get("views_started");
+                        final Object views = entries.get("views");
+                        final Object length = entries.get("length");
+                        final boolean isVideohost = canplay != null || views_started != null || views != null || length != null;
+                        if (!StringUtils.isEmpty(filename)) {
+                            /*
+                             * TODO: Add check for fileextension! At least for videohosts, filenames from json do not contain a
+                             * fileextension by default!
+                             */
+                            if (isVideohost) {
+                                filename += ".mp4";
+                            }
+                            link.setFinalFileName(filename);
+                        } else {
+                            if (isVideohost) {
+                                link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+                            }
+                            setWeakFilename(link);
+                        }
+                        /* Filesize is not always given especially not for videohosts. */
+                        if (filesize > 0) {
+                            link.setDownloadSize(filesize);
+                        }
                     }
                 }
                 if (index == urls.length) {
@@ -1149,7 +1077,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         } catch (final Exception e) {
             return false;
         } finally {
-            if (!linkcheckerIsWorking) {
+            if (linkcheckerHasFailed) {
                 logger.info("Seems like massLinkcheckerAPI availablecheck is not supported by this host");
                 this.getPluginConfig().setProperty("MASS_LINKCHECKER_API_LAST_FAILURE_TIMESTAMP", System.currentTimeMillis());
             }
@@ -1220,14 +1148,14 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     protected final boolean getFilesizeViaAvailablecheckAlt(final Browser br, final DownloadLink link) throws PluginException {
         logger.info("Trying getFilesizeViaAvailablecheckAlt");
         massLinkcheckerWebsite(new DownloadLink[] { link }, false);
-        final boolean isOnline = link.isAvailable();
-        if (isOnline) {
+        final boolean isChecked = link.isAvailabilityStatusChecked();
+        if (isChecked) {
             logger.info("Successfully checked URL via massLinkchecker | filesize: " + link.getView().getBytesTotal());
-        } else {
+        } else if (!link.isAvailable()) {
             logger.info("massLinkchecker detected offline URL");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        return isOnline;
+        return isChecked;
     }
 
     /**
@@ -2240,7 +2168,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     /** Returns unique id from inside URL - usually with this pattern: [a-z0-9]{12} */
     public String getFUIDFromURL(final DownloadLink dl) {
         try {
-            final String result = new Regex(new URL(dl.getPluginPatternMatcher()).getPath(), "/(?:embed\\-)?([a-z0-9]{12})").getMatch(0);
+            final String result = new Regex(new URL(dl.getPluginPatternMatcher()).getPath(), "/(?:embed-)?([a-z0-9]{12})").getMatch(0);
             return result;
         } catch (MalformedURLException e) {
             e.printStackTrace();
@@ -2477,7 +2405,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai;
         if (this.supports_api()) {
-            ai = this.fetchAccountInfoAPI(account);
+            ai = this.fetchAccountInfoAPI(this.br, account);
         } else {
             ai = this.fetchAccountInfoWebsite(account);
         }
@@ -2485,7 +2413,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     protected AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
-        final AccountInfo ai = new AccountInfo();
+        AccountInfo ai = new AccountInfo();
         loginWebsite(account, true);
         /* Only access URL if we haven't accessed it before already. */
         if (br.getURL() == null || !br.getURL().contains("/?op=my_account")) {
@@ -2493,10 +2421,23 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
         final String apikey = new Regex(correctedBR, "/api/account/info\\?key=([a-z0-9]+)").getMatch(0);
         if (apikey != null) {
-            logger.info("Found apikey");
+            logger.info("Found apikey --> Trying to get accountinfo via API");
             account.setProperty("apikey", apikey);
             /* TODO: 2019-07-10: Consider checking via API if apikey is available as this may work much more reliable! */
-            // return this.fetchAccountInfoAPI(account);
+            boolean api_success = false;
+            try {
+                ai = this.fetchAccountInfoAPI(this.br.cloneBrowser(), account);
+                api_success = true;
+            } catch (final PluginException e) {
+                e.printStackTrace();
+            }
+            if (api_success) {
+                logger.info("Successfully found accountinfo via API");
+                return ai;
+            } else {
+                /* 2019-07-11: It can happen that the API does not work although an apikey is provided. Example: uploadocean.com */
+                logger.warning("Failed to find accountinfo via API --> Falling back to website handling");
+            }
         }
         final String space[] = new Regex(correctedBR, ">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
         if ((space != null && space.length != 0) && (space[0] != null && space[1] != null)) {
@@ -2645,9 +2586,15 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return ai;
     }
 
-    protected final AccountInfo fetchAccountInfoAPI(final Account account) throws Exception {
+    /**
+     * Advantages over website: <br/>
+     * - Always precise expire-date <br/>
+     * - All info we need via one single http request <br/>
+     * - Consistent
+     */
+    protected final AccountInfo fetchAccountInfoAPI(final Browser br, final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        loginAPI(account);
+        loginAPI(br, account);
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         entries = (LinkedHashMap<String, Object>) entries.get("result");
         long expire_milliseconds_precise_to_the_second = 0;
@@ -2924,14 +2871,14 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     /**
      * More info see supports_api()
      */
-    protected final void loginAPI(final Account account) throws Exception {
+    protected final void loginAPI(final Browser br, final Account account) throws Exception {
         synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
                 if (this.getAPIKey(account) == null) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid APIKEY - only lowercase characters and numbers are allowed!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                getPage(this.getMainPage() + "/api/account/info?key=" + getAPIKey(account));
+                getPage(br, this.getMainPage() + "/api/account/info?key=" + getAPIKey(account));
                 final String msg = PluginJSonUtils.getJson(br, "msg");
                 final String status = PluginJSonUtils.getJson(br, "status");
                 /*
@@ -2944,8 +2891,9 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     /* E.g. {"msg":"Wrong auth","server_time":"2019-05-29 19:29:03","status":403} */
                     /* 2019-05-29: TODO: Check for more detailed errormessages at this stage e.g. banned/blocked accounts */
                     /* 2019-05-30: Improve this errormessage - add an URL which leads directly to the users' account page. */
-                    final String errortext = String.format("Invalid APIKEY - please go to %s/?op=my_account, get your 'API URL' and enter the string behind 'key=' in JDownloader!", account.getHoster());
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, errortext, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    // final String errortext = String.format("Invalid APIKEY - please go to %s/?op=my_account, get your 'API URL' and enter
+                    // the string behind 'key=' in JDownloader!", account.getHoster());
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             } catch (final PluginException e) {
                 throw e;
@@ -3240,5 +3188,80 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     @Override
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.SibSoft_XFileShare;
+    }
+
+    /** Returns empty StringArray for filename, filesize, filehash, [more information in the future?] */
+    public final String[] internal_getFileInfoArray() {
+        return new String[3];
+    }
+
+    /**
+     * This can 'automatically' detect whether a host supports embedding videos. <br />
+     * Example: uqload.com</br>
+     * Do not override - at least try to avoid having to!!
+     */
+    protected final boolean internal_isVideohosterEmbed() {
+        return isVideohosterEmbed() || new Regex(correctedBR, "/embed-" + this.fuid + "\\.html").matches();
+    }
+
+    /**
+     * Decides whether to enforce a filename with a '.mp4' ending or not. </br>
+     * Names are either enforced if the configuration of the script implies this or if it detects that embedding videos is possible. </br>
+     * Do not override - at least try to avoid having to!!
+     */
+    protected final boolean internal_isVideohoster_enforce_video_filename() {
+        return internal_isVideohosterEmbed() || isVideohoster_enforce_video_filename();
+    }
+
+    /**
+     * Some videohosts either have multiple qualities or even allow the user to officially download the original videofile. The problem is
+     * that this may require to solve a captcha while the stream download does not. This is an unfinished method, designed to be used in the
+     * future when we may have XFS plugin settings e.g. for video quality! TODO: Add quality settings
+     */
+    protected final boolean internal_videohost_prefer_OfficialOriginalVideoDownload() {
+        return false;
+    }
+
+    /**
+     * This can 'automatically' detect whether a host supports availablecheck via 'abuse' URL. <br />
+     * Example: uploadboy.com</br>
+     * Do not override - at least try to avoid having to!!
+     */
+    protected final boolean internal_supports_availablecheck_filename_abuse() {
+        final boolean supported_by_hardcoded_setting = this.supports_availablecheck_filename_abuse();
+        final boolean supported_by_indicating_html_code = new Regex(correctedBR, "op=report_file&(?:amp;)?id=" + this.fuid).matches();
+        boolean allowed_by_auto_handling = true;
+        final long last_failure = this.getPluginConfig().getLongProperty("REPORT_FILE_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP", 0);
+        if (last_failure > 0) {
+            final long timestamp_cooldown = last_failure + internal_waittime_on_alternative_availablecheck_failures();
+            if (timestamp_cooldown > System.currentTimeMillis()) {
+                logger.info("internal_supports_availablecheck_filename_abuse is still deactivated as it did not work on the last attempt");
+                logger.info("Time until retry: " + TimeFormatter.formatMilliSeconds(timestamp_cooldown - System.currentTimeMillis(), 0));
+                allowed_by_auto_handling = false;
+            }
+        }
+        return (supported_by_hardcoded_setting || supported_by_indicating_html_code) && allowed_by_auto_handling;
+    }
+
+    protected final boolean internal_supports_availablecheck_alt() {
+        boolean allowed_by_auto_handling = true;
+        final long last_failure = this.getPluginConfig().getLongProperty("ALT_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP", 0);
+        if (last_failure > 0) {
+            final long timestamp_cooldown = last_failure + internal_waittime_on_alternative_availablecheck_failures();
+            if (timestamp_cooldown > System.currentTimeMillis()) {
+                logger.info("internal_supports_availablecheck_alt is still deactivated as it did not work on the last attempt");
+                logger.info("Time until retry: " + TimeFormatter.formatMilliSeconds(timestamp_cooldown - System.currentTimeMillis(), 0));
+                allowed_by_auto_handling = false;
+            }
+        }
+        return supports_availablecheck_alt() && allowed_by_auto_handling;
+    }
+
+    /**
+     * Defines the time to wait until a failed linkcheck method will be tried again. This should be set to > 24 hours as its purpose is to
+     * minimize unnecessary http requests.
+     */
+    protected final long internal_waittime_on_alternative_availablecheck_failures() {
+        return 7 * 24 * 60 * 60 * 1000;
     }
 }

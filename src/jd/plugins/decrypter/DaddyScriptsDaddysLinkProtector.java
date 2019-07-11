@@ -53,6 +53,7 @@ public class DaddyScriptsDaddysLinkProtector extends antiDDoSForDecrypt {
         boolean passwordFail = false;
         int counter = 0;
         Form confirmationForm = null;
+        String passCode = null;
         do {
             confirmationForm = br.getForm(0);
             if (confirmationForm == null) {
@@ -67,7 +68,13 @@ public class DaddyScriptsDaddysLinkProtector extends antiDDoSForDecrypt {
                 confirmationForm.put("security_code", Encoding.urlEncode(code));
             } else if (confirmationForm.hasInputFieldByName("Pass1")) {
                 passwordFail = true;
-                confirmationForm.put("Pass1", Encoding.urlEncode(getUserInput("Password?", param)));
+                if (counter == 0) {
+                    passCode = this.getPluginConfig().getStringProperty("LAST_WORKING_PASSWORD");
+                }
+                if (passCode == null) {
+                    passCode = getUserInput("Password?", param);
+                }
+                confirmationForm.put("Pass1", Encoding.urlEncode(passCode));
             } else {
                 passwordFail = false;
                 captchaFail = false;
@@ -80,6 +87,10 @@ public class DaddyScriptsDaddysLinkProtector extends antiDDoSForDecrypt {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         } else if (passwordFail) {
             throw new DecrypterException(DecrypterException.PASSWORD);
+        }
+        if (passCode != null) {
+            /* Store valid password for next attempt */
+            this.getPluginConfig().setProperty("LAST_WORKING_PASSWORD", passCode);
         }
         String fpName = new Regex(parameter, "/([^/]+)$").getMatch(0);
         final String[] links = br.getRegex("<p><a href=\"(http[^<>\"]+)\"").getColumn(0);
