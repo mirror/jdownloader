@@ -80,19 +80,15 @@ public class TiktokCom extends antiDDoSForHost {
         if (fid == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (link.getPluginPatternMatcher().matches("@[^/]+/video/\\d+")) {
-            user = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        if (link.getPluginPatternMatcher().matches(".+/@[^/]+/video/\\d+.*?")) {
+            user = new Regex(link.getPluginPatternMatcher(), "/(@[^/]+)/").getMatch(0);
         } else {
-            /*
-             * 2019-07-11: TODO: Add proper support for "embed" URLs to find username - consider always using embed as this will give us
-             * more information!
-             */
-            /* 2nd linktype which does not contain username --> Find username */
+            /* 2nd + 3rd linktype which does not contain username --> Find username */
             br.setFollowRedirects(false);
-            br.getPage(link.getPluginPatternMatcher());
+            br.getPage(String.format("https://m.tiktok.com/v/%s.html", fid));
             final String redirect = br.getRedirectLocation();
             if (redirect != null) {
-                user = new Regex(redirect, this.getSupportedLinks()).getMatch(0);
+                user = new Regex(redirect, "/(@[^/]+)/").getMatch(0);
                 if (user != null) {
                     /* Set new URL so we do not have to handle that redirect next time. */
                     link.setPluginPatternMatcher(redirect);
