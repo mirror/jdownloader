@@ -64,6 +64,7 @@ public class XvideosharingCom extends XFileSharingProBasic {
 
     @Override
     public boolean supports_https() {
+        /* 2019-07-11: Special */
         return false;
     }
 
@@ -136,7 +137,7 @@ public class XvideosharingCom extends XFileSharingProBasic {
     @Override
     protected boolean supports_api() {
         /* 2019-07-10: Special: For testing purposes */
-        return false;
+        return super.supports_api();
     }
 
     /** 2019-02-08: Special */

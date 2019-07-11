@@ -95,16 +95,7 @@ public class UqloadCom extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean supports_availablecheck_alt() {
-        return false;
-    }
-
-    @Override
-    public boolean supports_availablecheck_filename_abuse() {
-        return false;
-    }
-
-    @Overrideprotected boolean supports_availablecheck_filesize_html() {
+    protected boolean supports_availablecheck_filesize_html() {
         return false;
     }
 

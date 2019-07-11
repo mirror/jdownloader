@@ -85,12 +85,6 @@ public class Flix555Com extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean supports_api() {
-        /* 2019-07-10: Special: For testing purposes */
-        return false;
-    }
-
-    @Override
     public boolean isVideohosterEmbed() {
         /* 2019-04-29: Special */
         return true;
@@ -100,18 +94,6 @@ public class Flix555Com extends XFileSharingProBasic {
     public boolean isVideohoster_enforce_video_filename() {
         /* 2019-04-29: Special */
         return true;
-    }
-
-    @Override
-    public boolean supports_availablecheck_alt() {
-        /* 2019-04-29: Special */
-        return false;
-    }
-
-    @Override
-    public boolean supports_availablecheck_filename_abuse() {
-        /* 2019-04-29: Special */
-        return false;
     }
 
     @Override

@@ -99,7 +99,7 @@ public class AnzfileNet extends XFileSharingProBasic {
     @Override
     public String[] scanInfo(final String[] fileInfo) {
         /* 2019-02-18: Special */
-        final String[] finfo = super.getFileInfoArray();
+        final String[] finfo = super.internal_getFileInfoArray();
         super.scanInfo(finfo);
         if (inValidate(fileInfo[0])) {
             fileInfo[0] = new Regex(correctedBR, "class=\"paneld\">([^<>\"]+)\\[\\d+[^<>]*?<").getMatch(0);
