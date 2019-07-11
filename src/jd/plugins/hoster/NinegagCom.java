@@ -69,11 +69,21 @@ public class NinegagCom extends PluginForHost {
         }
         final String id = new Regex(link.getDownloadURL(), "([a-zA-Z0-9]+)$").getMatch(0);
         String filename = PluginJSonUtils.getJsonValue(this.br, "title");
+        final String image_src = br.getRegex("rel=\"image_src\" href=\"(https?[^<>\"]*?)\"").getMatch(0);
+        String images = br.getRegex("\"post\"\\s*:\\s*\\{\\s*\"id\"\\s*:\"" + id + "\".*?\"images\"\\s*:\\s*(\\{.*?\\}\\s*\\})\\s*,").getMatch(0);
+        if (images == null) {
+            String jsonParse = br.getRegex("window\\._config\\s*=\\s*JSON\\.parse\\((.*?)\\)\\s*;\\s*</script").getMatch(0);
+            if (jsonParse != null) {
+                jsonParse = JSonStorage.restoreFromString(jsonParse, TypeRef.STRING);
+                if (filename == null) {
+                    filename = PluginJSonUtils.getJsonValue(jsonParse, "title");
+                }
+                images = new Regex(jsonParse, "\"post\"\\s*:\\s*\\{\\s*\"id\"\\s*:\"" + id + "\".*?\"images\"\\s*:\\s*(\\{.*?\\}\\s*\\})\\s*,").getMatch(0);
+            }
+        }
         if (filename == null) {
             filename = id;
         }
-        final String image_src = br.getRegex("rel=\"image_src\" href=\"(https?[^<>\"]*?)\"").getMatch(0);
-        final String images = br.getRegex("\"post\"\\s*:\\s*\\{\\s*\"id\"\\s*:\"" + id + "\".*?\"images\"\\s*:\\s*(\\{.*?\\}\\s*\\})\\s*,").getMatch(0);
         boolean video = false;
         if (images != null) {
             final Map<String, Object> map = JSonStorage.restoreFromString(images, TypeRef.HASHMAP);

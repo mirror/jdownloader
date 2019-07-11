@@ -1,5 +1,7 @@
 package jd.controlling.linkcollector;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -62,9 +64,9 @@ public class LinkCollectingJob {
         return modifier != null && postPackagizerModifier.remove(modifier);
     }
 
-    private boolean deepAnalyse;
-    private String  crawlerPassword = null;
-    private String  archivPassword  = null;
+    private boolean      deepAnalyse;
+    private String       crawlerPassword = null;
+    private List<String> archivPasswords = null;
 
     public String getCrawlerPassword() {
         return crawlerPassword;
@@ -74,12 +76,16 @@ public class LinkCollectingJob {
         this.crawlerPassword = crawlerPassword;
     }
 
-    public String getArchivPassword() {
-        return archivPassword;
+    public List<String> getArchivPasswords() {
+        return archivPasswords;
     }
 
-    public void setArchivPassword(String archivPassword) {
-        this.archivPassword = archivPassword;
+    public void setArchivPasswords(List<String> archivPasswords) {
+        if (archivPasswords == null || archivPasswords.size() == 0) {
+            this.archivPasswords = null;
+        } else {
+            this.archivPasswords = Collections.unmodifiableList(archivPasswords);
+        }
     }
 
     public boolean isDeepAnalyse() {

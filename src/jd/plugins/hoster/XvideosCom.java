@@ -35,12 +35,13 @@ import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.downloader.hls.M3U8Playlist;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 
 //xvideos.com by pspzockerscene
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xvideos.com" }, urls = { "https?://(?:www\\.|\\w+\\.)?xvideos\\.com/(video\\d+/|embedframe/\\d+|[a-z0-9\\-]+/(upload|pornstar|model)/[a-z0-9\\-_]+/\\d+/(\\d+)?)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xvideos.com" }, urls = { "https?://(?:www\\.|\\w+\\.)?xvideos\\.com/(video\\d+/.*|embedframe/\\d+|[a-z0-9\\-]+/(upload|pornstar|model)/[a-z0-9\\-_]+/\\d+/(\\d+)?)" })
 public class XvideosCom extends PluginForHost {
     public XvideosCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -72,14 +73,24 @@ public class XvideosCom extends PluginForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        String linkid = new Regex(link.getPluginPatternMatcher(), "(?:video|embedframe/)(\\d+)").getMatch(0);
-        if (linkid == null) {
-            linkid = new Regex(link.getPluginPatternMatcher(), "[^/]+/[a-z0-9\\-_]+/(\\d+)$").getMatch(0);
-        }
+        final String linkid = getVideoID(link);
         if (linkid != null) {
-            return linkid;
+            return getHost() + "://" + linkid;
         } else {
             return super.getLinkID(link);
+        }
+    }
+
+    private String getVideoID(final DownloadLink link) {
+        final String url = link.getPluginPatternMatcher();
+        if (url != null) {
+            String linkid = new Regex(url, "/(?:video|embedframe/)(\\d+)").getMatch(0);
+            if (linkid == null) {
+                linkid = new Regex(url, "[^/]+/[a-z0-9\\-_]+/(\\d+)$").getMatch(0);
+            }
+            return linkid;
+        } else {
+            return null;
         }
     }
 
@@ -93,7 +104,7 @@ public class XvideosCom extends PluginForHost {
         return -1;
     }
 
-    private static final String type_normal  = "https?://(www\\.)?xvideos\\.com/video[0-9]+/";
+    private static final String type_normal  = "https?://(www\\.)?xvideos\\.com/video[0-9]+/.*";
     private static final String type_embed   = "https?://\\w+\\.xvideos\\.com/embedframe/\\d+";
     private static final String type_special = "https?://(www\\.)?xvideos\\.com/([a-z0-9\\-\\_]+/upload/[a-z0-9\\-]+/\\d+|prof\\-video\\-click/(upload|pornstar)/[a-z0-9\\-\\_]+/\\d+)";
     private static final String NOCHUNKS     = "NOCHUNKS";
@@ -106,6 +117,7 @@ public class XvideosCom extends PluginForHost {
             link.setUrlDownload(new Regex(link.getDownloadURL(), "https?://[^/]+").getMatch(-1) + "/video" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0) + "/");
             link.setContentUrl(link.getDownloadURL());
         }
+        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
     }
 
     private boolean isValidVideoURL(final DownloadLink downloadLink, final String url) throws Exception {
@@ -158,11 +170,15 @@ public class XvideosCom extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("<title>([^<>\"]*?)\\- XVIDEOS\\.COM</title>").getMatch(0);
         }
+        final String videoID = getVideoID(link);
+        if (videoID == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         if (filename == null) {
             /* Fallback */
-            filename = this.getLinkID(link);
+            filename = videoID;
         } else {
-            filename = this.getLinkID(link) + "_" + filename;
+            filename = videoID + "_" + filename;
         }
         if (getPluginConfig().getBooleanProperty("Prefer HLS", true)) {
             final String hlsURL = getVideoHLS();

@@ -174,10 +174,7 @@ public class AccountAPIImplV2 implements AccountAPIV2 {
 
     @Override
     public void refreshAccounts(long[] ids) {
-        final List<Account> accs = getAccountbyIDs(ids);
-        for (final Account acc : accs) {
-            AccountChecker.getInstance().check(acc, false);
-        }
+        refreshAccounts(ids, false);
     }
 
     public void refreshAccounts(long[] ids, boolean force) {

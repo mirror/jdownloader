@@ -8,6 +8,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import jd.plugins.DownloadLink;
+
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.youtube.itag.YoutubeITAG;
 import org.jdownloader.plugins.components.youtube.variants.AbstractVariant;
@@ -20,10 +22,7 @@ import org.jdownloader.plugins.components.youtube.variants.VideoVariant;
 import org.jdownloader.plugins.components.youtube.variants.YoutubeSubtitleStorable;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
 
-import jd.plugins.DownloadLink;
-
 public class YoutubeClipData {
-
     /**
      *
      */
@@ -199,20 +198,20 @@ public class YoutubeClipData {
     }
 
     public List<VariantInfo> findSubtitleVariants() {
-        List<VariantInfo> allSubtitles = new ArrayList<VariantInfo>();
+        final List<VariantInfo> allSubtitles = new ArrayList<VariantInfo>();
         for (final YoutubeSubtitleStorable si : subtitles) {
-            SubtitleVariantInfo vi = new SubtitleVariantInfo(new SubtitleVariant(si), this);
+            final SubtitleVariantInfo vi = new SubtitleVariantInfo(new SubtitleVariant(si), this);
             allSubtitles.add(vi);
         }
         return allSubtitles;
     }
 
     public ArrayList<VariantInfo> findDescriptionVariant() {
-        ArrayList<VariantInfo> descriptions = new ArrayList<VariantInfo>();
+        final ArrayList<VariantInfo> descriptions = new ArrayList<VariantInfo>();
         final String descText = description;
         if (StringUtils.isNotEmpty(descText)) {
-            VariantInfo vi;
-            descriptions.add(vi = new DescriptionVariantInfo(descText, this));
+            final DescriptionVariantInfo vi = new DescriptionVariantInfo(descText, this);
+            descriptions.add(vi);
         }
         return descriptions;
     }

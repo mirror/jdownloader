@@ -372,9 +372,9 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
         job.setCustomSourceUrl(query.getSourceUrl());
         job.setAssignJobID(Boolean.TRUE.equals(query.isAssignJobID()));
         final boolean overwritePackagizerRules = Boolean.TRUE.equals(query.isOverwritePackagizerRules());
-        final HashSet<String> finalExtPws;
+        final List<String> finalExtPws;
         if (StringUtils.isNotEmpty(query.getExtractPassword())) {
-            finalExtPws = new HashSet<String>();
+            finalExtPws = new ArrayList<String>();
             finalExtPws.add(query.getExtractPassword());
         } else {
             finalExtPws = null;
@@ -429,6 +429,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
             });
         }
         if (finalExtPws != null && finalExtPws.size() > 0) {
+            job.setArchivPasswords(finalExtPws);
             modifiers.add(new CrawledLinkModifier() {
                 @Override
                 public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {

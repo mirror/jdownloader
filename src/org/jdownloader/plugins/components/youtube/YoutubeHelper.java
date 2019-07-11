@@ -2908,13 +2908,25 @@ public class YoutubeHelper {
 
     public void parserJson() throws Exception {
         {
-            final String ytInitialData = br.getRegex("window\\[\"ytInitialData\"\\]\\s*=\\s*(\\{.*?\\});[\r\n]").getMatch(0);
+            String ytInitialData = br.getRegex("window\\[\"ytInitialData\"\\]\\s*=\\s*(\\{.*?\\});[\r\n]").getMatch(0);
+            if (ytInitialData == null) {
+                ytInitialData = br.getRegex("window\\[\"ytInitialData\"\\]\\s*=\\s*(?:JSON.parse)?\\s*\\(\\s*(\"\\{.*?\\}\")\\s*\\);[\r\n]").getMatch(0);
+                if (ytInitialData != null) {
+                    ytInitialData = JSonStorage.restoreFromString(ytInitialData, TypeRef.STRING);
+                }
+            }
             if (ytInitialData != null) {
                 this.ytInitialData = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(ytInitialData);
             }
         }
         {
-            final String ytInitialPlayerResponse = br.getRegex("window\\[\"ytInitialPlayerResponse\"\\]\\s*=\\s*\\(\\s*(\\{.*?\\})\\);[\r\n]").getMatch(0);
+            String ytInitialPlayerResponse = br.getRegex("window\\[\"ytInitialPlayerResponse\"\\]\\s*=\\s*\\(\\s*(\\{.*?\\})\\);[\r\n]").getMatch(0);
+            if (ytInitialPlayerResponse == null) {
+                ytInitialPlayerResponse = br.getRegex("window\\[\"ytInitialPlayerResponse\"\\]\\s*=\\s*(?:JSON.parse)?\\s*\\(\\s*(\"\\{.*?\\}\")\\s*\\);[\r\n]").getMatch(0);
+                if (ytInitialPlayerResponse != null) {
+                    ytInitialPlayerResponse = JSonStorage.restoreFromString(ytInitialPlayerResponse, TypeRef.STRING);
+                }
+            }
             if (ytInitialPlayerResponse != null) {
                 this.ytInitialPlayerResponse = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(ytInitialPlayerResponse);
             }
