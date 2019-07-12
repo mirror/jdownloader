@@ -41,7 +41,7 @@ public class CompiledFiletypeFilter {
 
     public static ExtensionsFilterInterface getExtensionsFilterInterface(final String fileExtension) {
         if (fileExtension != null) {
-            for (final ExtensionsFilterInterface[] extensions : new ExtensionsFilterInterface[][] { HashExtensions.values(), AudioExtensions.values(), DocumentExtensions.values(), ArchiveExtensions.values(), ImageExtensions.values(), VideoExtensions.values(), SubtitleExtensions.values() }) {
+            for (final ExtensionsFilterInterface[] extensions : new ExtensionsFilterInterface[][] { ExecutableExtensions.values(), HashExtensions.values(), AudioExtensions.values(), DocumentExtensions.values(), ArchiveExtensions.values(), ImageExtensions.values(), VideoExtensions.values(), SubtitleExtensions.values() }) {
                 for (final ExtensionsFilterInterface extension : extensions) {
                     final Pattern pattern = extension.getPattern();
                     if (pattern != null && pattern.matcher(fileExtension).matches()) {
@@ -98,6 +98,63 @@ public class CompiledFiletypeFilter {
         @Override
         public boolean isSameExtensionGroup(ExtensionsFilterInterface extension) {
             return extension != null && extension instanceof HashExtensions;
+        }
+
+        @Override
+        public ExtensionsFilterInterface[] listSameGroup() {
+            return values();
+        }
+    }
+
+    public static enum ExecutableExtensions implements ExtensionsFilterInterface {
+        BAT,
+        EXE,
+        MSI,
+        JAR,
+        VBS,
+        APK,
+        APP,
+        BIN,
+        RUN,
+        PS1,
+        CMD;
+        private final Pattern  pattern;
+        private static Pattern allPattern;
+
+        public Pattern getPattern() {
+            return pattern;
+        }
+
+        public ExtensionsFilterInterface getSource() {
+            return this;
+        }
+
+        private ExecutableExtensions() {
+            pattern = Pattern.compile(name(), Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
+        }
+
+        private ExecutableExtensions(String id) {
+            this.pattern = Pattern.compile(id, Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
+        }
+
+        public String getDesc() {
+            return _GUI.T.FilterRuleDialog_createTypeFilter_mime_executable();
+        }
+
+        public String getIconID() {
+            return IconKey.ICON_DESKTOP;
+        }
+
+        public Pattern compiledAllPattern() {
+            if (allPattern == null) {
+                allPattern = compileAllPattern(ExecutableExtensions.values());
+            }
+            return allPattern;
+        }
+
+        @Override
+        public boolean isSameExtensionGroup(ExtensionsFilterInterface extension) {
+            return extension != null && extension instanceof ExecutableExtensions;
         }
 
         @Override
@@ -533,6 +590,9 @@ public class CompiledFiletypeFilter {
         }
         if (filetypeFilter.isSubFilesEnabled()) {
             filterInterfaces.add(SubtitleExtensions.SRT);
+        }
+        if (filetypeFilter.isExeFilesEnabled()) {
+            filterInterfaces.add(ExecutableExtensions.EXE);
         }
         try {
             if (filetypeFilter.getCustoms() != null) {

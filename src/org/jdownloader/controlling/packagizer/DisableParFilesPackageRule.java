@@ -12,7 +12,7 @@ public class DisableParFilesPackageRule extends PackagizerRule {
     }
 
     public void init() {
-        setFiletypeFilter(new FiletypeFilter(TypeMatchType.IS, true, false, false, false, false, false, false, false, "par,par2", false));
+        setFiletypeFilter(new FiletypeFilter(TypeMatchType.IS, true, false, false, false, false, false, false, false, false, "par,par2", false));
         setIconKey(org.jdownloader.gui.IconKey.ICON_EXTRACT);
         setName(_JDT.T.DisableParFilesPackageRulee_rule_name());
         setLinkEnabled(false);
