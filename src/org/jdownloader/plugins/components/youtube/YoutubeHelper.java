@@ -2908,9 +2908,9 @@ public class YoutubeHelper {
 
     public void parserJson() throws Exception {
         {
-            String ytInitialData = br.getRegex("window\\[\"ytInitialData\"\\]\\s*=\\s*(\\{.*?\\});[\r\n]").getMatch(0);
+            String ytInitialData = br.getRegex("window\\[\"ytInitialData\"\\]\\s*=\\s*(\\{.*?\\})\\s*;\\s*[\r\n]").getMatch(0);
             if (ytInitialData == null) {
-                ytInitialData = br.getRegex("window\\[\"ytInitialData\"\\]\\s*=\\s*(?:JSON.parse)?\\s*\\(\\s*(\"\\{.*?\\}\")\\s*\\);[\r\n]").getMatch(0);
+                ytInitialData = br.getRegex("window\\[\"ytInitialData\"\\]\\s*=\\s*(?:JSON.parse)?\\s*\\(\\s*(\"\\{.*?\\}\")\\s*\\)\\s*;\\s*[\r\n]").getMatch(0);
                 if (ytInitialData != null) {
                     ytInitialData = JSonStorage.restoreFromString(ytInitialData, TypeRef.STRING);
                 }
@@ -2920,11 +2920,14 @@ public class YoutubeHelper {
             }
         }
         {
-            String ytInitialPlayerResponse = br.getRegex("window\\[\"ytInitialPlayerResponse\"\\]\\s*=\\s*\\(\\s*(\\{.*?\\})\\);[\r\n]").getMatch(0);
+            String ytInitialPlayerResponse = br.getRegex("window\\[\"ytInitialPlayerResponse\"\\]\\s*=\\s*\\(\\s*(\\{.*?\\})\\s*\\)\\s*;\\s*[\r\n]").getMatch(0);
             if (ytInitialPlayerResponse == null) {
-                ytInitialPlayerResponse = br.getRegex("window\\[\"ytInitialPlayerResponse\"\\]\\s*=\\s*(?:JSON.parse)?\\s*\\(\\s*(\"\\{.*?\\}\")\\s*\\);[\r\n]").getMatch(0);
-                if (ytInitialPlayerResponse != null) {
-                    ytInitialPlayerResponse = JSonStorage.restoreFromString(ytInitialPlayerResponse, TypeRef.STRING);
+                ytInitialPlayerResponse = br.getRegex("window\\[\"ytInitialPlayerResponse\"\\]\\s*=\\s*(\\{.*?\\})\\s*;\\s*[\r\n]").getMatch(0);
+                if (ytInitialPlayerResponse == null) {
+                    ytInitialPlayerResponse = br.getRegex("window\\[\"ytInitialPlayerResponse\"\\]\\s*=\\s*(?:JSON.parse)?\\s*\\(\\s*(\"\\{.*?\\}\")\\s*\\)\\s*;\\s*[\r\n]").getMatch(0);
+                    if (ytInitialPlayerResponse != null) {
+                        ytInitialPlayerResponse = JSonStorage.restoreFromString(ytInitialPlayerResponse, TypeRef.STRING);
+                    }
                 }
             }
             if (ytInitialPlayerResponse != null) {

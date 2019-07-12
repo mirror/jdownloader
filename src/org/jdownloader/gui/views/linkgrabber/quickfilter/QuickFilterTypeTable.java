@@ -15,6 +15,7 @@ import jd.controlling.linkcrawler.CrawledLink;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ArchiveExtensions;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.AudioExtensions;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.DocumentExtensions;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExecutableExtensions;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.HashExtensions;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ImageExtensions;
@@ -226,6 +227,24 @@ public class QuickFilterTypeTable extends FilterTable {
 
                             protected String getID() {
                                 return "Type_Sub";
+                            }
+
+                            public String getDescription() {
+                                return description;
+                            }
+
+                            @Override
+                            public void setEnabled(boolean enabled) {
+                                super.setEnabled(enabled);
+                                QuickFilterTypeTable.this.setEnabled(enabled, this);
+                            }
+                        });
+                        knownExtensionFilters.add(filter);
+                        allFilters.add(filter = new ExtensionFilter(ExecutableExtensions.EXE) {
+                            final private String description = _JDT.T.exe_description();
+
+                            protected String getID() {
+                                return "Type_Exe";
                             }
 
                             public String getDescription() {

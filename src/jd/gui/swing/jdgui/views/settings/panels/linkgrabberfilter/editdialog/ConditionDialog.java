@@ -233,6 +233,9 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         if (f.isSubFilesEnabled()) {
             selection.add(FileType.SUB);
         }
+        if (f.isExeFilesEnabled()) {
+            selection.add(FileType.EXE);
+        }
         if (!StringUtils.isEmpty(f.getCustoms())) {
             selection.add(FileType.CUSTOM);
         }
@@ -247,7 +250,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
     }
 
     public FiletypeFilter getFiletypeFilter() {
-        return new FiletypeFilter(TypeMatchType.values()[cobType.getSelectedIndex()], cbType.isSelected(), cbTypeSelection.isItemSelected(FileType.HASH), cbTypeSelection.isItemSelected(FileType.AUDIO), cbTypeSelection.isItemSelected(FileType.VIDEO), cbTypeSelection.isItemSelected(FileType.ARCHIVE), cbTypeSelection.isItemSelected(FileType.IMAGE), cbTypeSelection.isItemSelected(FileType.TXT), cbTypeSelection.isItemSelected(FileType.SUB), cbTypeSelection.isItemSelected(FileType.CUSTOM) ? txtCustumMime.getText() : null, cbRegFileType.isSelected());
+        return new FiletypeFilter(TypeMatchType.values()[cobType.getSelectedIndex()], cbType.isSelected(), cbTypeSelection.isItemSelected(FileType.HASH), cbTypeSelection.isItemSelected(FileType.AUDIO), cbTypeSelection.isItemSelected(FileType.VIDEO), cbTypeSelection.isItemSelected(FileType.ARCHIVE), cbTypeSelection.isItemSelected(FileType.IMAGE), cbTypeSelection.isItemSelected(FileType.TXT), cbTypeSelection.isItemSelected(FileType.SUB), cbTypeSelection.isItemSelected(FileType.EXE), cbTypeSelection.isItemSelected(FileType.CUSTOM) ? txtCustumMime.getText() : null, cbRegFileType.isSelected());
     }
 
     public OnlineStatusFilter getOnlineStatusFilter() {
