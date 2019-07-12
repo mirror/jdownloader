@@ -92,7 +92,7 @@ public class SpankBangCom extends antiDDoSForHost {
             try {
                 // this request isn't behind cloudflare.
                 con = br.openHeadConnection(dllink);
-                if (!con.getContentType().contains("html")) {
+                if (con.isOK() && !con.getContentType().contains("text")) {
                     link.setDownloadSize(con.getLongContentLength());
                     return AvailableStatus.TRUE;
                 } else {
