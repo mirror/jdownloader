@@ -18,6 +18,8 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -38,6 +40,8 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.UniqueAlltimeID;
 
@@ -178,17 +182,36 @@ public class SpankBangCom extends PluginForDecrypt {
         if (x_csrftoken != null) {
             request.getHeaders().put("x-csrftoken", x_csrftoken);
         }
-        br.getPage(request);
-        // final String streamkey = br.getRegex("var stream_key = \\'([^<>\"]*?)\\'").getMatch(0);
-        String[] qualities = new String[] { "1080p", "720p", "480p", "320p", "240p" };
-        for (final String q : qualities) {
-            final String quality = getQuality(q);
-            // final String directlink = "http://spankbang.com/_" + fid + "/" + streamkey + "/title/" + quality + "__mp4";
-            final String directlink = PluginJSonUtils.getJson(br, "stream_url_" + q);
-            if (StringUtils.isEmpty(directlink)) {
-                continue;
+        final String page = br.getPage(request);
+        final String[] qualities = new String[] { "1080p", "720p", "480p", "320p", "240p" };
+        if (page.matches("(?s)^\\s*\\{.*") && page.matches("(?s).*\\}\\s*$")) {
+            final Map<String, Object> map = JSonStorage.restoreFromString(page, TypeRef.HASHMAP);
+            for (final String quality : qualities) {
+                final String qualityID = getQuality(quality);
+                final Object entry = map.get("stream_url_" + quality);
+                final String value;
+                if (entry instanceof String) {
+                    value = (String) entry;
+                } else if (entry instanceof List) {
+                    value = ((List<String>) entry).get(0);
+                } else {
+                    continue;
+                }
+                if (StringUtils.isNotEmpty(value)) {
+                    foundQualities.put(qualityID, value);
+                }
             }
-            foundQualities.put(quality, directlink);
+        } else {
+            // final String streamkey = br.getRegex("var stream_key = \\'([^<>\"]*?)\\'").getMatch(0);
+            for (final String q : qualities) {
+                final String quality = getQuality(q);
+                // final String directlink = "http://spankbang.com/_" + fid + "/" + streamkey + "/title/" + quality + "__mp4";
+                final String directlink = PluginJSonUtils.getJson(br, "stream_url_" + q);
+                if (StringUtils.isEmpty(directlink)) {
+                    continue;
+                }
+                foundQualities.put(quality, directlink);
+            }
         }
         return foundQualities;
     }
