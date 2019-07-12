@@ -19,10 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -37,6 +33,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FilefoxCc extends XFileSharingProBasic {
@@ -302,37 +302,40 @@ public class FilefoxCc extends XFileSharingProBasic {
     @Override
     public Form findFormF1Premium() throws Exception {
         /* 2019-06-13: Special */
-        checkForSpecialCaptcha();
+        handleSecurityVerification();
         return super.findFormF1Premium();
     }
 
     public Form findFormDownload1() throws Exception {
         /* 2019-06-13: Special */
-        checkForSpecialCaptcha();
+        handleSecurityVerification();
         return super.findFormDownload1();
     }
 
     @Override
     protected void getPage(String page) throws Exception {
         super.getPage(page);
-        checkForSpecialCaptcha();
+        handleSecurityVerification();
     }
 
-    private void checkForSpecialCaptcha() throws Exception {
+    private void handleSecurityVerification() throws Exception {
         if (br.getURL() != null && br.getURL().contains("op=captcha&id=")) {
             /*
              * 2019-01-23: Special - this may also happen in premium mode! This will only happen when accessing downloadurl. It gets e.g.
              * triggered when accessing a lot of different downloadurls in a small timeframe.
              */
             /* Tags: XFS_IP_CHECK /ip_check/ */
-            final Form specialCaptchaForm = br.getFormbyProperty("name", "F1");
-            if (specialCaptchaForm != null) {
-                logger.info("Handling specialCaptchaForm");
+            Form securityVerification = br.getFormbyProperty("name", "F1");
+            if (securityVerification == null) {
+                securityVerification = br.getFormbyProperty("id", "f1");
+            }
+            if (securityVerification != null && securityVerification.containsHTML("data-sitekey")) {
+                logger.info("Handling securityVerification");
                 final boolean redirectSetting = br.isFollowingRedirects();
                 final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                specialCaptchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                securityVerification.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 br.setFollowRedirects(true);
-                super.submitForm(specialCaptchaForm);
+                super.submitForm(securityVerification);
                 br.setFollowRedirects(redirectSetting);
             }
         }
