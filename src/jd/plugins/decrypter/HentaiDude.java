@@ -28,6 +28,8 @@ import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.utils.locale.JDL;
 
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
@@ -112,11 +114,19 @@ public class HentaiDude extends antiDDoSForDecrypt {
                 }
             }
         }
+        if (decryptedLinks.size() == 0) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         return decryptedLinks;
     }
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTER_NODLSIZE, JDL.L("plugins.decrypter.hentaidude.faster", "Faster but no download sizes")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SLOW_ALLPAGES, JDL.L("plugins.decrypter.hentaidude.slow", "Grab all pages (very slow!)")).setDefaultValue(false));
+    }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
     }
 }
