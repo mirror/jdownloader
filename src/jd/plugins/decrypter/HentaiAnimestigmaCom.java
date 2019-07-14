@@ -20,6 +20,8 @@ import java.util.regex.Matcher;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -27,6 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision: 40413 $", interfaceVersion = 3, names = { "hentai.animestigma.com" }, urls = { "https?://(?:www\\.)?hentai.animestigma.com.*" })
@@ -48,12 +51,12 @@ public class HentaiAnimestigmaCom extends antiDDoSForDecrypt {
         String parameter = param.toString();
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        if (handleEmbedSingle(decryptedLinks) == false) {
+        if (handleEmbedSingle(decryptedLinks, parameter) == false) {
             if (parameter.contains("hentai-list-a-z") || parameter.contains("3d-hentai-list-a-z")) {
                 handleEmbedList(decryptedLinks);
             } else if (br.toString().contains("You must be login to submit genre tags")) {
@@ -69,11 +72,30 @@ public class HentaiAnimestigmaCom extends antiDDoSForDecrypt {
         return decryptedLinks;
     }
 
-    private boolean handleEmbedSingle(final ArrayList<DownloadLink> decryptedLinks) {
+    private boolean handleEmbedSingle(final ArrayList<DownloadLink> decryptedLinks, String link) {
         String downloadtitle = br.getRegex("rel=\"bookmark\" title=\"([^\"]+)\">").getMatch(0);
         String downloadlink = br.getRegex("<iframe src=\"([^\"]+)\" frameborder=\"0\" scrolling=\"no\"").getMatch(0);
-        if (downloadlink != null && downloadtitle != null) {
-            decryptedLinks.add(this.createDownloadlink(Encoding.htmlOnlyDecode(downloadlink), Encoding.htmlOnlyDecode(downloadtitle)));
+        if (downloadlink != null && downloadtitle != null && link != null) {
+            URLConnectionAdapter con = null;
+            try {
+                final Browser brc = br.cloneBrowser();
+                brc.setFollowRedirects(true);
+                con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(downloadlink));
+                final String contentType = con.getContentType();
+                if (con.isOK() && StringUtils.containsIgnoreCase(contentType, "text/html")) {
+                    brc.getPage(downloadlink);
+                    String realdownloadlink = brc.getRegex("<source src=\"([^\"]+)\" type='video/mp4'>").getMatch(0);
+                    downloadlink = realdownloadlink;
+                }
+            } catch (Exception e) {
+                logger.log(e);
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+            decryptedLinks.add(this.createDownloadlink(Encoding.htmlOnlyDecode(downloadlink + "#hentai.animestigma.com-direct"), Encoding.htmlOnlyDecode(downloadtitle)));
             return true;
         } else {
             return false;
@@ -84,7 +106,7 @@ public class HentaiAnimestigmaCom extends antiDDoSForDecrypt {
         Matcher nextpage2 = br.getRegex("<a href=\"([^\"]+)\">([^<]+)</a>").getMatcher();
         while (nextpage2.find()) {
             if (nextpage2.group(1) != null && nextpage2.group(2) != null) {
-                br.getPage(nextpage2.group(1));
+                getPage(nextpage2.group(1));
                 handleEmbedFinal(decryptedLinks);
             }
         }
@@ -95,8 +117,8 @@ public class HentaiAnimestigmaCom extends antiDDoSForDecrypt {
         Matcher nextpage3 = br.getRegex("<a href=\"([^\"]+)\" rel=\"bookmark\" title=\"([^\"]+)\">").getMatcher();
         while (nextpage3.find()) {
             if (nextpage3.group(1) != null && nextpage3.group(2) != null) {
-                br.getPage(nextpage3.group(1));
-                handleEmbedSingle(decryptedLinks);
+                getPage(nextpage3.group(1));
+                handleEmbedSingle(decryptedLinks, nextpage3.group(1));
             }
         }
         return;
