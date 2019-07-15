@@ -14,8 +14,8 @@ import java.util.Map.Entry;
 
 import org.appwork.utils.Files17;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.myjdownloader.client.bindings.StorageInformationStorable;
 
 public class SystemAPIImpl17 {
@@ -38,9 +38,9 @@ public class SystemAPIImpl17 {
                 roots.put(pathObj, Files.getFileStore(pathObj));
                 customPath = pathObj;
             } catch (InvalidPathException e) {
-                LoggerFactory.getDefaultLogger().log(e);
+                LogController.CL().log(e);
             } catch (IOException e) {
-                LoggerFactory.getDefaultLogger().log(e);
+                LogController.CL().log(e);
             }
         }
         if (roots.isEmpty()) {
@@ -63,6 +63,7 @@ public class SystemAPIImpl17 {
                 storage.setSize(store.getTotalSpace());
                 storage.setFree(store.getUsableSpace());
             } catch (final IOException e) {
+                LogController.CL().log(e);
                 if (storage.getPath() == null) {
                     storage.setPath(root.toString());
                 }
