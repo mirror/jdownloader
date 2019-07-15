@@ -107,7 +107,10 @@ public class Tube8Com extends PluginForHost {
         }
         String filename = br.getRegex("<span class=\"item\">\\s*(.*?)\\s*</span>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>(.*?) - Porn Video \\d+[^<]*<").getMatch(0);
+            filename = br.getRegex("<title>\\s*(.*?)\\s*-\\s*Porn Video\\s*\\d+[^<]*<").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<title>\\s*(.*?)\\s*-\\s*Tube8\\s*<").getMatch(0);
+            }
         }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

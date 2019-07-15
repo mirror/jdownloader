@@ -123,9 +123,4 @@ public class HentaiAnimestigmaCom extends antiDDoSForDecrypt {
         }
         return;
     }
-
-    /* NO OVERRIDE!! */
-    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
-        return false;
-    }
 }

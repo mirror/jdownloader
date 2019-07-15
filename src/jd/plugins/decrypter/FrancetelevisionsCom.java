@@ -47,13 +47,11 @@ public class FrancetelevisionsCom extends PluginForDecrypt {
      * @return
      */
     public static String[] getAnnotationUrls() {
-        String[] a = new String[getAnnotationNames().length];
-        int i = 0;
+        final List<String> ret = new ArrayList<String>();
         for (final String domain : getAnnotationNames()) {
-            a[i] = "https?://(?:www\\.)?" + Pattern.quote(domain) + "/.+";
-            i++;
+            ret.add("https?://(?:www\\.)?" + Pattern.quote(domain) + "/.+(?<!\\.jpg)$");
         }
-        return a;
+        return ret.toArray(new String[0]);
     }
 
     public FrancetelevisionsCom(PluginWrapper wrapper) {
