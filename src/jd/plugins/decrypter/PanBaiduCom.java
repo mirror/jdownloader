@@ -59,10 +59,12 @@ public class PanBaiduCom extends PluginForDecrypt {
     private CryptedLink                        param                                 = null;
     private String                             parameter                             = null;
     private final ArrayList<DownloadLink>      decryptedLinks                        = new ArrayList<DownloadLink>();
+    private int                                file_object_index                     = 0;
     private final HashMap<String, FilePackage> filePackages                          = new HashMap<String, FilePackage>();
 
-    @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
+    @SuppressWarnings({ "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        file_object_index = 0;
         this.param = param;
         parameter = param.toString().replaceAll("(pan|yun)\\.baidu\\.com/", "pan.baidu.com/").replace("/wap/", "/share/");
         /* Extract password from url in case the url came from this decrypter before. */
@@ -116,7 +118,6 @@ public class PanBaiduCom extends PluginForDecrypt {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.getPage(String.format("http://pan.baidu.com/pcloud/feed/getsharelist?t=%d&category=0&auth_type=1&request_location=share_home&start=%d&limit=60&query_uk=%s&channel=chunlei&clienttype=0&web=1&logid=&bdstoken=null", System.currentTimeMillis(), offset, this.uk));
             LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-            final LinkedHashMap<String, Object> page_info = (LinkedHashMap<String, Object>) entries.get("");
             final ArrayList<Object> records = (ArrayList<Object>) entries.get("records");
             ArrayList<Object> filelist = (ArrayList<Object>) entries.get("records");
             if (records == null) {
@@ -271,9 +272,9 @@ public class PanBaiduCom extends PluginForDecrypt {
     }
 
     private void crawlFolderObject(final Object fileo, final String shorturl_id, final String shareid) {
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) fileo;
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) fileo;
         final String server_filename = (String) entries.get("server_filename");
-        if (server_filename == null) {
+        if (StringUtils.isEmpty(server_filename)) {
             /* Nothing to grab */
             return;
         }
@@ -309,7 +310,7 @@ public class PanBaiduCom extends PluginForDecrypt {
             }
             dl = createDownloadlink(subdir_link);
         } else {
-            if (fsid.equals("0") || server_filename == null) {
+            if (fsid.equals("0") || StringUtils.isEmpty(server_filename)) {
                 /* Nothing to grab */
                 return;
             }
@@ -320,10 +321,44 @@ public class PanBaiduCom extends PluginForDecrypt {
             } else {
                 contenturl = getPlainLink(parameter);
             }
-            final String md5 = (String) entries.get("md5");
+            String path = (String) entries.get("path");
+            String md5 = (String) entries.get("md5");
+            if (StringUtils.isEmpty(md5)) {
+                /* 2019-07-16: Workaround: md5 value is important to have but it is not always given ... */
+                try {
+                    entries = (LinkedHashMap<String, Object>) entries.get("thumbs");
+                    final String docpreviewURL = (String) entries.get("docpreview");
+                    String checkURL = (String) entries.get("url1");
+                    if (StringUtils.isEmpty(checkURL)) {
+                        checkURL = (String) entries.get("url2");
+                    }
+                    if (!StringUtils.isEmpty(checkURL)) {
+                        md5 = new Regex(checkURL, "/thumbnail/([a-f0-9]{32})").getMatch(0);
+                    }
+                    if (StringUtils.isEmpty(md5) && !StringUtils.isEmpty(docpreviewURL)) {
+                        md5 = new Regex(checkURL, "/doc/([a-f0-9]{32})").getMatch(0);
+                    }
+                } catch (final Throwable e) {
+                }
+            }
             dl = createDownloadlink("http://pan.baidudecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(10000));
-            dl.setProperty("server_filename", server_filename);
-            dl.setFinalFileName(server_filename);
+            if (server_filename.matches("^\\.[A-Za-z0-9]+")) {
+                /*
+                 * 2019-07-16: They're hiding their filenames inside an image now. In this case only the fileextension is given. Image
+                 * information can be found inside 'title_img'. This is just a workaround to give the user a chance to find the URLs he
+                 * added although a real filename is not given.
+                 */
+                String workaround_filename = "";
+                if (shorturl_id != null) {
+                    workaround_filename += shorturl_id + "_";
+                }
+                workaround_filename += shareid;
+                workaround_filename += server_filename;
+                dl.setName(workaround_filename);
+            } else {
+                dl.setProperty("server_filename", server_filename);
+                dl.setFinalFileName(server_filename);
+            }
             if (size > 0) {
                 dl.setDownloadSize(size);
             }
@@ -336,13 +371,15 @@ public class PanBaiduCom extends PluginForDecrypt {
             dl.setContentUrl(contenturl);
             dl.setProperty("origurl_uk", uk);
             dl.setProperty("origurl_shareid", shareid);
+            /* Required for multihoster support */
+            dl.setProperty("position", file_object_index);
             if (isdelete == 1) {
                 dl.setAvailable(false);
             } else {
                 dl.setAvailable(true);
             }
-            String path = (String) entries.get("path");
-            if (path != null) {
+            if (!StringUtils.isEmpty(path)) {
+                dl.setProperty("path_full", path);
                 path = new Regex(path, "(/.+/)").getMatch(0);
                 FilePackage fp = filePackages.get(path);
                 if (fp == null) {
@@ -362,15 +399,23 @@ public class PanBaiduCom extends PluginForDecrypt {
                     fp.add(dl);
                 }
             }
-            /* 2016-05-19: Upon requests that their MD5 hashes are invalid we no longer set them. */
             if (!StringUtils.isEmpty(md5)) {
+                /* This is NOT the md5 hash of the actual file!! */
                 // dl.setMD5Hash(md5);
-                /* 2019-07-03: We store the md5 hash as property as we might need them for the download process. */
+                /* 2019-07-03: We store the md5 hash as property as we might need them for the download process / multihoster support. */
                 dl.setProperty("internal_md5hash", md5);
             }
             if (shorturl_id != null) {
                 dl.setProperty("shorturl_id", shorturl_id);
             }
+            String linkid = this.getHost() + "://";
+            if (shorturl_id != null) {
+                linkid += shorturl_id + "/";
+            }
+            linkid += shareid + "/";
+            linkid += "/" + fsid;
+            dl.setLinkID(linkid);
+            file_object_index++;
         }
         decryptedLinks.add(dl);
     }
@@ -405,7 +450,7 @@ public class PanBaiduCom extends PluginForDecrypt {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "COMBINE_IN_ONE_FOLDER", "add only 1 folder to the linkgrabber.").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "COMBINE_IN_ONE_FOLDER", "Add only 1 folder to the linkgrabber.").setDefaultValue(true));
     }
 
     /* NO OVERRIDE!! */

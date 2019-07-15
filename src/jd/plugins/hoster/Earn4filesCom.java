@@ -17,22 +17,18 @@ package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class UseruploadNet extends XFileSharingProBasic {
-    public UseruploadNet(final PluginWrapper wrapper) {
+public class Earn4filesCom extends XFileSharingProBasic {
+    public Earn4filesCom(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
     }
@@ -40,14 +36,14 @@ public class UseruploadNet extends XFileSharingProBasic {
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
-     * limit-info: 2019-02-22: untested, set FREE account limits<br />
-     * captchatype-info: 2019-02-22: reCaptchaV2<br />
+     * limit-info: 2019-07-15: no limits at all <br />
+     * captchatype-info: 2019-07-15: reCaptchaV2<br />
      * other:<br />
      */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "userupload.net", "proapk.net" });
+        ret.add(new String[] { "earn4files.com" });
         return ret;
     }
 
@@ -61,28 +57,20 @@ public class UseruploadNet extends XFileSharingProBasic {
     }
 
     public static String[] getAnnotationUrls() {
-        return UseruploadNet.buildAnnotationUrls(getPluginDomains());
-    }
-
-    public static String[] buildAnnotationUrls(List<String[]> pluginDomains) {
-        final List<String> ret = new ArrayList<String>();
-        for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "(" + XFileSharingProBasic.getDefaultAnnotationPatternPart() + "|/d/[A-Za-z0-9]+)");
-        }
-        return ret.toArray(new String[0]);
+        return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
     }
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return false;
+            return true;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return false;
+            return true;
         } else {
             /* Free(anonymous) and unknown account type */
-            return false;
+            return true;
         }
     }
 
@@ -90,39 +78,14 @@ public class UseruploadNet extends XFileSharingProBasic {
     public int getMaxChunks(final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return 1;
+            return 0;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return 1;
+            return 0;
         } else {
             /* Free(anonymous) and unknown account type */
-            return 1;
+            return 0;
         }
-    }
-
-    @Override
-    protected boolean supports_availablecheck_filesize_html() {
-        /* 2019-07-15: Special */
-        return false;
-    }
-
-    @Override
-    public String[] scanInfo(final String[] fileInfo) {
-        super.scanInfo(fileInfo);
-        if (StringUtils.isEmpty(fileInfo[0])) {
-            fileInfo[0] = new Regex(correctedBR, "class=\"zmdi zmdi-file visible-xs\"></i>([^<>\"]+)<").getMatch(0);
-        }
-        if (StringUtils.isEmpty(fileInfo[1])) {
-            fileInfo[1] = new Regex(correctedBR, "<strong>Size:</strong>([^<>\"]+)</li>").getMatch(0);
-        }
-        if (!StringUtils.isEmpty(fileInfo[0])) {
-            /* 2019-07-15: Filehost tags filenames --> Fix that */
-            final String host_tag = new Regex(fileInfo[0], Pattern.compile("(_?userupload\\.net)", Pattern.CASE_INSENSITIVE)).getMatch(0);
-            if (host_tag != null) {
-                fileInfo[0] = fileInfo[0].replace(host_tag, "");
-            }
-        }
-        return fileInfo;
     }
 
     @Override
@@ -138,13 +101,5 @@ public class UseruploadNet extends XFileSharingProBasic {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
-    }
-
-    public void handleCaptcha(final DownloadLink link, final Form captchaForm) throws Exception {
-        if (captchaForm != null && captchaForm.hasInputFieldByName("adblock_detected")) {
-            captchaForm.remove("");
-            captchaForm.put("adblock_detected", "0");
-        }
-        super.handleCaptcha(link, captchaForm);
     }
 }

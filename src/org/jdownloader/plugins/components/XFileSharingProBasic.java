@@ -863,7 +863,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 }
                 {
                     /* Check if the mass-linkchecker works and which check we have to use */
-                    while (linkcheckTypeTryCount <= 1 && linkcheckerHasFailed) {
+                    while (linkcheckTypeTryCount <= 1) {
                         if (checkTypeCurrent != null) {
                             /* No matter which checkType we tried first - it failed and we need to try the other one! */
                             if (checkTypeCurrent.equals(checkTypeNew)) {
