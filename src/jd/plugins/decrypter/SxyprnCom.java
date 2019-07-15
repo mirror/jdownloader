@@ -24,7 +24,7 @@ public class SxyprnCom extends antiDDoSForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         getPage(parameter.getCryptedUrl());
-        final String[][] hits = br.getRegex("<a href=(?:\"|')(/post/[a-fA-F0-9]{13}\\.html)\\?sk=.*?title='(.*?)'").getMatches();
+        final String[][] hits = br.getRegex("href=(?:\"|')(/post/[a-fA-F0-9]{13}\\.html)[^<>]*?title='(.*?)'").getMatches();
         for (final String[] hit : hits) {
             final DownloadLink link = createDownloadlink(br.getURL(hit[0]).toString());
             link.setName(hit[1].trim() + ".mp4");

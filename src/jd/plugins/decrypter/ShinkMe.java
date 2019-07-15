@@ -41,11 +41,11 @@ import jd.plugins.components.SiteType.SiteTemplate;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "shink.in" }, urls = { "https?://(?:www\\.)?shink\\.(in|me)/(s/)?(?-i)[a-zA-Z0-9]{5}" })
-public class ShinkIn extends antiDDoSForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "shink.me" }, urls = { "https?://(?:www\\.)?shink\\.(in|me)/(s/)?(?-i)[a-zA-Z0-9]{5}" })
+public class ShinkMe extends antiDDoSForDecrypt {
     private static Object CTRLLOCK = new Object();
 
-    public ShinkIn(PluginWrapper wrapper) {
+    public ShinkMe(PluginWrapper wrapper) {
         super(wrapper);
     }
 

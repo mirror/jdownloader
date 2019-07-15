@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -33,6 +35,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porntrex.com" }, urls = { "https?://(?:www\\.)?porntrex\\.com/video/\\d+/[a-z0-9\\-]+/?" })
 public class PorntrexCom extends PluginForHost {
@@ -94,8 +97,12 @@ public class PorntrexCom extends PluginForHost {
                 }
             }
         }
-        if (dllink == null && foundQualities.size() > 0) {
+        if (StringUtils.isEmpty(dllink) && foundQualities.size() > 0) {
             dllink = foundQualities.get(0);
+        }
+        if (StringUtils.isEmpty(dllink)) {
+            /* 2019-07-15 */
+            dllink = jd.plugins.hoster.KernelVideoSharingCom.getDllink(br, this);
         }
         if (filename == null || dllink == null) {
             logger.info("filename: " + filename + ", dllink: " + dllink);
@@ -164,6 +171,11 @@ public class PorntrexCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.KernelVideoSharing;
     }
 
     @Override
