@@ -52,7 +52,6 @@ public class FastShareCz extends antiDDoSForHost {
     }
 
     private static final String MAINPAGE = "https://www.fastshare.cz";
-    private static Object       LOCK     = new Object();
 
     @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
@@ -157,7 +156,7 @@ public class FastShareCz extends antiDDoSForHost {
 
     @SuppressWarnings("unchecked")
     private void login(Account account, boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
@@ -188,7 +187,9 @@ public class FastShareCz extends antiDDoSForHost {
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", fetchCookies(MAINPAGE));
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.setProperty("cookies", Property.NULL);
+                }
                 throw e;
             }
         }

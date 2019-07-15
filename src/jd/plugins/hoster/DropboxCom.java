@@ -46,7 +46,7 @@ public class DropboxCom extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("dropboxdecrypted.com/", "dropbox.com/").replaceAll("#", "%23").replaceAll("\\?dl=\\d", ""));
+        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("dropboxdecrypted.com/", "dropbox.com/").replaceAll("#", "%23").replaceAll("\\?dl=\\d", "?"));
     }
 
     @Override
@@ -82,7 +82,7 @@ public class DropboxCom extends PluginForHost {
             URLConnectionAdapter con = null;
             if (link.getPluginPatternMatcher().matches(TYPE_S) || link.getPluginPatternMatcher().matches(TYPE_SH)) {
                 br.setCookie("http://dropbox.com", "locale", "en");
-                url = link.getPluginPatternMatcher() + "?dl=1";
+                url = URLHelper.parseLocation(new URL(link.getPluginPatternMatcher()), "&dl=1");
                 for (int i = 0; i < 2; i++) {
                     try {
                         br.setFollowRedirects(true);
@@ -192,7 +192,7 @@ public class DropboxCom extends PluginForHost {
                     url += "/";
                     url += Encoding.urlEncode_light(filename);
                 }
-                url += "?dl=1";
+                url = URLHelper.parseLocation(new URL(url), "&dl=1");
             }
             return AvailableStatus.TRUE;
         } else {
@@ -212,11 +212,7 @@ public class DropboxCom extends PluginForHost {
             }
         }
         br.setDebug(true);
-        try {
-            login(account, true);
-        } catch (final PluginException e) {
-            throw e;
-        }
+        login(account, true);
         ai.setStatus("Registered (free) user");
         ai.setUnlimitedTraffic();
         return ai;
@@ -277,7 +273,7 @@ public class DropboxCom extends PluginForHost {
             url = br.getURL("?dl=1").toString();
         } else {
             if (url == null) {
-                url = URLHelper.parseLocation(new URL(link.getPluginPatternMatcher()), "?dl=1");
+                url = URLHelper.parseLocation(new URL(link.getPluginPatternMatcher()), "&dl=1");
             }
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, url, true, 1);

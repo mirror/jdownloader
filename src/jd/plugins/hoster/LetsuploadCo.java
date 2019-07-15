@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -47,13 +48,24 @@ public class LetsuploadCo extends YetiShareCore {
         return new String[] { domains[0] };
     }
 
+    @Override
+    protected String getFUIDFromURL(final DownloadLink link) {
+        final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), "^https?://[^/]+/plugins/mediaplayer/site/_embed\\.php\\?u=([A-Za-z0-9]+)");
+        final String fid = urlinfo.getMatch(0);
+        if (fid != null) {
+            return fid;
+        } else {
+            return super.getFUIDFromURL(link);
+        }
+    }
+
     /**
      * returns the annotation pattern array: 'https?://(?:www\\.)?(?:domain1|domain2)/[A-Za-z0-9]+(?:/[^/<>]+)?'
      *
      */
     public static String[] getAnnotationUrls() {
         final String host = getHostsPattern();
-        return new String[] { host + "/(?!folder)[A-Za-z0-9]+(?:/[^/<>]+)?" };
+        return new String[] { host + "/(plugins/mediaplayer/site/_embed\\.php\\?u=[A-Za-z0-9]+.*|(?!folder)[A-Za-z0-9]+(?:/[^/<>]+)?)" };
     }
 
     /** Returns '(?:domain1|domain2)' */
@@ -129,5 +141,4 @@ public class LetsuploadCo extends YetiShareCore {
         }
         return super.scanInfo(fileInfo);
     }
-
-    }
+}

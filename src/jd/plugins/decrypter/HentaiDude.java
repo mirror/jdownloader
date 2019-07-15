@@ -124,9 +124,4 @@ public class HentaiDude extends antiDDoSForDecrypt {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTER_NODLSIZE, JDL.L("plugins.decrypter.hentaidude.faster", "Faster but no download sizes")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SLOW_ALLPAGES, JDL.L("plugins.decrypter.hentaidude.slow", "Grab all pages (very slow!)")).setDefaultValue(false));
     }
-
-    /* NO OVERRIDE!! */
-    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
-        return false;
-    }
 }

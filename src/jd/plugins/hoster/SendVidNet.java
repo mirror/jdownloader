@@ -15,22 +15,23 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.util.List;
+import java.util.Map;
+
 import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sendvid.com" }, urls = { "https?://(?:www\\.)?sendvid\\.com/(embed/)?[A-Za-z0-9]+" })
-public class SendvidCom extends antiDDoSForHost {
-    public SendvidCom(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision: 36026 $", interfaceVersion = 2, names = { "sendvid.net" }, urls = { "https?://(?:www\\.)?sendvid\\.net/v/[A-Za-z0-9\\-]+" })
+public class SendVidNet extends antiDDoSForHost {
+    public SendVidNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -40,13 +41,13 @@ public class SendvidCom extends antiDDoSForHost {
     // other:
     /* Connection stuff */
     private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
+    private static final int     free_maxchunks    = -4;
     private static final int     free_maxdownloads = -1;
     private String               dllink            = null;
 
     @Override
     public String getAGBLink() {
-        return "http://support.sendvid.com/customer/portal/articles/1743605-terms-of-service";
+        return "https://www.fembed.com/legal/terms";
     }
 
     @SuppressWarnings("deprecation")
@@ -56,60 +57,47 @@ public class SendvidCom extends antiDDoSForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         getPage(downloadLink.getDownloadURL());
-        final String videoid = downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().lastIndexOf("/") + 1);
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Sorry this video does not exist")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("name=\"twitter:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("name=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        final String title = br.getRegex("<title>\\s*(.*?)\\s*</title>").getMatch(0);
+        if (title != null) {
+            downloadLink.setFinalFileName(title);
         }
-        if (filename == null) {
-            filename = videoid;
-        }
-        dllink = br.getRegex("<source src=\"([^<>\"]*?)\"").getMatch(0);
-        if (filename == null || dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (!dllink.contains("http")) {
-            dllink = "https:" + dllink;
-        }
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
-        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
-        if (!filename.endsWith(ext)) {
-            filename += ext;
-        }
-        downloadLink.setFinalFileName(filename);
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            try {
-                con = openConnection(br2, dllink);
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final String videoid = downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().lastIndexOf("/") + 1);
+        postPage("https://sendvid.net/api/source/" + videoid, "d=sendvid.net");
+        final Map<String, Object> map = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        if (Boolean.TRUE.equals(map.get("success"))) {
+            String bestURL = null;
+            int bestResolution = -1;
+            final List<Map<String, Object>> files = (List<Map<String, Object>>) map.get("data");
+            for (Map<String, Object> file : files) {
+                if (!"mp4".equals(file.get("type"))) {
+                    continue;
+                }
+                final int res = Integer.parseInt(((String) file.get("label")).replace("p", ""));
+                if (bestURL == null || res > bestResolution) {
+                    bestURL = (String) file.get("file");
+                    bestResolution = res;
+                }
             }
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
+            if (bestURL == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                dllink = bestURL;
             }
-            downloadLink.setProperty("directlink", dllink);
             return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
-            }
+        } else {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
@@ -130,20 +118,6 @@ public class SendvidCom extends antiDDoSForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
-    }
-
-    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws Exception {
-        final URLConnectionAdapter con;
-        if (isJDStable()) {
-            con = openAntiDDoSRequestConnection(br, br.createGetRequest(directlink));
-        } else {
-            con = openAntiDDoSRequestConnection(br, br.createHeadRequest(directlink));
-        }
-        return con;
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @Override

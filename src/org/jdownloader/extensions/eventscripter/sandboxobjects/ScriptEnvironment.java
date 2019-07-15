@@ -47,7 +47,6 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.proxy.AbstractProxySelectorImpl;
 import jd.controlling.reconnect.Reconnecter;
-import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -547,9 +546,9 @@ public class ScriptEnvironment {
 
     @ScriptAPI(description = "Loads a website (Method: GET) and returns the source code", parameters = { "URL" }, example = "var myhtmlSourceString=getPage(\"http://jdownloader.org\");")
     public static String getPage(String fileOrUrl) throws EnvironmentException {
-        askForPermission("load resources from the internet");
+        final BrowserSandBox browser = getBrowser();
         try {
-            return new Browser().getPage(fileOrUrl);
+            return browser.getPage(fileOrUrl);
         } catch (Throwable e) {
             throw new EnvironmentException(e);
         }
@@ -849,9 +848,9 @@ public class ScriptEnvironment {
 
     @ScriptAPI(description = "Loads a website (METHOD: POST) and returns the source code", parameters = { "URL", "PostData" }, example = "var myhtmlSourceString=postPage(\"http://support.jdownloader.org/index.php\",\"searchquery=captcha\");")
     public static String postPage(String url, String post) throws EnvironmentException {
-        askForPermission("send data to the internet and request resources");
+        final BrowserSandBox browser = getBrowser();
         try {
-            return new Browser().postPage(url, post);
+            return browser.postPage(url, post);
         } catch (Throwable e) {
             throw new EnvironmentException(e);
         }

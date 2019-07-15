@@ -2,7 +2,6 @@ package org.jdownloader.api.system;
 
 import java.io.IOException;
 import java.nio.file.FileStore;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
@@ -45,7 +44,7 @@ public class SystemAPIImpl17 {
             }
         }
         if (roots.isEmpty()) {
-            for (final FileStore fileStore : FileSystems.getDefault().getFileStores()) {
+            for (final FileStore fileStore : Files17.getFileStores()) {
                 final Path fileStorePath = Files17.getPath(fileStore);
                 if (fileStorePath != null) {
                     roots.put(fileStorePath, fileStore);
