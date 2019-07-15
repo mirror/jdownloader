@@ -261,6 +261,7 @@ downloadlink_status_error_file_exists=Arquivo já existe
 downloadlink_status_error_file_not_found=Arquivo não encontrado
 downloadlink_status_error_hoster_temp_unavailable=Não é possível baixar por este servidor
 downloadlink_status_error_temp_unavailable=Temporariamente indisponível
+exe_description=Arquivos executáveis: exe, msi, bin...
 getNextSortIdentifier_sort_warning_rly_msg=Deseja realmente classificar todos os links e pacotes por '%s1'?
 getNextSortIdentifier_sort_warning_rly_title_=Classificar Captura de Links?
 google_email_verification_message=Algo parece um pouco diferente sobre a maneira como você está tentando fazer o login. Para verificar que é você, entre com o seu e-mail de recuperação\r\n%s1
