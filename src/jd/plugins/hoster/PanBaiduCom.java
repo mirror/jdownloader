@@ -566,7 +566,6 @@ public class PanBaiduCom extends PluginForHost {
         try {
             login(account, true);
         } catch (PluginException e) {
-            account.setValid(false);
             throw e;
         }
         /* 2016-04-21: So far all accounts are handled as free accounts - free does not have any limits anyways! */

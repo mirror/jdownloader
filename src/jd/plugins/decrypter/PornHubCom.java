@@ -22,6 +22,10 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -39,10 +43,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub(?:premium)?\\.com/(?:.*\\?viewkey=[a-z0-9]+|embed/[a-z0-9]+|embed_player\\.php\\?id=\\d+|pornstar/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos(/upload)?)?|channels/[A-Za-z0-9\\-_]+/videos|users/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos(/public)?)?|model/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos)?|playlist/\\d+)" })
 public class PornHubCom extends PluginForDecrypt {
@@ -419,6 +419,7 @@ public class PornHubCom extends PluginForDecrypt {
         final boolean bestonly = cfg.getBooleanProperty(jd.plugins.hoster.PornHubCom.BEST_ONLY, false);
         final boolean bestselectiononly = cfg.getBooleanProperty(jd.plugins.hoster.PornHubCom.BEST_SELECTION_ONLY, false);
         final boolean fastlinkcheck = cfg.getBooleanProperty(jd.plugins.hoster.PornHubCom.FAST_LINKCHECK, false);
+        final boolean prefer_server_filename = cfg.getBooleanProperty("USE_ORIGINAL_SERVER_FILENAME", false);
         /* Convert embed links to normal links */
         if (parameter.matches(".+/embed_player\\.php\\?id=\\d+")) {
             if (br.containsHTML("No htmlCode read") || br.containsHTML("flash/novideo\\.flv")) {
@@ -476,7 +477,8 @@ public class PornHubCom extends PluginForDecrypt {
                     if (grab) {
                         ret = true;
                         logger.info("Grab:" + format + "/" + quality);
-                        String final_filename = fpName + "_";
+                        final String server_filename = jd.plugins.hoster.PornHubCom.getFilenameFromURL(url);
+                        String html_filename = fpName + "_";
                         final DownloadLink dl = getDecryptDownloadlink(viewkey, format, quality);
                         dl.setProperty("directlink", url);
                         dl.setProperty("quality", quality);
@@ -485,17 +487,21 @@ public class PornHubCom extends PluginForDecrypt {
                         dl.setProperty("format", format);
                         dl.setLinkID("pornhub://" + viewkey + "_" + format + "_" + quality);
                         if (!StringUtils.isEmpty(username)) {
-                            final_filename += username + "_";
+                            html_filename += username + "_";
                             /* This property is only for the user (packagizer) and not required anywhere in our host plugin! */
                             dl.setProperty("username", username);
                         }
                         if (StringUtils.equalsIgnoreCase(format, "hls")) {
-                            final_filename += "hls_" + quality + "p.mp4";
+                            html_filename += "hls_" + quality + "p.mp4";
                         } else {
-                            final_filename += quality + "p.mp4";
+                            html_filename += quality + "p.mp4";
                         }
-                        dl.setFinalFileName(final_filename);
-                        dl.setProperty("decryptedfilename", final_filename);
+                        if (prefer_server_filename && server_filename != null) {
+                            dl.setFinalFileName(server_filename);
+                        } else {
+                            dl.setFinalFileName(html_filename);
+                        }
+                        dl.setProperty("decryptedfilename", html_filename);
                         dl.setContentUrl(parameter);
                         if (fastlinkcheck) {
                             dl.setAvailable(true);

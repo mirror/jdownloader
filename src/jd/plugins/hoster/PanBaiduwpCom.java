@@ -20,6 +20,11 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Random;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -38,11 +43,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pan.baiduwp.com" }, urls = { "" })
 public class PanBaiduwpCom extends antiDDoSForHost {
@@ -79,10 +79,12 @@ public class PanBaiduwpCom extends antiDDoSForHost {
             /* without account its not possible to download the link */
             return false;
         }
+        final long position = link.getLongProperty("position", -1);
         final String internal_md5hash = link.getStringProperty("internal_md5hash", null);
         final String shorturl_id = link.getStringProperty("shorturl_id", null);
-        final boolean urlCompatible = internal_md5hash != null && shorturl_id != null;
-        return urlCompatible;
+        final boolean urlCompatible_by_hash = internal_md5hash != null && shorturl_id != null;
+        final boolean urlCompatible_by_position = position > -1;
+        return urlCompatible_by_hash || urlCompatible_by_position;
     }
 
     @Override
@@ -130,6 +132,9 @@ public class PanBaiduwpCom extends antiDDoSForHost {
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
         final String internal_md5hash = link.getStringProperty("internal_md5hash", null);
         final String shorturl_id = link.getStringProperty("shorturl_id", null);
+        final long position = link.getLongProperty("position", -1);
+        final boolean urlCompatible_by_hash = internal_md5hash != null && shorturl_id != null;
+        final boolean urlCompatible_by_position = position > -1;
         /* In over 99% of all cases, we should already have the correct password here! */
         String passCode = link.getDownloadPassword();
         int counter = 0;
@@ -150,14 +155,41 @@ public class PanBaiduwpCom extends antiDDoSForHost {
         if (passCode != null) {
             link.setDownloadPassword(passCode);
         }
+        {
+            // final String path_full = link.getStringProperty("path_full", null);
+            /*
+             * For nested files: We need to find the correct subfolder and access it. TODO: Check this with bigger folder structures - for
+             * now, this only helps is there is only ONE subfolder!
+             */
+            final String[] subfolders = br.getRegex("<a href=\"/s/[^<>\"]+\\&path=%2F[^\"]+\">[^<>\"]+</a>").getColumn(-1);
+            if (subfolders.length == 1) {
+                final String subfolderHTML = subfolders[0];
+                final String subfolderURL = new Regex(subfolderHTML, "\"(/s/[^\"]+)\"").getMatch(0);
+                if (subfolderURL == null) {
+                    /* Should not / cannot happen */
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                getPage(subfolderURL);
+            }
+        }
         String targetHTML = null;
         /* Now we have a list of files of a folder but we want to download a specific file so let's find that ... */
         final String[] htmls = br.getRegex("<li class=\"list-group-item border-muted rounded text-muted py-2\">.*?</li>").getColumn(-1);
+        long index = 0;
         for (final String html : htmls) {
-            if (html.contains(internal_md5hash)) {
+            final boolean foundHTML;
+            if (urlCompatible_by_hash) {
+                /* Safe way */
+                foundHTML = html.contains(internal_md5hash);
+            } else {
+                /* Unsafe way - use this whenever no other identifiers are given! */
+                foundHTML = index == position;
+            }
+            if (foundHTML) {
                 targetHTML = html;
                 break;
             }
+            index++;
         }
         if (targetHTML == null) {
             logger.warning("Failed to find html leading to desired file");
@@ -178,8 +210,8 @@ public class PanBaiduwpCom extends antiDDoSForHost {
         dlform.setAction("/download");
         dlform.put("f", dlparams[0]);
         dlform.put("t", dlparams[1]);
-        dlform.put("p", dlparams[2]);
-        dlform.put("v", dlparams[3]);
+        dlform.put("p", Encoding.urlEncode(dlparams[2]));
+        dlform.put("v", Encoding.urlEncode(dlparams[3]));
         dlform.put("n", "");
         dlform.put("i", "");
         this.submitForm(dlform);
@@ -191,13 +223,15 @@ public class PanBaiduwpCom extends antiDDoSForHost {
             logger.warning("Failed to find continue_url");
             mhm.handleErrorGeneric(account, link, "continue_url_null", 50, 2 * 60 * 1000l);
         }
+        /* 2019-07-16: http://pandownload.com/faq/ua.html This User-Agent should grant us access to high speed downloadlinks. */
+        br = prepBrBaidu(new Browser());
         getPage(continue_url);
         final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("urls");
         if (ressourcelist == null || ressourcelist.isEmpty()) {
             mhm.handleErrorGeneric(account, link, "mirrors_null", 50, 2 * 60 * 1000l);
         }
-        /* Usually there are 4 mirrors available. Chose random mirror to download. */
+        /* Usually there are usually 4+ mirrors available. Chose a random mirror to download. */
         final int random = new Random().nextInt(ressourcelist.size());
         String dllink = (String) ressourcelist.get(random);
         return dllink;
@@ -206,7 +240,7 @@ public class PanBaiduwpCom extends antiDDoSForHost {
     private void handleDL(final Account account, final DownloadLink link, final String dllink) throws Exception {
         link.setProperty(this.getHost() + "directlink", dllink);
         /* Important! Bad headers e.g. Referer will cause a 403 response! */
-        br = new Browser();
+        br = prepBrBaidu(new Browser());
         try {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
             final String contenttype = dl.getConnection().getContentType();
@@ -214,18 +248,17 @@ public class PanBaiduwpCom extends antiDDoSForHost {
                 br.followConnection();
                 mhm.handleErrorGeneric(account, link, "unknowndlerror", 20, 5 * 60 * 1000l);
             }
-            String server_filename = getFileNameFromDispositionHeader(dl.getConnection());
-            if (link.getFinalFileName() == null && server_filename != null) {
-                if (server_filename.contains("%")) {
-                    server_filename = Encoding.htmlDecode(server_filename);
-                }
-                link.setFinalFileName(server_filename);
-            }
+            dl.setFilenameFix(isContentDispositionFixRequired(dl, dl.getConnection(), link));
             this.dl.startDownload();
         } catch (final Exception e) {
             link.setProperty(this.getHost() + "directlink", Property.NULL);
             throw e;
         }
+    }
+
+    private Browser prepBrBaidu(final Browser br) {
+        br.getHeaders().put("User-Agent", "Opera/9.80 (Windows NT 6.0) Presto/2.12.388 Version/12.14");
+        return br;
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
