@@ -94,7 +94,7 @@ public class StileProjectCom extends PluginForHost {
                 if (!con.getContentType().contains("html")) {
                     link.setDownloadSize(con.getLongContentLength());
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    server_issues = true;
                 }
             } finally {
                 try {
