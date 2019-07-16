@@ -19,6 +19,11 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.Random;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -40,12 +45,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
-import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "chomikuj.pl" }, urls = { "https?://chomikujdecrypted\\.pl/.*?,\\d+$" })
 public class ChoMikujPl extends antiDDoSForHost {
@@ -156,27 +155,36 @@ public class ChoMikujPl extends antiDDoSForHost {
         return AvailableStatus.TRUE;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
             login(account, true);
         } catch (PluginException e) {
-            account.setValid(false);
             throw e;
         }
-        account.setValid(true);
         final String remainingTraffic = br.getRegex("<strong>([^<>\"]*?)</strong>[\t\n\r ]+transferu").getMatch(0);
         if (remainingTraffic != null) {
-            /* Basically uploaders can always download their own files no matter how much traffic they have left ... */
-            ai.setSpecialTraffic(true);
+            if (this.getPluginConfig().getBooleanProperty("IGNORE_TRAFFIC_LIMIT", false)) {
+                /* Uploaders can always download their OWN files no matter how much traffic they have left ... */
+                ai.setSpecialTraffic(true);
+            }
             ai.setTrafficLeft(SizeFormatter.getSize(remainingTraffic.replace(",", ".")));
+            ai.setStatus("Account with traffic limitation");
         } else {
+            /*
+             * 2019-07-16: Not sure if that is a good idea but at the moment we're handling all accounts as premium and set unlimited
+             * traffic if we don't find any ...
+             */
+            ai.setStatus("Account without traffic limitation");
             ai.setUnlimitedTraffic();
         }
-        ai.setStatus("Premium Account");
         account.setType(AccountType.PREMIUM);
+        /* 2019-07-16: Points can be converted to traffic but for us they're not important */
+        final String collectedPointsStr = br.getRegex("title=\"Punkty\"[^<>]*?><strong>(\\d+)</strong>").getMatch(0);
+        if (collectedPointsStr != null) {
+            ai.setPremiumPoints(collectedPointsStr);
+        }
         return ai;
     }
 
@@ -570,40 +578,44 @@ public class ChoMikujPl extends antiDDoSForHost {
                 /** Load cookies */
                 br.setCookiesExclusive(true);
                 br.setFollowRedirects(true);
+                boolean loggedinViaCookies = false;
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null && !force) {
+                if (cookies != null) {
                     this.br.setCookies(this.getHost(), cookies);
-                    return;
+                    getPageWithCleanup(this.br, MAINPAGE);
+                    loggedinViaCookies = this.isLoggedIn();
                 }
-                getPageWithCleanup(this.br, MAINPAGE);
-                final String lang = System.getProperty("user.language");
-                final String requestVerificationToken = br.getRegex("<input name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"\\']+)\"").getMatch(0);
-                if (requestVerificationToken == null) {
-                    if ("de".equalsIgnoreCase(lang)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (!loggedinViaCookies) {
+                    getPageWithCleanup(this.br, MAINPAGE);
+                    final String lang = System.getProperty("user.language");
+                    final String requestVerificationToken = br.getRegex("<input name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"\\']+)\"").getMatch(0);
+                    if (requestVerificationToken == null) {
+                        if ("de".equalsIgnoreCase(lang)) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
                     }
-                }
-                postPageRawWithCleanup(this.br, "https://chomikuj.pl/action/Login/TopBarLogin", "rememberLogin=true&rememberLogin=false&topBar_LoginBtn=Zaloguj&ReturnUrl=%2F" + Encoding.urlEncode(account.getUser()) + "&Login=" + Encoding.urlEncode(account.getUser()) + "&Password=" + Encoding.urlEncode(account.getPass()) + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken));
-                if (br.getCookie(MAINPAGE, "RememberMe") == null) {
-                    if ("de".equalsIgnoreCase(lang)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    postPageRawWithCleanup(this.br, "https://chomikuj.pl/action/Login/TopBarLogin", "rememberLogin=true&rememberLogin=false&topBar_LoginBtn=Zaloguj&ReturnUrl=%2F" + Encoding.urlEncode(account.getUser()) + "&Login=" + Encoding.urlEncode(account.getUser()) + "&Password=" + Encoding.urlEncode(account.getPass()) + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken));
+                    if (!isLoggedIn()) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
+                    br.setCookie(MAINPAGE, "cookiesAccepted", "1");
+                    br.setCookie(MAINPAGE, "spt", "0");
+                    br.setCookie(MAINPAGE, "rcid", "1");
+                    postPageRawWithCleanup(this.br, "https://chomikuj.pl/" + Encoding.urlEncode(account.getUser()), "ReturnUrl=%2F" + Encoding.urlEncode(account.getUser()) + "&Login=" + Encoding.urlEncode(account.getUser()) + "&Password=" + Encoding.urlEncode(account.getPass()) + "&rememberLogin=true&rememberLogin=false&topBar_LoginBtn=Zaloguj");
+                    getPageWithCleanup(this.br, "https://chomikuj.pl/" + Encoding.urlEncode(account.getUser()));
                 }
-                br.setCookie(MAINPAGE, "cookiesAccepted", "1");
-                br.setCookie(MAINPAGE, "spt", "0");
-                br.setCookie(MAINPAGE, "rcid", "1");
-                postPageRawWithCleanup(this.br, "https://chomikuj.pl/" + Encoding.urlEncode(account.getUser()), "ReturnUrl=%2F" + Encoding.urlEncode(account.getUser()) + "&Login=" + Encoding.urlEncode(account.getUser()) + "&Password=" + Encoding.urlEncode(account.getPass()) + "&rememberLogin=true&rememberLogin=false&topBar_LoginBtn=Zaloguj");
-                getPageWithCleanup(this.br, "https://chomikuj.pl/" + Encoding.urlEncode(account.getUser()));
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;
             }
         }
+    }
+
+    private boolean isLoggedIn() {
+        return br.getCookie(MAINPAGE, "RememberMe", Cookies.NOTDELETEDPATTERN) != null;
     }
 
     private void getPageWithCleanup(final Browser br, final String url) throws Exception {
@@ -706,8 +718,9 @@ public class ChoMikujPl extends antiDDoSForHost {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ChoMikujPl.AVOIDPREMIUMMP3TRAFFICUSAGE, JDL.L("plugins.hoster.chomikujpl.avoidPremiumMp3TrafficUsage", "Force download of the stream versions of .mp3 files in account mode?\r\n<html><b>Avoids premium traffic usage for .mp3 files!</b></html>")).setDefaultValue(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ChoMikujPl.DECRYPTFOLDERS, JDL.L("plugins.hoster.chomikujpl.decryptfolders", "Decrypt subfolders in folders")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ChoMikujPl.AVOIDPREMIUMMP3TRAFFICUSAGE, "Force download of the stream versions of .mp3 files in account mode?\r\n<html><b>Avoids premium traffic usage for .mp3 files!</b></html>").setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ChoMikujPl.DECRYPTFOLDERS, "Decrypt subfolders in folders").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "IGNORE_TRAFFIC_LIMIT", "Ignore trafficlimit in account (e.g. useful to download self uploaded files)?").setDefaultValue(false));
     }
 
     @Override
