@@ -59,12 +59,16 @@ public class JavhdCom extends PluginForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        final String linkid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        final String linkid = getFID(link);
         if (linkid != null) {
-            return linkid;
+            return this.getHost() + "://" + linkid;
         } else {
             return super.getLinkID(link);
         }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     @Override
@@ -74,7 +78,7 @@ public class JavhdCom extends PluginForHost {
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final String linkid = this.getLinkID(link);
+        final String linkid = this.getFID(link);
         br.getPage("https://" + this.getHost() + "/en/player/" + linkid + "?is_trailer=1");
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
