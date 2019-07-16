@@ -15,12 +15,12 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Locale;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -31,7 +31,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
+import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fastshare.cz" }, urls = { "https?://(www\\.)?fastshare\\.cz/\\d+/[^<>\"#]+" })
@@ -154,7 +156,6 @@ public class FastShareCz extends antiDDoSForHost {
         dl.startDownload();
     }
 
-    @SuppressWarnings("unchecked")
     private void login(Account account, boolean force) throws Exception {
         synchronized (account) {
             try {
@@ -162,33 +163,27 @@ public class FastShareCz extends antiDDoSForHost {
                 br.setCookiesExclusive(true);
                 br.setCookie(MAINPAGE, "lang", "cs");
                 br.setCustomCharset("utf-8");
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            br.setCookie(MAINPAGE, key, value);
-                        }
-                        return;
+                Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    br.setCookies(getHost(), cookies);
+                    getPage("https://fastshare.cz/user");
+                    if (!br.containsHTML(">\\s*(?:Kredit|Credit|Kredyty)[\t\n\r ]+:[\t\n\r ]+</td>")) {
+                        cookies = null;
                     }
                 }
-                br.setFollowRedirects(true);
-                postPage("https://fastshare.cz/sql.php", "login=" + Encoding.urlEncode(account.getUser()) + "&heslo=" + Encoding.urlEncode(account.getPass()));
-                if (br.getURL().contains("fastshare.cz/error=1") || !br.containsHTML(">Kredit[\t\n\r ]+:[\t\n\r ]+</td>")) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (cookies == null) {
+                    br.setFollowRedirects(true);
+                    postPage("https://fastshare.cz/sql.php", "login=" + Encoding.urlEncode(account.getUser()) + "&heslo=" + Encoding.urlEncode(account.getPass()));
+                    if (br.getURL().contains("fastshare.cz/error=1")) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else if (!br.containsHTML(">\\s*(?:Kredit|Credit|Kredyty)[\t\n\r ]+:[\t\n\r ]+</td>")) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", fetchCookies(MAINPAGE));
+                account.saveCookies(br.getCookies(getHost()), "");
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.setProperty("cookies", Property.NULL);
+                    account.clearCookies("");
                 }
                 throw e;
             }
@@ -200,14 +195,23 @@ public class FastShareCz extends antiDDoSForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         login(account, true);
-        String availabletraffic = br.getRegex(">Kredit[\t\n\r ]+:[\t\n\r ]+</td>[\r\n\t ]+<td[^>]*?>([^<>\"&]+)").getMatch(0);
+        final String availabletraffic = br.getRegex(">\\s*(?:Kredit|Credit|Kredyty)[\t\n\r ]+:[\t\n\r ]+</td>[\r\n\t ]+<td[^>]*?>([^<>\"&]+)").getMatch(0);
+        final String unlimitedTraffic = br.getRegex("(?:Neomezené stahování)\\s*:\\s*</td>\\s*<td>\\s*<span[^>]*>\\s*(.*?)\\s*<").getMatch(0);
         if (availabletraffic != null) {
             ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
-        } else {
-            account.setValid(false);
-            return ai;
         }
-        account.setValid(true);
+        if (unlimitedTraffic != null) {
+            final String until = new Regex(unlimitedTraffic, "do\\s*(\\d+\\.\\d+\\.\\d+)").getMatch(0);
+            if (until != null) {
+                final long validUntil = TimeFormatter.getMilliSeconds(until, "dd.MM.yyyy", Locale.ENGLISH) + (23 * 60 * 60 * 1000l);
+                if (validUntil > 0) {
+                    ai.setValidUntil(validUntil);
+                    if (!ai.isExpired()) {
+                        ai.setUnlimitedTraffic();
+                    }
+                }
+            }
+        }
         account.setType(AccountType.PREMIUM);
         return ai;
     }
@@ -229,7 +233,7 @@ public class FastShareCz extends antiDDoSForHost {
             /* Direct downloads inactive --> We have to find the final downloadlink */
             dllink = br.getRegex("\"(https?://[a-z0-9]+\\.fastshare\\.cz/download\\.php[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("class=\"speed\"><a href=\"(https?://[^<>\"]*?)\"").getMatch(0);
+                dllink = br.getRegex("class=\"speed\">\\s*<a href=\"(https?://[^<>\"]*?)\"").getMatch(0);
             }
         }
         if (dllink == null) {
@@ -246,7 +250,7 @@ public class FastShareCz extends antiDDoSForHost {
             logger.warning("The final dllink seems not to be a file!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
-            dl.setFilenameFix(true);
+            dl.setFilenameFix(isContentDispositionFixRequired(dl, dl.getConnection(), link));
         }
         dl.startDownload();
     }

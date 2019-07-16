@@ -7,6 +7,11 @@ import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import jd.controlling.TaskQueue;
+import jd.controlling.captcha.SkipRequest;
+import jd.parser.Regex;
+import jd.plugins.Plugin;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
@@ -33,11 +38,6 @@ import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.solver.service.BrowserSolverService;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.controlling.UniqueAlltimeID;
-
-import jd.controlling.TaskQueue;
-import jd.controlling.captcha.SkipRequest;
-import jd.parser.Regex;
-import jd.plugins.Plugin;
 
 public abstract class BrowserReference implements ExtendedHttpRequestHandler, HttpRequestHandler, ConnectionHook {
     private final AtomicReference<HttpHandlerInfo> handlerInfo = new AtomicReference<HttpHandlerInfo>(null);
@@ -314,10 +314,10 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
                     response.getOutputStream(true).write("false".getBytes("UTF-8"));
                 }
             } else if ("skip".equals(pDo)) {
-                final SolverJob<?> job = ChallengeResponseController.getInstance().getJobByChallengeId(challenge.getId().getID());
+                final ChallengeResponseController challengeResponseController = ChallengeResponseController.getInstance();
+                final SolverJob<?> job = challengeResponseController.getJobByChallengeId(challenge.getId().getID());
                 if (job != null) {
                     final BrowserSolver browserSolver = BrowserSolver.getInstance();
-                    final ChallengeResponseController challengeResponseController = ChallengeResponseController.getInstance();
                     final Challenge<?> challenge = job.getChallenge();
                     if ("all".equals(skipType)) {
                         challengeResponseController.setSkipRequest(SkipRequest.BLOCK_ALL_CAPTCHAS, browserSolver, challenge);

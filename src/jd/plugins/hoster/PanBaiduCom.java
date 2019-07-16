@@ -18,8 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -42,6 +40,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pan.baidu.com" }, urls = { "https?://(?:www\\.)?pan\\.baidudecrypted\\.com/\\d+" })
 public class PanBaiduCom extends PluginForHost {
@@ -435,11 +435,9 @@ public class PanBaiduCom extends PluginForHost {
         }
     }
 
-    private static Object LOCK = new Object();
-
     @SuppressWarnings("deprecation")
     private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
@@ -547,7 +545,9 @@ public class PanBaiduCom extends PluginForHost {
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
-                account.clearCookies("");
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
@@ -563,11 +563,7 @@ public class PanBaiduCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            throw e;
-        }
+        login(account, true);
         /* 2016-04-21: So far all accounts are handled as free accounts - free does not have any limits anyways! */
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
