@@ -23,6 +23,12 @@ import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -46,12 +52,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fshare.vn" }, urls = { "https?://(?:www\\.)?(?:mega\\.1280\\.com|fshare\\.vn)/file/([0-9A-Z]+)" })
 public class FShareVn extends PluginForHost {
     private final String         SERVERERROR                           = "Tài nguyên bạn yêu cầu không tìm thấy";
@@ -69,10 +69,10 @@ public class FShareVn extends PluginForHost {
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS          = -1;
     /** Use mobile API for different things? */
     private static final boolean use_api_for_premium_account_downloads = true;
-    /** 2019-05-08: API also works for free accounts */
+    /** 2019-05-08: API works for free- and premium accounts! */
     private static final boolean use_api_for_free_account_downloads    = true;
-    /** 2019-05-08: We are not (yet) able to obtain account information via API - keep this DISABLED until there is a solution!! */
-    private static final boolean use_api_for_login_fetch_account_info  = false;
+    /** 2019-07-16: From now on we are able to get account information via API! */
+    private static final boolean use_api_for_login_fetch_account_info  = true;
 
     public FShareVn(PluginWrapper wrapper) {
         super(wrapper);
@@ -750,12 +750,38 @@ public class FShareVn extends PluginForHost {
     public AccountInfo fetchAccountInfoAPI(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         this.loginAPI(account, true);
-        /** 2019-05-08: So far we cannot obtain any account information via API :( */
-        /* As long as we cannot get any information via API, we'll simply treat every account as FREE-account. */
-        account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
-        account.setConcurrentUsePossible(true);
-        ai.setStatus("Free Account");
-        account.setType(AccountType.FREE);
+        br.getPage("https://" + getAPIHost() + "/api/user/get");
+        long validuntil = 0;
+        final String validuntilStr = PluginJSonUtils.getJson(br, "expire_vip");
+        /* 2019-07-16: Website does not display any traffic related information so we'll leave this out for now! */
+        // final String trafficStr = PluginJSonUtils.getJson(br, "traffic");
+        // final String traffic_usedStr = PluginJSonUtils.getJson(br, "traffic_used");
+        // final String account_type = PluginJSonUtils.getJson(br, "account_type");
+        final String webspace_usedStr = PluginJSonUtils.getJson(br, "webspace_used");
+        if (!StringUtils.isEmpty(validuntilStr) && validuntilStr.matches("\\d+")) {
+            validuntil = Long.parseLong(validuntilStr) * 1000;
+        }
+        if (!StringUtils.isEmpty(webspace_usedStr) && webspace_usedStr.matches("\\d+")) {
+            ai.setUsedSpace(webspace_usedStr);
+        }
+        if (validuntil > System.currentTimeMillis()) {
+            ai.setValidUntil(validuntil, br);
+            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            account.setConcurrentUsePossible(true);
+            ai.setStatus("Premium Account");
+            account.setType(AccountType.PREMIUM);
+        } else {
+            /** 2019-05-08: So far we cannot obtain any account information via API :( */
+            /* As long as we cannot get any information via API, we'll simply treat every account as FREE-account. */
+            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+            account.setConcurrentUsePossible(true);
+            if (validuntil > 0) {
+                ai.setStatus("Free (expired Premium)Account");
+            } else {
+                ai.setStatus("Free Account");
+            }
+            account.setType(AccountType.FREE);
+        }
         return ai;
     }
 
