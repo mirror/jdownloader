@@ -16,13 +16,11 @@ public class LinknameCleaner {
     public static final Pattern   par2     = Pattern.compile("(.*?)(\\.vol\\d+\\.par2$|\\.vol\\d+\\+\\d+\\.par2$|\\.par2$)", Pattern.CASE_INSENSITIVE);
     public static final Pattern   par      = Pattern.compile("(.*?)(\\.p\\d+$|\\.par$)", Pattern.CASE_INSENSITIVE);
     public static final Pattern[] rarPats  = new Pattern[] { pat0, pat1, pat3, pat4, pat5, par2, par };
-
     public static final Pattern   pat6     = Pattern.compile("(.*)\\.zip($|\\.html?)", Pattern.CASE_INSENSITIVE);
     public static final Pattern   pat7     = Pattern.compile("(.*)\\.z\\d+($|\\.html?)", Pattern.CASE_INSENSITIVE);
     public static final Pattern   pat8     = Pattern.compile("(?is).*\\.7z\\.[\\d]+($|\\.html?)", Pattern.CASE_INSENSITIVE);
     public static final Pattern   pat9     = Pattern.compile("(.*)\\.a.($|\\.html?)", Pattern.CASE_INSENSITIVE);
     public static final Pattern[] zipPats  = new Pattern[] { pat6, pat7, pat8, pat9 };
-
     public static final Pattern   pat10    = Pattern.compile("(.*)\\._((_[a-z]{1})|([a-z]{2}))(\\.|$)");
     public static Pattern         pat11    = null;
     public static Pattern[]       ffsjPats = null;
@@ -35,16 +33,12 @@ public class LinknameCleaner {
             /* not loaded yet */
         }
     }
-
     public static final Pattern   pat12    = Pattern.compile("(CD\\d+)", Pattern.CASE_INSENSITIVE);
     public static final Pattern   pat13    = Pattern.compile("(part\\d+)", Pattern.CASE_INSENSITIVE);
-
     public static final Pattern   pat14    = Pattern.compile("(.+)\\.+$");
     public static final Pattern   pat15    = Pattern.compile("(.+)-+$");
     public static final Pattern   pat16    = Pattern.compile("(.+)_+$");
-
     public static final Pattern   pat17    = Pattern.compile("(.+)\\.\\d+\\.xtm($|\\.html?)");
-
     public static final Pattern   pat18    = Pattern.compile("(.*)\\.isz($|\\.html?)", Pattern.CASE_INSENSITIVE);
     public static final Pattern   pat19    = Pattern.compile("(.*)\\.i\\d{2}$", Pattern.CASE_INSENSITIVE);
     public static final Pattern[] iszPats  = new Pattern[] { pat18, pat19 };
@@ -70,7 +64,6 @@ public class LinknameCleaner {
                     break;
                 }
             }
-
             if (extensionStilExists) {
                 /**
                  * remove 7zip/zip and hjmerge extensions
@@ -105,7 +98,6 @@ public class LinknameCleaner {
                     extensionStilExists = false;
                 }
             }
-
             if (extensionStilExists && ffsjPats != null) {
                 /**
                  * FFSJ splitted files
@@ -121,7 +113,6 @@ public class LinknameCleaner {
                 }
             }
         }
-
         /**
          * remove CDx,Partx
          */
@@ -133,7 +124,6 @@ public class LinknameCleaner {
         if (tmpname.length() > 3) {
             name = tmpname;
         }
-
         /* remove extension */
         if (EXTENSION_SETTINGS.REMOVE_ALL.equals(extensionSettings) || EXTENSION_SETTINGS.REMOVE_KNOWN.equals(extensionSettings)) {
             while (true) {
@@ -147,7 +137,11 @@ public class LinknameCleaner {
                         name = name.substring(0, lastPoint);
                     } else if (extLength <= 4 && EXTENSION_SETTINGS.REMOVE_ALL.equals(extensionSettings) && ext.matches("^[0-9a-zA-z]+$")) {
                         /* make sure to cut off only known extensions */
-                        name = name.substring(0, lastPoint);
+                        if (extensionStilExists) {
+                            name = name.substring(0, lastPoint);
+                        } else {
+                            break;
+                        }
                     } else {
                         break;
                     }
@@ -160,7 +154,6 @@ public class LinknameCleaner {
         name = getNameMatch(name, pat14);
         name = getNameMatch(name, pat15);
         name = getNameMatch(name, pat16);
-
         /* if enabled, replace dots and _ with spaces and do further clean ups */
         if (cleanup && org.jdownloader.settings.staticreferences.CFG_GENERAL.CLEAN_UP_FILENAMES.isEnabled()) {
             StringBuilder sb = new StringBuilder();
