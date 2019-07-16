@@ -134,7 +134,7 @@ public class PanBaiduwpCom extends antiDDoSForHost {
         final String shorturl_id = link.getStringProperty("shorturl_id", null);
         final long position = link.getLongProperty("position", -1);
         final boolean urlCompatible_by_hash = internal_md5hash != null && shorturl_id != null;
-        final boolean urlCompatible_by_position = position > -1;
+        // final boolean urlCompatible_by_position = position > -1;
         /* In over 99% of all cases, we should already have the correct password here! */
         String passCode = link.getDownloadPassword();
         int counter = 0;
@@ -155,41 +155,30 @@ public class PanBaiduwpCom extends antiDDoSForHost {
         if (passCode != null) {
             link.setDownloadPassword(passCode);
         }
-        {
-            // final String path_full = link.getStringProperty("path_full", null);
-            /*
-             * For nested files: We need to find the correct subfolder and access it. TODO: Check this with bigger folder structures - for
-             * now, this only helps is there is only ONE subfolder!
-             */
-            final String[] subfolders = br.getRegex("<a href=\"/s/[^<>\"]+\\&path=%2F[^\"]+\">[^<>\"]+</a>").getColumn(-1);
-            if (subfolders.length == 1) {
-                final String subfolderHTML = subfolders[0];
-                final String subfolderURL = new Regex(subfolderHTML, "\"(/s/[^\"]+)\"").getMatch(0);
-                if (subfolderURL == null) {
-                    /* Should not / cannot happen */
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                getPage(subfolderURL);
-            }
-        }
+        // {
+        // // final String path_full = link.getStringProperty("path_full", null);
+        // /*
+        // * For nested files: We need to find the correct subfolder and access it. TODO: Check this with bigger folder structures - for
+        // * now, this only helps is there is only ONE subfolder!
+        // */
+        // final String[] subfolders = br.getRegex("<a href=\"/s/[^<>\"]+\\&path=%2F[^\"]+\">[^<>\"]+</a>").getColumn(-1);
+        // if (subfolders.length == 1) {
+        // final String subfolderHTML = subfolders[0];
+        // final String subfolderURL = new Regex(subfolderHTML, "\"(/s/[^\"]+)\"").getMatch(0);
+        // if (subfolderURL == null) {
+        // /* Should not / cannot happen */
+        // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // }
+        // getPage(subfolderURL);
+        // }
+        // }
         String targetHTML = null;
-        /* Now we have a list of files of a folder but we want to download a specific file so let's find that ... */
-        final String[] htmls = br.getRegex("<li class=\"list-group-item border-muted rounded text-muted py-2\">.*?</li>").getColumn(-1);
-        long index = 0;
-        for (final String html : htmls) {
-            final boolean foundHTML;
-            if (urlCompatible_by_hash) {
-                /* Safe way */
-                foundHTML = html.contains(internal_md5hash);
-            } else {
-                /* Unsafe way - use this whenever no other identifiers are given! */
-                foundHTML = index == position;
-            }
-            if (foundHTML) {
-                targetHTML = html;
-                break;
-            }
-            index++;
+        if (urlCompatible_by_hash) {
+            /* 2019-07-16: Easy and more reliable way; can als work for files in nested subfolders */
+            targetHTML = findTargetHTML_by_hash(internal_md5hash, null);
+        } else {
+            /* 2019-07-16: More unreliable way */
+            targetHTML = findDownloadHTMLSnippet(internal_md5hash, position, urlCompatible_by_hash);
         }
         if (targetHTML == null) {
             logger.warning("Failed to find html leading to desired file");
@@ -235,6 +224,55 @@ public class PanBaiduwpCom extends antiDDoSForHost {
         final int random = new Random().nextInt(ressourcelist.size());
         String dllink = (String) ressourcelist.get(random);
         return dllink;
+    }
+
+    private String findTargetHTML_by_hash(final String internal_md5hash, String[] subfolders) throws IOException {
+        if (subfolders != null) {
+            for (final String subfolderHTML : subfolders) {
+                final String subfolderURL = new Regex(subfolderHTML, "\"(/s/[^\"]+)\"").getMatch(0);
+                if (subfolderURL == null) {
+                    return null;
+                }
+                br.getPage(subfolderURL);
+                String targetHTML = findDownloadHTMLSnippet(internal_md5hash, -1, true);
+                if (targetHTML != null) {
+                    return targetHTML;
+                }
+                /* Else continue to look for more subfolders! */
+            }
+        }
+        subfolders = br.getRegex("<a href=\"/s/[^<>\"]+\\&path=%2F[^\"]+\">[^<>\"]+</a>").getColumn(-1);
+        if (subfolders == null) {
+            return null;
+        }
+        return findTargetHTML_by_hash(internal_md5hash, subfolders);
+    }
+
+    /**
+     * Recursive function to find html even when files are nested deep in subfolders. The more complicated that structure is, the longer
+     * this may need!
+     */
+    private String findDownloadHTMLSnippet(final String internal_md5hash, final long position, final boolean urlCompatible_by_hash) {
+        /* Now we have a list of files of a folder but we want to download a specific file so let's find that ... */
+        String targetHTML = null;
+        final String[] htmls = br.getRegex("<li class=\"list-group-item border-muted rounded text-muted py-2\">.*?</li>").getColumn(-1);
+        long index = 0;
+        for (final String html : htmls) {
+            final boolean foundHTML;
+            if (urlCompatible_by_hash) {
+                /* Safe way */
+                foundHTML = html.contains(internal_md5hash);
+            } else {
+                /* Unsafe way - use this whenever no other identifiers are given! */
+                foundHTML = index == position;
+            }
+            if (foundHTML) {
+                targetHTML = html;
+                break;
+            }
+            index++;
+        }
+        return targetHTML;
     }
 
     private void handleDL(final Account account, final DownloadLink link, final String dllink) throws Exception {
