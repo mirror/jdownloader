@@ -15,20 +15,19 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.text.DecimalFormat;
-import java.util.HashMap;
 import java.util.LinkedHashSet;
-import java.util.Map.Entry;
 import java.util.regex.Pattern;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.HeadRequest;
@@ -48,10 +47,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "e-hentai.org" }, urls = { "^https?://(?:www\\.)?(?:(?:g\\.)?e-hentai\\.org|exhentai\\.org)/s/[a-f0-9]{10}/(\\d+)-(\\d+)$" })
 public class EHentaiOrg extends PluginForHost {
@@ -330,7 +325,7 @@ public class EHentaiOrg extends PluginForHost {
             } else {
                 br.getPage("http://exhentai.org/home.php");
                 if (account != null) { // todo: ensure this works?
-                    saveCookies(br, account);
+                    account.saveCookies(br.getCookies(MAINPAGE), "");
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "509.gif", 2 * 60 * 1000l);
                 }
             }
@@ -372,7 +367,7 @@ public class EHentaiOrg extends PluginForHost {
             if (br.containsHTML("¿You have exceeded your image viewing limits\\. Note that you can reset these limits by going")) {
                 br.getPage("http://exhentai.org/home.php");
                 if (account != null) { // todo: ensure this works?
-                    saveCookies(br, account);
+                    account.saveCookies(br.getCookies(MAINPAGE), "");
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
@@ -386,106 +381,77 @@ public class EHentaiOrg extends PluginForHost {
     private static final String MAINPAGE = "http://e-hentai.org";
     private static Object       LOCK     = new Object();
 
-    @SuppressWarnings("unchecked")
     public void login(final Browser br, final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
-                // Load cookies
                 br.setCookiesExclusive(true);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                final Cookies cookies = account.loadCookies("");
+                boolean loggedInViaCookies = false;
+                if (cookies != null) {
+                    br.setCookies(MAINPAGE, cookies);
+                    br.setCookies("http://exhentai.org/", cookies);
+                    br.getPage("https://forums.e-hentai.org/index.php?");
+                    loggedInViaCookies = this.isLoggedIn();
                 }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            br.setCookie(MAINPAGE, key, value);
-                            /* Important! */
-                            br.setCookie("http://exhentai.org/", key, value);
+                if (!loggedInViaCookies) {
+                    boolean failed = true;
+                    br.setFollowRedirects(true);
+                    br.getPage("https://forums.e-hentai.org/index.php?act=Login&CODE=01");
+                    for (int i = 0; i <= 3; i++) {
+                        final Form loginform = br.getFormbyKey("CookieDate");
+                        if (loginform == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
-                        return;
-                    }
-                }
-                boolean failed = true;
-                br.setFollowRedirects(true);
-                br.getPage("https://forums.e-hentai.org/index.php?act=Login&CODE=01");
-                for (int i = 0; i <= 3; i++) {
-                    final Form loginform = br.getFormbyKey("CookieDate");
-                    if (loginform == null) {
-                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        } else {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        loginform.put("UserName", account.getUser());
+                        loginform.put("PassWord", account.getPass());
+                        if (i > 0 && br.containsHTML("g-recaptcha-response")) {
+                            /*
+                             * First login attempt failed and we get a captcha --> Does not necessarily mean that user entered wrong
+                             * logindata - captchas may happen!
+                             */
+                            final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br);
+                            final String recaptchaV2Response = rc2.getToken();
+                            loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                        } else if (i > 0) {
+                            logger.info("No captcha on 2nd login attempt --> Probably invalid logindata");
+                            break;
+                        }
+                        br.submitForm(loginform);
+                        failed = !isLoggedIn();
+                        if (!failed) {
+                            break;
                         }
                     }
-                    loginform.put("UserName", account.getUser());
-                    loginform.put("PassWord", account.getPass());
-                    if (i > 0 && br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
-                        /* First login try failed and we get a captcha --> Does not necessarily mean that user entered wrong logindata! */
-                        final Recaptcha rc = new Recaptcha(br, this);
-                        rc.findID();
-                        rc.load();
-                        final DownloadLink dummyLink = new DownloadLink(this, "Account", "e-hentai.org", "http://e-hentai.org", true);
-                        final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                        final String c = getCaptchaCode("recaptcha", cf, dummyLink);
-                        loginform.put("recaptcha_challenge_field", rc.getChallenge());
-                        loginform.put("recaptcha_response_field", c);
+                    if (failed) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
-                    br.submitForm(loginform);
-                    failed = br.getCookie(MAINPAGE, "ipb_pass_hash") == null;
-                    if (!failed) {
-                        break;
-                    }
+                    /* 2019-07-17: Now required anymore */
+                    // br.getPage("https://exhentai.org/");
                 }
-                if (failed) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                }
-                br.getPage("http://exhentai.org/");
-                saveCookies(br, account);
+                account.saveCookies(br.getCookies(MAINPAGE), "");
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                account.clearCookies("");
                 throw e;
             }
         }
     }
 
-    private void saveCookies(final Browser br, final Account account) {
-        synchronized (LOCK) {
-            // Save cookies
-            final HashMap<String, String> cookies = new HashMap<String, String>();
-            final Cookies add = br.getCookies(MAINPAGE);
-            for (final Cookie c : add.getCookies()) {
-                cookies.put(c.getKey(), c.getValue());
-            }
-            account.setProperty("name", Encoding.urlEncode(account.getUser()));
-            account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-            account.setProperty("cookies", cookies);
-        }
+    private boolean isLoggedIn() {
+        return br.getCookie(MAINPAGE, "ipb_pass_hash", Cookies.NOTDELETEDPATTERN) != null;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         try {
             login(this.br, account, true);
         } catch (PluginException e) {
-            account.setValid(false);
             throw e;
         }
         ai.setUnlimitedTraffic();
         account.setType(AccountType.PREMIUM);
         account.setConcurrentUsePossible(true);
         ai.setStatus("Premium Account");
-        account.setValid(true);
         return ai;
     }
 

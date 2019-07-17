@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Random;
 
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
@@ -46,7 +47,6 @@ import jd.plugins.components.MultiHosterManagement;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pan.baiduwp.com" }, urls = { "" })
 public class PanBaiduwpCom extends antiDDoSForHost {
-    private static final String          PROTOCOL                  = "https://";
     /* Connection limits */
     private static final boolean         ACCOUNT_PREMIUM_RESUME    = true;
     private static final int             ACCOUNT_PREMIUM_MAXCHUNKS = 0;
@@ -79,11 +79,11 @@ public class PanBaiduwpCom extends antiDDoSForHost {
             /* without account its not possible to download the link */
             return false;
         }
-        final long position = link.getLongProperty("position", -1);
+        final String positionarrayCommaSeparated = link.getStringProperty("positionarray", null);
         final String internal_md5hash = link.getStringProperty("internal_md5hash", null);
         final String shorturl_id = link.getStringProperty("shorturl_id", null);
         final boolean urlCompatible_by_hash = internal_md5hash != null && shorturl_id != null;
-        final boolean urlCompatible_by_position = position > -1;
+        final boolean urlCompatible_by_position = positionarrayCommaSeparated != null;
         return urlCompatible_by_hash || urlCompatible_by_position;
     }
 
@@ -132,8 +132,9 @@ public class PanBaiduwpCom extends antiDDoSForHost {
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
         final String internal_md5hash = link.getStringProperty("internal_md5hash", null);
         final String shorturl_id = link.getStringProperty("shorturl_id", null);
-        final long position = link.getLongProperty("position", -1);
+        final String positionarrayCommaSeparated = link.getStringProperty("positionarray", null);
         final boolean urlCompatible_by_hash = internal_md5hash != null && shorturl_id != null;
+        final boolean urlCompatible_by_position_array = positionarrayCommaSeparated != null;
         // final boolean urlCompatible_by_position = position > -1;
         /* In over 99% of all cases, we should already have the correct password here! */
         String passCode = link.getDownloadPassword();
@@ -155,34 +156,36 @@ public class PanBaiduwpCom extends antiDDoSForHost {
         if (passCode != null) {
             link.setDownloadPassword(passCode);
         }
-        // {
-        // // final String path_full = link.getStringProperty("path_full", null);
-        // /*
-        // * For nested files: We need to find the correct subfolder and access it. TODO: Check this with bigger folder structures - for
-        // * now, this only helps is there is only ONE subfolder!
-        // */
-        // final String[] subfolders = br.getRegex("<a href=\"/s/[^<>\"]+\\&path=%2F[^\"]+\">[^<>\"]+</a>").getColumn(-1);
-        // if (subfolders.length == 1) {
-        // final String subfolderHTML = subfolders[0];
-        // final String subfolderURL = new Regex(subfolderHTML, "\"(/s/[^\"]+)\"").getMatch(0);
-        // if (subfolderURL == null) {
-        // /* Should not / cannot happen */
-        // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // }
-        // getPage(subfolderURL);
-        // }
-        // }
         String targetHTML = null;
         if (urlCompatible_by_hash) {
-            /* 2019-07-16: Easy and more reliable way; can als work for files in nested subfolders */
+            /* 2019-07-16: Easy and more reliable way; can also work for files in nested subfolders */
             targetHTML = findTargetHTML_by_hash(internal_md5hash, null);
         } else {
-            /* 2019-07-16: More unreliable way */
-            targetHTML = findDownloadHTMLSnippet(internal_md5hash, position, urlCompatible_by_hash);
+            /* Grab file to download only by position! This is an unsafe way but will usually do the job! */
+            final String[] positionarrayStr = positionarrayCommaSeparated.split(",");
+            int[] posarray = new int[positionarrayStr.length];
+            int counter_pos = 0;
+            for (final String positionStr : positionarrayStr) {
+                posarray[counter_pos] = Integer.parseInt(positionStr);
+                counter_pos++;
+            }
+            targetHTML = findTargetHTML_by_position(0, posarray);
         }
         if (targetHTML == null) {
             logger.warning("Failed to find html leading to desired file");
-            mhm.handleErrorGeneric(account, link, "target_html_null", 50, 2 * 60 * 1000l);
+            /* Keep the retry count low as this should never happen!! */
+            mhm.handleErrorGeneric(account, link, "target_html_null", 5, 2 * 60 * 1000l);
+        }
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            /* 2019-07-17: For development purposes */
+            String comment_current = link.getComment();
+            if (comment_current == null) {
+                comment_current = "";
+            } else {
+                comment_current += " | baiduwp URL: ";
+            }
+            comment_current += br.getURL();
+            link.setComment(comment_current);
         }
         String dlparamsStr = new Regex(targetHTML, "dl\\(([^\\)]+)\\)").getMatch(0);
         if (StringUtils.isEmpty(dlparamsStr)) {
@@ -226,14 +229,51 @@ public class PanBaiduwpCom extends antiDDoSForHost {
         return dllink;
     }
 
-    private String findTargetHTML_by_hash(final String internal_md5hash, String[] subfolders) throws IOException {
-        if (subfolders != null) {
-            for (final String subfolderHTML : subfolders) {
-                final String subfolderURL = new Regex(subfolderHTML, "\"(/s/[^\"]+)\"").getMatch(0);
+    /*
+     * E.g. positionArray = {0,3,6} --> Enter the subfolder on position[0], then the subfolder on position[3], then the file on position
+     * [6].
+     */
+    private String findTargetHTML_by_position(int positionCurrent, int[] positionArray) throws Exception {
+        final String[] subfolderHTMLs = getSubfolderHTMLSnippets();
+        final int currentGrabPosition = positionArray[positionCurrent];
+        /*
+         * Make sure that we only try to find a subfolder if the position is valid. Else we may have a folder which contains subfolders AND
+         * files and we want to grab a file 'below' the subfolders which means position of that file may be higher than of the folders
+         * (assuming subfolders are always listed above files in the same folder)!
+         */
+        final boolean positionIsInSubfolderRange = currentGrabPosition <= subfolderHTMLs.length - 1;
+        if (subfolderHTMLs != null && subfolderHTMLs.length > 0 && positionIsInSubfolderRange) {
+            logger.info("Current loop: " + positionCurrent);
+            logger.info("Current position to grab: " + currentGrabPosition);
+            String subfolderHTML = null;
+            try {
+                subfolderHTML = subfolderHTMLs[currentGrabPosition];
+            } catch (final Throwable e) {
+                return null;
+            }
+            final String subfolderURL = regexSubfolderURL(subfolderHTML);
+            if (subfolderURL == null) {
+                logger.warning("Failed to find subfolderURL");
+                return null;
+            }
+            logger.info("Current folder: " + subfolderURL);
+            getPage(subfolderURL);
+            positionCurrent++;
+            return findTargetHTML_by_position(positionCurrent, positionArray);
+        }
+        final String targetHTML = findDownloadHTMLSnippet(null, currentGrabPosition, false);
+        return targetHTML;
+    }
+
+    private String findTargetHTML_by_hash(final String internal_md5hash, String[] subfoldersHTMLs) throws Exception {
+        if (subfoldersHTMLs != null) {
+            for (final String subfolderHTML : subfoldersHTMLs) {
+                final String subfolderURL = regexSubfolderURL(subfolderHTML);
                 if (subfolderURL == null) {
+                    logger.warning("Failed to find subfolderURL");
                     return null;
                 }
-                br.getPage(subfolderURL);
+                getPage(subfolderURL);
                 String targetHTML = findDownloadHTMLSnippet(internal_md5hash, -1, true);
                 if (targetHTML != null) {
                     return targetHTML;
@@ -241,11 +281,19 @@ public class PanBaiduwpCom extends antiDDoSForHost {
                 /* Else continue to look for more subfolders! */
             }
         }
-        subfolders = br.getRegex("<a href=\"/s/[^<>\"]+\\&path=%2F[^\"]+\">[^<>\"]+</a>").getColumn(-1);
-        if (subfolders == null) {
+        subfoldersHTMLs = getSubfolderHTMLSnippets();
+        if (subfoldersHTMLs == null) {
             return null;
         }
-        return findTargetHTML_by_hash(internal_md5hash, subfolders);
+        return findTargetHTML_by_hash(internal_md5hash, subfoldersHTMLs);
+    }
+
+    private String[] getSubfolderHTMLSnippets() {
+        return br.getRegex("<a href=\"/s/[^<>\"]+\\&path=%2F[^\"]+\">[^<>\"]+</a>").getColumn(-1);
+    }
+
+    private String regexSubfolderURL(final String subfolderHTML) {
+        return new Regex(subfolderHTML, "\"(/s/[^\"<>]*?)\"").getMatch(0);
     }
 
     /**
@@ -342,6 +390,10 @@ public class PanBaiduwpCom extends antiDDoSForHost {
         ArrayList<String> supportedHosts = new ArrayList<String>();
         supportedHosts.add("pan.baidu.com");
         account.setType(AccountType.PREMIUM);
+        /*
+         * 2019-07-17: Our plugin may lead to a lot of http requests for each file --> Only allow 1 download 'per account' to keep the
+         * number of requests low! Also they have a quite tight daily downloadlimit which will quickly kick in.
+         */
         account.setMaxSimultanDownloads(1);
         ai.setStatus("Dummy account");
         ai.setMultiHostSupport(this, supportedHosts);

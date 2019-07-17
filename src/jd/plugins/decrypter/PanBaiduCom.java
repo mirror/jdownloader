@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Random;
 
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -39,7 +40,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pan.baidu.com" }, urls = { "https?://(?:www\\.)?(?:pan|yun)\\.baidu\\.com/(?:share|wap)/.+|https?://(?:www\\.)?pan\\.baidu\\.com/s/[A-Za-z0-9-_]+(\\?linkpassword=[^#&]+)?(?:#(dir|list)/path=%2F.+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pan.baidu.com" }, urls = { "https?://(?:pan|yun)\\.baidu\\.com/(?:share|wap)/.+|https?://(?:www\\.)?pan\\.baidu\\.com/s/.+" })
 public class PanBaiduCom extends PluginForDecrypt {
     public PanBaiduCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -60,6 +61,9 @@ public class PanBaiduCom extends PluginForDecrypt {
     private String                             parameter                             = null;
     private final ArrayList<DownloadLink>      decryptedLinks                        = new ArrayList<DownloadLink>();
     private int                                file_object_index                     = 0;
+    private int                                folder_object_index                   = 0;
+    private int                                object_index                          = 0;
+    private String                             position_arrayStr                     = null;
     private final HashMap<String, FilePackage> filePackages                          = new HashMap<String, FilePackage>();
 
     @SuppressWarnings({ "deprecation" })
@@ -74,6 +78,13 @@ public class PanBaiduCom extends PluginForDecrypt {
             parameter = parameter.replaceAll("(\\&|\\?|#)linkpassword=" + link_password, "");
             /* Revert urlencode */
             link_password = Encoding.htmlDecode(link_password);
+        }
+        position_arrayStr = new Regex(parameter, "positionarray=([^<>\"\\&=]+)").getMatch(0);
+        if (position_arrayStr != null) {
+            /* Remove invalid parameter from url. */
+            parameter = parameter.replaceAll("(\\&|\\?|#)positionarray=" + link_password, "");
+            /* Revert possible urlencode */
+            position_arrayStr = Encoding.htmlDecode(position_arrayStr);
         }
         if (!parameter.matches(TYPE_FOLDER_NORMAL_PASSWORD_PROTECTED) && !parameter.matches(TYPE_FOLDER_SHORT) && !parameter.matches(TYPE_FOLDER_USER_HOME)) {
             /* Correct invalid "view" linktypes - we need one general linkformat! */
@@ -283,6 +294,12 @@ public class PanBaiduCom extends PluginForDecrypt {
         final long size = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
         final long isdelete = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
         final long isdir = JavaScriptEngineFactory.toLong(entries.get("isdir"), 0);
+        final String position_arrayStr_current;
+        if (position_arrayStr == null) {
+            position_arrayStr_current = "" + object_index;
+        } else {
+            position_arrayStr_current = position_arrayStr + "," + object_index;
+        }
         if (isdir == 1) {
             final String path = (String) entries.get("path");
             String subdir_link = null;
@@ -301,6 +318,7 @@ public class PanBaiduCom extends PluginForDecrypt {
             } else {
                 subdir_link = "http://pan.baidu.com/s/" + shorturl_id + "#dir/path=" + Encoding.urlEncode(path);
             }
+            subdir_link += "?positionarray=" + Encoding.urlEncode(position_arrayStr_current);
             if (link_password != null) {
                 /*
                  * Add passsword so in case user adds password protected mainfolder once he does not have to enter the password again for
@@ -372,7 +390,11 @@ public class PanBaiduCom extends PluginForDecrypt {
             dl.setProperty("origurl_uk", uk);
             dl.setProperty("origurl_shareid", shareid);
             /* Required for multihoster support */
-            dl.setProperty("position", file_object_index);
+            dl.setProperty("positionarray", position_arrayStr_current);
+            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                /* Only for development purposes */
+                dl.setComment("Position: " + position_arrayStr_current);
+            }
             if (isdelete == 1) {
                 dl.setAvailable(false);
             } else {
@@ -417,6 +439,7 @@ public class PanBaiduCom extends PluginForDecrypt {
             dl.setLinkID(linkid);
             file_object_index++;
         }
+        object_index++;
         decryptedLinks.add(dl);
     }
 
