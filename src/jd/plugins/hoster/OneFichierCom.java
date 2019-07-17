@@ -21,7 +21,20 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.regex.Pattern;
+
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DefaultIntValue;
+import org.appwork.storage.config.annotations.SpinnerValidator;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginHost;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.config.TakeValueFromSubconfig;
+import org.jdownloader.plugins.config.Type;
+import org.jdownloader.translate._JDT;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -49,37 +62,15 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.config.annotations.DefaultIntValue;
-import org.appwork.storage.config.annotations.SpinnerValidator;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginHost;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.config.TakeValueFromSubconfig;
-import org.jdownloader.plugins.config.Type;
-import org.jdownloader.translate._JDT;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class OneFichierCom extends PluginForHost {
     private final String         HTML_PASSWORDPROTECTED       = "(This file is Password Protected|Ce fichier est protégé par mot de passe|access with a password)";
     private final String         PROPERTY_FREELINK            = "freeLink";
     private final String         PROPERTY_HOTLINK             = "hotlink";
     private final String         PROPERTY_PREMLINK            = "premLink";
-    private final String         PREFER_RECONNECT             = "PREFER_RECONNECT";
-    private final String         PREFER_SSL                   = "PREFER_SSL";
     private static final String  MAINPAGE                     = "https://1fichier.com/";
     /** 2019-04-04: Documentation: https://1fichier.com/api.html */
     public static final String   API_BASE                     = "https://api.1fichier.com/v1";
-    /**
-     * True = use API, false = use combination of website + old basic auth API - ONLY RELEVANT FOR PREMIUM USERS; IF ENABLED, USER HAS TO
-     * ENTER API_KEY INSTEAD OF USERNAME:PASSWORD!
-     */
-    public static final boolean  use_premium_api              = false;
     private boolean              pwProtected                  = false;
     private DownloadLink         currDownloadLink             = null;
     /* Max total connections for premium = 30 (RE: admin, updated 07.03.2019) */
@@ -96,44 +87,35 @@ public class OneFichierCom extends PluginForHost {
      */
     private static final boolean resume_free_hotlink          = true;
     private static final int     maxchunks_free_hotlink       = -4;
-    public static String[]       domains                      = new String[] { "1fichier.com", "alterupload.com", "cjoint.net", "desfichiers.net", "dfichiers.com", "megadl.fr", "mesfichiers.org", "piecejointe.net", "pjointe.com", "tenvoi.com", "dl4free.com" };
+    // public static String[] domains = new String[] { "1fichier.com", "alterupload.com", "cjoint.net", "desfichiers.net", "dfichiers.com",
+    // "megadl.fr", "mesfichiers.org", "piecejointe.net", "pjointe.com", "tenvoi.com", "dl4free.com" };
 
     @Override
     public String[] siteSupportedNames() {
         /* 1st domain = current domain! */
-        final List<String> ret = new ArrayList<String>(Arrays.asList(domains));
+        final String[] supportedDomains = buildAnnotationNames(getPluginDomains());
+        final List<String> ret = Arrays.asList(supportedDomains);
         ret.add("1fichier");
         return ret.toArray(new String[0]);
     }
 
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "1fichier.com", "alterupload.com", "cjoint.net", "desfichiers.net", "dfichiers.com", "megadl.fr", "mesfichiers.org", "piecejointe.net", "pjointe.com", "tenvoi.com", "dl4free.com" });
+        return ret;
+    }
+
     public static String[] getAnnotationNames() {
-        return new String[] { domains[0] };
+        return buildAnnotationNames(getPluginDomains());
     }
 
-    /**
-     * returns the annotation pattern array: 'https?://(?:www\\.)?(?:domain1|domain2)/(?:embed\\-)?[a-z0-9]{12}'
-     *
-     */
     public static String[] getAnnotationUrls() {
-        // construct pattern
-        // final String host = getHostsPattern();
-        return new String[] { getHostsPattern() };
-    }
-
-    /** Returns '(?:domain1|domain2)' */
-    private static String getHostsPatternPart() {
-        final StringBuilder pattern = new StringBuilder();
-        for (final String name : domains) {
-            pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/\\?[a-z0-9]{5,20}|https?://[a-z0-9]{5,20}\\." + buildHostsPatternPart(domains));
         }
-        return pattern.toString();
-    }
-
-    /** returns 'https?://(?:www\\.)?(?:domain1|domain2)' */
-    private static String getHostsPattern() {
-        /* Supports old- + new linkformat */
-        final String hosts = "https?://(www\\.)?(?:" + getHostsPatternPart() + ")/\\?[a-z0-9]{5,20}|https?://[a-z0-9]{5,20}\\." + "(?:" + getHostsPatternPart() + ")";
-        return hosts;
+        return ret.toArray(new String[0]);
     }
 
     public OneFichierCom(PluginWrapper wrapper) {
@@ -594,8 +576,7 @@ public class OneFichierCom extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         if (account.getUser() == null || !account.getUser().matches(".+@.+")) {
             ai.setStatus(":\r\nYou need to use Email as username!");
-            account.setValid(false);
-            return ai;
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "You need to use Email as username!", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         br.setAllowedResponseCodes(new int[] { 403, 503 });
         br = new Browser();
@@ -687,6 +668,12 @@ public class OneFichierCom extends PluginForHost {
             return ai;
         }
         checkErrorsAPI(account);
+        String mail = PluginJSonUtils.getJson(br, "email");
+        if (!StringUtils.isEmpty(mail)) {
+            /* don't store the complete username for security purposes. */
+            final String shortuserName = "***" + mail.substring(3, mail.length());
+            account.setUser(shortuserName);
+        }
         final String subscription_end = PluginJSonUtils.getJson(br, "subscription_end");
         final String available_credits_in_gigabyte_str = PluginJSonUtils.getJson(br, "cdn");
         final double available_credits_in_gigabyte = available_credits_in_gigabyte_str != null ? Double.parseDouble(available_credits_in_gigabyte_str) : 0;
@@ -744,6 +731,7 @@ public class OneFichierCom extends PluginForHost {
                 /* This should never happen! */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown API error", 5 * 60 * 1000l);
             }
+            final String account_invalid_text = "Invalid API Key - you can find your API Key here: 1fichier.com/console/params.pl";
             if (message.matches("Flood detected: IP Locked #\\d+")) {
                 if (account != null) {
                     throw new AccountUnavailableException("API flood detection #38 has been triggered", 5 * 60 * 1000l);
@@ -761,13 +749,21 @@ public class OneFichierCom extends PluginForHost {
                 /* Login required but not logged in */
                 if (account != null) {
                     /* Assume APIKey is invalid or simply not valid anymore (e.g. user disabled or changed APIKey) */
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, account_invalid_text, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new AccountRequiredException();
+                }
+            } else if (message.matches("No such user #\\d+")) {
+                /* Login required but not logged in */
+                if (account != null) {
+                    /* Assume APIKey is invalid or simply not valid anymore (e.g. user disabled or changed APIKey) */
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, account_invalid_text, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else {
                     throw new AccountRequiredException();
                 }
             } else {
                 /* Unknown/unhandled error */
-                /** TODO: Replace PLUGIN_DEFECT with retry handling */
+                /** TODO: Maybe replace PLUGIN_DEFECT with retry handling */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
@@ -968,7 +964,7 @@ public class OneFichierCom extends PluginForHost {
         }
         /* 2019-04-04: Downloadlink is officially only valid for 5 minutes */
         dllink = PluginJSonUtils.getJson(br, "url");
-        if (StringUtils.isEmpty(dllink)) {
+        if (StringUtils.isEmpty(dllink) || !dllink.startsWith("http")) {
             checkErrorsAPI(account);
         }
         return dllink;
@@ -1081,16 +1077,16 @@ public class OneFichierCom extends PluginForHost {
     }
 
     public static String getAPIKey(final Account account) {
-        /** TODO: Debug stuff - remove this once a 'real' API implementation/AccountFactory gets added. */
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            return "YOUR_TEST_API_KEY_GOES_HERE";
-        } else {
-            return account.getPass();
-        }
+        return account.getPass();
     }
 
     public static boolean canUseAPI(final Account account) {
-        return account != null && account.getType() == AccountType.PREMIUM && use_premium_api;
+        /**
+         * true = use premium API, false = use combination of website + OLD basic auth API - ONLY RELEVANT FOR PREMIUM USERS; IF ENABLED,
+         * USER HAS TO ENTER API_KEY INSTEAD OF USERNAME:PASSWORD (or APIKEY:APIKEY)!!
+         */
+        final boolean useAPI_setting = PluginJsonConfig.get(OneFichierConfigInterface.class).isUsePremiumAPIEnabled();
+        return account != null && (account.getType() == AccountType.PREMIUM || account.getType() == AccountType.UNKNOWN) && useAPI_setting;
     }
 
     /** Required to authenticate via API. */
@@ -1258,6 +1254,10 @@ public class OneFichierCom extends PluginForHost {
             public String getSmallFilesWaitInterval_label() {
                 return "Wait x seconds for small files (smaller than 50 mbyte) to prevent IP block";
             }
+
+            public String getUsePremiumAPIEnabled_label() {
+                return "Use premium API? This may help to get around 2FA login issues. Works ONLY for premium accounts! Once enabled, enter your API Key as username AND password!";
+            }
         }
 
         public static final OneFichierConfigInterfaceTranslation TRANSLATION = new OneFichierConfigInterfaceTranslation();
@@ -1275,6 +1275,13 @@ public class OneFichierCom extends PluginForHost {
         boolean isPreferSSLEnabled();
 
         void setPreferSSLEnabled(boolean b);
+
+        @AboutConfig
+        @DefaultBooleanValue(false)
+        @TakeValueFromSubconfig("USE_PREMIUM_API")
+        boolean isUsePremiumAPIEnabled();
+
+        void setUsePremiumAPIEnabled(boolean b);
 
         @AboutConfig
         @DefaultIntValue(10)

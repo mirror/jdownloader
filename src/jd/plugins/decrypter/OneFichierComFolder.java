@@ -47,11 +47,11 @@ public class OneFichierComFolder extends PluginForDecrypt {
 
     @Override
     public String[] siteSupportedNames() {
-        return jd.plugins.hoster.OneFichierCom.domains;
+        return jd.plugins.hoster.OneFichierCom.getAnnotationNames();
     }
 
     public static String[] getAnnotationNames() {
-        return new String[] { jd.plugins.hoster.OneFichierCom.domains[0] };
+        return new String[] { jd.plugins.hoster.OneFichierCom.getAnnotationNames()[0] };
     }
 
     /**
@@ -66,7 +66,7 @@ public class OneFichierComFolder extends PluginForDecrypt {
 
     private static String getHostsPattern() {
         final StringBuilder pattern = new StringBuilder();
-        for (final String name : jd.plugins.hoster.OneFichierCom.domains) {
+        for (final String name : jd.plugins.hoster.OneFichierCom.getAnnotationNames()) {
             pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
         }
         final String hosts = "https?://(?:www\\.)?" + "(?:" + pattern.toString() + ")";

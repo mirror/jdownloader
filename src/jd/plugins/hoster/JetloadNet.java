@@ -18,6 +18,11 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -31,9 +36,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "jetload.net" }, urls = { "https?://(?:www\\.)?jetload\\.net/(?:#\\!/d|e|#\\!/v)/([A-Za-z0-9]+)" })
 public class JetloadNet extends PluginForHost {
@@ -66,12 +68,16 @@ public class JetloadNet extends PluginForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        final String linkid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        final String linkid = getFID(link);
         if (linkid != null) {
-            return linkid;
+            return this.getHost() + "://" + linkid;
         } else {
             return super.getLinkID(link);
         }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     @Override
@@ -100,7 +106,7 @@ public class JetloadNet extends PluginForHost {
          * happen that a file gets displayed as online (linkgrabber) but once it gets checked via website (download-attempt) its' real
          * status will be OFFLINE. This should not be a big issue as it is a rare occurence.
          */
-        br.getPage(String.format("https://jetload.net/api/v2/check_file/%s/%s", API_KEY, this.getLinkID(link)));
+        br.getPage(String.format("https://jetload.net/api/v2/check_file/%s/%s", API_KEY, this.getFID(link)));
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -116,7 +122,7 @@ public class JetloadNet extends PluginForHost {
         if (filename != null) {
             link.setFinalFileName(filename);
         } else {
-            link.setName(this.getLinkID(link));
+            link.setName(this.getFID(link));
         }
         if (!StringUtils.isEmpty(filesize) && filesize.matches("\\d+")) {
             link.setDownloadSize(Long.parseLong(filesize));
@@ -127,11 +133,11 @@ public class JetloadNet extends PluginForHost {
     public AvailableStatus requestFileInformationWebsite(final DownloadLink link) throws IOException, PluginException {
         /* 2019-05-08: Very similar to their API but not exactly the same */
         // br.getHeaders().put("X-XSRF-TOKEN", ""); /* 2019-05-08: We don't need this */
-        br.getPage(String.format("https://jetload.net/api/get_direct_video/%s", this.getLinkID(link)));
+        br.getPage(String.format("https://jetload.net/api/get_direct_video/%s", this.getFID(link)));
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (br.containsHTML("file can\\'t be found") || !br.containsHTML(this.getLinkID(link))) {
+        if (br.containsHTML("file can\\'t be found") || !br.containsHTML(this.getFID(link))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = PluginJSonUtils.getJson(br, "origin_filename");
@@ -139,7 +145,7 @@ public class JetloadNet extends PluginForHost {
         if (filename != null) {
             link.setFinalFileName(filename);
         } else {
-            link.setName(this.getLinkID(link));
+            link.setName(this.getFID(link));
         }
         if (!StringUtils.isEmpty(filesize) && filesize.matches("\\d+")) {
             link.setDownloadSize(Long.parseLong(filesize));
@@ -159,47 +165,70 @@ public class JetloadNet extends PluginForHost {
                 /* We need to access it via the website here if this has not happened before. */
                 requestFileInformationWebsite(link);
             }
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             /*
              * Attention! This is NOT the filename we use - it is only required to get a working downloadlink (wrong value = downloadlink
              * leads to 404)
              */
-            final String encoding_status = (String) JavaScriptEngineFactory.walkJson(entries, "file/encoding_status");
-            final String filename = (String) JavaScriptEngineFactory.walkJson(entries, "file/file_name");
+            // final String encoding_status = (String) JavaScriptEngineFactory.walkJson(entries, "file/encoding_status");
+            final String filename_internal = (String) JavaScriptEngineFactory.walkJson(entries, "file/file_name");
             final String ext = (String) JavaScriptEngineFactory.walkJson(entries, "file/file_ext");
-            if (StringUtils.isEmpty(filename)) {
+            if (StringUtils.isEmpty(filename_internal)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else if (StringUtils.isEmpty(ext)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            String server = (String) JavaScriptEngineFactory.walkJson(entries, "server/id");
-            if (StringUtils.isEmpty(server)) {
-                // server/id available for encoding_status: "completed"
-                server = (String) JavaScriptEngineFactory.walkJson(entries, "file/srv_id");
-                // file/srv_id always available for encoding_status: "pending"
-                if (StringUtils.isEmpty(server)) {
+            /* 2019-07-17: official http download via API fails with response 404 --> Prefer stream download */
+            final boolean prefer_stream_download = true;
+            if (prefer_stream_download) {
+                final String hostname = (String) JavaScriptEngineFactory.walkJson(entries, "server/hostname");
+                if (StringUtils.isEmpty(hostname)) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                // br.getPage("/api/get_direct_video/" + this.getFID(link));
+                // entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                dllink = String.format("%s/v2/schema/archive/%s/master.m3u8", hostname, filename_internal);
+            } else {
+                /* Official download via API */
+                String serverID = (String) JavaScriptEngineFactory.walkJson(entries, "server/id");
+                if (StringUtils.isEmpty(serverID)) {
+                    // server/id available for encoding_status: "completed"
+                    serverID = (String) JavaScriptEngineFactory.walkJson(entries, "file/srv_id");
+                    // file/srv_id always available for encoding_status: "pending"
+                    if (StringUtils.isEmpty(serverID)) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                }
+                final PostRequest downloadReq = br.createJSonPostRequest("/api/download", String.format("{\"file_name\":\"%s.%s\",\"srv\":\"%s\"}", filename_internal, ext, serverID));
+                br.openRequestConnection(downloadReq);
+                br.loadConnection(null);
+                dllink = br.toString();
             }
-            final PostRequest downloadReq = br.createJSonPostRequest("/api/download", String.format("{\"file_name\":\"%s.%s\",\"srv\":\"%s\"}", filename, ext, server));
-            br.openRequestConnection(downloadReq);
-            br.loadConnection(null);
-            dllink = br.toString();
             if (StringUtils.isEmpty(dllink) || !dllink.startsWith("http")) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+        if (dllink.contains(".m3u8")) {
+            /* HLS download */
+            br.getPage(dllink);
+            final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
+            dllink = hlsbest.getDownloadurl();
+            checkFFmpeg(link, "Download a HLS Stream");
+            dl = new HLSDownloader(link, br, dllink);
+        } else {
+            /* HTTP download */
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
+            if (dl.getConnection().getContentType().contains("html")) {
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                }
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         }
-        link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
     }
 
