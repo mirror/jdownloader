@@ -179,13 +179,13 @@ public class PanBaiduwpCom extends antiDDoSForHost {
         if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             /* 2019-07-17: For development purposes */
             String comment_current = link.getComment();
-            if (comment_current == null) {
-                comment_current = "";
-            } else {
-                comment_current += " | baiduwp URL: ";
+            if (comment_current == null || !comment_current.contains("baiduwp URL")) {
+                if (comment_current == null) {
+                    comment_current = "";
+                }
+                comment_current += br.getURL();
+                link.setComment(comment_current);
             }
-            comment_current += br.getURL();
-            link.setComment(comment_current);
         }
         String dlparamsStr = new Regex(targetHTML, "dl\\(([^\\)]+)\\)").getMatch(0);
         if (StringUtils.isEmpty(dlparamsStr)) {
