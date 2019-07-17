@@ -467,11 +467,13 @@ public abstract class K2SApi extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, FREE_RECONNECTWAIT - passedTimeSinceLastDl);
                     }
                 }
-                postPageRaw(br, "/requestcaptcha", "", account);
+                postPageRaw(this.br, "/requestcaptcha", "", account);
                 final String challenge = PluginJSonUtils.getJsonValue(br, "challenge");
                 final String captcha_url = PluginJSonUtils.getJsonValue(br, "captcha_url");
                 // Dependency
                 if (inValidate(challenge) || inValidate(captcha_url)) {
+                    logger.warning("challenge = " + challenge + " | captcha_url = " + captcha_url);
+                    this.handleErrors(account, this.br);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 final String code = getCaptchaCode(captcha_url, downloadLink);
@@ -487,9 +489,11 @@ public abstract class K2SApi extends PluginForHost {
                 if (StringUtils.isNotEmpty(custom_referer)) {
                     getURL.put("url_referrer", custom_referer);
                 }
-                postPageRaw(br, "/geturl", JSonStorage.toString(getURL), account);
+                postPageRaw(this.br, "/geturl", JSonStorage.toString(getURL), account);
                 final String free_download_key = PluginJSonUtils.getJsonValue(br, "free_download_key");
                 if (inValidate(free_download_key)) {
+                    logger.warning("free_download_key is null");
+                    this.handleErrors(account, this.br);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 if (!inValidate(PluginJSonUtils.getJsonValue(br, "time_wait"))) {
@@ -509,6 +513,8 @@ public abstract class K2SApi extends PluginForHost {
             }
             dllink = PluginJSonUtils.getJsonValue(br, "url");
             if (inValidate(dllink)) {
+                logger.warning("dllink is null");
+                this.handleErrors(account, this.br);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("dllink = " + dllink);
@@ -998,6 +1004,10 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     private void handleErrors(final Account account, final String iString, final boolean subErrors) throws PluginException {
+        if (br.getHttpConnection().getResponseCode() == 400) {
+            /* 2019-07-17: This may happen after any requesteven if the request itself is done right. */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 400", 5 * 60 * 1000l);
+        }
         if (inValidate(iString)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
