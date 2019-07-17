@@ -48,28 +48,28 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "chomikuj.pl" }, urls = { "https?://chomikujdecrypted\\.pl/.*?,\\d+$" })
 public class ChoMikujPl extends antiDDoSForHost {
-    private String              dllink                      = null;
-    private static final String PREMIUMONLY                 = "(Aby pobrać ten plik, musisz być zalogowany lub wysłać jeden SMS\\.|Właściciel tego chomika udostępnia swój transfer, ale nie ma go już w wystarczającej|wymaga opłacenia kosztów transferu z serwerów Chomikuj\\.pl)";
-    private static final String PREMIUMONLYUSERTEXT         = "Download is only available for registered/premium users!";
-    private static final String ACCESSDENIED                = "Nie masz w tej chwili uprawnień do tego pliku lub dostęp do niego nie jest w tej chwili możliwy z innych powodów\\.";
-    private final String        VIDEOENDINGS                = "\\.(avi|flv|mp4|mpg|rmvb|divx|wmv|mkv)";
-    private static final String MAINPAGE                    = "https://chomikuj.pl/";
-    private static Object       LOCK                        = new Object();
+    private String               dllink                      = null;
+    private static final String  PREMIUMONLY                 = "(Aby pobrać ten plik, musisz być zalogowany lub wysłać jeden SMS\\.|Właściciel tego chomika udostępnia swój transfer, ale nie ma go już w wystarczającej|wymaga opłacenia kosztów transferu z serwerów Chomikuj\\.pl)";
+    private static final String  PREMIUMONLYUSERTEXT         = "Download is only available for registered/premium users!";
+    private static final String  ACCESSDENIED                = "Nie masz w tej chwili uprawnień do tego pliku lub dostęp do niego nie jest w tej chwili możliwy z innych powodów\\.";
+    private final String         VIDEOENDINGS                = "\\.(avi|flv|mp4|mpg|rmvb|divx|wmv|mkv)";
+    private static final String  MAINPAGE                    = "https://chomikuj.pl/";
+    private static Object        LOCK                        = new Object();
     /* Pluging settings */
-    public static final String  DECRYPTFOLDERS              = "DECRYPTFOLDERS";
-    private static final String AVOIDPREMIUMMP3TRAFFICUSAGE = "AVOIDPREMIUMMP3TRAFFICUSAGE";
-    private static boolean      pluginloaded                = false;
-    private Browser             cbr                         = null;
-    private int                 free_maxchunks              = 1;
-    private boolean             free_resume                 = false;
-    private int                 free_maxdls                 = -1;
-    private int                 account_maxchunks           = 0;
+    public static final String   DECRYPTFOLDERS              = "DECRYPTFOLDERS";
+    private static final String  AVOIDPREMIUMMP3TRAFFICUSAGE = "AVOIDPREMIUMMP3TRAFFICUSAGE";
+    private static boolean       pluginloaded                = false;
+    private Browser              cbr                         = null;
+    private static final int     free_maxchunks              = 1;
+    private static final boolean free_resume                 = false;
+    private static final int     free_maxdls                 = -1;
+    private static final int     account_maxchunks           = 0;
     /* TODO: Verify if premium users really can resume */
-    private boolean             account_resume              = true;
-    private int                 account_maxdls              = -1;
-    private boolean             serverIssue                 = false;
-    private boolean             premiumonly                 = false;
-    private boolean             plus18                      = false;
+    private static final boolean account_resume              = true;
+    private static final int     account_maxdls              = -1;
+    private boolean              serverIssue                 = false;
+    private boolean              premiumonly                 = false;
+    private boolean              plus18                      = false;
 
     public ChoMikujPl(PluginWrapper wrapper) {
         super(wrapper);
@@ -451,8 +451,6 @@ public class ChoMikujPl extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.unicodeDecode(dllink);
-        free_resume = false;
-        account_resume = false;
         return dllink;
     }
 
@@ -471,41 +469,19 @@ public class ChoMikujPl extends antiDDoSForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        final boolean is_premiumonly = cbr != null && cbr.containsHTML(PREMIUMONLY) || this.premiumonly;
         if (plus18) {
             logger.info("Adult content only downloadable when logged in");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         } else if (serverIssue) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
-        } else if (cbr != null && cbr.containsHTML(PREMIUMONLY) || premiumonly) {
+        }
+        if (!getDllink(link, br, false) && is_premiumonly) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
-        if (!isVideo(downloadLink)) {
-            if (!getDllink(downloadLink, br, false)) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            }
-        }
-        if (isVideo(downloadLink)) { // Non premium only gets preview with getDllink(downloadLink, br, false);
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        }
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        final boolean resumeSupported = free_resume || StringUtils.containsIgnoreCase(dllink, "/Audio.ashx");
-        if (!resumeSupported) {
-            free_maxchunks = 1;
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumeSupported, free_maxchunks);
-        dl.setFilenameFix(true);
-        final URLConnectionAdapter con = dl.getConnection();
-        if (!con.isContentDisposition() && ((StringUtils.containsIgnoreCase(con.getContentType(), "text") && con.getResponseCode() == 200) || !con.isOK())) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            handleServerErrors();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
+        handleDownload(link, free_resume, free_maxchunks);
     }
 
     @Override
@@ -544,20 +520,27 @@ public class ChoMikujPl extends antiDDoSForHost {
                 getDllink(link, br, true);
             }
         }
+        handleDownload(link, account_resume, account_maxchunks);
+    }
+
+    public void handleDownload(final DownloadLink downloadLink, boolean resume, int maxChunks) throws Exception, PluginException {
         if (dllink == null) {
-            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+            logger.warning("dllink is null");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        sleep(2 * 1000l, link);
-        final boolean resumeSupported = account_resume || StringUtils.containsIgnoreCase(dllink, "/Audio.ashx");
-        if (!resumeSupported) {
-            account_maxchunks = 1;
+        final boolean isAudioStreamDownload = StringUtils.containsIgnoreCase(dllink, "/Audio.ashx");
+        final boolean isVideoStreamPreviewDownload = StringUtils.containsIgnoreCase(dllink, "/Preview.ashx");
+        if (isAudioStreamDownload || isVideoStreamPreviewDownload) {
+            resume = true;
+            maxChunks = 0;
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumeSupported, account_maxchunks);
+        if (!resume) {
+            maxChunks = 1;
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, maxChunks);
         dl.setFilenameFix(true);
         final URLConnectionAdapter con = dl.getConnection();
         if (!con.isContentDisposition() && ((StringUtils.containsIgnoreCase(con.getContentType(), "text") && con.getResponseCode() == 200) || !con.isOK())) {
-            // 206 Partitial Content might have text/html content-type
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             handleServerErrors();
@@ -575,7 +558,6 @@ public class ChoMikujPl extends antiDDoSForHost {
     private void login(Account account, boolean force) throws Exception {
         synchronized (LOCK) {
             try {
-                /** Load cookies */
                 br.setCookiesExclusive(true);
                 br.setFollowRedirects(true);
                 boolean loggedinViaCookies = false;
