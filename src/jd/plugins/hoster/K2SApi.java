@@ -23,14 +23,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogInterface;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.proxy.AbstractProxySelectorImpl;
@@ -55,6 +47,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogInterface;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  * Abstract class supporting keep2share/fileboom/publish2<br/>
@@ -353,6 +353,7 @@ public abstract class K2SApi extends PluginForHost {
                 }
             }
         } catch (final Exception e) {
+            logger.log(e);
             return false;
         }
         return true;
@@ -1000,25 +1001,25 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     private void handleErrors(final Account account, final Browser ibr) throws PluginException {
-        handleErrors(account, ibr.toString(), false);
+        handleErrors(account, ibr, ibr.toString(), false);
     }
 
-    private void handleErrors(final Account account, final String iString, final boolean subErrors) throws PluginException {
-        if (br.getHttpConnection().getResponseCode() == 400) {
+    private void handleErrors(final Account account, final Browser br, final String brString, final boolean subErrors) throws PluginException {
+        if (br != null && br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 400) {
             /* 2019-07-17: This may happen after any requesteven if the request itself is done right. */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 400", 5 * 60 * 1000l);
         }
-        if (inValidate(iString)) {
+        if (inValidate(brString)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if ("success".equalsIgnoreCase(PluginJSonUtils.getJsonValue(iString, "status")) && "200".equalsIgnoreCase(PluginJSonUtils.getJsonValue(iString, "code")) && !subErrors) {
+        if ("success".equalsIgnoreCase(PluginJSonUtils.getJsonValue(brString, "status")) && "200".equalsIgnoreCase(PluginJSonUtils.getJsonValue(brString, "code")) && !subErrors) {
             return;
         }
         // let the error handling begin!
-        String errCode = PluginJSonUtils.getJsonValue(iString, "errorCode");
+        String errCode = PluginJSonUtils.getJsonValue(brString, "errorCode");
         if (inValidate(errCode) && subErrors) {
             // subErrors
-            errCode = PluginJSonUtils.getJsonValue(iString, "code");
+            errCode = PluginJSonUtils.getJsonValue(brString, "code");
         }
         if (!inValidate(errCode) && errCode.matches("\\d+")) {
             final int err = Integer.parseInt(errCode);
@@ -1055,7 +1056,7 @@ public abstract class K2SApi extends PluginForHost {
                     // {"message":"Download not
                     // available","status":"error","code":406,"errorCode":42,"errors":[{"code":5,"timeRemaining":"2521.000000"}]}
                     // think timeRemaining is in seconds
-                    String time = PluginJSonUtils.getJsonValue(iString, "timeRemaining");
+                    String time = PluginJSonUtils.getJsonValue(brString, "timeRemaining");
                     if (!inValidate(time) && time.matches("[\\d\\.]+")) {
                         time = time.substring(0, time.indexOf("."));
                         throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, msg, Integer.parseInt(time) * 1000);
@@ -1087,7 +1088,7 @@ public abstract class K2SApi extends PluginForHost {
                     // {"message":"Download is not
                     // available","status":"error","code":406,"errorCode":21,"errors":[{"code":2,"message":"Traffic limit exceed"}]}
                     // sub error, pass it back into itself.
-                    handleErrors(account, PluginJSonUtils.getJsonArray(iString, "errors"), true);
+                    handleErrors(account, br, PluginJSonUtils.getJsonArray(brString, "errors"), true);
                     // ERROR_FILE_IS_BLOCKED = 22;
                     // what does this mean? premium only link ? treating as 'file not found'
                 case 23:
@@ -1127,7 +1128,7 @@ public abstract class K2SApi extends PluginForHost {
                     // {"message":"Download not available","status":"error","code":406,"errorCode":42,"errors":[{"code":6}]}
                     // {"message":"Download not available","status":"error","code":406,"errorCode":42,"errors":[{"code":7}]}
                     // sub error, pass it back into itself.
-                    handleErrors(account, PluginJSonUtils.getJsonArray(iString, "errors"), true);
+                    handleErrors(account, br, PluginJSonUtils.getJsonArray(brString, "errors"), true);
                 case 70:
                 case 72:
                     // ERROR_INCORRECT_USERNAME_OR_PASSWORD = 70;
