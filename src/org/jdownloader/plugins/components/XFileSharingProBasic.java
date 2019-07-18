@@ -70,7 +70,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         super(wrapper);
         // this.enablePremium(super.getPurchasePremiumURL());
     }
-
     // public static List<String[]> getPluginDomains() {
     // final List<String[]> ret = new ArrayList<String[]>();
     // // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
@@ -89,6 +88,19 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     //
     // public static String[] getAnnotationUrls() {
     // return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
+    // }
+
+    // @Override
+    // public String rewriteHost(String host) {
+    // if (host == null) {
+    // return null;
+    // } else {
+    // final String mapping = this.getMappedHost(ImgmazeCom.getPluginDomains(), host);
+    // if (mapping != null) {
+    // return mapping;
+    // }
+    // }
+    // return super.rewriteHost(host);
     // }
     public static final String getDefaultAnnotationPatternPart() {
         return "/(?:embed\\-)?[a-z0-9]{12}(?:/[^/]+(?:\\.html)?)?";
@@ -2347,8 +2359,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
         } else if (responsecode == 416) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 5 * 60 * 1000l);
+        } else if (responsecode == 500) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500", 5 * 60 * 1000l);
         } else if (responsecode == 503) {
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 503 connection limit reached, please contact our support!", 5 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 503 connection limit reached", 5 * 60 * 1000l);
         }
     }
 
