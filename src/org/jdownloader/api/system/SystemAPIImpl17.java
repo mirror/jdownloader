@@ -58,10 +58,11 @@ public class SystemAPIImpl17 {
                 final FileStore store = entry.getValue();
                 if ((customPath == null || !customPath.equals(root)) && (typeFilters.contains(store.type()) || store.isReadOnly() || pathFilters.contains(root.toString()))) {
                     continue;
+                } else {
+                    storage.setPath(root.toString());
+                    storage.setSize(store.getTotalSpace());
+                    storage.setFree(store.getUsableSpace());
                 }
-                storage.setPath(root.toString());
-                storage.setSize(store.getTotalSpace());
-                storage.setFree(store.getUsableSpace());
             } catch (final IOException e) {
                 LogController.CL().log(e);
                 if (storage.getPath() == null) {
