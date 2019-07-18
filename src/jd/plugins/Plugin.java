@@ -118,8 +118,12 @@ public abstract class Plugin implements ActionListener {
     public static String buildHostsPatternPart(String[] domains) {
         final StringBuilder pattern = new StringBuilder();
         pattern.append("(?:");
-        for (final String name : domains) {
-            pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
+        for (int i = 0; i < domains.length; i++) {
+            final String domain = domains[i];
+            if (i > 0) {
+                pattern.append("|");
+            }
+            pattern.append(Pattern.quote(domain));
         }
         pattern.append(")");
         return pattern.toString();
