@@ -613,9 +613,9 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     }
 
     private String getArteVPUrl(final String source) {
-        String vp_url = new Regex(source, "arte_vp_url\\s*=\\s*(?:\"|\\')(http[^<>\"\\']*?)(?:\"|\\')").getMatch(0);
+        String vp_url = new Regex(source, "arte_vp_url\\s*=\\s*(?:\"|\\')(https?[^<>\"\\']*?)(?:\"|\\')").getMatch(0);
         if (vp_url == null) {
-            vp_url = new Regex(source, "arte_vp_url_oembed\\s*=\\s*(?:\"|\\')(http[^<>\"\\']*?)(?:\"|\\')").getMatch(0);
+            vp_url = new Regex(source, "arte_vp_url_oembed\\s*=\\s*(?:\"|\\')(https?[^<>\"\\']*?)(?:\"|\\')").getMatch(0);
         }
         if (vp_url == null) {
             /*
@@ -624,7 +624,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
              * &amp;config=arte_tvguide
              */
             /* We actually don't necessarily use these urls but the existance of them is an indicator for us on which API-url to use. */
-            vp_url = new Regex(source, "<iframe[^>]*?src\\s*=\\s*\"https?://(?:www\\.)arte\\.tv/player/v\\d+/index\\.php\\?json_url=(http[^<>\"]+)\"\\s*>[^>]*?</iframe>").getMatch(0);
+            vp_url = new Regex(source, "<iframe[^>]*?src\\s*=\\s*\"https?://(?:www\\.)arte\\.tv/player/v\\d+/index\\.php\\?json_url=(https?[^<>\"]+)\"\\s*>[^>]*?</iframe>").getMatch(0);
             if (vp_url == null) {
                 /* 2019-07-18: URL inside json in html code */
                 vp_url = new Regex(source, "json_url\\s*=\\s*(https?.*?)(<|>|\\\\\"|\"|')").getMatch(0);
