@@ -1,12 +1,16 @@
 package org.jdownloader.extensions.eventscripter.sandboxobjects;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.attribute.BasicFileAttributes;
 
 public class FilePathSandbox17 extends FilePathSandbox {
-
     public FilePathSandbox17(String fileOrUrl) {
         super(fileOrUrl);
+    }
+
+    protected FilePathSandbox17(File file) {
+        super(file);
     }
 
     @Override
@@ -19,7 +23,7 @@ public class FilePathSandbox17 extends FilePathSandbox {
     }
 
     @Override
-    protected FilePathSandbox newFilePathSandbox(String file) {
+    protected FilePathSandbox newFilePathSandbox(File file) {
         return new FilePathSandbox17(file);
     }
 

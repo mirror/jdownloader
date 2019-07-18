@@ -17,8 +17,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -27,8 +25,13 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hotpornfile.org" }, urls = { "https?://(?:www\\.)?hotpornfile\\.org/([^/]+)/(\\d+)" })
 public class HotpornfileOrg extends PluginForDecrypt {
@@ -49,16 +52,21 @@ public class HotpornfileOrg extends PluginForDecrypt {
         // br.postPage("https://www." + this.getHost() + "/wp-admin/admin-ajax.php", "action=get_stream&postId=" + fid);
         /* 2019-07-18: reCaptchaKey hardcoded */
         String recaptchaV2Response = this.getPluginConfig().getStringProperty("recaptcha_response", null);
+        String json_type = null;
         if (recaptchaV2Response != null) {
             br.postPage("https://www." + this.getHost() + "/wp-admin/admin-ajax.php", "action=bypass_captcha&postId=" + fid + "&challenge=" + Encoding.urlEncode(recaptchaV2Response));
+            json_type = PluginJSonUtils.getJson(br, "type");
         }
-        final String json_type = PluginJSonUtils.getJson(br, "type");
-        if ("error".equalsIgnoreCase(json_type)) {
+        if (recaptchaV2Response == null || StringUtils.equalsIgnoreCase(json_type, "error")) {
             logger.info("Failed to re-use previous recaptchaV2Response");
             recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, "6Lf1jhYUAAAAAN8kNxOBBEUu3qBPcy4UNu4roO5K").getToken();
             br.postPage("https://www." + this.getHost() + "/wp-admin/admin-ajax.php", "action=get_protected_links&postId=" + fid + "&response=" + Encoding.urlEncode(recaptchaV2Response));
+            json_type = PluginJSonUtils.getJson(br, "type");
         } else {
             logger.info("Successfully re-used previous recaptchaV2Response");
+        }
+        if (StringUtils.equalsIgnoreCase(json_type, "error")) {
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         String src = PluginJSonUtils.getJson(br, "msg");
         if (src == null) {
@@ -68,8 +76,7 @@ public class HotpornfileOrg extends PluginForDecrypt {
         String fpName = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         final String[] links = new Regex(src, "\"(https?://[^\"]+)").getColumn(0);
         if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         for (final String singleLink : links) {
             decryptedLinks.add(createDownloadlink(singleLink));

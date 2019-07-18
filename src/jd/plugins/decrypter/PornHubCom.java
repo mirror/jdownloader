@@ -22,10 +22,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -44,7 +40,11 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub(?:premium)?\\.com/(?:.*\\?viewkey=[a-z0-9]+|embed/[a-z0-9]+|embed_player\\.php\\?id=\\d+|pornstar/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos(/upload)?)?|channels/[A-Za-z0-9\\-_]+/videos|users/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos(/public)?)?|model/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos)?|playlist/\\d+)" })
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub(?:premium)?\\.(?:com|org)/(?:.*\\?viewkey=[a-z0-9]+|embed/[a-z0-9]+|embed_player\\.php\\?id=\\d+|pornstar/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos(/upload)?)?|channels/[A-Za-z0-9\\-_]+/videos|users/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos(/public)?)?|model/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos)?|playlist/\\d+)" })
 public class PornHubCom extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     public PornHubCom(PluginWrapper wrapper) {
@@ -62,7 +62,8 @@ public class PornHubCom extends PluginForDecrypt {
         try {
             parameter = jd.plugins.hoster.PornHubCom.correctAddedURL(param.toString());
         } catch (PluginException e) {
-            parameter = param.toString().replaceFirst("https?://(?:www\\.|[a-z]{2}\\.)?pornhub(?:premium)?\\.com/", "https://www.pornhub.com/");
+            logger.log(e);
+            parameter = param.toString().replaceFirst("https?://(?:www\\.|[a-z]{2}\\.)?pornhub(?:premium)?\\.(?:com|org)/", "https://www.pornhub.com/");
         }
         br.setFollowRedirects(true);
         jd.plugins.hoster.PornHubCom.prepBr(br);
@@ -146,7 +147,7 @@ public class PornHubCom extends PluginForDecrypt {
             if (this.isAbort()) {
                 return true;
             }
-            final String[] viewkeys = br.getRegex("<a href=\"(?:https?://(?:www\\.|[a-z]{2}\\.)?pornhub(?:premium)?.com)?/view_video.php\\?viewkey=([^\"]+?)\"").getColumn(0);
+            final String[] viewkeys = br.getRegex("<a href=\"(?:https?://(?:www\\.|[a-z]{2}\\.)?pornhub(?:premium)?.(?:com|org))?/view_video.php\\?viewkey=([^\"]+?)\"").getColumn(0);
             logger.info("Links found: " + viewkeys.length);
             for (final String viewkey : viewkeys) {
                 logger.info("viewkey: " + viewkey);
@@ -426,7 +427,7 @@ public class PornHubCom extends PluginForDecrypt {
                 decryptedLinks.add(createOfflinelink(parameter));
                 return true;
             }
-            final String newLink = br.getRegex("<link_url>(https?://(?:www\\.|[a-z]{2}\\.)?pornhub(?:premium)?\\.com/view_video\\.php\\?viewkey=[a-z0-9]+)</link_url>").getMatch(0);
+            final String newLink = br.getRegex("<link_url>(https?://(?:www\\.|[a-z]{2}\\.)?pornhub(?:premium)?\\.(?:com|org)/view_video\\.php\\?viewkey=[a-z0-9]+)</link_url>").getMatch(0);
             if (newLink == null) {
                 throw new DecrypterException("Decrypter broken for link: " + parameter);
             }

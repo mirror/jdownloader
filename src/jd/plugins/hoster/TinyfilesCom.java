@@ -19,9 +19,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
-
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
@@ -29,6 +26,8 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class TinyfilesCom extends XFileSharingProBasic {
@@ -49,7 +48,12 @@ public class TinyfilesCom extends XFileSharingProBasic {
      * captchatype-info: null 4dignum solvemedia reCaptchaV2<br />
      * other:<br />
      */
-    private static String[] domains = new String[] { "tiny-files.com" };
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "tiny-files.com" });
+        return ret;
+    }
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
@@ -123,35 +127,19 @@ public class TinyfilesCom extends XFileSharingProBasic {
     }
 
     public static String[] getAnnotationNames() {
-        return domains;
+        return buildAnnotationNames(getPluginDomains());
     }
 
     @Override
     public String[] siteSupportedNames() {
-        return domains;
+        return buildSupportedNames(getPluginDomains());
     }
 
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
-        for (int i = 0; i < domains.length; i++) {
-            if (i == 0) {
-                /* Match all URLs on first (=current) domain */
-                ret.add("https?://(?:www\\.)?" + getHostsPatternPart() + "/([a-f0-9]{24}/\\d+/[^/]+/?|(?:embed\\-)?[a-z0-9]{12}(?:/[^/]+\\.html)?)");
-            } else {
-                ret.add("");
-            }
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([a-f0-9]{24}/\\d+/[^/]+/?|(?:embed\\-)?[a-z0-9]{12}(?:/[^/]+\\.html)?)");
         }
         return ret.toArray(new String[0]);
-    }
-
-    /** Returns '(?:domain1|domain2)' */
-    public static String getHostsPatternPart() {
-        final StringBuilder pattern = new StringBuilder();
-        pattern.append("(?:");
-        for (final String name : domains) {
-            pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
-        }
-        pattern.append(")");
-        return pattern.toString();
     }
 }

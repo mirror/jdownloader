@@ -15,7 +15,6 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.net.URL;
 import java.security.InvalidKeyException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,14 +39,12 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.controlling.AccountController;
-import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Base64;
 import jd.nutils.encoding.Encoding;
-import jd.nutils.nativeintegration.LocalBrowser;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
@@ -66,10 +63,11 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com", "pornhubpremium.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub(?:premium)?\\.com/(?:photo|(embed)?gif)/\\d+|https://pornhubdecrypted/.+", "" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com", "pornhubpremium.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub(?:premium)?\\.(?:com|org)/(?:photo|(embed)?gif)/\\d+|https://pornhubdecrypted/.+", "" })
 public class PornHubCom extends PluginForHost {
     /* Connection stuff */
     // private static final boolean FREE_RESUME = true;
@@ -711,7 +709,7 @@ public class PornHubCom extends PluginForHost {
                          * Expired pornhub premium --> It should still be a valid free account --> We might need to access a special url
                          * which redirects us to the pornhub free mainpage and sets the cookies.
                          */
-                        final String pornhubMainpageCookieRedirectUrl = br.getRegex("\\'pornhubLink\\'\\s*?:\\s*?(?:\"|\\')(https?://(?:www\\.)?pornhub\\.com/[^<>\"\\']+)(?:\"|\\')").getMatch(0);
+                        final String pornhubMainpageCookieRedirectUrl = br.getRegex("\\'pornhubLink\\'\\s*?:\\s*?(?:\"|\\')(https?://(?:www\\.)?pornhub\\.(?:com|org)/[^<>\"\\']+)(?:\"|\\')").getMatch(0);
                         if (pornhubMainpageCookieRedirectUrl != null) {
                             getPage(br, pornhubMainpageCookieRedirectUrl);
                         }
@@ -832,12 +830,9 @@ public class PornHubCom extends PluginForHost {
             cipher.init(Cipher.ENCRYPT_MODE, secretKey);
             keyBytes = cipher.doFinal(keyBytes);
         } catch (InvalidKeyException e) {
-            if (e.getMessage().contains("Illegal key size")) {
-                getPolicyFiles();
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Unlimited Strength JCE Policy Files needed!");
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Unlimited Strength JCE Policy Files needed!", e);
         } catch (Throwable e1) {
-            return null;
+            LogController.CL().log(e1);
         }
         System.arraycopy(keyBytes, 0, keyBytes, nBits / 2, nBits / 2);
         return new SecretKeySpec(keyBytes, "AES");
@@ -895,20 +890,6 @@ public class PornHubCom extends PluginForHost {
         br.getHeaders().put("Accept-Language", "en-US,en;q=0.8,de;q=0.6");
         br.getHeaders().put("Accept-Charset", null);
         br.setLoadLimit(br.getDefaultLoadLimit() * 4);
-    }
-
-    public static void getPolicyFiles() throws Exception {
-        int ret = -100;
-        UserIO.setCountdownTime(120);
-        ret = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_LARGE, "Java Cryptography Extension (JCE) Error: 32 Byte keylength is not supported!", "At the moment your Java version only supports a maximum keylength of 16 Bytes but the keezmovies plugin needs support for 32 byte keys.\r\nFor such a case Java offers so called \"Policy Files\" which increase the keylength to 32 bytes. You have to copy them to your Java-Home-Directory to do this!\r\nExample path: \"jre6\\lib\\security\\\". The path is different for older Java versions so you might have to adapt it.\r\n\r\nBy clicking on CONFIRM a browser instance will open which leads to the downloadpage of the file.\r\n\r\nThanks for your understanding.", null, "CONFIRM", "Cancel");
-        if (ret != -100) {
-            if (UserIO.isOK(ret)) {
-                LocalBrowser.openDefaultURL(new URL("http://www.oracle.com/technetwork/java/javase/downloads/jce-6-download-429243.html"));
-                LocalBrowser.openDefaultURL(new URL("http://h10.abload.de/img/jcedp50.png"));
-            } else {
-                return;
-            }
-        }
     }
 
     public static String createPornhubImageLink(final String viewkey, final Account acc) {
