@@ -18,10 +18,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.regex.Pattern;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -39,6 +35,9 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class TnaFlixCom extends PluginForHost {
     public TnaFlixCom(PluginWrapper wrapper) {
@@ -46,7 +45,6 @@ public class TnaFlixCom extends PluginForHost {
         setConfigElements();
     }
 
-    private static String[]      domains                         = new String[] { "tnaflix.com", "empflix.com" };
     private static final String  ALLOW_MULTIHOST_USAGE           = "ALLOW_MULTIHOST_USAGE";
     private static final boolean default_allow_multihoster_usage = false;
     private static final String  TYPE_NORMAL                     = "https?://[^/]+/(view_video\\.php\\?viewkey=[a-z0-9]+|.*?video\\d+)";
@@ -290,40 +288,28 @@ public class TnaFlixCom extends PluginForHost {
     }
 
     public static String[] getAnnotationNames() {
-        return domains;
+        return buildAnnotationNames(getPluginDomains());
     }
 
     @Override
     public String[] siteSupportedNames() {
-        return domains;
+        return buildSupportedNames(getPluginDomains());
     }
 
     public static String[] getAnnotationUrls() {
-        /*
-         * 2019-06-12: Special: The owner of this host mograded from another script to XFS which is why we accept other URLs than only
-         * default XFS.
-         */
         final List<String> ret = new ArrayList<String>();
-        for (int i = 0; i < domains.length; i++) {
-            if (i == 0) {
-                /* Match all URLs on first (=current) domain */
-                ret.add("https?://(?:[a-z0-9]+\\.)?" + getHostsPatternPart() + "/(view_video\\.php\\?viewkey=[a-z0-9]+|video/\\d+|.*?video\\d+)|https?://(?:www\\.)?" + getHostsPatternPart() + "/embedding_player/embedding_feed\\.php\\?viewkey=[a-z0-9]+");
-            } else {
-                ret.add("");
-            }
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:[a-z0-9]+\\.)?" + buildHostsPatternPart(domains) + "/(view_video\\.php\\?viewkey=[a-z0-9]+|video/\\d+|.*?video\\d+)|https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/embedding_player/embedding_feed\\.php\\?viewkey=[a-z0-9]+");
         }
         return ret.toArray(new String[0]);
     }
 
-    /** Returns '(?:domain1|domain2)' */
-    public static String getHostsPatternPart() {
-        final StringBuilder pattern = new StringBuilder();
-        pattern.append("(?:");
-        for (final String name : domains) {
-            pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
-        }
-        pattern.append(")");
-        return pattern.toString();
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "tnaflix.com" });
+        ret.add(new String[] { "empflix.com" });
+        return ret;
     }
 
     @Override

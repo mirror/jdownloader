@@ -854,7 +854,7 @@ public class ClipboardMonitoring {
                 }
                 break;
             }
-            for (; i < bytes.length - 1; i++) {
+            for (; i < bytes.length; i++) {
                 if (bytes[i] != 0) {
                     /* copy byte */
                     bytes[indexOriginal++] = bytes[i];

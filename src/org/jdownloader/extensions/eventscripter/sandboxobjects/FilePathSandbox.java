@@ -16,6 +16,10 @@ public class FilePathSandbox {
         file = new File(fileOrUrl);
     }
 
+    protected FilePathSandbox(File file) {
+        this.file = file;
+    }
+
     @Override
     public int hashCode() {
         if (file != null) {
@@ -64,10 +68,10 @@ public class FilePathSandbox {
     }
 
     public FilePathSandbox getParent() {
-        return newFilePathSandbox(file.getParent());
+        return newFilePathSandbox(file.getParentFile());
     }
 
-    protected FilePathSandbox newFilePathSandbox(final String file) {
+    protected FilePathSandbox newFilePathSandbox(final File file) {
         return new FilePathSandbox(file);
     }
 
@@ -79,7 +83,7 @@ public class FilePathSandbox {
         } else {
             ret = new FilePathSandbox[files.length];
             for (int i = 0; i < files.length; i++) {
-                ret[i] = newFilePathSandbox(files[i].getAbsolutePath());
+                ret[i] = newFilePathSandbox(files[i].getAbsoluteFile());
             }
         }
         return ret;
@@ -95,11 +99,47 @@ public class FilePathSandbox {
         return !dest.exists() && file.renameTo(dest);
     }
 
+    public FilePathSandbox renameName(final String newName) throws EnvironmentException {
+        org.jdownloader.extensions.eventscripter.sandboxobjects.ScriptEnvironment.askForPermission("rename file or folder name only");
+        final File dst = new File(file.getParentFile(), newName);
+        if (dst.exists()) {
+            return null;
+        } else if (file.renameTo(dst)) {
+            return newFilePathSandbox(dst);
+        } else {
+            return null;
+        }
+    }
+
+    public FilePathSandbox rename(final String newDest) throws EnvironmentException {
+        org.jdownloader.extensions.eventscripter.sandboxobjects.ScriptEnvironment.askForPermission("rename file or folder");
+        final File dst = new File(newDest);
+        if (dst.exists()) {
+            return null;
+        } else if (file.renameTo(dst)) {
+            return newFilePathSandbox(dst);
+        } else {
+            return null;
+        }
+    }
+
+    public FilePathSandbox renamePath(final String newPath) throws EnvironmentException {
+        org.jdownloader.extensions.eventscripter.sandboxobjects.ScriptEnvironment.askForPermission("rename file or folder path only");
+        final File dst = new File(newPath, getName());
+        if (dst.exists()) {
+            return null;
+        } else if (file.renameTo(dst)) {
+            return newFilePathSandbox(dst);
+        } else {
+            return null;
+        }
+    }
+
     public boolean moveTo(String folder) throws EnvironmentException {
         org.jdownloader.extensions.eventscripter.sandboxobjects.ScriptEnvironment.askForPermission("move a file to a new folder");
         File dest = new File(folder);
         if (!dest.exists()) {
-            dest.mkdirs();
+            newFilePathSandbox(dest).mkdirs();
         }
         dest = new File(dest, file.getName());
         final boolean ret = !dest.exists() && file.renameTo(dest);

@@ -17,15 +17,15 @@ package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
-
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class WupfileCom extends XFileSharingProBasic {
@@ -41,18 +41,36 @@ public class WupfileCom extends XFileSharingProBasic {
      * captchatype-info: 2019-05-22: null<br />
      * other:<br />
      */
-    private static String[] domains = new String[] { "wupfile.com", "salefiles.com" };
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "wupfile.com", "salefiles.com" });
+        return ret;
+    }
 
     @Override
     public String rewriteHost(String host) {
-        if (host == null) {
-            /* signal rewrite support! */
-            return domains[0];
-        }
-        /* 2019-05-22: Special: salefiles.com is now wupfile.com */
-        for (final String domain : domains) {
-            if (domain.equalsIgnoreCase(host)) {
-                return domains[0];
+        if (StringUtils.equalsIgnoreCase(this.getHost(), "wupfile.com")) {
+            if (host == null) {
+                return null;
+            } else {
+                final String mapping = this.getMappedHost(getPluginDomains(), host);
+                if (mapping != null) {
+                    return mapping;
+                }
             }
         }
         return super.rewriteHost(host);
@@ -99,42 +117,5 @@ public class WupfileCom extends XFileSharingProBasic {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return 5;
-    }
-
-    public static String[] getAnnotationNames() {
-        /*
-         * only return the first/valid domain, else rewrite won't happen when the other domain is still signaled as existing!
-         */
-        return new String[] { domains[0] };
-    }
-
-    @Override
-    public String[] siteSupportedNames() {
-        return domains;
-    }
-
-    public static String[] getAnnotationUrls() {
-        final List<String> ret = new ArrayList<String>();
-        for (int i = 0; i < domains.length; i++) {
-            if (i == 0) {
-                /* Match all URLs on first (=current) domain */
-                ret.add("https?://(?:www\\.)?" + getHostsPatternPart() + XFileSharingProBasic.getDefaultAnnotationPatternPart());
-            } else {
-                /* see getAnnotationNames */
-                break;
-            }
-        }
-        return ret.toArray(new String[0]);
-    }
-
-    /** Returns '(?:domain1|domain2)' */
-    public static String getHostsPatternPart() {
-        final StringBuilder pattern = new StringBuilder();
-        pattern.append("(?:");
-        for (final String name : domains) {
-            pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
-        }
-        pattern.append(")");
-        return pattern.toString();
     }
 }

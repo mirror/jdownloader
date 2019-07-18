@@ -28,6 +28,7 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountRequiredException;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -225,7 +226,7 @@ public class PluralsightCom extends PluginForHost {
         final Account account = AccountController.getInstance().getValidAccount(this);
         if (account != null) {
             if (antiAccountBlockProtection(account)) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Account block protection, please wait!", 5 * 60 * 1000l);
+                throw new AccountUnavailableException("Account block protection, please wait!", 5 * 60 * 1000l);
             }
             try {
                 login(account, br, this, false);

@@ -18,10 +18,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -33,16 +29,20 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "javhd.com" }, urls = { "https?://(?:www\\.)?javhd\\.com/[a-z]{2}/id/(\\d+)/([a-z0-9\\-]+)" })
 public class JavhdCom extends PluginForHost {
     public JavhdCom(PluginWrapper wrapper) {
         super(wrapper);
     }
+
     /* DEV NOTES */
     // Tags: Porn plugin
     // protocol: no https
     // other:
-
     /* Extension which will be used if no correct extension is found */
     private static final String  default_extension = ".mp4";
     /* Connection stuff */
@@ -159,7 +159,7 @@ public class JavhdCom extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
-                if (!con.getContentType().contains("html")) {
+                if (con.isOK() && !con.getContentType().contains("text")) {
                     link.setDownloadSize(con.getLongContentLength());
                 } else {
                     server_issues = true;

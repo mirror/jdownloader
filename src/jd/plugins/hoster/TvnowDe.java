@@ -20,22 +20,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.config.annotations.DefaultEnumValue;
-import org.appwork.storage.config.annotations.LabelInterface;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.downloader.hds.HDSDownloader;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.config.MediathekProperties;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.Order;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -55,6 +39,22 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.MediathekHelper;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.TvnowDe.TvnowConfigInterface.Quality;
+
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DefaultEnumValue;
+import org.appwork.storage.config.annotations.LabelInterface;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.downloader.hds.HDSDownloader;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.config.MediathekProperties;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tvnow.de" }, urls = { "tvnowdecrypted://.+" })
 public class TvnowDe extends PluginForHost {
@@ -724,10 +724,8 @@ public class TvnowDe extends PluginForHost {
         handleDownload(downloadLink, null);
     }
 
-    private static Object LOCK = new Object();
-
     private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
@@ -774,7 +772,9 @@ public class TvnowDe extends PluginForHost {
                 account.setProperty("authtoken", authtoken);
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
-                account.clearCookies("");
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
@@ -787,11 +787,7 @@ public class TvnowDe extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            throw e;
-        }
+        login(account, true);
         final String userID = account.getStringProperty("userid", null);
         br.getPage(API_BASE + "/users/" + userID + "/transactions?fields=*,paymentPaytype.*,paymentPaytype.format.*,paymentTransaction.*,paymentTransaction.paymentProvider&filter=%7B%22ContainerId%22:0%7D");
         /** We can get A LOT of information here ... but we really only want to know if we have a free- or a premium account. */
@@ -804,6 +800,11 @@ public class TvnowDe extends PluginForHost {
             expiredateTimestamp = !StringUtils.isEmpty(expiredateStr) ? TimeFormatter.getMilliSeconds(expiredateStr, "yyyy-MM-dd HH:mm:ss", Locale.GERMANY) : 0;
             if (!StringUtils.isEmpty(createdateStr)) {
                 ai.setCreateTime(TimeFormatter.getMilliSeconds(createdateStr, "yyyy-MM-dd HH:mm:ss", Locale.GERMANY));
+            }
+            final String nextBillingDate = (String) entries.get("nextBillingDate");
+            if (StringUtils.isNotEmpty(nextBillingDate)) {
+                final long nextBilling = TimeFormatter.getMilliSeconds(nextBillingDate, "yyyy-MM-dd HH:mm:ss", Locale.GERMANY);
+                expiredateTimestamp = Math.max(expiredateTimestamp, nextBilling);
             }
         }
         if (expiredateTimestamp < System.currentTimeMillis()) {

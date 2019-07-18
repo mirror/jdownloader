@@ -17,7 +17,6 @@ package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -45,8 +44,25 @@ public class UploadBoyCom extends XFileSharingProBasic {
      * captchatype-info: 2019-05-29: reCaptchaV2<br />
      * other:<br />
      */
-    private static String[] domains    = new String[] { "uploadboy.com", "uploadboy.me" };
-    private static String[] mainDomain = new String[] { "uploadboy.com" };
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "uploadboy.com", "uploadboy.me" });
+        return ret;
+    }
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
@@ -112,38 +128,5 @@ public class UploadBoyCom extends XFileSharingProBasic {
             /* Fallback to normal handling */
             super.handleCaptcha(link, captchaForm);
         }
-    }
-
-    public static String[] getAnnotationNames() {
-        return mainDomain;
-    }
-
-    @Override
-    public String[] siteSupportedNames() {
-        return domains;
-    }
-
-    public static String[] getAnnotationUrls() {
-        final List<String> ret = new ArrayList<String>();
-        for (int i = 0; i < domains.length; i++) {
-            if (i == 0) {
-                /* Match all URLs on first (=current) domain */
-                ret.add("https?://(?:www\\.)?" + getHostsPatternPart() + XFileSharingProBasic.getDefaultAnnotationPatternPart());
-            } else {
-                break;
-            }
-        }
-        return ret.toArray(new String[0]);
-    }
-
-    /** Returns '(?:domain1|domain2)' */
-    public static String getHostsPatternPart() {
-        final StringBuilder pattern = new StringBuilder();
-        pattern.append("(?:");
-        for (final String name : domains) {
-            pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
-        }
-        pattern.append(")");
-        return pattern.toString();
     }
 }
