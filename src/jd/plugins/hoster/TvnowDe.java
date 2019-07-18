@@ -38,20 +38,16 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MediathekHelper;
 import jd.plugins.components.PluginJSonUtils;
-import jd.plugins.hoster.TvnowDe.TvnowConfigInterface.Quality;
 
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.config.annotations.DefaultEnumValue;
-import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.downloader.hds.HDSDownloader;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.config.MediathekProperties;
+import org.jdownloader.plugins.components.config.TvnowConfigInterface;
+import org.jdownloader.plugins.components.config.TvnowConfigInterface.Quality;
 import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -226,7 +222,7 @@ public class TvnowDe extends PluginForHost {
         String filename_beginning = "";
         final AvailableStatus status;
         if (isDRM) {
-            final TvnowConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.TvnowDe.TvnowConfigInterface.class);
+            final TvnowConfigInterface cfg = PluginJsonConfig.get(org.jdownloader.plugins.components.config.TvnowConfigInterface.class);
             filename_beginning = "[DRM]";
             if (cfg.isEnableDRMOffline()) {
                 /* Show as offline although it is online ... but we cannot download it anyways! */
@@ -337,7 +333,7 @@ public class TvnowDe extends PluginForHost {
 
     /* Last revision with old handling: BEFORE 38232 (30393) */
     private void handleDownload(final DownloadLink downloadLink, final Account acc) throws Exception {
-        final TvnowConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.TvnowDe.TvnowConfigInterface.class);
+        final TvnowConfigInterface cfg = PluginJsonConfig.get(org.jdownloader.plugins.components.config.TvnowConfigInterface.class);
         final boolean isFree = downloadLink.getBooleanProperty("isFREE", false);
         final boolean isDRM = downloadLink.getBooleanProperty("isDRM", false);
         // final boolean isStrictDrm1080p;
@@ -438,7 +434,7 @@ public class TvnowDe extends PluginForHost {
                  * 2017-11-15: They've changed these URLs to redirect to image content (a pixel). Most likely we have a broken HLS url -->
                  * Download not possible, only crypted HDS available.
                  */
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming type [DRM]");
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming type [DRM]", e);
             }
             dl.startDownload();
         } else {
@@ -705,7 +701,7 @@ public class TvnowDe extends PluginForHost {
     }
 
     public int getMaxSimultaneousDownloads() {
-        final TvnowConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.TvnowDe.TvnowConfigInterface.class);
+        final TvnowConfigInterface cfg = PluginJsonConfig.get(org.jdownloader.plugins.components.config.TvnowConfigInterface.class);
         if (cfg.isEnableUnlimitedSimultaneousDownloads()) {
             return -1;
         } else {
@@ -878,96 +874,5 @@ public class TvnowDe extends PluginForHost {
     @Override
     public Class<? extends PluginConfigInterface> getConfigInterface() {
         return TvnowConfigInterface.class;
-    }
-
-    public static interface TvnowConfigInterface extends PluginConfigInterface {
-        public static class TRANSLATION {
-            public String getEnableUnlimitedSimultaneousDownloads_label() {
-                /* Translation not required for this */
-                return "Enable unlimited simultaneous downloads? [Warning this may cause issues]";
-            }
-
-            public String getEnableDRMOffline_label() {
-                /* Translation not required for this */
-                return "Display DRM protected content as offline (because it is not downloadable anyway)?";
-            }
-
-            public String getShowQualityInfoInComment() {
-                /* Translation not required for this */
-                return "Show quality information in comment field on downloadstart?";
-            }
-        }
-
-        public static enum Quality implements LabelInterface {
-            BEST {
-                @Override
-                public String getLabel() {
-                    return "Best";
-                }
-            },
-            FHD1080 {
-                @Override
-                public String getLabel() {
-                    return "1080p";
-                }
-            },
-            HD720 {
-                @Override
-                public String getLabel() {
-                    return "720p";
-                }
-            },
-            SD540HIGH {
-                @Override
-                public String getLabel() {
-                    return "540p high";
-                }
-            },
-            SD540LOW {
-                @Override
-                public String getLabel() {
-                    return "540p low";
-                }
-            },
-            SD360HIGH {
-                @Override
-                public String getLabel() {
-                    return "360p high";
-                }
-            },
-            SD360LOW {
-                @Override
-                public String getLabel() {
-                    return "360p low";
-                }
-            };
-        }
-
-        public static final TRANSLATION TRANSLATION = new TRANSLATION();
-
-        @DefaultBooleanValue(false)
-        @Order(10)
-        boolean isEnableUnlimitedSimultaneousDownloads();
-
-        void setEnableUnlimitedSimultaneousDownloads(boolean b);
-
-        @DefaultBooleanValue(false)
-        @Order(20)
-        boolean isEnableDRMOffline();
-
-        void setEnableDRMOffline(boolean b);
-
-        @DefaultBooleanValue(false)
-        @Order(30)
-        boolean isShowQualityInfoInComment();
-
-        void setShowQualityInfoInComment(boolean b);
-
-        @AboutConfig
-        @DefaultEnumValue("BEST")
-        @Order(40)
-        Quality getPreferredQuality();
-
-        void setPreferredQuality(Quality quality);
     }
 }
