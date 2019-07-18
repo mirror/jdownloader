@@ -20,6 +20,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -38,19 +41,17 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "stahomat.cz" }, urls = { "" })
 public class StahomatCz extends PluginForHost {
     /* IMPORTANT: superload.cz and stahomat.cz use the same api */
     /* IMPORTANT2: 30.04.15: They block IPs from the following countries: es, it, jp, fr, cl, br, ar, de, mx, cn, ve */
-    private static final String          mName = "stahomat.cz/";
-    private static final String          mProt = "http://";
-    private static final String          mAPI  = "http://api.stahomat.cz/a-p-i";
-    private static MultiHosterManagement mhm   = new MultiHosterManagement("stahomat.cz");
-    private String                       TOKEN = null;
+    private static final String          mName     = "stahomat.cz/";
+    private static final String          mProt     = "http://";
+    private static final String          mAPI      = "http://api.stahomat.cz/a-p-i";
+    private static MultiHosterManagement mhm       = new MultiHosterManagement("stahomat.cz");
+    private String                       api_token = null;
 
     public StahomatCz(PluginWrapper wrapper) {
         super(wrapper);
@@ -191,44 +192,53 @@ public class StahomatCz extends PluginForHost {
         br.setFollowRedirects(true);
         final String pass = link.getStringProperty("pass", null);
         this.getToken(account);
-        if (TOKEN == null) {
+        if (api_token == null) {
             mhm.handleErrorGeneric(account, link, "login_token_null", 50, 5 * 60 * 1000l);
         }
         String dllink = checkDirectLink(link, "superloadczdirectlink");
         if (dllink == null) {
-            showMessage(link, "Task 1: Generating Link");
             /* request Download */
             if (pass != null) {
                 postPageSafe(account, mAPI + "/download-url", "url=" + Encoding.urlEncode(link.getDownloadURL()) + "&password=" + Encoding.urlEncode(pass) + "&token=");
             } else {
                 postPageSafe(account, mAPI + "/download-url", "url=" + Encoding.urlEncode(link.getDownloadURL()) + "&token=");
             }
-            if (br.containsHTML("\"error\":\"invalidLink\"")) {
-                logger.info("Superload.cz says 'invalid link', disabling real host for 1 hour.");
+            handleErrors(account, link);
+            dllink = PluginJSonUtils.getJson(br, "link");
+            if (dllink == null) {
+                mhm.handleErrorGeneric(account, link, "dllinknull", 50, 5 * 60 * 1000l);
+            }
+        }
+        // might need a sleep here hoster seems to have troubles with new links.
+        handleDL(account, link, dllink);
+    }
+
+    private void handleErrors(final Account account, final DownloadLink link) throws PluginException, InterruptedException {
+        final String error = PluginJSonUtils.getJson(br, "error");
+        if (error != null) {
+            /* 2019-07-18: TODO: Some of these errormessages were copied from superload.cz by mistake(???) */
+            if (error.equalsIgnoreCase("invalidLink")) {
+                logger.info("'invalid link', disabling real host for 1 hour.");
                 mhm.handleErrorGeneric(account, link, "invalidLink", 50, 5 * 60 * 1000l);
-            } else if (br.containsHTML("\"error\":\"temporarilyUnsupportedServer\"")) {
+            } else if (error.equalsIgnoreCase("temporarilyUnsupportedServer")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Temp. Error. Try again later", 5 * 60 * 1000l);
-            } else if (br.containsHTML("\"error\":\"fileNotFound\"")) {
+            } else if (error.equalsIgnoreCase("fileNotFound")) {
                 logger.info("Detected untrusted fileNotFound --> Retrying until we have to temporarily disable the host");
                 mhm.handleErrorGeneric(account, link, "untrusted_file_not_found", 50, 5 * 60 * 1000l);
                 /* Do not trust their file_not_found status --> http://svn.jdownloader.org/issues/56989 */
                 // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (br.containsHTML("\"error\":\"unsupportedServer\"")) {
-                logger.info("Superload.cz says 'unsupported server', disabling real host for 1 hour.");
+            } else if (error.equalsIgnoreCase("unsupportedServer")) {
+                logger.info("'unsupported server', disabling real host for 1 hour.");
                 mhm.handleErrorGeneric(account, link, "unsupportedServer", 50, 5 * 60 * 1000l);
-            } else if (br.containsHTML("\"error\":\"Lack of credits\"")) {
-                logger.info("Superload.cz says 'Lack of credits', temporarily disabling account.");
+            } else if (error.equalsIgnoreCase("Lack of credits")) {
+                logger.info("'Lack of credits', temporarily disabling account.");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            } else if (error.equalsIgnoreCase("Unable to download the file")) {
+                mhm.handleErrorGeneric(account, link, "unable_to_download_file", 50, 5 * 60 * 1000l);
+            } else {
+                logger.warning("Unknown error:" + error);
             }
-            dllink = getJson("link");
-            if (dllink == null) {
-                mhm.handleErrorGeneric(account, link, "dllinknull", 50, 5 * 60 * 1000l);
-            }
-            dllink = dllink.replaceAll("\\\\", "");
-            showMessage(link, "Task 2: Download begins!");
         }
-        // might need a sleep here hoster seems to have troubles with new links.
-        handleDL(account, link, dllink);
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
@@ -273,7 +283,7 @@ public class StahomatCz extends PluginForHost {
         ai.setStatus("Premium account");
         try {
             // get the supported host list,
-            String hostsSup = br.cloneBrowser().postPage(mAPI + "/get-supported-hosts", "token=" + TOKEN);
+            String hostsSup = br.cloneBrowser().postPage(mAPI + "/get-supported-hosts", "token=" + api_token);
             String[] hosts = new Regex(hostsSup, "\"([^\", ]+\\.[^\", ]+)").getColumn(0);
             ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
             ai.setMultiHostSupport(this, supportedHosts);
@@ -291,11 +301,11 @@ public class StahomatCz extends PluginForHost {
                 if (!getSuccess()) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                TOKEN = getJson("token");
-                if (TOKEN == null) {
+                api_token = PluginJSonUtils.getJson(br, "token");
+                if (api_token == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                acc.setProperty("token", TOKEN);
+                acc.setProperty("token", api_token);
             } catch (PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     acc.removeProperty("token");
@@ -305,20 +315,16 @@ public class StahomatCz extends PluginForHost {
         }
     }
 
-    private void showMessage(DownloadLink link, String message) {
-        link.getLinkStatus().setStatusText(message);
-    }
-
     private AccountInfo updateCredits(AccountInfo ai, final Account account) throws PluginException, IOException {
         if (ai == null) {
             ai = new AccountInfo();
         }
         this.getToken(account);
-        if (TOKEN == null) {
+        if (api_token == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.postPage(mAPI + "/get-status-bar", "token=" + TOKEN);
-        final Integer credits = Integer.parseInt(getJson("credits"));
+        br.postPage(mAPI + "/get-status-bar", "token=" + api_token);
+        final Integer credits = Integer.parseInt(PluginJSonUtils.getJson(br, "credits"));
         if (credits != null) {
             // 1000 credits = 1 GB, convert back into 1024 (Bytes)
             // String expression = "(" + credits + " / 1000) * 1073741824";
@@ -329,19 +335,11 @@ public class StahomatCz extends PluginForHost {
     }
 
     private String getToken(final Account account) throws IOException, PluginException {
-        TOKEN = getJson("token");
-        if (TOKEN == null) {
+        api_token = PluginJSonUtils.getJson(br, "token");
+        if (api_token == null) {
             login(account);
         }
-        return TOKEN;
-    }
-
-    private String getJson(final String key) {
-        String result = br.getRegex("\"" + key + "\":\"([^\"]+)\"").getMatch(0);
-        if (result == null) {
-            result = br.getRegex("\"" + key + "\":([^\"\\}\\,]+)").getMatch(0);
-        }
-        return result;
+        return api_token;
     }
 
     private boolean getSuccess() {
@@ -353,7 +351,7 @@ public class StahomatCz extends PluginForHost {
         for (int i = 1; i <= 5; i++) {
             logger.info("Request try " + i + " of 5");
             try {
-                br.postPage(page, postData + TOKEN);
+                br.postPage(page, postData + api_token);
             } catch (final BrowserException e) {
                 if (br.getRequest().getHttpConnection().getResponseCode() == 401) {
                     logger.info("Request failed (401) -> Re-newing token and trying again");
