@@ -37,6 +37,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginHost;
 import org.jdownloader.plugins.config.PluginJsonConfig;
@@ -824,8 +825,8 @@ public class OneFichierCom extends PluginForHost {
                         if (br.containsHTML("following many identification errors") && br.containsHTML("Your account will be unlock")) {
                             throw new AccountUnavailableException("Your account will be unlock within 1 hour", 60 * 60 * 1000l);
                         }
-                        logger.info("Username/Password also invalid via site login!");
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        logger.info("Username/Password also invalid via site login or user has 2FA login enabled!");
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or 2-factor-authentification enabled!\r\nIf you are a premium user and you have 2-factor-authentification enabled, you have to use your API Key to login in JDownloader.\r\nFirst enable API Key login for JD via Settings -> Plugins -> 1fichier.com,\r\nthen get your API Key and enable 2-factor-authentification see here: 1fichier.com/console/params.pl", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
                 account.saveCookies(br.getCookies(getHost()), "");
@@ -1269,7 +1270,7 @@ public class OneFichierCom extends PluginForHost {
             }
 
             public String getUsePremiumAPIEnabled_label() {
-                return "Use premium API? This may help to get around 2FA login issues. Works ONLY for premium accounts! Once enabled, enter your API Key as username AND password!";
+                return "Use premium API? This helps to get around 2-factor-authentification login issues. Works ONLY for premium accounts! If not done before, you should enable 2-factor-authentification afterwards.";
             }
         }
 
@@ -1278,6 +1279,7 @@ public class OneFichierCom extends PluginForHost {
         @AboutConfig
         @DefaultBooleanValue(false)
         @TakeValueFromSubconfig("PREFER_RECONNECT")
+        @Order(10)
         boolean isPreferReconnectEnabled();
 
         void setPreferReconnectEnabled(boolean b);
@@ -1285,12 +1287,14 @@ public class OneFichierCom extends PluginForHost {
         @AboutConfig
         @DefaultBooleanValue(true)
         @TakeValueFromSubconfig("PREFER_SSL")
+        @Order(20)
         boolean isPreferSSLEnabled();
 
         void setPreferSSLEnabled(boolean b);
 
         @AboutConfig
         @DefaultBooleanValue(false)
+        @Order(30)
         @TakeValueFromSubconfig("USE_PREMIUM_API")
         boolean isUsePremiumAPIEnabled();
 
@@ -1299,6 +1303,7 @@ public class OneFichierCom extends PluginForHost {
         @AboutConfig
         @DefaultIntValue(10)
         @SpinnerValidator(min = 0, max = 60)
+        @Order(40)
         int getSmallFilesWaitInterval();
 
         void setSmallFilesWaitInterval(int i);
