@@ -130,6 +130,7 @@ public class UlozTo extends PluginForHost {
             if (finalDirectDownloadURL != null) {
                 return AvailableStatus.TRUE;
             }
+            checkGeoBlocked(br, null);
             if (br.containsHTML("/limit-exceeded") || StringUtils.containsIgnoreCase(br.getURL(), "/limit-exceeded")) {
                 final Form f = br.getFormbyAction("/limit-exceeded");
                 if (f != null) {
@@ -641,6 +642,16 @@ public class UlozTo extends PluginForHost {
         }
     }
 
+    private void checkGeoBlocked(Browser br, Account account) throws PluginException {
+        if (StringUtils.containsIgnoreCase(br.getURL(), "/blocked")) {
+            if (account != null) {
+                throw new AccountUnavailableException("Geoblocked", 24 * 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Geoblocked", 24 * 60 * 60 * 1000l);
+            }
+        }
+    }
+
     private void loginWebsite(final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
@@ -651,6 +662,7 @@ public class UlozTo extends PluginForHost {
                 if (cookies != null) {
                     this.br.setCookies(this.getHost(), cookies);
                     this.br.getPage("https://" + account.getHoster());
+                    checkGeoBlocked(br, account);
                     handleAgeRestrictedRedirects(null);
                     if (br.containsHTML("do=web-login")) {
                         cookies = null;
@@ -660,6 +672,7 @@ public class UlozTo extends PluginForHost {
                 }
                 if (cookies == null) {
                     this.br.getPage("https://" + account.getHoster() + "/login");
+                    checkGeoBlocked(br, account);
                     handleAgeRestrictedRedirects(null);
                     final Form loginform = br.getFormbyKey("username");
                     if (loginform == null) {

@@ -17,9 +17,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.regex.Pattern;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -39,6 +36,8 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class OneFichierComFolder extends PluginForDecrypt {
     public OneFichierComFolder(PluginWrapper wrapper) {
@@ -47,11 +46,11 @@ public class OneFichierComFolder extends PluginForDecrypt {
 
     @Override
     public String[] siteSupportedNames() {
-        return jd.plugins.hoster.OneFichierCom.getAnnotationNames();
+        return buildSupportedNames(jd.plugins.hoster.OneFichierCom.getPluginDomains());
     }
 
     public static String[] getAnnotationNames() {
-        return new String[] { jd.plugins.hoster.OneFichierCom.getAnnotationNames()[0] };
+        return jd.plugins.hoster.OneFichierCom.getAnnotationNames();
     }
 
     /**
@@ -59,18 +58,8 @@ public class OneFichierComFolder extends PluginForDecrypt {
      *
      */
     public static String[] getAnnotationUrls() {
-        // construct pattern
-        final String host = getHostsPattern();
+        final String host = "https?://(?:www\\.)?" + buildHostsPatternPart(jd.plugins.hoster.OneFichierCom.getPluginDomains().get(0));
         return new String[] { host + "/(?:(?:[a-z]{2})/)?dir/([A-Za-z0-9]+)" };
-    }
-
-    private static String getHostsPattern() {
-        final StringBuilder pattern = new StringBuilder();
-        for (final String name : jd.plugins.hoster.OneFichierCom.getAnnotationNames()) {
-            pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
-        }
-        final String hosts = "https?://(?:www\\.)?" + "(?:" + pattern.toString() + ")";
-        return hosts;
     }
 
     private ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
