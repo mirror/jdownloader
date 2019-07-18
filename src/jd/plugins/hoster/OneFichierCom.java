@@ -1409,7 +1409,7 @@ public class OneFichierCom extends PluginForHost {
         @Override
         public boolean validateInputs() {
             final String password = getPassword();
-            if (password == null || !password.trim().matches("[A-Za-z0-9\\-_]{32}")) {
+            if (password == null || !password.trim().matches("[A-Za-z0-9\\-_=]{32}")) {
                 idLabel.setForeground(Color.RED);
                 return false;
             }
