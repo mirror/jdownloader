@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.awt.Color;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,9 +23,31 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DefaultIntValue;
+import org.appwork.storage.config.annotations.SpinnerValidator;
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginHost;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.config.TakeValueFromSubconfig;
+import org.jdownloader.plugins.config.Type;
+import org.jdownloader.translate._JDT;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
+import jd.gui.swing.components.linkbutton.JLink;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -38,6 +61,7 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.AccountUnavailableException;
+import jd.plugins.DefaultEditAccountPanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -47,20 +71,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.config.annotations.DefaultIntValue;
-import org.appwork.storage.config.annotations.SpinnerValidator;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginHost;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.config.TakeValueFromSubconfig;
-import org.jdownloader.plugins.config.Type;
-import org.jdownloader.translate._JDT;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class OneFichierCom extends PluginForHost {
@@ -648,18 +658,19 @@ public class OneFichierCom extends PluginForHost {
         performAPIRequest(API_BASE + "/user/info.cgi", "");
         final AccountInfo ai = new AccountInfo();
         final String apierror = this.getAPIErrormessage();
-        final boolean apiTempBlocked = !StringUtils.isEmpty(apierror) && apierror.matches("Flood detected: .+");
-        if (apiTempBlocked && account.lastUpdateTime() > 0) {
-            logger.info("Cannot get account details because of API limits but account has been checked before so we'll not throw an error");
-            return account.getAccountInfo();
-        } else if (apiTempBlocked) {
-            /*
-             * Account got added for the first time but API is blocked at the moment. We know the account must be premium but we cannot get
-             * any information at the moment ...
-             */
-            logger.info("Cannot get account details because of API limits and account has never been checked before --> Adding account without info");
+        final boolean apiTempBlocked = !StringUtils.isEmpty(apierror) && apierror.matches("Flood detected: User Locked.*?");
+        if (apiTempBlocked) {
+            if (account.lastUpdateTime() > 0) {
+                logger.info("Cannot get account details because of API limits but account has been checked before and is ok");
+            } else {
+                /*
+                 * Account got added for the first time but API is blocked at the moment. We know the account must be premium but we cannot
+                 * get any information at the moment ...
+                 */
+                logger.info("Cannot get account details because of API limits and account has never been checked before --> Adding account without info");
+            }
             account.setType(AccountType.PREMIUM);
-            ai.setStatus("Premium account (can't display info at this moment)");
+            ai.setStatus("Premium account (can't display more detailed info at this moment)");
             account.setMaxSimultanDownloads(maxdownloads_account_premium);
             account.setConcurrentUsePossible(true);
             ai.setUnlimitedTraffic();
@@ -690,7 +701,7 @@ public class OneFichierCom extends PluginForHost {
             ai.setUnlimitedTraffic();
             ai.setValidUntil(validuntil);
         } else {
-            /* Free */
+            /* Free --> 2019-07-18: API Keys are only available for premium users so this should never happen! */
             account.setType(AccountType.FREE);
             accountStatus = "Free account";
             account.setMaxSimultanDownloads(maxdownloads_free);
@@ -729,25 +740,29 @@ public class OneFichierCom extends PluginForHost {
                 /* This should never happen! */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown API error", 5 * 60 * 1000l);
             }
-            final String account_invalid_text = "Invalid API Key - you can find your API Key here: 1fichier.com/console/params.pl";
+            final String apikey_invalid_text = "Invalid API Key - you can find your API Key here: 1fichier.com/console/params.pl\r\nPlease keep in mind that API Keys are only available for premium customers.\r\nIf you do not own a premium account, disable the API Key setting in the plugin settings so that you can login via username & password!\r\nKeep in mind that 2FA login via JD and username/password is not supported!";
             if (message.matches("Flood detected: IP Locked #\\d+")) {
+                /*
+                 * 2019-07-18: This may even happen on the first login attempt. When this happens we cannot know whether the account is
+                 * valid or not!
+                 */
                 if (account != null) {
-                    throw new AccountUnavailableException("API flood detection #38 has been triggered", 5 * 60 * 1000l);
+                    throw new AccountUnavailableException("API flood detection has been triggered", 5 * 60 * 1000l);
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "API flood detection #38 has been triggered", 5 * 60 * 1000l);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "API flood detection has been triggered", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 }
             } else if (message.matches("Flood detected: User Locked #\\d+")) {
                 /* 2019-04-04: Not sure what the difference to #38 is ... */
                 if (account != null) {
-                    throw new AccountUnavailableException("API flood detection #218 has been triggered", 5 * 60 * 1000l);
+                    throw new AccountUnavailableException("API flood detection has been triggered", 5 * 60 * 1000l);
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "API flood detection #218 has been triggered", 5 * 60 * 1000l);
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "API flood detection has been triggered", 5 * 60 * 1000l);
                 }
             } else if (message.matches("Not authenticated #\\d+")) {
-                /* Login required but not logged in */
+                /* Login required but not logged in (this should never happen) */
                 if (account != null) {
                     /* Assume APIKey is invalid or simply not valid anymore (e.g. user disabled or changed APIKey) */
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, account_invalid_text, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, apikey_invalid_text, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else {
                     throw new AccountRequiredException();
                 }
@@ -755,7 +770,7 @@ public class OneFichierCom extends PluginForHost {
                 /* Login required but not logged in */
                 if (account != null) {
                     /* Assume APIKey is invalid or simply not valid anymore (e.g. user disabled or changed APIKey) */
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, account_invalid_text, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, apikey_invalid_text, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else {
                     throw new AccountRequiredException();
                 }
@@ -1319,79 +1334,90 @@ public class OneFichierCom extends PluginForHost {
         return br;
     }
 
-    // public static class OnefichierAccountFactory extends MigPanel implements AccountBuilderInterface {
-    // private static final long serialVersionUID = 1L;
-    // private final String PINHELP = "Enter your API Key";
-    //
-    // private String getPassword() {
-    // if (this.pass == null) {
-    // return null;
-    // }
-    // if (EMPTYPW.equals(new String(this.pass.getPassword()))) {
-    // return null;
-    // }
-    // return new String(this.pass.getPassword());
-    // }
-    //
-    // public boolean updateAccount(Account input, Account output) {
-    // boolean changed = false;
-    // if (!StringUtils.equals(input.getUser(), output.getUser())) {
-    // output.setUser(input.getUser());
-    // changed = true;
-    // }
-    // if (!StringUtils.equals(input.getPass(), output.getPass())) {
-    // output.setPass(input.getPass());
-    // changed = true;
-    // }
-    // return changed;
-    // }
-    //
-    // private final ExtPasswordField pass;
-    // private static String EMPTYPW = " ";
-    //
-    // public OnefichierAccountFactory(final InputChangedCallbackInterface callback) {
-    // super("ins 0, wrap 2", "[][grow,fill]", "");
-    // add(new JLabel("Click here to find your API Key:"));
-    // add(new JLink("https://1fichier.com/console/params.pl"));
-    // add(new JLabel("API Key:"));
-    // add(this.pass = new ExtPasswordField() {
-    // @Override
-    // public void onChanged() {
-    // callback.onChangedInput(this);
-    // }
-    // }, "");
-    // pass.setHelpText(PINHELP);
-    // }
-    //
-    // @Override
-    // public JComponent getComponent() {
-    // return this;
-    // }
-    //
-    // @Override
-    // public void setAccount(Account defaultAccount) {
-    // if (defaultAccount != null) {
-    // // name.setText(defaultAccount.getUser());
-    // pass.setText(defaultAccount.getPass());
-    // }
-    // }
-    //
-    // @Override
-    // public boolean validateInputs() {
-    // // final String userName = getUsername();
-    // // if (userName == null || !userName.trim().matches("^\\d{9}$")) {
-    // // idLabel.setForeground(Color.RED);
-    // // return false;
-    // // }
-    // // idLabel.setForeground(Color.BLACK);
-    // return getPassword() != null;
-    // }
-    //
-    // @Override
-    // public Account getAccount() {
-    // return new Account(null, getPassword());
-    // }
-    // }
+    @Override
+    public AccountBuilderInterface getAccountFactory(InputChangedCallbackInterface callback) {
+        if (PluginJsonConfig.get(OneFichierConfigInterface.class).isUsePremiumAPIEnabled()) {
+            return new OnefichierAccountFactory(callback);
+        } else {
+            return new DefaultEditAccountPanel(callback, !getAccountwithoutUsername());
+        }
+    }
+
+    public static class OnefichierAccountFactory extends MigPanel implements AccountBuilderInterface {
+        private static final long serialVersionUID = 1L;
+        private final String      PINHELP          = "Enter your API Key";
+
+        private String getPassword() {
+            if (this.pass == null) {
+                return null;
+            }
+            if (EMPTYPW.equals(new String(this.pass.getPassword()))) {
+                return null;
+            }
+            return new String(this.pass.getPassword());
+        }
+
+        public boolean updateAccount(Account input, Account output) {
+            boolean changed = false;
+            if (!StringUtils.equals(input.getUser(), output.getUser())) {
+                output.setUser(input.getUser());
+                changed = true;
+            }
+            if (!StringUtils.equals(input.getPass(), output.getPass())) {
+                output.setPass(input.getPass());
+                changed = true;
+            }
+            return changed;
+        }
+
+        private final ExtPasswordField pass;
+        private static String          EMPTYPW = " ";
+        private final JLabel           idLabel;
+
+        public OnefichierAccountFactory(final InputChangedCallbackInterface callback) {
+            super("ins 0, wrap 2", "[][grow,fill]", "");
+            add(new JLabel("Click here to find your API Key:"));
+            add(new JLink("https://1fichier.com/console/params.pl"));
+            this.add(this.idLabel = new JLabel("Enter your API Key:"));
+            add(this.pass = new ExtPasswordField() {
+                @Override
+                public void onChanged() {
+                    callback.onChangedInput(this);
+                }
+            }, "");
+            pass.setHelpText(PINHELP);
+        }
+
+        @Override
+        public JComponent getComponent() {
+            return this;
+        }
+
+        @Override
+        public void setAccount(Account defaultAccount) {
+            if (defaultAccount != null) {
+                // name.setText(defaultAccount.getUser());
+                pass.setText(defaultAccount.getPass());
+            }
+        }
+
+        @Override
+        public boolean validateInputs() {
+            final String password = getPassword();
+            if (password == null || !password.trim().matches("[A-Za-z0-9\\-_]{32}")) {
+                idLabel.setForeground(Color.RED);
+                return false;
+            }
+            idLabel.setForeground(Color.BLACK);
+            return getPassword() != null;
+        }
+
+        @Override
+        public Account getAccount() {
+            return new Account(null, getPassword());
+        }
+    }
+
     @Override
     public void reset() {
     }
