@@ -26,6 +26,13 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 
+import org.appwork.txtresource.TranslationFactory;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.UniqueAlltimeID;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -39,13 +46,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.txtresource.TranslationFactory;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.UniqueAlltimeID;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "arte.tv", "concert.arte.tv", "creative.arte.tv", "future.arte.tv", "cinema.arte.tv", "theoperaplatform.eu", "info.arte.tv" }, urls = { "https?://(?:www\\.)?arte\\.tv/.+", "https?://concert\\.arte\\.tv/.+", "https?://creative\\.arte\\.tv/(?:de|fr|en|it|pl|es)/(?!scald_dmcloud_json).+", "https?://future\\.arte\\.tv/.+", "https?://cinema\\.arte\\.tv/.+", "https?://(?:www\\.)?theoperaplatform\\.eu/.+", "https?://info\\.arte\\.tv/.+" })
 public class ArteMediathekDecrypter extends PluginForDecrypt {
@@ -174,7 +174,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     /* Fallback - maybe they simply embed a normal ARTE TYPE_GUIDE video ... */
                     playerinfo = this.br.getRegex("api\\.arte\\.tv/api/player/v1/config/[a-z]{2}/([A-Za-z0-9\\-]+)(\\?[^<>\"\\']+)");
                     final String link_ending = playerinfo.getMatch(1);
-                    fid = br.getRegex("api\\.arte\\.tv/api/player/v1/config/(?:de|fr|en|it|pl|es)/([A-Za-z0-9\\-]+)").getMatch(0);
+                    fid = br.getRegex("api\\.arte\\.tv(?:/|%2F)api(?:/|%2F)player(?:/|%2F)v1(?:/|%2F)config(?:/|%2F)(?:de|fr|en|it|pl|es)(?:/|%2F)([A-Za-z0-9\\-]+)").getMatch(0);
                     if (fid != null && link_ending != null) {
                         hybridAPIUrl = API_HYBRID_URL_1 + link_ending;
                     } else {
@@ -625,6 +625,10 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
              */
             /* We actually don't necessarily use these urls but the existance of them is an indicator for us on which API-url to use. */
             vp_url = new Regex(source, "<iframe[^>]*?src=\"https?://(?:www\\.)arte\\.tv/player/v\\d+/index\\.php\\?json_url=(http[^<>\"]+)\">[^>]*?</iframe>").getMatch(0);
+            if (vp_url == null) {
+                /* 2019-07-18: URL inside json in html code */
+                vp_url = new Regex(source, "json_url=(https?[^<>\"']+)").getMatch(0);
+            }
             if (vp_url != null) {
                 vp_url = Encoding.htmlDecode(vp_url);
             }
