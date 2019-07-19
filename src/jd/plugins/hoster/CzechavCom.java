@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
@@ -33,13 +32,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.components.config.CzechavComConfigInterface;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "czechav.com" }, urls = { "http://czechavdecrypted.+" })
 public class CzechavCom extends PluginForHost {
-
     public CzechavCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.czechav.com/en/join/");
@@ -58,9 +55,7 @@ public class CzechavCom extends PluginForHost {
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-
     public static final String   html_loggedin                = "/members/logout";
-
     private boolean              server_issues                = false;
     private boolean              logged_in                    = false;
 
@@ -108,11 +103,9 @@ public class CzechavCom extends PluginForHost {
     // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     // }
     // }
-
     // private String getFID(final DownloadLink dl) {
     // return dl.getStringProperty("fid", null);
     // }
-
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
@@ -227,57 +220,6 @@ public class CzechavCom extends PluginForHost {
         return "Download videos- and pictures with the czechav.com plugin.";
     }
 
-    public static interface CzechavComConfigInterface extends PluginConfigInterface {
-        @DefaultBooleanValue(true)
-        @Order(9)
-        boolean isFastLinkcheckEnabled();
-
-        void setFastLinkcheckEnabled(boolean b);
-
-        @DefaultBooleanValue(false)
-        @Order(10)
-        boolean isGrabBestVideoVersionEnabled();
-
-        void setGrabBestVideoVersionEnabled(boolean b);
-
-        @DefaultBooleanValue(true)
-        @Order(20)
-        boolean isGrab2160pVideoEnabled();
-
-        void setGrab2160pVideoEnabled(boolean b);
-
-        @DefaultBooleanValue(true)
-        @Order(30)
-        boolean isGrab1080pVideoEnabled();
-
-        void setGrab1080pVideoEnabled(boolean b);
-
-        @DefaultBooleanValue(true)
-        @Order(40)
-        boolean isGrab720pVideoEnabled();
-
-        void setGrab720pVideoEnabled(boolean b);
-
-        @DefaultBooleanValue(true)
-        @Order(50)
-        boolean isGrab540pVideoEnabled();
-
-        void setGrab540pVideoEnabled(boolean b);
-
-        @DefaultBooleanValue(true)
-        @Order(60)
-        boolean isGrab360pVideoEnabled();
-
-        void setGrab360pVideoEnabled(boolean b);
-
-        @DefaultBooleanValue(true)
-        @Order(70)
-        boolean isGrabOtherResolutionsVideoEnabled();
-
-        void setGrabOtherResolutionsVideoEnabled(boolean b);
-
-    }
-
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return ACCOUNT_PREMIUM_MAXDOWNLOADS;
@@ -290,5 +232,4 @@ public class CzechavCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

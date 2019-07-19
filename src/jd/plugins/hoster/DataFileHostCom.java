@@ -22,13 +22,6 @@ import java.util.LinkedHashSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.config.Order;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Request;
@@ -40,6 +33,12 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.DataFileHostConfigInterface;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datafilehost.com" }, urls = { "https?://((www\\.)?datafilehost\\.com/(download\\-[a-z0-9]+\\.html|d/[a-z0-9]+)|www\\d+\\.datafilehost\\.com/d/[a-z0-9]+)" })
 public class DataFileHostCom extends antiDDoSForHost {
@@ -196,7 +195,7 @@ public class DataFileHostCom extends antiDDoSForHost {
         final String dllink = br.getURL("/get.php?file=" + fid).toString().replace("https://", "http://");
         br.getHeaders().put("Upgrade-Insecure-Requests", "1");
         br.setRequest(null);
-        final DataFileHostConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.DataFileHostCom.DataFileHostConfigInterface.class);
+        final DataFileHostConfigInterface cfg = PluginJsonConfig.get(org.jdownloader.plugins.components.config.DataFileHostConfigInterface.class);
         final int maxchunks;
         if (cfg.isFreeUnlimitedChunksEnabled()) {
             maxchunks = 0;
@@ -224,22 +223,6 @@ public class DataFileHostCom extends antiDDoSForHost {
     @Override
     public Class<? extends PluginConfigInterface> getConfigInterface() {
         return DataFileHostConfigInterface.class;
-    }
-
-    public static interface DataFileHostConfigInterface extends PluginConfigInterface {
-        public static class TRANSLATION {
-            public String getFreeUnlimitedChunksEnabled_label() {
-                return "Enable unlimited chunks for free mode [can cause issues]?";
-            }
-        }
-
-        public static final TRANSLATION TRANSLATION = new TRANSLATION();
-
-        @DefaultBooleanValue(false)
-        @Order(8)
-        boolean isFreeUnlimitedChunksEnabled();
-
-        void setFreeUnlimitedChunksEnabled(boolean b);
     }
 
     @Override
