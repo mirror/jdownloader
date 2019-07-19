@@ -194,7 +194,7 @@ public class PluralsightCom extends PluginForHost {
     }
 
     public boolean antiAccountBlockProtection(final Account account) {
-        final boolean check1 = antiAccountBlockProtection(account, map100PerHour, 72, 60 * 60 * 1000l);
+        final boolean check1 = antiAccountBlockProtection(account, map100PerHour, 50, 60 * 60 * 1000l);
         final boolean check2 = antiAccountBlockProtection(account, map200Per4Hours, 200, 4 * 60 * 60 * 1000l);
         return check1 || check2;
     }
