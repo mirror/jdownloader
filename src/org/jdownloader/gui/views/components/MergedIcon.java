@@ -7,7 +7,6 @@ import org.appwork.swing.components.IDIcon;
 import org.appwork.swing.components.IconIdentifier;
 
 public class MergedIcon extends ExtMergedIcon {
-
     private int gap = 5;
 
     public MergedIcon(Icon... icons) {
@@ -27,7 +26,6 @@ public class MergedIcon extends ExtMergedIcon {
             add(c, x, (height - c.getIconHeight()) / 2, i++, null);
             x += c.getIconWidth() + gap;
         }
-
     }
 
     @Override
@@ -36,7 +34,6 @@ public class MergedIcon extends ExtMergedIcon {
             return internalID;
         }
         IconIdentifier map = new IconIdentifier("ColMerge");
-
         for (Entry e : entries) {
             if (e.icon instanceof IDIcon) {
                 map.add(((IDIcon) e.icon).getIdentifier());
@@ -44,7 +41,6 @@ public class MergedIcon extends ExtMergedIcon {
                 map.add(new IconIdentifier("unknown", e.icon.toString()));
             }
         }
-
         return map;
     }
 }
