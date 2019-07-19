@@ -57,15 +57,16 @@ public class HotpornfileOrg extends PluginForDecrypt {
             br.postPage("https://www." + this.getHost() + "/wp-admin/admin-ajax.php", "action=bypass_captcha&postId=" + fid + "&challenge=" + Encoding.urlEncode(recaptchaV2Response));
             json_type = PluginJSonUtils.getJson(br, "type");
         }
-        if (recaptchaV2Response == null || StringUtils.equalsIgnoreCase(json_type, "error")) {
+        if (recaptchaV2Response == null || !StringUtils.equalsIgnoreCase(json_type, "success")) {
             logger.info("Failed to re-use previous recaptchaV2Response");
+            br.getPage(parameter);
             recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, "6Lf1jhYUAAAAAN8kNxOBBEUu3qBPcy4UNu4roO5K").getToken();
             br.postPage("https://www." + this.getHost() + "/wp-admin/admin-ajax.php", "action=get_protected_links&postId=" + fid + "&response=" + Encoding.urlEncode(recaptchaV2Response));
             json_type = PluginJSonUtils.getJson(br, "type");
         } else {
             logger.info("Successfully re-used previous recaptchaV2Response");
         }
-        if (StringUtils.equalsIgnoreCase(json_type, "error")) {
+        if (!StringUtils.equalsIgnoreCase(json_type, "success")) {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         String src = PluginJSonUtils.getJson(br, "msg");

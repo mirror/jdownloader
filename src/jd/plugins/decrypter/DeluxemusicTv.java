@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.DeluxemusicTvConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -32,7 +33,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.hoster.DeluxemusicTv.DeluxemusicTvConfigInterface;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deluxemusic.tv" }, urls = { "https?://(?:www\\.)?deluxemusic\\.tv/.*?\\.html|https?://deluxetv\\-vimp\\.mivitec\\.net/(?!video/|getMedium)[a-z0-9\\-]+(?:/\\d+)?" })
 public class DeluxemusicTv extends PluginForDecrypt {
@@ -112,7 +112,7 @@ public class DeluxemusicTv extends PluginForDecrypt {
      * E.g. 'https://deluxetv-vimp.mivitec.net/category/dlx-ama/18'
      */
     private void crawlCategory(final String parameter) throws IOException {
-        final DeluxemusicTvConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.DeluxemusicTv.DeluxemusicTvConfigInterface.class);
+        final DeluxemusicTvConfigInterface cfg = PluginJsonConfig.get(org.jdownloader.plugins.components.config.DeluxemusicTvConfigInterface.class);
         if (!cfg.isEnableCategoryCrawler()) {
             logger.info("Category crawler disabled --> Doing nothing");
             return;

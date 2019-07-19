@@ -33,10 +33,10 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-import jd.plugins.hoster.BrazzersCom.BrazzersConfigInterface;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.config.BrazzersConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -55,7 +55,7 @@ public class BrazzersCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final ArrayList<String> all_selected_qualities = new ArrayList<String>();
-        final BrazzersConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.BrazzersCom.BrazzersConfigInterface.class);
+        final BrazzersConfigInterface cfg = PluginJsonConfig.get(org.jdownloader.plugins.components.config.BrazzersConfigInterface.class);
         final String parameter = param.toString();
         final PluginForHost plg = JDUtilities.getPluginForHost(this.getHost());
         final Account aa = AccountController.getInstance().getValidAccount(plg);

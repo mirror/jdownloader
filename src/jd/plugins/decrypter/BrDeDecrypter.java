@@ -26,6 +26,7 @@ import java.util.Map.Entry;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.config.BrDeConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
@@ -38,7 +39,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.hoster.BrDe.BrDeConfigInterface;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "br.de" }, urls = { "https?://(?:www\\.)?br\\.de/[^<>\"]+(\\.html)?" })
 public class BrDeDecrypter extends PluginForDecrypt {
@@ -96,7 +96,7 @@ public class BrDeDecrypter extends PluginForDecrypt {
         final ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
         HashMap<String, DownloadLink> best_map = new HashMap<String, DownloadLink>();
         HashMap<String, DownloadLink> tmpBestMap = new HashMap<String, DownloadLink>();
-        final BrDeConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.BrDe.BrDeConfigInterface.class);
+        final BrDeConfigInterface cfg = PluginJsonConfig.get(org.jdownloader.plugins.components.config.BrDeConfigInterface.class);
         final boolean grab_subtitle = cfg.isGrabSubtitleEnabled();
         final boolean grabBEST = cfg.isGrabBESTEnabled();
         String date_formatted = null;

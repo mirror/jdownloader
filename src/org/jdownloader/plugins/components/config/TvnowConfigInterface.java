@@ -6,7 +6,10 @@ import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginHost;
+import org.jdownloader.plugins.config.Type;
 
+@PluginHost(host = "tvnow.de", type = Type.HOSTER)
 public interface TvnowConfigInterface extends PluginConfigInterface {
     public static class TRANSLATION {
         public String getEnableUnlimitedSimultaneousDownloads_label() {

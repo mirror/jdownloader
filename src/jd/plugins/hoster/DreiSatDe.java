@@ -39,11 +39,8 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.JDUtilities;
 
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.TakeValueFromSubconfig;
+import org.jdownloader.plugins.components.config.DreiSatConfigInterface;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -399,41 +396,5 @@ public class DreiSatDe extends PluginForHost {
 
     private boolean isEmpty(String ip) {
         return ip == null || ip.trim().length() == 0;
-    }
-
-    public static interface DreiSatConfigInterface extends PluginConfigInterface {
-        @AboutConfig
-        @DefaultBooleanValue(false)
-        @TakeValueFromSubconfig("Q_BEST")
-        boolean isLoadBestVersionOnlyEnabled();
-
-        void setLoadBestVersionOnlyEnabled(boolean b);
-
-        @AboutConfig
-        @DefaultBooleanValue(true)
-        boolean isLoadLowVersionEnabled();
-
-        void setLoadLowVersionEnabled(boolean b);
-
-        @AboutConfig
-        @DefaultBooleanValue(true)
-        @TakeValueFromSubconfig("Q_HIGH")
-        boolean isLoadHighVersionEnabled();
-
-        void setLoadHighVersionEnabled(boolean b);
-
-        @AboutConfig
-        @DefaultBooleanValue(true)
-        @TakeValueFromSubconfig("Q_VERYHIGH")
-        boolean isLoadVeryHighVersionEnabled();
-
-        void setLoadVeryHighVersionEnabled(boolean b);
-
-        @AboutConfig
-        @DefaultBooleanValue(false)
-        @TakeValueFromSubconfig("Q_HD")
-        boolean isLoadHDVersionEnabled();
-
-        void setLoadhDVersionEnabled(boolean b);
     }
 }

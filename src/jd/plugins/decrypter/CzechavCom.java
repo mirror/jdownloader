@@ -35,9 +35,9 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.hoster.CzechavCom.CzechavComConfigInterface;
 import jd.utils.JDUtilities;
 
+import org.jdownloader.plugins.components.config.CzechavComConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "czechav.com" }, urls = { "https?://(?:www\\.)?czechav\\.com/(?:de|en)/video/[a-z0-9\\-]+\\-\\d+[a-z0-9\\-]*/?" })
@@ -68,7 +68,7 @@ public class CzechavCom extends PluginForDecrypt {
         final String urlpart = new Regex(parameter, "/video/([a-z0-9\\-]+)-\\d+").getMatch(0);
         final String fid = new Regex(parameter, "(\\d+)/?$").getMatch(0);
         final boolean is_logged_in = getUserLogin(false);
-        final CzechavComConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.CzechavCom.CzechavComConfigInterface.class);
+        final CzechavComConfigInterface cfg = PluginJsonConfig.get(org.jdownloader.plugins.components.config.CzechavComConfigInterface.class);
         final boolean fastLinkcheck = cfg.isFastLinkcheckEnabled();
         if (!is_logged_in) {
             logger.info("Account required");

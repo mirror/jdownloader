@@ -19,12 +19,6 @@ import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.jdownloader.plugins.config.Order;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.translate._JDT;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -36,6 +30,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.jdownloader.plugins.components.config.DeluxemusicTvConfigInterface;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deluxemusic.tv" }, urls = { "https?://(?:www\\.)?deluxetv\\-vimp\\.mivitec\\.net/.*?/?video/[^/]+/[a-f0-9]{32}.*|https?://deluxetv\\-vimp\\.mivitec\\.net/getMedium/[a-f0-9]{32}\\.mp4" })
 public class DeluxemusicTv extends PluginForHost {
@@ -74,7 +72,7 @@ public class DeluxemusicTv extends PluginForHost {
         final Regex urlregex = new Regex(link.getPluginPatternMatcher(), "/video/([^/]+).*[a-f0-9]{32}(/(\\d+))?");
         final String category_id = urlregex.getMatch(2);
         final String url_title = urlregex.getMatch(0);
-        final DeluxemusicTvConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.DeluxemusicTv.DeluxemusicTvConfigInterface.class);
+        final DeluxemusicTvConfigInterface cfg = PluginJsonConfig.get(org.jdownloader.plugins.components.config.DeluxemusicTvConfigInterface.class);
         /*
          * Usually this setting is for decrypters but in this case their contentservers are very slow which is why users can disable the
          * filesize check - it speeds up the linkcheck for this plugin!
@@ -224,32 +222,6 @@ public class DeluxemusicTv extends PluginForHost {
     @Override
     public Class<? extends PluginConfigInterface> getConfigInterface() {
         return DeluxemusicTvConfigInterface.class;
-    }
-
-    public static interface DeluxemusicTvConfigInterface extends PluginConfigInterface {
-        public static class TRANSLATION {
-            public String getFastLinkcheckEnabled_label() {
-                return _JDT.T.lit_enable_fast_linkcheck();
-            }
-
-            public String getEnableCategoryCrawler_label() {
-                return "Enable category crawler? This may add huge amounts of URLs!";
-            }
-        }
-
-        public static final TRANSLATION TRANSLATION = new TRANSLATION();
-
-        @DefaultBooleanValue(false)
-        @Order(9)
-        boolean isFastLinkcheckEnabled();
-
-        void setFastLinkcheckEnabled(boolean b);
-
-        @DefaultBooleanValue(false)
-        @Order(10)
-        boolean isEnableCategoryCrawler();
-
-        void setEnableCategoryCrawler(boolean b);
     }
 
     @Override
