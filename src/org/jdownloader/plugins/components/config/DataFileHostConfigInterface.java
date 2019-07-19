@@ -1,7 +1,5 @@
 package org.jdownloader.plugins.components.config;
 
-import jd.plugins.hoster.DataFileHostCom.DataFileHostConfigInterface.TRANSLATION;
-
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.config.PluginConfigInterface;
