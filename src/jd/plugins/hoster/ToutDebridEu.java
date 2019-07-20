@@ -220,7 +220,9 @@ public class ToutDebridEu extends antiDDoSForHost {
         synchronized (account) {
             /* Load cookies */
             br.setCookiesExclusive(true);
+            br.setAllowedResponseCodes(507);
             this.br = prepBR(this.br);
+            account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 15 * 60 * 1000l);
             loginWebsite(account, force);
         }
     }
