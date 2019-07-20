@@ -252,7 +252,13 @@ public class ToutDebridEu extends antiDDoSForHost {
                 /* Clear cookies to prevent unknown errors as we'll perform a full login below now. */
                 this.br = prepBR(new Browser());
             }
-            getPage(PROTOCOL + this.getHost() + "/login");
+            for (int i = 0; i < 2; i++) {
+                getPage(PROTOCOL + this.getHost() + "/login");
+                if (br.getHttpConnection().getResponseCode() != 507) {
+                    break;
+                }
+                Thread.sleep(1000);
+            }
             final Form login = br.getFormbyActionRegex(".*login\\.php.*");
             if (login == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
