@@ -36,6 +36,25 @@ public class PluginsAPIImpl implements PluginsAPI {
     }
 
     @Override
+    public List<String> getPluginVersion(String URL) {
+        List<String> ret = new ArrayList<String>();
+        if (StringUtils.isNotEmpty(URL)) {
+            URL = URL.replaceAll("^https?://(www.)?", "");
+            for (LazyHostPlugin lhp : HostPluginController.getInstance().list()) {
+                if (URL.equals(lhp.getDisplayName())) {
+                    ret.add(String.valueOf(lhp.getVersion()));
+                }
+            }
+            for (LazyCrawlerPlugin lhp : CrawlerPluginController.getInstance().list()) {
+                if (URL.equals(lhp.getDisplayName())) {
+                    ret.add(String.valueOf(lhp.getVersion()));
+                }
+            }
+        }
+        return ret;
+    }
+
+    @Override
     public HashMap<String, ArrayList<String>> getAllPluginRegex() {
         final HashMap<String, ArrayList<String>> map = new HashMap<String, ArrayList<String>>();
         for (final LazyHostPlugin lhp : HostPluginController.getInstance().list()) {
