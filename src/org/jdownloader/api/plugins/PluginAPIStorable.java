@@ -4,11 +4,13 @@ import org.appwork.storage.Storable;
 import org.jdownloader.myjdownloader.client.bindings.AdvancedConfigEntryDataStorable;
 
 public class PluginAPIStorable extends AdvancedConfigEntryDataStorable implements Storable {
-
     private String className;
     private String displayName;
     private String pattern;
     private String version;
+
+    protected PluginAPIStorable() {
+    }
 
     public String getClassName() {
         return className;
@@ -41,5 +43,4 @@ public class PluginAPIStorable extends AdvancedConfigEntryDataStorable implement
     public void setVersion(String version) {
         this.version = version;
     }
-
 }

@@ -39,5 +39,5 @@ public interface PluginsAPI extends RemoteAPIInterface {
     List<PluginConfigEntryAPIStorable> query(AdvancedConfigQueryStorable query) throws BadParameterException;
 
     @APIParameterNames({ "URL" })
-    List<String> getPluginVersion(String URL);
+    List<PluginAPIStorable> getPluginInfos(String URL);
 }
