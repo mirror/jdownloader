@@ -222,8 +222,26 @@ public class ToutDebridEu extends antiDDoSForHost {
             br.setCookiesExclusive(true);
             br.setAllowedResponseCodes(507);
             this.br = prepBR(this.br);
+            // cookies do expire very fast
             account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 15 * 60 * 1000l);
             loginWebsite(account, force);
+        }
+    }
+
+    @Override
+    protected void getPage(String page) throws Exception {
+        for (int i = 0; i < 2; i++) {
+            super.getPage(page);
+            if (br.getHttpConnection().getResponseCode() == 507) {
+                final DownloadLink link = getDownloadLink();
+                if (link != null) {
+                    sleep(1000, link);
+                } else {
+                    Thread.sleep(1000);
+                }
+            } else {
+                break;
+            }
         }
     }
 
@@ -252,13 +270,7 @@ public class ToutDebridEu extends antiDDoSForHost {
                 /* Clear cookies to prevent unknown errors as we'll perform a full login below now. */
                 this.br = prepBR(new Browser());
             }
-            for (int i = 0; i < 2; i++) {
-                getPage(PROTOCOL + this.getHost() + "/login");
-                if (br.getHttpConnection().getResponseCode() != 507) {
-                    break;
-                }
-                Thread.sleep(1000);
-            }
+            getPage(PROTOCOL + this.getHost() + "/login");
             final Form login = br.getFormbyActionRegex(".*login\\.php.*");
             if (login == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
