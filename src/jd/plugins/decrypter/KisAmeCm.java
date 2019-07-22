@@ -47,6 +47,7 @@ import jd.utils.JDHexUtils;
 import jd.utils.RazStringBuilder;
 
 import org.appwork.utils.Hash;
+import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.images.IconIO;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
@@ -590,6 +591,9 @@ public class KisAmeCm extends antiDDoSForDecrypt implements RefreshSessionLink {
     private File getStitchedImage(final String[] captchaImages, final BufferedImage[] images) throws Exception {
         int i = -1;
         for (final String ci : captchaImages) {
+            if (isAbort()) {
+                throw new InterruptedException();
+            }
             // download each image
             URLConnectionAdapter con = null;
             try {
@@ -630,7 +634,9 @@ public class KisAmeCm extends antiDDoSForDecrypt implements RefreshSessionLink {
             w += bi.getWidth();
         }
         final File stitchedImageOutput = getLocalCaptchaFile(".jpg");
-        ImageIO.write(stichedImageBuffer, "jpg", stitchedImageOutput);
+        // image contains transparency which results in incompatible jpg file when ImageIO is being used
+        // IconIO.toJpgBytes removes transparency first
+        IO.writeToFile(stitchedImageOutput, IconIO.toJpgBytes(stichedImageBuffer));
         return stitchedImageOutput;
     }
 
