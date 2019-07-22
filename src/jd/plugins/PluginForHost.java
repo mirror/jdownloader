@@ -1601,7 +1601,7 @@ public abstract class PluginForHost extends Plugin {
         synchronized (AUTOCAPTCHAMAP) {
             final HashMap<String, Boolean> map = AUTOCAPTCHAMAP.get(acc);
             if (map != null) {
-                final String ID = getHost() + "_" + link.getHost();
+                final String ID = getHost() + "_" + acc.getType() + "_" + link.getHost();
                 final Boolean captcha = map.get(ID);
                 if (captcha != null) {
                     return captcha;
@@ -1629,7 +1629,7 @@ public abstract class PluginForHost extends Plugin {
                 AUTOCAPTCHAMAP.put(acc, map);
             }
             if (map != null) {
-                final String ID = getHost() + "_" + link.getHost();
+                final String ID = getHost() + "_" + acc.getType() + "_" + link.getHost();
                 if (hasCaptcha == null) {
                     if (map.remove(ID) && map.size() == 0) {
                         AUTOCAPTCHAMAP.remove(acc);

@@ -353,12 +353,7 @@ public class FilerNet extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         this.setBrowserExclusive();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account);
         if ("free".equals(PluginJSonUtils.getJson(br, "state"))) {
             account.setType(AccountType.FREE);
             ai.setStatus("Free User");
@@ -375,7 +370,6 @@ public class FilerNet extends PluginForHost {
             }
             ai.setValidUntil(Long.parseLong(PluginJSonUtils.getJson(br, "until")) * 1000);
         }
-        account.setValid(true);
         return ai;
     }
 
@@ -593,14 +587,11 @@ public class FilerNet extends PluginForHost {
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
+        if (acc == null || !AccountType.PREMIUM.equals(acc.getType())) {
+            /* no/free account, yes we can expect captcha */
             return true;
+        } else {
+            return false;
         }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-            /* free accounts also have captchas */
-            return true;
-        }
-        return false;
     }
 }
