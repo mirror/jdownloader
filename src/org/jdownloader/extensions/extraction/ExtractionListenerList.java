@@ -357,7 +357,7 @@ public class ExtractionListenerList implements ExtractionListener {
             final ArrayList<File> files = new ArrayList<File>(currentArchive.getExtractedFiles());
             files.addAll(currentArchive.getSkippedFiles());
             FileCreationManager.getInstance().getEventSender().fireEvent(new FileCreationEvent(controller, FileCreationEvent.Type.NEW_FILES, files.toArray(new File[files.size()])));
-            if (ex.getSettings().isDeleteInfoFilesAfterExtraction() && currentArchive.getArchiveType().name().startsWith("RAR")) {
+            if (ex.getSettings().isDeleteInfoFilesAfterExtraction() && currentArchive.getArchiveType() != null && currentArchive.getArchiveType().name().startsWith("RAR")) {
                 final File fileOutput = new File(currentArchive.getArchiveFiles().get(0).getFilePath());
                 final File infoFiles = new File(fileOutput.getParentFile(), fileOutput.getName().replaceFirst("(?i)(\\.pa?r?t?\\.?[0-9]+\\.rar|\\.rar)$", "") + ".info");
                 if (infoFiles.exists() && infoFiles.delete()) {
